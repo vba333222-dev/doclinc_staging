@@ -73,25 +73,30 @@ defined('BASEPATH') or exit('No direct script access allowed');
 $active_group = 'default';
 $query_builder = TRUE;
 
+$env = function ($key, $default = '') {
+	$value = getenv($key);
+	return ($value === false || $value === '') ? $default : $value;
+};
+
 $db['default'] = array(
-	'dsn'	=> '',
-	'hostname' => 'localhost',
-	'username' => 'idbcsnet_railway',
-	'password' => 't4ny4p4k0f4',
-	'port'     => '3306',
-	'database' => 'idbcsnet_railway',
-	'dbdriver' => 'mysqli',
-	'dbprefix' => '',
+	'dsn'	=> $env('DB_DSN'),
+	'hostname' => $env('DB_HOST', 'localhost'),
+	'username' => $env('DB_USER'),
+	'password' => $env('DB_PASS'),
+	'port'     => $env('DB_PORT', '3306'),
+	'database' => $env('DB_NAME'),
+	'dbdriver' => $env('DB_DRIVER', 'mysqli'),
+	'dbprefix' => $env('DB_PREFIX'),
 	'pconnect' => FALSE,
-	'db_debug' => (ENVIRONMENT !== 'production'),
+	'db_debug' => filter_var($env('DB_DEBUG', (ENVIRONMENT !== 'production')), FILTER_VALIDATE_BOOLEAN),
 	'cache_on' => FALSE,
 	'cachedir' => '',
-	'char_set' => 'utf8',
-	'dbcollat' => 'utf8_general_ci',
+	'char_set' => $env('DB_CHARSET', 'utf8'),
+	'dbcollat' => $env('DB_COLLATION', 'utf8_general_ci'),
 	'swap_pre' => '',
 	'encrypt' => FALSE,
 	'compress' => FALSE,
 	'stricton' => FALSE,
 	'failover' => array(),
-	'save_queries' => TRUE
+	'save_queries' => filter_var($env('DB_SAVE_QUERIES', TRUE), FILTER_VALIDATE_BOOLEAN)
 );

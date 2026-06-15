@@ -1,13 +1,24 @@
-cat > .gitignore <<'EOF'
 .env
+.env.*
+!.env.example
 
 application/cache/*
 !application/cache/index.html
+!application/cache/sessions/
+application/cache/sessions/*
+!application/cache/sessions/index.html
 
 application/logs/*
 !application/logs/index.html
 
-application/sessions/*
+admin_menu/application/cache/*
+!admin_menu/application/cache/index.html
+!admin_menu/application/cache/sessions/
+admin_menu/application/cache/sessions/*
+!admin_menu/application/cache/sessions/index.html
+
+admin_menu/application/logs/*
+!admin_menu/application/logs/index.html
 
 *.log
 
@@ -15,4 +26,4 @@ vendor/
 node_modules/
 
 .DS_Store
-EOFplan.json
+plan.json

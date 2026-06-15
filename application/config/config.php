@@ -23,10 +23,21 @@ defined('BASEPATH') or exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-// $alamat = "http://" . $_SERVER['HTTP_HOST']; // takutnya lupa, kalo udah mau ke hostingan jgn lupa pake https
-$alamat = "https://" . $_SERVER['HTTP_HOST']; // takutnya lupa, kalo udah mau ke hostingan jgn lupa pake https
-$alamat = $alamat . str_replace(basename($_SERVER['SCRIPT_NAME']), "", $_SERVER['SCRIPT_NAME']);
-$config['base_url']    = $alamat; //"http://localhost/invoice";
+$app_base_url = getenv('APP_BASE_URL');
+if ($app_base_url !== false && trim($app_base_url) !== '') {
+	$config['base_url'] = rtrim($app_base_url, '/') . '/';
+} else {
+	$is_https = (
+		(!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
+		|| (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+		|| (!empty($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443)
+	);
+	$scheme = $is_https ? 'https' : 'http';
+	$host = !empty($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
+	$script_name = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+	$script_path = str_replace(basename($script_name), '', $script_name);
+	$config['base_url'] = rtrim($scheme . '://' . $host . $script_path, '/') . '/';
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -327,7 +338,7 @@ $config['cache_query_string'] = FALSE;
 | https://codeigniter.com/user_guide/libraries/encryption.html
 |
 */
-$config['encryption_key'] = 'SangatRahasia1234567890';
+$config['encryption_key'] = getenv('CI_ENCRYPTION_KEY') ?: '';
 
 /*
 |--------------------------------------------------------------------------
@@ -539,4 +550,4 @@ $config['rewrite_short_tags'] = FALSE;
 */
 $config['proxy_ips'] = '';
 
-$config['api_access_token'] = 'Bearer 31ZubGXP9GsCejWvHKzvGmAqt6O6';
+$config['api_access_token'] = getenv('API_ACCESS_TOKEN') ?: '';
