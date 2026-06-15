@@ -69,22 +69,31 @@ class Konsultasi extends MX_Controller
 		$foto = '';
 		$video = '';
 
-		$config['upload_path'] = './uploads/';
-		$config['allowed_types'] = 'jpg|jpeg|png|mp4|mov';
-		$config['max_size'] = 10240; // 10MB
 		$this->load->library('upload');
 
 		if (!empty($_FILES['foto']['name'])) {
-			$config['file_name'] = 'foto_' . time();
-			$this->upload->initialize($config);
+			$foto_config = [
+				'upload_path'   => './uploads/',
+				'allowed_types' => 'jpg|jpeg|png',
+				'max_size'      => 10240, // 10 MB
+				'encrypt_name'  => TRUE,
+				'detect_mime'   => TRUE,
+			];
+			$this->upload->initialize($foto_config);
 			if ($this->upload->do_upload('foto')) {
 				$foto = $this->upload->data('file_name');
 			}
 		}
 
 		if (!empty($_FILES['video']['name'])) {
-			$config['file_name'] = 'video_' . time();
-			$this->upload->initialize($config);
+			$video_config = [
+				'upload_path'   => './uploads/',
+				'allowed_types' => 'mp4|mov',
+				'max_size'      => 51200, // 50 MB
+				'encrypt_name'  => TRUE,
+				'detect_mime'   => TRUE,
+			];
+			$this->upload->initialize($video_config);
 			if ($this->upload->do_upload('video')) {
 				$video = $this->upload->data('file_name');
 			}

@@ -30,7 +30,9 @@
         {
             $config['upload_path']   = './uploads/feeds/';
             $config['allowed_types'] = 'jpg|png|jpeg';
-            // $config['max_size']      = 2048;
+            $config['max_size']      = 5120; // 5 MB
+            $config['encrypt_name']  = TRUE;
+            $config['detect_mime']   = TRUE;
             $this->load->library('upload', $config);
             if ($this->upload->do_upload('gambar')) {
                 $data = $this->input->post();
@@ -50,7 +52,9 @@
             if (!empty($_FILES['gambar']['name'])) {
                 $config['upload_path']   = './uploads/feeds/';
                 $config['allowed_types'] = 'jpg|png|jpeg';
-                $config['max_size']      = 2048;
+                $config['max_size']      = 5120; // 5 MB
+                $config['encrypt_name']  = TRUE;
+                $config['detect_mime']   = TRUE;
                 $this->load->library('upload', $config);
                 if ($this->upload->do_upload('gambar')) {
                     $gambar = $this->upload->data('file_name');

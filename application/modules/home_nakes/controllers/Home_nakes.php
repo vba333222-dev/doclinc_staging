@@ -143,7 +143,9 @@ class Home_nakes extends MX_Controller
 		if (!empty($_FILES['foto']['name'])) {
 			$config['upload_path']   = './uploads/profile/';
 			$config['allowed_types'] = 'jpg|jpeg|png';
-			$config['file_name']     = time() . '_' . $_FILES['foto']['name'];
+			$config['max_size']      = 5120; // 5 MB
+			$config['encrypt_name']  = TRUE;
+			$config['detect_mime']   = TRUE;
 
 			$this->load->library('upload', $config);
 			if ($this->upload->do_upload('foto')) {

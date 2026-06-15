@@ -13,6 +13,41 @@
 		{
 			return isset($_FILES[$field][$key]) ? $_FILES[$field][$key] : $default;
 		}
+
+		/**
+		 * Validate uploaded file before moving.
+		 * Returns true if safe, false otherwise.
+		 * Only allows image extensions with matching MIME types.
+		 */
+		private function _validate_upload($tmp_name, $name, $max_size = 5242880)
+		{
+			if (empty($tmp_name) || empty($name)) {
+				return false;
+			}
+
+			// File size check
+			if (filesize($tmp_name) > $max_size) {
+				return false;
+			}
+
+			// Extension whitelist
+			$allowed_ext = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+			$ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+			if (!in_array($ext, $allowed_ext, true)) {
+				return false;
+			}
+
+			// MIME type validation
+			$allowed_mime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+			$finfo = finfo_open(FILEINFO_MIME_TYPE);
+			$mime = finfo_file($finfo, $tmp_name);
+			finfo_close($finfo);
+			if (!in_array($mime, $allowed_mime, true)) {
+				return false;
+			}
+
+			return true;
+		}
 		// rowcode for home
 		public function home(){
 			$this->session->set_flashdata('title', 'Landing Page - Home');
@@ -100,6 +135,12 @@
 	        $datename = $date.$name;
 	        $folder = "../assets/img/";
 	        $target_file = $folder.$datename;
+	        if (!$this->_validate_upload($temp, $name)) {
+	            $info = '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button><p class="font-weight-bold mb-0">Gagal!</p><p class="mb-0">File tidak valid. Hanya gambar (jpg, jpeg, png, gif, webp) maksimal 5MB yang diizinkan.</p></div>';
+	            $this->session->set_flashdata('info', $info);
+	            redirect('landing_page/about');
+	            return;
+	        }
 	        move_uploaded_file($temp, $target_file);
 
 	        $data = $this->Landing_page_m->about_update_pict($datename);
@@ -141,6 +182,12 @@
 	        // $filename = $name;
 	        $folder = "../assets/img/uploads/news/";
 	        $target_file = $folder.$filename;
+	        if (!$this->_validate_upload($temp, $name)) {
+	            $info = '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button><p class="font-weight-bold mb-0">Gagal!</p><p class="mb-0">File tidak valid. Hanya gambar (jpg, jpeg, png, gif, webp) maksimal 5MB yang diizinkan.</p></div>';
+	            $this->session->set_flashdata('info', $info);
+	            redirect('landing_page/news_events');
+	            return;
+	        }
 	        move_uploaded_file($temp, $target_file);
 
 			$data = $this->Landing_page_m->news_events_add($title,$content,$preview,$filename,$status);
@@ -174,6 +221,12 @@
 	        // $filename = $name;
 	        $folder = "../assets/img/uploads/news/";
 	        $target_file = $folder.$filename;
+	        if (!$this->_validate_upload($temp, $name)) {
+	            $info = '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button><p class="font-weight-bold mb-0">Gagal!</p><p class="mb-0">File tidak valid. Hanya gambar (jpg, jpeg, png, gif, webp) maksimal 5MB yang diizinkan.</p></div>';
+	            $this->session->set_flashdata('info', $info);
+	            redirect('landing_page/news_events');
+	            return;
+	        }
 	        move_uploaded_file($temp, $target_file);
 
 			$data = $this->Landing_page_m->news_events_update($id,$title,$content,$preview,$filename,$status);
@@ -545,6 +598,12 @@
 	        $datename = $date.$name; 
 	        $folder = "../assets/img/";
 	        $target_file = $folder.$datename;
+	        if (!$this->_validate_upload($temp, $name)) {
+	            $info = '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button><p class="font-weight-bold mb-0">Gagal!</p><p class="mb-0">File tidak valid. Hanya gambar (jpg, jpeg, png, gif, webp) maksimal 5MB yang diizinkan.</p></div>';
+	            $this->session->set_flashdata('info', $info);
+	            redirect('landing_page/partner');
+	            return;
+	        }
 	        move_uploaded_file($temp, $target_file);
 
 	        $data = $this->Landing_page_m->add_partner($datename, $alt_name);
@@ -589,6 +648,12 @@
 	        $folder = "../assets/img/";
 	        $target_file = $folder.$datename;
 			if ($name!=''){
+				if (!$this->_validate_upload($temp, $name)) {
+					$info = '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button><p class="font-weight-bold mb-0">Gagal!</p><p class="mb-0">File tidak valid. Hanya gambar (jpg, jpeg, png, gif, webp) maksimal 5MB yang diizinkan.</p></div>';
+					$this->session->set_flashdata('info', $info);
+					redirect('landing_page/partner');
+					return;
+				}
 				move_uploaded_file($temp, $target_file);
 				$logo=$datename;
 			}else{
@@ -653,9 +718,22 @@
 			$row_username = $cek_username->row_array();
 			$valid_username = isset($row_username['username']) ? $row_username['username'] : NULL;
 			if ($valid_username==NULL) {
-		        move_uploaded_file($temp, $target_file);
+				// Validate avatar upload
+				if (!$this->_validate_upload($temp, $name)) {
+					$info = '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button><p class="font-weight-bold mb-0">Gagal!</p><p class="mb-0">File avatar tidak valid. Hanya gambar (jpg, jpeg, png, gif, webp) maksimal 5MB yang diizinkan.</p></div>';
+					$this->session->set_flashdata('info', $info);
+					redirect('landing_page/the_team');
+					return;
+				}
+				move_uploaded_file($temp, $target_file);
 
-		        if ($temp_sign!=''){
+				if ($temp_sign!=''){
+					if (!$this->_validate_upload($temp_sign, $name_sign)) {
+						$info = '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button><p class="font-weight-bold mb-0">Gagal!</p><p class="mb-0">File signature tidak valid. Hanya gambar (jpg, jpeg, png, gif, webp) maksimal 5MB yang diizinkan.</p></div>';
+						$this->session->set_flashdata('info', $info);
+						redirect('landing_page/the_team');
+						return;
+					}
 					move_uploaded_file($temp_sign, $target_file_sign);
 				}
 
@@ -722,6 +800,12 @@
 	        $folder = "../assets/img/testimonials/";
 	        $target_file = $folder.$datename;
 			if ($name!=''){
+				if (!$this->_validate_upload($temp, $name)) {
+					$info = '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button><p class="font-weight-bold mb-0">Gagal!</p><p class="mb-0">File avatar tidak valid. Hanya gambar (jpg, jpeg, png, gif, webp) maksimal 5MB yang diizinkan.</p></div>';
+					$this->session->set_flashdata('info', $info);
+					redirect('landing_page/the_team');
+					return;
+				}
 				move_uploaded_file($temp, $target_file);
 				$avatar=$datename;
 			}else{
@@ -736,6 +820,12 @@
 	        $folder_sign = "assets/img/";
 	        $target_file_sign = $folder_sign.$datename_sign;
 	        if ($name_sign!=''){
+				if (!$this->_validate_upload($temp_sign, $name_sign)) {
+					$info = '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button><p class="font-weight-bold mb-0">Gagal!</p><p class="mb-0">File signature tidak valid. Hanya gambar (jpg, jpeg, png, gif, webp) maksimal 5MB yang diizinkan.</p></div>';
+					$this->session->set_flashdata('info', $info);
+					redirect('landing_page/the_team');
+					return;
+				}
 				move_uploaded_file($temp_sign, $target_file_sign);
 				$signature=$datename_sign;
 			}else{
@@ -837,7 +927,12 @@
 	        $datename = $date.$name; 
 	        $folder = "../assets/img/uploads/portofolio/";
 	        $target_file = $folder.$datename;
-			
+	        if (!$this->_validate_upload($temp, $name)) {
+	            $info = '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button><p class="font-weight-bold mb-0">Gagal!</p><p class="mb-0">File tidak valid. Hanya gambar (jpg, jpeg, png, gif, webp) maksimal 5MB yang diizinkan.</p></div>';
+	            $this->session->set_flashdata('info', $info);
+	            redirect('landing_page/portofolio');
+	            return;
+	        }
 	        move_uploaded_file($temp, $target_file);
 
 	        $data = $this->Landing_page_m->add_portofolio($title, $description, $datename, $status);
@@ -869,6 +964,12 @@
 	        $folder = "../assets/img/uploads/portofolio/";
 	        $target_file = $folder.$datename;
 			if ($name!='') {
+				if (!$this->_validate_upload($temp, $name)) {
+					$info = '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button><p class="font-weight-bold mb-0">Gagal!</p><p class="mb-0">File tidak valid. Hanya gambar (jpg, jpeg, png, gif, webp) maksimal 5MB yang diizinkan.</p></div>';
+					$this->session->set_flashdata('info', $info);
+					redirect('landing_page/portofolio');
+					return;
+				}
 				move_uploaded_file($temp, $target_file);
 				$pict = $datename;
 			}else{
