@@ -305,11 +305,14 @@ if ($kriteria == 0) {
 				url: "<?php echo base_url(); ?>konsultasi_nakes/save_konsultasi_nakes",
 				method: "POST",
 				data: formData,
-				processData: false, // Wajib
-				contentType: false, // Wajib
+				processData: false,
+				contentType: false,
 				success: function(response) {
 					console.log("Response:", response);
-					if (response == 1) {
+					if (typeof response === 'string') {
+						try { response = JSON.parse(response); } catch(e) {}
+					}
+					if (response.status === 'success') {
 						Swal.fire({
 							title: "Berhasil!",
 							icon: "success",

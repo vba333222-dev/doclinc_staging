@@ -147,7 +147,12 @@ class Konsultasi_nakes extends MX_Controller
 			$terapi
 		);
 
-		echo 1;
+		if ($result) {
+			echo json_encode(['status' => 'success']);
+		} else {
+			log_message('error', 'Konsultasi_nakes::save_konsultasi_nakes failed for request_id=' . $request_id);
+			echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan data']);
+		}
 	}
 
 

@@ -116,44 +116,42 @@ class Konsultasi extends MX_Controller
 
 		$token = $this->input->get('token');
 		if (empty($token)) {
-			echo "Token tidak boleh kosong!";
+			log_message('error', 'Konsultasi::send called with empty token');
+			echo json_encode(['status' => 'error', 'message' => 'Token tidak boleh kosong']);
 			return;
 		}
 
 		$this->config->load('firebase');
 
-		// $token = $this->input->post('token');
 		$serviceAccountPath = $this->config->item('firebase_service_account');
-		// $deviceToken = $this->config->item('firebase_device_token');
 		$deviceToken = $token;
 
-		// Ambil pesan dari input
 		$pesan = "Warga telah melakukan konsultasi, silakan cek sekarang!";
 
 		if (empty($pesan)) {
-			echo "Pesan tidak boleh kosong!";
+			log_message('error', 'Konsultasi::send called with empty pesan');
+			echo json_encode(['status' => 'error', 'message' => 'Pesan tidak boleh kosong']);
 			return;
 		}
 
-		// Buat instance Firebase
 		$firebase = (new Factory)
 			->withServiceAccount($serviceAccountPath)
 			->createMessaging();
 
-		// Data notifikasi
 		$message = [
 			'notification' => [
 				'title' => 'Hai',
 				'body' => $pesan,
 			],
-			'token' => $deviceToken, // Token perangkat tujuan
+			'token' => $deviceToken,
 		];
 
 		try {
 			$firebase->send($message);
 			header('Location: ' . base_url('home#riwayat'));
 		} catch (MessagingException $e) {
-			echo "Gagal mengirim notifikasi: " . $e->getMessage();
+			log_message('error', 'Firebase send failed: ' . $e->getMessage());
+			echo json_encode(['status' => 'error', 'message' => 'Gagal mengirim notifikasi']);
 		}
 	}
 

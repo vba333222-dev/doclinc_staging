@@ -19,7 +19,9 @@ class Login extends MX_Controller
 			} elseif ($role == 'admin') {
 				redirect('/home_admin');
 			} else {
-				echo 'Error: User role not recognized';
+				log_message('error', 'Login::index unrecognized role: ' . $role);
+				$this->session->sess_destroy();
+				redirect('../', 'refresh');
 			}
 		} else {
 			$this->load->view('login_v');

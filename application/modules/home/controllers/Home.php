@@ -45,7 +45,8 @@ class Home extends MX_Controller
 			} elseif ($role == 'admin') {
 				redirect('/home_admin');
 			} else {
-				echo 'Error: User role not recognized';
+				log_message('error', 'Home::index unrecognized role: ' . $role);
+				redirect('../', 'refresh');
 			}
 		} else {
 			redirect('../');

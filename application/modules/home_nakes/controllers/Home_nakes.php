@@ -88,7 +88,12 @@ class Home_nakes extends MX_Controller
 		}
 
 		$data = $this->Home_nakes_m->accept_request($id, $id_user, $latitude, $longitude);
-		echo json_encode($data);
+		if ($data) {
+			echo json_encode(['status' => 'success']);
+		} else {
+			log_message('error', 'Home_nakes::accept_request failed for id=' . $id);
+			echo json_encode(['status' => 'error', 'message' => 'Gagal menerima request']);
+		}
 	}
 	public function get_location_user()
 	{

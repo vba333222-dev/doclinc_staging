@@ -14,9 +14,9 @@ function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode)
 
 	// Periksa error pada cURL
 	if (curl_errno($curl)) {
-		echo 'Curl error: ' . curl_error($curl);
+		$curl_err = curl_error($curl);
 		curl_close($curl);
-		return "Error saat menghubungi API.";
+		return "N/A";
 	}
 
 	curl_close($curl);

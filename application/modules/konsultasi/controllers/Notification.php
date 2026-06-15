@@ -23,7 +23,7 @@ class Notification extends CI_Controller
 
 	public function test()
 	{
-		echo "Hello World";
+		echo json_encode(['status' => 'ok']);
 	}
 
 	// public function save()
@@ -64,33 +64,32 @@ class Notification extends CI_Controller
 		$serviceAccountPath = $this->config->item('firebase_service_account');
 		$deviceToken = $this->config->item('firebase_device_token');
 
-		// Ambil pesan dari input
 		$pesan = "Selamat siang Pasien atas nama Bayu";
 
 		if (!$pesan) {
-			echo "Pesan tidak boleh kosong!";
+			log_message('error', 'Notification::send called with empty pesan');
+			echo json_encode(['status' => 'error', 'message' => 'Pesan tidak boleh kosong']);
 			return;
 		}
 
-		// Buat instance Firebase
 		$firebase = (new Factory)
 			->withServiceAccount($serviceAccountPath)
 			->createMessaging();
 
-		// Data notifikasi
 		$message = [
 			'notification' => [
 				'title' => 'Hai',
 				'body' => $pesan,
 			],
-			'token' => $deviceToken, // Token perangkat tujuan
+			'token' => $deviceToken,
 		];
 
 		try {
 			$firebase->send($message);
-			echo "Notifikasi berhasil dikirim!";
+			echo json_encode(['status' => 'success', 'message' => 'Notifikasi berhasil dikirim']);
 		} catch (MessagingException $e) {
-			echo "Gagal mengirim notifikasi: " . $e->getMessage();
+			log_message('error', 'Notification::send Firebase error: ' . $e->getMessage());
+			echo json_encode(['status' => 'error', 'message' => 'Gagal mengirim notifikasi']);
 		}
 	}
 
