@@ -1,0 +1,18 @@
+cat > .gitignore <<'EOF'
+.env
+
+application/cache/*
+!application/cache/index.html
+
+application/logs/*
+!application/logs/index.html
+
+application/sessions/*
+
+*.log
+
+vendor/
+node_modules/
+
+.DS_Store
+EOF
