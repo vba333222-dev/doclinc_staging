@@ -1,11 +1,15 @@
 RewriteEngine on
+
+# Keep local development on HTTP, but preserve HTTPS redirects for normal hosts.
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$ [NC]
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
 RewriteCond $1 !^(index\.php|resources|robots\.txt)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php/$1 [L,QSA] 
- 
-RewriteCond %{HTTPS} off
-RewriteRule ^.*$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+RewriteRule ^(.*)$ index.php/$1 [L,QSA]
 
 # php -- BEGIN cPanel-generated handler, do not edit
 # Set the “ea-php70” package as the default “PHP” programming language.

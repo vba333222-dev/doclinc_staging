@@ -23,10 +23,22 @@ defined('BASEPATH') or exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-// $alamat = "http://" . $_SERVER['HTTP_HOST']; // takutnya lupa, kalo udah mau ke hostingan jgn lupa pake https
-$alamat = "https://" . $_SERVER['HTTP_HOST']; // takutnya lupa, kalo udah mau ke hostingan jgn lupa pake https
-$alamat = $alamat . str_replace(basename($_SERVER['SCRIPT_NAME']), "", $_SERVER['SCRIPT_NAME']);
-$config['base_url']    = $alamat; //"http://localhost/invoice";
+$admin_base_url = getenv('ADMIN_BASE_URL');
+if ($admin_base_url !== false && trim($admin_base_url) !== '') {
+	$config['base_url'] = rtrim($admin_base_url, '/') . '/';
+} else {
+	$is_https = (
+		(!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
+		|| (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+		|| (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on')
+		|| (!empty($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443)
+	);
+	$scheme = $is_https ? 'https' : 'http';
+	$host = !empty($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
+	$script_name = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+	$script_path = str_replace(basename($script_name), '', $script_name);
+	$config['base_url'] = rtrim($scheme . '://' . $host . $script_path, '/') . '/';
+}
 
 /*
 |--------------------------------------------------------------------------
