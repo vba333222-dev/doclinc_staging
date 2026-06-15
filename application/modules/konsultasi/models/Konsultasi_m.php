@@ -154,8 +154,17 @@ class Konsultasi_m extends MX_Controller
 		// $query = $this->db->query("SELECT * FROM tbl_riwayat WHERE idUser ='$id_user'");
 		// $hasil = $query->row();
 
-		$hasil = $CI->encryption->decrypt(base64_decode($query->riwayat));
+		if (!$query || empty($query->riwayat)) {
+			return '';
+		}
 
-		return $hasil;
+		$decoded = base64_decode($query->riwayat);
+		if ($decoded === false) {
+			return '';
+		}
+
+		$hasil = $CI->encryption->decrypt($decoded);
+
+		return $hasil ?: '';
 	}
 }

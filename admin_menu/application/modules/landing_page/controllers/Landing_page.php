@@ -9,6 +9,10 @@
 				redirect('/','refresh');
 	        }
 		}
+		private function file_value($field, $key, $default = '')
+		{
+			return isset($_FILES[$field][$key]) ? $_FILES[$field][$key] : $default;
+		}
 		// rowcode for home
 		public function home(){
 			$this->session->set_flashdata('title', 'Landing Page - Home');
@@ -89,10 +93,10 @@
 		}
 		public function about_update_pict(){
 			$date = date('Ymd_His_');
-			$temp   = $_FILES['pict']['tmp_name'];
-	        $name   = $_FILES['pict']['name'];
-	        $size   = $_FILES['pict']['size'];
-	        $type   = $_FILES['pict']['type'];
+			$temp   = $this->file_value('pict', 'tmp_name');
+	        $name   = $this->file_value('pict', 'name');
+	        $size   = $this->file_value('pict', 'size');
+	        $type   = $this->file_value('pict', 'type');
 	        $datename = $date.$name;
 	        $folder = "../assets/img/";
 	        $target_file = $folder.$datename;
@@ -129,10 +133,10 @@
 			$status = $this->input->post('status');
 
 			$date = date('Ymd_');
-			$temp   = $_FILES['gambar']['tmp_name'];
-	        $name   = str_replace(' ', '_', $_FILES['gambar']['name']);
-	        $size   = $_FILES['gambar']['size'];
-	        $type   = $_FILES['gambar']['type'];
+			$temp   = $this->file_value('gambar', 'tmp_name');
+	        $name   = str_replace(' ', '_', $this->file_value('gambar', 'name'));
+	        $size   = $this->file_value('gambar', 'size');
+	        $type   = $this->file_value('gambar', 'type');
 	        $filename = $date.$name;
 	        // $filename = $name;
 	        $folder = "../assets/img/uploads/news/";
@@ -162,10 +166,10 @@
 
 
 			$date = date('Ymd_');
-			$temp   = $_FILES['gambar']['tmp_name'];
-	        $name   = $_FILES['gambar']['name'];
-	        $size   = $_FILES['gambar']['size'];
-	        $type   = $_FILES['gambar']['type'];
+			$temp   = $this->file_value('gambar', 'tmp_name');
+	        $name   = $this->file_value('gambar', 'name');
+	        $size   = $this->file_value('gambar', 'size');
+	        $type   = $this->file_value('gambar', 'type');
 	        $filename = $date.$name;
 	        // $filename = $name;
 	        $folder = "../assets/img/uploads/news/";
@@ -534,10 +538,10 @@
 		public function add_partner(){ 
 			$alt_name=$this->input->post('alt_name');  
 			$date = date('Ymd_His_');
-			$temp   = $_FILES['logo_partner']['tmp_name'];
-	        $name   = $_FILES['logo_partner']['name'];
-	        $size   = $_FILES['logo_partner']['size'];
-	        $type   = $_FILES['logo_partner']['type'];
+			$temp   = $this->file_value('logo_partner', 'tmp_name');
+	        $name   = $this->file_value('logo_partner', 'name');
+	        $size   = $this->file_value('logo_partner', 'size');
+	        $type   = $this->file_value('logo_partner', 'type');
 	        $datename = $date.$name; 
 	        $folder = "../assets/img/";
 	        $target_file = $folder.$datename;
@@ -577,10 +581,10 @@
 			$alt_name=$this->input->post('alt_name_edit'); 
 
 			$date = date('Ymd_His_');
-			$temp   = $_FILES['logo_edit2']['tmp_name'];
-	        $name   = $_FILES['logo_edit2']['name'];
-	        $size   = $_FILES['logo_edit2']['size'];
-	        $type   = $_FILES['logo_edit2']['type'];
+			$temp   = $this->file_value('logo_edit2', 'tmp_name');
+	        $name   = $this->file_value('logo_edit2', 'name');
+	        $size   = $this->file_value('logo_edit2', 'size');
+	        $type   = $this->file_value('logo_edit2', 'type');
 	        $datename = $date.$name; 
 	        $folder = "../assets/img/";
 	        $target_file = $folder.$datename;
@@ -629,24 +633,25 @@
 			$twitter=$this->input->post('twitter');  
 			$fb=$this->input->post('fb');   
 			$date = date('Ymd_His_');
-			$temp   = $_FILES['avatar']['tmp_name'];
-	        $name   = $_FILES['avatar']['name'];
-	        $size   = $_FILES['avatar']['size'];
-	        $type   = $_FILES['avatar']['type'];
+			$temp   = $this->file_value('avatar', 'tmp_name');
+	        $name   = $this->file_value('avatar', 'name');
+	        $size   = $this->file_value('avatar', 'size');
+	        $type   = $this->file_value('avatar', 'type');
 	        $datename = $date.$name; 
 	        $folder = "../assets/img/testimonials/";
 	        $target_file = $folder.$datename;
 
-	        $temp_sign   = $_FILES['signature']['tmp_name'];
-	        $name_sign   = $_FILES['signature']['name'];
-	        $size_sign   = $_FILES['signature']['size'];
-	        $type_sign   = $_FILES['signature']['type'];
+	        $temp_sign   = $this->file_value('signature', 'tmp_name');
+	        $name_sign   = $this->file_value('signature', 'name');
+	        $size_sign   = $this->file_value('signature', 'size');
+	        $type_sign   = $this->file_value('signature', 'type');
 	        $datename_sign = $date.$name_sign; 
 	        $folder_sign = "assets/img/";
 	        $target_file_sign = $folder_sign.$datename_sign;
 
 	        $cek_username = $this->Landing_page_m->cek_username($username);
-			$valid_username = $cek_username->row_array()['username'];
+			$row_username = $cek_username->row_array();
+			$valid_username = isset($row_username['username']) ? $row_username['username'] : NULL;
 			if ($valid_username==NULL) {
 		        move_uploaded_file($temp, $target_file);
 
@@ -709,10 +714,10 @@
 		    $avatar=$this->input->post('avatar_');   
 		    $signature=$this->input->post('signature_');   
 			$date = date('Ymd_His_');
-			$temp   = $_FILES['avatar2_']['tmp_name'];
-	        $name   = $_FILES['avatar2_']['name'];
-	        $size   = $_FILES['avatar2_']['size'];
-	        $type   = $_FILES['avatar2_']['type'];
+			$temp   = $this->file_value('avatar2_', 'tmp_name');
+	        $name   = $this->file_value('avatar2_', 'name');
+	        $size   = $this->file_value('avatar2_', 'size');
+	        $type   = $this->file_value('avatar2_', 'type');
 	        $datename = $date.$name; 
 	        $folder = "../assets/img/testimonials/";
 	        $target_file = $folder.$datename;
@@ -723,10 +728,10 @@
 				$avatar=$avatar;
 			} 
 
-			$temp_sign   = $_FILES['signature2_']['tmp_name'];
-	        $name_sign   = $_FILES['signature2_']['name'];
-	        $size_sign   = $_FILES['signature2_']['size'];
-	        $type_sign   = $_FILES['signature2_']['type'];
+			$temp_sign   = $this->file_value('signature2_', 'tmp_name');
+	        $name_sign   = $this->file_value('signature2_', 'name');
+	        $size_sign   = $this->file_value('signature2_', 'size');
+	        $type_sign   = $this->file_value('signature2_', 'type');
 	        $datename_sign = $date.$name_sign; 
 	        $folder_sign = "assets/img/";
 	        $target_file_sign = $folder_sign.$datename_sign;
@@ -825,10 +830,10 @@
 			$description=addslashes($this->input->post('description'));
 			$status=$this->input->post('status');
 			$date = date('Ymd_His_');
-			$temp   = $_FILES['pict']['tmp_name'];
-	        $name   = $_FILES['pict']['name'];
-	        $size   = $_FILES['pict']['size'];
-	        $type   = $_FILES['pict']['type'];
+			$temp   = $this->file_value('pict', 'tmp_name');
+	        $name   = $this->file_value('pict', 'name');
+	        $size   = $this->file_value('pict', 'size');
+	        $type   = $this->file_value('pict', 'type');
 	        $datename = $date.$name; 
 	        $folder = "../assets/img/uploads/portofolio/";
 	        $target_file = $folder.$datename;
@@ -856,10 +861,10 @@
 			$status=$this->input->post('status');
 			$pict=$this->input->post('pictnya');
 			$date = date('Ymd_His_');
-			$temp   = $_FILES['pict']['tmp_name'];
-	        $name   = $_FILES['pict']['name'];
-	        $size   = $_FILES['pict']['size'];
-	        $type   = $_FILES['pict']['type'];
+			$temp   = $this->file_value('pict', 'tmp_name');
+	        $name   = $this->file_value('pict', 'name');
+	        $size   = $this->file_value('pict', 'size');
+	        $type   = $this->file_value('pict', 'type');
 	        $datename = $date.$name; 
 	        $folder = "../assets/img/uploads/portofolio/";
 	        $target_file = $folder.$datename;

@@ -118,7 +118,8 @@ echo("tidak ada");
 		$coordinate = $this->Home_m->getAllDataLocations($nama);
 		$mode = 'driving';
 
-		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		$request_method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '';
+		if ($request_method === 'POST') {
 			$latitudeB = $_POST['latitude'] ?? '';
 			$longitudeB = $_POST['longitude'] ?? '';
 

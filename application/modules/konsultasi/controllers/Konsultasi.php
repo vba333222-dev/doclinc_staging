@@ -21,7 +21,10 @@ class Konsultasi extends MX_Controller
 	public function index()
 	{
 		$userid = $this->session->userdata('id');
-		$nama = $_GET['nama'];
+		$nama = $this->input->get('nama');
+		if ($nama === null) {
+			$nama = '';
+		}
 		$data['getDataDoctor'] = $this->Konsultasi_m->getDataDoctor($nama);
 		$data['getFotoDokter'] = $this->Konsultasi_m->getFotoDokter($nama);
 		$data['getDataTokenDoctor'] = $this->Konsultasi_m->getDataTokenDoctor($nama);
@@ -98,7 +101,11 @@ class Konsultasi extends MX_Controller
 	public function send()
 	{
 
-		$token = $_GET['token'];
+		$token = $this->input->get('token');
+		if (empty($token)) {
+			echo "Token tidak boleh kosong!";
+			return;
+		}
 
 		$this->config->load('firebase');
 

@@ -23,10 +23,16 @@ class Konsultasi_nakes extends MX_Controller
 	{
 		$x['request_id'] = $this->uri->segment(3);
 		$data_request = $this->Konsultasi_nakes_m->get_data_request($this->uri->segment(3));
-		$x['userid'] = $data_request->row()->userid;
-		$x['nama_pasien'] = $data_request->row()->nama;
-		$x['keluhan'] = $data_request->row()->request_description;
-		$x['tgl_lahir'] = $data_request->row()->tgl;
+		$request = $data_request->row();
+		if (!$request) {
+			redirect('home_nakes');
+			return;
+		}
+
+		$x['userid'] = $request->userid;
+		$x['nama_pasien'] = $request->nama;
+		$x['keluhan'] = $request->request_description;
+		$x['tgl_lahir'] = $request->tgl;
 
 		$lahir = new DateTime($x['tgl_lahir']);
 		$today = new DateTime('today');

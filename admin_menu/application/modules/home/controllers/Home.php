@@ -93,7 +93,8 @@ class Home extends MX_Controller
 		                </div>';
 			$this->session->set_flashdata('info', $info);
 		}
-		redirect($_SERVER['HTTP_REFERER']);
+		$referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'home';
+		redirect($referer);
 	}
 
 	public function get_realtime_konsultasi()
