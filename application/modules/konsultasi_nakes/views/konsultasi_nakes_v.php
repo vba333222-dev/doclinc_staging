@@ -1,5 +1,5 @@
 <?php
-$kriteria = $_GET['kriteria'];
+$kriteria = isset($_GET['kriteria']) ? $_GET['kriteria'] : 0;
 
 if ($kriteria == 0) {
 	$kriteria = 'Selesai Konsultasi';

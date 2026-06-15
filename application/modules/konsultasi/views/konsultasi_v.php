@@ -1,42 +1,46 @@
 <?php
 function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode)
 {
-	$apiKey = 'AIzaSyBTfv2in7EP1cLT71-bVC-66SZsrg4Kr5w'; // Ganti dengan API Key Google Maps Anda
+	if (empty($latitudeA) || empty($longitudeA) || empty($latitudeB) || empty($longitudeB)) {
+		return 'N/A';
+	}
+
+	$apiKey = 'AIzaSyBTfv2in7EP1cLT71-bVC-66SZsrg4Kr5w';
 	$url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=$latitudeA,$longitudeA&destinations=$latitudeB,$longitudeB&mode=$mode&key=$apiKey";
 
-	// Inisialisasi cURL
 	$curl = curl_init();
 	curl_setopt($curl, CURLOPT_URL, $url);
 	curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($curl, CURLOPT_TIMEOUT, 10);
 
-	// Jalankan cURL dan dapatkan respons
 	$response = curl_exec($curl);
 
-	// Periksa error pada cURL
 	if (curl_errno($curl)) {
-		echo 'Curl error: ' . curl_error($curl);
 		curl_close($curl);
-		return "Error saat menghubungi API.";
+		return 'N/A';
 	}
 
 	curl_close($curl);
 
-	// Decode JSON respons
 	$data = json_decode($response, true);
 
-	// Mengambil durasi dari respons
-	return $data['rows'][0]['elements'][0]['duration']['text'];
+	if (!empty($data['status']) && $data['status'] == 'OK'
+		&& isset($data['rows'][0]['elements'][0]['status'])
+		&& $data['rows'][0]['elements'][0]['status'] == 'OK') {
+		return $data['rows'][0]['elements'][0]['duration']['text'];
+	}
 
-	// Mengembalikan durasi dalam format yang diinginkan
-	// return $duration;
+	return 'N/A';
 }
 
 // Mencari jarak antara pusat kesehatan dan pahlawan 1
 
-$dokter = $_GET['nama'];
+$dokter = isset($_GET['nama']) ? $_GET['nama'] : '';
 
 $this->load->model('Konsultasi_m');
 $coordinate = $this->Konsultasi_m->getAllDataLocations($dokter);
+$latitudeA = '';
+$longitudeA = '';
 foreach ($coordinate as $coordinate) {
 	$latitudeA = $coordinate['latitude'];
 	$longitudeA = $coordinate['longitude'];
@@ -102,11 +106,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					<?php
 					$this->load->model('Konsultasi_m');
 					$hasil = $this->Konsultasi_m->getLocation($dokter);
+					$location_text = (!empty($hasil) && isset($hasil['location'])) ? $hasil['location'] : 'Lokasi tidak tersedia';
 					?>
-					<i class="fas fa-map-marker-alt me-2"></i><small><?= $hasil['location'] ?></small>
+					<i class="fas fa-map-marker-alt me-2"></i><small><?= htmlspecialchars($location_text) ?></small>
 				</div>
 			</div>
 			<?php
+			$foto = '';
 			foreach ($getFotoDokter->result() as $row) {
 				$foto = $row->foto;
 			}
@@ -114,6 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			<!-- buat syntax untuk menampilan nama dokter dan jadikan dibawah image -->
 			<?php
 			// ambil data dari controller konsultasi
+			$dokter_id = '';
+			$nama = '';
 			foreach ($getDataDoctor->result() as $row) {
 				$dokter_id = $row->userId;
 				$nama = $row->nama;
@@ -128,8 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 			?>
 
-			<?php if (!empty($row->foto)) : ?>
-				<img class="rounded-4" id="gambar" src="<?= base_url('uploads/profile/' . $row->foto); ?>" width="100px" height="auto" alt="Image Not Found">
+			<?php if (!empty($foto)) : ?>
+				<img class="rounded-4" id="gambar" src="<?= base_url('uploads/profile/' . $foto); ?>" width="100px" height="auto" alt="Image Not Found">
 			<?php else : ?>
 				<img class="rounded-4" id="gambar" src="https://static.vecteezy.com/system/resources/previews/020/765/399/non_2x/default-profile-account-unknown-icon-black-silhouette-free-vector.jpg" width="100px" height="auto" alt="Default Image">
 			<?php endif; ?>

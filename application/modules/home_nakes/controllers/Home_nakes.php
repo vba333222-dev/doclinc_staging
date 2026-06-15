@@ -97,6 +97,12 @@ class Home_nakes extends MX_Controller
 	}
 	public function get_estimation($origin_lat, $origin_lng, $dest_lat, $dest_lng)
 	{
+		$default = ['distance' => 'N/A', 'duration' => 'N/A'];
+
+		if (empty($origin_lat) || empty($origin_lng) || empty($dest_lat) || empty($dest_lng)) {
+			return $default;
+		}
+
 		$apiKey = 'AIzaSyBTfv2in7EP1cLT71-bVC-66SZsrg4Kr5w';
 		$url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={$origin_lat},{$origin_lng}&destinations={$dest_lat},{$dest_lng}&mode=driving&key={$apiKey}";
 
@@ -104,26 +110,28 @@ class Home_nakes extends MX_Controller
 		curl_setopt_array($curl, [
 			CURLOPT_RETURNTRANSFER => 1,
 			CURLOPT_URL => $url,
-			CURLOPT_SSL_VERIFYPEER => false
+			CURLOPT_SSL_VERIFYPEER => false,
+			CURLOPT_TIMEOUT => 10
 		]);
 
 		$response = curl_exec($curl);
 		curl_close($curl);
 
+		if ($response === false || empty($response)) {
+			return $default;
+		}
+
 		$data = json_decode($response, true);
-		if ($data['status'] == 'OK' && $data['rows'][0]['elements'][0]['status'] == 'OK') {
-			$distance = $data['rows'][0]['elements'][0]['distance']['text'];
-			$duration = $data['rows'][0]['elements'][0]['duration']['text'];
+		if (!empty($data['status']) && $data['status'] == 'OK'
+			&& isset($data['rows'][0]['elements'][0]['status'])
+			&& $data['rows'][0]['elements'][0]['status'] == 'OK') {
 			return [
-				'distance' => $distance,
-				'duration' => $duration
-			];
-		} else {
-			return [
-				'distance' => 'N/A',
-				'duration' => 'N/A'
+				'distance' => $data['rows'][0]['elements'][0]['distance']['text'],
+				'duration' => $data['rows'][0]['elements'][0]['duration']['text']
 			];
 		}
+
+		return $default;
 	}
 
 	public function updateprofile()

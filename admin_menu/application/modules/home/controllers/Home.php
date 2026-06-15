@@ -21,10 +21,10 @@ class Home extends MX_Controller
 		$get_konsultasi_proses = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Accepted'");
 		$get_konsultasi_selesai = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Completed'");
 		$get_konsultasi_cancel = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Cancelled'");
-		$x['konsultasi_baru'] = $get_konsultasi_baru->row()->jml;
-		$x['konsultasi_proses'] = $get_konsultasi_proses->row()->jml;
-		$x['konsultasi_selesai'] = $get_konsultasi_selesai->row()->jml;
-		$x['konsultasi_cancel'] = $get_konsultasi_cancel->row()->jml;
+		$x['konsultasi_baru'] = $get_konsultasi_baru->num_rows() > 0 ? (int)$get_konsultasi_baru->row()->jml : 0;
+		$x['konsultasi_proses'] = $get_konsultasi_proses->num_rows() > 0 ? (int)$get_konsultasi_proses->row()->jml : 0;
+		$x['konsultasi_selesai'] = $get_konsultasi_selesai->num_rows() > 0 ? (int)$get_konsultasi_selesai->row()->jml : 0;
+		$x['konsultasi_cancel'] = $get_konsultasi_cancel->num_rows() > 0 ? (int)$get_konsultasi_cancel->row()->jml : 0;
 		$x['konsultasi_baru_list'] = $this->Home_m->konsultasi_baru_list();
 		$x['konsultasi_proses_list'] = $this->Home_m->konsultasi_proses_list();
 		$x['konsultasi_selesai_list'] = $this->Home_m->konsultasi_selesai_list()->result();
@@ -37,7 +37,8 @@ class Home extends MX_Controller
 			$value_bln = str_pad($i, 2, "0", STR_PAD_LEFT);
 			$bulan_txt .= "'" . $bulan[$value_bln] . "'";
 			$data = $this->Home_m->get_konsul_perbulan(date('Y-' . $value_bln));
-			$nilai_txt .= "'" . $data->row()->total_nilai . "'";
+			$total = ($data->num_rows() > 0) ? (int)$data->row()->total_nilai : 0;
+			$nilai_txt .= "'" . $total . "'";
 			if ($i < 12) {
 				$bulan_txt .= ", ";
 				$nilai_txt .= ", ";
@@ -114,13 +115,12 @@ class Home extends MX_Controller
 		$get_konsultasi_selesai_total = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Completed'");
 
 		$data = [
-			'baru' => (int)$get_konsultasi_baru->row()->jml,
-			'proses' => (int)$get_konsultasi_proses->row()->jml,
-			'selesai' => (int)$get_konsultasi_selesai->row()->jml,
-
+			'baru' => ($get_konsultasi_baru->num_rows() > 0) ? (int)$get_konsultasi_baru->row()->jml : 0,
+			'proses' => ($get_konsultasi_proses->num_rows() > 0) ? (int)$get_konsultasi_proses->row()->jml : 0,
+			'selesai' => ($get_konsultasi_selesai->num_rows() > 0) ? (int)$get_konsultasi_selesai->row()->jml : 0,
 		];
 		$data['total'] = array_sum($data);
-		$x = ['total_selesai' => (int)$get_konsultasi_selesai_total->row()->jml];
+		$x = ['total_selesai' => ($get_konsultasi_selesai_total->num_rows() > 0) ? (int)$get_konsultasi_selesai_total->row()->jml : 0];
 
 		$datas = array_merge($data, $x);
 
@@ -136,24 +136,27 @@ class Home extends MX_Controller
 		$data = [];
 
 		foreach ($list->result() as $row) {
-			$created_at = new DateTime($row->created_at);
-			$now = new DateTime();
-			$interval = $created_at->diff($now);
-			// $tertunda_jam = $interval->days * 24 + $interval->h;
-			$tertunda_jam = sprintf(
-				'%02d:%02d:%02d',
-				$interval->days * 24 + $interval->h,
-				$interval->i,
-				$interval->s
-			);
+			if (!empty($row->created_at)) {
+				$created_at = new DateTime($row->created_at);
+				$now = new DateTime();
+				$interval = $created_at->diff($now);
+				$tertunda_jam = sprintf(
+					'%02d:%02d:%02d',
+					$interval->days * 24 + $interval->h,
+					$interval->i,
+					$interval->s
+				);
+			} else {
+				$tertunda_jam = '00:00:00';
+			}
 
 			$data[] = [
 				'request_id' => $row->request_id,
-				'nama' => $row->nama,
+				'nama' => $row->nama ?? '',
 				'created_at' => $row->created_at,
 				'tertunda_jam' => $tertunda_jam,
-				'nama_puskesmas' => $row->nama_puskesmas,
-				'dokter' => $row->name
+				'nama_puskesmas' => $row->nama_puskesmas ?? '',
+				'dokter' => $row->name ?? ''
 			];
 		}
 
@@ -169,24 +172,27 @@ class Home extends MX_Controller
 		$data = [];
 
 		foreach ($list->result() as $row) {
-			$created_at = new DateTime($row->created_at);
-			$now = new DateTime();
-			$interval = $created_at->diff($now);
-			// $tertunda_jam = $interval->days * 24 + $interval->h;
-			$tertunda_jam = sprintf(
-				'%02d:%02d:%02d',
-				$interval->days * 24 + $interval->h,
-				$interval->i,
-				$interval->s
-			);
+			if (!empty($row->created_at)) {
+				$created_at = new DateTime($row->created_at);
+				$now = new DateTime();
+				$interval = $created_at->diff($now);
+				$tertunda_jam = sprintf(
+					'%02d:%02d:%02d',
+					$interval->days * 24 + $interval->h,
+					$interval->i,
+					$interval->s
+				);
+			} else {
+				$tertunda_jam = '00:00:00';
+			}
 
 			$data[] = [
 				'request_id' => $row->request_id,
-				'nama' => $row->nama,
+				'nama' => $row->nama ?? '',
 				'created_at' => $row->created_at,
 				'tertunda_jam' => $tertunda_jam,
-				'nama_puskesmas' => $row->nama_puskesmas,
-				'dokter' => $row->name
+				'nama_puskesmas' => $row->nama_puskesmas ?? '',
+				'dokter' => $row->name ?? ''
 			];
 		}
 

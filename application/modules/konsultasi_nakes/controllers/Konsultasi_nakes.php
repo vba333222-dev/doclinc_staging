@@ -38,9 +38,13 @@ class Konsultasi_nakes extends MX_Controller
 		$x['keluhan'] = $request->request_description;
 		$x['tgl_lahir'] = $request->tgl;
 
-		$lahir = new DateTime($x['tgl_lahir']);
-		$today = new DateTime('today');
-		$x['umur'] = $lahir->diff($today)->y;
+		if (!empty($x['tgl_lahir'])) {
+			$lahir = new DateTime($x['tgl_lahir']);
+			$today = new DateTime('today');
+			$x['umur'] = $lahir->diff($today)->y;
+		} else {
+			$x['umur'] = '';
+		}
 
 		// Tambahkan data obat ke view
 		// $x['data_obat'] = $filteredData;

@@ -235,7 +235,7 @@
 				<h3 id="ustadzNameFull"></h3>
 				<p id="ustadzSpecialization" class="mb-0"></p>
 				<?php
-				$request_id = $_GET['reqId'];
+				$request_id = isset($_GET['reqId']) ? $_GET['reqId'] : '';
 				?>
 				<input type="text" id="username" value="<?= $request_id ?>" hidden>
 			</div>

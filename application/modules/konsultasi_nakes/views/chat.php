@@ -239,8 +239,8 @@
 		</div>
 
 		<?php
-		$request_id = $_GET['reqId'];
-		$user_id = $_GET['userId'];
+		$request_id = isset($_GET['reqId']) ? $_GET['reqId'] : '';
+		$user_id = isset($_GET['userId']) ? $_GET['userId'] : '';
 		?>
 
 		<input type="text" id="request_id" value="<?= $request_id ?>" hidden>
