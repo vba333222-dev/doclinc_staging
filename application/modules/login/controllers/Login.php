@@ -22,8 +22,7 @@ class Login extends MX_Controller
 				echo 'Error: User role not recognized';
 			}
 		} else {
-			redirect('../');
-			// $this->load->view('login_v');
+			$this->load->view('login_v');
 		}
 	}
 
@@ -36,12 +35,19 @@ class Login extends MX_Controller
 		$longitude = htmlspecialchars($this->input->post('longitude'));
 		$auth = $this->Login_m->auth($username, $password);
 		if ($auth->num_rows() > 0) {
+			$role = $auth->row()->role;
+			// Reject roles that should not access the public app
+			if (!in_array($role, ['warga', 'dokter'])) {
+				echo "2";
+				return;
+			}
 			$session_data = [
 				'id' => $auth->row()->userId,
 				'username' => $auth->row()->username,
 				'nama' => $auth->row()->nama,
 				'email' => $auth->row()->email,
-				'role' => $auth->row()->role,
+				'role' => $role,
+				'remark' => $auth->row()->remark,
 				'picture' => $auth->row()->foto,
 				'logged_in' => TRUE
 			];
@@ -50,11 +56,10 @@ class Login extends MX_Controller
 			$id = $this->session->userdata('id');
 			$username = $this->session->userdata('username');		
 			$save_lokasi = $this->Login_m->save_location($id,$username,$location, $lattitude,$longitude);
-			// echo "OK";
-			echo "1";
+			// Return role so client can redirect to the correct page
+			echo $role;
 		} else {
 			echo "0";
-			// echo "NO";
 		}
 	}
 

@@ -10,6 +10,11 @@ class Upload extends CI_Controller
 	{
 		parent::__construct();
 		$this->load->helper(['form', 'url']);
+		if ($this->session->userdata('logged_in') != TRUE) {
+			http_response_code(403);
+			echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+			exit;
+		}
 	}
 
 	public function foto()

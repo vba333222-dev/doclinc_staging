@@ -9,6 +9,10 @@ class Konsultasi_nakes extends MX_Controller
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('../', 'refresh');
 		}
+		// Only doctors/nakes may complete consultations
+		if ($this->session->userdata('role') != 'dokter') {
+			redirect('/home', 'refresh');
+		}
 
 		// Load library ApiClient
 		$this->load->library('ApiClient');

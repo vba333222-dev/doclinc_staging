@@ -9,6 +9,10 @@ class Home_nakes extends MX_Controller
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('../');
 		}
+		// Only doctors/nakes may access this module
+		if ($this->session->userdata('role') != 'dokter') {
+			redirect('/home');
+		}
 	}
 	public function index()
 	{
@@ -75,6 +79,14 @@ class Home_nakes extends MX_Controller
 		$id_user = $this->input->post('id_user');
 		$latitude = $this->input->post('latitude');
 		$longitude = $this->input->post('longitude');
+
+		// Verify the request belongs to the logged-in doctor before accepting
+		$doctor_id = $this->session->userdata('id');
+		if (!$this->Home_nakes_m->verify_request_owner($id, $doctor_id)) {
+			echo json_encode(['status' => 'error', 'message' => 'Unauthorized: request does not belong to you']);
+			return;
+		}
+
 		$data = $this->Home_nakes_m->accept_request($id, $id_user, $latitude, $longitude);
 		echo json_encode($data);
 	}

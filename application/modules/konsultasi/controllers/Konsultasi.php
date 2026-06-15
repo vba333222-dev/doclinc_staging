@@ -15,6 +15,10 @@ class Konsultasi extends MX_Controller
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('../', 'refresh');
 		}
+		// Only warga may create consultations
+		if ($this->session->userdata('role') != 'warga') {
+			redirect('/home_nakes', 'refresh');
+		}
 		$this->load->library('encryption');
 	}
 

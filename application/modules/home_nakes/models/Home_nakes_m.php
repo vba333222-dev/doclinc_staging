@@ -116,6 +116,18 @@ class Home_nakes_m extends MX_Controller
 			return true;
 		}
 	}
+
+	/**
+	 * Verify that a request belongs to the given doctor.
+	 * Returns true only if the request's dokter_id matches the doctor's userId.
+	 */
+	public function verify_request_owner($request_id, $doctor_id)
+	{
+		$this->db->where('request_id', $request_id);
+		$this->db->where('dokter_id', $doctor_id);
+		$query = $this->db->get('requests');
+		return $query->num_rows() > 0;
+	}
 	public function get_location_user($id)
 	{
 		// echo("SELECT * FROM locations WHERE date(create_date)=date(now()) and name='".$name."'");

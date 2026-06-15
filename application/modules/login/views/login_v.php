@@ -79,15 +79,21 @@
 					longitude: longitude,
 				},
 				success: function(result) {
-					// 	if (result == 'OK') {
-					if (result == '1') {
+					result = result.trim();
+					if (result === 'warga' || result === 'dokter') {
 						$('button[type="submit"]').attr("disabled", true);
 						$('button[type="submit"]').html('<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>' +
 							'<span role="status"> Loading...</span>');
+						var redirectTo = (result === 'warga') ? '<?= base_url() ?>home' : '<?= base_url() ?>home_nakes';
 						setTimeout(function() {
-							// 			window.location.href = 'home';
-							window.location.reload(result);
-						}, 1000); // Delay 1 detik setelah alert sebelum ke loading
+							window.location.href = redirectTo;
+						}, 1000);
+					} else if (result === '2') {
+						Swal.fire({
+							title: "Gagal!",
+							text: "Akun ini tidak memiliki akses ke aplikasi ini",
+							icon: "error"
+						});
 					} else {
 						Swal.fire({
 							title: "Gagal!",
