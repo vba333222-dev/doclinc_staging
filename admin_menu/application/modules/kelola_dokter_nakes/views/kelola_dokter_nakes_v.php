@@ -68,9 +68,9 @@
 												<div class="row">
 													<div class="col-md-3">
 														<?php if ($data->foto): ?>
-															<img src="<?= base_url('../uploads/profile/' . $data->foto) ?>" class="img-thumbnail rounded-circle">
+															<img src="<?= base_url('../uploads/profile/' . html_escape($data->foto)) ?>" class="img-thumbnail rounded-circle">
 														<?php else: ?>
-															<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRE0DSJPJD2kGUbNsOpT8Qx6mxi6VFKPY_wDw&s" class="img-thumbnail rounded-circle">
+															<img src="<?= base_url('../assets/images/default-profile.svg') ?>" class="img-thumbnail rounded-circle">
 														<?php endif; ?>
 													</div>
 													<div class="col-md-9">

@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		<div class="d-flex align-items-center animate__animated animate__fadeInUp animate__faster">
 			<div class="flex-shrink-0">
 				<img class="rounded-4 shadow"
-					src="<?= base_url(); ?>assets/images/<?php echo !empty($_SESSION['picture']) ? $_SESSION['picture'] : 'rahmat.jpg'; ?>"
+					src="<?= base_url('assets/images/default-profile.svg'); ?>"
 					width="100px"
 					height="100px">
 			</div>
@@ -129,9 +129,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			?>
 
 			<?php if (!empty($row->foto)) : ?>
-				<img class="rounded-4" id="gambar" src="<?= base_url('uploads/profile/' . $row->foto); ?>" width="100px" height="auto" alt="Image Not Found">
+				<img class="rounded-4" id="gambar" src="<?= base_url('uploads/profile/' . html_escape($row->foto)); ?>" width="100px" height="auto" alt="Image Not Found">
 			<?php else : ?>
-				<img class="rounded-4" id="gambar" src="https://static.vecteezy.com/system/resources/previews/020/765/399/non_2x/default-profile-account-unknown-icon-black-silhouette-free-vector.jpg" width="100px" height="auto" alt="Default Image">
+				<img class="rounded-4" id="gambar" src="<?= base_url('assets/images/default-profile.svg'); ?>" width="100px" height="auto" alt="Default Image">
 			<?php endif; ?>
 		</div>
 	</div>

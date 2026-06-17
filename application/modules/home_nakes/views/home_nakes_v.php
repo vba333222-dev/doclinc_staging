@@ -9,8 +9,7 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-	<link rel="stylesheet" href="
-								<?= base_url(); ?>assets/css/style.css">
+	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/css/bootstrap-select.min.css" integrity="sha512-g2SduJKxa4Lbn3GW+Q7rNz+pKP9AWMR++Ta8fgwsZRCUsawjPvF/BxSMkGS61VsR9yinGoEgrHPGPn2mrj8+4w==" crossorigin="anonymous" referrerpolicy="no-referrer">
 	<style type="text/css">
@@ -269,10 +268,10 @@
 				<div class="d-flex animate__animated animate__fadeInUp animate__faster">
 					<div class="flex-shrink-0">
 						<?php if (!empty($profile['foto'])) : ?>
-							<img class="rounded-4 shadow" src="<?= base_url(); ?>uploads/profile/<?= $profile['foto'] ?>" width="100px" height="100px">
+							<img class="rounded-4 shadow" src="<?= base_url('uploads/profile/' . html_escape($profile['foto'])); ?>" width="100px" height="100px">
 						<?php else : ?>
 							<img class="rounded-4 shadow"
-								src="<?= base_url(); ?>assets/images/<?php echo !empty($_SESSION['picture']) ? $_SESSION['picture'] : 'rahmat.jpg'; ?>"
+								src="<?= base_url('assets/images/default-profile.svg'); ?>"
 								width="100px"
 								height="100px">
 						<?php endif; ?>
@@ -635,9 +634,9 @@
 						<div class="text-center mb-3">
 							<label for="uploadFoto" class="d-inline-block position-relative" style="cursor: pointer;">
 								<?php if (!empty($profile['foto'])) : ?>
-									<img id="previewFoto" src="<?= base_url(); ?>uploads/profile/<?= $profile['foto'] ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+									<img id="previewFoto" src="<?= base_url('uploads/profile/' . html_escape($profile['foto'])); ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
 								<?php else : ?>
-									<img id="previewFoto" src="https://static.vecteezy.com/system/resources/previews/020/911/740/non_2x/user-profile-icon-profile-avatar-user-icon-male-icon-face-icon-profile-icon-free-png.png" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+									<img id="previewFoto" src="<?= base_url('assets/images/default-profile.svg'); ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
 								<?php endif; ?>
 								<input type="file" id="uploadFoto" name="foto" accept="image/*" class="d-none" onchange="previewImage(event)">
 							</label>

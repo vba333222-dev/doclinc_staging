@@ -1,0 +1,1412 @@
+{
+  "meta": {
+    "document_name": "Doclinc Development Brief",
+    "version": "2.2.0",
+    "language": "id-ID",
+    "updated_at": "2026-06-18",
+    "created_for": "Tim pengembang internal",
+    "purpose": "Memberikan arahan teknis untuk stabilisasi dan pengembangan Doclinc secara bertahap dengan fokus hanya pada repository Doclinc. Sistem host/launcher eksternal berada di luar scope pengerjaan dan tidak boleh dimodifikasi, diasumsikan, atau disentuh dari repository ini.",
+    "visibility": "internal",
+    "important_note": [
+      "Dokumen ini untuk arahan teknis internal pengembangan Doclinc.",
+      "Fokus hanya pada codebase Doclinc yang tersedia di repository.",
+      "Jangan memasukkan credential, token, secret, data pasien asli, atau informasi sensitif ke repository.",
+      "Jangan membuat perubahan, asumsi, endpoint, atau instruksi yang membutuhkan modifikasi sistem host/launcher eksternal.",
+      "Dokumentasi publik, laporan client, commit message, dan README harus hanya berisi informasi teknis yang perlu dan aman dibagikan."
+    ],
+    "revision_focus": [
+      "Memperjelas batas scope: repository ini hanya Doclinc, bukan sistem host/launcher eksternal.",
+      "Menghapus instruksi yang mengharuskan perubahan pada sistem host/launcher eksternal.",
+      "Menjadikan integrasi eksternal hanya sebagai kontrak Doclinc-side adapter opsional.",
+      "Mempertahankan rencana LiveKit untuk voice/video call.",
+      "Mempertahankan rencana LeafletJS untuk realtime kunjungan dokter ke pasien.",
+      "Mempertahankan rencana penggantian Firebase dengan komponen Doclinc-side: MariaDB/MySQL, Redis/WebSocket, LiveKit, dan storage adapter."
+    ]
+  },
+  "project": {
+    "name": "Doclinc / Doklinc",
+    "parent_system": "External host application, out of repository scope",
+    "current_role": "Aplikasi layanan kesehatan/konsultasi mandiri pada repository ini. Aplikasi dapat dibuka dari sistem host/launcher eksternal, tetapi sistem eksternal tersebut tidak disertakan dan tidak boleh dimodifikasi dalam pekerjaan ini.",
+    "current_stack": {
+      "backend": "PHP CodeIgniter 3 dengan pola HMVC",
+      "database": "MariaDB/MySQL existing",
+      "hosting_existing": "aaPanel/server existing",
+      "hosting_staging": "CloudPanel di GCP",
+      "frontend": "PHP views + CSS/JS existing",
+      "runtime_context": "Aplikasi PHP lama yang perlu distabilkan, dipisahkan dari modul non-kesehatan, dan dimodernisasi bertahap. Scope kerja dibatasi pada Doclinc saja."
+    },
+    "target_direction": {
+      "short_term": [
+        "Stabilkan aplikasi existing tanpa rewrite total.",
+        "Pastikan staging berjalan di CloudPanel.",
+        "Perbaiki session, cache, logs, base_url, upload security, asset fallback, dan error frontend utama.",
+        "Pisahkan konfigurasi dari source code menggunakan environment/server config."
+      ],
+      "mid_term": "Pisahkan Doclinc sebagai layanan mandiri dengan kontrak entry/session adapter di sisi Doclinc saja. Jangan membuat perubahan pada sistem host/launcher eksternal. Gunakan MariaDB/MySQL sebagai sumber data utama, WebSocket/Redis untuk realtime event aplikasi, LiveKit untuk voice/video calling, dan LeafletJS untuk peta kunjungan dokter.",
+      "long_term": "Modernisasi bertahap menuju stack yang lebih stabil, disarankan Laravel jika rebuild disetujui, database terpisah, LiveKit Cloud/self-host untuk voice/video calling, storage object-based, Redis, WebSocket, dan deployment terkontrol. Integrasi eksternal tetap berbasis kontrak, bukan perubahan pada repository eksternal."
+    }
+  },
+  "current_staging_environment": {
+    "provider": "Google Cloud Platform",
+    "project_id": "thematic-answer-473003-n4",
+    "vm_name": "doclinc-staging",
+    "zone": "asia-southeast2-a",
+    "machine_type": "e2-medium",
+    "internal_ip": "10.184.0.2",
+    "external_ip": "34.101.183.104",
+    "panel": "CloudPanel",
+    "cloudpanel_url": "https://34.101.183.104:8443",
+    "site_domain_for_dev": "staging.doclinc.local",
+    "site_user": "doclinc-dev",
+    "site_path": "/home/doclinc-dev/htdocs/staging.doclinc.local",
+    "branch": "fix/config-session",
+    "repository_current_baseline": "5286cf7 Initial staging baseline",
+    "notes": [
+      "Domain staging.doclinc.local dipakai melalui hosts file lokal karena DNS resmi doclinc.com belum dapat dipastikan.",
+      "Jangan gunakan Let's Encrypt untuk domain lokal.",
+      "Gunakan HTTP untuk staging lokal sampai domain resmi tersedia.",
+      "Set PHP site di CloudPanel ke PHP 8.1 jika tersedia, atau PHP 8.2 sebagai fallback. Hindari PHP 8.4 untuk CI3 lama.",
+      "Port CloudPanel 8443 sudah terbuka sementara. Setelah setup stabil, batasi akses firewall panel ke IP admin bila memungkinkan."
+    ]
+  },
+  "repository_hygiene": {
+    "current_state": [
+      "Branch main dan fix/config-session sudah diarahkan ke baseline bersih yang sama.",
+      "File arahan internal lama dan laporan internal yang tidak perlu di repository sudah dihapus dari branch aktif.",
+      "Commit history branch utama sudah diringkas menjadi baseline baru."
+    ],
+    "rules": [
+      "Jangan commit file arahan internal yang tidak diperlukan runtime.",
+      "Jangan commit laporan audit internal ke webroot repository jika berpotensi dilihat pihak luar.",
+      "Jangan commit .env, token, server key, credential database, atau data pasien.",
+      "Gunakan commit message netral dan teknis.",
+      "Jangan menaruh catatan proses kerja yang tidak perlu di README, markdown publik, atau commit message.",
+      "Gunakan .gitignore untuk runtime logs/cache/sessions dan file konfigurasi lokal."
+    ],
+    "recommended_checks": [
+      "git status",
+      "find . -path './.git' -prune -o -iname '*internal*' -print",
+      "git grep -n \"DB_PASSWORD\\|PCARE_SECRET\\|SATUSEHAT_CLIENT_SECRET\\|FIREBASE\\|serverKey\" . || true"
+    ]
+  },
+  "non_negotiable_constraints": [
+    "Jangan rewrite total sebelum mapping fitur, database, flow user, dan risiko selesai.",
+    "Jangan mengubah logic kritikal tanpa memahami controller, model, view, dan data flow existing.",
+    "Jangan menyimpan credential, token, secret, server key, atau data pasien asli di repository.",
+    "Jangan menggunakan data pasien asli untuk development.",
+    "Jangan scraping PCare web sebagai pengganti API.",
+    "Jangan menghapus Firebase file/dependency secara membabi buta sebelum inventory fungsi selesai.",
+    "Jangan mengganti nama input form existing sembarangan karena backend lama mungkin bergantung pada nama field tersebut.",
+    "Jangan mencampur ulang Doclinc dengan database/app lain seperti modul ustadz atau fitur non-kesehatan.",
+    "Jangan membuat endpoint dengan user_id mentah di query string sebagai mekanisme login/SSO.",
+    "Jangan menganggap WebRTC sebagai pengganti Firebase secara total; WebRTC hanya untuk audio/video/media realtime.",
+    "Jangan memakai password database lama atau credential yang pernah muncul di log/chat sebagai credential aktif.",
+    "Jangan menyimpan LIVEKIT_API_SECRET, map provider key, webhook secret, atau secret integrasi apapun di repository atau frontend.",
+    "Jangan membuat token LiveKit dari frontend; token harus dibuat oleh backend/service internal.",
+    "Jangan membuat room call dari parameter frontend tanpa validasi konsultasi dan participant di backend.",
+    "Jangan mengandalkan public OpenStreetMap tile server untuk production traffic.",
+    "Jangan melacak lokasi dokter/pasien di luar sesi kunjungan aktif yang sah.",
+    "Jangan menyimpan riwayat lokasi detail selamanya; wajib ada retention/purge policy.",
+    "Jangan mengubah, membuat asumsi, atau menulis instruksi yang membutuhkan akses/perubahan pada sistem host/launcher eksternal.",
+    "Jangan menjadikan sistem host/launcher eksternal sebagai dependency wajib untuk menjalankan staging Doclinc.",
+    "Jika entry dari aplikasi eksternal dibutuhkan di masa depan, implementasikan hanya adapter/contract di sisi Doclinc dan mock/stub untuk development.",
+    "Pertahankan login/session existing Doclinc untuk staging/fallback selama belum ada kontrak entry resmi."
+  ],
+  "development_principles": {
+    "strategy": "Incremental stabilization first, then modular separation, then modernization.",
+    "code_style": [
+      "Small changes per commit.",
+      "Prefer readable, conservative fixes over clever rewrites.",
+      "Keep controller thin where possible.",
+      "Move integration logic into libraries/services/adapters.",
+      "Use environment variables for configuration.",
+      "Use escaping for user/database output in views.",
+      "Log errors server-side; do not echo debug SQL, stack trace, or raw exception to users.",
+      "Keep runtime folders writable by site user without using chmod 777.",
+      "Do not let upload/media folders execute PHP or scripts."
+    ],
+    "testing_expectation": [
+      "After every change, test login/SSO flow, role routing, key pages, form submit, asset loading, upload flow, and mobile responsive layout.",
+      "Check browser console and network tab for 404/400/500/JS errors.",
+      "Check PHP logs after critical flow.",
+      "Use staging/local environment first.",
+      "Test with synthetic data only."
+    ],
+    "commit_guidelines": {
+      "allowed_style": [
+        "Fix session runtime paths",
+        "Harden upload directory execution",
+        "Refactor notification response handling",
+        "Redesign login page layout",
+        "Add Doclinc integration adapter interface",
+        "Add backend notification storage",
+        "Add realtime event adapter",
+        "Add mock health integration clients"
+      ],
+      "avoid": [
+        "final fix fix",
+        "misc update",
+        "temporary random change",
+        "debug dump",
+        "client-ready maybe"
+      ]
+    }
+  },
+  "current_known_issues": {
+    "frontend_runtime": [
+      {
+        "symptom": "GET /uploads/profile/default.jpg 404",
+        "likely_cause": "Default profile asset tidak tersedia atau fallback path salah.",
+        "suggested_fix": "Sediakan asset fallback di assets/doclinc/img/default-profile.png dan update view agar fallback aman."
+      },
+      {
+        "symptom": "GET /<div style= 400 Bad Request",
+        "likely_cause": "HTML string kemungkinan masuk ke URL/src/href karena echo data tidak aman atau variable view salah.",
+        "suggested_fix": "Cari output yang membentuk src/href/action dari data database. Gunakan escaping, validasi variable, dan fallback."
+      },
+      {
+        "symptom": "Firebase service worker registration failed",
+        "likely_cause": "Firebase messaging lama masih dipanggil, sedangkan file/path tidak cocok atau Firebase akan ditinggalkan.",
+        "suggested_fix": "Inventory file Firebase dulu, lalu ganti dengan backend notification + WebSocket/internal notification flow secara bertahap."
+      },
+      {
+        "symptom": "Google Maps JS loaded without loading=async",
+        "likely_cause": "Script Google Maps dipanggil langsung tanpa async/defer/loading async.",
+        "suggested_fix": "Rapikan script loading jika fitur maps masih dipakai."
+      }
+    ],
+    "architecture": [
+      "Doclinc masih tercampur dengan codebase/database lama.",
+      "Ada indikasi database/codebase bercampur dengan app lain.",
+      "Session, base_url, upload path, dan runtime folder perlu distabilkan.",
+      "Firebase dependency lama harus dipetakan sebelum dihapus.",
+      "Database config lama masih berisiko karena credential pernah berada di source/config. Credential aktif harus diganti dan dipindah ke env/server config."
+    ],
+    "runtime": [
+      "CloudPanel site harus memakai PHP 8.1/8.2 untuk kompatibilitas awal CI3.",
+      "Folder application/cache, application/logs, application/cache/sessions, uploads, serta folder runtime admin_menu harus writable oleh site user.",
+      "Document root berisi file yang tidak perlu publik harus diblokir via Nginx/site config atau dipindahkan keluar webroot."
+    ]
+  },
+  "recommended_target_architecture": {
+    "concept": "Doclinc menjadi layanan kesehatan mandiri. Sistem host/launcher eksternal hanya dianggap sebagai caller/consumer opsional dan berada di luar repository. Semua pekerjaan harus fokus pada backend, frontend, database, realtime, call, map, storage, dan security Doclinc.",
+    "diagram_text": [
+      "External Host/Launcher Application (out of scope)",
+      "  -> Optional signed entry token or context handoff, only if contract exists",
+      "  -> No code changes from this repository",
+      "Doclinc Web/PWA/WebView",
+      "  -> REST API",
+      "  -> WebSocket for active app realtime events",
+      "  -> LiveKit client for voice/video room",
+      "  -> LeafletJS map for doctor visit tracking",
+      "Doclinc Backend",
+      "  -> Validate Doclinc session or optional external entry token adapter",
+      "  -> Generate LiveKit access token",
+      "  -> Manage consultation, call, visit, notification, and audit data",
+      "  -> MariaDB/MySQL Doclinc database",
+      "  -> Local/object storage adapter",
+      "  -> Redis cache/pub-sub",
+      "LiveKit Server or LiveKit Cloud",
+      "  -> Voice call",
+      "  -> Video call",
+      "  -> WebRTC signaling/media SFU",
+      "  -> Participant join/leave webhooks",
+      "Map Layer",
+      "  -> LeafletJS rendering",
+      "  -> OSM-compatible tile provider / paid tile / self-host tiles",
+      "  -> OSRM/provider routing when needed"
+    ],
+    "recommended_long_term_stack": {
+      "backend": "Laravel atau service architecture bertahap dari CI3 existing",
+      "frontend": "Laravel Blade/Inertia Vue/React atau web responsive sesuai kebutuhan Doclinc.",
+      "database_preferred_for_new_build": "PostgreSQL jika rebuild penuh disetujui dan migrasi matang",
+      "database_realistic_existing": "MariaDB/MySQL untuk stabilisasi dan fase transisi",
+      "realtime_app_events": "WebSocket + Redis",
+      "voice_video_calling": "LiveKit Cloud untuk percepatan awal atau self-host LiveKit untuk kontrol production",
+      "map_tracking": "LeafletJS + provider tile/routing/geocoding terpisah",
+      "storage": "Local storage sementara, lalu MinIO/S3-compatible/object storage",
+      "queue_cache": "Redis",
+      "deployment": "Docker/Nginx reverse proxy atau VM/service terpisah sesuai kesiapan tim"
+    },
+    "short_term_stack_while_existing_ci3": {
+      "backend": "CodeIgniter 3 existing",
+      "database": "MariaDB/MySQL staging terpisah",
+      "app_realtime_server": "Node.js Socket.IO service terpisah untuk notification/presence/tracking events",
+      "voice_video_calling": "LiveKit client + backend token endpoint/service internal",
+      "map_ui": "LeafletJS untuk render map/marker/polyline",
+      "location_tracking": "Backend location endpoint + Redis + WebSocket + MariaDB audit",
+      "frontend": "PHP views + modular CSS/JS",
+      "external_entry": "Optional Doclinc-side adapter/stub only; no external repository changes."
+    }
+  },
+  "firebase_removal_plan": {
+    "decision": "Firebase akan ditinggalkan sepenuhnya.",
+    "important_clarification": "Firebase tidak diganti oleh satu komponen tunggal. Auth/session tetap dikelola di sisi Doclinc atau melalui optional external entry adapter jika kontrak tersedia. Database/realtime data pindah ke MariaDB/MySQL + WebSocket/Redis, voice/video WebRTC ke LiveKit, storage ke local/object storage, dan push/background notification harus diputuskan sebagai kontrak terpisah tanpa mengubah sistem eksternal dari repository ini.",
+    "replacement_mapping": {
+      "firebase_auth": "Doclinc session/auth existing first, optional external entry adapter on Doclinc side only if contract exists",
+      "firebase_cloud_messaging": "Doclinc notifications table + WebSocket for active sessions; optional external push handoff only if an approved API exists",
+      "firebase_realtime_database_or_firestore_chat": "MariaDB/MySQL sebagai penyimpanan utama + WebSocket/Redis untuk realtime active-session event",
+      "firebase_for_webrtc_signaling": "LiveKit room/token/signaling/media SFU",
+      "firebase_storage": "Local storage sementara, lalu MinIO/S3-compatible/object storage",
+      "firebase_analytics": "Internal audit log / Matomo / Plausible jika dibutuhkan"
+    },
+    "inventory_commands": [
+      "grep -R \"firebase\" .",
+      "grep -R \"messaging\" .",
+      "grep -R \"firebase-messaging-sw\" .",
+      "grep -R \"FCM\" .",
+      "grep -R \"fcm\" .",
+      "grep -R \"getToken\" .",
+      "grep -R \"serverKey\" ."
+    ],
+    "likely_files_to_review": [
+      "firebase-messaging-sw.js",
+      "get-notif.js",
+      "notification.js",
+      "Firebase config scripts",
+      "Notification controller/model",
+      "Database fields such as fcm_token/device_token"
+    ],
+    "safe_migration_steps": [
+      "Inventory seluruh penggunaan Firebase.",
+      "Classify each usage: auth, push, chat, call signaling, storage, analytics.",
+      "Pastikan semua data penting tersimpan di MariaDB/MySQL sebelum realtime broadcast.",
+      "Tambahkan notifications table dan WebSocket/Redis untuk active-session event.",
+      "Tambahkan LiveKit sebagai pengganti WebRTC signaling/media custom untuk voice/video calling.",
+      "Tambahkan storage adapter agar upload tidak bergantung pada Firebase Storage.",
+      "Jika background push diperlukan, buat interface/adapter Doclinc-side dan dokumentasikan kebutuhan API eksternal tanpa mengubah sistem eksternal.",
+      "Disable Firebase frontend registration setelah replacement aktif dan teruji.",
+      "Remove Firebase config/secrets dari repo dan env setelah tidak ada dependency runtime."
+    ]
+  },
+  "database_replacement_plan": {
+    "decision": "Gunakan MariaDB/MySQL sebagai database utama Doclinc untuk fase existing/staging. Jangan migrasi ke PostgreSQL saat legacy CI3 belum stabil.",
+    "reasoning": [
+      "Codebase CI3 existing memakai mysqli dan pola query MySQL/MariaDB.",
+      "SQL dump existing juga mengikuti MySQL/MariaDB.",
+      "CloudPanel mudah dipakai untuk MariaDB/MySQL.",
+      "Migrasi PostgreSQL sekarang akan menambah risiko query, driver, tipe data, dan behavior SQL."
+    ],
+    "components": {
+      "primary_database": "MariaDB/MySQL for existing CI3 and staging stability.",
+      "app_realtime": "WebSocket + Redis for notification, presence, chat event fanout, and doctor visit location broadcast.",
+      "voice_video": "LiveKit for voice/video rooms and media transport.",
+      "location_tracking": "Redis for last known location + MariaDB for visit status/checkpoint/audit.",
+      "file_storage": "Local storage first, then MinIO/S3-compatible/object storage."
+    },
+    "redis_note": [
+      "Redis Pub/Sub cocok untuk realtime event ringan.",
+      "Jangan jadikan Redis Pub/Sub sebagai satu-satunya penyimpanan chat/notifikasi.",
+      "Simpan chat/notifikasi ke MariaDB/MySQL terlebih dahulu agar data tidak hilang ketika user offline atau socket disconnect."
+    ],
+    "minimum_tables": {
+      "notifications": [
+        "id",
+        "target_user_id",
+        "source_user_id",
+        "type",
+        "title",
+        "body",
+        "deep_link",
+        "payload_json",
+        "is_read",
+        "read_at",
+        "created_at"
+      ],
+      "chat_messages": [
+        "id",
+        "request_id",
+        "sender_id",
+        "receiver_id",
+        "message",
+        "attachment_url",
+        "message_type",
+        "created_at",
+        "read_at"
+      ],
+      "device_sessions": [
+        "id",
+        "user_id",
+        "platform",
+        "device_id",
+        "push_token",
+        "last_seen_at",
+        "created_at"
+      ],
+      "media_files": [
+        "id",
+        "owner_id",
+        "request_id",
+        "storage_disk",
+        "file_key",
+        "original_name",
+        "mime_type",
+        "size_bytes",
+        "created_at"
+      ],
+      "audit_logs": [
+        "id",
+        "actor_user_id",
+        "action",
+        "entity_type",
+        "entity_id",
+        "ip_address",
+        "user_agent",
+        "metadata_json",
+        "created_at"
+      ],
+      "consultation_calls": [
+        "id",
+        "consultation_id",
+        "call_type",
+        "room_name",
+        "caller_user_id",
+        "receiver_user_id",
+        "status",
+        "started_at",
+        "accepted_at",
+        "ended_at",
+        "duration_seconds",
+        "ended_by",
+        "failure_reason",
+        "created_at",
+        "updated_at"
+      ],
+      "consultation_call_events": [
+        "id",
+        "call_id",
+        "user_id",
+        "event_type",
+        "payload_json",
+        "created_at"
+      ],
+      "doctor_visits": [
+        "id",
+        "consultation_id",
+        "doctor_user_id",
+        "patient_user_id",
+        "status",
+        "patient_lat",
+        "patient_lng",
+        "doctor_last_lat",
+        "doctor_last_lng",
+        "doctor_last_seen_at",
+        "started_at",
+        "arrived_at",
+        "completed_at",
+        "created_at",
+        "updated_at"
+      ],
+      "doctor_visit_location_logs": [
+        "id",
+        "visit_id",
+        "doctor_user_id",
+        "lat",
+        "lng",
+        "accuracy_meters",
+        "speed_mps",
+        "heading_degrees",
+        "recorded_at"
+      ]
+    },
+    "credential_policy": [
+      "Credential database lama yang pernah muncul di chat/log harus diganti.",
+      "Database staging harus memakai user/password baru dari CloudPanel.",
+      "application/config/database.php sebaiknya membaca env/server config, bukan menyimpan password langsung.",
+      ".env harus masuk .gitignore.",
+      ".env.example hanya berisi placeholder."
+    ]
+  },
+  "realtime_and_webrtc": {
+    "decision": "Gunakan LiveKit untuk voice call, video call, room, participant management, WebRTC signaling, dan media SFU. Jangan membangun WebRTC signaling custom dari nol kecuali ada alasan khusus yang disetujui.",
+    "what_livekit_replaces": [
+      "Custom WebRTC offer/answer exchange",
+      "Custom ICE candidate signaling",
+      "Custom media room handling",
+      "Manual participant media subscription logic"
+    ],
+    "what_livekit_does_not_replace": [
+      "external host application SSO/auth",
+      "MariaDB/MySQL data persistence",
+      "Background push notification",
+      "Notifications table",
+      "Chat message storage",
+      "Visit/location tracking backend",
+      "File/object storage"
+    ],
+    "deployment_options": {
+      "staging_fastest": "LiveKit Cloud for proof of concept and integration testing.",
+      "production_controlled": "Self-host LiveKit on separate VM/service with valid domain, trusted TLS, correct UDP/TCP firewall, monitoring, and backup plan.",
+      "do_not_do": "Jangan menaruh production LiveKit di server CloudPanel yang sama jika traffic nyata mulai masuk tanpa kapasitas/monitoring yang jelas."
+    },
+    "backend_responsibilities": [
+      "Validate active Doclinc/external host application session.",
+      "Validate consultation/call participant relationship.",
+      "Create consultation_calls record.",
+      "Generate deterministic safe room_name from consultation_id/call_id.",
+      "Generate short-lived LiveKit token server-side.",
+      "Reject token request from invalid participant.",
+      "Create notification/incoming call event for receiver.",
+      "Receive and validate LiveKit webhook.",
+      "Update call status, duration, and event log."
+    ],
+    "frontend_responsibilities": [
+      "Request call creation/token from backend only.",
+      "Connect to LiveKit room using backend-issued token.",
+      "Enable audio-only mode for voice call.",
+      "Enable audio+video mode for video call.",
+      "Show incoming call modal.",
+      "Handle accept/reject/end states.",
+      "Handle microphone/camera permission denied.",
+      "Handle reconnecting/disconnected UI state."
+    ],
+    "recommended_room_naming": "doclinc-consultation-{consultation_id}-call-{call_id}",
+    "call_types": [
+      "voice",
+      "video"
+    ],
+    "minimum_backend_endpoints": [
+      "POST /calls/create",
+      "POST /calls/{call_id}/token",
+      "POST /calls/{call_id}/accept",
+      "POST /calls/{call_id}/reject",
+      "POST /calls/{call_id}/end",
+      "POST /livekit/webhook"
+    ],
+    "minimum_tables": {
+      "consultation_calls": [
+        "id",
+        "consultation_id",
+        "call_type",
+        "room_name",
+        "caller_user_id",
+        "receiver_user_id",
+        "status",
+        "started_at",
+        "accepted_at",
+        "ended_at",
+        "duration_seconds",
+        "ended_by",
+        "failure_reason",
+        "created_at",
+        "updated_at"
+      ],
+      "consultation_call_events": [
+        "id",
+        "call_id",
+        "user_id",
+        "event_type",
+        "payload_json",
+        "created_at"
+      ]
+    },
+    "call_statuses": [
+      "created",
+      "ringing",
+      "accepted",
+      "rejected",
+      "missed",
+      "ended",
+      "failed"
+    ],
+    "events_to_log": [
+      "call_created",
+      "incoming_call_sent",
+      "participant_joined",
+      "participant_left",
+      "call_accepted",
+      "call_rejected",
+      "call_missed",
+      "call_ended",
+      "call_failed",
+      "permission_denied",
+      "webhook_room_finished"
+    ],
+    "env_template": {
+      "LIVEKIT_URL": "wss://livekit.example.internal-or-domain",
+      "LIVEKIT_API_KEY": "",
+      "LIVEKIT_API_SECRET": "",
+      "LIVEKIT_WEBHOOK_SECRET": "",
+      "LIVEKIT_TOKEN_TTL_SECONDS": "600",
+      "LIVEKIT_DEFAULT_CALL_TIMEOUT_SECONDS": "60",
+      "LIVEKIT_DEPLOYMENT_MODE": "cloud|self_hosted"
+    },
+    "recording_policy": {
+      "default": "off",
+      "enable_only_if": [
+        "legal/patient consent policy is approved",
+        "storage encryption and retention are defined",
+        "egress service is deployed and monitored"
+      ],
+      "notes": "Untuk fase awal simpan call metadata/duration saja, bukan rekaman audio/video."
+    },
+    "error_cases_to_handle": [
+      "receiver offline",
+      "caller offline",
+      "microphone permission denied",
+      "camera permission denied",
+      "LiveKit token expired",
+      "room join failed",
+      "network drop",
+      "participant reconnecting",
+      "call rejected",
+      "call missed",
+      "call canceled",
+      "session expired",
+      "invalid consultation room",
+      "invalid participant token request"
+    ]
+  },
+  "notification_without_firebase": {
+    "decision": "Firebase Cloud Messaging akan ditinggalkan, sehingga notifikasi harus diganti.",
+    "recommended_model": {
+      "active_doclinc_session": "WebSocket realtime event",
+      "background_or_closed_app": "Out of scope until approved external push API exists; document limitation and use polling fallback where acceptable",
+      "fallback": "Polling endpoint for unread notification/incoming calls, only as temporary fallback"
+    },
+    "backend_flow": [
+      "Create notification record in MariaDB/MySQL.",
+      "If target user has active Doclinc session, send WebSocket event.",
+      "If target user inactive/background, do not assume external push availability; use optional push adapter only when an approved API contract exists.",
+      "For incoming call, notification payload references call_id, consultation_id, call_type, and Doclinc deep link/path.",
+      "Client opens call screen and requests LiveKit token from backend after validation."
+    ],
+    "important_risk": "LiveKit hanya menangani voice/video room dan tidak bisa membangunkan aplikasi yang tertutup. Background incoming call/notification membutuhkan push provider atau external API yang disetujui, tetapi implementasi eksternal berada di luar scope repository ini.",
+    "optional_external_push_payload_contract": {
+      "target_user_id": "12345",
+      "title": "Konsultasi Baru",
+      "body": "Ada konsultasi baru yang perlu ditangani.",
+      "type": "doclinc_consultation",
+      "deep_link": "doclinc://consultation/987"
+    }
+  },
+  "storage_plan": {
+    "short_term": [
+      "Pertahankan uploads lokal untuk staging.",
+      "Pastikan uploads tidak dapat mengeksekusi PHP/script.",
+      "Gunakan MIME detection dan allowed extensions.",
+      "Gunakan safe generated filename.",
+      "Tambahkan default profile fallback asset."
+    ],
+    "mid_term": [
+      "Pindahkan media konsultasi/chat ke MinIO, S3-compatible object storage, atau GCS.",
+      "Database hanya menyimpan metadata file dan object key.",
+      "Buat adapter StorageService agar backend tidak bergantung langsung ke satu vendor."
+    ],
+    "minimum_metadata": [
+      "storage_disk",
+      "file_key",
+      "original_name",
+      "mime_type",
+      "size_bytes",
+      "owner_id",
+      "request_id",
+      "created_at"
+    ]
+  },
+  "figma_to_development": {
+    "goal": "Implement design from Figma into Doclinc gradually without breaking existing backend logic.",
+    "principles": [
+      "Figma is a visual source of truth, not production code.",
+      "Export assets from Figma; do not export whole pages as a single image.",
+      "Translate Figma layout to responsive HTML/CSS.",
+      "Keep existing PHP form action, input names, loops, and backend data variables unless intentionally refactored.",
+      "Use modular CSS under assets/doclinc."
+    ],
+    "recommended_asset_structure": {
+      "assets/doclinc/css/base.css": "Global color, typography, reset, CSS variables.",
+      "assets/doclinc/css/components.css": "Button, input, card, badge, alert, navbar, chat bubble.",
+      "assets/doclinc/css/pages.css": "Page-specific login/dashboard/chat layout.",
+      "assets/doclinc/js/app.js": "Small frontend interactions.",
+      "assets/doclinc/img": "Logo, illustrations, default profile image.",
+      "assets/doclinc/icons": "SVG icons."
+    },
+    "priority_pages": [
+      "Login/SSO entry page",
+      "Dashboard warga",
+      "Dashboard nakes/dokter",
+      "Konsultasi",
+      "Chat",
+      "Riwayat konsultasi",
+      "Profil",
+      "Notification/empty/error states"
+    ],
+    "mobile_webview_requirements": [
+      "meta viewport must exist",
+      "button/input minimum comfortable height around 44-48px",
+      "input font-size should be at least 16px to avoid mobile zoom issues",
+      "avoid hover-only interaction",
+      "avoid opening new tabs unexpectedly",
+      "test at 360px/390px/414px widths"
+    ],
+    "sample_css_include": [
+      "<link rel=\"stylesheet\" href=\"<?= base_url('assets/doclinc/css/base.css') ?>\">",
+      "<link rel=\"stylesheet\" href=\"<?= base_url('assets/doclinc/css/components.css') ?>\">",
+      "<link rel=\"stylesheet\" href=\"<?= base_url('assets/doclinc/css/pages.css') ?>\">"
+    ]
+  },
+  "bpjs_pcare_and_satusehat_development": {
+    "decision": "Do not depend directly on production PCare/SATUSEHAT during development.",
+    "strategy": "Use adapter layer and mock/sandbox.",
+    "adapter_pattern": {
+      "interfaces": [
+        "PcareClientInterface",
+        "SatusehatClientInterface"
+      ],
+      "implementations": [
+        "MockPcareClient",
+        "BpjsPcareClient",
+        "MockSatusehatClient",
+        "SatusehatSandboxClient",
+        "SatusehatProductionClient"
+      ],
+      "mode_env": "HEALTH_INTEGRATION_MODE=mock|sandbox|production"
+    },
+    "pcare_development": {
+      "recommended": "Mock PCare API local first.",
+      "do_not_do": [
+        "Do not scrape PCare web.",
+        "Do not use real patient data.",
+        "Do not hardcode BPJS credentials."
+      ],
+      "mock_endpoints": [
+        "GET /mock/pcare/peserta/{noKartu}",
+        "GET /mock/pcare/peserta/nik/{nik}",
+        "POST /mock/pcare/pendaftaran",
+        "GET /mock/pcare/poli",
+        "GET /mock/pcare/provider",
+        "GET /mock/pcare/diagnosa?keyword=...",
+        "GET /mock/pcare/dokter"
+      ],
+      "scenarios": [
+        "peserta aktif",
+        "peserta tidak aktif",
+        "peserta tidak ditemukan",
+        "provider tidak sesuai",
+        "pendaftaran sukses",
+        "pendaftaran duplikat",
+        "timeout",
+        "signature invalid"
+      ]
+    },
+    "satusehat_development": {
+      "recommended": "Use SATUSEHAT sandbox when credentials are available. Use mock FHIR/fixtures before credentials are ready.",
+      "mock_endpoints": [
+        "POST /mock/satusehat/oauth2/v1/accesstoken",
+        "GET /mock/satusehat/fhir-r4/v1/Patient?identifier=...",
+        "GET /mock/satusehat/fhir-r4/v1/Practitioner?identifier=...",
+        "POST /mock/satusehat/fhir-r4/v1/Encounter",
+        "POST /mock/satusehat/fhir-r4/v1/Condition",
+        "POST /mock/satusehat/fhir-r4/v1/Observation"
+      ],
+      "minimum_resources_to_understand": [
+        "Patient",
+        "Practitioner",
+        "Organization",
+        "Encounter",
+        "Condition",
+        "Observation",
+        "Procedure",
+        "DiagnosticReport",
+        "Composition if needed"
+      ],
+      "scenarios": [
+        "token success",
+        "token expired",
+        "patient found",
+        "patient not found",
+        "encounter created",
+        "validation error",
+        "organization invalid",
+        "rate limit",
+        "server error"
+      ]
+    },
+    "env_template": {
+      "HEALTH_INTEGRATION_MODE": "mock",
+      "PCARE_BASE_URL": "",
+      "PCARE_CONS_ID": "",
+      "PCARE_SECRET_KEY": "",
+      "PCARE_USER_KEY": "",
+      "SATUSEHAT_BASE_URL": "",
+      "SATUSEHAT_AUTH_URL": "",
+      "SATUSEHAT_CLIENT_ID": "",
+      "SATUSEHAT_CLIENT_SECRET": "",
+      "SATUSEHAT_ORGANIZATION_ID": ""
+    }
+  },
+  "database_direction": {
+    "short_term": "Keep existing MariaDB/MySQL while stabilizing, but map and isolate Doclinc tables.",
+    "mid_term": "Create separate Doclinc database/schema and migrate only relevant tables/data.",
+    "long_term": "Keep MariaDB/MySQL unless rebuild scope explicitly approves PostgreSQL migration.",
+    "must_do": [
+      "Inventory tables used by Doclinc.",
+      "Identify tables from unrelated apps and do not rely on them.",
+      "Document relationships: users, dokter/nakes, warga, requests, medicalrecords, chats, notifications, calls, audit logs.",
+      "Add migrations only when project structure supports it safely.",
+      "Create backup before schema changes.",
+      "Rotate any credential that has ever been exposed in chat/log/source."
+    ],
+    "data_isolation_goal": [
+      "doclinc_db",
+      "external_host_db_out_of_scope",
+      "other_app_db_out_of_scope"
+    ]
+  },
+  "security_requirements": {
+    "auth_session": [
+      "Validate Doclinc session before protected actions.",
+      "If optional external entry token is supported later, validate it only through Doclinc-side adapter and approved contract.",
+      "Expire internal sessions appropriately.",
+      "Protect role-based routes.",
+      "Do not accept role/user identity from plain query params.",
+      "Do not require or modify external host application code."
+    ],
+    "uploads": [
+      "Block script execution in uploads directory.",
+      "Use MIME detection.",
+      "Use allowed extensions.",
+      "Use safe generated filenames.",
+      "Do not trust client-provided filename.",
+      "Provide default image fallback."
+    ],
+    "output": [
+      "Escape database/user output in views.",
+      "Avoid raw echo of HTML unless intentionally sanitized.",
+      "Do not echo SQL queries or stack traces to users."
+    ],
+    "secrets": [
+      "Move secrets to .env or server config.",
+      "Keep .env out of repository.",
+      "Provide .env.example with placeholders only.",
+      "Rotate database password and integration secret if exposed.",
+      "Do not keep GitHub tokens in command history."
+    ],
+    "health_data": [
+      "Use dummy/synthetic data in development.",
+      "Audit access to medical data.",
+      "Log key actions without leaking sensitive content unnecessarily.",
+      "Avoid committing upload media containing real patient/user data."
+    ],
+    "webroot": [
+      "Block access to .git, .env, composer.json, Dockerfile, markdown notes, SQL dumps, logs, and internal folders from public HTTP.",
+      "Move SQL dumps and internal docs outside document root where possible."
+    ],
+    "livekit": [
+      "Generate LiveKit access token only from backend/service internal.",
+      "Never expose LIVEKIT_API_SECRET to frontend or repository.",
+      "Validate consultation and participant before issuing token.",
+      "Use short token TTL.",
+      "Validate webhook signature/secret before processing events.",
+      "Do not allow arbitrary room join from user-controlled room name."
+    ],
+    "location_tracking": [
+      "Track location only for active assigned doctor visits.",
+      "Stop tracking after visit completion/cancellation.",
+      "Authorize all location publish/subscribe operations.",
+      "Store only necessary location history.",
+      "Define retention/purge policy for detailed location logs.",
+      "Use HTTPS for production tracking pages.",
+      "Prefer external host application/native location bridge for reliable background location."
+    ],
+    "maps": [
+      "Restrict map provider tokens by domain/app where possible.",
+      "Do not expose unrestricted provider keys.",
+      "Do not rely on public tile services for production volume.",
+      "Keep map/routing provider credentials in env/server config."
+    ]
+  },
+  "recommended_task_sequence": [
+    {
+      "phase": "Phase 0 - Safety and repository hygiene",
+      "tasks": [
+        "Confirm repository contains Doclinc only and do not inspect or modify external host/launcher application.",
+        "Confirm clean branch/baseline exists.",
+        "Confirm backup exists for code and database.",
+        "Confirm internal-only files are not in active repository branch.",
+        "Confirm .env is ignored.",
+        "Rotate any exposed database credential.",
+        "Document current staging environment."
+      ]
+    },
+    {
+      "phase": "Phase 1 - Stabilize existing CI3 on CloudPanel",
+      "tasks": [
+        "Set CloudPanel site PHP to 8.1 or 8.2.",
+        "Fix runtime paths for sessions/cache/logs.",
+        "Fix base_url and environment config.",
+        "Create CloudPanel database/user for staging.",
+        "Import SQL dump using synthetic or sanitized data.",
+        "Update database config to read env/server config.",
+        "Harden uploads directory.",
+        "Fix missing default profile image.",
+        "Fix invalid href/src cases such as '<div style=' URL issue.",
+        "Remove debug echo/last_query from user-facing responses.",
+        "Ensure login/SSO entry does not break existing role redirect."
+      ]
+    },
+    {
+      "phase": "Phase 2 - UI implementation from Figma",
+      "tasks": [
+        "Create assets/doclinc/css and assets/doclinc/img structure.",
+        "Implement base.css, components.css, pages.css.",
+        "Redesign login/SSO page first.",
+        "Redesign dashboard warga/nakes.",
+        "Redesign konsultasi and chat pages.",
+        "Test mobile WebView widths and asset loading."
+      ]
+    },
+    {
+      "phase": "Phase 3 - Firebase replacement foundation",
+      "tasks": [
+        "Inventory Firebase usage.",
+        "Add notifications table or equivalent backend notification storage.",
+        "Add chat_messages table if chat currently depends on transient/realtime-only logic.",
+        "Implement WebSocket realtime server for active session events.",
+        "Add Redis for event fanout when WebSocket service is ready.",
+        "Replace get-notif.js with WebSocket client when ready.",
+        "Add Doclinc-side push adapter interface only if approved external API contract exists; otherwise document limitation.",
+        "Remove Firebase only after replacement is verified."
+      ]
+    },
+    {
+      "phase": "Phase 4 - LiveKit voice/video calling",
+      "tasks": [
+        "Choose LiveKit Cloud or self-host for staging proof of concept.",
+        "Add LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET, and webhook secret through env/server config only.",
+        "Add consultation_calls and consultation_call_events tables.",
+        "Implement backend call creation endpoint.",
+        "Implement backend LiveKit token endpoint with participant validation.",
+        "Implement incoming call notification flow.",
+        "Add LiveKit JS client to call page.",
+        "Implement voice-only call mode.",
+        "Implement video call mode.",
+        "Implement accept/reject/end call actions.",
+        "Add LiveKit webhook endpoint and event logging.",
+        "Handle permission denied, missed, rejected, ended, failed, reconnecting, and token expired states.",
+        "Keep recording disabled until consent, legal, retention, and storage policy are approved."
+      ]
+    },
+    {
+      "phase": "Phase 5 - Realtime doctor visit tracking and map replacement",
+      "tasks": [
+        "Use LeafletJS as map rendering library for MVP.",
+        "Choose staging tile provider and define attribution.",
+        "Do not use public OSM tile server for production traffic.",
+        "Add doctor_visits and doctor_visit_location_logs tables.",
+        "Implement visit start/arrived/complete/cancel endpoints.",
+        "Implement doctor location update endpoint with role and assignment validation.",
+        "Store last known doctor location in Redis and important checkpoints in MariaDB.",
+        "Broadcast doctor_location_updated event through WebSocket.",
+        "Implement patient/admin map screen with realtime moving marker.",
+        "Add optional route polyline using OSRM/provider after marker tracking is stable.",
+        "Define location log retention/purge policy.",
+        "Plan native external host application location bridge for reliable background tracking."
+      ]
+    },
+    {
+      "phase": "Phase 6 - PCare/SATUSEHAT integration preparation",
+      "tasks": [
+        "Create adapter interfaces.",
+        "Create mock PCare client and fixtures.",
+        "Create mock SATUSEHAT/FHIR fixtures.",
+        "Add env mode mock/sandbox/production.",
+        "Wire Doclinc service/controller to adapter, not direct curl.",
+        "Prepare sandbox integration later."
+      ]
+    },
+    {
+      "phase": "Phase 7 - Long-term modernization",
+      "tasks": [
+        "Map all Doclinc features and DB tables.",
+        "Prepare Laravel rebuild/refactor plan if approved.",
+        "Design separate database schema.",
+        "Build SSO, notification, WebSocket, LiveKit, PCare/SATUSEHAT adapters into clean architecture.",
+        "Run old and new system in parallel before cutover.",
+        "Design production map/routing/location tracking architecture before home-visit rollout."
+      ]
+    }
+  ],
+  "acceptance_criteria": {
+    "stabilization": [
+      "No PHP warnings/notices on main flows.",
+      "No missing critical assets on login/dashboard/chat.",
+      "No raw SQL/debug output visible to user.",
+      "Uploads cannot execute PHP/scripts.",
+      "Environment-specific config works locally/staging.",
+      "CloudPanel staging opens on http://staging.doclinc.local through local hosts mapping."
+    ],
+    "repository": [
+      "No internal development artifacts in active branch.",
+      "No credentials or patient data in repository.",
+      "Branch main and staging branch point to clean baseline or approved commits.",
+      "Commit messages are neutral and technical."
+    ],
+    "firebase_removed": [
+      "No Firebase scripts called in browser.",
+      "No service worker Firebase registration error.",
+      "No Firebase secrets/config required.",
+      "Active notifications work via WebSocket/Redis.",
+      "Voice/video call works through LiveKit, not Firebase signaling.",
+      "Background notification strategy documented or integrated via external host application."
+    ],
+    "database_replacement": [
+      "Notifications persist in MariaDB/MySQL.",
+      "Chat messages persist in MariaDB/MySQL before realtime broadcast.",
+      "Device/session mapping exists if push integration needs it.",
+      "Uploads have database metadata if storage adapter is introduced.",
+      "Exposed/legacy credential is rotated."
+    ],
+    "pcare_satusehat_dev": [
+      "Mock mode works without external credentials.",
+      "Adapters exist.",
+      "No real patient data used.",
+      "Sandbox/production credentials can be added through env only."
+    ],
+    "ui": [
+      "Figma-based design implemented modularly.",
+      "Mobile WebView responsive.",
+      "Forms still submit correctly.",
+      "Existing backend variables/data loops preserved unless intentionally refactored."
+    ],
+    "livekit_calling": [
+      "Warga/nakes can initiate voice call.",
+      "Warga/nakes can initiate video call.",
+      "Receiver gets incoming call event/notification while active.",
+      "Receiver can accept or reject call.",
+      "Both valid participants join the same LiveKit room using backend-issued token.",
+      "Invalid participant cannot request token for the room.",
+      "Microphone mute/unmute works.",
+      "Camera on/off works for video call.",
+      "Permission denied states are handled.",
+      "Call end/missed/rejected/failed states are stored in database.",
+      "LIVEKIT_API_SECRET never appears in frontend, repository, or public logs.",
+      "Recording remains disabled unless policy and storage are approved."
+    ],
+    "doctor_visit_tracking": [
+      "Doctor can start an assigned active visit.",
+      "Doctor location update is accepted only for valid assigned visit.",
+      "Patient/admin can see moving doctor marker in realtime.",
+      "Unauthorized users cannot subscribe to location stream.",
+      "Visit statuses assigned/on_the_way/arrived/started/completed/cancelled/failed work.",
+      "Tracking stops after completed/cancelled/failed.",
+      "Location logs have retention/purge policy.",
+      "Map works with LeafletJS without Google Maps API dependency.",
+      "Production plan does not depend on public OSM tile server for traffic.",
+      "Route/ETA is optional and added only through approved provider/OSRM/Mapbox path."
+    ],
+    "external_entry_boundary": [
+      "Doclinc can run in staging without external host application code.",
+      "Existing Doclinc login/session fallback remains usable for development/staging unless explicitly replaced.",
+      "Any future external entry support is implemented as Doclinc-side adapter only.",
+      "No task or code requires modifying the external host application repository.",
+      "No raw user_id/role query string login is introduced."
+    ]
+  },
+  "suggested_first_commands": [
+    "git status",
+    "php -v",
+    "find . -iname \"*.sql\" -type f",
+    "grep -R \"firebase\" .",
+    "grep -R \"firebase-messaging-sw\" .",
+    "grep -R \"base_url\" application/config application/modules | head -100",
+    "grep -n \"hostname\\|username\\|password\\|database\\|dbdriver\" application/config/database.php",
+    "find application/modules -type f -name \"*.php\" | grep views",
+    "find assets uploads -maxdepth 3 -type f | head -100",
+    "grep -R \"LiveKit\\|livekit\" application assets admin_menu 2>/dev/null | head -100",
+    "grep -R \"google.maps\\|maps.googleapis\\|leaflet\\|mapbox\" application assets admin_menu 2>/dev/null | head -100",
+    "grep -R \"navigator.geolocation\\|watchPosition\\|getCurrentPosition\" application assets admin_menu 2>/dev/null | head -100"
+  ],
+  "developer_instruction": {
+    "work_mode": [
+      "Keep all work scoped to Doclinc repository only; do not modify external host/launcher application.",
+      "Analyze before editing.",
+      "Prefer small safe diffs.",
+      "Explain risky changes before applying if running interactively.",
+      "Never assume production credential availability.",
+      "Never introduce vendor lock-in without explicit reason.",
+      "Keep old system working while adding replacement layers.",
+      "Do not remove Firebase files until replacement flow is implemented and tested.",
+      "Do not change database schema without backup and migration note."
+    ],
+    "deliverables_expected": [
+      "Code changes",
+      "Short technical summary",
+      "Files changed",
+      "Manual test steps",
+      "Known risks",
+      "Next recommended task"
+    ],
+    "additional_focus_after_v2_1": [
+      "When implementing call features, use LiveKit token endpoint/server-side secrets only.",
+      "When implementing visit tracking, separate map rendering from tile/routing/geocoding providers.",
+      "Keep tracking, call, and notification persistence in MariaDB/MySQL before realtime broadcast.",
+      "Prefer MVP marker tracking before route/ETA complexity."
+    ]
+  },
+  "livekit_voice_video_calling": {
+    "decision": "Gunakan LiveKit untuk voice call, video call, room, participant management, WebRTC signaling, dan media SFU. Jangan membangun WebRTC signaling custom dari nol kecuali ada alasan khusus yang disetujui.",
+    "what_livekit_replaces": [
+      "Custom WebRTC offer/answer exchange",
+      "Custom ICE candidate signaling",
+      "Custom media room handling",
+      "Manual participant media subscription logic"
+    ],
+    "what_livekit_does_not_replace": [
+      "Doclinc auth/session",
+      "Optional external entry adapter",
+      "MariaDB/MySQL data persistence",
+      "Background push notification",
+      "Notifications table",
+      "Chat message storage",
+      "Visit/location tracking backend",
+      "File/object storage"
+    ],
+    "deployment_options": {
+      "staging_fastest": "LiveKit Cloud for proof of concept and integration testing.",
+      "production_controlled": "Self-host LiveKit on separate VM/service with valid domain, trusted TLS, correct UDP/TCP firewall, monitoring, and backup plan.",
+      "do_not_do": "Jangan menaruh production LiveKit di server CloudPanel yang sama jika traffic nyata mulai masuk tanpa kapasitas/monitoring yang jelas."
+    },
+    "backend_responsibilities": [
+      "Validate active Doclinc session.",
+      "Validate consultation/call participant relationship.",
+      "Create consultation_calls record.",
+      "Generate deterministic safe room_name from consultation_id/call_id.",
+      "Generate short-lived LiveKit token server-side.",
+      "Reject token request from invalid participant.",
+      "Create notification/incoming call event for receiver.",
+      "Receive and validate LiveKit webhook.",
+      "Update call status, duration, and event log."
+    ],
+    "frontend_responsibilities": [
+      "Request call creation/token from backend only.",
+      "Connect to LiveKit room using backend-issued token.",
+      "Enable audio-only mode for voice call.",
+      "Enable audio+video mode for video call.",
+      "Show incoming call modal.",
+      "Handle accept/reject/end states.",
+      "Handle microphone/camera permission denied.",
+      "Handle reconnecting/disconnected UI state."
+    ],
+    "recommended_room_naming": "doclinc-consultation-{consultation_id}-call-{call_id}",
+    "call_types": [
+      "voice",
+      "video"
+    ],
+    "minimum_backend_endpoints": [
+      "POST /calls/create",
+      "POST /calls/{call_id}/token",
+      "POST /calls/{call_id}/accept",
+      "POST /calls/{call_id}/reject",
+      "POST /calls/{call_id}/end",
+      "POST /livekit/webhook"
+    ],
+    "minimum_tables": {
+      "consultation_calls": [
+        "id",
+        "consultation_id",
+        "call_type",
+        "room_name",
+        "caller_user_id",
+        "receiver_user_id",
+        "status",
+        "started_at",
+        "accepted_at",
+        "ended_at",
+        "duration_seconds",
+        "ended_by",
+        "failure_reason",
+        "created_at",
+        "updated_at"
+      ],
+      "consultation_call_events": [
+        "id",
+        "call_id",
+        "user_id",
+        "event_type",
+        "payload_json",
+        "created_at"
+      ]
+    },
+    "call_statuses": [
+      "created",
+      "ringing",
+      "accepted",
+      "rejected",
+      "missed",
+      "ended",
+      "failed"
+    ],
+    "events_to_log": [
+      "call_created",
+      "incoming_call_sent",
+      "participant_joined",
+      "participant_left",
+      "call_accepted",
+      "call_rejected",
+      "call_missed",
+      "call_ended",
+      "call_failed",
+      "permission_denied",
+      "webhook_room_finished"
+    ],
+    "env_template": {
+      "LIVEKIT_URL": "wss://livekit.example.internal-or-domain",
+      "LIVEKIT_API_KEY": "",
+      "LIVEKIT_API_SECRET": "",
+      "LIVEKIT_WEBHOOK_SECRET": "",
+      "LIVEKIT_TOKEN_TTL_SECONDS": "600",
+      "LIVEKIT_DEFAULT_CALL_TIMEOUT_SECONDS": "60",
+      "LIVEKIT_DEPLOYMENT_MODE": "cloud|self_hosted"
+    },
+    "recording_policy": {
+      "default": "off",
+      "enable_only_if": [
+        "legal/patient consent policy is approved",
+        "storage encryption and retention are defined",
+        "egress service is deployed and monitored"
+      ],
+      "notes": "Untuk fase awal simpan call metadata/duration saja, bukan rekaman audio/video."
+    },
+    "error_cases_to_handle": [
+      "receiver offline",
+      "caller offline",
+      "microphone permission denied",
+      "camera permission denied",
+      "LiveKit token expired",
+      "room join failed",
+      "network drop",
+      "participant reconnecting",
+      "call rejected",
+      "call missed",
+      "call canceled",
+      "session expired",
+      "invalid consultation room",
+      "invalid participant token request"
+    ]
+  },
+  "realtime_doctor_visit_tracking": {
+    "decision": "Gunakan LeafletJS sebagai library utama untuk rendering peta MVP. Leaflet hanya bertugas menampilkan map, marker, polyline, dan interaksi. Tile, routing, geocoding, reverse geocoding, dan ETA harus disediakan oleh service/provider terpisah.",
+    "mapbox_position": "Mapbox opsional, bukan wajib. Gunakan Mapbox jika project membutuhkan managed geocoding, directions, map styling, dan delivery production lebih cepat. Hindari Mapbox jika prioritas utama adalah cost control dan low vendor lock-in.",
+    "recommended_mvp_stack": {
+      "map_rendering": "LeafletJS",
+      "tiles": "OSM-compatible tile provider for staging/MVP; do not rely on public OSM tile server for production traffic.",
+      "routing": "OSRM/provider route polyline when needed; optional for first MVP.",
+      "geocoding": "Manual coordinate/pin first; provider geocoding later if needed.",
+      "realtime": "WebSocket + Redis",
+      "persistence": "MariaDB/MySQL doctor_visits and location logs",
+      "location_source": "Browser Geolocation while WebView/page is active; background tracking must be treated as out of scope unless a native/external bridge contract is separately provided."
+    },
+    "production_options": {
+      "tiles": [
+        "Paid OSM-compatible tile provider",
+        "Self-hosted tiles",
+        "Mapbox if managed map platform is preferred"
+      ],
+      "routing": [
+        "OSRM self-host/provider",
+        "GraphHopper/Valhalla/provider",
+        "Mapbox Directions if Mapbox selected"
+      ],
+      "geocoding": [
+        "Provider geocoding/reverse geocoding",
+        "Mapbox Geocoding if Mapbox selected"
+      ],
+      "tracking": "Native/background tracking requires an approved external/native bridge contract and is outside this repository."
+    },
+    "doctor_visit_flow": [
+      "Admin/system assigns doctor visit to consultation.",
+      "Doctor opens visit page and taps start visit.",
+      "Backend validates assigned active visit.",
+      "Doctor client sends location every 5-15 seconds while visit is active.",
+      "Backend stores last known location in Redis and important checkpoints in MariaDB.",
+      "Backend broadcasts doctor_location_updated to authorized patient/admin subscribers.",
+      "Patient/admin map updates doctor marker in realtime.",
+      "Doctor marks arrived/started/completed.",
+      "Tracking stops after completed/cancelled/failed."
+    ],
+    "minimum_backend_endpoints": [
+      "POST /visits/{visit_id}/start",
+      "POST /visits/{visit_id}/location",
+      "POST /visits/{visit_id}/arrived",
+      "POST /visits/{visit_id}/complete",
+      "POST /visits/{visit_id}/cancel",
+      "GET /visits/{visit_id}/last-location",
+      "GET /visits/{visit_id}/route optional"
+    ],
+    "minimum_tables": {
+      "doctor_visits": [
+        "id",
+        "consultation_id",
+        "doctor_user_id",
+        "patient_user_id",
+        "status",
+        "patient_lat",
+        "patient_lng",
+        "doctor_last_lat",
+        "doctor_last_lng",
+        "doctor_last_seen_at",
+        "started_at",
+        "arrived_at",
+        "completed_at",
+        "created_at",
+        "updated_at"
+      ],
+      "doctor_visit_location_logs": [
+        "id",
+        "visit_id",
+        "doctor_user_id",
+        "lat",
+        "lng",
+        "accuracy_meters",
+        "speed_mps",
+        "heading_degrees",
+        "recorded_at"
+      ]
+    },
+    "visit_statuses": [
+      "assigned",
+      "on_the_way",
+      "arrived",
+      "started",
+      "completed",
+      "cancelled",
+      "failed"
+    ],
+    "websocket_events": [
+      "doctor_visit_started",
+      "doctor_location_updated",
+      "doctor_arrived",
+      "doctor_visit_completed",
+      "doctor_visit_cancelled",
+      "doctor_visit_failed"
+    ],
+    "update_interval_recommendation": {
+      "on_the_way": "5-10 seconds when active foreground tracking is available.",
+      "background": "Do not assume WebView background tracking is reliable. Treat background tracking as out of scope unless an approved native/external bridge exists.",
+      "completed_or_cancelled": "Stop immediately."
+    },
+    "security_and_privacy": [
+      "Doctor can only update location for active assigned visit.",
+      "Patient can only subscribe to their own active visit.",
+      "Admin subscription must be role-checked.",
+      "Do not expose raw location stream publicly.",
+      "Do not keep detailed location logs forever.",
+      "Define retention such as 7-30 days for detailed logs unless legal/audit requires otherwise.",
+      "Stop tracking after visit completion/cancellation.",
+      "Use HTTPS for production because browser location permission requires secure context behavior."
+    ],
+    "env_template": {
+      "MAP_RENDERER": "leaflet",
+      "MAP_TILE_PROVIDER": "osm-compatible|mapbox|maptiler|self_hosted",
+      "MAP_TILE_URL": "",
+      "MAP_TILE_ATTRIBUTION": "",
+      "MAPBOX_TOKEN": "",
+      "ROUTING_PROVIDER": "none|osrm|mapbox|provider",
+      "ROUTING_BASE_URL": "",
+      "LOCATION_UPDATE_INTERVAL_SECONDS": "10",
+      "LOCATION_LOG_RETENTION_DAYS": "30"
+    },
+    "mvp_scope": [
+      "Show patient destination coordinate.",
+      "Show moving doctor marker.",
+      "Show visit status.",
+      "Show last updated time.",
+      "Optional route polyline after marker tracking is stable."
+    ],
+    "browser_webview_limitations": [
+      "Foreground Geolocation API can be used when the page/WebView is active and permission is granted.",
+      "Background location tracking is not reliable in a plain WebView/PWA.",
+      "Do not add tasks that require modifying external/native app code from this repository.",
+      "Document limitation and provide foreground-only MVP first."
+    ]
+  },
+  "map_provider_strategy": {
+    "decision": "LeafletJS first. Mapbox only if managed map/directions/geocoding reliability is required and budget/compliance are approved.",
+    "leaflet_usage": [
+      "map display",
+      "marker",
+      "polyline",
+      "popup",
+      "basic interaction",
+      "mobile-friendly visit tracking UI"
+    ],
+    "leaflet_limitations": [
+      "does not provide tiles by itself",
+      "does not provide routing by itself",
+      "does not provide geocoding by itself",
+      "does not provide ETA/traffic by itself",
+      "does not provide backend tracking"
+    ],
+    "avoid_in_production": [
+      "public OSM tile server for high traffic",
+      "unrestricted frontend map API keys",
+      "tracking without consent/session validation",
+      "permanent detailed location history without retention policy"
+    ],
+    "recommended_decision_path": [
+      "Use LeafletJS for staging/MVP.",
+      "Use OSM-compatible paid tile provider or self-hosted tiles before production traffic grows.",
+      "Add OSRM/provider routing only after realtime marker tracking is stable.",
+      "Consider Mapbox when managed geocoding/directions/style and faster production delivery outweigh cost/vendor lock-in."
+    ]
+  },
+  "external_entry_boundary": {
+    "decision": "Sistem host/launcher eksternal tidak disertakan dalam repository dan tidak menjadi target perubahan. Fokus hanya pada Doclinc.",
+    "scope_rules": [
+      "Do not inspect, modify, refactor, document, or assume code from the external host application.",
+      "Do not create tasks that require changes outside the Doclinc repository.",
+      "Do not block Doclinc staging on unavailable external entry/SSO implementation.",
+      "Keep existing Doclinc login/session fallback for development and staging until a formal entry contract exists.",
+      "If external entry is later required, implement only the Doclinc-side consumer endpoint and mock/stub provider for local testing."
+    ],
+    "doclinc_side_optional_contract": {
+      "recommended_endpoint": "/entry/consume",
+      "example_url_pattern": "https://doclinc.example/entry/consume?token=<SIGNED_SHORT_LIVED_TOKEN>",
+      "token_requirements_if_used": {
+        "type": "JWT signed token or opaque token with introspection endpoint, provided by an approved external contract",
+        "expiry": "1-5 minutes",
+        "single_use_preferred": true,
+        "claims": [
+          "issuer",
+          "subject/user_id",
+          "role",
+          "nik if required",
+          "name",
+          "phone if required",
+          "organization/puskesmas_id if required",
+          "issued_at",
+          "expires_at",
+          "nonce/jti"
+        ],
+        "must_not_do": [
+          "Do not login with ?user_id=123.",
+          "Do not trust role from plain query string.",
+          "Do not store long-lived token in localStorage unless strictly required and reviewed.",
+          "Do not require external application code changes from this repository."
+        ]
+      }
+    },
+    "role_mapping": {
+      "warga": "dashboard warga",
+      "dokter": "dashboard dokter",
+      "nakes": "dashboard nakes",
+      "admin": "dashboard admin",
+      "superadmin": "dashboard superadmin"
+    },
+    "minimum_tables_if_external_mapping_is_needed": {
+      "external_user_map": [
+        "id",
+        "external_subject_id",
+        "doclinc_user_id",
+        "role",
+        "nik",
+        "name",
+        "phone",
+        "organization_id",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  }
+}
