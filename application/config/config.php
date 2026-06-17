@@ -23,10 +23,20 @@ defined('BASEPATH') or exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-// $alamat = "http://" . $_SERVER['HTTP_HOST']; // takutnya lupa, kalo udah mau ke hostingan jgn lupa pake https
-$alamat = "https://" . $_SERVER['HTTP_HOST']; // takutnya lupa, kalo udah mau ke hostingan jgn lupa pake https
-$alamat = $alamat . str_replace(basename($_SERVER['SCRIPT_NAME']), "", $_SERVER['SCRIPT_NAME']);
-$config['base_url']    = $alamat; //"http://localhost/invoice";
+$base_url = getenv('DOCLINC_BASE_URL') ?: getenv('CI_BASE_URL');
+if ($base_url) {
+	$config['base_url'] = rtrim($base_url, '/') . '/';
+} else {
+	$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+		|| (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+		|| (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on');
+	$protocol = $https ? 'https' : 'http';
+	$host = !empty($_SERVER['HTTP_X_FORWARDED_HOST']) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : ($_SERVER['HTTP_HOST'] ?? 'localhost');
+	$host = preg_replace('/[^a-z0-9.\-:_]/i', '', $host);
+	$script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+	$base_path = str_replace(basename($script_name), '', $script_name);
+	$config['base_url'] = $protocol . '://' . $host . $base_path;
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -237,7 +247,8 @@ $config['log_threshold'] = 1;
 | application/logs/ directory. Use a full server path with trailing slash.
 |
 */
-$config['log_path'] = APPPATH . 'logs/';
+$log_path = getenv('DOCLINC_LOG_PATH') ?: getenv('CI_LOG_PATH');
+$config['log_path'] = $log_path ? rtrim($log_path, "/\\") . DIRECTORY_SEPARATOR : APPPATH . 'logs/';
 
 /*
 |--------------------------------------------------------------------------
@@ -296,7 +307,8 @@ $config['error_views_path'] = '';
 | application/cache/ directory.  Use a full server path with trailing slash.
 |
 */
-$config['cache_path'] = APPPATH . 'cache/';
+$cache_path = getenv('DOCLINC_CACHE_PATH') ?: getenv('CI_CACHE_PATH');
+$config['cache_path'] = $cache_path ? rtrim($cache_path, "/\\") . DIRECTORY_SEPARATOR : APPPATH . 'cache/';
 
 /*
 |--------------------------------------------------------------------------
@@ -387,7 +399,8 @@ $config['sess_driver'] = 'files';
 $config['sess_cookie_name'] = 'cilegon_bersatu_session';
 // $config['sess_cookie_name'] = 'ci_session';
 $config['sess_expiration'] = 7200;
-$config['sess_save_path'] = APPPATH . 'cache/sessions/';  // Absolute writable path for CI3 file sessions.
+$sess_save_path = getenv('DOCLINC_SESSION_PATH') ?: getenv('CI_SESSION_PATH');
+$config['sess_save_path'] = $sess_save_path ? rtrim($sess_save_path, "/\\") . DIRECTORY_SEPARATOR : APPPATH . 'cache/sessions/';
 $config['sess_match_ip'] = FALSE;
 $config['sess_time_to_update'] = 300;
 $config['sess_regenerate_destroy'] = FALSE;

@@ -303,10 +303,10 @@ foreach ($dataDoctor->result() as $doc) {
 					?>
 					<div class="flex-shrink-0">
 						<?php if (!empty($foto)) : ?>
-							<img class="rounded-4 shadow" id="previewFoto" src="<?= base_url(); ?>uploads/profile/<?= $foto ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+							<img class="rounded-4 shadow" id="previewFoto" src="<?= base_url('uploads/profile/' . html_escape($foto)); ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
 						<?php else : ?>
 							<img class="rounded-4 shadow"
-								src="https://static.vecteezy.com/system/resources/previews/020/765/399/non_2x/default-profile-account-unknown-icon-black-silhouette-free-vector.jpg"
+								src="<?= base_url('assets/images/default-profile.svg'); ?>"
 								width="100px"
 								height="100px">
 						<?php endif; ?>
@@ -411,9 +411,9 @@ foreach ($dataDoctor->result() as $doc) {
 							<div class="card-body p-2">
 								<div class="d-flex hero-card">
 									<?php if (!empty($row->foto)) : ?>
-										<img class="rounded-4" id="gambar" src="<?= base_url('uploads/profile/' . $row->foto); ?>" width="100px" height="auto" alt="Image Not Found">
+										<img class="rounded-4" id="gambar" src="<?= base_url('uploads/profile/' . html_escape($row->foto)); ?>" width="100px" height="auto" alt="Image Not Found">
 									<?php else : ?>
-										<img class="rounded-4" id="gambar" src="https://static.vecteezy.com/system/resources/previews/020/765/399/non_2x/default-profile-account-unknown-icon-black-silhouette-free-vector.jpg" width="100px" height="auto" alt="Default Image">
+										<img class="rounded-4" id="gambar" src="<?= base_url('assets/images/default-profile.svg'); ?>" width="100px" height="auto" alt="Default Image">
 									<?php endif; ?>
 									<div class="w-100 ms-2">
 										<div class="d-flex">

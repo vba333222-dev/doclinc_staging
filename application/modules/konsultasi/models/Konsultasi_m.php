@@ -90,7 +90,6 @@ class Konsultasi_m extends MX_Controller
 		];
 
 		$this->db->insert('tbl_riwayat', $data_riwayat);
-		echo $this->db->last_query();
 
 		$this->db->trans_complete();
 		return $this->db->trans_status();
