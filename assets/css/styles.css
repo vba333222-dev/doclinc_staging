@@ -1,0 +1,38 @@
+body {
+    background-color: #e0f2f1;
+}
+
+.navbar-brand {
+    color: white;
+    font-size: 1.5rem;
+}
+
+.carousel .carousel-item {
+    transition: transform 0.5s ease-in-out;
+}
+
+.card {
+    border-radius: 15px;
+}
+
+.card-body {
+    background-color: #ffffff;
+    border-radius: 0 0 15px 15px;
+}
+
+.card-img-top {
+    border-radius: 50%; /* Membuat gambar berbentuk lingkaran */
+    height: 200px; /* Atur tinggi gambar */
+    width: 200px; /* Atur lebar gambar */
+    object-fit: cover; /* Memastikan gambar terpotong dengan baik */
+    margin: 0 auto; /* Memusatkan gambar dalam card */
+}
+
+.img-fluid {
+    border-radius: 50%; /* Membuat gambar berbentuk lingkaran */
+    height: 150px; /* Atur tinggi gambar */
+    width: 150px; /* Atur lebar gambar */
+    object-fit: cover; /* Memastikan gambar terpotong dengan baik */
+    margin: 0 auto; /* Memusatkan gambar dalam modal */
+    border: 5px solid #09AD74; /* Menambahkan border hijau tosca */
+}
