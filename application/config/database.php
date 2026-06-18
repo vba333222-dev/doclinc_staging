@@ -73,14 +73,18 @@ defined('BASEPATH') or exit('No direct script access allowed');
 $active_group = 'default';
 $query_builder = TRUE;
 $db_debug = filter_var(getenv('DB_DEBUG'), FILTER_VALIDATE_BOOLEAN);
+$db_host = getenv('DB_HOST') ?: '';
+$db_name = getenv('DB_NAME') ?: '';
+$db_user = getenv('DB_USER') ?: '';
+$db_pass = getenv('DB_PASS') ?: '';
 
 $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => 'localhost',
-	'username' => 'idbcsnet_railway',
-	'password' => 't4ny4p4k0f4',
+	'hostname' => $db_host,
+	'username' => $db_user,
+	'password' => $db_pass,
 	'port'     => '3306',
-	'database' => 'idbcsnet_railway',
+	'database' => $db_name,
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
@@ -94,5 +98,5 @@ $db['default'] = array(
 	'compress' => FALSE,
 	'stricton' => FALSE,
 	'failover' => array(),
-	'save_queries' => TRUE
+	'save_queries' => $db_debug
 );
