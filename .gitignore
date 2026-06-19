@@ -15,4 +15,7 @@ vendor/
 node_modules/
 
 .DS_Store
+
+application/third_party/firebase/*firebase-adminsdk*.json
+*firebase-adminsdk*.json
 EOFplan.json
