@@ -10,10 +10,17 @@
                 ->where('username', $username)
                 ->where('password', $password)
                 ->get('users');
-        }
+		}
 		public function save_location($id,$username,$location,$lattitude,$longitude)
 		{
-			return $this->db->insert('locations', [
+			if (!$this->db->table_exists('locations')) {
+				return false;
+			}
+
+			$db_debug = $this->db->db_debug;
+			$this->db->db_debug = FALSE;
+
+			$result = $this->db->insert('locations', [
 				'id_user' => $id,
 				'name' => $username,
 				'location' => $location,
@@ -21,5 +28,8 @@
 				'longitude' => $longitude,
 				'create_date' => date('Y-m-d H:i:s'),
 			]);
+
+			$this->db->db_debug = $db_debug;
+			return $result;
 		}
     }
