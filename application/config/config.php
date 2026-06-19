@@ -23,11 +23,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$base_url = getenv('DOCLINC_BASE_URL') ?: getenv('CI_BASE_URL');
+$base_url = getenv('APP_BASE_URL') ?: getenv('DOCLINC_BASE_URL') ?: getenv('CI_BASE_URL');
 if ($base_url) {
 	$config['base_url'] = rtrim($base_url, '/') . '/';
 } else {
-	$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+	$https = (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on')
 		|| (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
 		|| (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on');
 	$protocol = $https ? 'https' : 'http';

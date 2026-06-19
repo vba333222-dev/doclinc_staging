@@ -6,14 +6,14 @@
 	<title>Doc Link - Registrasi</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
+	<link rel="stylesheet" href="<?= base_url('assets/css/style.css'); ?>">
 </head>
 <body class="bg-success">
 	<div class="container">
 		<div class="row d-flex align-items-center justify-content-center vh-100">
 			<div class="col-md-4">
 				<center>
-					<img class="p-2" src="<?= base_url(); ?>assets/images/doklincwhite.png" alt="" height="70px">
+					<img class="p-2" src="<?= base_url('assets/images/doklincwhite.png'); ?>" alt="" height="70px">
 					<p class="fw-bold text-white text-uppercase">Registrasi</p>
 				</center>
 				<div class="card shadow-lg" style="border-radius: 10px; overflow: hidden;">
@@ -57,7 +57,7 @@
 
 				                    <div class="d-grid">
 
-				                        <a href="<?= base_url('login');?>" class="btn btn-secondary">Batal</a>
+				                        <a href="<?= site_url('login');?>" class="btn btn-secondary">Batal</a>
 				                    </div>
 				                </div>
 				            </div>
@@ -93,7 +93,7 @@
 			};
 			$.ajax({
 				type: 'POST',
-				url: '<?= base_url('sign_up/save_user'); ?>',
+				url: '<?= site_url('sign_up/save_user'); ?>',
 				data: formData,
 				dataType: 'json',
 				success: function(response) {
@@ -106,7 +106,7 @@
 							timer: 2000
 						});
 						setTimeout(function() {
-							window.location.href = 'login';
+							window.location.href = '<?= site_url('login'); ?>';
 						}, 2000);
 					} else {
 						Swal.fire({
