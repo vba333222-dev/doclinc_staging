@@ -1,4 +1,5 @@
 <?php
+$id_request = '';
 foreach ($data_profile->result() as $x) {
 	$usia = $x->usia;
 }
@@ -935,17 +936,21 @@ foreach ($dataDoctor->result() as $doc) {
 	</script> -->
 
 	<script>
-		let doktId = document.getElementById('doktId').value;
+		let doktIdEl = document.getElementById('doktId');
 		let dokId = document.getElementById('dokId');
-		dokId.value = doktId;
-		console.log('Dokter Id: ' + dokId);
+		if (doktIdEl && dokId) {
+			dokId.value = doktIdEl.value;
+			console.log('Dokter Id: ' + dokId);
+		}
 	</script>
 
 	<script>
 		console.log('ini adalah base url: ' + '<?= base_url("assets/images/dokter_jaenul.jpeg") ?>');
 
 		const gambar = document.getElementById('gambar');
-		console.log(gambar['src']);
+		if (gambar) {
+			console.log(gambar['src']);
+		}
 	</script>
 
 	<!-- Webtoapk dan lain-lain -->
@@ -1515,7 +1520,7 @@ foreach ($dataDoctor->result() as $doc) {
 
 		const idUser = document.getElementById('id_user').value;
 		console.log(idUser);
-		var request_id = "<?php echo $id_request; ?>";
+		var request_id = <?= json_encode($id_request ?? ''); ?>;
 
 
 		const currentUserId = idUser; // ID pengguna
@@ -1621,13 +1626,19 @@ foreach ($dataDoctor->result() as $doc) {
 	<!-- simpan lokasi ke firebase -->
 	<script>
 		const waktu = firebase.database().ref('location');
-		const lats = parseFloat(document.getElementById('latitudes').value);
-		const lngs = parseFloat(document.getElementById('longitudes').value);
+		const latitudesEl = document.getElementById('latitudes');
+		const longitudesEl = document.getElementById('longitudes');
+		const lats = latitudesEl ? parseFloat(latitudesEl.value) : null;
+		const lngs = longitudesEl ? parseFloat(longitudesEl.value) : null;
 
 		let estimasiLat;
 		let estimasiLng;
 
 		waktu.on('value', (snapshot) => {
+			if (lats === null || lngs === null) {
+				return;
+			}
+
 			const data = snapshot.val();
 			estimasiLat = '';
 			estimasiLng = '';
@@ -1754,7 +1765,7 @@ foreach ($dataDoctor->result() as $doc) {
 
 	<!-- tampil notif dari nakes -->
 	<script>
-		var request_id = "<?php echo $id_request; ?>";
+		var request_id = <?= json_encode($id_request ?? ''); ?>;
 
 		// Ambil data dari node 'notif'
 		const notifRef = firebase.database().ref("notiffromdoc");
@@ -1804,7 +1815,8 @@ foreach ($dataDoctor->result() as $doc) {
 	<!-- rating dokter -->
 	<script>
 		var idUsers = "<?php echo $_SESSION['id']; ?>";
-		var request_id = document.getElementById("reqIdRat").value;
+		const reqIdRat = document.getElementById("reqIdRat");
+		var request_id = reqIdRat ? reqIdRat.value : "";
 		const baseUrl = "<?= base_url('/uploads/profile/') ?>";
 		console.log("id user: " + idUsers);
 		console.log("id_request: " + request_id);
