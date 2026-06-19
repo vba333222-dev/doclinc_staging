@@ -7,7 +7,7 @@ class Home_nakes extends MX_Controller
 		parent::__construct();
 		$this->load->model('Home_nakes_m');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			redirect('../');
+			redirect('login');
 		}
 	}
 	public function index()

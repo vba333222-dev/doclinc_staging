@@ -7,7 +7,7 @@ class Konsultasi_nakes extends MX_Controller
 		parent::__construct();
 		$this->load->model('Konsultasi_nakes_m');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			redirect('../', 'refresh');
+			redirect('login', 'refresh');
 		}
 
 		// Load library ApiClient

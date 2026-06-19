@@ -7,8 +7,7 @@ class Home extends MX_Controller
 		parent::__construct();
 		$this->load->model('Home_m');
 		if ($this->session->userdata('logged_in') != TRUE) {
-// 			redirect('../');
-echo("tidak ada");
+			redirect('login');
 		}
 		$this->load->helper('maps');
 	}
@@ -49,7 +48,7 @@ echo("tidak ada");
 				echo 'Error: User role not recognized';
 			}
 		} else {
-			redirect('../');
+			redirect('login');
 			// $this->load->view('login_v');
 		}
 	}
