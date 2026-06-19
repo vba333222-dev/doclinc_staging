@@ -43,8 +43,12 @@ class Home_m extends MX_Controller
 		$CI = &get_instance();
 		$CI->load->library('encryption');
 
+		$request_date_select = $this->db->field_exists('date', 'requests')
+			? 'requests.date AS date'
+			: 'DATE(requests.created_at) AS date';
+
 		// Query database
-		$this->db->select("requests.*, m_dokter.name AS nama_dokter");
+		$this->db->select("requests.*, {$request_date_select}, m_dokter.name AS nama_dokter", FALSE);
 		$this->db->from("m_dokter");
 		$this->db->join("requests", "requests.dokter_id=m_dokter.professional_id", "inner");
 		$this->db->where("user_id", $user_id);
@@ -152,12 +156,23 @@ class Home_m extends MX_Controller
 
 	public function getAllRequestPendingAccept($user_id)
 	{
-		return $this->db->where('user_id', $user_id)->get('requests');
+		$request_date_select = $this->db->field_exists('date', 'requests')
+			? 'requests.date AS date'
+			: 'DATE(requests.created_at) AS date';
+
+		return $this->db
+			->select("requests.*, {$request_date_select}", FALSE)
+			->where('user_id', $user_id)
+			->get('requests');
 	}
 
 	public function getAllRequestJumlah()
 	{
-		return $this->db->query("SELECT COUNT(*) as jumlah FROM requests WHERE date=CURDATE()");
+		if ($this->db->field_exists('date', 'requests')) {
+			return $this->db->query("SELECT COUNT(*) AS jumlah, NULL AS user_id FROM requests WHERE date=CURDATE()");
+		}
+
+		return $this->db->query("SELECT COUNT(*) AS jumlah, NULL AS user_id FROM requests WHERE DATE(created_at)=CURDATE()");
 	}
 
 	// public function getAllDataDoctor($kode_pkm)
