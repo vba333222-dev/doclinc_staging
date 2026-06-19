@@ -4,6 +4,7 @@ $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '#';
 $map_provider = $this->config->item('map_provider') ?: 'none';
+$mapbox_public_token = $this->config->item('mapbox_public_token') ?: '';
 foreach ($data_profile->result() as $x) {
 	$usia = $x->usia;
 }
@@ -1124,6 +1125,7 @@ foreach ($dataDoctor->result() as $doc) {
 	<script>
 		const mapProvider = <?= json_encode($map_provider); ?>;
 		const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
+		const mapboxPublicToken = <?= json_encode($mapbox_public_token); ?>;
 
 		function getFirebaseDatabase() {
 			const noopRef = {
@@ -1165,10 +1167,69 @@ foreach ($dataDoctor->result() as $doc) {
 		let marker;
 		let geocoder;
 
+		function setLocationFields(location) {
+			const latitudeEl = document.getElementById("latitude");
+			const longitudeEl = document.getElementById("longitude");
+			const latitudexEl = document.getElementById("latitudex");
+			const longitudexEl = document.getElementById("longitudex");
+
+			if (latitudeEl) latitudeEl.value = location.lat;
+			if (longitudeEl) longitudeEl.value = location.lng;
+			if (latitudexEl) latitudexEl.value = location.lat;
+			if (longitudexEl) longitudexEl.value = location.lng;
+		}
+
+		function setLocationText(address, kota) {
+			const addressEl = document.getElementById("address");
+			const kotaEl = document.getElementById('kota');
+
+			if (addressEl) addressEl.innerHTML = address || "Lokasi belum tersedia";
+			if (kotaEl) kotaEl.textContent = kota || "Lokasi belum tersedia";
+		}
+
+		function getMapboxCity(feature) {
+			if (!feature) return '';
+
+			if (feature.place_type && feature.place_type.includes('place')) {
+				return feature.text || '';
+			}
+
+			const context = feature.context || [];
+			const city = context.find(item => item.id && item.id.indexOf('place.') === 0) ||
+				context.find(item => item.id && item.id.indexOf('district.') === 0);
+
+			return city ? city.text : '';
+		}
+
+		function getMapboxAddress(location) {
+			if (mapProvider !== 'mapbox' || !mapboxPublicToken || !window.fetch) {
+				setLocationText(location.lat + ', ' + location.lng, '');
+				return;
+			}
+
+			const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' +
+				encodeURIComponent(location.lng + ',' + location.lat) +
+				'.json?access_token=' + encodeURIComponent(mapboxPublicToken);
+
+			fetch(url)
+				.then(response => {
+					if (!response.ok) {
+						throw new Error('Mapbox geocoding failed');
+					}
+					return response.json();
+				})
+				.then(data => {
+					const feature = data.features && data.features.length ? data.features[0] : null;
+					setLocationText(feature ? feature.place_name : '', getMapboxCity(feature));
+				})
+				.catch(() => {
+					setLocationText(location.lat + ', ' + location.lng, '');
+				});
+		}
+
 		function initMap() {
 			if (mapProvider !== 'google' || !window.google || !google.maps) {
-				const kotaEl = document.getElementById('kota');
-				if (kotaEl) kotaEl.textContent = "Lokasi belum tersedia";
+				setLocationText('', '');
 
 				if (navigator.geolocation) {
 					navigator.geolocation.watchPosition(function(position) {
@@ -1177,8 +1238,7 @@ foreach ($dataDoctor->result() as $doc) {
 							lng: position.coords.longitude,
 						};
 
-						document.getElementById("latitude").value = newLocation.lat;
-						document.getElementById("longitude").value = newLocation.lng;
+						setLocationFields(newLocation);
 						getAddress(newLocation);
 					}, showError);
 				}
@@ -1226,8 +1286,7 @@ foreach ($dataDoctor->result() as $doc) {
 			map.setCenter(newLocation);
 
 			// Tampilkan latitude dan longitude
-			document.getElementById("latitude").value = newLocation.lat;
-			document.getElementById("longitude").value = newLocation.lng;
+			setLocationFields(newLocation);
 
 			// Mendapatkan alamat dengan Geocoder
 			getAddress(newLocation);
@@ -1329,11 +1388,13 @@ foreach ($dataDoctor->result() as $doc) {
 		}
 
 		function getAddress(location) {
+			if (mapProvider === 'mapbox') {
+				getMapboxAddress(location);
+				return;
+			}
+
 			if (!geocoder) {
-				const addressEl = document.getElementById("address");
-				const kotaEl = document.getElementById('kota');
-				if (addressEl) addressEl.innerHTML = location.lat + ', ' + location.lng;
-				if (kotaEl) kotaEl.textContent = "Lokasi belum tersedia";
+				setLocationText(location.lat + ', ' + location.lng, '');
 				return;
 			}
 
@@ -1364,28 +1425,13 @@ foreach ($dataDoctor->result() as $doc) {
 				// 	alert("User denied the request for Geolocation.");
 				// 	break;
 				case error.POSITION_UNAVAILABLE:
-					Swal.fire({
-						title: "Error",
-						text: "Location information is unavailable.",
-						icon: "error",
-						confirmButtonText: "OK"
-					});
+					setLocationText('', '');
 					break;
 				case error.TIMEOUT:
-					Swal.fire({
-						title: "Error",
-						text: "The request to get user location timed out.",
-						icon: "error",
-						confirmButtonText: "OK"
-					});
+					setLocationText('', '');
 					break;
 				case error.UNKNOWN_ERROR:
-					Swal.fire({
-						title: "Error",
-						text: "An unknown error occurred.",
-						icon: "error",
-						confirmButtonText: "OK"
-					});
+					setLocationText('', '');
 					break;
 			}
 		}
