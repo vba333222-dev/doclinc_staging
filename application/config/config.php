@@ -552,6 +552,10 @@ $config['rewrite_short_tags'] = FALSE;
 */
 $config['proxy_ips'] = '';
 
+$config['google_maps_api_key'] = getenv('GOOGLE_MAPS_API_KEY') ?: '';
+$config['firebase_enabled'] = filter_var(getenv('FIREBASE_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN);
+$config['legacy_superapp_url'] = getenv('LEGACY_SUPERAPP_URL') ?: '';
+$config['map_provider'] = getenv('MAP_PROVIDER') ?: 'none';
 $config['mapbox_public_token'] = getenv('MAPBOX_PUBLIC_TOKEN') ?: '';
 
 $config['api_access_token'] = 'Bearer 31ZubGXP9GsCejWvHKzvGmAqt6O6';

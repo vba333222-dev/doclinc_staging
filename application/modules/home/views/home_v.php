@@ -1,5 +1,9 @@
 <?php
 $id_request = '';
+$google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
+$firebase_enabled = (bool) $this->config->item('firebase_enabled');
+$legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '#';
+$map_provider = $this->config->item('map_provider') ?: 'none';
 foreach ($data_profile->result() as $x) {
 	$usia = $x->usia;
 }
@@ -278,7 +282,7 @@ foreach ($dataDoctor->result() as $doc) {
 	<div class="content-wrapper" id="content-wrapper">
 		<div class="contents">
 			<div class="hero bg-success p-3 overflow-hidden">
-				<a href="https://idbcs.net/cilegon_bersatu" style="text-decoration: none; color: white; font-size: 1.5rem;">
+				<a href="<?= html_escape($legacy_superapp_url); ?>" style="text-decoration: none; color: white; font-size: 1.5rem;">
 					<i class="fas fa-chevron-left icon"></i>
 				</a>
 				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
@@ -835,15 +839,21 @@ foreach ($dataDoctor->result() as $doc) {
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTfv2in7EP1cLT71-bVC-66SZsrg4Kr5w"></script>
+	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
+		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
+	<?php endif; ?>
 
 	<!-- firebase dan notifikasi -->
 
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-	<script src="https://idbcs.net/cilegon_bersatu/firebase/firebase-config.js"></script>
-	<script src="https://idbcs.net/cilegon_bersatu/firebase/get-notif.js"></script>
+	<?php if ($firebase_enabled) : ?>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+		<?php if ($legacy_superapp_url !== '#') : ?>
+			<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/firebase-config.js'); ?>"></script>
+			<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/get-notif.js'); ?>"></script>
+		<?php endif; ?>
+	<?php endif; ?>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -1112,11 +1122,69 @@ foreach ($dataDoctor->result() as $doc) {
 
 	<!-- Mengirim lokasi -->
 	<script>
+		const mapProvider = <?= json_encode($map_provider); ?>;
+		const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
+
+		function getFirebaseDatabase() {
+			const noopRef = {
+				on: function() {},
+				child: function() {
+					return noopRef;
+				},
+				remove: function() {
+					return Promise.resolve();
+				},
+				push: function() {
+					return noopRef;
+				},
+				set: function() {
+					return Promise.resolve();
+				}
+			};
+
+			if (!firebaseEnabled || !window.firebase || !firebase.database) {
+				return {
+					ref: function() {
+						return noopRef;
+					}
+				};
+			}
+
+			try {
+				return firebase.database();
+			} catch (error) {
+				return {
+					ref: function() {
+						return noopRef;
+					}
+				};
+			}
+		}
+
 		let map;
 		let marker;
 		let geocoder;
 
 		function initMap() {
+			if (mapProvider !== 'google' || !window.google || !google.maps) {
+				const kotaEl = document.getElementById('kota');
+				if (kotaEl) kotaEl.textContent = "Lokasi belum tersedia";
+
+				if (navigator.geolocation) {
+					navigator.geolocation.watchPosition(function(position) {
+						const newLocation = {
+							lat: position.coords.latitude,
+							lng: position.coords.longitude,
+						};
+
+						document.getElementById("latitude").value = newLocation.lat;
+						document.getElementById("longitude").value = newLocation.lng;
+						getAddress(newLocation);
+					}, showError);
+				}
+				return;
+			}
+
 			// Inisialisasi peta
 			const initialLocation = {
 				lat: -6.1751,
@@ -1167,6 +1235,13 @@ foreach ($dataDoctor->result() as $doc) {
 		}
 
 		function sendData() {
+			if (mapProvider !== 'google') {
+				document.querySelectorAll('.hasil').forEach((element) => {
+					element.textContent = '-';
+				});
+				return;
+			}
+
 			// Ambil nilai dari input
 			const latitude = document.getElementById('latitude').value;
 			const longitude = document.getElementById('longitude').value;
@@ -1250,9 +1325,18 @@ foreach ($dataDoctor->result() as $doc) {
 					});
 				}, true);
 			}
+
 		}
 
 		function getAddress(location) {
+			if (!geocoder) {
+				const addressEl = document.getElementById("address");
+				const kotaEl = document.getElementById('kota');
+				if (addressEl) addressEl.innerHTML = location.lat + ', ' + location.lng;
+				if (kotaEl) kotaEl.textContent = "Lokasi belum tersedia";
+				return;
+			}
+
 			geocoder.geocode({
 				location: location
 			}, (results, status) => {
@@ -1516,7 +1600,7 @@ foreach ($dataDoctor->result() as $doc) {
 	<!-- Notifikasi Chat -->
 	<script>
 		// Referensi data notifikasi
-		const notificationsRef = firebase.database().ref('notifications');
+		const notificationsRef = getFirebaseDatabase().ref('notifications');
 
 		const idUser = document.getElementById('id_user').value;
 		console.log(idUser);
@@ -1605,7 +1689,7 @@ foreach ($dataDoctor->result() as $doc) {
 					}).then((result) => {
 						if (result.isConfirmed) {
 							// Hapus notifikasi berdasarkan key
-							firebase.database().ref(`notifications/${item.key}`).remove()
+							getFirebaseDatabase().ref(`notifications/${item.key}`).remove()
 								.then(() => {
 									Swal.fire('Berhasil', 'Notifikasi berhasil dihapus.', 'success');
 								})
@@ -1625,7 +1709,7 @@ foreach ($dataDoctor->result() as $doc) {
 
 	<!-- simpan lokasi ke firebase -->
 	<script>
-		const waktu = firebase.database().ref('location');
+		const waktu = getFirebaseDatabase().ref('location');
 		const latitudesEl = document.getElementById('latitudes');
 		const longitudesEl = document.getElementById('longitudes');
 		const lats = latitudesEl ? parseFloat(latitudesEl.value) : null;
@@ -1654,6 +1738,10 @@ foreach ($dataDoctor->result() as $doc) {
 			};
 
 			console.log(origin);
+
+			if (mapProvider !== 'google' || !window.google || !google.maps) {
+				return;
+			}
 
 			const destination = new google.maps.LatLng(lats, lngs);
 			const service = new google.maps.DistanceMatrixService();
@@ -1768,7 +1856,7 @@ foreach ($dataDoctor->result() as $doc) {
 		var request_id = <?= json_encode($id_request ?? ''); ?>;
 
 		// Ambil data dari node 'notif'
-		const notifRef = firebase.database().ref("notiffromdoc");
+		const notifRef = getFirebaseDatabase().ref("notiffromdoc");
 
 		// Dengarkan perubahan data notifikasi
 		notifRef.on("value", (snapshot) => {
@@ -1822,7 +1910,7 @@ foreach ($dataDoctor->result() as $doc) {
 		console.log("id_request: " + request_id);
 
 		// Ambil data dari node 'notif'
-		const notifRate = firebase.database().ref("rating");
+		const notifRate = getFirebaseDatabase().ref("rating");
 
 		let alreadyShown = false;
 
@@ -1894,7 +1982,7 @@ foreach ($dataDoctor->result() as $doc) {
 					success: function(data) {
 						if (data.status === 'success') {
 
-							const deleteRate = firebase.database().ref('rating');
+							const deleteRate = getFirebaseDatabase().ref('rating');
 							deleteRate.on('value', (snapshot) => {
 								const data = snapshot.val();
 								if (data) {
