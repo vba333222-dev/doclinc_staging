@@ -164,8 +164,21 @@ class Home_m extends MX_Controller
 
 	public function get_data_profile($user_id)
 	{
+		$select = ['users.*'];
+		foreach (['tgl', 'gender', 'no_hp', 'alamat', 'foto'] as $field) {
+			if (!$this->db->field_exists($field, 'users')) {
+				$select[] = 'NULL AS ' . $field;
+			}
+		}
+
+		if ($this->db->field_exists('tgl', 'users')) {
+			$select[] = 'TIMESTAMPDIFF(YEAR, tgl, CURDATE()) AS usia';
+		} else {
+			$select[] = 'NULL AS usia';
+		}
+
 		return $this->db
-			->select('*, TIMESTAMPDIFF(YEAR, tgl, CURDATE()) AS usia', FALSE)
+			->select(implode(', ', $select), FALSE)
 			->where('userId', $user_id)
 			->get('users');
 	}
