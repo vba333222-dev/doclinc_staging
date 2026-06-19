@@ -155,6 +155,10 @@ class Home_m extends MX_Controller
 
 	public function get_data_feeds()
 	{
+		if (!$this->db->table_exists('feeds')) {
+			return $this->db->query("SELECT NULL AS feedId, NULL AS gambar, NULL AS status WHERE 1=0");
+		}
+
 		return $this->db->query("SELECT * FROM feeds WHERE status='aktif' ORDER BY feedId DESC");
 	}
 
