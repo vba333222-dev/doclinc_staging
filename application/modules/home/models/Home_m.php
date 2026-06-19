@@ -65,6 +65,10 @@ class Home_m extends MX_Controller
 
 	public function getAllDataRequestsCompleted($user_id)
 	{
+		if (!$this->db->table_exists('konsultasi')) {
+			return [];
+		}
+
 		// Load library encryption
 		$CI = &get_instance();
 		$CI->load->library('encryption');
@@ -96,6 +100,10 @@ class Home_m extends MX_Controller
 
 	public function getTerapiByKonsulId($konsul_id)
 	{
+		if (!$this->db->table_exists('terapi')) {
+			return [];
+		}
+
 		$this->db->where('konsul_id', $konsul_id);
 		return $this->db->get('terapi')->result();
 	}
@@ -116,6 +124,10 @@ class Home_m extends MX_Controller
 
 	public function getAllDataDoctor($kode_pkm)
 	{
+		if (!$this->db->table_exists('locations')) {
+			return $this->db->query("SELECT NULL AS userId, NULL AS nama, NULL AS foto, NULL AS request_id, NULL AS user_id, NULL AS dokter_id, NULL AS request_status, NULL AS date, NULL AS create_date WHERE 1=0");
+		}
+
 		return $this->db->query("SELECT
 									users.*,
 									locations.*,
@@ -224,6 +236,10 @@ class Home_m extends MX_Controller
 
 	public function getAllRating()
 	{
+		if (!$this->db->table_exists('rating')) {
+			return $this->db->query("SELECT NULL AS id_user, NULL AS id_dokter, NULL AS rating WHERE 1=0");
+		}
+
 		return $this->db->query("SELECT * FROM rating");
 	}
 
