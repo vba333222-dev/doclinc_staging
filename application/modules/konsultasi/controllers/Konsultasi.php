@@ -11,7 +11,7 @@ class Konsultasi extends MX_Controller
 		parent::__construct();
 		$this->load->model('Konsultasi_m');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			redirect('../', 'refresh');
+			redirect('login', 'refresh');
 		}
 		$this->load->library('encryption');
 	}

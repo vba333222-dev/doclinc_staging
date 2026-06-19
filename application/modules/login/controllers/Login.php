@@ -22,8 +22,7 @@ class Login extends MX_Controller
 				echo 'Error: User role not recognized';
 			}
 		} else {
-			redirect('../');
-			// $this->load->view('login_v');
+			$this->load->view('login_v');
 		}
 	}
 
@@ -61,6 +60,6 @@ class Login extends MX_Controller
 	public function logout()
 	{
 		$this->session->sess_destroy();
-		redirect('../');
+		redirect('login');
 	}
 }
