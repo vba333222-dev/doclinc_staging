@@ -35,20 +35,21 @@ class Login extends MX_Controller
 		$longitude = htmlspecialchars($this->input->post('longitude'));
 		$auth = $this->Login_m->auth($username, $password);
 		if ($auth->num_rows() > 0) {
+			$user = $auth->row();
 			$session_data = [
-				'id' => $auth->row()->userId,
-				'username' => $auth->row()->username,
-				'nama' => $auth->row()->nama,
-				'email' => $auth->row()->email,
-				'role' => $auth->row()->role,
-				'picture' => $auth->row()->foto,
+				'id' => $user->userId,
+				'username' => $user->username,
+				'nama' => $user->nama,
+				'email' => $user->email,
+				'role' => $user->role,
+				'picture' => property_exists($user, 'foto') ? $user->foto : null,
 				'logged_in' => TRUE
 			];
 			$this->session->set_userdata($session_data);	
 			
 			$id = $this->session->userdata('id');
 			$username = $this->session->userdata('username');		
-			$save_lokasi = $this->Login_m->save_location($id,$username,$location, $lattitude,$longitude);
+			$this->Login_m->save_location($id,$username,$location, $lattitude,$longitude);
 			// echo "OK";
 			echo "1";
 		} else {

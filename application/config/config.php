@@ -552,4 +552,6 @@ $config['rewrite_short_tags'] = FALSE;
 */
 $config['proxy_ips'] = '';
 
+$config['mapbox_public_token'] = getenv('MAPBOX_PUBLIC_TOKEN') ?: '';
+
 $config['api_access_token'] = 'Bearer 31ZubGXP9GsCejWvHKzvGmAqt6O6';

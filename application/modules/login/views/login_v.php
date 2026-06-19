@@ -7,7 +7,6 @@
 	<title>Doc Linc (BETA)- Login</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC71j570q3iQGfOnd_YVHpsAl808HlV6j4"></script>
 	<link rel="stylesheet" href="<?= base_url('assets/css/style.css'); ?>">
 </head>
 
@@ -51,7 +50,6 @@
 	<input type="hidden" id="address" placeholder="Address" readonly>
 	<input type="hidden" id="latitude" placeholder="Latitude" readonly>
 	<input type="hidden" id="longitude" placeholder="Longitude" readonly>
-	<div id="map"></div>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
@@ -59,6 +57,8 @@
 
 	<!-- Script untuk menangani login, alert sukses, dan redirect ke loading page -->
 	<script>
+		const mapboxToken = <?= json_encode($this->config->item('mapbox_public_token') ?: ''); ?>;
+
 		document.getElementById('loginForm').addEventListener('submit', function(event) {
 			event.preventDefault(); // Mencegah form dikirim secara default
 
@@ -99,81 +99,54 @@
 			});
 		});
 
-		let map;
-		let marker;
-		let geocoder;
+		function initLocation() {
+			document.getElementById("address").value = "Location unavailable";
 
-		function initMap() {
-			// Inisialisasi peta
-			const initialLocation = {
-				lat: -6.1751,
-				lng: 106.8650
-			}; // Lokasi awal (Jakarta)
-			map = new google.maps.Map(document.getElementById("map"), {
-				zoom: 15,
-				center: initialLocation,
-			});
-			marker = new google.maps.Marker({
-				position: initialLocation,
-				map: map,
-			});
-			geocoder = new google.maps.Geocoder();
-			// Mendapatkan lokasi pengguna
-			if (navigator.geolocation) {
-				navigator.geolocation.watchPosition(updateLocation, showError);
-			} else {
-				alert("Geolocation is not supported by this browser.");
+			if (!navigator.geolocation) {
+				return;
 			}
+
+			navigator.geolocation.getCurrentPosition(updateLocation, function() {}, {
+				enableHighAccuracy: true,
+				timeout: 10000,
+				maximumAge: 60000
+			});
 		}
 
 		function updateLocation(position) {
-			const newLocation = {
-				lat: position.coords.latitude,
-				lng: position.coords.longitude,
-			};
-			// Update posisi marker dan pusat peta
-			marker.setPosition(newLocation);
-			map.setCenter(newLocation);
-			// Tampilkan latitude dan longitude
-			document.getElementById("latitude").value = newLocation.lat;
-			document.getElementById("longitude").value = newLocation.lng;
-			// Mendapatkan alamat dengan Geocoder
-			getAddress(newLocation);
+			const latitude = position.coords.latitude;
+			const longitude = position.coords.longitude;
+
+			document.getElementById("latitude").value = latitude;
+			document.getElementById("longitude").value = longitude;
+			getAddress(latitude, longitude);
 		}
 
-		function getAddress(location) {
-			geocoder.geocode({
-				location: location
-			}, (results, status) => {
-				if (status === "OK") {
-					if (results[0]) {
-						document.getElementById("address").value = results[0].formatted_address;
-					} else {
-						document.getElementById("address").value = "No results found";
-					}
-				} else {
-					document.getElementById("address").value = "Geocoder failed due to: " + status;
-				}
-			});
-		}
-
-		function showError(error) {
-			switch (error.code) {
-				case error.PERMISSION_DENIED:
-					alert("User denied the request for Geolocation.");
-					break;
-				case error.POSITION_UNAVAILABLE:
-					alert("Location information is unavailable.");
-					break;
-				case error.TIMEOUT:
-					alert("The request to get user location timed out.");
-					break;
-				case error.UNKNOWN_ERROR:
-					alert("An unknown error occurred.");
-					break;
+		function getAddress(latitude, longitude) {
+			if (!mapboxToken || !window.fetch) {
+				return;
 			}
+
+			const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' +
+				encodeURIComponent(longitude + ',' + latitude) +
+				'.json?access_token=' + encodeURIComponent(mapboxToken);
+
+			fetch(url)
+				.then(function(response) {
+					if (!response.ok) {
+						throw new Error('Mapbox geocoding failed');
+					}
+					return response.json();
+				})
+				.then(function(data) {
+					if (data.features && data.features.length > 0 && data.features[0].place_name) {
+						document.getElementById("address").value = data.features[0].place_name;
+					}
+				})
+				.catch(function() {});
 		}
-		window.onload = initMap;
+
+		window.onload = initLocation;
 	</script>
 </body>
 
