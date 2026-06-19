@@ -8,7 +8,7 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC71j570q3iQGfOnd_YVHpsAl808HlV6j4"></script>
-	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
+	<link rel="stylesheet" href="<?= base_url('assets/css/style.css'); ?>">
 </head>
 
 <body class="bg-success">
@@ -16,7 +16,7 @@
 		<div class="row d-flex align-items-center justify-content-center vh-100">
 			<div class="col-md-4">
 				<center>
-					<img class="p-2" src="<?= base_url(); ?>assets/images/doklincwhite.png" alt="" height="100px">
+					<img class="p-2" src="<?= base_url('assets/images/doklincwhite.png'); ?>" alt="" height="100px">
 				</center>
 				<div class="card shadow-lg mt-3" style="border-radius: 10px; overflow: hidden;">
 					<div class="card-body" style="background-color: #e0f2f1;">
@@ -41,7 +41,7 @@
 						</form>
 						<hr>
 						<div class="text-center">
-							<p class="text-muted mb-0" style="color: #004d40;">Belum punya akun? <a href="<?= base_url('sign_up'); ?>" style="color: #00796b;">Daftar di sini</a></p>
+							<p class="text-muted mb-0" style="color: #004d40;">Belum punya akun? <a href="<?= site_url('sign_up'); ?>" style="color: #00796b;">Daftar di sini</a></p>
 						</div>
 					</div>
 				</div>
@@ -69,7 +69,7 @@
 			var lattitude = document.getElementById('latitude').value;
 			var longitude = document.getElementById('longitude').value;
 			$.ajax({
-				url: '<?= base_url(); ?>login/auth/',
+				url: '<?= site_url('login/auth'); ?>',
 				type: 'POST',
 				data: {
 					username: username,
