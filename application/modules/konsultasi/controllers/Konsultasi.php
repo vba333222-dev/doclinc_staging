@@ -19,7 +19,7 @@ class Konsultasi extends MX_Controller
 	public function index()
 	{
 		$userid = $this->session->userdata('id');
-		$nama = $_GET['nama'];
+		$nama = $_GET['nama'] ?? '';
 		$data['getDataDoctor'] = $this->Konsultasi_m->getDataDoctor($nama);
 		$data['getFotoDokter'] = $this->Konsultasi_m->getFotoDokter($nama);
 		$data['getDataTokenDoctor'] = $this->Konsultasi_m->getDataTokenDoctor($nama);
@@ -95,10 +95,14 @@ class Konsultasi extends MX_Controller
 
 	public function send()
 	{
+		if (!(bool) $this->config->item('firebase_enabled')) {
+			redirect('home#riwayat');
+			return;
+		}
 
 		$token = $this->input->get('token', TRUE);
 		if (empty($token)) {
-			show_error('Token notifikasi tidak ditemukan.', 400);
+			redirect('home#riwayat');
 			return;
 		}
 
@@ -106,6 +110,10 @@ class Konsultasi extends MX_Controller
 
 		// $token = $this->input->post('token');
 		$serviceAccountPath = $this->config->item('firebase_service_account');
+		if (empty($serviceAccountPath) || !is_file($serviceAccountPath)) {
+			redirect('home#riwayat');
+			return;
+		}
 		// $deviceToken = $this->config->item('firebase_device_token');
 		$deviceToken = $token;
 
@@ -120,7 +128,7 @@ class Konsultasi extends MX_Controller
 		// Buat instance Firebase
 		if (!class_exists(Factory::class)) {
 			log_message('error', 'Firebase dependency is missing. Run composer require kreait/firebase-php and install vendor/autoload.php.');
-			show_error('Firebase dependency belum terpasang.', 500);
+			redirect('home#riwayat');
 			return;
 		}
 
@@ -141,7 +149,8 @@ class Konsultasi extends MX_Controller
 			$firebase->send($message);
 			header('Location: ' . base_url('home#riwayat'));
 		} catch (MessagingException $e) {
-			echo "Gagal mengirim notifikasi: " . $e->getMessage();
+			log_message('error', 'Gagal mengirim notifikasi konsultasi: ' . $e->getMessage());
+			redirect('home#riwayat');
 		}
 	}
 
