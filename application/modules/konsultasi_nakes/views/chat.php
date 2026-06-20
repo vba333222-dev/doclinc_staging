@@ -1,3 +1,8 @@
+<?php
+$firebase_enabled = (bool) $this->config->item('firebase_enabled');
+$legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
+$chat_back_url = !empty($legacy_superapp_url) ? rtrim($legacy_superapp_url, '/') . '/sehat_geh' : base_url('home_nakes');
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -227,7 +232,7 @@
 	<div class="chat-container">
 		<!-- Profil Ustadz -->
 		<div class="profile-header">
-			<a href="https://idbcs.net/cilegon_bersatu/sehat_geh" style="text-decoration: none; color: white; font-size: 1.5rem;">
+			<a href="<?= html_escape($chat_back_url); ?>" style="text-decoration: none; color: white; font-size: 1.5rem;">
 				<i class="fas fa-chevron-left icon"></i>
 			</a>
 			<img src="<?= base_url(); ?>assets/images/rahmat.jpg" alt="Pasien" id="ustadzProfileImage">
@@ -239,8 +244,8 @@
 		</div>
 
 		<?php
-		$request_id = $_GET['reqId'];
-		$user_id = $_GET['userId'];
+		$request_id = $_GET['reqId'] ?? '';
+		$user_id = $_GET['userId'] ?? '';
 		?>
 
 		<input type="text" id="request_id" value="<?= $request_id ?>" hidden>
@@ -258,13 +263,38 @@
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 
-	<script src="https://www.gstatic.com/firebasejs/8.6.1/firebase.js"></script>
-	<script src="https://idbcs.net/cilegon_bersatu/firebase/firebase-config.js"></script>
+	<?php if ($firebase_enabled) : ?>
+		<script src="https://www.gstatic.com/firebasejs/8.6.1/firebase.js"></script>
+		<?php if (!empty($legacy_superapp_url)) : ?>
+			<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/firebase-config.js'); ?>"></script>
+		<?php endif; ?>
+	<?php endif; ?>
 
 	<script>
+		const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
+
+		function getFirebaseDatabase() {
+			if (!firebaseEnabled || !window.firebase || !firebase.database) {
+				return null;
+			}
+
+			try {
+				return firebase.database();
+			} catch (error) {
+				return null;
+			}
+		}
+
 		document.addEventListener("DOMContentLoaded", () => {
 			if (Notification.permission !== "granted") {
 				Notification.requestPermission();
+			}
+
+			if (!getFirebaseDatabase()) {
+				const chatBox = document.getElementById("chat-box");
+				if (chatBox) {
+					chatBox.innerHTML = '<div class="text-muted small text-center p-3">Chat realtime belum tersedia pada konfigurasi ini.</div>';
+				}
 			}
 		});
 
@@ -275,71 +305,74 @@
 
 		const currentUser = document.getElementById('username').value;
 		const chatWith = pasien;
+		const firebaseDb = getFirebaseDatabase();
 
-		firebase.database().ref("messages").on("child_added", (snapshot) => {
-			const message = snapshot.val();
-			console.log("New message detected:", message);
+		if (firebaseDb) {
+			firebaseDb.ref("messages").on("child_added", (snapshot) => {
+				const message = snapshot.val();
+				console.log("New message detected:", message);
 
-			if (message.receiver === currentUser) {
-				console.log("Message is for current user:", message);
-				showNotification(`Message from ${message.sender}: ${message.text}`);
-			}
-		});
+				if (message.receiver === currentUser) {
+					console.log("Message is for current user:", message);
+					showNotification(`Message from ${message.sender}: ${message.text}`);
+				}
+			});
 
-		// Listen for messages
-		firebase.database().ref("messages").on("value", (snapshot) => {
-			const chatBox = document.getElementById("chat-box");
-			chatBox.innerHTML = ""; // Clear the chat box
-			snapshot.forEach((childSnapshot) => {
-				const message = childSnapshot.val();
+			// Listen for messages
+			firebaseDb.ref("messages").on("value", (snapshot) => {
+				const chatBox = document.getElementById("chat-box");
+				chatBox.innerHTML = ""; // Clear the chat box
+				snapshot.forEach((childSnapshot) => {
+					const message = childSnapshot.val();
 
-				if (
-					(message.sender === currentUser && message.receiver === chatWith) ||
-					(message.sender === chatWith && message.receiver === currentUser)
-				) {
-					const messageElement = document.createElement("div");
-					const messageContent = document.createElement("div");
-					const textElement = document.createElement("span");
-					const timestampElement = document.createElement("span");
+					if (
+						(message.sender === currentUser && message.receiver === chatWith) ||
+						(message.sender === chatWith && message.receiver === currentUser)
+					) {
+						const messageElement = document.createElement("div");
+						const messageContent = document.createElement("div");
+						const textElement = document.createElement("span");
+						const timestampElement = document.createElement("span");
 
 
-					messageElement.classList.add("message");
-					if (message.sender === currentUser) {
-						messageElement.classList.add("message-right");
-					} else {
-						messageElement.classList.add("message-left");
-					}
+						messageElement.classList.add("message");
+						if (message.sender === currentUser) {
+							messageElement.classList.add("message-right");
+						} else {
+							messageElement.classList.add("message-left");
+						}
 
 					// messageElement.innerHTML = `<div class="sender">${message.sender}:</div> <div class="content">${message}</div>`;
 
 					// const sender = message.sender === currentUser ? "You" : message.sender;
 					// messageElement.textContent = `${sender}: ${message.text}`;
 					// Message text
-					textElement.classList.add("message-text");
-					textElement.textContent = message.text;
+						textElement.classList.add("message-text");
+						textElement.textContent = message.text;
 
-					// Timestamp
-					timestampElement.classList.add("timestamp");
-					timestampElement.textContent = new Date(message.timestamp).toLocaleTimeString([], {
-						hour: "2-digit",
-						minute: "2-digit",
-					});
+						// Timestamp
+						timestampElement.classList.add("timestamp");
+						timestampElement.textContent = new Date(message.timestamp).toLocaleTimeString([], {
+							hour: "2-digit",
+							minute: "2-digit",
+						});
 
-					// Combine message text and timestamp
-					messageContent.classList.add("message-content");
-					messageContent.appendChild(textElement);
-					messageContent.appendChild(timestampElement);
+						// Combine message text and timestamp
+						messageContent.classList.add("message-content");
+						messageContent.appendChild(textElement);
+						messageContent.appendChild(timestampElement);
 
-					messageElement.appendChild(messageContent);
-					chatBox.appendChild(messageElement);
+						messageElement.appendChild(messageContent);
+						chatBox.appendChild(messageElement);
 
-					// chatBox.appendChild(messageContainer);
+						// chatBox.appendChild(messageContainer);
 
-					// Scroll to the bottom
-					chatBox.scrollTop = chatBox.scrollHeight;
-				}
+						// Scroll to the bottom
+						chatBox.scrollTop = chatBox.scrollHeight;
+					}
+				});
 			});
-		});
+		}
 
 		function showNotification(message) {
 			console.log("Attempting to show notification with message:", message);
@@ -370,9 +403,17 @@
 		function sendMessage() {
 			const messageInput = document.getElementById("message");
 			const message = messageInput.value;
+			const firebaseDb = getFirebaseDatabase();
+			if (!firebaseDb) {
+				const chatBox = document.getElementById("chat-box");
+				if (chatBox) {
+					chatBox.innerHTML = '<div class="text-muted small text-center p-3">Chat realtime belum tersedia pada konfigurasi ini.</div>';
+				}
+				return;
+			}
 
 			if (message.trim() !== "") {
-				const newMessageRef = firebase.database().ref("messages").push();
+				const newMessageRef = firebaseDb.ref("messages").push();
 				newMessageRef.set({
 					sender: currentUser,
 					receiver: chatWith,
@@ -383,7 +424,7 @@
 
 				const nama = 'pahlawan1'
 				const userId = document.getElementById('user_id').value;
-				const newMessageReff = firebase.database().ref("notifications").push();
+				const newMessageReff = firebaseDb.ref("notifications").push();
 				newMessageReff.set({
 					receiver: chatWith,
 					userId: userId,
