@@ -22,15 +22,27 @@ class Konsultasi_nakes extends MX_Controller
 	public function konsultasi()
 	{
 		$x['request_id'] = $this->uri->segment(3);
-		$data_request = $this->Konsultasi_nakes_m->get_data_request($this->uri->segment(3));
-		$x['userid'] = $data_request->row()->userid;
-		$x['nama_pasien'] = $data_request->row()->nama;
-		$x['keluhan'] = $data_request->row()->request_description;
-		$x['tgl_lahir'] = $data_request->row()->tgl;
+		$data_request = $this->Konsultasi_nakes_m->get_data_request($x['request_id']);
+		$request = $data_request->row();
+		if (!$request) {
+			redirect('home_nakes');
+			return;
+		}
 
-		$lahir = new DateTime($x['tgl_lahir']);
-		$today = new DateTime('today');
-		$x['umur'] = $lahir->diff($today)->y;
+		$x['userid'] = $request->userid;
+		$x['nama_pasien'] = $request->nama;
+		$x['keluhan'] = $request->request_description;
+		$x['tgl_lahir'] = !empty($request->tgl) ? $request->tgl : null;
+		$x['umur'] = '-';
+		if (!empty($x['tgl_lahir'])) {
+			try {
+				$lahir = new DateTime($x['tgl_lahir']);
+				$today = new DateTime('today');
+				$x['umur'] = $lahir->diff($today)->y;
+			} catch (Exception $e) {
+				$x['tgl_lahir'] = null;
+			}
+		}
 
 		// Tambahkan data obat ke view
 		// $x['data_obat'] = $filteredData;
@@ -50,13 +62,18 @@ class Konsultasi_nakes extends MX_Controller
 		$search = $this->input->get('cari');
 
 		// Ambil data dari API
-		$response = $this->apiclient->getData($apiUrl, $params);
+		try {
+			$response = $this->apiclient->getData($apiUrl, $params);
+		} catch (Exception $e) {
+			echo json_encode([]);
+			return;
+		}
 
 		// var_dump($response);
 
 		// Filter hanya name dan kfa_code
 		$filteredData = [];
-		if (!empty($response['items']['data'])) {
+		if (is_array($response) && !empty($response['items']['data'])) {
 			foreach ($response['items']['data'] as $item) {
 				if (isset($item['name']) && isset($item['kfa_code'])) {
 					// Hanya tambahkan jika cocok dengan pencarian
@@ -131,7 +148,7 @@ class Konsultasi_nakes extends MX_Controller
 			$terapi
 		);
 
-		echo 1;
+		echo $result ? 1 : 0;
 	}
 
 
