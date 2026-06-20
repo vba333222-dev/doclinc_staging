@@ -7,10 +7,15 @@ class Konsultasi_m extends MX_Controller
 		$this->db  = $this->load->database('default', TRUE);
 	}
 
+	private function empty_query()
+	{
+		return $this->db->query('SELECT 1 WHERE 1 = 0');
+	}
+
 	public function save_konsultasi(
 		$id_user,
 		$dokter_id,
-		$riwayat = null,
+		$riwayat,
 		$keluhan,
 		$alamat,
 		$lattitude,
@@ -21,40 +26,52 @@ class Konsultasi_m extends MX_Controller
 	) {
 		$this->db->trans_start(); // Mulai transaksi
 
-		// Query insert ke tabel requests
-		$this->db->query(
-			"INSERT INTO requests SET
-		user_id = " . $this->db->escape($id_user) . ",
-		dokter_id = " . $this->db->escape($dokter_id) . ",
-		request_description = " . $this->db->escape($keluhan) . ",
-		request_status = 'Pending',
-		location = " . $this->db->escape($alamat) . ",
-		lattitude = " . $this->db->escape($lattitude) . ",
-		longitude = " . $this->db->escape($longitude) . ",
-		date = " . $this->db->escape(date('Y-m-d', strtotime($tanggal))) . ",
-		photos = " . $this->db->escape($foto) . ",
-		video = " . $this->db->escape($video)
-		);
+		$data = [
+			'user_id' => $id_user,
+			'dokter_id' => $dokter_id,
+			'request_description' => $keluhan,
+			'request_status' => 'Pending',
+			'location' => $alamat,
+			'lattitude' => $lattitude,
+			'longitude' => $longitude,
+		];
+		if ($this->db->field_exists('date', 'requests')) {
+			$data['date'] = date('Y-m-d', strtotime($tanggal));
+		}
+		if ($this->db->field_exists('photos', 'requests')) {
+			$data['photos'] = $foto;
+		}
+		if ($this->db->field_exists('video', 'requests')) {
+			$data['video'] = $video;
+		}
+		if ($this->db->field_exists('created_at', 'requests')) {
+			$data['created_at'] = date('Y-m-d H:i:s');
+		}
+		if ($this->db->field_exists('updated_at', 'requests')) {
+			$data['updated_at'] = date('Y-m-d H:i:s');
+		}
+
+		$this->db->insert('requests', $data);
 
 		// Cek apakah sudah ada riwayat untuk user tersebut
-		$cek = $this->db->query("SELECT * FROM tbl_riwayat WHERE idUser = " . $this->db->escape($id_user))->row();
+		if ($this->db->table_exists('tbl_riwayat')) {
+			$cek = $this->db->query("SELECT * FROM tbl_riwayat WHERE idUser = " . $this->db->escape($id_user))->row();
 
-		if ($cek) {
-			// Jika ada → update riwayat dan updated_at saja
-			$this->db->query(
-				"UPDATE tbl_riwayat SET
-			riwayat = " . $this->db->escape($riwayat) . ",
-			updated_at = NOW()
-			WHERE idUser = " . $this->db->escape($id_user)
-			);
-		} else {
-			// Jika tidak ada → insert baru
-			$this->db->query("INSERT INTO tbl_riwayat SET
-			idUser = " . $this->db->escape($id_user) . ",
-			riwayat = " . $this->db->escape($riwayat) . ",
-			created_at = NOW(),
-			updated_at = NOW()
-		");
+			if ($cek) {
+				$this->db->query(
+					"UPDATE tbl_riwayat SET
+				riwayat = " . $this->db->escape($riwayat) . ",
+				updated_at = NOW()
+				WHERE idUser = " . $this->db->escape($id_user)
+				);
+			} else {
+				$this->db->query("INSERT INTO tbl_riwayat SET
+				idUser = " . $this->db->escape($id_user) . ",
+				riwayat = " . $this->db->escape($riwayat) . ",
+				created_at = NOW(),
+				updated_at = NOW()
+			");
+			}
 		}
 
 		$this->db->trans_complete(); // Selesaikan transaksi
@@ -76,10 +93,16 @@ class Konsultasi_m extends MX_Controller
 			'location'            => $alamat,
 			'lattitude'           => $lattitude,
 			'longitude'           => $longitude,
-			'date'                => date('Y-m-d', strtotime($tanggal)),
-			'photos'              => $foto,
-			'video'               => $video,
 		];
+		if ($this->db->field_exists('date', 'requests')) {
+			$data['date'] = date('Y-m-d', strtotime($tanggal));
+		}
+		if ($this->db->field_exists('photos', 'requests')) {
+			$data['photos'] = $foto;
+		}
+		if ($this->db->field_exists('video', 'requests')) {
+			$data['video'] = $video;
+		}
 
 		$this->db->insert('requests', $data);
 		// $this->db->insert_id(); // atau return true/false kalau kamu tidak perlu ID-nya
@@ -89,7 +112,9 @@ class Konsultasi_m extends MX_Controller
 			'riwayat' => $riwayat,
 		];
 
-		$this->db->insert('tbl_riwayat', $data_riwayat);
+		if ($this->db->table_exists('tbl_riwayat')) {
+			$this->db->insert('tbl_riwayat', $data_riwayat);
+		}
 
 		$this->db->trans_complete();
 		return $this->db->trans_status();
@@ -98,6 +123,10 @@ class Konsultasi_m extends MX_Controller
 
 	public function getAllDataLocations($dokter)
 	{
+		if (!$this->db->table_exists('locations')) {
+			return [];
+		}
+
 		$query = $this->db->query("SELECT
 			latitude, longitude, location
 		FROM
@@ -111,6 +140,10 @@ class Konsultasi_m extends MX_Controller
 
 	public function getLocation($dokter)
 	{
+		if (!$this->db->table_exists('locations')) {
+			return ['location' => 'Lokasi belum tersedia'];
+		}
+
 		$query = $this->db->query("SELECT
 			location
 		FROM
@@ -122,21 +155,33 @@ class Konsultasi_m extends MX_Controller
 		ORDER BY
 			create_date
 		DESC LIMIT 1");
-		return $query->row_array();
+		$result = $query->row_array();
+		return $result ?: ['location' => 'Lokasi belum tersedia'];
 	}
 
 	public function getDataDoctor($dokter)
 	{
+		$this->db->select('users.*');
+		foreach (['foto', 'no_hp', 'alamat', 'tgl'] as $field) {
+			if (!$this->db->field_exists($field, 'users')) {
+				$this->db->select("NULL AS {$field}", FALSE);
+			}
+		}
+
 		return $this->db->where('userId', $dokter)->get('users');
 	}
 
 	public function getFotoDokter($dokter)
 	{
-		return $this->db->where('userId', $dokter)->get('users');
+		return $this->getDataDoctor($dokter);
 	}
 
 	public function getDataTokenDoctor($dokter)
 	{
+		if (!$this->db->table_exists('fcm_tokens') || !$this->db->field_exists('no_hp', 'users')) {
+			return $this->empty_query();
+		}
+
 		// buatkan query join antara tabel users dan tabel fcm_tokens diaman yang menjadi referensinya adalah no_hp users
 		// dan phone di tabel fcm_tokens
 		return $this->db
@@ -149,6 +194,9 @@ class Konsultasi_m extends MX_Controller
 
 	public function getDataPenunjangById($id_user)
 	{
+		if (!$this->db->table_exists('tbl_riwayat')) {
+			return '';
+		}
 
 		// Load library encryption
 		$CI = &get_instance();

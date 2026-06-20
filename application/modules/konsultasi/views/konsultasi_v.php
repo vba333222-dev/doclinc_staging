@@ -1,7 +1,15 @@
 <?php
-function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode)
+$map_provider = $this->config->item('map_provider') ?: 'none';
+$google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
+$firebase_enabled = (bool) $this->config->item('firebase_enabled');
+$legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
+
+function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode, $apiKey, $mapProvider)
 {
-	$apiKey = 'AIzaSyBTfv2in7EP1cLT71-bVC-66SZsrg4Kr5w'; // Ganti dengan API Key Google Maps Anda
+	if ($mapProvider !== 'google' || empty($apiKey) || empty($latitudeA) || empty($longitudeA) || empty($latitudeB) || empty($longitudeB)) {
+		return '';
+	}
+
 	$url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=$latitudeA,$longitudeA&destinations=$latitudeB,$longitudeB&mode=$mode&key=$apiKey";
 
 	// Inisialisasi cURL
@@ -14,9 +22,8 @@ function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode)
 
 	// Periksa error pada cURL
 	if (curl_errno($curl)) {
-		echo 'Curl error: ' . curl_error($curl);
 		curl_close($curl);
-		return "Error saat menghubungi API.";
+		return '';
 	}
 
 	curl_close($curl);
@@ -25,7 +32,7 @@ function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode)
 	$data = json_decode($response, true);
 
 	// Mengambil durasi dari respons
-	return $data['rows'][0]['elements'][0]['duration']['text'];
+	return $data['rows'][0]['elements'][0]['duration']['text'] ?? '';
 
 	// Mengembalikan durasi dalam format yang diinginkan
 	// return $duration;
@@ -33,13 +40,18 @@ function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode)
 
 // Mencari jarak antara pusat kesehatan dan pahlawan 1
 
-$dokter = $_GET['nama'];
+$dokter = $_GET['nama'] ?? '';
+$latitudeA = '';
+$longitudeA = '';
+$dokter_id = $dokter;
+$nama = '';
+$token = '';
 
 $this->load->model('Konsultasi_m');
 $coordinate = $this->Konsultasi_m->getAllDataLocations($dokter);
-foreach ($coordinate as $coordinate) {
-	$latitudeA = $coordinate['latitude'];
-	$longitudeA = $coordinate['longitude'];
+foreach ($coordinate as $coordinate_item) {
+	$latitudeA = $coordinate_item['latitude'];
+	$longitudeA = $coordinate_item['longitude'];
 }
 
 $mode = 'driving';
@@ -53,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	header('Content-Type: application/json'); // Set header untuk JSON
 	json_encode(['status' => 'success', 'latitude' => htmlspecialchars($latitudeB), 'longitude' => htmlspecialchars($longitudeB)]);
 
-	echo getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode);
+	echo getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode, $google_maps_api_key, $map_provider);
 
 	exit; // Hentikan proses eksekusi
 }
@@ -103,12 +115,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$this->load->model('Konsultasi_m');
 					$hasil = $this->Konsultasi_m->getLocation($dokter);
 					?>
-					<i class="fas fa-map-marker-alt me-2"></i><small><?= $hasil['location'] ?></small>
+					<i class="fas fa-map-marker-alt me-2"></i><small><?= html_escape($hasil['location'] ?? 'Lokasi belum tersedia'); ?></small>
 				</div>
 			</div>
 			<?php
-			foreach ($getFotoDokter->result() as $row) {
-				$foto = $row->foto;
+			$foto = '';
+			foreach ($getFotoDokter->result() as $row_foto) {
+				$foto = $row_foto->foto ?? '';
 			}
 			?>
 			<!-- buat syntax untuk menampilan nama dokter dan jadikan dibawah image -->
@@ -128,8 +141,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 			?>
 
-			<?php if (!empty($row->foto)) : ?>
-				<img class="rounded-4" id="gambar" src="<?= base_url('uploads/profile/' . html_escape($row->foto)); ?>" width="100px" height="auto" alt="Image Not Found">
+			<?php if (!empty($foto)) : ?>
+				<img class="rounded-4" id="gambar" src="<?= base_url('uploads/profile/' . html_escape($foto)); ?>" width="100px" height="auto" alt="Image Not Found">
 			<?php else : ?>
 				<img class="rounded-4" id="gambar" src="<?= base_url('assets/images/default-profile.svg'); ?>" width="100px" height="auto" alt="Default Image">
 			<?php endif; ?>
@@ -158,8 +171,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				<input type="hidden" class="form-control shadow border-success" id="nama" value="<?php echo $_SESSION['username']; ?>" placeholder="Nama Lengkap" readonly>
 			</div>
 			<div class="form-floating mb-2">
-				<input type="hidden" class="form-control shadow border-success" name="dokter_id" id="dokter_id" value="<?= $dokter_id ?>" placeholder="Dokter ID" readonly>
-				<input type="hidden" class="form-control shadow border-success" name="namadokter" id="namadokter" value="<?= $nama ?>" placeholder="Dokter ID" readonly>
+				<input type="hidden" class="form-control shadow border-success" name="dokter_id" id="dokter_id" value="<?= html_escape($dokter_id); ?>" placeholder="Dokter ID" readonly>
+				<input type="hidden" class="form-control shadow border-success" name="namadokter" id="namadokter" value="<?= html_escape($nama); ?>" placeholder="Dokter ID" readonly>
 			</div>
 			<div class="form-floating mb-2">
 				<!-- Textarea utama -->
@@ -200,9 +213,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 			// echo "isi token: " . $token;
 			?>
-			<input type="text" name="token" id="token" value="<?php echo $token; ?>" style="display: none;" readonly>
+			<input type="text" name="token" id="token" value="<?php echo html_escape($token); ?>" style="display: none;" readonly>
 			<div class="form-floating mb-2 d-none">
-				<input type="hidden" class="form-control shadow border-success" id="no_hp" value="<?= $_SESSION['no_hp'] ?>" placeholder="Nomor HP" readonly>
+				<input type="hidden" class="form-control shadow border-success" id="no_hp" value="<?= html_escape($_SESSION['no_hp'] ?? '') ?>" placeholder="Nomor HP" readonly>
 				<label for="no_hp">Nomor HP</label>
 			</div>
 
@@ -317,16 +330,41 @@ Lama keluhan:
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTfv2in7EP1cLT71-bVC-66SZsrg4Kr5w"></script>
+	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
+		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
+	<?php endif; ?>
 
 	<!-- firebase dan notifikasi -->
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-	<script src="https://idbcs.net/cilegon_bersatu/firebase/firebase-config.js"></script>
-	<script src="https://idbcs.net/cilegon_bersatu/firebase/get-notif.js"></script>
+	<?php if ($firebase_enabled) : ?>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+		<?php if (!empty($legacy_superapp_url)) : ?>
+			<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/firebase-config.js'); ?>"></script>
+			<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/get-notif.js'); ?>"></script>
+		<?php endif; ?>
+	<?php endif; ?>
 
 	<script>
+		const mapProvider = <?= json_encode($map_provider); ?>;
+		const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
+
+		function hasGoogleMaps() {
+			return mapProvider === 'google' && window.google && window.google.maps;
+		}
+
+		function getFirebaseDatabase() {
+			if (!firebaseEnabled || !window.firebase || !firebase.database) {
+				return null;
+			}
+
+			try {
+				return firebase.database();
+			} catch (error) {
+				return null;
+			}
+		}
+
 		// validasi untuk mengecek bahwa jam kunjungan hanya dilakukan sebelum jam 17.00
 		// Mendapatkan waktu saat ini
 		const currentHour = new Date().toLocaleTimeString('id-ID', {
@@ -484,13 +522,19 @@ Lama keluhan:
 					}).then((result) => {
 						var token = $('#token').val();
 						if (result.dismiss === Swal.DismissReason.timer) {
-							window.location.href = '<?php echo base_url(); ?>konsultasi/send?token=' + token;
+							const redirectUrl = token ? '<?php echo base_url(); ?>konsultasi/send?token=' + encodeURIComponent(token) : '<?php echo base_url(); ?>home#riwayat';
 
 							const namaDokter = document.getElementById('namadokter').value;
 
 							const nama = document.getElementById('nama');
 							const keluhan = document.getElementById('keluhan');
-							const newMessageRef = firebase.database().ref("notifications").push();
+							const firebaseDb = getFirebaseDatabase();
+							if (!firebaseDb) {
+								window.location.href = redirectUrl;
+								return;
+							}
+
+							const newMessageRef = firebaseDb.ref("notifications").push();
 							newMessageRef.set({
 								sender: namaDokter,
 								text: 'Ada Pasien yang membutuhkan bantuan atas nama ' + nama.value + ' dengan keluhan ' + keluhan.value,
@@ -501,17 +545,21 @@ Lama keluhan:
 							const id_dokter = dokter_id;
 							const status = 'Pending';
 
-							const newRequest = firebase.database().ref("request").push();
+							const newRequest = firebaseDb.ref("request").push();
 							newRequest.set({
 								id_pasien: id_pasien,
 								id_dokter: id_dokter,
-								keluhan: keluhan,
+								keluhan: keluhan.value,
 								lat: lat,
 								lng: lng,
 								alamat: alamat,
 								tanggal: tanggal,
 								status: status,
 								timestamp: Date.now()
+							}).then(() => {
+								window.location.href = redirectUrl;
+							}).catch(() => {
+								window.location.href = redirectUrl;
 							});
 						}
 					});
@@ -542,6 +590,8 @@ Lama keluhan:
 		let geocoder;
 
 		function initMap() {
+			if (!hasGoogleMaps()) return;
+
 			// Inisialisasi peta
 			const initialLocation = {
 				lat: -6.1751,
@@ -568,6 +618,8 @@ Lama keluhan:
 		}
 
 		function updateLocation(position) {
+			if (!hasGoogleMaps() || !marker || !map) return;
+
 			const newLocation = {
 				lat: position.coords.latitude,
 				lng: position.coords.longitude,
@@ -586,6 +638,8 @@ Lama keluhan:
 		}
 
 		function sendData() {
+			if (!hasGoogleMaps()) return;
+
 			// Ambil nilai dari input
 			const latitude = document.getElementById('latitude').value;
 			const longitude = document.getElementById('longitude').value;
@@ -608,6 +662,8 @@ Lama keluhan:
 		}
 
 		function getAddress(location) {
+			if (!hasGoogleMaps() || !geocoder) return;
+
 			geocoder.geocode({
 				location: location
 			}, (results, status) => {
@@ -640,7 +696,6 @@ Lama keluhan:
 			}
 		}
 
-		window.onload = initMap;
 		window.onload = function() {
 			initMap();
 
