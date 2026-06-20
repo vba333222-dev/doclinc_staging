@@ -33,7 +33,7 @@ class Home_nakes_m extends MX_Controller
 			$this->db->select('tbl_riwayat.riwayat');
 			$this->db->join('tbl_riwayat', 'tbl_riwayat.idUser = users.userId', 'left');
 		} else {
-			$this->db->select('NULL AS riwayat', FALSE);
+			$this->db->select("'' AS riwayat", FALSE);
 		}
 	}
 
@@ -159,10 +159,16 @@ class Home_nakes_m extends MX_Controller
 	}
 	public function accept_request($id, $id_user, $latitude, $longitude)
 	{
+		if (empty($id) || empty($id_user)) {
+			return false;
+		}
+
 		$data = [
 			'request_status' => 'Accepted',
-			'updated_at' => date('Y-m-d H:i:s'),
 		];
+		if ($this->db->field_exists('updated_at', 'requests')) {
+			$data['updated_at'] = date('Y-m-d H:i:s');
+		}
 		if ($this->db->field_exists('lattitude_dokter', 'requests')) {
 			$data['lattitude_dokter'] = $latitude;
 		}
@@ -173,7 +179,8 @@ class Home_nakes_m extends MX_Controller
 		return $this->db
 			->where('request_id', $id)
 			->where('dokter_id', $id_user)
-			->update('requests', $data);
+			->where('request_status', 'Pending')
+			->update('requests', $data) && $this->db->affected_rows() > 0;
 	}
 	public function get_location_user($id)
 	{
