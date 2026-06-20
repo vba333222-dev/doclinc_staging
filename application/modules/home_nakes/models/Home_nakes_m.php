@@ -116,12 +116,24 @@ class Home_nakes_m extends MX_Controller
 				}
 			}
 		} else {
-			$this->db
-				->select('NULL AS diagnosa', FALSE)
-				->select('NULL AS saran', FALSE)
-				->select('NULL AS diagnosis', FALSE)
-				->select('NULL AS treatment', FALSE)
-				->select('NULL AS recommendations', FALSE);
+			if ($this->db->table_exists('medicalrecords')) {
+				$this->db
+					->select('medicalrecords.record_id AS konsul_id')
+					->select('medicalrecords.diagnosis AS diagnosa')
+					->select('medicalrecords.recommendations AS saran')
+					->select('medicalrecords.diagnosis AS diagnosis')
+					->select('medicalrecords.treatment AS treatment')
+					->select('medicalrecords.recommendations AS recommendations')
+					->select('medicalrecords.created_at AS result_created_at')
+					->join('medicalrecords', 'requests.request_id = medicalrecords.request_id', 'left');
+			} else {
+				$this->db
+					->select('NULL AS diagnosa', FALSE)
+					->select('NULL AS saran', FALSE)
+					->select('NULL AS diagnosis', FALSE)
+					->select('NULL AS treatment', FALSE)
+					->select('NULL AS recommendations', FALSE);
+			}
 		}
 
 		return $this->db

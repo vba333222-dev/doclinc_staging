@@ -570,16 +570,17 @@ foreach ($dataDoctor->result() as $doc) {
 							foreach ($getAllDataRequestsCompleted as $data) {
 								$id_request = $data->request_id;
 								$tanggal = $data->date;
-								$keluhan = $data->request_description;
-								$saran	 = $data->recommendations;
+								$keluhan = !empty($data->request_description) ? $data->request_description : 'Keluhan tersimpan';
+								$saran	 = !empty($data->recommendations) ? $data->recommendations : '-';
 								$dokter_id = $data->dokter_id;
 								$nama_dokter_riwayat = $data->nama_dokter;
-								$diagnosa = $data->diagnosa;
-								$saran_dokter = $data->saran;
+								$diagnosa = !empty($data->diagnosa) ? $data->diagnosa : (!empty($data->diagnosis) ? $data->diagnosis : '-');
+								$saran_dokter = !empty($data->saran) ? $data->saran : $saran;
+								$card_id = !empty($data->konsul_id) ? $data->konsul_id : $id_request;
 
 								$tanggal_riwayat = date('d F Y', strtotime($tanggal));
 							?>
-								<div class="card shadow mb-2" id="card-<?= $data->konsul_id ?>">
+								<div class="card shadow mb-2" id="card-<?= $card_id ?>">
 									<div class="card-header d-flex align-items-center">
 										<p class="mb-0"><em><?= $tanggal_riwayat; ?></em></p>
 										<span class="badge text-bg-secondary ms-auto">Selesai</span>
@@ -619,7 +620,7 @@ foreach ($dataDoctor->result() as $doc) {
 												<?php } ?>
 											</tbody>
 										</table>
-										<button class="btn btn-sm btn-outline-success mt-2" onclick="downloadCard('card-<?= $data->konsul_id ?>')">
+										<button class="btn btn-sm btn-outline-success mt-2" onclick="downloadCard('card-<?= $card_id ?>')">
 											<i class="fas fa-file-download"></i> Download Resep
 										</button>
 									</div>

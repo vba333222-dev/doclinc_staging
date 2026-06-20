@@ -538,8 +538,18 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 							$CI = &get_instance();
 							$CI->load->library('encryption');
 							foreach ($data_request_completed->result() as $x) {
-								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
-								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
+								try {
+									$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
+								} catch (Exception $e) {
+									$keluhan = 'Keluhan tersimpan';
+								}
+								try {
+									$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
+								} catch (Exception $e) {
+									$riwayat = '';
+								}
+								$diagnosa = !empty($x->diagnosa) ? $x->diagnosa : (!empty($x->diagnosis) ? $x->diagnosis : '-');
+								$saran = !empty($x->saran) ? $x->saran : (!empty($x->recommendations) ? $x->recommendations : '-');
 							?>
 								<div class="card shadow mb-2">
 									<div class="card-header d-flex align-items-center">
@@ -556,10 +566,10 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 											<span class="fw-bold"><i class="fas fa-notes-medical fa-fw"></i> Keluhan :</span><br><?php echo $keluhan; ?>
 										</p>
 										<p class="mb-1 small">
-											<span class="fw-bold"><i class="fas fa-user-md fs-4"></i> Diagnosa :</span><br><?php echo $x->diagnosa; ?>
+											<span class="fw-bold"><i class="fas fa-user-md fs-4"></i> Diagnosa :</span><br><?php echo $diagnosa; ?>
 										</p>
 										<p class="mb-1 small">
-											<span class="fw-bold"><i class='fas fa-comment-dots fs-4'></i> Saran :</span><br><?php echo $x->saran; ?>
+											<span class="fw-bold"><i class='fas fa-comment-dots fs-4'></i> Saran :</span><br><?php echo $saran; ?>
 										</p>
 									</div>
 								</div>
