@@ -81,10 +81,11 @@ class Home_m extends MX_Controller
 			: ($this->db->field_exists('updated_at', 'requests') ? 'DATE(requests.updated_at) AS date' : 'DATE(requests.created_at) AS date');
 
 		// Ambil data utama (konsultasi dan user tanpa join terapi)
-		$this->db->select("requests.*, {$request_date_select}, users.nama, m_dokter.name AS nama_dokter", FALSE);
+		$this->db->select("requests.*, {$request_date_select}, users.nama, COALESCE(m_dokter.name, dokter_user.nama, 'Dokter') AS nama_dokter", FALSE);
 		$this->db->from('requests');
 		$this->db->join('users', 'requests.user_id = users.userId');
-		$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id');
+		$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id', 'left');
+		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
 		if ($this->db->table_exists('konsultasi')) {
 			$this->db
 				->select('konsultasi.*')

@@ -573,7 +573,7 @@ foreach ($dataDoctor->result() as $doc) {
 								$keluhan = !empty($data->request_description) ? $data->request_description : 'Keluhan tersimpan';
 								$saran	 = !empty($data->recommendations) ? $data->recommendations : '-';
 								$dokter_id = $data->dokter_id;
-								$nama_dokter_riwayat = $data->nama_dokter;
+								$nama_dokter_riwayat = !empty($data->nama_dokter) ? $data->nama_dokter : 'Dokter';
 								$diagnosa = !empty($data->diagnosa) ? $data->diagnosa : (!empty($data->diagnosis) ? $data->diagnosis : '-');
 								$saran_dokter = !empty($data->saran) ? $data->saran : $saran;
 								$card_id = !empty($data->konsul_id) ? $data->konsul_id : $id_request;
