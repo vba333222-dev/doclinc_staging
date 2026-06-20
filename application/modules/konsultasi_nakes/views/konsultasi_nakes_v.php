@@ -1,5 +1,9 @@
 <?php
 $kriteria = $_GET['kriteria'] ?? '';
+$map_provider = $this->config->item('map_provider') ?: 'none';
+$google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
+$firebase_enabled = (bool) $this->config->item('firebase_enabled');
+$legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 
 if ($kriteria == 0) {
 	$kriteria = 'Selesai Konsultasi';
@@ -257,17 +261,38 @@ if ($kriteria == 0) {
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/js/bootstrap-select.min.js" integrity="sha512-yrOmjPdp8qH8hgLfWpSFhC/+R9Cj9USL8uJxYIveJZGAiedxyIxwNw4RsLDlcjNlIRR4kkHaDHSmNHAkxFTmgg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTfv2in7EP1cLT71-bVC-66SZsrg4Kr5w"></script>
+	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
+		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
+	<?php endif; ?>
 
 	<!-- firebase dan notifikasi -->
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-	<script src="https://idbcs.net/cilegon_bersatu/firebase/firebase-config.js"></script>
-	<script src="https://idbcs.net/cilegon_bersatu/firebase/get-notif.js"></script>
+	<?php if ($firebase_enabled) : ?>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+		<?php if (!empty($legacy_superapp_url)) : ?>
+			<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/firebase-config.js'); ?>"></script>
+			<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/get-notif.js'); ?>"></script>
+		<?php endif; ?>
+	<?php endif; ?>
 
 	<!-- save konsultasi -->
 	<script>
+		const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
+		const mapProvider = <?= json_encode($map_provider); ?>;
+
+		function getFirebaseDatabase() {
+			if (!firebaseEnabled || !window.firebase || !firebase.database) {
+				return null;
+			}
+
+			try {
+				return firebase.database();
+			} catch (error) {
+				return null;
+			}
+		}
+
 		$('#save_konsul_nakes').click(function() {
 			const userId = document.getElementById('userId').value;
 			const dokterId = document.getElementById('dokterId').value;
@@ -320,14 +345,15 @@ if ($kriteria == 0) {
 							timerProgressBar: true
 						}).then((result) => {
 							// kirim pesan ke warga untuk menampilkan rating dari nakes melalui firebase
-							if (!window.firebase || !firebase.database) {
+							const firebaseDb = getFirebaseDatabase();
+							if (!firebaseDb) {
 								if (result.dismiss === Swal.DismissReason.timer) {
 									window.location.href = '../../home_nakes#riwayat_konsul_selesai';
 								}
 								return;
 							}
 
-							const munculPopUpWarga = firebase.database().ref('rating').push();
+							const munculPopUpWarga = firebaseDb.ref('rating').push();
 							munculPopUpWarga.set({
 								idReq: idReq,
 								idUser: userId,
