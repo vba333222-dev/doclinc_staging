@@ -109,6 +109,8 @@ class Konsultasi_nakes extends MX_Controller
 
 	public function save_konsultasi_nakes()
 	{
+		$this->output->set_content_type('application/json');
+
 		$request_id = $this->input->post('request_id');
 		$diagnosa = $this->input->post('diagnosa');
 		$saran = $this->input->post('saran');
@@ -118,7 +120,7 @@ class Konsultasi_nakes extends MX_Controller
 		$foto = null;
 
 		if (!$request_id || !$diagnosa || !$saran || !$kriteria) {
-			echo json_encode(['status' => 'error', 'message' => 'Data tidak lengkap']);
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Data tidak lengkap']));
 			return;
 		}
 
@@ -130,7 +132,7 @@ class Konsultasi_nakes extends MX_Controller
 			$this->load->library('upload', $config);
 
 			if (!$this->upload->do_upload('file')) {
-				echo json_encode(['status' => 'error', 'message' => $this->upload->display_errors()]);
+				$this->output->set_output(json_encode(['status' => 'error', 'message' => strip_tags($this->upload->display_errors())]));
 				return;
 			} else {
 				$uploaded = $this->upload->data();
@@ -148,7 +150,12 @@ class Konsultasi_nakes extends MX_Controller
 			$terapi
 		);
 
-		echo $result ? 1 : 0;
+		if ($result) {
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Konsultasi berhasil disimpan']));
+			return;
+		}
+
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Konsultasi gagal disimpan']));
 	}
 
 

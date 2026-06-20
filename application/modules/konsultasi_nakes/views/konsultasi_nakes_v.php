@@ -334,7 +334,12 @@ if ($kriteria == 0) {
 				contentType: false, // Wajib
 				success: function(response) {
 					console.log("Response:", response);
-					if (response == 1) {
+					if (typeof response === 'string') {
+						try {
+							response = JSON.parse(response);
+						} catch (e) {}
+					}
+					if (response == 1 || (response && response.status === 'success')) {
 						Swal.fire({
 							title: "Berhasil!",
 							icon: "success",
@@ -370,7 +375,8 @@ if ($kriteria == 0) {
 							})
 						});
 					} else {
-						Swal.fire("Gagal!", response.message, "error");
+						const message = response && response.message ? response.message : "Konsultasi gagal disimpan";
+						Swal.fire("Gagal!", message, "error");
 					}
 				},
 				error: function(xhr, status, error) {
