@@ -69,19 +69,42 @@ class Home_m extends MX_Controller
 
 	public function getAllDataRequestsCompleted($user_id)
 	{
-		if (!$this->db->table_exists('konsultasi')) {
+		if (!$this->db->table_exists('konsultasi') && !$this->db->table_exists('medicalrecords')) {
 			return [];
 		}
 
 		// Load library encryption
 		$CI = &get_instance();
 		$CI->load->library('encryption');
+		$request_date_select = $this->db->field_exists('date', 'requests')
+			? 'requests.date AS date'
+			: ($this->db->field_exists('updated_at', 'requests') ? 'DATE(requests.updated_at) AS date' : 'DATE(requests.created_at) AS date');
+
 		// Ambil data utama (konsultasi dan user tanpa join terapi)
-		$this->db->select('requests.*, users.nama, konsultasi.*, m_dokter.name AS nama_dokter');
+		$this->db->select("requests.*, {$request_date_select}, users.nama, m_dokter.name AS nama_dokter", FALSE);
 		$this->db->from('requests');
 		$this->db->join('users', 'requests.user_id = users.userId');
-		$this->db->join('konsultasi', 'requests.request_id = konsultasi.request_id');
 		$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id');
+		if ($this->db->table_exists('konsultasi')) {
+			$this->db
+				->select('konsultasi.*')
+				->join('konsultasi', 'requests.request_id = konsultasi.request_id', 'left');
+			foreach (['diagnosa', 'saran', 'diagnosis', 'treatment', 'recommendations'] as $field) {
+				if (!$this->db->field_exists($field, 'konsultasi')) {
+					$this->db->select("NULL AS {$field}", FALSE);
+				}
+			}
+		} else {
+			$this->db
+				->select('medicalrecords.record_id AS konsul_id')
+				->select('medicalrecords.diagnosis AS diagnosa')
+				->select('medicalrecords.recommendations AS saran')
+				->select('medicalrecords.diagnosis AS diagnosis')
+				->select('medicalrecords.treatment AS treatment')
+				->select('medicalrecords.recommendations AS recommendations')
+				->select('medicalrecords.created_at AS result_created_at')
+				->join('medicalrecords', 'requests.request_id = medicalrecords.request_id', 'left');
+		}
 		$this->db->where('requests.request_status', 'Completed');
 		$this->db->where('requests.user_id', $user_id);
 		$this->db->order_by('requests.request_id', 'DESC');
@@ -90,12 +113,12 @@ class Home_m extends MX_Controller
 
 		// Ambil terapi untuk semua konsultasi yang ditemukan
 		foreach ($hasil as &$row) {
-			$row->terapi_list = $this->getTerapiByKonsulId($row->konsul_id);
+			$row->terapi_list = $this->db->table_exists('konsultasi') ? $this->getTerapiByKonsulId($row->konsul_id) : [];
 
 			try {
 				$row->request_description = $CI->encryption->decrypt(base64_decode($row->request_description));
 			} catch (Exception $e) {
-				$row->request_description = '[Keluhan tidak dapat didekripsi]';
+				$row->request_description = 'Keluhan tersimpan';
 			}
 		}
 
