@@ -71,12 +71,25 @@ class Home_nakes extends MX_Controller
 	}
 	public function accept_request()
 	{
+		$this->output->set_content_type('application/json');
+
 		$id = $this->input->post('id');
-		$id_user = $this->input->post('id_user');
+		$id_user = $this->session->userdata('id');
 		$latitude = $this->input->post('latitude');
 		$longitude = $this->input->post('longitude');
+
+		if (empty($id) || empty($id_user)) {
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Data request tidak lengkap']));
+			return;
+		}
+
 		$data = $this->Home_nakes_m->accept_request($id, $id_user, $latitude, $longitude);
-		echo json_encode($data);
+		if ($data) {
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Request konsultasi diterima']));
+			return;
+		}
+
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan atau bukan milik dokter login']));
 	}
 	public function get_location_user()
 	{

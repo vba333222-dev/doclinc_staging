@@ -982,7 +982,17 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 								longitude: longitude
 							},
 							success: function(response) {
-								// alert(response);
+								if (typeof response === 'string') {
+									try {
+										response = JSON.parse(response);
+									} catch (e) {}
+								}
+								if (!(response == 1 || response === true || (response && response.status === 'success'))) {
+									const message = response && response.message ? response.message : 'Request gagal diterima';
+									Swal.fire("Gagal", message, "error");
+									return;
+								}
+
 								Swal.fire({
 									title: "Berhasil",
 									text: "Anda menerima konsultasi",
@@ -1056,10 +1066,15 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 												}
 
 												// Redirect tetap dilakukan
-												window.location.href = `chat/chat?reqId=${reqId}&userId=${userId}&namaPasien=${namaPasien}`;
+												window.location.href = `<?= base_url('konsultasi_nakes/konsultasi/'); ?>${reqId}?kriteria=1`;
+											}).catch(() => {
+												window.location.href = `<?= base_url('konsultasi_nakes/konsultasi/'); ?>${reqId}?kriteria=1`;
 											});
 									}
 								});
+							},
+							error: function() {
+								Swal.fire("Gagal", "Request gagal diterima", "error");
 							}
 						});
 					}
