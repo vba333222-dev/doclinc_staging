@@ -1,5 +1,5 @@
 <?php
-$kriteria = $_GET['kriteria'];
+$kriteria = $_GET['kriteria'] ?? '';
 
 if ($kriteria == 0) {
 	$kriteria = 'Selesai Konsultasi';
@@ -320,6 +320,13 @@ if ($kriteria == 0) {
 							timerProgressBar: true
 						}).then((result) => {
 							// kirim pesan ke warga untuk menampilkan rating dari nakes melalui firebase
+							if (!window.firebase || !firebase.database) {
+								if (result.dismiss === Swal.DismissReason.timer) {
+									window.location.href = '../../home_nakes#riwayat_konsul_selesai';
+								}
+								return;
+							}
+
 							const munculPopUpWarga = firebase.database().ref('rating').push();
 							munculPopUpWarga.set({
 								idReq: idReq,
@@ -330,9 +337,10 @@ if ($kriteria == 0) {
 								if (result.dismiss === Swal.DismissReason.timer) {
 									window.location.href = '../../home_nakes#riwayat_konsul_selesai';
 								}
-							}).catch((error) => {
-								console.error('Gagal menyimpan ke Firebase:', error);
-								Swal.fire('Gagal', 'Tidak bisa menyimpan ke Firebase.', 'error');
+							}).catch(() => {
+								if (result.dismiss === Swal.DismissReason.timer) {
+									window.location.href = '../../home_nakes#riwayat_konsul_selesai';
+								}
 							})
 						});
 					} else {
