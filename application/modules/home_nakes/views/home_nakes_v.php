@@ -1,3 +1,9 @@
+<?php
+$google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
+$firebase_enabled = (bool) $this->config->item('firebase_enabled');
+$legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '#';
+$map_provider = $this->config->item('map_provider') ?: 'none';
+?>
 <!DOCTYPE html>
 <html>
 
@@ -5,7 +11,6 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Doc Link (BETA) - Home</title>
-	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTfv2in7EP1cLT71-bVC-66SZsrg4Kr5w"></script>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -246,7 +251,7 @@
 	<div class="content-wrapper" id="content-wrapper">
 		<div class="contents">
 			<div class="hero bg-success p-3 overflow-hidden">
-				<a href="https://idbcs.net/cilegon_bersatu" style="text-decoration: none; color: white; font-size: 1.5rem;">
+				<a href="<?= html_escape($legacy_superapp_url); ?>" style="text-decoration: none; color: white; font-size: 1.5rem;">
 					<i class="fas fa-chevron-left icon"></i>
 				</a>
 				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
@@ -773,17 +778,97 @@
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
+		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
+	<?php endif; ?>
 
 	<!-- firebase dan notifikasi -->
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-	<!-- <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase.js"></script> -->
-	<script src="https://idbcs.net/cilegon_bersatu/firebase/firebase-config.js"></script>
-	<script src="https://idbcs.net/cilegon_bersatu/firebase/get-notif.js"></script>
+	<?php if ($firebase_enabled) : ?>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+		<?php if ($legacy_superapp_url !== '#') : ?>
+			<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/firebase-config.js'); ?>"></script>
+			<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/get-notif.js'); ?>"></script>
+		<?php endif; ?>
+	<?php endif; ?>
 
 	<!-- Javascript unutk webtoapk dan lain-lain -->
 	<script>
+		const mapProvider = <?= json_encode($map_provider); ?>;
+		const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
+
+		function getFirebaseDatabase() {
+			const noopRef = {
+				on: function() {},
+				once: function() {
+					return Promise.resolve({
+						exists: function() {
+							return false;
+						},
+						val: function() {
+							return null;
+						},
+						forEach: function() {}
+					});
+				},
+				child: function() {
+					return noopRef;
+				},
+				remove: function() {
+					return Promise.resolve();
+				},
+				push: function() {
+					return noopRef;
+				},
+				set: function() {
+					return Promise.resolve();
+				},
+				orderByChild: function() {
+					return noopRef;
+				},
+				equalTo: function() {
+					return noopRef;
+				}
+			};
+
+			if (!firebaseEnabled || !window.firebase || !firebase.database) {
+				return {
+					ref: function() {
+						return noopRef;
+					},
+					ServerValue: {
+						TIMESTAMP: Date.now()
+					}
+				};
+			}
+
+			try {
+				return firebase.database();
+			} catch (error) {
+				return {
+					ref: function() {
+						return noopRef;
+					},
+					ServerValue: {
+						TIMESTAMP: Date.now()
+					}
+				};
+			}
+		}
+
+		const db = getFirebaseDatabase();
+
+		function getFirebaseServerTimestamp() {
+			return firebaseEnabled && window.firebase && firebase.database && firebase.database.ServerValue ?
+				firebase.database.ServerValue.TIMESTAMP :
+				Date.now();
+		}
+
+		function hasGoogleMaps() {
+			return mapProvider === 'google' && window.google && window.google.maps;
+		}
+
 		function exitApp() {
 			Website2APK.exitApp();
 		}
@@ -906,7 +991,7 @@
 									timer: 2000,
 									timerProgressBar: true
 								}).then((result) => {
-									const newMessageRef = firebase.database().ref("notiffromdoc").push();
+									const newMessageRef = db.ref("notiffromdoc").push();
 									newMessageRef.set({
 										id_req: id,
 										id_user: id_user,
@@ -1018,16 +1103,6 @@
 		console.log("Usernamenya: " + userName);
 	</script>
 
-	<!-- <script>
-		firebase.database().ref('location').remove()
-			.then(() => {
-				console.log("Data berhasil dihapus.");
-			})
-			.catch((error) => {
-				console.error("Gagal menghapus data:", error);
-			});
-	</script> -->
-
 	<!-- maps -->
 	<script>
 		let map, userMarker, destinationMarker, userLocation;
@@ -1035,6 +1110,8 @@
 		let firstLoad = true;
 
 		function initMap() {
+			if (!hasGoogleMaps()) return;
+
 			map = new google.maps.Map(document.getElementById("maps"), {
 				zoom: 12,
 				center: {
@@ -1086,6 +1163,8 @@
 		}
 
 		function updateLocation(position) {
+			if (!hasGoogleMaps()) return;
+
 			userLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 
 			userMarker.setPosition(userLocation);
@@ -1108,19 +1187,19 @@
 
 		function saveLocationToFirebases(lat, lng) {
 			const userId = document.getElementById("username").value;
-			const location = firebase.database().ref('location').push();
+			const location = db.ref('location').push();
 			location.set({
 				userId: userId,
 				latitude: lat,
 				longitude: lng,
-				timestamp: firebase.database.ServerValue.TIMESTAMP,
+				timestamp: getFirebaseServerTimestamp(),
 			});
 		}
 
 		function saveLocationToFirebase(lat, lng) {
 			const userName = '<?= $_SESSION['id'] ?>';
 			const userId = document.getElementById("username").value;
-			const locationRef = firebase.database().ref('location/' + userName);
+			const locationRef = db.ref('location/' + userName);
 
 			locationRef.once('value').then((snapshot) => {
 				if (snapshot.exists()) {
@@ -1132,13 +1211,15 @@
 					userId: userId,
 					latitude: lat,
 					longitude: lng,
-					timestamp: firebase.database.ServerValue.TIMESTAMP,
+					timestamp: getFirebaseServerTimestamp(),
 				});
 			});
 		}
 
 
 		function getAddress(location) {
+			if (!hasGoogleMaps() || !geocoder) return;
+
 			geocoder.geocode({
 				location: location
 			}, (results, status) => {
@@ -1152,6 +1233,8 @@
 		}
 
 		function updateDestination(lat, lng) {
+			if (!hasGoogleMaps() || !destinationMarker) return;
+
 			const destination = new google.maps.LatLng(lat, lng);
 			destinationMarker.setPosition(destination);
 			// hitungJarak(destination);
@@ -1160,7 +1243,7 @@
 		}
 
 		function hitungJarak() {
-			if (!userLocation) return;
+			if (!hasGoogleMaps() || !userLocation) return;
 
 			const service = new google.maps.DistanceMatrixService();
 
@@ -1190,7 +1273,7 @@
 		}
 
 		function hitungJarakAcc() {
-			if (!userLocation) return;
+			if (!hasGoogleMaps() || !userLocation) return;
 
 			// buatkan code untuk destination
 			const destinations = {
@@ -1223,7 +1306,7 @@
 		}
 
 		function calculateRoute(destination) {
-			if (!userLocation) return;
+			if (!hasGoogleMaps() || !userLocation || !directionsService) return;
 
 			const request = {
 				origin: userLocation,
@@ -1264,7 +1347,9 @@
 			}
 		}
 
-		window.onload = initMap;
+		if (hasGoogleMaps()) {
+			window.addEventListener('load', initMap);
+		}
 	</script>
 
 	<!-- Chat yang sudah tidak di pakai karena untuk chat sendiri ada di module chat -->
@@ -1298,7 +1383,7 @@
 			const chatWith = pasien;
 
 
-			firebase.database().ref("messages").on("child_added", (snapshot) => {
+			db.ref("messages").on("child_added", (snapshot) => {
 				const message = snapshot.val();
 				console.log("New message detected:", message);
 
@@ -1309,7 +1394,7 @@
 			});
 
 			// Listen for messages
-			firebase.database().ref("messages").on("value", (snapshot) => {
+			db.ref("messages").on("value", (snapshot) => {
 				const chatBox = document.getElementById("chat-box");
 				chatBox.innerHTML = ""; // Clear the chat box
 				snapshot.forEach((childSnapshot) => {
@@ -1389,7 +1474,7 @@
 				const message = messageInput.value;
 
 				if (message.trim() !== "") {
-					const newMessageRef = firebase.database().ref("messages").push();
+					const newMessageRef = db.ref("messages").push();
 					newMessageRef.set({
 						sender: currentUser,
 						receiver: chatWith,
@@ -1405,7 +1490,7 @@
 	<!-- Notifikasi -->
 	<script>
 		// Referensi data notifikasi
-		const notificationsRef = firebase.database().ref('notifications');
+		const notificationsRef = db.ref('notifications');
 
 		// Element badge
 		const badge = document.getElementById('badgeNotif');
@@ -1419,7 +1504,7 @@
 
 
 			// Tampilkan jumlah notifikasi
-			let userNotifications = Object.values(data).filter(item => item.receiver === currentUser);
+			let userNotifications = data ? Object.values(data).filter(item => item.receiver === currentUser) : [];
 			let userCount = userNotifications.length;
 
 			if (userCount > 0) {
@@ -1497,8 +1582,6 @@
 	<!-- tampil request dari pasien melalui firebase -->
 	<script>
 		// Mendapatkan referensi ke database Firebase
-		const db = firebase.database();
-
 		// Mendapatkan referensi ke node "request"
 		const requestRef = db.ref("request");
 
