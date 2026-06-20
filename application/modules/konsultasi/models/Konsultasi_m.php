@@ -24,6 +24,13 @@ class Konsultasi_m extends MX_Controller
 		$foto = null,
 		$video = null
 	) {
+		if (empty($id_user)) {
+			return false;
+		}
+		if (empty($dokter_id)) {
+			return false;
+		}
+
 		$this->db->trans_start(); // Mulai transaksi
 
 		$data = [

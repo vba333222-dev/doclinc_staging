@@ -48,7 +48,9 @@ class Konsultasi extends MX_Controller
 
 	public function save_konsultasi()
 	{
-		$id_user = $this->input->post('id_user');
+		$this->output->set_content_type('application/json');
+
+		$id_user = $this->session->userdata('id');
 		$pahlawan = $this->input->post('dokter_id');
 		$riwayat = $this->input->post('data_penunjang');
 		$keluhan = $this->input->post('keluhan');
@@ -59,6 +61,19 @@ class Konsultasi extends MX_Controller
 
 		$foto = '';
 		$video = '';
+
+		if (empty($id_user)) {
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Session pengguna tidak ditemukan']));
+			return;
+		}
+		if (empty($pahlawan)) {
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Dokter belum dipilih']));
+			return;
+		}
+		if (empty($keluhan) || empty($alamat)) {
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Data konsultasi belum lengkap']));
+			return;
+		}
 
 		$config['upload_path'] = './uploads/';
 		$config['allowed_types'] = 'jpg|jpeg|png|mp4|mov';
@@ -89,7 +104,12 @@ class Konsultasi extends MX_Controller
 
 		// Simpan data ke model
 		$data = $this->Konsultasi_m->save_konsultasi($id_user, $pahlawan, $riwayat, $keluhan, $alamat, $lattitude, $longitude, $tanggal, $foto, $video);
-		echo json_encode($data);
+		if ($data) {
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Konsultasi berhasil dikirim']));
+			return;
+		}
+
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Konsultasi gagal dikirim']));
 	}
 
 
