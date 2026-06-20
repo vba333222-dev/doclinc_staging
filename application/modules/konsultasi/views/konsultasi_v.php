@@ -511,6 +511,18 @@ Lama keluhan:
 				async: false,
 				dataType: 'json',
 				success: function(response) {
+					if (typeof response === 'string') {
+						try {
+							response = JSON.parse(response);
+						} catch (e) {}
+					}
+					if (!(response == 1 || (response && response.status === 'success'))) {
+						const message = response && response.message ? response.message : 'Konsultasi gagal dikirim';
+						$('#save_konsul').prop('disabled', false).text('Kirim');
+						Swal.fire("Gagal!", message, "error");
+						return;
+					}
+
 					Swal.fire({
 						title: "Berhasil!",
 						icon: "success",
