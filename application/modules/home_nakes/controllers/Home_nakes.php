@@ -85,7 +85,15 @@ class Home_nakes extends MX_Controller
 	}
 	public function get_estimation($origin_lat, $origin_lng, $dest_lat, $dest_lng)
 	{
-		$apiKey = 'AIzaSyBTfv2in7EP1cLT71-bVC-66SZsrg4Kr5w';
+		$apiKey = $this->config->item('google_maps_api_key') ?: '';
+		$mapProvider = $this->config->item('map_provider') ?: 'none';
+		if ($mapProvider !== 'google' || empty($apiKey) || empty($origin_lat) || empty($origin_lng) || empty($dest_lat) || empty($dest_lng)) {
+			return [
+				'distance' => 'N/A',
+				'duration' => 'N/A'
+			];
+		}
+
 		$url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={$origin_lat},{$origin_lng}&destinations={$dest_lat},{$dest_lng}&mode=driving&key={$apiKey}";
 
 		$curl = curl_init();
@@ -99,7 +107,7 @@ class Home_nakes extends MX_Controller
 		curl_close($curl);
 
 		$data = json_decode($response, true);
-		if ($data['status'] == 'OK' && $data['rows'][0]['elements'][0]['status'] == 'OK') {
+		if (isset($data['status'], $data['rows'][0]['elements'][0]['status']) && $data['status'] == 'OK' && $data['rows'][0]['elements'][0]['status'] == 'OK') {
 			$distance = $data['rows'][0]['elements'][0]['distance']['text'];
 			$duration = $data['rows'][0]['elements'][0]['duration']['text'];
 			return [

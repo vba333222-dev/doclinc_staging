@@ -1,10 +1,16 @@
+	<?php
+	$google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
+	$map_provider = $this->config->item('map_provider') ?: 'none';
+	?>
 	<!DOCTYPE html>
 	<html>
 	  <head>
 	    <meta charset="UTF-8">
 	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	    <title>SehatGeh - Home</title>
-	    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC71j570q3iQGfOnd_YVHpsAl808HlV6j4"></script>
+	    <?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
+	      <script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
+	    <?php endif; ?>
 	    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -677,8 +683,15 @@
 	      let map;
 	      let marker;
 	      let geocoder;
+	      const mapProvider = <?= json_encode($map_provider); ?>;
+
+	      function hasGoogleMaps() {
+	        return mapProvider === 'google' && window.google && window.google.maps;
+	      }
 
 	      function initMap() {
+	        if (!hasGoogleMaps()) return;
+
 	        // Inisialisasi peta
 	        const initialLocation = {
 	          lat: -6.1751,
@@ -702,6 +715,8 @@
 	      }
 
 	      function updateLocation(position) {
+	        if (!hasGoogleMaps() || !marker || !map) return;
+
 	        const newLocation = {
 	          lat: position.coords.latitude,
 	          lng: position.coords.longitude,
@@ -717,6 +732,8 @@
 	      }
 
 	      function getAddress(location) {
+	        if (!hasGoogleMaps() || !geocoder) return;
+
 	        geocoder.geocode({
 	          location: location
 	        }, (results, status) => {
@@ -732,7 +749,9 @@
 	          }
 	        });
 	      }
-	      window.onload = initMap;
+	      if (hasGoogleMaps()) {
+	        window.addEventListener('load', initMap);
+	      }
 	    </script>
 	  </body>
 	</html>

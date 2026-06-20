@@ -1,3 +1,7 @@
+<?php
+$google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
+$map_provider = $this->config->item('map_provider') ?: 'none';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,7 +9,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-Time Location Tracking</title>
     <!-- Load Google Maps API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBBAlyuqqIRtJj68YxHyj8lpVRtiDcMjAc&libraries=places"></script>
+    <?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
+        <script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>&libraries=places"></script>
+    <?php endif; ?>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
@@ -15,9 +21,15 @@ INI TES LOKASI
 <input type="text" >
     <script>
         let map, marker;
+        const mapProvider = <?= json_encode($map_provider); ?>;
         const id_user = 1; // Example user ID
         const name = "User Name"; // Example user name
+        function hasGoogleMaps() {
+            return mapProvider === 'google' && window.google && window.google.maps;
+        }
         function initMap() {
+            if (!hasGoogleMaps()) return;
+
             map = new google.maps.Map(document.getElementById("map"), {
                 center: { lat: -6.200000, lng: 106.816666 }, // Sementara posisi awal Jakarta
                 zoom: 15
@@ -39,6 +51,8 @@ INI TES LOKASI
             }
         }
         function updateLocation(position) {
+            if (!hasGoogleMaps() || !marker || !map) return;
+
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             // Update marker position
@@ -67,7 +81,9 @@ INI TES LOKASI
             console.error("Geolocation error:", error);
         }
         // Initialize the map when the window loads
-        window.onload = initMap;
+        if (hasGoogleMaps()) {
+            window.addEventListener('load', initMap);
+        }
     </script>
 </body>
 </html>
