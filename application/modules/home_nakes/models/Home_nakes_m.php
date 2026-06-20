@@ -6,34 +6,55 @@ class Home_nakes_m extends MX_Controller
 		parent::__construct();
 		$this->db = $this->load->database('default', TRUE);
 	}
+
+	private function optional_request_selects()
+	{
+		$selects = [];
+		foreach (['photos', 'video', 'lattitude_dokter', 'longitude_dokter'] as $field) {
+			if (!$this->db->field_exists($field, 'requests')) {
+				$selects[] = "NULL AS {$field}";
+			}
+		}
+
+		return $selects;
+	}
+
+	private function select_request_base()
+	{
+		$this->db->select('requests.*, users.nama');
+		foreach ($this->optional_request_selects() as $select) {
+			$this->db->select($select, FALSE);
+		}
+	}
+
+	private function join_riwayat_or_default()
+	{
+		if ($this->db->table_exists('tbl_riwayat')) {
+			$this->db->select('tbl_riwayat.riwayat');
+			$this->db->join('tbl_riwayat', 'tbl_riwayat.idUser = users.userId', 'left');
+		} else {
+			$this->db->select('NULL AS riwayat', FALSE);
+		}
+	}
+
+	private function empty_query()
+	{
+		return $this->db->query('SELECT 1 WHERE 1 = 0');
+	}
+
 	public function request_keluhan($id)
 	{
-		// return $this->db->query("SELECT
-		// 								requests.*, users.nama
-		// 							FROM
-		// 								requests
-		// 							INNER JOIN users ON requests.user_id = users.userId
-		// 							WHERE
-		// 								requests.request_status = 'Pending'
-		// 							AND
-		// 							    requests.dokter_id = '$id'
-		// 							ORDER BY
-		// 								requests.request_id DESC");
+		$this->select_request_base();
+		$this->db
+			->from('requests')
+			->join('users', 'requests.user_id = users.userId');
+		$this->join_riwayat_or_default();
 
-		return $this->db->query("SELECT
-				requests.*,
-				users.nama,
-				tbl_riwayat.riwayat
-			FROM
-				requests
-			INNER JOIN users ON requests.user_id = users.userId
-			INNER JOIN tbl_riwayat ON tbl_riwayat.idUser = users.userId
-			WHERE
-				requests.request_status = 'Pending'
-				AND requests.dokter_id = " . $this->db->escape($id) . "
-			ORDER BY
-				requests.request_id DESC
-		");
+		return $this->db
+			->where('requests.request_status', 'Pending')
+			->where('requests.dokter_id', $id)
+			->order_by('requests.request_id', 'DESC')
+			->get();
 	}
 
 	// public function request_keluhan($id)
@@ -66,10 +87,13 @@ class Home_nakes_m extends MX_Controller
 
 	public function request_keluhan_accept($id)
 	{
-		return $this->db
-			->select('requests.*, users.nama')
+		$this->select_request_base();
+		$this->db
 			->from('requests')
-			->join('users', 'requests.user_id = users.userId')
+			->join('users', 'requests.user_id = users.userId');
+		$this->join_riwayat_or_default();
+
+		return $this->db
 			->where('requests.request_status', 'Accepted')
 			->where('requests.dokter_id', $id)
 			->order_by('requests.request_id', 'DESC')
@@ -77,11 +101,30 @@ class Home_nakes_m extends MX_Controller
 	}
 	public function request_keluhan_completed($id)
 	{
-		return $this->db
-			->select('requests.*, users.nama, konsultasi.*')
+		$this->select_request_base();
+		$this->db
 			->from('requests')
-			->join('users', 'requests.user_id = users.userId')
-			->join('konsultasi', 'requests.request_id = konsultasi.request_id')
+			->join('users', 'requests.user_id = users.userId');
+		$this->join_riwayat_or_default();
+		if ($this->db->table_exists('konsultasi')) {
+			$this->db
+				->select('konsultasi.*')
+				->join('konsultasi', 'requests.request_id = konsultasi.request_id', 'left');
+			foreach (['diagnosa', 'saran', 'diagnosis', 'treatment', 'recommendations'] as $field) {
+				if (!$this->db->field_exists($field, 'konsultasi')) {
+					$this->db->select("NULL AS {$field}", FALSE);
+				}
+			}
+		} else {
+			$this->db
+				->select('NULL AS diagnosa', FALSE)
+				->select('NULL AS saran', FALSE)
+				->select('NULL AS diagnosis', FALSE)
+				->select('NULL AS treatment', FALSE)
+				->select('NULL AS recommendations', FALSE);
+		}
+
+		return $this->db
 			->where('requests.request_status', 'Completed')
 			->where('requests.dokter_id', $id)
 			->order_by('requests.request_id', 'DESC')
@@ -89,47 +132,88 @@ class Home_nakes_m extends MX_Controller
 	}
 	public function check_ip_exists($ip_address)
 	{
+		if (!$this->db->table_exists('locations')) {
+			return null;
+		}
+
 		$this->db->where('ip_address', $ip_address);
 		$query = $this->db->get('locations');
 		return $query->row(); //
 	}
 	public function update_location($data, $ip_address)
 	{
+		if (!$this->db->table_exists('locations')) {
+			return false;
+		}
+
 		$this->db->where('ip_address', $ip_address);
 		return $this->db->update('locations', $data);
 	}
 	public function save_location($data)
 	{
+		if (!$this->db->table_exists('locations')) {
+			return false;
+		}
+
 		return $this->db->insert('locations', $data);
 	}
 	public function accept_request($id, $id_user, $latitude, $longitude)
 	{
+		$data = [
+			'request_status' => 'Accepted',
+			'updated_at' => date('Y-m-d H:i:s'),
+		];
+		if ($this->db->field_exists('lattitude_dokter', 'requests')) {
+			$data['lattitude_dokter'] = $latitude;
+		}
+		if ($this->db->field_exists('longitude_dokter', 'requests')) {
+			$data['longitude_dokter'] = $longitude;
+		}
+
 		return $this->db
 			->where('request_id', $id)
 			->where('dokter_id', $id_user)
-			->update('requests', [
-				'request_status' => 'Accepted',
-				'lattitude_dokter' => $latitude,
-				'longitude_dokter' => $longitude,
-				'updated_at' => date('Y-m-d H:i:s'),
-			]);
+			->update('requests', $data);
 	}
 	public function get_location_user($id)
 	{
+		if (!$this->db->table_exists('locations')) {
+			return $this->empty_query();
+		}
+
+		if ($this->db->field_exists('create_date', 'locations')) {
+			$this->db->where('DATE(create_date)', 'DATE(NOW())', FALSE);
+		}
+
 		return $this->db
-			->where('DATE(create_date)', 'DATE(NOW())', FALSE)
 			->where('id_user', $id)
 			->get('locations');
 	}
 
 	public function get_profile_by_id($id)
 	{
+		$this->db->select('users.*');
+		foreach (['foto', 'tgl', 'gender', 'no_hp', 'alamat'] as $field) {
+			if (!$this->db->field_exists($field, 'users')) {
+				$this->db->select("NULL AS {$field}", FALSE);
+			}
+		}
+
 		return $this->db->get_where('users', ['userId' => $id])->row_array();
 	}
 
 
 	public function update_profile($id, $data)
 	{
+		foreach (array_keys($data) as $field) {
+			if (!$this->db->field_exists($field, 'users')) {
+				unset($data[$field]);
+			}
+		}
+		if (empty($data)) {
+			return true;
+		}
+
 		$this->db->where('userId', $id);
 		return $this->db->update('users', $data);
 	}
