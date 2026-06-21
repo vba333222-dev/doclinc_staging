@@ -23,9 +23,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$base_url = getenv('DOCLINC_BASE_URL') ?: getenv('CI_BASE_URL');
-if ($base_url) {
-	$config['base_url'] = rtrim($base_url, '/') . '/';
+$admin_base_url = getenv('ADMIN_BASE_URL');
+if ($admin_base_url) {
+	$config['base_url'] = rtrim($admin_base_url, '/') . '/';
 } else {
 	$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
 		|| (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
@@ -33,8 +33,14 @@ if ($base_url) {
 	$protocol = $https ? 'https' : 'http';
 	$host = !empty($_SERVER['HTTP_X_FORWARDED_HOST']) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : ($_SERVER['HTTP_HOST'] ?? 'localhost');
 	$host = preg_replace('/[^a-z0-9.\-:_]/i', '', $host);
-	$script_name = $_SERVER['SCRIPT_NAME'] ?? '';
-	$base_path = str_replace(basename($script_name), '', $script_name);
+	$base_path = '/admin_menu/';
+	foreach (array($_SERVER['SCRIPT_NAME'] ?? '', $_SERVER['REQUEST_URI'] ?? '') as $path) {
+		$position = stripos($path, '/admin_menu/');
+		if ($position !== FALSE) {
+			$base_path = substr($path, 0, $position + strlen('/admin_menu/'));
+			break;
+		}
+	}
 	$config['base_url'] = $protocol . '://' . $host . $base_path;
 }
 
