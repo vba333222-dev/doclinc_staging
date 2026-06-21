@@ -89,7 +89,7 @@
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
-			<form action="<?= base_url(); ?>kelola_keluhan/tambah_keluhan" method="POST">
+			<form action="<?= site_url('kelola_keluhan/tambah_keluhan'); ?>" method="POST">
 				<div class="modal-body">
 					<div class="form-group">
 						<label for="kategori" class="col-form-label">Kategori :</label>
@@ -121,7 +121,7 @@
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
-			<form action="<?= base_url(); ?>kelola_keluhan/edit_keluhan" method="POST">
+			<form action="<?= site_url('kelola_keluhan/edit_keluhan'); ?>" method="POST">
 				<div class="modal-body">
 					<div class="form-group">
 						<label for="id_keluhan" class="col-form-label">ID Keluhan :</label>
@@ -157,7 +157,7 @@
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
-			<form action="<?= base_url(); ?>kelola_keluhan/activate_keluhan" method="POST">
+			<form action="<?= site_url('kelola_keluhan/activate_keluhan'); ?>" method="POST">
 				<div class="modal-body">
 					<input type="hidden" name="id_keluhan">
 					<div class="form-group">
@@ -182,7 +182,7 @@
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
-			<form action="<?= base_url(); ?>kelola_keluhan/delete_keluhan" method="POST">
+			<form action="<?= site_url('kelola_keluhan/delete_keluhan'); ?>" method="POST">
 				<div class="modal-body">
 					<input type="hidden" name="id_keluhan">
 					<div class="form-group">

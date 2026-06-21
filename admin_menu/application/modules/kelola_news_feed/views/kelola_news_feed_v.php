@@ -88,7 +88,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form action="<?= base_url();?>kelola_news_feed/tambah" method="POST" enctype="multipart/form-data">
+      <form action="<?= site_url('kelola_news_feed/tambah'); ?>" method="POST" enctype="multipart/form-data">
           <div class="modal-body">
               <div class="form-group">
                 <label for="subject" class="col-form-label">Subject :</label>
@@ -125,7 +125,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form action="<?= base_url();?>kelola_news_feed/edit" method="POST">
+      <form action="<?= site_url('kelola_news_feed/edit'); ?>" method="POST">
           <div class="modal-body">
               <input type="hidden" name="feedId_edit" id="feedId_edit">
               <div class="form-group">
@@ -159,7 +159,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form action="<?= base_url();?>kelola_news_feed/delete" method="POST">
+      <form action="<?= site_url('kelola_news_feed/delete'); ?>" method="POST">
           <div class="modal-body">
               <input type="hidden" name="feedId">
               <p>Apakah Anda yakin ingin menghapus news feed ini?</p>
@@ -191,7 +191,7 @@
         var feedId = button.data('idfeed');
         var modal = $(this);
         $.ajax({
-            url: "<?= base_url('kelola_news_feed/get_news_feed'); ?>",
+            url: "<?= site_url('kelola_news_feed/get_news_feed'); ?>",
             type: "POST",
             data: {feedId: feedId},
             dataType: "json",
