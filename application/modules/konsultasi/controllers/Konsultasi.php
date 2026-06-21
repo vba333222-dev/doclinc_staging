@@ -76,12 +76,15 @@ class Konsultasi extends MX_Controller
 		}
 
 		$config['upload_path'] = './uploads/';
-		$config['allowed_types'] = 'jpg|jpeg|png|mp4|mov';
 		$config['max_size'] = 10240; // 10MB
+		$config['encrypt_name'] = TRUE;
+		$config['detect_mime'] = TRUE;
+		$config['mod_mime_fix'] = TRUE;
+		$config['remove_spaces'] = TRUE;
 		$this->load->library('upload');
 
 		if (!empty($_FILES['foto']['name'])) {
-			$config['file_name'] = 'foto_' . time();
+			$config['allowed_types'] = 'jpg|jpeg|png';
 			$this->upload->initialize($config);
 			if ($this->upload->do_upload('foto')) {
 				$foto = $this->upload->data('file_name');
@@ -89,7 +92,7 @@ class Konsultasi extends MX_Controller
 		}
 
 		if (!empty($_FILES['video']['name'])) {
-			$config['file_name'] = 'video_' . time();
+			$config['allowed_types'] = 'mp4|mov';
 			$this->upload->initialize($config);
 			if ($this->upload->do_upload('video')) {
 				$video = $this->upload->data('file_name');

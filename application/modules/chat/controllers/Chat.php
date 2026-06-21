@@ -15,11 +15,14 @@ class Chat extends MX_Controller
 		$config['allowed_types'] = 'jpg|jpeg|png';
 		$config['max_size']      = 5120; // 5 MB
 		$config['encrypt_name']  = TRUE;
+		$config['detect_mime']   = TRUE;
+		$config['mod_mime_fix']  = TRUE;
+		$config['remove_spaces'] = TRUE;
 
 		$this->load->library('upload', $config);
 
 		if (!is_dir($config['upload_path'])) {
-			mkdir($config['upload_path'], 0777, true);
+			mkdir($config['upload_path'], 0755, true);
 		}
 
 		if (!$this->upload->do_upload('foto')) {
@@ -42,11 +45,14 @@ class Chat extends MX_Controller
 		$config['allowed_types'] = 'mp4|mov|avi|mkv';
 		$config['max_size']      = 51200; // 50 MB
 		$config['encrypt_name']  = TRUE;
+		$config['detect_mime']   = TRUE;
+		$config['mod_mime_fix']  = TRUE;
+		$config['remove_spaces'] = TRUE;
 
 		$this->load->library('upload', $config);
 
 		if (!is_dir($config['upload_path'])) {
-			mkdir($config['upload_path'], 0777, true);
+			mkdir($config['upload_path'], 0755, true);
 		}
 
 		if (!$this->upload->do_upload('video')) {
