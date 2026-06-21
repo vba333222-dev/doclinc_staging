@@ -154,13 +154,6 @@
             colReorder: true
         }); 
     });
-    <?php if ($this->session->flashdata('success')): ?>
-        Swal.fire({
-            title: "Berhasil!",
-            icon: "success",
-            text: "<?= $this->session->flashdata('success'); ?>"
-        });
-    <?php endif; ?>
     $('#modalAktif').on('show.bs.modal', function (event) {
       var button = $(event.relatedTarget);
       var iduser = button.data('iduser');

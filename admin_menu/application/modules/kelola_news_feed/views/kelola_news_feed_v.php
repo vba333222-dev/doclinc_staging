@@ -182,21 +182,6 @@
         $('#tbl_news_feed').DataTable();
     });
 
-    <?php if ($this->session->flashdata('success')): ?>
-        Swal.fire({
-            title: "Berhasil!",
-            icon: "success",
-            text: "<?= $this->session->flashdata('success'); ?>"
-        });
-    <?php endif; ?>
-    <?php if ($this->session->flashdata('error')): ?>
-        Swal.fire({
-            title: "Gagal!",
-            icon: "error",
-            text: "<?= html_escape($this->session->flashdata('error')); ?>"
-        });
-    <?php endif; ?>
-
     $('#modalEdit').on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var feedId = button.data('idfeed');

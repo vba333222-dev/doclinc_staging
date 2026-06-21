@@ -29,12 +29,11 @@
 	<!-- gijgo -->
 	<script src="https://unpkg.com/gijgo@1.9.13/js/gijgo.min.js" type="text/javascript"></script>
 	<link href="https://unpkg.com/gijgo@1.9.13/css/gijgo.min.css" rel="stylesheet" type="text/css" />
-	<link href="../../../assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
 
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 	<!-- buatkan untuk icon web -->
-	<link rel="icon" type="image/png" href="<?php echo base_url('../../assets/images/logo/doklinc.png'); ?>">
+	<link rel="icon" type="image/png" href="<?php echo base_url('assets/img/android-icon-192x192.png'); ?>">
 
 	<!-- Custom Modern Hospital Dashboard Styles -->
 	<style>
@@ -129,7 +128,7 @@
 			<!-- Sidebar - Brand -->
 			<a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
 				<div class="sidebar-brand-icon">
-					<img src="../../assets/images/logo/doklincwhite.png" alt="Logo">
+					<img src="<?php echo base_url('assets/img/asoka-logo-only.png'); ?>" alt="Logo">
 				</div>
 			</a>
 
