@@ -24,11 +24,15 @@
 		{
 		    $id=$this->input->post('feedId');
 		    $data=$this->Kelola_newsfeed_m->get_news_feed($id);
-		    echo json_encode($data);
+		    $this->output->set_content_type('application/json')->set_output(json_encode($data));
 		}
         public function tambah()
         {
-            $config['upload_path']   = './uploads/feeds/';
+            $upload_path = FCPATH . 'uploads/feeds/';
+            if (!is_dir($upload_path)) {
+                mkdir($upload_path, 0755, TRUE);
+            }
+            $config['upload_path']   = $upload_path;
             $config['allowed_types'] = 'jpg|png|jpeg';
             $config['max_size']      = 2048;
             $config['encrypt_name']  = TRUE;
@@ -44,15 +48,22 @@
 				$data['create_user'] =$this->session->userdata("username");
                 $data ['status']= $this->input->post('status');
                 $this->Kelola_newsfeed_m->insert_news($data);
+                $this->session->set_flashdata('success', 'Anda berhasil menambah data.');
+            } else {
+                $this->session->set_flashdata('error', strip_tags($this->upload->display_errors('', '')));
             }
-			$this->session->set_flashdata('success', 'Anda berhasil menambah data.');
 			redirect('kelola_news_feed','refresh');
         }
         public function edit()
         {
             $data = $this->input->post();
+            $gambar='';
             if (!empty($_FILES['gambar']['name'])) {
-                $config['upload_path']   = './uploads/feeds/';
+                $upload_path = FCPATH . 'uploads/feeds/';
+                if (!is_dir($upload_path)) {
+                    mkdir($upload_path, 0755, TRUE);
+                }
+                $config['upload_path']   = $upload_path;
                 $config['allowed_types'] = 'jpg|png|jpeg';
                 $config['max_size']      = 2048;
                 $config['encrypt_name']  = TRUE;
@@ -62,9 +73,11 @@
                 $this->load->library('upload', $config);
                 if ($this->upload->do_upload('gambar')) {
                     $gambar = $this->upload->data('file_name');
+                } else {
+                    $this->session->set_flashdata('error', strip_tags($this->upload->display_errors('', '')));
+                    redirect('kelola_news_feed','refresh');
                 }
             }
-            $gambar='';
             $feedId= $this->input->post('feedId_edit');
             $subject= $this->input->post('subject_edit');
             $status= $this->input->post('status_edit');

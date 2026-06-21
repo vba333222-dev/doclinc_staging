@@ -22,11 +22,11 @@
 						?>
 							<tr>
 								<td><?= $no; ?></td>
-								<td><?= $row->request_id; ?></td>
-								<td><?= $row->request_description; ?></td>
-								<td><?= $row->date; ?></td>
+								<td><?= html_escape($row->request_id ?? '-'); ?></td>
+								<td><?= html_escape($row->request_description ?? '-'); ?></td>
+								<td><?= html_escape($row->date ?? '-'); ?></td>
 								<td><?php
-									$status = $row->request_status;
+									$status = $row->request_status ?? '';
 									$status_badge = '';
 
 									switch ($status) {

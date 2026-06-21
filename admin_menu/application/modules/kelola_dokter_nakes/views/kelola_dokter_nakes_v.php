@@ -1,8 +1,5 @@
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
 	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-user-md"></i> Kelola Dokter / Nakes</h1>
-	<a href="<?= base_url('kelola_dokter_nakes/tambah') ?>" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-		<i class="fas fa-plus fa-sm text-white-50"></i> Tambah Data
-	</a>
 </div>
 
 <div class="container-fluid">
@@ -34,15 +31,15 @@
 								<td class="text-center"><?= $no++; ?></td>
 								<td>
 									<i class="fas fa-user-circle mr-2 text-secondary"></i>
-									<?= $data->nama; ?>
+									<?= html_escape($data->nama ?? '-'); ?>
 								</td>
-								<td><span class="badge badge-info"><?= $data->remark; ?></span></td>
-								<td><i class="fas fa-phone-alt text-info mr-1"></i><?= $data->no_hp; ?></td>
+								<td><span class="badge badge-info"><?= html_escape($data->remark ?? '-'); ?></span></td>
+								<td><i class="fas fa-phone-alt text-info mr-1"></i><?= html_escape($data->no_hp ?? '-'); ?></td>
 								<td class="text-center">
 									<button type="button" class="btn btn-info btn-sm rounded-pill" data-toggle="modal" data-target="#editModal<?= $data->userId ?>">
 										<i class="fas fa-edit"></i> Edit
 									</button>
-									<a href="<?= base_url('kelola_dokter_nakes/delete_dokter_nakes/?id_dokter_nakes=' . $data->userId) ?>"
+									<a href="<?= site_url('kelola_dokter_nakes/delete_dokter_nakes?id_dokter_nakes=' . rawurlencode($data->userId)) ?>"
 										class="btn btn-danger btn-sm rounded-pill"
 										onclick="return confirm('Yakin ingin menghapus data ini?');">
 										<i class="fas fa-trash"></i> Hapus
@@ -62,8 +59,8 @@
 												<span aria-hidden="true">&times;</span>
 											</button>
 										</div>
-										<form action="<?= base_url('kelola_dokter_nakes/update/' . $data->userId) ?>" method="post">
-											<input type="hidden" name="old_photo" value="<?= $data->foto ?>">
+										<form action="<?= site_url('kelola_dokter_nakes/update/' . rawurlencode($data->userId)) ?>" method="post">
+											<input type="hidden" name="old_photo" value="<?= html_escape($data->foto ?? '') ?>">
 											<div class="form-group mt-3 px-3">
 												<div class="row">
 													<div class="col-md-3">
@@ -78,15 +75,15 @@
 											<div class="modal-body bg-light rounded mx-3">
 												<div class="form-group">
 													<label class="text-info"><i class="fas fa-user-md mr-1"></i> Nama Lengkap</label>
-													<input type="text" class="form-control rounded-pill border-info" name="nama" value="<?= $data->nama ?>" required>
+													<input type="text" class="form-control rounded-pill border-info" name="nama" value="<?= html_escape($data->nama ?? '') ?>" required>
 												</div>
 												<div class="form-group">
 													<label class="text-info"><i class="fas fa-clinic-medical mr-1"></i> Kode Puskesmas</label>
-													<input type="text" class="form-control rounded-pill border-info" name="remark" value="<?= $data->remark ?>" required>
+													<input type="text" class="form-control rounded-pill border-info" name="remark" value="<?= html_escape($data->remark ?? '') ?>" required>
 												</div>
 												<div class="form-group">
 													<label class="text-info"><i class="fas fa-phone-alt mr-1"></i> Nomor Telepon</label>
-													<input type="text" class="form-control rounded-pill border-info" name="no_hp" value="<?= $data->no_hp ?>" required>
+													<input type="text" class="form-control rounded-pill border-info" name="no_hp" value="<?= html_escape($data->no_hp ?? '') ?>">
 												</div>
 											</div>
 											<div class="modal-footer border-0 px-4 pb-4">
@@ -112,6 +109,9 @@
 <script>
 	document.addEventListener('DOMContentLoaded', function() {
 		const searchInput = document.getElementById('searchInput');
+		if (!searchInput) {
+			return;
+		}
 		const tableRows = document.querySelectorAll('#dataTable tbody tr');
 
 		searchInput.addEventListener('keyup', function() {

@@ -70,7 +70,7 @@ class Home extends MX_Controller
 		$email = $this->session->userdata('email');
 		$password = htmlspecialchars(sha1($this->input->post('old_password')));
 		$new_password = htmlspecialchars(sha1($this->input->post('new_password')));
-		$cek_old_password = $this->db->query("SELECT * FROM tbl_user WHERE email='$email' AND password='$password'");
+		$cek_old_password = $this->db->get_where('users', array('email' => $email, 'password' => $password));
 		if ($cek_old_password->num_rows() > 0) {
 			$this->Home_m->change_password($email, $new_password);
 			$info = '<div class="alert alert-success alert-dismissible fade show shadow-sm border border-success animate__animated animate__bounceInUp" role="alert">
@@ -123,7 +123,7 @@ class Home extends MX_Controller
 
 		$datas = array_merge($data, $x);
 
-		echo json_encode($datas);
+		$this->output->set_content_type('application/json')->set_output(json_encode($datas));
 	}
 
 
@@ -156,7 +156,7 @@ class Home extends MX_Controller
 			];
 		}
 
-		echo json_encode($data);
+		$this->output->set_content_type('application/json')->set_output(json_encode($data));
 	}
 
 
@@ -189,7 +189,7 @@ class Home extends MX_Controller
 			];
 		}
 
-		echo json_encode($data);
+		$this->output->set_content_type('application/json')->set_output(json_encode($data));
 	}
 
 	public function ajax_konsultasi_selesai()
@@ -221,7 +221,7 @@ class Home extends MX_Controller
 			'total_konsultasi' => $total_konsultasi,
 		];
 
-		echo json_encode($data);
+		$this->output->set_content_type('application/json')->set_output(json_encode($data));
 	}
 
 	public function get_top_diagnosa()
@@ -239,6 +239,6 @@ class Home extends MX_Controller
 			];
 		}
 
-		echo json_encode($data);
+		$this->output->set_content_type('application/json')->set_output(json_encode($data));
 	}
 }

@@ -27,8 +27,8 @@
                           <td><?= $row->konsul_id;?></td>
                           <td></td>
                           <td></td>
-                          <td><?= $row->diagnosa;?></td>
-                          <td><?= $row->saran;?></td>
+                          <td><?= html_escape($row->diagnosa ?? '-');?></td>
+                          <td><?= html_escape($row->saran ?? '-');?></td>
                           <td>
                             <div class="btn-group">
                               <button type="button" class="btn btn-outline-secondary">Aksi</button>
@@ -64,12 +64,12 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form action="<?= base_url();?>kelola_pengaduan/edit_tindakan" method="POST">
+      <form action="<?= site_url('kelola_tindakan/edit_tindakan'); ?>" method="POST">
           <div class="modal-body">
               <input type="hidden" name="konsul_id">
               <div class="form-group">
-                <label for="dinas" class="col-form-label">Tindakan :</label>
-                <input type="text" class="form-control" id="dinas" name="dinas" required>
+                <label for="saran" class="col-form-label">Saran :</label>
+                <input type="text" class="form-control" id="saran" name="saran" required>
               </div>
           </div>
           <div class="modal-footer">
@@ -89,7 +89,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form action="<?= base_url();?>kelola_pengaduan/delete_tindakan" method="POST">
+      <form action="<?= site_url('kelola_tindakan/delete_tindakan'); ?>" method="POST">
           <div class="modal-body">
               <input type="hidden" name="konsul_id">
               <div class="form-group">

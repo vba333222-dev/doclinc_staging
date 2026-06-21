@@ -94,11 +94,11 @@
 		}
 
 		@media (max-width: 768px) {
-			#map<?= $baru->request_id; ?> {
+			.admin-map {
 				height: 300px;
 			}
 
-			#directionsPanel<?= $baru->request_id; ?> {
+			.admin-directions-panel {
 				max-height: 300px;
 			}
 
@@ -243,7 +243,7 @@
 						<li class="nav-item dropdown no-arrow">
 							<a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-toggle="dropdown">
 								<img class="img-profile rounded-circle mr-2" src="https://c1.klipartz.com/pngpicture/823/765/sticker-png-login-icon-system-administrator-user-user-profile-icon-design-avatar-face-head-thumbnail.png" style="width:36px; height:36px; object-fit:cover;">
-								<span class="d-none d-lg-inline text-gray-700 small font-weight-bold"><?= htmlspecialchars($_SESSION['username']) ?></span>
+								<span class="d-none d-lg-inline text-gray-700 small font-weight-bold"><?= html_escape($this->session->userdata('username') ?: '') ?></span>
 							</a>
 							<div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
 								<a class="dropdown-item" href="#">

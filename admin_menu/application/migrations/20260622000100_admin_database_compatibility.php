@@ -52,6 +52,12 @@ function add_column_if_missing($db, $table, $column, $definition)
 
 add_column_if_missing($db, 'users', 'remark', 'varchar(100) NULL AFTER `status`');
 add_column_if_missing($db, 'users', 'updated_by', 'varchar(100) NULL AFTER `updated_at`');
+add_column_if_missing($db, 'users', 'no_hp', 'varchar(50) NULL AFTER `email`');
+add_column_if_missing($db, 'users', 'tgl', 'date NULL AFTER `no_hp`');
+add_column_if_missing($db, 'users', 'gender', 'varchar(20) NULL AFTER `tgl`');
+add_column_if_missing($db, 'users', 'alamat', 'text NULL AFTER `gender`');
+add_column_if_missing($db, 'users', 'ktp', 'varchar(255) NULL AFTER `alamat`');
+add_column_if_missing($db, 'users', 'foto', 'varchar(255) NULL AFTER `ktp`');
 add_column_if_missing($db, 'requests', 'date', 'datetime NULL AFTER `request_status`');
 add_column_if_missing($db, 'requests', 'location_detail', 'text NULL AFTER `location`');
 add_column_if_missing($db, 'requests', 'lattitude_dokter', 'varchar(100) NULL AFTER `longitude`');

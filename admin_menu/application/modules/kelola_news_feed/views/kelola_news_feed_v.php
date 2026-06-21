@@ -30,9 +30,9 @@
                         <tr>
                           <td><?= $no;?></td>
                           <td><?= $row->feedId;?></td>
-                          <td><?= $row->subject;?></td>
-                          <td><img src="<?= base_url('uploads/feeds/').$row->gambar; ?>" width="100"></td>
-                          <td><?= date('d-m-Y',strtotime($row->create_at));?></td>
+                          <td><?= html_escape($row->subject ?? '-');?></td>
+                          <td><?php if (!empty($row->gambar)): ?><img src="<?= base_url('uploads/feeds/') . rawurlencode($row->gambar); ?>" width="100" alt="News Feed"><?php else: ?>-<?php endif; ?></td>
+                          <td><?= !empty($row->create_at) ? date('d-m-Y',strtotime($row->create_at)) : '-';?></td>
                           <td>
                                 <?php
                                     $status = $row->status;
@@ -125,12 +125,16 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form action="<?= site_url('kelola_news_feed/edit'); ?>" method="POST">
+      <form action="<?= site_url('kelola_news_feed/edit'); ?>" method="POST" enctype="multipart/form-data">
           <div class="modal-body">
               <input type="hidden" name="feedId_edit" id="feedId_edit">
               <div class="form-group">
                 <label for="subject" class="col-form-label">Subject :</label>
                 <input type="text" class="form-control" id="subject_edit" name="subject_edit" >
+              </div>
+              <div class="form-group">
+                <label for="gambar_edit" class="col-form-label">Gambar :</label>
+                <input type="file" class="form-control" id="gambar_edit" name="gambar">
               </div>
               <div class="form-group">
                 <label for="status" class="col-form-label">Status :</label>
@@ -183,6 +187,13 @@
             title: "Berhasil!",
             icon: "success",
             text: "<?= $this->session->flashdata('success'); ?>"
+        });
+    <?php endif; ?>
+    <?php if ($this->session->flashdata('error')): ?>
+        Swal.fire({
+            title: "Gagal!",
+            icon: "error",
+            text: "<?= html_escape($this->session->flashdata('error')); ?>"
         });
     <?php endif; ?>
 

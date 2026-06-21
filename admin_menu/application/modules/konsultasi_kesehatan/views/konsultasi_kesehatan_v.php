@@ -33,11 +33,11 @@
 							<tr>
 								<td><?= $no; ?></td>
 								<td><?= $row->request_id; ?></td>
-								<td><?= $row->request_description; ?></td>
-								<td><?= $row->nama_warga; ?></td>
-								<td><?= $row->puskesmas; ?></td>
-								<td><?= $row->location; ?></td>
-								<td><?= date('d-m-Y', strtotime($row->date)); ?></td>
+								<td><?= html_escape($row->request_description ?? '-'); ?></td>
+								<td><?= html_escape($row->nama_warga ?? '-'); ?></td>
+								<td><?= html_escape($row->puskesmas ?? '-'); ?></td>
+								<td><?= html_escape($row->location ?? '-'); ?></td>
+								<td><?= !empty($row->date) ? date('d-m-Y', strtotime($row->date)) : '-'; ?></td>
 								<td><?php
 									$status = $row->request_status;
 									$status_badge = '';
@@ -61,13 +61,17 @@
 									echo $status_badge;
 									?>
 								</td>
-								<td><?= $row->kriteria ?></td>
-								<td><?= $row->diagnosa; ?></td>
-								<td><?= $row->saran; ?></td>
+								<td><?= html_escape($row->kriteria ?? '-'); ?></td>
+								<td><?= html_escape($row->diagnosa ?? '-'); ?></td>
+								<td><?= html_escape($row->saran ?? '-'); ?></td>
 								<td>
-									<img src="<?= base_url('../uploads/' . $row->foto) ?>" alt="Tidak ada foto" class="img-thumbnail" width="100" height="100">
+									<?php if (!empty($row->foto)): ?>
+										<img src="<?= base_url('../uploads/' . rawurlencode($row->foto)) ?>" alt="Foto konsultasi" class="img-thumbnail" width="100" height="100">
+									<?php else: ?>
+										-
+									<?php endif; ?>
 								</td>
-								<td><?= $row->nama_dokter; ?></td>
+								<td><?= html_escape($row->nama_dokter ?? '-'); ?></td>
 							</tr>
 						<?php endforeach ?>
 					</tbody>
