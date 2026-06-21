@@ -48,7 +48,7 @@
 
 <!-- Forms for each report type -->
 <div id="form-perhari" class="laporan-form" style="display:none;">
-	<form id="formLaporanPerHari" action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
+	<form id="formLaporanPerHari" action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
 				<label for="tanggal_hari" class="col-form-label">Tanggal</label>
@@ -82,7 +82,7 @@
 </div>
 
 <div id="form-perminggu" class="laporan-form" style="display:none;">
-	<form action="<?= base_url('laporan/perminggu'); ?>" method="get" class="mb-4">
+	<form action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
 				<label for="minggu_tahun" class="col-form-label">Tahun</label>
@@ -101,7 +101,7 @@
 	</form>
 </div>
 <div id="form-perbulan" class="laporan-form" style="display:none;">
-	<form action="<?= base_url('laporan/perbulan'); ?>" method="get" class="mb-4">
+	<form action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
 				<label for="bulan" class="col-form-label">Bulan</label>
@@ -125,7 +125,7 @@
 	</form>
 </div>
 <div id="form-pertahun" class="laporan-form" style="display:none;">
-	<form action="<?= base_url('laporan/pertahun'); ?>" method="get" class="mb-4">
+	<form action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
 				<label for="tahun_tahun" class="col-form-label">Tahun</label>

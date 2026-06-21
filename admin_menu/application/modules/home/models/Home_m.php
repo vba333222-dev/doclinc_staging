@@ -154,4 +154,14 @@ class Home_m extends MX_Controller
 		$this->db->limit($limit);
 		return $this->db->get()->result();
 	}
+
+	public function change_password($email, $new_password)
+	{
+		if (!$this->db->table_exists('users')) {
+			return false;
+		}
+
+		$this->db->where('email', $email);
+		return $this->db->update('users', array('password' => $new_password, 'updated_at' => date('Y-m-d H:i:s')));
+	}
 }

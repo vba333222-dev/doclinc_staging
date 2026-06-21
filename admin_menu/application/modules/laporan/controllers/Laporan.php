@@ -37,17 +37,17 @@ class Laporan extends MX_Controller
 			} elseif ($tipe === 'perminggu') {
 				$tanggal_awal = $this->input->get('tanggal_awal'); // optional filter mingguan
 				$tanggal_akhir = $this->input->get('tanggal_akhir');
-				$data = $this->Laporan_m->get_laporan_perminggu($tanggal_awal, $tanggal_akhir);
+				$data = array();
 			} else {
 				// Jika tipe tidak valid
-				echo json_encode(['status' => 'error', 'message' => 'Tipe laporan tidak dikenali']);
+				$this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Tipe laporan tidak dikenali']));
 				return;
 			}
 
-			echo json_encode([
+			$this->output->set_content_type('application/json')->set_output(json_encode([
 				'status' => 'success',
 				'data' => $data ?? []
-			]);
+			]));
 		} else {
 			// Akses biasa (non-AJAX)
 			$this->load->view('commons/header');

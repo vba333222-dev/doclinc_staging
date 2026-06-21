@@ -36,10 +36,10 @@
 			} else {
 			    $id_keluhan = 'K001';
 			}
-			$kategori = $_POST['kategori'];
-			$namakeluhan = $_POST['nama_keluhan'];
-			$deskripsi = $_POST['deskripsi'];
-			$create_user = $_SESSION['username'];
+			$kategori = $this->input->post('kategori');
+			$namakeluhan = $this->input->post('nama_keluhan');
+			$deskripsi = $this->input->post('deskripsi');
+			$create_user = $this->session->userdata('username');
 			$create_date = date('Y-m-d H:i:s');
 			$this->Kelola_keluhan_m->tambah_keluhan($id_keluhan,$kategori,$namakeluhan,$deskripsi,$create_user,$create_date);
 			$this->session->set_flashdata('success', 'Anda berhasil menambah data keluhan.');
@@ -48,11 +48,11 @@
 
 		public function edit_keluhan()
 		{
-			$id_keluhan = $_POST['id_keluhan'];
-			$kategori = $_POST['kategori'];
-			$namakeluhan = $_POST['namakeluhan'];
-			$deskripsi = $_POST['deskripsi'];
-			$modify_user = $_SESSION['username'];
+			$id_keluhan = $this->input->post('id_keluhan');
+			$kategori = $this->input->post('kategori');
+			$namakeluhan = $this->input->post('namakeluhan');
+			$deskripsi = $this->input->post('deskripsi');
+			$modify_user = $this->session->userdata('username');
 			$modify_date = date('Y-m-d H:i:s');
 			$this->Kelola_keluhan_m->edit_keluhan($id_keluhan,$kategori,$namakeluhan,$deskripsi,$modify_user,$modify_date);
 			$this->session->set_flashdata('success', 'Anda berhasil mengubah data keluhan.');
@@ -61,9 +61,9 @@
 
 		public function activate_keluhan()
 		{
-			$id_keluhan = $_POST['id_keluhan'];
-			$remark = $_POST['remark'];
-			$modify_user = $_SESSION['username'];
+			$id_keluhan = $this->input->post('id_keluhan');
+			$remark = $this->input->post('remark');
+			$modify_user = $this->session->userdata('username');
 			$modify_date = date('Y-m-d H:i:s');
 			$this->Kelola_keluhan_m->activate_keluhan($id_keluhan,$remark,$modify_user,$modify_date);
 			$this->session->set_flashdata('success', 'Anda berhasil mengaktifkan data keluhan.');
@@ -72,9 +72,9 @@
 
 		public function delete_keluhan()
 		{
-			$id_keluhan = $_POST['id_keluhan'];
-			$remark = $_POST['remark'];
-			$modify_user = $_SESSION['username'];
+			$id_keluhan = $this->input->post('id_keluhan');
+			$remark = $this->input->post('remark');
+			$modify_user = $this->session->userdata('username');
 			$modify_date = date('Y-m-d H:i:s');
 			$this->Kelola_keluhan_m->delete_keluhan($id_keluhan,$remark,$modify_user,$modify_date);
 			$this->session->set_flashdata('success', 'Anda berhasil menonaktifkan data keluhan.');

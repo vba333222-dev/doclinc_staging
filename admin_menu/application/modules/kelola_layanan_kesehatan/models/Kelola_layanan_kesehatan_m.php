@@ -8,11 +8,19 @@ class Kelola_layanan_kesehatan_m extends MX_Controller
 	}
 	public function get_data_layanan_kesehatan()
 	{
+		if (!$this->db->table_exists('requests')) {
+			return array();
+		}
+
 		// Load library encryption
 		$CI = &get_instance();
 		$CI->load->library('encryption');
+		$date_select = $this->db->field_exists('date', 'requests') ? 'date' : 'created_at AS date';
 		$query = $this->db->query("SELECT
-                                        *
+                                        request_id,
+                                        request_description,
+                                        request_status,
+                                        $date_select
                                     FROM
                                         requests
                                     ORDER BY created_at DESC");

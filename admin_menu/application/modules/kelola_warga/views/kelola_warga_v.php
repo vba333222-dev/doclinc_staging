@@ -53,15 +53,15 @@
                                       </div>
                                   </div>
                               </td>
-                              <td><?= $row->nama;?></td>
-                              <td><?= $row->email;?></td>
-                              <td><?= $row->no_hp;?></td>
-                              <td><?= $row->tgl;?></td>
-                              <td><?= $row->gender;?></td>
-                              <td><?= $row->alamat;?></td>
+                              <td><?= html_escape($row->nama ?? '-');?></td>
+                              <td><?= html_escape($row->email ?? '-');?></td>
+                              <td><?= html_escape($row->no_hp ?? '-');?></td>
+                              <td><?= html_escape($row->tgl ?? '-');?></td>
+                              <td><?= html_escape($row->gender ?? '-');?></td>
+                              <td><?= html_escape($row->alamat ?? '-');?></td>
                               <td>
                                 <?php 
-                                    if($row->ktp!=''){
+                                    if(!empty($row->ktp)){
                                 ?>
                                     <a href="../uploads/<?= $row->ktp;?>" target="_BLANK">Lihat</a>
                                 <?php 
@@ -70,7 +70,7 @@
                               </td>
                               <td>
                                 <?php 
-                                    if($row->foto!=''){
+                                    if(!empty($row->foto)){
                                 ?>
                                     <a href="../uploads/<?= $row->foto;?>" target="_BLANK">Lihat</a>
                                 <?php 
@@ -96,7 +96,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form action="<?= base_url();?>kelola_warga/aktifkan_user" method="POST">
+      <form action="<?= site_url('kelola_warga/aktifkan_user'); ?>" method="POST">
           <div class="modal-body">
               <input type="hidden" name="id_user">
               <p>Anda yakin ingin mengaktifkan akun <span class="font-weight-bold" name="nama_user"></span></p>
@@ -122,7 +122,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <form action="<?= base_url();?>kelola_warga/nonaktifkan_user" method="POST">
+      <form action="<?= site_url('kelola_warga/nonaktifkan_user'); ?>" method="POST">
           <div class="modal-body">
               <input type="hidden" name="id_user">
               <p>Anda yakin ingin menonaktifkan akun <span class="font-weight-bold" name="nama_user"></span></p>
