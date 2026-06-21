@@ -40,9 +40,9 @@
 					'is_login' => 'TRUE'
 				);
 				$this->session->set_userdata($data_session);
-				echo 1;
+				return $this->output->set_output('1');
 		    }else{
-		    	echo 0;
+				return $this->output->set_output('0');
 		    }
 		}
 

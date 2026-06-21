@@ -433,6 +433,7 @@ class CI_Output {
 		{
 			$output =& $this->final_output;
 		}
+		$output = (string) $output;
 
 		// --------------------------------------------------------------------
 
