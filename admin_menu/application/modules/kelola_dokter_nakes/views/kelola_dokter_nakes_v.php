@@ -67,11 +67,7 @@
 											<div class="form-group mt-3 px-3">
 												<div class="row">
 													<div class="col-md-3">
-														<?php if ($data->foto): ?>
-															<img src="<?= base_url('../uploads/profile/' . html_escape($data->foto)) ?>" class="img-thumbnail rounded-circle">
-														<?php else: ?>
-															<img src="<?= base_url('../assets/images/default-profile.svg') ?>" class="img-thumbnail rounded-circle">
-														<?php endif; ?>
+														<img src="<?= doclinc_safe_profile_image_src($data->foto ?? '') ?>" class="img-thumbnail rounded-circle" alt="Foto Profil">
 													</div>
 													<div class="col-md-9">
 														<input type="file" class="form-control-file" name="photo">
