@@ -344,13 +344,13 @@
 			<?php
 			if ($_SESSION['role'] == 'dokter') { ?>
 				<!-- <img src="<?= base_url(); ?>uploads/profile/<?= $foto ?>" alt="Pasien" id="ustadzProfileImage"> -->
-				<img src="https://static.vecteezy.com/system/resources/previews/020/765/399/non_2x/default-profile-account-unknown-icon-black-silhouette-free-vector.jpg" alt="Pasien" id="ustadzProfileImage">
+				<img src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>" alt="Pasien" id="ustadzProfileImage">
 			<?php } elseif ($_SESSION['role'] == 'warga') { ?>
 				<!-- <img src="<?= base_url(); ?>uploads/profile/<?= $foto ?>" alt="Dokter" id="ustadzProfileImage"> -->
-				<img src="https://static.vecteezy.com/system/resources/previews/020/765/399/non_2x/default-profile-account-unknown-icon-black-silhouette-free-vector.jpg" alt="Dokter" id="ustadzProfileImage">
+				<img src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>" alt="Dokter" id="ustadzProfileImage">
 			<?php } else { ?>
 				<img class="rounded-4 shadow"
-					src="https://static.vecteezy.com/system/resources/previews/020/765/399/non_2x/default-profile-account-unknown-icon-black-silhouette-free-vector.jpg"
+					src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>"
 					width="100px"
 					height="100px">
 			<?php } ?>

@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		<div class="d-flex align-items-center animate__animated animate__fadeInUp animate__faster">
 			<div class="flex-shrink-0">
 				<img class="rounded-4 shadow"
-					src="<?= base_url('assets/images/default-profile.svg'); ?>"
+					src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>"
 					width="100px"
 					height="100px">
 			</div>
@@ -141,11 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 			?>
 
-			<?php if (!empty($foto)) : ?>
-				<img class="rounded-4" id="gambar" src="<?= base_url('uploads/profile/' . html_escape($foto)); ?>" width="100px" height="auto" alt="Image Not Found">
-			<?php else : ?>
-				<img class="rounded-4" id="gambar" src="<?= base_url('assets/images/default-profile.svg'); ?>" width="100px" height="auto" alt="Default Image">
-			<?php endif; ?>
+			<img class="rounded-4" id="gambar" src="<?= doclinc_safe_profile_image_src($foto); ?>" width="100px" height="auto" alt="Foto Profil">
 		</div>
 	</div>
 	</div>

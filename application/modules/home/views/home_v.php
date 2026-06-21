@@ -308,14 +308,7 @@ foreach ($dataDoctor->result() as $doc) {
 					}
 					?>
 					<div class="flex-shrink-0">
-						<?php if (!empty($foto)) : ?>
-							<img class="rounded-4 shadow" id="previewFoto" src="<?= base_url('uploads/profile/' . html_escape($foto)); ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
-						<?php else : ?>
-							<img class="rounded-4 shadow"
-								src="<?= base_url('assets/images/default-profile.svg'); ?>"
-								width="100px"
-								height="100px">
-						<?php endif; ?>
+						<img class="rounded-4 shadow" id="previewFoto" src="<?= doclinc_safe_profile_image_src($foto); ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
 					</div>
 					<div class="flex-grow-1 ms-3 text-white">
 						<small>Hello,</small>
@@ -416,11 +409,7 @@ foreach ($dataDoctor->result() as $doc) {
 							data-link="<?= base_url('konsultasi'); ?>?nama=<?= $userId; ?>">
 							<div class="card-body p-2">
 								<div class="d-flex hero-card">
-									<?php if (!empty($row->foto)) : ?>
-										<img class="rounded-4" id="gambar" src="<?= base_url('uploads/profile/' . html_escape($row->foto)); ?>" width="100px" height="auto" alt="Image Not Found">
-									<?php else : ?>
-										<img class="rounded-4" id="gambar" src="<?= base_url('assets/images/default-profile.svg'); ?>" width="100px" height="auto" alt="Default Image">
-									<?php endif; ?>
+									<img class="rounded-4" id="gambar" src="<?= doclinc_safe_profile_image_src($row->foto ?? ''); ?>" width="100px" height="auto" alt="Foto Profil">
 									<div class="w-100 ms-2">
 										<div class="d-flex">
 											<p class="fw-bold mb-0 me-auto"><?= $nama_dokter; ?></p>
@@ -1952,7 +1941,24 @@ foreach ($dataDoctor->result() as $doc) {
 		var idUsers = "<?php echo $_SESSION['id']; ?>";
 		const reqIdRat = document.getElementById("reqIdRat");
 		var request_id = reqIdRat ? reqIdRat.value : "";
-		const baseUrl = "<?= base_url('/uploads/profile/') ?>";
+		const profileUploadUrl = <?= json_encode(base_url('uploads/profile/')); ?>;
+		const defaultProfileUrl = <?= json_encode(base_url('assets/doclinc/img/default-profile.png')); ?>;
+
+		function safeProfileImageUrl(path) {
+			path = String(path || '').trim();
+
+			if (!path || /[<>"']/.test(path) || /(?:javascript|data)\s*:/i.test(path)) {
+				return defaultProfileUrl;
+			}
+
+			path = path.replace(/\\/g, '/').replace(/^\/+/, '');
+
+			if (path.indexOf('..') !== -1 || !/^[A-Za-z0-9._/-]+$/.test(path)) {
+				return defaultProfileUrl;
+			}
+
+			return profileUploadUrl + path.split('/').map(encodeURIComponent).join('/');
+		}
 		console.log("id user: " + idUsers);
 		console.log("id_request: " + request_id);
 
@@ -1984,7 +1990,7 @@ foreach ($dataDoctor->result() as $doc) {
 						success: function(response) {
 							const dataDokter = response[0];
 
-							document.getElementById('gambarDokter').src = baseUrl + dataDokter.foto;
+							document.getElementById('gambarDokter').src = safeProfileImageUrl(dataDokter.foto);
 							document.getElementById('namaDokter').textContent = dataDokter.nama;
 							document.getElementById('dokIds').value = idDokter;
 

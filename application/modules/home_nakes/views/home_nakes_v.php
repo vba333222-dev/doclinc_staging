@@ -272,14 +272,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 				</div>
 				<div class="d-flex animate__animated animate__fadeInUp animate__faster">
 					<div class="flex-shrink-0">
-						<?php if (!empty($profile['foto'])) : ?>
-							<img class="rounded-4 shadow" src="<?= base_url('uploads/profile/' . html_escape($profile['foto'])); ?>" width="100px" height="100px">
-						<?php else : ?>
-							<img class="rounded-4 shadow"
-								src="<?= base_url('assets/images/default-profile.svg'); ?>"
-								width="100px"
-								height="100px">
-						<?php endif; ?>
+						<img class="rounded-4 shadow" src="<?= doclinc_safe_profile_image_src($profile['foto'] ?? ''); ?>" width="100px" height="100px" alt="Foto Profil">
 					</div>
 					<div class="flex-grow-1 ms-3 text-white">
 						<small>Hello,</small>
@@ -648,11 +641,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 					<div class="modal-body bg-light">
 						<div class="text-center mb-3">
 							<label for="uploadFoto" class="d-inline-block position-relative" style="cursor: pointer;">
-								<?php if (!empty($profile['foto'])) : ?>
-									<img id="previewFoto" src="<?= base_url('uploads/profile/' . html_escape($profile['foto'])); ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
-								<?php else : ?>
-									<img id="previewFoto" src="<?= base_url('assets/images/default-profile.svg'); ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
-								<?php endif; ?>
+								<img id="previewFoto" src="<?= doclinc_safe_profile_image_src($profile['foto'] ?? ''); ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
 								<input type="file" id="uploadFoto" name="foto" accept="image/*" class="d-none" onchange="previewImage(event)">
 							</label>
 							<small class="text-muted d-block mt-2">Klik untuk mengubah foto</small>
