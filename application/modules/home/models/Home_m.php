@@ -34,17 +34,22 @@ class Home_m extends MX_Controller
 	private function joinDoctorLocations()
 	{
 		if (!$this->db->table_exists('locations') || !$this->db->field_exists('id_user', 'locations')) {
-			$this->db->select('NULL AS create_date, NULL AS latitude, NULL AS longitude, NULL AS location', FALSE);
+			$this->db->select('COALESCE(users.updated_at, users.created_at, NOW()) AS create_date, NULL AS latitude, NULL AS longitude, NULL AS location', FALSE);
 			return;
 		}
 
-		$this->db->select('locations.*');
+		foreach ($this->db->list_fields('locations') as $field) {
+			if ($field !== 'create_date') {
+				$this->db->select('locations.' . $field);
+			}
+		}
 
 		$location_join = 'users.userId = locations.id_user';
 		if ($this->db->field_exists('create_date', 'locations')) {
 			$location_join .= ' AND DATE(locations.create_date) = CURDATE()';
+			$this->db->select('COALESCE(locations.create_date, users.updated_at, users.created_at, NOW()) AS create_date', FALSE);
 		} else {
-			$this->db->select('NULL AS create_date', FALSE);
+			$this->db->select('COALESCE(users.updated_at, users.created_at, NOW()) AS create_date', FALSE);
 		}
 
 		$this->db->join('locations', $location_join, 'left', FALSE);
