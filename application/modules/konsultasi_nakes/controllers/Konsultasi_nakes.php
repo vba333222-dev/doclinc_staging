@@ -22,6 +22,7 @@ class Konsultasi_nakes extends MX_Controller
 	public function konsultasi()
 	{
 		$x['request_id'] = $this->uri->segment(3);
+		$kriteria = $this->input->get('kriteria', TRUE);
 		$data_request = $this->Konsultasi_nakes_m->get_data_request($x['request_id']);
 		$request = $data_request->row();
 		if (!$request) {
@@ -34,6 +35,13 @@ class Konsultasi_nakes extends MX_Controller
 		$x['keluhan'] = $request->request_description;
 		$x['tgl_lahir'] = !empty($request->tgl) ? $request->tgl : null;
 		$x['umur'] = '-';
+		$x['kriteria'] = '';
+		if ((string) $kriteria === '0') {
+			$x['kriteria'] = 'Selesai Konsultasi';
+		} elseif ((string) $kriteria === '1') {
+			$x['kriteria'] = 'Kunjungan Nakes';
+		}
+
 		if (!empty($x['tgl_lahir'])) {
 			try {
 				$lahir = new DateTime($x['tgl_lahir']);
@@ -117,6 +125,7 @@ class Konsultasi_nakes extends MX_Controller
 		$kriteria = $this->input->post('kriteria');
 		$rujukan = $this->input->post('rujukan');
 		$terapi = json_decode($this->input->post('terapi'), true);
+		$terapi = is_array($terapi) ? $terapi : [];
 		$foto = null;
 
 		if (!$request_id || !$diagnosa || !$saran || !$kriteria) {
