@@ -1,6 +1,9 @@
 <?php
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
+$session_role = $this->session->userdata('role') ?: '';
+$session_nama = $this->session->userdata('nama') ?: '';
+$session_id = $this->session->userdata('id') ?: '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -346,10 +349,10 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 				<i class="fas fa-chevron-left icon"></i>
 			</a>
 			<?php
-			if ($_SESSION['role'] == 'dokter') { ?>
+			if ($session_role == 'dokter') { ?>
 				<!-- <img src="<?= base_url(); ?>uploads/profile/<?= $foto ?>" alt="Pasien" id="ustadzProfileImage"> -->
 				<img src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>" alt="Pasien" id="ustadzProfileImage">
-			<?php } elseif ($_SESSION['role'] == 'warga') { ?>
+			<?php } elseif ($session_role == 'warga') { ?>
 				<!-- <img src="<?= base_url(); ?>uploads/profile/<?= $foto ?>" alt="Dokter" id="ustadzProfileImage"> -->
 				<img src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>" alt="Dokter" id="ustadzProfileImage">
 			<?php } else { ?>
@@ -366,22 +369,27 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 				$user_id = isset($_GET['userId']) ? htmlspecialchars($_GET['userId']) : '';
 				$namaPasien = isset($_GET['namaPasien']) ? htmlspecialchars($_GET['namaPasien']) : '';
 
-				// echo $_SESSION['role'];
-
-				if ($_SESSION['role'] == 'dokter') { ?>
-					<input type="hidden" id="username" value="<?= $_SESSION['nama'] ?>">
+				if ($session_role == 'dokter') { ?>
+					<input type="hidden" id="username" value="<?= html_escape($session_nama) ?>">
 					<input type="hidden" id="request_id" value="<?= $request_id ?>">
 					<input type="hidden" id="user_id" value="<?= $user_id ?>">
 					<input type="hidden" id="uid" value="<?= $user_id ?>">
 					<input type="hidden" id="uids" value="<?= $user_id ?>">
-					<input type="hidden" id="namaVideo" value="<?= $_SESSION['nama'] ?>">
-				<?php } elseif ($_SESSION['role'] == 'warga') { ?>
+					<input type="hidden" id="namaVideo" value="<?= html_escape($session_nama) ?>">
+				<?php } elseif ($session_role == 'warga') { ?>
 					<input type="hidden" id="username" value="<?= $request_id ?>">
 					<input type="hidden" id="request_id" value="<?= $user_id ?>">
 					<input type="hidden" id="user_id" value="<?= $request_id ?>">
-					<input type="hidden" id="uid" value="<?= $_SESSION['id'] ?>">
+					<input type="hidden" id="uid" value="<?= html_escape($session_id) ?>">
 					<input type="hidden" id="uids" value="<?= $user_id ?>">
-					<input type="hidden" id="namaVideo" value="<?= $_SESSION['nama'] ?>">
+					<input type="hidden" id="namaVideo" value="<?= html_escape($session_nama) ?>">
+				<?php } else { ?>
+					<input type="hidden" id="username" value="">
+					<input type="hidden" id="request_id" value="">
+					<input type="hidden" id="user_id" value="">
+					<input type="hidden" id="uid" value="">
+					<input type="hidden" id="uids" value="">
+					<input type="hidden" id="namaVideo" value="">
 				<?php } ?>
 			</div>
 
@@ -409,7 +417,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 					<i class="fas fa-plus"></i>
 				</button>
 				<div id="mediaPopup" class="media-popup">
-					<?php if ($_SESSION['role'] == 'dokter') { ?>
+					<?php if ($session_role == 'dokter') { ?>
 						<div class="popup-item" onclick="handleAttachment('special')"><i class="fas fa-user-md"></i> Dokter Only</div>
 					<?php } ?>
 					<div class="popup-item" onclick="handleAttachment('file')"><i class="fas fa-folder"></i> File</div>
@@ -541,10 +549,10 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 		const namaDokter = document.getElementById('request_id').value;
 		const namaVideo = document.getElementById('namaVideo').value;
 		const namaPasien = "<?= $namaPasien ?>";
-		if ("<?= $_SESSION['role'] === 'dokter' ?>") {
+		if (<?= json_encode($session_role === 'dokter') ?>) {
 			document.getElementById("labelDokter").innerText = namaVideo;
 			document.getElementById("labelWarga").innerText = namaPasien;
-		} else if ("<?= $_SESSION['role'] === 'warga' ?>") {
+		} else if (<?= json_encode($session_role === 'warga') ?>) {
 			document.getElementById("labelDokter").innerText = namaVideo;
 			document.getElementById("labelWarga").innerText = namaDokter;
 		}
@@ -553,14 +561,14 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 	<!-- pengaturan video call -->
 	<script>
 		document.addEventListener("DOMContentLoaded", () => {
-			const role = "<?= $_SESSION['role'] ?>"; // Role dari session
+			const role = <?= json_encode($session_role) ?>;
 			const localVideoContainer = document.getElementById("localVideoContainer");
 			const remoteVideoContainer = document.getElementById("remoteVideoContainer");
 			const namaDokter = document.getElementById('request_id').value;
 			const namaVideo = document.getElementById('namaVideo').value;
 			const namaPasien = "<?= $namaPasien ?>";
 
-			if ("<?= $_SESSION['role'] === 'dokter' ?>") {
+			if (<?= json_encode($session_role === 'dokter') ?>) {
 				// Dokter: Local video kecil, overlay ke remote video
 				localVideoContainer.style.position = "absolute";
 				localVideoContainer.style.bottom = "20px";
@@ -569,7 +577,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 				localVideoContainer.style.height = "90px";
 				document.getElementById("labelLocal").innerText = namaVideo;
 				document.getElementById("labelRemote").innerText = namaPasien;
-			} else if ("<?= $_SESSION['role'] === 'warga' ?>") {
+			} else if (<?= json_encode($session_role === 'warga') ?>) {
 				// Warga: Local video kecil, overlay ke remote video
 				localVideoContainer.style.position = "absolute";
 				localVideoContainer.style.bottom = "20px";
@@ -961,7 +969,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 					receiver: chatWith,
 					sender: nama,
 					userId: userId,
-					text: 'Ada pesan masuk dari ' + "<?= $_SESSION['nama'] ?>",
+					text: 'Ada pesan masuk dari ' + <?= json_encode($session_nama) ?>,
 					timestamp: Date.now()
 				});
 			}
