@@ -210,6 +210,9 @@ class Home extends MX_Controller
 
 		// Total dari semua total_selesai
 		$total_konsultasi = array_sum(array_column($list, 'total_selesai'));
+		if ($total_konsultasi <= 0) {
+			$list = [];
+		}
 
 		$data = [
 			'list' => $list,

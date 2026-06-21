@@ -38,21 +38,21 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 							</div>
 							<div class="row">
 								<?php
-								// Ambil data semua diagnosa per puskesmas
-								// Ambil jumlah seluruh diagnosa per puskesmas (total semua diagnosa per puskesmas)
-								$all_diagnosa_per_puskesmas = $this->db->query("
-									SELECT
-										p.nama_puskesmas,
-										COUNT(*) as total
-									FROM konsultasi k
-									JOIN requests r ON k.request_id = r.request_id
-									JOIN users u ON r.user_id = u.userId
-									JOIN m_puskesmas p ON u.remark = p.kode_pkm
-									GROUP BY p.nama_puskesmas
-									ORDER BY p.nama_puskesmas
-								")->result_array();
+								$all_diagnosa_per_puskesmas = [];
+								if ($this->db->table_exists('konsultasi') && $this->db->table_exists('requests') && $this->db->table_exists('users') && $this->db->table_exists('m_puskesmas') && $this->db->field_exists('remark', 'users')) {
+									$all_diagnosa_per_puskesmas = $this->db->query("
+										SELECT
+											p.nama_puskesmas,
+											COUNT(*) as total
+										FROM konsultasi k
+										JOIN requests r ON k.request_id = r.request_id
+										JOIN users u ON r.user_id = u.userId
+										JOIN m_puskesmas p ON u.remark = p.kode_pkm
+										GROUP BY p.nama_puskesmas
+										ORDER BY p.nama_puskesmas
+									")->result_array();
+								}
 
-								// Susun data: puskesmas => [diagnosa => total]
 								$all_stats = [];
 								foreach ($all_diagnosa_per_puskesmas as $row) {
 									$all_stats[$row['nama_puskesmas']][] = [
@@ -87,21 +87,22 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 						</div>
 						<div class="col-md-6">
 							<?php
-							// Ambil data diagnosa terbanyak per puskesmas
-							$diagnosa_per_puskesmas = $this->db->query("
-								SELECT
-									p.nama_puskesmas,
-									k.diagnosa,
-									COUNT(*) as total
-								FROM konsultasi k
-								JOIN requests r ON k.request_id = r.request_id
-								JOIN users u ON r.user_id = u.userId
-								JOIN m_puskesmas p ON u.remark = p.kode_pkm
-								GROUP BY p.nama_puskesmas, k.diagnosa
-								ORDER BY p.nama_puskesmas, total DESC
-							")->result_array();
+							$diagnosa_per_puskesmas = [];
+							if ($this->db->table_exists('konsultasi') && $this->db->table_exists('requests') && $this->db->table_exists('users') && $this->db->table_exists('m_puskesmas') && $this->db->field_exists('remark', 'users')) {
+								$diagnosa_per_puskesmas = $this->db->query("
+									SELECT
+										p.nama_puskesmas,
+										k.diagnosa,
+										COUNT(*) as total
+									FROM konsultasi k
+									JOIN requests r ON k.request_id = r.request_id
+									JOIN users u ON r.user_id = u.userId
+									JOIN m_puskesmas p ON u.remark = p.kode_pkm
+									GROUP BY p.nama_puskesmas, k.diagnosa
+									ORDER BY p.nama_puskesmas, total DESC
+								")->result_array();
+							}
 
-							// Susun data: puskesmas => [diagnosa => total], batasi 5 diagnosa per puskesmas
 							$puskesmas_stats = [];
 							foreach ($diagnosa_per_puskesmas as $row) {
 								$puskesmas = $row['nama_puskesmas'];
@@ -800,7 +801,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 			tanggalAkhir = tanggal;
 		}
 
-		let url = "<?= base_url('home/get_realtime_konsultasi') ?>";
+		let url = "<?= site_url('home/get_realtime_konsultasi') ?>";
 		if (tanggalAwal && tanggalAkhir) {
 			url += "?start=" + tanggalAwal + "&end=" + tanggalAkhir;
 		}
@@ -840,7 +841,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 		let tanggal = $('#datepicker').val(); // format yyyy-mm-dd
 
 		$.ajax({
-			url: "<?= base_url('home/get_konsultasi_baru_ajax'); ?>",
+			url: "<?= site_url('home/get_konsultasi_baru_ajax'); ?>",
 			type: "GET",
 			data: {
 				tanggal: tanggal
@@ -897,7 +898,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 		let tanggal = $('#datepicker').val(); // format yyyy-mm-dd
 
 		$.ajax({
-			url: "<?= base_url('home/get_konsultasi_proses_ajax'); ?>",
+			url: "<?= site_url('home/get_konsultasi_proses_ajax'); ?>",
 			type: "GET",
 			data: {
 				tanggal: tanggal
@@ -956,7 +957,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 <script>
 	function loadKonsultasiSelesai() {
 		$.ajax({
-			url: '<?= base_url('home/ajax_konsultasi_selesai') ?>',
+			url: '<?= site_url('home/ajax_konsultasi_selesai') ?>',
 			method: 'GET',
 			dataType: 'json',
 			success: function(res) {
@@ -1005,7 +1006,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 <!-- <script>
 	function loadDiagnosaChart() {
 		$.ajax({
-			url: "<?= base_url('home/get_top_diagnosa?limit=6'); ?>",
+			url: "<?= site_url('home/get_top_diagnosa?limit=6'); ?>",
 			type: "GET",
 			dataType: "json",
 			success: function(response) {
@@ -1078,7 +1079,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 			window.diagnosaChartModalInstance.destroy();
 		}
 		$.ajax({
-			url: "<?= base_url('home/get_top_diagnosa?limit=3'); ?>",
+			url: "<?= site_url('home/get_top_diagnosa?limit=3'); ?>",
 			type: "GET",
 			dataType: "json",
 			success: function(response) {
