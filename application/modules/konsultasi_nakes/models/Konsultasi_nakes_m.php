@@ -52,19 +52,45 @@ class Konsultasi_nakes_m extends MX_Controller
 		$this->db->where('request_id', $request_id);
 		$this->db->update('requests', $request_data);
 
-		if ($this->db->table_exists('konsultasi')) {
-			$data_konsul = [
+		$data_konsul = [
+			'request_id' => $request_id,
+			'diagnosa' => $diagnosa,
+			'saran' => $saran,
+			'kriteria' => $kriteria,
+			'rujukan' => $rujukan,
+			'foto' => $file_path,
+			'create_date' => $date,
+			'create_user' => $user
+		];
+
+		if ($this->db->table_exists('medicalrecords')) {
+			$record = [
 				'request_id' => $request_id,
-				'diagnosa' => $diagnosa,
-				'saran' => $saran,
-				'kriteria' => $kriteria,
-				'rujukan' => $rujukan,
-				'foto' => $file_path,
-				'create_date' => $date,
-				'create_user' => $user
+				'diagnosis' => $diagnosa,
+				'treatment' => $this->build_treatment_summary($kriteria, $rujukan, $file_path, $terapi),
+				'recommendations' => $saran,
+				'created_at' => $date
 			];
-			$this->db->insert('konsultasi', $data_konsul);
-			$konsul_id = $this->db->insert_id();
+
+			$existing = $this->db->get_where('medicalrecords', ['request_id' => $request_id])->row();
+			if ($existing) {
+				$this->db->where('request_id', $request_id);
+				$this->db->update('medicalrecords', $record);
+			} else {
+				$this->db->insert('medicalrecords', $record);
+			}
+		}
+
+		if ($this->db->table_exists('konsultasi')) {
+			$existing_konsul = $this->db->get_where('konsultasi', ['request_id' => $request_id])->row();
+			if ($existing_konsul) {
+				$this->db->where('request_id', $request_id);
+				$this->db->update('konsultasi', $data_konsul);
+				$konsul_id = $existing_konsul->konsul_id;
+			} else {
+				$this->db->insert('konsultasi', $data_konsul);
+				$konsul_id = $this->db->insert_id();
+			}
 
 			if ($this->db->table_exists('terapi') && !empty($terapi)) {
 				foreach ($terapi as $t) {
@@ -79,14 +105,6 @@ class Konsultasi_nakes_m extends MX_Controller
 					$this->db->insert('terapi', $data_terapi);
 				}
 			}
-		} elseif ($this->db->table_exists('medicalrecords')) {
-			$this->db->insert('medicalrecords', [
-				'request_id' => $request_id,
-				'diagnosis' => $diagnosa,
-				'treatment' => $this->build_treatment_summary($kriteria, $rujukan, $file_path, $terapi),
-				'recommendations' => $saran,
-				'created_at' => $date
-			]);
 		}
 
 		$this->db->trans_complete();

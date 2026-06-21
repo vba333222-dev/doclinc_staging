@@ -39,7 +39,7 @@
         			<div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
         			<div class="modal-footer">
         				<button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-        				<a class="btn btn-primary" href="<?php echo base_url(); ?>login/logout">Logout</a>
+					<a class="btn btn-primary" href="<?php echo site_url('login/logout'); ?>">Logout</a>
         			</div>
         		</div>
         	</div>
@@ -54,7 +54,7 @@
         					<span aria-hidden="true">×</span>
         				</button>
         			</div>
-        			<form action="<?php echo base_url(); ?>home/change_password" method="POST" id="change_password">
+			<form action="<?php echo site_url('home/change_password'); ?>" method="POST" id="change_password">
         				<div class="modal-body">
         					<div class="form-group">
         						<label for="old_password">Password lama</label>

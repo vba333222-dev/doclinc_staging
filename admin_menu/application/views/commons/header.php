@@ -134,56 +134,56 @@
 			</a>
 
 			<li class="nav-item <?= $this->session->flashdata('active_tab_dashboard'); ?>">
-				<a class="nav-link" href="<?php echo base_url(); ?>home">
+				<a class="nav-link" href="<?php echo site_url('home'); ?>">
 					<i class="fas fa-tachometer-alt"></i>
 					<span>Dashboard</span>
 				</a>
 			</li>
 
 			<li class="nav-item <?= $this->session->flashdata('active_tab_keluhan'); ?>">
-				<a class="nav-link" href="<?php echo base_url(); ?>kelola_keluhan">
+				<a class="nav-link" href="<?php echo site_url('kelola_keluhan'); ?>">
 					<i class="fas fa-comments"></i>
 					<span>Kelola Keluhan</span>
 				</a>
 			</li>
 
 			<li class="nav-item">
-				<a class="nav-link" href="<?php echo base_url(); ?>kelola_news_feed">
+				<a class="nav-link" href="<?php echo site_url('kelola_news_feed'); ?>">
 					<i class="fas fa-newspaper"></i>
 					<span>Kelola News & Feed</span>
 				</a>
 			</li>
 
 			<li class="nav-item">
-				<a class="nav-link" href="<?php echo base_url(); ?>kelola_dokter_nakes">
+				<a class="nav-link" href="<?php echo site_url('kelola_dokter_nakes'); ?>">
 					<i class="fas fa-user-md"></i>
 					<span>Kelola Dokter/Nakes</span>
 				</a>
 			</li>
 
 			<li class="nav-item">
-				<a class="nav-link" href="<?php echo base_url(); ?>konsultasi_kesehatan">
+				<a class="nav-link" href="<?php echo site_url('konsultasi_kesehatan'); ?>">
 					<i class="fas fa-stethoscope"></i>
 					<span>Laporan Detail</span>
 				</a>
 			</li>
 
 			<li class="nav-item">
-				<a class="nav-link" href="<?php echo base_url(); ?>kelola_layanan_kesehatan">
+				<a class="nav-link" href="<?php echo site_url('kelola_layanan_kesehatan'); ?>">
 					<i class="fas fa-clinic-medical"></i>
 					<span>Kelola Layanan Kesehatan</span>
 				</a>
 			</li>
 
 			<li class="nav-item">
-				<a class="nav-link" href="<?php echo base_url(); ?>kelola_tindakan">
+				<a class="nav-link" href="<?php echo site_url('kelola_tindakan'); ?>">
 					<i class="fas fa-procedures"></i>
 					<span>Kelola Tindakan</span>
 				</a>
 			</li>
 
 			<li class="nav-item">
-				<a class="nav-link" href="<?php echo base_url(); ?>laporan">
+				<a class="nav-link" href="<?php echo site_url('laporan'); ?>">
 					<i class="fas fa-file-alt"></i>
 					<span>Resume</span>
 				</a>
@@ -255,7 +255,7 @@
 									Settings
 								</a>
 								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" href="<?php echo base_url(); ?>login/logout">
+								<a class="dropdown-item" href="<?php echo site_url('login/logout'); ?>">
 									<i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
 									Logout
 								</a>
