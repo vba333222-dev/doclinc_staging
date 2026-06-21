@@ -13,25 +13,43 @@ class Kelola_layanan_kesehatan_m extends MX_Controller
 			return $fallback;
 		}
 
-		if (!is_string($value)) {
-			$value = (string) $value;
+		if (is_array($value) || is_object($value)) {
+			return $fallback;
+		}
+
+		if (!is_scalar($value)) {
+			return $fallback;
+		}
+
+		$value = trim((string) $value);
+		if ($value === '') {
+			return $fallback;
+		}
+
+		if (!preg_match('/^[A-Za-z0-9+\/=]+$/', $value)) {
+			return $value;
 		}
 
 		$decoded = base64_decode($value, TRUE);
-		if ($decoded === FALSE || $decoded === '') {
-			return $value !== '' ? $value : $fallback;
+		if ($decoded === FALSE || strlen($decoded) < 32) {
+			return $value;
 		}
 
 		try {
 			$CI = &get_instance();
 			$CI->load->library('encryption');
-			$decrypted = $CI->encryption->decrypt($decoded);
+			set_error_handler(function ($severity, $message, $file, $line) {
+				throw new ErrorException($message, 0, $severity, $file, $line);
+			});
+			$decrypted = $CI->encryption->decrypt($value);
 		} catch (Throwable $e) {
-			return $value !== '' ? $value : $fallback;
+			return $value;
+		} finally {
+			restore_error_handler();
 		}
 
 		if ($decrypted === FALSE || $decrypted === null || $decrypted === '') {
-			return $value !== '' ? $value : $fallback;
+			return $value;
 		}
 
 		return $decrypted;

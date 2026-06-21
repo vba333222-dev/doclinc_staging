@@ -424,16 +424,27 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 									$raw_description = $proses->request_description ?? '';
 									$decrypted_description = '-';
 									if ($raw_description !== '') {
-										$decoded_description = base64_decode((string) $raw_description, TRUE);
-										if ($decoded_description !== FALSE && $decoded_description !== '') {
+										$raw_description = trim((string) $raw_description);
+										$decoded_description = base64_decode($raw_description, TRUE);
+										if (
+											$raw_description !== ''
+											&& preg_match('/^[A-Za-z0-9+\/=]+$/', $raw_description)
+											&& $decoded_description !== FALSE
+											&& strlen($decoded_description) >= 32
+										) {
 											try {
-												$decrypted_value = $CI->encryption->decrypt($decoded_description);
+												set_error_handler(function ($severity, $message, $file, $line) {
+													throw new ErrorException($message, 0, $severity, $file, $line);
+												});
+												$decrypted_value = $CI->encryption->decrypt($raw_description);
 												$decrypted_description = !empty($decrypted_value) ? $decrypted_value : $raw_description;
 											} catch (Throwable $e) {
 												$decrypted_description = $raw_description;
+											} finally {
+												restore_error_handler();
 											}
 										} else {
-											$decrypted_description = $raw_description;
+											$decrypted_description = $raw_description !== '' ? $raw_description : '-';
 										}
 									}
 									?>
