@@ -1,3 +1,7 @@
+<?php
+$firebase_enabled = (bool) $this->config->item('firebase_enabled');
+$legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -482,12 +486,56 @@
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
-	<!-- <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase.js"></script> -->
-	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-	<script src="https://idbcs.net/cilegon_bersatu/firebase/firebase-config.js"></script>
+	<?php if ($firebase_enabled) : ?>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
+		<!-- <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase.js"></script> -->
+		<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+		<?php if ($legacy_superapp_url !== '') : ?>
+			<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/firebase-config.js'); ?>"></script>
+		<?php endif; ?>
+	<?php endif; ?>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+	<script>
+		const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
+
+		function getFirebaseDatabase() {
+			const noopRef = {
+				on: function() {},
+				child: function() {
+					return noopRef;
+				},
+				remove: function() {
+					return Promise.resolve();
+				},
+				push: function() {
+					return noopRef;
+				},
+				set: function() {
+					return Promise.resolve();
+				}
+			};
+
+			if (!firebaseEnabled || !window.firebase || !firebase.database) {
+				return {
+					ref: function() {
+						return noopRef;
+					}
+				};
+			}
+
+			try {
+				return firebase.database();
+			} catch (error) {
+				return {
+					ref: function() {
+						return noopRef;
+					}
+				};
+			}
+		}
+	</script>
 
 	<!-- <script>
 		const namaDokter = document.getElementById('request_id').value;
@@ -673,7 +721,7 @@
 				timestamp: timestamp
 			};
 
-			firebase.database().ref("messages").push(message);
+			getFirebaseDatabase().ref("messages").push(message);
 		}
 
 		function popUpNakes() {
@@ -781,14 +829,14 @@
 		const userChat = document.getElementById('request_id').value;
 		const chatWith = userChat;
 
-		firebase.database().ref("messages").on("child_added", (snapshot) => {
+		getFirebaseDatabase().ref("messages").on("child_added", (snapshot) => {
 			const message = snapshot.val();
 			if (message.receiver === currentUser) {
 				showNotification(`Message from ${message.sender}: ${message.text}`);
 			}
 		});
 
-		firebase.database().ref("messages").on("value", (snapshot) => {
+		getFirebaseDatabase().ref("messages").on("value", (snapshot) => {
 			const chatBox = document.getElementById("chat-box");
 			chatBox.innerHTML = "";
 			snapshot.forEach((childSnapshot) => {
@@ -897,7 +945,7 @@
 
 
 			if (message.trim() !== "") {
-				const newMessageRef = firebase.database().ref("messages").push();
+				const newMessageRef = getFirebaseDatabase().ref("messages").push();
 				newMessageRef.set({
 					sender: currentUser,
 					receiver: chatWith,
@@ -908,7 +956,7 @@
 
 				const nama = document.getElementById('username').value;
 				const userId = document.getElementById('uids').value;
-				const newMessageReff = firebase.database().ref("notifications").push();
+				const newMessageReff = getFirebaseDatabase().ref("notifications").push();
 				newMessageReff.set({
 					receiver: chatWith,
 					sender: nama,
@@ -986,7 +1034,7 @@
 		console.log("Role:", role);
 
 		// Firebase reference
-		const roomRef = firebase.database().ref("calls/" + uid);
+		const roomRef = getFirebaseDatabase().ref("calls/" + uid);
 
 		// firebase.database().ref("calls").on("value", snap => {
 		// 	console.log("Seluruh data calls:", snap.val());

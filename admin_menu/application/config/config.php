@@ -153,6 +153,8 @@ $config['composer_autoload'] = FALSE;
 
 $config['google_maps_api_key'] = getenv('GOOGLE_MAPS_API_KEY') ?: '';
 $config['map_provider'] = getenv('MAP_PROVIDER') ?: 'none';
+$config['firebase_enabled'] = filter_var(getenv('FIREBASE_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN);
+$config['legacy_superapp_url'] = getenv('LEGACY_SUPERAPP_URL') ?: '';
 
 /*
 |--------------------------------------------------------------------------
