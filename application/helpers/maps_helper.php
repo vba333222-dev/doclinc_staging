@@ -4,9 +4,21 @@ defined('BASEPATH') or exit('No direct script access allowed');
 if (!function_exists('get_duration_maps')) {
 	function get_duration_maps($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode = 'driving')
 	{
-		$apiKey = 'AIzaSyBTfv2in7EP1cLT71-bVC-66SZsrg4Kr5w'; // Ganti dengan API Key Anda
+		$CI = get_instance();
+		$apiKey = $CI->config->item('google_maps_api_key');
+		$mapProvider = $CI->config->item('map_provider');
 
-		$url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=$latitudeA,$longitudeA&destinations=$latitudeB,$longitudeB&mode=$mode&key=$apiKey";
+		if ($mapProvider !== 'google' || empty($apiKey)) {
+			return '-';
+		}
+
+		$query = http_build_query([
+			'origins' => $latitudeA . ',' . $longitudeA,
+			'destinations' => $latitudeB . ',' . $longitudeB,
+			'mode' => $mode,
+			'key' => $apiKey,
+		]);
+		$url = 'https://maps.googleapis.com/maps/api/distancematrix/json?' . $query;
 
 		$curl = curl_init();
 		curl_setopt($curl, CURLOPT_URL, $url);
@@ -18,7 +30,7 @@ if (!function_exists('get_duration_maps')) {
 		if (curl_errno($curl)) {
 			log_message('error', 'Curl error: ' . curl_error($curl));
 			curl_close($curl);
-			return "Curl error: " . curl_error($curl);
+			return '-';
 		}
 
 		curl_close($curl);
@@ -27,20 +39,20 @@ if (!function_exists('get_duration_maps')) {
 
 		if (!is_array($data)) {
 			log_message('error', "Invalid JSON response: $response");
-			return "Respons tidak valid dari Google API.";
+			return '-';
 		}
 
 		if ($data['status'] !== 'OK') {
 			log_message('error', "API Error: " . $data['status']);
-			return "API Error: " . $data['status'];
+			return '-';
 		}
 
 		if (!isset($data['rows'][0]['elements'][0]['status']) || $data['rows'][0]['elements'][0]['status'] !== 'OK') {
-			return "Lokasi tidak ditemukan atau rute tidak tersedia.";
+			return '-';
 		}
 
 		if (!isset($data['rows'][0]['elements'][0]['duration']['text'])) {
-			return "Durasi tidak tersedia";
+			return '-';
 		}
 
 		return $data['rows'][0]['elements'][0]['duration']['text'];

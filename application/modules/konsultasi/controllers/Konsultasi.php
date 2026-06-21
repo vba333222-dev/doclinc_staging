@@ -147,7 +147,7 @@ class Konsultasi extends MX_Controller
 
 		// Buat instance Firebase
 		if (!class_exists(Factory::class)) {
-			log_message('error', 'Firebase dependency is missing. Run composer require kreait/firebase-php and install vendor/autoload.php.');
+			log_message('error', 'Firebase dependency is missing.');
 			redirect('home#riwayat');
 			return;
 		}

@@ -114,7 +114,13 @@
         <!-- Custom scripts for all pages-->
         <script src="<?php echo base_url(); ?>assets/js/sb-admin-2.min.js"></script>
         <script src="../../../assets/vendor/swiper/swiper-bundle.min.js"></script>
-        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTfv2in7EP1cLT71-bVC-66SZsrg4Kr5w&language=id&libraries=places"></script>
+        <?php
+        $googleMapsApiKey = $this->config->item('google_maps_api_key');
+        $mapProvider = $this->config->item('map_provider');
+        ?>
+        <?php if ($mapProvider === 'google' && !empty($googleMapsApiKey)): ?>
+            <script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($googleMapsApiKey); ?>&language=id&libraries=places"></script>
+        <?php endif; ?>
 
         </body>
 

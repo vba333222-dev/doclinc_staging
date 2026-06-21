@@ -1,3 +1,7 @@
+<?php
+$google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
+$map_provider = $this->config->item('map_provider') ?: 'none';
+?>
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
 	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-stethoscope"></i> Dashboard DokLinC</h1>
 
@@ -502,7 +506,18 @@
 
 <!-- javascript untuk menampilkan map pasien baru -->
 <script>
+	const mapProvider = <?= json_encode($map_provider); ?>;
+	const googleMapsEnabled = mapProvider === 'google' && <?= json_encode(!empty($google_maps_api_key)); ?>;
+
+	function canUseGoogleMaps() {
+		return googleMapsEnabled && window.google && window.google.maps;
+	}
+
 	document.addEventListener("DOMContentLoaded", function() {
+		if (!canUseGoogleMaps()) {
+			return;
+		}
+
 		const directionsService = new google.maps.DirectionsService();
 		const directionsRenderers = {}; // untuk menyimpan per modal
 
@@ -633,6 +648,10 @@
 <!-- javascript untuk menampilkan pasien proses -->
 <script>
 	document.addEventListener("DOMContentLoaded", function() {
+		if (!canUseGoogleMaps()) {
+			return;
+		}
+
 		const directionsService = new google.maps.DirectionsService();
 		const directionsRenderers = {}; // untuk menyimpan per modal
 
