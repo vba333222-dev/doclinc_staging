@@ -1,6 +1,8 @@
 <?php
 $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $map_provider = $this->config->item('map_provider') ?: 'none';
+$firebase_enabled = (bool) $this->config->item('firebase_enabled');
+$legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 ?>
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
 	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-stethoscope"></i> Dashboard DokLinC</h1>
@@ -465,11 +467,15 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://idbcs.net/cilegon_bersatu/firebase/firebase-config.js"></script>
-<script src="https://idbcs.net/cilegon_bersatu/firebase/get-notif.js"></script>
+<?php if ($firebase_enabled) : ?>
+	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+	<?php if ($legacy_superapp_url !== '') : ?>
+		<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/firebase-config.js'); ?>"></script>
+		<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/get-notif.js'); ?>"></script>
+	<?php endif; ?>
+<?php endif; ?>
 
 <script>
 	flatpickr("#datepicker", {
@@ -508,13 +514,14 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 <script>
 	const mapProvider = <?= json_encode($map_provider); ?>;
 	const googleMapsEnabled = mapProvider === 'google' && <?= json_encode(!empty($google_maps_api_key)); ?>;
+	const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
 
-	function canUseGoogleMaps() {
-		return googleMapsEnabled && window.google && window.google.maps;
+	function canUseRealtimeMaps() {
+		return googleMapsEnabled && firebaseEnabled && window.google && window.google.maps && window.firebase && firebase.database;
 	}
 
 	document.addEventListener("DOMContentLoaded", function() {
-		if (!canUseGoogleMaps()) {
+		if (!canUseRealtimeMaps()) {
 			return;
 		}
 
@@ -648,7 +655,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 <!-- javascript untuk menampilkan pasien proses -->
 <script>
 	document.addEventListener("DOMContentLoaded", function() {
-		if (!canUseGoogleMaps()) {
+		if (!canUseRealtimeMaps()) {
 			return;
 		}
 
