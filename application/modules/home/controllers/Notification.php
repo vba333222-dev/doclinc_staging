@@ -58,6 +58,13 @@ class Notification extends CI_Controller
 
 	public function send()
 	{
+		if (!(bool) $this->config->item('firebase_enabled')) {
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode(['status' => 'disabled']));
+			return;
+		}
+
 		$this->config->load('firebase');
 		$serviceAccountPath = $this->config->item('firebase_service_account');
 		$deviceToken = $this->config->item('firebase_device_token');
@@ -72,8 +79,11 @@ class Notification extends CI_Controller
 
 		// Buat instance Firebase
 		if (!class_exists(Factory::class)) {
-			log_message('error', 'Firebase dependency is missing. Run composer require kreait/firebase-php and install vendor/autoload.php.');
-			show_error('Firebase dependency belum terpasang.', 500);
+			log_message('error', 'Firebase dependency is missing.');
+			$this->output
+				->set_status_header(503)
+				->set_content_type('application/json')
+				->set_output(json_encode(['status' => 'error', 'message' => 'Firebase dependency missing']));
 			return;
 		}
 
@@ -92,9 +102,15 @@ class Notification extends CI_Controller
 
 		try {
 			$firebase->send($message);
-			echo "Notifikasi berhasil dikirim!";
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode(['status' => 'success']));
 		} catch (MessagingException $e) {
-			echo "Gagal mengirim notifikasi: " . $e->getMessage();
+			log_message('error', 'Gagal mengirim notifikasi home: ' . $e->getMessage());
+			$this->output
+				->set_status_header(502)
+				->set_content_type('application/json')
+				->set_output(json_encode(['status' => 'error', 'message' => 'Firebase send failed']));
 		}
 	}
 

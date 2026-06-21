@@ -151,6 +151,9 @@ $config['subclass_prefix'] = 'MY_';
 */
 $config['composer_autoload'] = FALSE;
 
+$config['google_maps_api_key'] = getenv('GOOGLE_MAPS_API_KEY') ?: '';
+$config['map_provider'] = getenv('MAP_PROVIDER') ?: 'none';
+
 /*
 |--------------------------------------------------------------------------
 | Allowed URL Characters

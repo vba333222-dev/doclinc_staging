@@ -1,8 +1,21 @@
 <?php
 function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode)
 {
-	$apiKey = 'AIzaSyBBAlyuqqIRtJj68YxHyj8lpVRtiDcMjAc'; // Ganti dengan API Key Google Maps Anda
-	$url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=$latitudeA,$longitudeA&destinations=$latitudeB,$longitudeB&mode=$mode&key=$apiKey";
+	$CI = get_instance();
+	$apiKey = $CI->config->item('google_maps_api_key');
+	$mapProvider = $CI->config->item('map_provider');
+
+	if ($mapProvider !== 'google' || empty($apiKey)) {
+		return '-';
+	}
+
+	$query = http_build_query([
+		'origins' => $latitudeA . ',' . $longitudeA,
+		'destinations' => $latitudeB . ',' . $longitudeB,
+		'mode' => $mode,
+		'key' => $apiKey,
+	]);
+	$url = 'https://maps.googleapis.com/maps/api/distancematrix/json?' . $query;
 
 	// Inisialisasi cURL
 	$curl = curl_init();
@@ -14,9 +27,9 @@ function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode)
 
 	// Periksa error pada cURL
 	if (curl_errno($curl)) {
-		echo 'Curl error: ' . curl_error($curl);
+		log_message('error', 'Curl error: ' . curl_error($curl));
 		curl_close($curl);
-		return "Error saat menghubungi API.";
+		return '-';
 	}
 
 	curl_close($curl);
@@ -25,11 +38,15 @@ function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode)
 	$data = json_decode($response, true);
 
 	// Mengambil durasi dari respons
-	return $data['rows'][0]['elements'][0]['duration']['text'];
+	return $data['rows'][0]['elements'][0]['duration']['text'] ?? '-';
 
 	// Mengembalikan durasi dalam format yang diinginkan
 	// return $duration;
 }
+
+$googleMapsApiKey = $this->config->item('google_maps_api_key');
+$mapProvider = $this->config->item('map_provider');
+$googleMapsEnabled = ($mapProvider === 'google' && !empty($googleMapsApiKey));
 
 // Mencari jarak antara pusat kesehatan dan pahlawan 1
 $this->load->model('Konsultasi_m');
@@ -154,7 +171,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBBAlyuqqIRtJj68YxHyj8lpVRtiDcMjAc"></script>
+	<?php if ($googleMapsEnabled) : ?>
+		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($googleMapsApiKey); ?>"></script>
+	<?php endif; ?>
 
 	<script>
 		$('#save_konsul').click(function() {
@@ -221,6 +240,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		let geocoder;
 
 		function initMap() {
+			if (!window.google || !google.maps) {
+				document.getElementById("result").innerHTML = "-";
+				return;
+			}
+
 			// Inisialisasi peta
 			const initialLocation = {
 				lat: -6.1751,
@@ -252,16 +276,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				lng: position.coords.longitude,
 			};
 
-			// Update posisi marker dan pusat peta
-			marker.setPosition(newLocation);
-			map.setCenter(newLocation);
-
 			// Tampilkan latitude dan longitude
 			document.getElementById("latitude").value = newLocation.lat;
 			document.getElementById("longitude").value = newLocation.lng;
 
-			// Mendapatkan alamat dengan Geocoder
-			getAddress(newLocation);
+			if (marker && map && geocoder) {
+				// Update posisi marker dan pusat peta
+				marker.setPosition(newLocation);
+				map.setCenter(newLocation);
+
+				// Mendapatkan alamat dengan Geocoder
+				getAddress(newLocation);
+			}
 		}
 
 		function sendData() {
@@ -287,6 +313,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		function getAddress(location) {
+			if (!geocoder) {
+				return;
+			}
+
 			geocoder.geocode({
 				location: location
 			}, (results, status) => {
@@ -319,7 +349,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 		}
 
-		window.onload = initMap;
 		window.onload = function() {
 			initMap();
 

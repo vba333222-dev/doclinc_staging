@@ -559,4 +559,4 @@ $config['legacy_superapp_url'] = getenv('LEGACY_SUPERAPP_URL') ?: '';
 $config['map_provider'] = getenv('MAP_PROVIDER') ?: 'none';
 $config['mapbox_public_token'] = getenv('MAPBOX_PUBLIC_TOKEN') ?: '';
 
-$config['api_access_token'] = 'Bearer 31ZubGXP9GsCejWvHKzvGmAqt6O6';
+$config['api_access_token'] = getenv('API_ACCESS_TOKEN') ?: '';
