@@ -151,13 +151,14 @@ class MX_Loader extends CI_Loader
 	public function library($library, $params = NULL, $object_name = NULL)
 	{
 		if (is_array($library)) return $this->libraries($library);
+		if ($library === NULL OR $library === '') return $this;
 
 		$class = strtolower(basename($library));
 
 		if (isset($this->_ci_classes[$class]) && $_alias = $this->_ci_classes[$class])
 			return $this;
 
-		($_alias = strtolower($object_name)) OR $_alias = $class;
+		$_alias = ($object_name !== NULL && $object_name !== '') ? strtolower($object_name) : $class;
 
 		list($path, $_library) = Modules::find($library, $this->_module, 'libraries/');
 
