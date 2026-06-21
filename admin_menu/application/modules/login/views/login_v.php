@@ -108,7 +108,7 @@ define('SECRET_KEY', '6Lf_m3AiAAAAACYyqHSHYMf9Bt5uMn8dnRDJyPhu');
 					</button>
 				</div>
 				<div class="modal-body">
-					<form action="<?php echo base_url(); ?>login/reset_password" method="POST" id="lupa">
+					<form action="<?php echo site_url('login/reset_password'); ?>" method="POST" id="lupa">
 						<div id="pesan_cust"></div>
 						<div class="form-group mb-3">
 							<label for="email_cust">Masukkan email Anda (Pastikan email aktif)</label>
@@ -137,7 +137,7 @@ define('SECRET_KEY', '6Lf_m3AiAAAAACYyqHSHYMf9Bt5uMn8dnRDJyPhu');
 				if (email != '' && password != '') {
 					$.ajax({
 						type: "POST",
-						url: "<?php echo base_url(); ?>login/ceklogin",
+						url: "<?php echo site_url('login/ceklogin'); ?>",
 						data: {
 							email: email,
 							password: password
