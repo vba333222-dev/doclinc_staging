@@ -128,7 +128,11 @@ class Konsultasi_nakes extends MX_Controller
 		if (!empty($_FILES['file']['name'])) {
 			$config['upload_path'] = './uploads/';
 			$config['allowed_types'] = 'jpg|jpeg|png';
-			$config['file_name'] = uniqid() . "_" . $_FILES['file']['name'];
+			$config['max_size'] = 5120; // 5MB
+			$config['encrypt_name'] = TRUE;
+			$config['detect_mime'] = TRUE;
+			$config['mod_mime_fix'] = TRUE;
+			$config['remove_spaces'] = TRUE;
 			$this->load->library('upload', $config);
 
 			if (!$this->upload->do_upload('file')) {
