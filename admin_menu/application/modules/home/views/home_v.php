@@ -419,17 +419,25 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 									<!-- <p class="mb-2"><strong><i class="fas fa-clock"></i> Waktu Konsultasi:</strong></p> -->
 									<p class="mb-2"><strong><i class="fas fa-file-alt"></i> Deskripsi Keluhan:</strong></p>
 									<?php
-									// Dekripsi request_description jika terenkripsi
 									$CI = &get_instance();
 									$CI->load->library('encryption');
-									$decrypted_description = $proses->request_description;
-									try {
-										$decrypted_description = $CI->encryption->decrypt(base64_decode($proses->request_description));
-									} catch (Exception $e) {
-										$decrypted_description = '[Keluhan tidak dapat didekripsi]';
+									$raw_description = $proses->request_description ?? '';
+									$decrypted_description = '-';
+									if ($raw_description !== '') {
+										$decoded_description = base64_decode((string) $raw_description, TRUE);
+										if ($decoded_description !== FALSE && $decoded_description !== '') {
+											try {
+												$decrypted_value = $CI->encryption->decrypt($decoded_description);
+												$decrypted_description = !empty($decrypted_value) ? $decrypted_value : $raw_description;
+											} catch (Throwable $e) {
+												$decrypted_description = $raw_description;
+											}
+										} else {
+											$decrypted_description = $raw_description;
+										}
 									}
 									?>
-									<p class="text-muted"><?= $decrypted_description; ?></p>
+									<p class="text-muted"><?= html_escape($decrypted_description); ?></p>
 
 								</div>
 								<div class="col-md-6">
