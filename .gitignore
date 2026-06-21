@@ -33,6 +33,20 @@ admin_menu/application/cache/sessions/*
 !admin_menu/application/cache/sessions/index.html
 !admin_menu/application/cache/sessions/.htaccess
 
+# Runtime uploads / user-generated media
+uploads/**
+!uploads/
+!uploads/**/
+!uploads/**/.htaccess
+
+admin_menu/uploads/**
+!admin_menu/uploads/
+!admin_menu/uploads/**/
+!admin_menu/uploads/**/.htaccess
+
+# Local database dumps / seeds
+assets/*.sql
+
 vendor/
 node_modules/
 
