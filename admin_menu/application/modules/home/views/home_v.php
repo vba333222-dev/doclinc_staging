@@ -423,28 +423,38 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 									$CI->load->library('encryption');
 									$raw_description = $proses->request_description ?? '';
 									$decrypted_description = '-';
-									if ($raw_description !== '') {
+									$decrypt_value = function ($value) use ($CI) {
+										try {
+											set_error_handler(function ($severity, $message, $file, $line) {
+												throw new ErrorException($message, 0, $severity, $file, $line);
+											});
+											$decrypted = $CI->encryption->decrypt($value);
+										} catch (Throwable $e) {
+											$decrypted = null;
+										} finally {
+											restore_error_handler();
+										}
+
+										return ($decrypted === FALSE || $decrypted === null) ? null : $decrypted;
+									};
+									if ($raw_description !== null && $raw_description !== '' && is_scalar($raw_description)) {
 										$raw_description = trim((string) $raw_description);
-										$decoded_description = base64_decode($raw_description, TRUE);
-										if (
-											$raw_description !== ''
-											&& preg_match('/^[A-Za-z0-9+\/=]+$/', $raw_description)
-											&& $decoded_description !== FALSE
-											&& strlen($decoded_description) >= 32
-										) {
-											try {
-												set_error_handler(function ($severity, $message, $file, $line) {
-													throw new ErrorException($message, 0, $severity, $file, $line);
-												});
-												$decrypted_value = $CI->encryption->decrypt($raw_description);
-												$decrypted_description = !empty($decrypted_value) ? $decrypted_value : $raw_description;
-											} catch (Throwable $e) {
-												$decrypted_description = $raw_description;
-											} finally {
-												restore_error_handler();
+										if ($raw_description !== '') {
+											$is_encoded_payload = strlen($raw_description) > 80 && preg_match('/^[A-Za-z0-9+\/=]+$/', $raw_description);
+											$decrypted_value = $decrypt_value($raw_description);
+											if ($decrypted_value === null) {
+												$decoded_description = base64_decode($raw_description, TRUE);
+												if (is_string($decoded_description) && $decoded_description !== '') {
+													$decrypted_value = $decrypt_value($decoded_description);
+												}
 											}
-										} else {
-											$decrypted_description = $raw_description !== '' ? $raw_description : '-';
+											if ($decrypted_value !== null && $decrypted_value !== '') {
+												$decrypted_description = $decrypted_value;
+											} elseif ($is_encoded_payload) {
+												$decrypted_description = '-';
+											} else {
+												$decrypted_description = $raw_description;
+											}
 										}
 									}
 									?>

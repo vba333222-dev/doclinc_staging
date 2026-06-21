@@ -26,15 +26,25 @@ class Kelola_layanan_kesehatan_m extends MX_Controller
 			return $fallback;
 		}
 
-		if (!preg_match('/^[A-Za-z0-9+\/=]+$/', $value)) {
-			return $value;
+		$is_encoded_payload = $this->is_probably_encoded_payload($value);
+
+		$decrypted = $this->try_decrypt_string($value);
+		if ($decrypted === null) {
+			$decoded = base64_decode($value, TRUE);
+			if (is_string($decoded) && $decoded !== '') {
+				$decrypted = $this->try_decrypt_string($decoded);
+			}
 		}
 
-		$decoded = base64_decode($value, TRUE);
-		if ($decoded === FALSE || strlen($decoded) < 32) {
-			return $value;
+		if ($decrypted !== null && $decrypted !== '') {
+			return $decrypted;
 		}
 
+		return $is_encoded_payload ? $fallback : $value;
+	}
+
+	private function try_decrypt_string($value)
+	{
 		try {
 			$CI = &get_instance();
 			$CI->load->library('encryption');
@@ -43,16 +53,22 @@ class Kelola_layanan_kesehatan_m extends MX_Controller
 			});
 			$decrypted = $CI->encryption->decrypt($value);
 		} catch (Throwable $e) {
-			return $value;
+			$decrypted = null;
 		} finally {
 			restore_error_handler();
 		}
 
-		if ($decrypted === FALSE || $decrypted === null || $decrypted === '') {
-			return $value;
+		return ($decrypted === FALSE || $decrypted === null) ? null : $decrypted;
+	}
+
+	private function is_probably_encoded_payload($value)
+	{
+		if (strlen($value) > 80 && preg_match('/^[A-Za-z0-9+\/=]+$/', $value)) {
+			return true;
 		}
 
-		return $decrypted;
+		$decoded = base64_decode($value, TRUE);
+		return is_string($decoded) && strlen($decoded) > 32 && preg_match('/^[A-Fa-f0-9]{32,}/', $decoded);
 	}
 
 	public function get_data_layanan_kesehatan()
