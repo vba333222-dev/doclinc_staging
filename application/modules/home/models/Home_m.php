@@ -9,6 +9,88 @@ class Home_m extends MX_Controller
 		$this->db  = $this->load->database('default', TRUE);
 	}
 
+	private function selectDoctorFields()
+	{
+		$this->db->select('users.*');
+
+		if (!$this->db->field_exists('foto', 'users')) {
+			$this->db->select('NULL AS foto', FALSE);
+		}
+	}
+
+	private function applyDoctorFilters($kode_pkm)
+	{
+		$this->db->where('users.role', 'dokter');
+
+		if ($this->db->field_exists('status', 'users')) {
+			$this->db->where('users.status', 'aktif');
+		}
+
+		if (!empty($kode_pkm) && $this->db->field_exists('remark', 'users')) {
+			$this->db->where('users.remark', $kode_pkm);
+		}
+	}
+
+	private function joinDoctorLocations()
+	{
+		if (!$this->db->table_exists('locations') || !$this->db->field_exists('id_user', 'locations')) {
+			$this->db->select('NULL AS create_date, NULL AS latitude, NULL AS longitude, NULL AS location', FALSE);
+			return;
+		}
+
+		$this->db->select('locations.*');
+
+		$location_join = 'users.userId = locations.id_user';
+		if ($this->db->field_exists('create_date', 'locations')) {
+			$location_join .= ' AND DATE(locations.create_date) = CURDATE()';
+		} else {
+			$this->db->select('NULL AS create_date', FALSE);
+		}
+
+		$this->db->join('locations', $location_join, 'left', FALSE);
+	}
+
+	private function joinLatestPendingRequest()
+	{
+		$can_join_requests = $this->db->table_exists('requests')
+			&& $this->db->field_exists('request_id', 'requests')
+			&& $this->db->field_exists('dokter_id', 'requests')
+			&& $this->db->field_exists('request_status', 'requests');
+
+		if (!$can_join_requests) {
+			$this->db->select('NULL AS request_id, NULL AS user_id, NULL AS dokter_id, NULL AS request_status, NULL AS date', FALSE);
+			return;
+		}
+
+		$request_select = array(
+			'requests.request_id AS request_id',
+			$this->db->field_exists('user_id', 'requests') ? 'requests.user_id AS user_id' : 'NULL AS user_id',
+			'requests.dokter_id AS dokter_id',
+			'requests.request_status AS request_status',
+		);
+
+		if ($this->db->field_exists('date', 'requests')) {
+			$request_select[] = 'requests.date AS date';
+		} elseif ($this->db->field_exists('created_at', 'requests')) {
+			$request_select[] = 'DATE(requests.created_at) AS date';
+		} else {
+			$request_select[] = 'NULL AS date';
+		}
+
+		$this->db->select(implode(', ', $request_select), FALSE);
+		$this->db->join(
+			'requests',
+			"requests.request_id = (
+				SELECT MAX(r2.request_id)
+				FROM requests r2
+				WHERE r2.dokter_id = users.userId
+				AND r2.request_status = 'Pending'
+			)",
+			'left',
+			FALSE
+		);
+	}
+
 	public function getAllDataLocations($nama)
 	{
 		// 		$query = $this->db->query("SELECT latitude, longitude, location, name FROM locations WHERE name='$nama' AND date(locations.create_date)=date(now())");
@@ -138,44 +220,26 @@ class Home_m extends MX_Controller
 
 	public function getAllDataDoctors($kode_pkm)
 	{
-		return $this->db
-			->select('users.*, locations.*')
-			->from('users')
-			->join('locations', 'users.userId = locations.id_user')
-			->where('users.remark', $kode_pkm)
-			->where('users.role', 'dokter')
-			->group_by('users.userId')
-			->get()
-			->result_array();
+		$this->selectDoctorFields();
+		$this->joinDoctorLocations();
+		$this->db->from('users');
+		$this->applyDoctorFilters($kode_pkm);
+		$this->db->group_by('users.userId');
+
+		return $this->db->get()->result_array();
 	}
 
 
 	public function getAllDataDoctor($kode_pkm)
 	{
-		if (!$this->db->table_exists('locations')) {
-			return $this->db->query("SELECT NULL AS userId, NULL AS nama, NULL AS foto, NULL AS request_id, NULL AS user_id, NULL AS dokter_id, NULL AS request_status, NULL AS date, NULL AS create_date WHERE 1=0");
-		}
+		$this->selectDoctorFields();
+		$this->joinDoctorLocations();
+		$this->joinLatestPendingRequest();
+		$this->db->from('users');
+		$this->applyDoctorFilters($kode_pkm);
+		$this->db->group_by('users.userId');
 
-		return $this->db->query("SELECT
-									users.*,
-									locations.*,
-									requests.*
-								FROM
-									users
-								INNER JOIN
-									locations ON users.userId=locations.id_user
-								AND DATE(locations.create_date)=CURDATE()
-								LEFT JOIN
-									requests ON requests.request_id = (
-				SELECT MAX(r2.request_id)
-				FROM requests r2
-				WHERE r2.dokter_id = users.userId
-				AND r2.request_status = 'Pending'
-				-- AND date(r2.date) = CURDATE()
-			)
-								WHERE users.role='dokter'
-								AND users.remark=" . $this->db->escape($kode_pkm) . "
-								GROUP BY users.userId");
+		return $this->db->get();
 	}
 
 	public function getAllRequestPendingAccept($user_id)
