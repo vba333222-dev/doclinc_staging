@@ -128,6 +128,7 @@ $config['enable_hooks'] = FALSE;
 |
 */
 $config['subclass_prefix'] = 'MY_';
+$config['controller_suffix'] = '';
 
 /*
 |--------------------------------------------------------------------------
