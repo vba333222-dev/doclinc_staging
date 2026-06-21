@@ -109,13 +109,6 @@
     $(document).ready( function () {
         $('#tbl_tindakan').DataTable(); 
     });
-    <?php if ($this->session->flashdata('success')): ?>
-        Swal.fire({
-            title: "Berhasil!",
-            icon: "success",
-            text: "<?= $this->session->flashdata('success'); ?>"
-        });
-    <?php endif; ?>
     $('#modalEdit').on('show.bs.modal', function (event) {
       var button = $(event.relatedTarget);
       var konsul_id = button.data('idtindakan');

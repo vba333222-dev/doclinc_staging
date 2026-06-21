@@ -43,7 +43,7 @@ define('SECRET_KEY', '6Lf_m3AiAAAAACYyqHSHYMf9Bt5uMn8dnRDJyPhu');
 	<!-- Custom CSS -->
 	<link href="<?php echo base_url(); ?>assets/css/custom.css" rel="stylesheet">
 	<script src="https://www.google.com/recaptcha/api.js" async defer></script>
-	<link rel="icon" type="image/png" href="<?php echo base_url('../../assets/images/logo/doklinc.png'); ?>">
+	<link rel="icon" type="image/png" href="<?php echo base_url('assets/img/android-icon-192x192.png'); ?>">
 </head>
 
 <body class="bg-brown-100">
@@ -53,7 +53,7 @@ define('SECRET_KEY', '6Lf_m3AiAAAAACYyqHSHYMf9Bt5uMn8dnRDJyPhu');
 				<div class="card border-0 shadow-lg rounded-4 animate__animated animate__fadeInDown" style="background: #ffffffcc;">
 					<div class="card-body p-5">
 						<div class="text-center mb-4">
-							<img src="<?php echo base_url(); ?>../../assets/images/logo/doklinclogo.png" alt="Logo DokLinC" style="width:70px; margin-bottom:10px;">
+							<img src="<?php echo base_url('assets/img/asoka-logo-only.png'); ?>" alt="Logo DokLinC" style="width:70px; margin-bottom:10px;">
 							<h1 class="h4 text-primary font-weight-bold mb-2">Selamat Datang di Admin DokLinC</h1>
 							<p class="text-muted mb-0">Silakan login untuk mengakses sistem administrasi DokLinC</p>
 						</div>

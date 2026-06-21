@@ -78,6 +78,16 @@
         	</div>
         </div>
 
+        <?php
+        $admin_success_message = $this->session->flashdata('success');
+        $admin_error_message = $this->session->flashdata('error');
+        if ($admin_success_message !== NULL) {
+            $this->session->unset_userdata('success');
+        }
+        if ($admin_error_message !== NULL) {
+            $this->session->unset_userdata('error');
+        }
+        ?>
         <script type="text/javascript">
         	$(document).ready(function() {
         		if ($(window).width() < 481) {
@@ -96,13 +106,20 @@
         			}
         		});
         	});
-        	<?php if ($this->session->flashdata('success')): ?>
-        		Swal.fire({
-        			title: "Berhasil!",
-        			icon: "success",
-        			text: "<?= $this->session->flashdata('success'); ?>"
-        		});
-        	<?php endif; ?>
+			<?php if ($admin_success_message): ?>
+				Swal.fire({
+					title: "Berhasil!",
+					icon: "success",
+					text: "<?= html_escape($admin_success_message); ?>"
+				});
+			<?php endif; ?>
+            <?php if ($admin_error_message): ?>
+                Swal.fire({
+                    title: "Gagal!",
+                    icon: "error",
+                    text: "<?= html_escape($admin_error_message); ?>"
+                });
+            <?php endif; ?>
         </script>
 
         <!-- Bootstrap core JavaScript-->
@@ -113,7 +130,6 @@
 
         <!-- Custom scripts for all pages-->
         <script src="<?php echo base_url(); ?>assets/js/sb-admin-2.min.js"></script>
-        <script src="../../../assets/vendor/swiper/swiper-bundle.min.js"></script>
         <?php
         $googleMapsApiKey = $this->config->item('google_maps_api_key');
         $mapProvider = $this->config->item('map_provider');
