@@ -1,13 +1,13 @@
 <?php
-$kriteria = $_GET['kriteria'] ?? '';
+$kriteria = isset($kriteria) ? $kriteria : '';
 $map_provider = $this->config->item('map_provider') ?: 'none';
 $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 
-if ($kriteria == 0) {
+if ((string) $kriteria === '0') {
 	$kriteria = 'Selesai Konsultasi';
-} elseif ($kriteria == 1) {
+} elseif ((string) $kriteria === '1') {
 	$kriteria = 'Kunjungan Nakes';
 }
 
@@ -155,10 +155,10 @@ if ($kriteria == 0) {
 		<path style="transform:translate(0, 50px); opacity:0.9" fill="url(#sw-gradient-1)" d="M0,60L48,54C96,48,192,36,288,28C384,20,480,16,576,24C672,32,768,52,864,62C960,72,1056,72,1152,64C1248,56,1344,40,1440,30C1536,20,1632,16,1728,30C1824,44,1920,76,2016,86C2112,96,2208,84,2304,68C2400,52,2496,32,2592,34C2688,36,2784,60,2880,68C2976,76,3072,68,3168,58C3264,48,3360,36,3456,26C3552,16,3648,8,3744,18C3840,28,3936,56,4032,68C4128,80,4224,76,4320,74C4416,72,4512,72,4608,72C4704,72,4800,72,4896,66C4992,60,5088,48,5184,44C5280,40,5376,44,5472,46C5568,48,5664,48,5760,46C5856,44,5952,40,6048,46C6144,52,6240,68,6336,72C6432,76,6528,68,6624,60C6720,52,6816,44,6864,40L6912,36L6912,120L6864,120C6816,120,6720,120,6624,120C6528,120,6432,120,6336,120C6240,120,6144,120,6048,120C5952,120,5856,120,5760,120C5664,120,5568,120,5472,120C5376,120,5280,120,5184,120C5088,120,4992,120,4896,120C4800,120,4704,120,4608,120C4512,120,4416,120,4320,120C4224,120,4128,120,4032,120C3936,120,3840,120,3744,120C3648,120,3552,120,3456,120C3360,120,3264,120,3168,120C3072,120,2976,120,2880,120C2784,120,2688,120,2592,120C2496,120,2400,120,2304,120C2208,120,2112,120,2016,120C1920,120,1824,120,1728,120C1632,120,1536,120,1440,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
 	</svg>
 	<div class="content animate__animated animate__fadeInUp animate__faster" style="padding: 15px;">
-		<input type="hidden" name="userid" id="userId" value="<?= $userid ?>">
-		<input type="hidden" name="dokterid" id="dokterId" value="<?= $_SESSION['id'] ?>">
+		<input type="hidden" name="userid" id="userId" value="<?= html_escape($userid) ?>">
+		<input type="hidden" name="dokterid" id="dokterId" value="<?= html_escape($_SESSION['id']) ?>">
 		<form id="form_konsul_nakes" enctype="multipart/form-data">
-			<input type="hidden" name="request_id" id="idReq" value="<?= $request_id ?>">
+			<input type="hidden" name="request_id" id="idReq" value="<?= html_escape($request_id) ?>">
 			<div class="form-floating mb-3">
 				<input type="text" id="diagnosa" name="diagnosa" class="form-control shadow-sm border-success" placeholder="Diagnosa" required>
 				<label for="diagnosa"><i class="bi bi-heart-pulse"></i> Diagnosa*</label>
@@ -215,7 +215,7 @@ if ($kriteria == 0) {
 				<label for="saran"><i class="bi bi-chat-dots"></i> Saran*</label>
 			</div>
 			<div class="form-floating mb-3">
-				<input type="text" id="kriteria" name="kriteria" class="form-control shadow-sm border-success" value="<?= $kriteria ?>" readonly>
+				<input type="text" id="kriteria" name="kriteria" class="form-control shadow-sm border-success" value="<?= html_escape($kriteria) ?>" readonly>
 				<label for="kriteria"><i class="bi bi-clipboard-check"></i> Kriteria*</label>
 			</div>
 			<?php if ($kriteria === 'Kunjungan Nakes') : ?>
@@ -297,9 +297,21 @@ if ($kriteria == 0) {
 			const userId = document.getElementById('userId').value;
 			const dokterId = document.getElementById('dokterId').value;
 			const idReq = document.getElementById('idReq').value;
+			const diagnosa = $('#diagnosa').val().trim();
+			const saran = $('#saran').val().trim();
+			const kriteria = $('#kriteria').val().trim();
+
+			if (!idReq || !diagnosa || !saran || !kriteria) {
+				Swal.fire("Gagal!", "Data tidak lengkap", "error");
+				return;
+			}
 
 			var form = document.getElementById('form_konsul_nakes');
 			var formData = new FormData(form);
+			formData.set("request_id", idReq);
+			formData.set("diagnosa", diagnosa);
+			formData.set("saran", saran);
+			formData.set("kriteria", kriteria);
 
 			// Hilangkan tombol kirim selama proses berlangsung
 			$('#save_konsul_nakes').prop('disabled', true).text('Mengirim...');
@@ -324,7 +336,7 @@ if ($kriteria == 0) {
 			});
 
 			// Tambahkan data terapi dalam bentuk string JSON
-			formData.append("terapi", JSON.stringify(terapiData));
+			formData.set("terapi", JSON.stringify(terapiData));
 
 			$.ajax({
 				url: "<?php echo base_url(); ?>konsultasi_nakes/save_konsultasi_nakes",
@@ -377,11 +389,22 @@ if ($kriteria == 0) {
 					} else {
 						const message = response && response.message ? response.message : "Konsultasi gagal disimpan";
 						Swal.fire("Gagal!", message, "error");
+						$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-save"></i> Simpan');
 					}
 				},
 				error: function(xhr, status, error) {
 					console.error("Error:", xhr.responseText);
-					Swal.fire("Gagal!", "Terjadi kesalahan AJAX", "error");
+					let message = "Terjadi kesalahan AJAX";
+					if (xhr.responseText) {
+						try {
+							const response = JSON.parse(xhr.responseText);
+							if (response && response.message) {
+								message = response.message;
+							}
+						} catch (e) {}
+					}
+					Swal.fire("Gagal!", message, "error");
+					$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-save"></i> Simpan');
 				}
 			});
 		});
