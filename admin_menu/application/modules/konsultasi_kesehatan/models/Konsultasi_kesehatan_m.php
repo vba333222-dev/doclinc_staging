@@ -6,15 +6,43 @@ class Konsultasi_kesehatan_m extends MX_Controller
 		parent::__construct();
 		$this->db  = $this->load->database('default', TRUE);
 	}
+
+	private function safe_decrypt($value, $fallback = '-')
+	{
+		if ($value === null || $value === '') {
+			return $fallback;
+		}
+
+		if (!is_string($value)) {
+			$value = (string) $value;
+		}
+
+		$decoded = base64_decode($value, TRUE);
+		if ($decoded === FALSE || $decoded === '') {
+			return $value !== '' ? $value : $fallback;
+		}
+
+		try {
+			$CI = &get_instance();
+			$CI->load->library('encryption');
+			$decrypted = $CI->encryption->decrypt($decoded);
+		} catch (Throwable $e) {
+			return $value !== '' ? $value : $fallback;
+		}
+
+		if ($decrypted === FALSE || $decrypted === null || $decrypted === '') {
+			return $value !== '' ? $value : $fallback;
+		}
+
+		return $decrypted;
+	}
+
 	public function get_data_konsul()
 	{
 		if (!$this->db->table_exists('requests') || !$this->db->table_exists('users')) {
 			return array();
 		}
 
-		// Load library encryption
-		$CI = &get_instance();
-		$CI->load->library('encryption');
 		$date_select = $this->db->field_exists('date', 'requests') ? 'requests.date' : 'requests.created_at AS date';
 		$location_detail_select = $this->db->field_exists('location_detail', 'requests') ? 'requests.location_detail' : 'NULL AS location_detail';
 		$lattitude_dokter_select = $this->db->field_exists('lattitude_dokter', 'requests') ? 'requests.lattitude_dokter' : 'NULL AS lattitude_dokter';
@@ -55,13 +83,8 @@ class Konsultasi_kesehatan_m extends MX_Controller
 									ORDER BY date DESC");
 		$hasil = $query->result();
 
-		// Ambil terapi untuk semua konsultasi yang ditemukan
 		foreach ($hasil as $row) {
-			try {
-				$row->request_description = $CI->encryption->decrypt(base64_decode($row->request_description));
-			} catch (Exception $e) {
-				$row->request_description = '[Keluhan tidak dapat didekripsi]';
-			}
+			$row->request_description = $this->safe_decrypt($row->request_description, '-');
 		}
 		return $hasil;
 	}
