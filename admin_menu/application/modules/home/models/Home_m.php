@@ -164,4 +164,13 @@ class Home_m extends MX_Controller
 		$this->db->where('email', $email);
 		return $this->db->update('users', array('password' => $new_password, 'updated_at' => date('Y-m-d H:i:s')));
 	}
+
+	public function get_user_by_email($email)
+	{
+		if (!$this->db->table_exists('users')) {
+			return $this->empty_result(array('userId', 'email', 'password'));
+		}
+
+		return $this->db->where('email', $email)->get('users');
+	}
 }
