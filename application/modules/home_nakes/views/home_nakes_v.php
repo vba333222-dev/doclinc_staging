@@ -411,7 +411,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 														data-namapasien="<?= $x->nama; ?>"
 														data-riwayat="<?= $riwayat ?>"
 														data-keluhan="<?= $keluhan ?>">
-														<i class="fa fa-comment-medical me-2"></i> Mulai Konsultasi
+														<i class="fa fa-comment-medical me-2"></i> Terima Konsultasi
 													</button>
 												</div>
 											</div>
@@ -516,7 +516,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 											<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
 										</button>
 										<a href="<?= base_url('konsultasi_nakes/konsultasi/' . $x->request_id) . '?kriteria=1' ?>" class="btn btn-success shadow-sm rounded-pill ms-auto">
-											<i class="fas fa-notes-medical me-2"></i> Isi Konsultasi
+											<i class="fas fa-notes-medical me-2"></i> Lanjut Konsultasi
 										</a>
 									</div>
 								</div>
@@ -994,7 +994,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 
 								Swal.fire({
 									title: "Berhasil",
-									text: "Anda menerima konsultasi",
+									text: response && response.message ? response.message : "Anda menerima konsultasi",
 									icon: "success",
 									showConfirmButton: false,
 									timer: 2000,

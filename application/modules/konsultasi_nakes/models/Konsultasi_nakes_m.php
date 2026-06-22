@@ -21,7 +21,12 @@ class Konsultasi_nakes_m extends MX_Controller
 			->where('requests.request_status', 'Accepted')
 			->where('requests.request_id', $request_id);
 		if ($doctor_id !== null) {
+			$this->db->group_start();
 			$this->db->where('requests.dokter_id', $doctor_id);
+			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+				$this->db->or_where('requests.accepted_by_user_id', $doctor_id);
+			}
+			$this->db->group_end();
 		}
 
 		return $this->db
@@ -55,7 +60,12 @@ class Konsultasi_nakes_m extends MX_Controller
 		}
 
 		$this->db->where('request_id', $request_id);
+		$this->db->group_start();
 		$this->db->where('dokter_id', $user);
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$this->db->or_where('accepted_by_user_id', $user);
+		}
+		$this->db->group_end();
 		$this->db->where('request_status', 'Accepted');
 		$this->db->update('requests', $request_data);
 		if ($this->db->affected_rows() < 1) {
