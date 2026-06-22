@@ -9,17 +9,75 @@ class Kelola_dokter_nakes extends MX_Controller
 		if ($this->session->userdata('is_login') == FALSE) {
 			redirect('/', 'refresh');
 		}
+		if ($this->session->userdata('level') !== 'admin') {
+			redirect('home', 'refresh');
+		}
 	}
 	public function index()
 	{
 		$this->session->set_flashdata('title', 'Kelola Dokter/Nakes');
 		$this->session->set_flashdata('active_tab_kelola_dokter_nakes', 'active');
-		$year = date('Y');
-		$month = date('m');
 		$x['data_dokter_nakes'] = $this->Kelola_dokter_nakes_m->get_data_dokter_nakes();
+		$x['puskesmas_options'] = $this->Kelola_dokter_nakes_m->get_puskesmas_options();
 		$this->load->view('commons/header');
 		$this->load->view('kelola_dokter_nakes_v', $x);
 		$this->load->view('commons/footer');
+	}
+
+	public function store()
+	{
+		$this->load->library('form_validation');
+
+		$this->form_validation->set_rules('nama', 'Nama', 'trim|required');
+		$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
+		$this->form_validation->set_rules('username', 'Username', 'trim|required');
+		$this->form_validation->set_rules('password', 'Password', 'required|min_length[8]');
+		$this->form_validation->set_rules('confirm_password', 'Konfirmasi Password', 'required|matches[password]');
+
+		$email = trim((string) $this->input->post('email', TRUE));
+		$username = trim((string) $this->input->post('username', TRUE));
+		if ($email && $this->Kelola_dokter_nakes_m->email_exists($email)) {
+			$this->session->set_flashdata('error', 'Email sudah digunakan.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+		if ($username && $this->Kelola_dokter_nakes_m->username_exists($username)) {
+			$this->session->set_flashdata('error', 'Username sudah digunakan.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+
+		if ($this->form_validation->run() === FALSE) {
+			$this->session->set_flashdata('error', strip_tags(validation_errors(' ', ' ')));
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+
+		$status = $this->input->post('status', TRUE);
+		$status = in_array($status, array('aktif', 'nonaktif'), TRUE) ? $status : 'aktif';
+		$remark = $this->Kelola_dokter_nakes_m->normalize_remark($this->input->post('remark', TRUE));
+
+		$data = array(
+			'nama' => $this->input->post('nama', TRUE),
+			'email' => $email,
+			'username' => $username,
+			'no_hp' => $this->input->post('no_hp', TRUE),
+			'password' => password_hash((string) $this->input->post('password'), PASSWORD_DEFAULT),
+			'role' => 'dokter',
+			'status' => $status,
+			'remark' => $remark,
+			'updated_by' => $this->session->userdata('username'),
+		);
+
+		$result = $this->Kelola_dokter_nakes_m->create_dokter_nakes($data);
+		if ($result) {
+			$this->session->set_flashdata('success', 'Dokter/Nakes berhasil ditambahkan.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+
+		$this->session->set_flashdata('error', 'Dokter/Nakes gagal ditambahkan.');
+		redirect('kelola_dokter_nakes', 'refresh');
 	}
 	public function aktifkan_user()
 	{
