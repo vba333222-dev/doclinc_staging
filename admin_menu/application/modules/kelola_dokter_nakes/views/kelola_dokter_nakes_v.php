@@ -4,8 +4,11 @@
 
 <div class="container-fluid">
 	<div class="card shadow mb-4">
-		<div class="card-header py-3">
+		<div class="card-header py-3 d-flex align-items-center justify-content-between">
 			<h6 class="m-0 font-weight-bold text-primary">Daftar Dokter / Nakes</h6>
+			<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill" data-toggle="modal" data-target="#modalTambahDokterNakes">
+				<i class="fas fa-plus-circle mr-1"></i> Tambah Dokter/Nakes
+			</button>
 		</div>
 		<div class="card-body">
 			<!-- <div class="row mb-3">
@@ -102,6 +105,102 @@
 					</tbody>
 				</table>
 			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="modalTambahDokterNakes" tabindex="-1" role="dialog" aria-labelledby="modalTambahDokterNakesLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+		<div class="modal-content border-0 shadow-sm">
+			<div class="modal-header bg-success text-white">
+				<h5 class="modal-title" id="modalTambahDokterNakesLabel">
+					<i class="fas fa-user-plus mr-2"></i>Tambah Dokter/Nakes
+				</h5>
+				<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<form action="<?= site_url('kelola_dokter_nakes/store') ?>" method="post">
+				<div class="modal-body bg-light">
+					<div class="row">
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="text-success"><i class="fas fa-user-md mr-1"></i> Nama Lengkap</label>
+								<input type="text" class="form-control rounded-pill border-success" name="nama" required>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="text-success"><i class="fas fa-envelope mr-1"></i> Email</label>
+								<input type="email" class="form-control rounded-pill border-success" name="email" required>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="text-success"><i class="fas fa-user mr-1"></i> Username</label>
+								<input type="text" class="form-control rounded-pill border-success" name="username" required>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="text-success"><i class="fas fa-phone-alt mr-1"></i> No HP</label>
+								<input type="text" class="form-control rounded-pill border-success" name="no_hp">
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="text-success"><i class="fas fa-lock mr-1"></i> Password</label>
+								<input type="password" class="form-control rounded-pill border-success" name="password" minlength="8" required>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="text-success"><i class="fas fa-lock mr-1"></i> Konfirmasi Password</label>
+								<input type="password" class="form-control rounded-pill border-success" name="confirm_password" minlength="8" required>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="text-success"><i class="fas fa-clinic-medical mr-1"></i> Puskesmas/Remark</label>
+								<?php if (!empty($puskesmas_options)): ?>
+									<select class="form-control rounded-pill border-success" name="remark">
+										<?php foreach ($puskesmas_options as $puskesmas): ?>
+											<option value="<?= html_escape($puskesmas->kode_pkm); ?>">
+												<?= html_escape($puskesmas->nama_puskesmas); ?> (<?= html_escape($puskesmas->kode_pkm); ?>)
+											</option>
+										<?php endforeach; ?>
+									</select>
+								<?php else: ?>
+									<input type="text" class="form-control rounded-pill border-success" name="remark" value="DEFAULT">
+								<?php endif; ?>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="text-success"><i class="fas fa-toggle-on mr-1"></i> Status</label>
+								<select class="form-control rounded-pill border-success" name="status">
+									<option value="aktif">Aktif</option>
+									<option value="nonaktif">Nonaktif</option>
+								</select>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer border-0 px-4 pb-4">
+					<button type="button" class="btn btn-light rounded-pill px-4 border" data-dismiss="modal">
+						<i class="fas fa-times-circle mr-1"></i>Batal
+					</button>
+					<button type="submit" class="btn btn-success rounded-pill px-4">
+						<i class="fas fa-check-circle mr-1"></i>Simpan
+					</button>
+				</div>
+			</form>
 		</div>
 	</div>
 </div>
