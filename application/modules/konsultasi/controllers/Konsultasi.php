@@ -90,6 +90,7 @@ class Konsultasi extends MX_Controller
 		}
 
 		if (!$assigned_puskesmas) {
+			log_message('error', 'Konsultasi warga gagal: puskesmas tujuan tidak valid. user_id=' . $id_user . ' puskesmas_code=' . $manual_puskesmas_code);
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Puskesmas tujuan belum tersedia']));
 			return;
 		}
@@ -98,11 +99,18 @@ class Konsultasi extends MX_Controller
 		$queue_handler_user_id = doclinc_get_queue_handler_user_id($assigned_puskesmas_code);
 		if (!$queue_handler_user_id) {
 			$this->output->set_status_header(403);
+			log_message('error', 'Konsultasi warga gagal: akun puskesmas/nakes belum tersedia. user_id=' . $id_user . ' puskesmas_code=' . $assigned_puskesmas_code);
 			doclinc_log_request_event('unauthorized_request_update', null, array('target' => 'create', 'puskesmas_code' => $assigned_puskesmas_code));
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akun Puskesmas/Nakes belum tersedia']));
 			return;
 		}
-		if (empty($keluhan) || empty($alamat)) {
+		if (empty($alamat)) {
+			$alamat = !empty($assigned_puskesmas_name)
+				? 'Puskesmas tujuan: ' . $assigned_puskesmas_name
+				: 'Alamat belum tersedia';
+		}
+		if (empty($keluhan)) {
+			log_message('error', 'Konsultasi warga gagal: keluhan kosong. user_id=' . $id_user . ' puskesmas_code=' . $assigned_puskesmas_code);
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Data konsultasi belum lengkap']));
 			return;
 		}
@@ -163,6 +171,7 @@ class Konsultasi extends MX_Controller
 			return;
 		}
 
+		log_message('error', 'Konsultasi warga gagal insert request. user_id=' . $id_user . ' puskesmas_code=' . $assigned_puskesmas_code . ' handler_user_id=' . $queue_handler_user_id);
 		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Konsultasi gagal dikirim']));
 	}
 
