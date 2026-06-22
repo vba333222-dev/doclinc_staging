@@ -139,15 +139,19 @@ if (!function_exists('doclinc_can_user_access_puskesmas_request')) {
 			return false;
 		}
 
-		$user_id = is_array($user) ? ($user['id'] ?? null) : ($user->id ?? null);
-		$remark = is_array($user) ? ($user['remark'] ?? '') : ($user->remark ?? '');
+		$user_id = is_array($user) ? ($user['id'] ?? ($user['userId'] ?? null)) : ($user->id ?? ($user->userId ?? null));
+		$remark = trim((string) (is_array($user) ? ($user['remark'] ?? '') : ($user->remark ?? '')));
 
 		if (!empty($request->dokter_id) && (string) $request->dokter_id === (string) $user_id) {
 			return true;
 		}
+		if (isset($request->accepted_by_user_id) && !empty($request->accepted_by_user_id) && (string) $request->accepted_by_user_id === (string) $user_id) {
+			return true;
+		}
 
-		return !empty($remark)
+		return $request->request_status === 'Pending'
+			&& $remark !== ''
 			&& isset($request->assigned_puskesmas_code)
-			&& (string) $request->assigned_puskesmas_code === (string) $remark;
+			&& trim((string) $request->assigned_puskesmas_code) === $remark;
 	}
 }

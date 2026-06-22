@@ -17,7 +17,13 @@ class Home_nakes extends MX_Controller
 		$uid = $this->session->userdata('id');
 		$name = $this->session->userdata('username');
 		$d['profile'] = $this->Home_nakes_m->get_profile_by_id($uid);
-		$puskesmas_code = isset($d['profile']['remark']) ? $d['profile']['remark'] : $this->session->userdata('remark');
+		$puskesmas_code = trim((string) (isset($d['profile']['remark']) ? $d['profile']['remark'] : ''));
+		if ($puskesmas_code === '') {
+			$puskesmas_code = trim((string) $this->session->userdata('remark'));
+		}
+		if ($puskesmas_code !== '') {
+			$this->session->set_userdata('remark', $puskesmas_code);
+		}
 		if (empty($puskesmas_code)) {
 			log_message('error', 'Akun Puskesmas/Nakes belum memiliki kode puskesmas: ' . $uid);
 		}
@@ -81,7 +87,13 @@ class Home_nakes extends MX_Controller
 		$id = $this->input->post('id');
 		$id_user = $this->session->userdata('id');
 		$profile = $this->Home_nakes_m->get_profile_by_id($id_user);
-		$puskesmas_code = isset($profile['remark']) ? $profile['remark'] : $this->session->userdata('remark');
+		$puskesmas_code = trim((string) (isset($profile['remark']) ? $profile['remark'] : ''));
+		if ($puskesmas_code === '') {
+			$puskesmas_code = trim((string) $this->session->userdata('remark'));
+		}
+		if ($puskesmas_code !== '') {
+			$this->session->set_userdata('remark', $puskesmas_code);
+		}
 		$latitude = $this->input->post('latitude');
 		$longitude = $this->input->post('longitude');
 
