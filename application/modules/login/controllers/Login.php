@@ -6,6 +6,7 @@ class Login extends MX_Controller
 	{
 		parent::__construct();
 		$this->load->model('Login_m');
+		$this->load->helper('password_compat');
 	}
 
 	public function index()
@@ -29,13 +30,17 @@ class Login extends MX_Controller
 	public function auth()
 	{
 		$username = htmlspecialchars($this->input->post('username'));
-		$password = sha1(htmlspecialchars($this->input->post('password')));
+		$password = (string) $this->input->post('password');
 		$location = htmlspecialchars($this->input->post('location'));
 		$lattitude = htmlspecialchars($this->input->post('lattitude'));
 		$longitude = htmlspecialchars($this->input->post('longitude'));
-		$auth = $this->Login_m->auth($username, $password);
-		if ($auth->num_rows() > 0) {
+		$auth = $this->Login_m->auth($username);
+		if ($auth->num_rows() > 0 && doclinc_password_verify($password, (string) $auth->row()->password)) {
 			$user = $auth->row();
+			if (doclinc_password_needs_rehash((string) $user->password)) {
+				$this->Login_m->update_password($user->userId, doclinc_password_hash($password));
+			}
+			$this->session->sess_regenerate(TRUE);
 			$session_data = [
 				'id' => $user->userId,
 				'username' => $user->username,
@@ -50,9 +55,11 @@ class Login extends MX_Controller
 			$id = $this->session->userdata('id');
 			$username = $this->session->userdata('username');		
 			$this->Login_m->save_location($id,$username,$location, $lattitude,$longitude);
+			$this->Login_m->log_login_event('login_success', $user->userId, array('role' => $user->role));
 			// echo "OK";
 			echo "1";
 		} else {
+			$this->Login_m->log_login_event('login_failed', NULL, array('area' => 'public'));
 			echo "0";
 			// echo "NO";
 		}

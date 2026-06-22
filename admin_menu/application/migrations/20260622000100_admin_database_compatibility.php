@@ -224,6 +224,21 @@ $tables = array(
 		PRIMARY KEY (`id_pengaduan`),
 		KEY `idx_pengaduan_lokasi` (`lokasi`),
 		KEY `idx_pengaduan_status` (`status`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+	'audit_logs' => "CREATE TABLE IF NOT EXISTS `audit_logs` (
+		`id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		`actor_user_id` int(11) NULL,
+		`action` varchar(100) NOT NULL,
+		`entity_type` varchar(100) NULL,
+		`entity_id` varchar(100) NULL,
+		`ip_address` varchar(45) NULL,
+		`user_agent` varchar(255) NULL,
+		`metadata_json` text NULL,
+		`created_at` datetime NOT NULL,
+		PRIMARY KEY (`id`),
+		KEY `idx_audit_logs_action` (`action`),
+		KEY `idx_audit_logs_actor` (`actor_user_id`),
+		KEY `idx_audit_logs_created_at` (`created_at`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
 );
 

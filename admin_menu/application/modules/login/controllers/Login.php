@@ -4,6 +4,7 @@
 		function __construct(){
 			parent::__construct();
 			$this->load->model('Login_m');
+			$this->load->helper('password_compat');
 		}
 
 		public function index(){
@@ -21,27 +22,25 @@
 
 		public function ceklogin(){
 			$email = htmlspecialchars($this->input->post('email'));
-		    $password = htmlspecialchars(sha1($this->input->post('password')));
-		    $res = $this->Login_m->isThere($email,$password)->num_rows();
-		    if ($res>0) {
-		    	$getEmail	  = "";
-		    	$getUsername  = "";
-		    	$getRole    = "";
-				$cekUsername  = $this->Login_m->cekUsername($email);
-				foreach($cekUsername as $x){
-					$getEmail	  = $x->email;
-					$getUsername  = $x->username;
-					$getRole    = $x->role;
-				} 
+		    $password = (string) $this->input->post('password');
+		    $user_query = $this->Login_m->get_admin_by_email($email);
+		    if ($user_query->num_rows() > 0 && doclinc_password_verify($password, (string) $user_query->row()->password)) {
+				$user = $user_query->row();
+				if (doclinc_password_needs_rehash((string) $user->password)) {
+					$this->Login_m->update_password($user->userId, doclinc_password_hash($password));
+				}
+				$this->session->sess_regenerate(TRUE);
 		    	$data_session = array(
-					'email' => $getEmail,
-					'username' => $getUsername,
-					'level' => $getRole,
+					'email' => $user->email,
+					'username' => $user->username,
+					'level' => $user->role,
 					'is_login' => 'TRUE'
 				);
 				$this->session->set_userdata($data_session);
+				$this->Login_m->log_login_event('login_success', $user->userId, array('role' => $user->role, 'area' => 'admin'));
 				return $this->output->set_output('1');
 		    }else{
+				$this->Login_m->log_login_event('login_failed', NULL, array('area' => 'admin'));
 				return $this->output->set_output('0');
 		    }
 		}
@@ -71,7 +70,7 @@
             for ($i = 0; $i < $length; $i++) {
                 $randomString .= $characters[rand(0, $charactersLength - 1)];
             }
-            $encrypted = sha1($randomString);
+            $encrypted = doclinc_password_hash($randomString);
 	    	$email = $this->input->post('email_cust');
 	    	$this->Login_m->reset_password($email,$encrypted);
 	    	$this->send_mail($email,$randomString);

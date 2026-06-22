@@ -6,6 +6,7 @@ class Home extends MX_Controller
 	{
 		parent::__construct();
 		$this->load->model('Home_m');
+		$this->load->helper('password_compat');
 		if ($this->session->userdata('is_login') == FALSE) {
 			redirect('/', 'refresh');
 		}
@@ -68,10 +69,10 @@ class Home extends MX_Controller
 	public function change_password()
 	{
 		$email = $this->session->userdata('email');
-		$password = htmlspecialchars(sha1($this->input->post('old_password')));
-		$new_password = htmlspecialchars(sha1($this->input->post('new_password')));
-		$cek_old_password = $this->db->get_where('users', array('email' => $email, 'password' => $password));
-		if ($cek_old_password->num_rows() > 0) {
+		$password = (string) $this->input->post('old_password');
+		$new_password = doclinc_password_hash((string) $this->input->post('new_password'));
+		$user_query = $this->Home_m->get_user_by_email($email);
+		if ($user_query->num_rows() > 0 && doclinc_password_verify($password, (string) $user_query->row()->password)) {
 			$this->Home_m->change_password($email, $new_password);
 			$info = '<div class="alert alert-success alert-dismissible fade show shadow-sm border border-success animate__animated animate__bounceInUp" role="alert">
 		                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">

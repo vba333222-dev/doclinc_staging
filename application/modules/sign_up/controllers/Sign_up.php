@@ -4,6 +4,7 @@
 		function __construct(){
 			parent::__construct();
 			$this->load->model('Sign_up_m');
+			$this->load->helper('password_compat');
 		}
 		public function index(){
 			$this->load->view('sign_up_v');
@@ -29,7 +30,7 @@
                     'email' => $this->input->post('email'),
                     'no_hp' => $this->input->post('no_hp'),
                     'username' => $this->input->post('username'),
-                    'password' => sha1(htmlspecialchars($this->input->post('password'))),
+                    'password' => doclinc_password_hash((string) $this->input->post('password')),
                     'role' =>'warga',
                     'status' =>'aktif',
                     'created_at' =>date('Y-m-d H:i:s'),
