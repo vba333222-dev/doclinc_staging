@@ -49,6 +49,26 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		return $exists ? $remark : 'DEFAULT';
 	}
 
+	public function has_active_puskesmas()
+	{
+		return count($this->get_puskesmas_options()) > 0;
+	}
+
+	public function puskesmas_exists($remark)
+	{
+		$remark = trim((string) $remark);
+		if ($remark === '' || !$this->db->table_exists('m_puskesmas')) {
+			return false;
+		}
+
+		$this->db->where('kode_pkm', $remark);
+		if ($this->db->field_exists('status', 'm_puskesmas')) {
+			$this->db->where('status', 'aktif');
+		}
+
+		return $this->db->count_all_results('m_puskesmas') > 0;
+	}
+
 	public function email_exists($email)
 	{
 		if (!$this->db->table_exists('users')) {
@@ -116,7 +136,7 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		if (!$this->sync_m_dokter($user_id, $insert)) {
 			log_message('error', 'Gagal sinkronisasi m_dokter untuk user dokter ' . $user_id);
 		}
-		$this->log_audit('admin_create_doctor_user', $user_id);
+		$this->log_audit('admin_create_puskesmas_nakes_user', $user_id);
 
 		return $user_id;
 	}

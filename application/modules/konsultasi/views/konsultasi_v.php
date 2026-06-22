@@ -171,6 +171,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				<input type="hidden" class="form-control shadow border-success" name="namadokter" id="namadokter" value="<?= html_escape($nama); ?>" placeholder="Dokter ID" readonly>
 			</div>
 			<div class="form-floating mb-2">
+				<select class="form-select shadow border-success" name="assigned_puskesmas_code" id="assigned_puskesmas_code">
+					<option value="">Pilih Puskesmas Tujuan</option>
+					<?php foreach (($puskesmas_options ?? array()) as $puskesmas): ?>
+						<option value="<?= html_escape($puskesmas->kode_pkm ?? ''); ?>">
+							<?= html_escape($puskesmas->nama_puskesmas ?? '-'); ?> (<?= html_escape($puskesmas->kode_pkm ?? '-'); ?>)
+						</option>
+					<?php endforeach; ?>
+				</select>
+				<label for="assigned_puskesmas_code">Puskesmas Tujuan</label>
+				<small class="text-muted">Jika lokasi aktif, sistem akan memilih puskesmas terdekat.</small>
+			</div>
+			<div class="form-floating mb-2">
 				<!-- Textarea utama -->
 				<div class="mb-3">
 					<label for="data_penunjang" class="form-label">Data Penunjang</label>

@@ -1,9 +1,9 @@
 {
   "meta": {
     "document_name": "Doclinc Development Brief",
-    "version": "2.2.0",
+    "version": "2.3.0",
     "language": "id-ID",
-    "updated_at": "2026-06-18",
+    "updated_at": "2026-06-22",
     "created_for": "Tim pengembang internal",
     "purpose": "Memberikan arahan teknis untuk stabilisasi dan pengembangan Doclinc secara bertahap dengan fokus hanya pada repository Doclinc. Sistem host/launcher eksternal berada di luar scope pengerjaan dan tidak boleh dimodifikasi, diasumsikan, atau disentuh dari repository ini.",
     "visibility": "internal",
@@ -12,7 +12,8 @@
       "Fokus hanya pada codebase Doclinc yang tersedia di repository.",
       "Jangan memasukkan credential, token, secret, data pasien asli, atau informasi sensitif ke repository.",
       "Jangan membuat perubahan, asumsi, endpoint, atau instruksi yang membutuhkan modifikasi sistem host/launcher eksternal.",
-      "Dokumentasi publik, laporan client, commit message, dan README harus hanya berisi informasi teknis yang perlu dan aman dibagikan."
+      "Dokumentasi publik, laporan client, commit message, dan README harus hanya berisi informasi teknis yang perlu dan aman dibagikan.",
+      "Konteks operasional Cilegon: Doclinc harus mendukung 9 puskesmas aktif. Permintaan pasien diarahkan ke puskesmas aktif terdekat berdasarkan lokasi pasien; puskesmas kemudian mengakomodir nakes yang menangani permintaan tersebut."
     ],
     "revision_focus": [
       "Memperjelas batas scope: repository ini hanya Doclinc, bukan sistem host/launcher eksternal.",
@@ -20,7 +21,11 @@
       "Menjadikan integrasi eksternal hanya sebagai kontrak Doclinc-side adapter opsional.",
       "Mempertahankan rencana LiveKit untuk voice/video call.",
       "Mempertahankan rencana LeafletJS untuk realtime kunjungan dokter ke pasien.",
-      "Mempertahankan rencana penggantian Firebase dengan komponen Doclinc-side: MariaDB/MySQL, Redis/WebSocket, LiveKit, dan storage adapter."
+      "Mempertahankan rencana penggantian Firebase dengan komponen Doclinc-side: MariaDB/MySQL, Redis/WebSocket, LiveKit, dan storage adapter.",
+      "Menambahkan model operasional puskesmas: pasien diarahkan ke puskesmas aktif terdekat berdasarkan lokasi, bukan langsung memilih nakes perorangan.",
+      "Menegaskan bahwa akun nakes/dokter pada fase legacy dapat merepresentasikan akun operasional puskesmas, sementara puskesmas mengakomodir penugasan nakes internal.",
+      "Menambahkan kebutuhan master 9 puskesmas aktif Cilegon, koordinat, status aktif, dan relasi akun nakes/puskesmas.",
+      "Menambahkan rencana routing konsultasi berbasis lokasi pasien dan puskesmas terdekat secara bertahap."
     ]
   },
   "project": {
@@ -40,9 +45,12 @@
         "Stabilkan aplikasi existing tanpa rewrite total.",
         "Pastikan staging berjalan di CloudPanel.",
         "Perbaiki session, cache, logs, base_url, upload security, asset fallback, dan error frontend utama.",
-        "Pisahkan konfigurasi dari source code menggunakan environment/server config."
+        "Pisahkan konfigurasi dari source code menggunakan environment/server config.",
+        "Perjelas akun dokter/nakes sebagai akun operasional puskesmas pada fase legacy bila belum ada role/fasilitas terpisah.",
+        "Tambahkan master 9 puskesmas aktif Cilegon dan relasi akun nakes/dokter ke puskesmas.",
+        "Ubah flow konsultasi agar pasien diarahkan ke puskesmas aktif terdekat, bukan langsung memilih nakes perorangan."
       ],
-      "mid_term": "Pisahkan Doclinc sebagai layanan mandiri dengan kontrak entry/session adapter di sisi Doclinc saja. Jangan membuat perubahan pada sistem host/launcher eksternal. Gunakan MariaDB/MySQL sebagai sumber data utama, WebSocket/Redis untuk realtime event aplikasi, LiveKit untuk voice/video calling, dan LeafletJS untuk peta kunjungan dokter.",
+      "mid_term": "Pisahkan Doclinc sebagai layanan mandiri dengan kontrak entry/session adapter di sisi Doclinc saja. Jangan membuat perubahan pada sistem host/launcher eksternal. Gunakan MariaDB/MySQL sebagai sumber data utama, WebSocket/Redis untuk realtime event aplikasi, LiveKit untuk voice/video calling, dan LeafletJS untuk peta kunjungan dokter. Tambahkan routing berbasis puskesmas: pasien diarahkan ke puskesmas aktif terdekat berdasarkan lokasi, lalu puskesmas mengakomodir penugasan nakes internal.",
       "long_term": "Modernisasi bertahap menuju stack yang lebih stabil, disarankan Laravel jika rebuild disetujui, database terpisah, LiveKit Cloud/self-host untuk voice/video calling, storage object-based, Redis, WebSocket, dan deployment terkontrol. Integrasi eksternal tetap berbasis kontrak, bukan perubahan pada repository eksternal."
     }
   },
@@ -214,7 +222,12 @@
       "Map Layer",
       "  -> LeafletJS rendering",
       "  -> OSM-compatible tile provider / paid tile / self-host tiles",
-      "  -> OSRM/provider routing when needed"
+      "  -> OSRM/provider routing when needed",
+      "Doclinc Puskesmas Routing Layer",
+      "  -> Determine nearest active puskesmas from patient location",
+      "  -> Assign request to puskesmas queue/account",
+      "  -> Allow puskesmas to accommodate internal nakes handling",
+      "  -> Audit routing and assignment"
     ],
     "recommended_long_term_stack": {
       "backend": "Laravel atau service architecture bertahap dari CI3 existing",
@@ -407,6 +420,27 @@
         "speed_mps",
         "heading_degrees",
         "recorded_at"
+      ],
+      "puskesmas_nakes_members": [
+        "id",
+        "puskesmas_id_or_code",
+        "user_id",
+        "role_in_facility",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "consultation_routing_events": [
+        "id",
+        "request_id",
+        "patient_user_id",
+        "selected_puskesmas_id_or_code",
+        "selected_account_user_id",
+        "patient_lat",
+        "patient_lng",
+        "distance_meters",
+        "routing_method",
+        "created_at"
       ]
     },
     "credential_policy": [
@@ -745,7 +779,10 @@
       "Document relationships: users, dokter/nakes, warga, requests, medicalrecords, chats, notifications, calls, audit logs.",
       "Add migrations only when project structure supports it safely.",
       "Create backup before schema changes.",
-      "Rotate any credential that has ever been exposed in chat/log/source."
+      "Rotate any credential that has ever been exposed in chat/log/source.",
+      "Pisahkan konsep akun puskesmas/nakes dari akun dokter perorangan jika operasionalnya puskesmas-based.",
+      "Tambahkan master 9 puskesmas aktif Cilegon dengan koordinat dan status aktif.",
+      "Dokumentasikan relasi puskesmas, akun nakes/dokter, requests, routing event, dan assignment nakes."
     ],
     "data_isolation_goal": [
       "doclinc_db",
@@ -760,7 +797,9 @@
       "Expire internal sessions appropriately.",
       "Protect role-based routes.",
       "Do not accept role/user identity from plain query params.",
-      "Do not require or modify external host application code."
+      "Do not require or modify external host application code.",
+      "Untuk puskesmas-based routing, validasi bahwa akun puskesmas/nakes hanya mengakses request yang dirutekan ke puskesmas/akun tersebut.",
+      "Jangan menerima puskesmas_id, dokter_id, atau assigned_nakes_user_id dari frontend tanpa validasi session dan master puskesmas aktif."
     ],
     "uploads": [
       "Block script execution in uploads directory.",
@@ -807,7 +846,9 @@
       "Store only necessary location history.",
       "Define retention/purge policy for detailed location logs.",
       "Use HTTPS for production tracking pages.",
-      "Prefer external host application/native location bridge for reliable background location."
+      "Prefer external host application/native location bridge for reliable background location.",
+      "Gunakan lokasi pasien untuk routing puskesmas hanya pada request yang sah dan dengan consent/permission yang jelas.",
+      "Jika lokasi pasien dipakai untuk mencari puskesmas terdekat, simpan hanya data yang diperlukan dan batasi akses koordinat."
     ],
     "maps": [
       "Restrict map provider tokens by domain/app where possible.",
@@ -843,6 +884,20 @@
         "Fix invalid href/src cases such as '<div style=' URL issue.",
         "Remove debug echo/last_query from user-facing responses.",
         "Ensure login/SSO entry does not break existing role redirect."
+      ]
+    },
+    {
+      "phase": "Phase 1B - Puskesmas-based service model and routing foundation",
+      "tasks": [
+        "Audit m_puskesmas, users.remark, m_dokter, dan requests.dokter_id untuk memastikan mapping puskesmas/nakes.",
+        "Definisikan akun puskesmas/nakes pada fase legacy sebagai role dokter dengan label UI yang jelas.",
+        "Tambahkan atau rapikan master 9 puskesmas aktif Cilegon dengan kode, nama, alamat, kecamatan, latitude, longitude, dan status.",
+        "Update admin create/edit akun puskesmas/nakes agar wajib memilih puskesmas aktif jika master tersedia.",
+        "Pastikan request konsultasi diarahkan ke akun puskesmas/nakes berdasarkan puskesmas, bukan pilihan dokter perorangan langsung.",
+        "Tambahkan helper/service untuk menghitung puskesmas aktif terdekat dari lokasi pasien.",
+        "Tambahkan fallback manual puskesmas jika lokasi pasien tidak tersedia.",
+        "Tambahkan audit log untuk consultation_routed_to_puskesmas dan unauthorized_puskesmas_request_access.",
+        "Test: request pasien muncul pada dashboard akun puskesmas/nakes yang benar dan tidak muncul pada puskesmas lain."
       ]
     },
     {
@@ -1001,6 +1056,18 @@
       "Any future external entry support is implemented as Doclinc-side adapter only.",
       "No task or code requires modifying the external host application repository.",
       "No raw user_id/role query string login is introduced."
+    ],
+    "puskesmas_based_routing": [
+      "Master 9 puskesmas aktif Cilegon tersedia di m_puskesmas atau tabel pengganti yang disetujui.",
+      "Setiap akun puskesmas/nakes yang aktif terhubung ke puskesmas aktif.",
+      "Pembuatan konsultasi tidak mengandalkan pilihan dokter/nakes perorangan langsung jika mode puskesmas-based routing aktif.",
+      "Pasien dengan koordinat valid diarahkan ke puskesmas aktif terdekat.",
+      "Fallback manual tersedia ketika lokasi pasien tidak tersedia atau ditolak.",
+      "Request tersimpan dengan mapping yang konsisten ke akun puskesmas/nakes atau puskesmas queue.",
+      "Dashboard puskesmas/nakes hanya menampilkan request milik puskesmas/akun tersebut.",
+      "Akun puskesmas/nakes lain tidak dapat melihat/memutasi request tersebut.",
+      "Audit log mencatat routing, assignment, access denied, accept, complete, dan mutasi penting tanpa data medis sensitif.",
+      "Tidak ada dependency atau perubahan pada external host/launcher application."
     ]
   },
   "suggested_first_commands": [
@@ -1015,7 +1082,9 @@
     "find assets uploads -maxdepth 3 -type f | head -100",
     "grep -R \"LiveKit\\|livekit\" application assets admin_menu 2>/dev/null | head -100",
     "grep -R \"google.maps\\|maps.googleapis\\|leaflet\\|mapbox\" application assets admin_menu 2>/dev/null | head -100",
-    "grep -R \"navigator.geolocation\\|watchPosition\\|getCurrentPosition\" application assets admin_menu 2>/dev/null | head -100"
+    "grep -R \"navigator.geolocation\\|watchPosition\\|getCurrentPosition\" application assets admin_menu 2>/dev/null | head -100",
+    "grep -R \"m_puskesmas\\|puskesmas\\|remark\\|dokter_id\" application admin_menu -n 2>/dev/null | head -200",
+    "grep -R \"request_status\\|save_konsultasi\\|dokter_id\" application/modules -n 2>/dev/null | head -200"
   ],
   "developer_instruction": {
     "work_mode": [
@@ -1041,7 +1110,9 @@
       "When implementing call features, use LiveKit token endpoint/server-side secrets only.",
       "When implementing visit tracking, separate map rendering from tile/routing/geocoding providers.",
       "Keep tracking, call, and notification persistence in MariaDB/MySQL before realtime broadcast.",
-      "Prefer MVP marker tracking before route/ETA complexity."
+      "Prefer MVP marker tracking before route/ETA complexity.",
+      "Implementasikan routing konsultasi berbasis puskesmas: pasien diarahkan ke puskesmas aktif terdekat, lalu puskesmas mengakomodir nakes internal.",
+      "Jangan membuat pasien memilih nakes perorangan sebagai default jika requirement operasionalnya puskesmas-based."
     ]
   },
   "livekit_voice_video_calling": {
@@ -1408,5 +1479,163 @@
         "updated_at"
       ]
     }
+  },
+  "puskesmas_based_service_model": {
+    "decision": "Doclinc harus memakai model layanan berbasis puskesmas. Pasien tidak diarahkan langsung ke nakes perorangan sebagai keputusan utama. Pasien diarahkan ke puskesmas aktif terdekat berdasarkan lokasi pasien; puskesmas kemudian mengakomodir nakes yang menangani permintaan.",
+    "known_operational_context": [
+      "Kota Cilegon memiliki 9 puskesmas aktif yang harus menjadi master fasilitas layanan.",
+      "Akun nakes/dokter Doclinc pada fase awal dapat digunakan sebagai akun operasional puskesmas.",
+      "Puskesmas bertanggung jawab mengelola/mengakomodir nakes internal yang menangani permintaan pasien.",
+      "Routing konsultasi harus mempertimbangkan lokasi pasien dan puskesmas aktif terdekat.",
+      "Detail assignment nakes internal dapat dibuat bertahap setelah master puskesmas dan queue puskesmas stabil."
+    ],
+    "principles": [
+      "Jangan membuat pasien memilih nakes perorangan sebagai mekanisme utama jika requirement operasionalnya adalah puskesmas-based routing.",
+      "Jangan mengubah external host/launcher application.",
+      "Jangan menambah role enum baru sebelum schema dan flow legacy dipetakan.",
+      "Pertahankan role 'dokter' sebagai kompatibilitas CI3 legacy untuk akun puskesmas/nakes sampai role model baru disiapkan.",
+      "Semua request harus tetap diotorisasi server-side berdasarkan session, puskesmas assignment, dan ownership.",
+      "Lokasi pasien hanya digunakan untuk routing fasilitas dan kunjungan aktif yang sah, bukan pelacakan permanen."
+    ],
+    "short_term_legacy_mapping": {
+      "users.role": "Gunakan role 'dokter' untuk akun operasional puskesmas/nakes selama enum role masih admin/dokter/warga.",
+      "users.remark": "Gunakan sebagai kode/identitas puskesmas sementara jika belum ada kolom puskesmas_id formal.",
+      "m_puskesmas": "Master 9 puskesmas aktif Cilegon. Harus memiliki nama, kode, status aktif, dan idealnya latitude/longitude.",
+      "m_dokter": "Tetap disinkronkan best-effort untuk kompatibilitas tampilan lama, tetapi mapping harus mengarah ke users.userId/professional_id yang benar.",
+      "requests.dokter_id": "Untuk fase legacy, simpan users.userId akun puskesmas/nakes yang menerima queue. Jangan menyimpan primary key m_dokter jika dashboard memfilter berdasarkan users.userId.",
+      "future_request_fields": [
+        "puskesmas_code atau puskesmas_id",
+        "assigned_nakes_user_id",
+        "routing_source",
+        "patient_lat",
+        "patient_lng",
+        "routing_distance_meters"
+      ]
+    },
+    "target_data_model": {
+      "puskesmas": [
+        "id",
+        "kode_puskesmas",
+        "nama_puskesmas",
+        "alamat",
+        "kecamatan",
+        "latitude",
+        "longitude",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "puskesmas_nakes_members": [
+        "id",
+        "puskesmas_id atau kode_puskesmas",
+        "user_id",
+        "role_in_facility",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "consultation_routing_events": [
+        "id",
+        "request_id",
+        "patient_user_id",
+        "selected_puskesmas_id atau kode_puskesmas",
+        "selected_account_user_id",
+        "patient_lat",
+        "patient_lng",
+        "distance_meters",
+        "routing_method",
+        "created_at"
+      ]
+    },
+    "routing_flow_mvp": [
+      "Pasien membuka form konsultasi.",
+      "Frontend meminta izin lokasi pasien melalui browser/WebView jika tersedia.",
+      "Backend menerima latitude/longitude pasien dan memvalidasi format/range koordinat.",
+      "Backend mengambil daftar puskesmas aktif dari m_puskesmas.",
+      "Backend menghitung puskesmas aktif terdekat menggunakan rumus jarak koordinat, cukup Haversine untuk MVP.",
+      "Backend memilih akun puskesmas/nakes aktif yang terhubung ke puskesmas tersebut.",
+      "Request dibuat ke queue akun puskesmas/nakes tersebut.",
+      "Puskesmas melihat request pada dashboard nakes/puskesmas.",
+      "Puskesmas mengakomodir nakes internal yang menangani request. Detail assignment individual dapat ditambahkan pada fase berikutnya.",
+      "Audit log mencatat request_created dan consultation_routed_to_puskesmas tanpa menyimpan data medis sensitif."
+    ],
+    "fallback_flow_when_location_unavailable": [
+      "Jika permission lokasi ditolak atau koordinat tidak tersedia, tampilkan pilihan puskesmas manual.",
+      "Jika pilihan puskesmas manual belum siap, gunakan pilihan kecamatan lalu mapping ke puskesmas default yang diset admin.",
+      "Jangan silently assign ke DEFAULT tanpa diketahui admin/pasien.",
+      "Catat routing_method sebagai manual atau fallback."
+    ],
+    "admin_requirements": [
+      "Admin dapat mengelola master 9 puskesmas aktif.",
+      "Admin dapat mengisi latitude/longitude puskesmas.",
+      "Admin dapat mengaktifkan/nonaktifkan puskesmas.",
+      "Admin dapat membuat akun puskesmas/nakes dan menghubungkannya ke puskesmas aktif.",
+      "Form tambah dokter/nakes harus diberi label operasional yang jelas seperti 'Akun Puskesmas/Nakes' jika akun tersebut mewakili puskesmas.",
+      "Akun puskesmas/nakes tidak boleh memakai remark DEFAULT jika master puskesmas aktif sudah tersedia."
+    ],
+    "security_and_privacy": [
+      "Pasien hanya bisa melihat request miliknya.",
+      "Akun puskesmas/nakes hanya bisa melihat request yang dirutekan ke puskesmas/akun tersebut.",
+      "Jika assignment nakes individual dibuat, nakes hanya bisa membuka request yang assigned kepadanya atau berada dalam puskesmasnya sesuai aturan yang disetujui.",
+      "Admin dapat melihat list untuk kebutuhan operasional, tetapi mutasi data tetap wajib role-check.",
+      "Lokasi pasien harus disimpan seminimal mungkin sesuai kebutuhan routing dan audit.",
+      "Jangan menyimpan koordinat detail pasien selamanya tanpa retention policy.",
+      "Jangan tampilkan koordinat pasien ke akun yang tidak berwenang."
+    ],
+    "implementation_stages": [
+      {
+        "stage": "Stage A - Clarify legacy account semantics",
+        "tasks": [
+          "Ubah label admin dari sekadar Dokter/Nakes menjadi Akun Puskesmas/Nakes jika akun mewakili puskesmas.",
+          "Pastikan akun puskesmas/nakes tetap role dokter untuk kompatibilitas.",
+          "Pastikan users.remark menyimpan kode puskesmas, bukan DEFAULT, setelah master puskesmas tersedia."
+        ]
+      },
+      {
+        "stage": "Stage B - Master 9 puskesmas aktif",
+        "tasks": [
+          "Audit m_puskesmas.",
+          "Tambahkan field kode, nama, alamat, kecamatan, latitude, longitude, status jika belum ada secara migration kecil dan non-destruktif.",
+          "Seed 9 puskesmas aktif Cilegon hanya jika data sudah diverifikasi.",
+          "Tambahkan admin UI untuk mengelola data puskesmas."
+        ]
+      },
+      {
+        "stage": "Stage C - Puskesmas account mapping",
+        "tasks": [
+          "Update form tambah akun puskesmas/nakes agar wajib pilih puskesmas aktif.",
+          "Sinkronkan users.remark/m_dokter ke kode puskesmas.",
+          "Pastikan akun puskesmas/nakes aktif muncul sebagai target queue sesuai puskesmas."
+        ]
+      },
+      {
+        "stage": "Stage D - Patient nearest puskesmas routing",
+        "tasks": [
+          "Tambahkan helper/service hitung puskesmas terdekat.",
+          "Ubah create konsultasi agar menggunakan lokasi pasien untuk memilih puskesmas aktif terdekat.",
+          "Sediakan fallback manual jika lokasi tidak tersedia.",
+          "Catat routing event/audit.",
+          "Pastikan request tampil pada dashboard akun puskesmas/nakes yang benar."
+        ]
+      },
+      {
+        "stage": "Stage E - Internal nakes assignment",
+        "tasks": [
+          "Tambahkan assignment individual nakes jika puskesmas membutuhkan banyak akun nakes.",
+          "Pisahkan queue puskesmas dan assigned_nakes_user_id.",
+          "Tambahkan audit assignment dan ownership check per puskesmas."
+        ]
+      }
+    ],
+    "acceptance_criteria": [
+      "Master 9 puskesmas aktif tersedia dan dapat dikelola admin.",
+      "Setiap akun puskesmas/nakes terhubung ke puskesmas aktif.",
+      "Pasien dengan lokasi valid diarahkan ke puskesmas aktif terdekat.",
+      "Jika lokasi tidak tersedia, pasien diarahkan melalui fallback manual yang jelas.",
+      "Request muncul di dashboard akun puskesmas/nakes yang sesuai.",
+      "Request tidak muncul di akun puskesmas/nakes dari puskesmas lain.",
+      "Audit log mencatat routing dan mutasi penting tanpa data medis sensitif.",
+      "Tidak ada perubahan yang membutuhkan external host/launcher application."
+    ]
   }
 }

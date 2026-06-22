@@ -16,11 +16,15 @@ class Home_nakes extends MX_Controller
 
 		$uid = $this->session->userdata('id');
 		$name = $this->session->userdata('username');
+		$d['profile'] = $this->Home_nakes_m->get_profile_by_id($uid);
+		$puskesmas_code = isset($d['profile']['remark']) ? $d['profile']['remark'] : $this->session->userdata('remark');
+		if (empty($puskesmas_code)) {
+			log_message('error', 'Akun Puskesmas/Nakes belum memiliki kode puskesmas: ' . $uid);
+		}
 		$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed($uid);
 		$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept($uid);
-		$d['data_request_new'] = $this->Home_nakes_m->request_keluhan($uid);
+		$d['data_request_new'] = $this->Home_nakes_m->request_keluhan($uid, $puskesmas_code);
 		$d['data_user'] = $this->Home_nakes_m->get_location_user($uid);
-		$d['profile'] = $this->Home_nakes_m->get_profile_by_id($uid);
 
 		$latitude_dokter = '';
 		$longitude_dokter = '';
@@ -76,6 +80,8 @@ class Home_nakes extends MX_Controller
 
 		$id = $this->input->post('id');
 		$id_user = $this->session->userdata('id');
+		$profile = $this->Home_nakes_m->get_profile_by_id($id_user);
+		$puskesmas_code = isset($profile['remark']) ? $profile['remark'] : $this->session->userdata('remark');
 		$latitude = $this->input->post('latitude');
 		$longitude = $this->input->post('longitude');
 
@@ -84,7 +90,7 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		$data = $this->Home_nakes_m->accept_request($id, $id_user, $latitude, $longitude);
+		$data = $this->Home_nakes_m->accept_request($id, $id_user, $latitude, $longitude, $puskesmas_code);
 		if ($data) {
 			doclinc_log_request_event('request_accepted', $id);
 			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Request konsultasi diterima']));
