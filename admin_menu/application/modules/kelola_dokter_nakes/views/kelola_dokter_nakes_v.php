@@ -1,3 +1,10 @@
+<?php
+$puskesmas_options = isset($puskesmas_options) ? $puskesmas_options : array();
+$puskesmas_names = array();
+foreach ($puskesmas_options as $puskesmas) {
+	$puskesmas_names[(string) $puskesmas->kode_pkm] = $puskesmas->nama_puskesmas;
+}
+?>
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
 	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-user-md"></i> Kelola Akun Puskesmas / Nakes</h1>
 </div>
@@ -22,8 +29,11 @@
 						<tr class="bg-info text-black">
 							<th class="text-center" width="5%"><i class="fas fa-list-ol"></i></th>
 							<th><i class="fas fa-user-md"></i> Nama</th>
-							<th><i class="fas fa-hospital"></i> Kode PKM</th>
+							<th><i class="fas fa-envelope"></i> Email</th>
+							<th><i class="fas fa-user"></i> Username</th>
+							<th><i class="fas fa-hospital"></i> Puskesmas</th>
 							<th><i class="fas fa-phone"></i> No. Telepon</th>
+							<th><i class="fas fa-toggle-on"></i> Status</th>
 							<th class="text-center"><i class="fas fa-cogs"></i> Aksi</th>
 						</tr>
 					</thead>
@@ -36,17 +46,47 @@
 									<i class="fas fa-user-circle mr-2 text-secondary"></i>
 									<?= html_escape($data->nama ?? '-'); ?>
 								</td>
-								<td><span class="badge badge-info"><?= html_escape($data->remark ?? '-'); ?></span></td>
+								<td><?= html_escape($data->email ?? '-'); ?></td>
+								<td><?= html_escape($data->username ?? '-'); ?></td>
+								<td>
+									<?php
+									$kode_pkm = trim((string) ($data->remark ?? ''));
+									$nama_pkm = $data->nama_puskesmas ?? ($puskesmas_names[$kode_pkm] ?? '');
+									$puskesmas_status = $data->puskesmas_status ?? '';
+									?>
+									<span class="badge badge-info"><?= html_escape($kode_pkm !== '' ? $kode_pkm : '-'); ?></span>
+									<div class="small text-muted"><?= html_escape($nama_pkm !== '' ? $nama_pkm : 'Belum terhubung ke puskesmas aktif'); ?></div>
+									<?php if ($kode_pkm !== '' && $puskesmas_status === 'nonaktif'): ?>
+										<div class="small text-warning">Puskesmas nonaktif</div>
+									<?php endif; ?>
+								</td>
 								<td><i class="fas fa-phone-alt text-info mr-1"></i><?= html_escape($data->no_hp ?? '-'); ?></td>
+								<td>
+									<span class="badge badge-<?= ($data->status ?? '') === 'aktif' ? 'success' : 'secondary'; ?>">
+										<?= html_escape(ucfirst($data->status ?? '-')); ?>
+									</span>
+								</td>
 								<td class="text-center">
 									<button type="button" class="btn btn-info btn-sm rounded-pill" data-toggle="modal" data-target="#editModal<?= $data->userId ?>">
 										<i class="fas fa-edit"></i> Edit
 									</button>
-									<a href="<?= site_url('kelola_dokter_nakes/delete_dokter_nakes?id_dokter_nakes=' . rawurlencode($data->userId)) ?>"
-										class="btn btn-danger btn-sm rounded-pill"
-										onclick="return confirm('Yakin ingin menghapus data ini?');">
-										<i class="fas fa-trash"></i> Hapus
-									</a>
+									<?php if (($data->status ?? '') === 'aktif'): ?>
+										<form action="<?= site_url('kelola_dokter_nakes/nonaktifkan_user') ?>" method="post" class="d-inline">
+											<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
+											<input type="hidden" name="remark_nonaktif" value="<?= html_escape($data->remark ?? ''); ?>">
+											<button type="submit" class="btn btn-secondary btn-sm rounded-pill" onclick="return confirm('Nonaktifkan akun ini?');">
+												<i class="fas fa-ban"></i> Nonaktif
+											</button>
+										</form>
+									<?php else: ?>
+										<form action="<?= site_url('kelola_dokter_nakes/aktifkan_user') ?>" method="post" class="d-inline">
+											<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
+											<input type="hidden" name="remark_aktif" value="<?= html_escape($data->remark ?? ''); ?>">
+											<button type="submit" class="btn btn-success btn-sm rounded-pill" onclick="return confirm('Aktifkan akun ini?');">
+												<i class="fas fa-check"></i> Aktif
+											</button>
+										</form>
+									<?php endif; ?>
 								</td>
 							</tr>
 
@@ -81,12 +121,46 @@
 													<input type="text" class="form-control rounded-pill border-info" name="nama" value="<?= html_escape($data->nama ?? '') ?>" required>
 												</div>
 												<div class="form-group">
-													<label class="text-info"><i class="fas fa-clinic-medical mr-1"></i> Kode Puskesmas</label>
-													<input type="text" class="form-control rounded-pill border-info" name="remark" value="<?= html_escape($data->remark ?? '') ?>" required>
+													<label class="text-info"><i class="fas fa-envelope mr-1"></i> Email</label>
+													<input type="email" class="form-control rounded-pill border-info" name="email" value="<?= html_escape($data->email ?? '') ?>" required>
+												</div>
+												<div class="form-group">
+													<label class="text-info"><i class="fas fa-user mr-1"></i> Username</label>
+													<input type="text" class="form-control rounded-pill border-info" name="username" value="<?= html_escape($data->username ?? '') ?>" required>
+												</div>
+												<div class="form-group">
+													<label class="text-info"><i class="fas fa-clinic-medical mr-1"></i> Puskesmas</label>
+													<?php if (!empty($puskesmas_options)): ?>
+														<select class="form-control rounded-pill border-info" name="remark" required>
+															<?php foreach ($puskesmas_options as $puskesmas): ?>
+																<option value="<?= html_escape($puskesmas->kode_pkm); ?>" <?= (string) ($data->remark ?? '') === (string) $puskesmas->kode_pkm ? 'selected' : ''; ?>>
+																	<?= html_escape($puskesmas->nama_puskesmas); ?> (<?= html_escape($puskesmas->kode_pkm); ?>)
+																</option>
+															<?php endforeach; ?>
+														</select>
+													<?php else: ?>
+														<input type="text" class="form-control rounded-pill border-info" name="remark" value="<?= html_escape($data->remark ?? 'DEFAULT') ?>" required>
+													<?php endif; ?>
 												</div>
 												<div class="form-group">
 													<label class="text-info"><i class="fas fa-phone-alt mr-1"></i> Nomor Telepon</label>
 													<input type="text" class="form-control rounded-pill border-info" name="no_hp" value="<?= html_escape($data->no_hp ?? '') ?>">
+												</div>
+												<div class="form-group">
+													<label class="text-info"><i class="fas fa-toggle-on mr-1"></i> Status</label>
+													<select class="form-control rounded-pill border-info" name="status">
+														<option value="aktif" <?= ($data->status ?? '') === 'aktif' ? 'selected' : ''; ?>>Aktif</option>
+														<option value="nonaktif" <?= ($data->status ?? '') === 'nonaktif' ? 'selected' : ''; ?>>Nonaktif</option>
+													</select>
+												</div>
+												<div class="form-group">
+													<label class="text-info"><i class="fas fa-lock mr-1"></i> Password Baru</label>
+													<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" autocomplete="new-password">
+													<small class="text-muted">Biarkan kosong jika tidak ingin mengganti password.</small>
+												</div>
+												<div class="form-group">
+													<label class="text-info"><i class="fas fa-lock mr-1"></i> Konfirmasi Password Baru</label>
+													<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" autocomplete="new-password">
 												</div>
 											</div>
 											<div class="modal-footer border-0 px-4 pb-4">

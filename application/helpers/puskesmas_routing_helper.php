@@ -10,6 +10,9 @@ if (!function_exists('doclinc_get_active_puskesmas')) {
 		}
 
 		$CI->db->select('*');
+		if ($CI->db->field_exists('kode_pkm', 'm_puskesmas')) {
+			$CI->db->where('kode_pkm !=', 'DEFAULT');
+		}
 		if ($CI->db->field_exists('status', 'm_puskesmas')) {
 			$CI->db->where('status', 'aktif');
 		}
@@ -40,6 +43,9 @@ if (!function_exists('doclinc_get_puskesmas_by_code')) {
 		}
 
 		$CI->db->where($field, $code);
+		if ($field === 'kode_pkm') {
+			$CI->db->where('kode_pkm !=', 'DEFAULT');
+		}
 		if ($CI->db->field_exists('status', 'm_puskesmas')) {
 			$CI->db->where('status', 'aktif');
 		}
@@ -98,7 +104,7 @@ if (!function_exists('doclinc_get_puskesmas_nakes_users')) {
 	function doclinc_get_puskesmas_nakes_users($puskesmas_code)
 	{
 		$puskesmas_code = trim((string) $puskesmas_code);
-		if ($puskesmas_code === '') {
+		if ($puskesmas_code === '' || $puskesmas_code === 'DEFAULT') {
 			return array();
 		}
 

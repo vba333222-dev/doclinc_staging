@@ -156,7 +156,14 @@
 			<li class="nav-item">
 				<a class="nav-link" href="<?php echo site_url('kelola_dokter_nakes'); ?>">
 					<i class="fas fa-user-md"></i>
-					<span>Kelola Dokter/Nakes</span>
+					<span>Akun Puskesmas/Nakes</span>
+				</a>
+			</li>
+
+			<li class="nav-item <?= $this->session->flashdata('active_tab_master_puskesmas'); ?>">
+				<a class="nav-link" href="<?php echo site_url('master_puskesmas'); ?>">
+					<i class="fas fa-hospital"></i>
+					<span>Master Puskesmas</span>
 				</a>
 			</li>
 
