@@ -42,23 +42,35 @@ class Home_nakes_m extends MX_Controller
 		return $this->db->query('SELECT 1 WHERE 1 = 0');
 	}
 
+	private function normalize_puskesmas_code($puskesmas_code)
+	{
+		return trim((string) $puskesmas_code);
+	}
+
+	private function where_pending_queue_owner($id, $puskesmas_code)
+	{
+		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
+
+		$this->db->group_start();
+		if ($puskesmas_code !== '' && $this->db->field_exists('assigned_puskesmas_code', 'requests')) {
+			$this->db->where('TRIM(assigned_puskesmas_code) = ' . $this->db->escape($puskesmas_code), null, false);
+			$this->db->or_where('dokter_id', $id);
+		} else {
+			$this->db->where('dokter_id', $id);
+		}
+		$this->db->group_end();
+	}
+
 	public function request_keluhan($id, $puskesmas_code = '')
 	{
 		$this->select_request_base();
 		$this->db
 			->from('requests')
-			->join('users', 'requests.user_id = users.userId');
+			->join('users', 'requests.user_id = users.userId', 'left');
 		$this->join_riwayat_or_default();
 
 		$this->db->where('requests.request_status', 'Pending');
-		$this->db->group_start();
-		if (!empty($puskesmas_code) && $this->db->field_exists('assigned_puskesmas_code', 'requests')) {
-			$this->db->where('requests.assigned_puskesmas_code', $puskesmas_code);
-			$this->db->or_where('requests.dokter_id', $id);
-		} else {
-			$this->db->where('requests.dokter_id', $id);
-		}
-		$this->db->group_end();
+		$this->where_pending_queue_owner($id, $puskesmas_code);
 
 		return $this->db
 			->order_by('requests.request_id', 'DESC')
@@ -204,14 +216,7 @@ class Home_nakes_m extends MX_Controller
 			->where('request_id', $id)
 			->where('request_status', 'Pending');
 
-		$this->db->group_start();
-		if (!empty($puskesmas_code) && $this->db->field_exists('assigned_puskesmas_code', 'requests')) {
-			$this->db->where('assigned_puskesmas_code', $puskesmas_code);
-			$this->db->or_where('dokter_id', $id_user);
-		} else {
-			$this->db->where('dokter_id', $id_user);
-		}
-		$this->db->group_end();
+		$this->where_pending_queue_owner($id_user, $puskesmas_code);
 
 		$this->db->update('requests', $data);
 		return $this->db->affected_rows() > 0;

@@ -49,7 +49,10 @@ if (!function_exists('doclinc_can_view_request')) {
 		}
 
 		if ($role === 'dokter') {
-			if ((string) $request->dokter_id === (string) $user_id) {
+			if (!empty($request->dokter_id) && (string) $request->dokter_id === (string) $user_id) {
+				return true;
+			}
+			if (isset($request->accepted_by_user_id) && !empty($request->accepted_by_user_id) && (string) $request->accepted_by_user_id === (string) $user_id) {
 				return true;
 			}
 
@@ -61,9 +64,10 @@ if (!function_exists('doclinc_can_view_request')) {
 				->row();
 
 			return $user
-				&& !empty($user->remark)
+				&& $request->request_status === 'Pending'
+				&& trim((string) $user->remark) !== ''
 				&& isset($request->assigned_puskesmas_code)
-				&& (string) $request->assigned_puskesmas_code === (string) $user->remark;
+				&& trim((string) $request->assigned_puskesmas_code) === trim((string) $user->remark);
 		}
 
 		return $role === 'admin';
