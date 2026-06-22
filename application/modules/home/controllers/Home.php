@@ -6,6 +6,7 @@ class Home extends MX_Controller
 	{
 		parent::__construct();
 		$this->load->model('Home_m');
+		$this->load->helper('request_authz');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login');
 		}
@@ -73,6 +74,7 @@ class Home extends MX_Controller
 		if ($this->Home_m->updateRequestById($id)) {
 			$response = (['status' => 'success', 'message' => 'Data berhasil diupdate']);
 		} else {
+			doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_update'));
 			$response = (['status' => 'error', 'message' => 'Gagal mengupdate data']);
 		}
 		echo json_encode($response);
@@ -81,13 +83,19 @@ class Home extends MX_Controller
 	public function deleterequestbyid()
 	{
 		$id = $this->input->post('requestId');
-		$this->Home_m->deleteRequestById($id);
-		echo json_encode(['status' => 'success', 'message' => 'Data berhasil dihapus']);
+		if ($this->Home_m->deleteRequestById($id)) {
+			echo json_encode(['status' => 'success', 'message' => 'Data berhasil dihapus']);
+			return;
+		}
+
+		doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_delete'));
+		$this->output->set_status_header(403);
+		echo json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']);
 	}
 
 	public function submit_rating()
 	{
-		$iduser = $this->input->post('id_user');
+		$iduser = $this->session->userdata('id');
 		$iddokter = $this->input->post('id_dokter');
 		$rating = $this->input->post('rating');
 

@@ -6,6 +6,7 @@ class Home_nakes extends MX_Controller
 	{
 		parent::__construct();
 		$this->load->model('Home_nakes_m');
+		$this->load->helper('request_authz');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login');
 		}
@@ -49,8 +50,8 @@ class Home_nakes extends MX_Controller
 	{
 		$ip_address = $this->input->ip_address();
 		$data = array(
-			'id_user' => $this->input->post('id_user'),
-			'name' => $this->input->post('name'),
+			'id_user' => $this->session->userdata('id'),
+			'name' => $this->session->userdata('username'),
 			'ip_address' => $ip_address,
 			'latitude' => $this->input->post('latitude'),
 			'longitude' => $this->input->post('longitude'),
@@ -85,10 +86,12 @@ class Home_nakes extends MX_Controller
 
 		$data = $this->Home_nakes_m->accept_request($id, $id_user, $latitude, $longitude);
 		if ($data) {
+			doclinc_log_request_event('request_accepted', $id);
 			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Request konsultasi diterima']));
 			return;
 		}
 
+		doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'accept'));
 		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan atau bukan milik dokter login']));
 	}
 	public function get_location_user()

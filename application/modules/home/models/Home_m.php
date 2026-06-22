@@ -311,9 +311,16 @@ class Home_m extends MX_Controller
 	public function updateRequestById($id)
 	{
 
-		$data = [
-			'date' => date('Y-m-d'),
-		];
+		$data = [];
+		if ($this->db->field_exists('date', 'requests')) {
+			$data['date'] = date('Y-m-d');
+		}
+		if ($this->db->field_exists('updated_at', 'requests')) {
+			$data['updated_at'] = date('Y-m-d H:i:s');
+		}
+		if (empty($data)) {
+			return false;
+		}
 
 		$this->db->where('request_id', $id);
 		$this->db->where('user_id', $this->session->userdata('id')); // Pastikan user_id sesuai dengan session

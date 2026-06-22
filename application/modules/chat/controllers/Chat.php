@@ -3,9 +3,25 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Chat extends MX_Controller
 {
+	public function __construct()
+	{
+		parent::__construct();
+		$this->load->helper('request_authz');
+		if ($this->session->userdata('logged_in') != TRUE) {
+			redirect('login');
+		}
+	}
 
 	public function index()
 	{
+		$request_id = $this->input->get('reqId', TRUE);
+		if (!empty($request_id) && !doclinc_can_view_request($request_id)) {
+			doclinc_log_request_event('unauthorized_request_access', $request_id, array('target' => 'chat'));
+			$role = doclinc_current_user_role();
+			redirect($role === 'dokter' ? 'home_nakes' : 'home');
+			return;
+		}
+
 		$this->load->view('chat');
 	}
 

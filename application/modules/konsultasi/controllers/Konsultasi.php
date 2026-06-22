@@ -10,6 +10,7 @@ class Konsultasi extends MX_Controller
 	{
 		parent::__construct();
 		$this->load->model('Konsultasi_m');
+		$this->load->helper('request_authz');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login', 'refresh');
 		}
@@ -29,6 +30,13 @@ class Konsultasi extends MX_Controller
 
 	public function chat()
 	{
+		$request_id = $this->input->get('reqId', TRUE);
+		if (!empty($request_id) && !doclinc_can_view_request($request_id)) {
+			doclinc_log_request_event('unauthorized_request_access', $request_id, array('target' => 'konsultasi_chat'));
+			redirect('home');
+			return;
+		}
+
 		$this->load->view('chat');
 	}
 
@@ -51,6 +59,7 @@ class Konsultasi extends MX_Controller
 		$this->output->set_content_type('application/json');
 
 		$id_user = $this->session->userdata('id');
+		$role = $this->session->userdata('role');
 		$pahlawan = $this->input->post('dokter_id');
 		$riwayat = $this->input->post('data_penunjang');
 		$keluhan = $this->input->post('keluhan');
@@ -66,8 +75,20 @@ class Konsultasi extends MX_Controller
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Session pengguna tidak ditemukan']));
 			return;
 		}
+		if ($role !== 'warga') {
+			$this->output->set_status_header(403);
+			doclinc_log_request_event('unauthorized_request_update', null, array('target' => 'create', 'role' => $role));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
 		if (empty($pahlawan)) {
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Dokter belum dipilih']));
+			return;
+		}
+		if (!$this->Konsultasi_m->is_active_doctor($pahlawan)) {
+			$this->output->set_status_header(403);
+			doclinc_log_request_event('unauthorized_request_update', null, array('target' => 'create', 'dokter_id' => $pahlawan));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Dokter tidak tersedia']));
 			return;
 		}
 		if (empty($keluhan) || empty($alamat)) {
@@ -108,6 +129,7 @@ class Konsultasi extends MX_Controller
 		// Simpan data ke model
 		$data = $this->Konsultasi_m->save_konsultasi($id_user, $pahlawan, $riwayat, $keluhan, $alamat, $lattitude, $longitude, $tanggal, $foto, $video);
 		if ($data) {
+			doclinc_log_request_event('request_created', $data, array('dokter_id' => $pahlawan));
 			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Konsultasi berhasil dikirim']));
 			return;
 		}
