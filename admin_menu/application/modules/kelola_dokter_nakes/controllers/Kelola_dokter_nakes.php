@@ -106,13 +106,65 @@ class Kelola_dokter_nakes extends MX_Controller
 
 	public function update($id_user)
 	{
+		$this->load->library('form_validation');
+		$id_user = (int) $id_user;
+		$this->form_validation->set_rules('nama', 'Nama', 'trim|required');
+		$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
+		$this->form_validation->set_rules('username', 'Username', 'trim|required');
+
+		$email = trim((string) $this->input->post('email', TRUE));
+		$username = trim((string) $this->input->post('username', TRUE));
+		$password = (string) $this->input->post('password');
+		$confirm_password = (string) $this->input->post('confirm_password');
+
+		if ($email && $this->Kelola_dokter_nakes_m->email_exists($email, $id_user)) {
+			$this->session->set_flashdata('error', 'Email sudah digunakan.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+		if ($username && $this->Kelola_dokter_nakes_m->username_exists($username, $id_user)) {
+			$this->session->set_flashdata('error', 'Username sudah digunakan.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+		if ($password !== '' && strlen($password) < 8) {
+			$this->session->set_flashdata('error', 'Password minimal 8 karakter.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+		if ($password !== '' && $password !== $confirm_password) {
+			$this->session->set_flashdata('error', 'Konfirmasi password tidak sesuai.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+		if ($this->form_validation->run() === FALSE) {
+			$this->session->set_flashdata('error', strip_tags(validation_errors(' ', ' ')));
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+
+		$status = $this->input->post('status', TRUE);
+		$status = in_array($status, array('aktif', 'nonaktif'), TRUE) ? $status : 'aktif';
+		$posted_remark = $this->input->post('remark', TRUE);
+		if ($this->Kelola_dokter_nakes_m->has_active_puskesmas() && !$this->Kelola_dokter_nakes_m->puskesmas_exists($posted_remark)) {
+			$this->session->set_flashdata('error', 'Puskesmas aktif wajib dipilih.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+
 		$data = array(
-			'nama' => $this->input->post('nama'),
-			'remark' => $this->input->post('remark'),
-			'no_hp' => $this->input->post('no_hp'),
+			'nama' => $this->input->post('nama', TRUE),
+			'email' => $email,
+			'username' => $username,
+			'remark' => $this->Kelola_dokter_nakes_m->normalize_remark($posted_remark),
+			'no_hp' => $this->input->post('no_hp', TRUE),
+			'status' => $status,
 			'updated_by' => $this->session->userdata('username'),
 			'updated_at' => date('Y-m-d H:i:s')
 		);
+		if ($password !== '') {
+			$data['password'] = password_hash($password, PASSWORD_DEFAULT);
+		}
 
 		$this->Kelola_dokter_nakes_m->update_dokter_nakes($id_user, $data);
 		$this->session->set_flashdata('success', 'Data berhasil diperbarui.');

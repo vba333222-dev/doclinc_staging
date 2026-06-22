@@ -9,11 +9,18 @@ class Kelola_dokter_nakes_m extends MX_Controller
 	public function get_data_dokter_nakes()
 	{
 		if (!$this->db->table_exists('users')) {
-			return $this->db->query("SELECT NULL AS userId, NULL AS nama, NULL AS remark, NULL AS no_hp, NULL AS foto WHERE 1=0");
+			return $this->db->query("SELECT NULL AS userId, NULL AS nama, NULL AS email, NULL AS username, NULL AS status, NULL AS remark, NULL AS no_hp, NULL AS foto, NULL AS nama_puskesmas, NULL AS puskesmas_status WHERE 1=0");
 		}
 
-		$this->db->where('role', 'dokter');
-		return $this->db->get('users');
+		$this->db->select('users.*, m_puskesmas.nama_puskesmas, m_puskesmas.status AS puskesmas_status');
+		$this->db->from('users');
+		if ($this->db->table_exists('m_puskesmas') && $this->db->field_exists('remark', 'users')) {
+			$this->db->join('m_puskesmas', 'm_puskesmas.kode_pkm = users.remark', 'left');
+		}
+		$this->db->where('users.role', 'dokter');
+		$this->db->order_by('users.nama', 'ASC');
+
+		return $this->db->get();
 	}
 
 	public function get_puskesmas_options()
@@ -26,6 +33,7 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		if ($this->db->field_exists('status', 'm_puskesmas')) {
 			$this->db->where('status', 'aktif');
 		}
+		$this->db->where('kode_pkm !=', 'DEFAULT');
 		$this->db->order_by('nama_puskesmas', 'ASC');
 
 		return $this->db->get('m_puskesmas')->result();
@@ -44,6 +52,7 @@ class Kelola_dokter_nakes_m extends MX_Controller
 
 		$exists = $this->db
 			->where('kode_pkm', $remark)
+			->where('kode_pkm !=', 'DEFAULT')
 			->count_all_results('m_puskesmas') > 0;
 
 		return $exists ? $remark : 'DEFAULT';
@@ -62,6 +71,7 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		}
 
 		$this->db->where('kode_pkm', $remark);
+		$this->db->where('kode_pkm !=', 'DEFAULT');
 		if ($this->db->field_exists('status', 'm_puskesmas')) {
 			$this->db->where('status', 'aktif');
 		}
@@ -69,26 +79,32 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		return $this->db->count_all_results('m_puskesmas') > 0;
 	}
 
-	public function email_exists($email)
+	public function email_exists($email, $exclude_user_id = null)
 	{
 		if (!$this->db->table_exists('users')) {
 			return false;
 		}
 
-		return $this->db
-			->where('email', $email)
-			->count_all_results('users') > 0;
+		$this->db->where('email', $email);
+		if ($exclude_user_id !== null) {
+			$this->db->where('userId !=', $exclude_user_id);
+		}
+
+		return $this->db->count_all_results('users') > 0;
 	}
 
-	public function username_exists($username)
+	public function username_exists($username, $exclude_user_id = null)
 	{
 		if (!$this->db->table_exists('users')) {
 			return false;
 		}
 
-		return $this->db
-			->where('username', $username)
-			->count_all_results('users') > 0;
+		$this->db->where('username', $username);
+		if ($exclude_user_id !== null) {
+			$this->db->where('userId !=', $exclude_user_id);
+		}
+
+		return $this->db->count_all_results('users') > 0;
 	}
 
 	public function create_dokter_nakes($data)
@@ -167,7 +183,7 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		}
 
 		$allowed = array();
-		foreach (array('nama', 'remark', 'no_hp', 'updated_by', 'updated_at') as $field) {
+		foreach (array('nama', 'email', 'username', 'remark', 'no_hp', 'status', 'password', 'updated_by', 'updated_at') as $field) {
 			if ($this->db->field_exists($field, 'users') && array_key_exists($field, $data)) {
 				$allowed[$field] = $data[$field];
 			}
@@ -181,6 +197,10 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		$this->db->where('role', 'dokter');
 		$result = $this->db->update('users', $allowed);
 		if ($result) {
+			$this->log_audit('admin_update_puskesmas_nakes_user', $id_user);
+			if (isset($allowed['password'])) {
+				$this->log_audit('admin_reset_puskesmas_nakes_password', $id_user);
+			}
 			$user = $this->db
 				->where('userId', $id_user)
 				->where('role', 'dokter')
@@ -209,7 +229,12 @@ class Kelola_dokter_nakes_m extends MX_Controller
 
 		$this->db->where('userId', $id_user);
 		$this->db->where('role', 'dokter');
-		return $this->db->update('users', $data);
+		$result = $this->db->update('users', $data);
+		if ($result) {
+			$this->log_audit($status === 'aktif' ? 'admin_enable_puskesmas_nakes_user' : 'admin_disable_puskesmas_nakes_user', $id_user);
+		}
+
+		return $result;
 	}
 
 	private function sync_m_dokter($user_id, $user)
