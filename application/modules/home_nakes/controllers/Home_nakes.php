@@ -7,6 +7,7 @@ class Home_nakes extends MX_Controller
 		parent::__construct();
 		$this->load->model('Home_nakes_m');
 		$this->load->helper('request_authz');
+		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login');
 		}
@@ -115,6 +116,18 @@ class Home_nakes extends MX_Controller
 		if (!empty($result['status']) && $result['status'] === 'success') {
 			if (empty($result['already_accepted'])) {
 				doclinc_log_request_event('request_accepted', $id);
+				$request = doclinc_request_row($id);
+				if ($request) {
+					doclinc_notify_user(
+						$request->user_id,
+						'request_accepted',
+						'request',
+						$id,
+						'Konsultasi diterima',
+						'Permintaan konsultasi Anda sudah diterima oleh petugas.',
+						$id_user
+					);
+				}
 			}
 			$this->output->set_output(json_encode(['status' => 'success', 'message' => $result['message']]));
 			return;

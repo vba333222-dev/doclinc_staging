@@ -7,6 +7,7 @@ class Konsultasi_nakes extends MX_Controller
 		parent::__construct();
 		$this->load->model('Konsultasi_nakes_m');
 		$this->load->helper('request_authz');
+		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login', 'refresh');
 		}
@@ -190,6 +191,18 @@ class Konsultasi_nakes extends MX_Controller
 
 		if ($result) {
 			doclinc_log_request_event('consultation_completed', $request_id);
+			$request = doclinc_request_row($request_id);
+			if ($request) {
+				doclinc_notify_user(
+					$request->user_id,
+					'consultation_completed',
+					'request',
+					$request_id,
+					'Konsultasi selesai',
+					'Hasil konsultasi Anda sudah tersedia.',
+					$doctor_id
+				);
+			}
 			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Konsultasi berhasil disimpan']));
 			return;
 		}
