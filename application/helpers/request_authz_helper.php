@@ -37,6 +37,7 @@ if (!function_exists('doclinc_can_view_request')) {
 	{
 		$user_id = $user_id ?: doclinc_current_user_id();
 		$role = $role ?: doclinc_current_user_role();
+		$CI = &get_instance();
 		$request = doclinc_request_row($request_id);
 
 		if (!$request || empty($user_id)) {
@@ -48,7 +49,21 @@ if (!function_exists('doclinc_can_view_request')) {
 		}
 
 		if ($role === 'dokter') {
-			return (string) $request->dokter_id === (string) $user_id;
+			if ((string) $request->dokter_id === (string) $user_id) {
+				return true;
+			}
+
+			$user = $CI->db
+				->select('remark')
+				->where('userId', $user_id)
+				->where('role', 'dokter')
+				->get('users')
+				->row();
+
+			return $user
+				&& !empty($user->remark)
+				&& isset($request->assigned_puskesmas_code)
+				&& (string) $request->assigned_puskesmas_code === (string) $user->remark;
 		}
 
 		return $role === 'admin';
@@ -67,7 +82,9 @@ if (!function_exists('doclinc_can_update_request')) {
 		}
 
 		if ((string) $request->dokter_id !== (string) $user_id) {
-			return false;
+			if (!isset($request->accepted_by_user_id) || (string) $request->accepted_by_user_id !== (string) $user_id) {
+				return false;
+			}
 		}
 
 		return empty($allowed_statuses) || in_array($request->request_status, $allowed_statuses, true);

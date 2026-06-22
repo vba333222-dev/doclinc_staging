@@ -1,13 +1,13 @@
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-user-md"></i> Kelola Dokter / Nakes</h1>
+	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-user-md"></i> Kelola Akun Puskesmas / Nakes</h1>
 </div>
 
 <div class="container-fluid">
 	<div class="card shadow mb-4">
 		<div class="card-header py-3 d-flex align-items-center justify-content-between">
-			<h6 class="m-0 font-weight-bold text-primary">Daftar Dokter / Nakes</h6>
+			<h6 class="m-0 font-weight-bold text-primary">Daftar Akun Puskesmas / Nakes</h6>
 			<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill" data-toggle="modal" data-target="#modalTambahDokterNakes">
-				<i class="fas fa-plus-circle mr-1"></i> Tambah Dokter/Nakes
+				<i class="fas fa-plus-circle mr-1"></i> Tambah Akun Puskesmas/Nakes
 			</button>
 		</div>
 		<div class="card-body">
@@ -114,7 +114,7 @@
 		<div class="modal-content border-0 shadow-sm">
 			<div class="modal-header bg-success text-white">
 				<h5 class="modal-title" id="modalTambahDokterNakesLabel">
-					<i class="fas fa-user-plus mr-2"></i>Tambah Dokter/Nakes
+					<i class="fas fa-user-plus mr-2"></i>Tambah Akun Puskesmas/Nakes
 				</h5>
 				<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
@@ -178,6 +178,7 @@
 									</select>
 								<?php else: ?>
 									<input type="text" class="form-control rounded-pill border-success" name="remark" value="DEFAULT">
+									<small class="text-muted">Fallback sementara jika master puskesmas aktif belum tersedia.</small>
 								<?php endif; ?>
 							</div>
 						</div>

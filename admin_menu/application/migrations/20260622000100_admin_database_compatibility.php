@@ -132,12 +132,19 @@ add_column_if_missing($db, 'requests', 'date', 'datetime NULL AFTER `request_sta
 add_column_if_missing($db, 'requests', 'location_detail', 'text NULL AFTER `location`');
 add_column_if_missing($db, 'requests', 'lattitude_dokter', 'varchar(100) NULL AFTER `longitude`');
 add_column_if_missing($db, 'requests', 'longitude_dokter', 'varchar(100) NULL AFTER `lattitude_dokter`');
+add_column_if_missing($db, 'requests', 'assigned_puskesmas_code', 'varchar(100) NULL AFTER `dokter_id`');
+add_column_if_missing($db, 'requests', 'assigned_puskesmas_name', 'varchar(255) NULL AFTER `assigned_puskesmas_code`');
+add_column_if_missing($db, 'requests', 'patient_latitude', 'decimal(10,7) NULL AFTER `longitude_dokter`');
+add_column_if_missing($db, 'requests', 'patient_longitude', 'decimal(10,7) NULL AFTER `patient_latitude`');
+add_column_if_missing($db, 'requests', 'accepted_by_user_id', 'int(11) NULL AFTER `patient_longitude`');
 
 $tables = array(
 	'm_puskesmas' => "CREATE TABLE IF NOT EXISTS `m_puskesmas` (
 		`kode_pkm` varchar(100) NOT NULL,
 		`nama_puskesmas` varchar(150) NOT NULL,
 		`alamat` text NULL,
+		`latitude` decimal(10,7) NULL,
+		`longitude` decimal(10,7) NULL,
 		`status` enum('aktif','nonaktif') NOT NULL DEFAULT 'aktif',
 		`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		`updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -246,10 +253,44 @@ foreach ($tables as $table => $query) {
 	create_table_if_missing($db, $table, $query);
 }
 
+add_column_if_missing($db, 'm_puskesmas', 'latitude', 'decimal(10,7) NULL AFTER `alamat`');
+add_column_if_missing($db, 'm_puskesmas', 'longitude', 'decimal(10,7) NULL AFTER `latitude`');
+
+$puskesmas_seed = array(
+	array('10280101', 'Puskesmas Cilegon', -6.027077, 106.040176),
+	array('10280201', 'Puskesmas Cibeber', -6.035414, 106.050550),
+	array('10280301', 'Puskesmas Ciwandan', -5.978580, 105.992680),
+	array('10280401', 'Puskesmas Pulo Merak', -5.917950, 106.025680),
+	array('10280402', 'Puskesmas Grogol', -5.955560, 106.021060),
+	array('10280501', 'Puskesmas Citangkil', -6.017040, 106.018410),
+	array('10280601', 'Puskesmas Purwakarta', -6.017121, 106.061413),
+	array('10280701', 'Puskesmas Jombang', -6.017770, 106.050300),
+	array('2241001', 'Puskesmas Citangkil II', -6.012550, 106.007620),
+);
+
+if (table_exists($db, 'm_puskesmas')) {
+	$stmt = $db->prepare("INSERT INTO `m_puskesmas` (`kode_pkm`, `nama_puskesmas`, `latitude`, `longitude`, `status`)
+		VALUES (?, ?, ?, ?, 'aktif')
+		ON DUPLICATE KEY UPDATE
+			`nama_puskesmas` = VALUES(`nama_puskesmas`),
+			`latitude` = VALUES(`latitude`),
+			`longitude` = VALUES(`longitude`),
+			`status` = 'aktif'");
+	foreach ($puskesmas_seed as $row) {
+		$stmt->bind_param('ssdd', $row[0], $row[1], $row[2], $row[3]);
+		$stmt->execute();
+		echo "[ok] seeded puskesmas `" . $row[0] . "`\n";
+	}
+	$stmt->close();
+}
+
 $queries = array(
 	array('seed default puskesmas', "INSERT INTO `m_puskesmas` (`kode_pkm`, `nama_puskesmas`, `status`)
-		SELECT 'DEFAULT', 'Puskesmas Default', 'aktif'
+		SELECT 'DEFAULT', 'Puskesmas Default', 'nonaktif'
 		WHERE NOT EXISTS (SELECT 1 FROM `m_puskesmas` WHERE `kode_pkm` = 'DEFAULT')"),
+	array('disable default puskesmas fallback', "UPDATE `m_puskesmas`
+		SET `status` = 'nonaktif'
+		WHERE `kode_pkm` = 'DEFAULT'"),
 	array('backfill users remark', "UPDATE `users`
 		SET `remark` = 'DEFAULT'
 		WHERE `remark` IS NULL OR `remark` = ''"),
@@ -272,6 +313,8 @@ $queries = array(
 foreach ($queries as $query) {
 	$required_tables = array();
 	if ($query[0] === 'seed default puskesmas') {
+		$required_tables = array('m_puskesmas');
+	} elseif ($query[0] === 'disable default puskesmas fallback') {
 		$required_tables = array('m_puskesmas');
 	} elseif ($query[0] === 'backfill users remark') {
 		$required_tables = array('users');

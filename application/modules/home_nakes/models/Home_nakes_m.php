@@ -42,7 +42,7 @@ class Home_nakes_m extends MX_Controller
 		return $this->db->query('SELECT 1 WHERE 1 = 0');
 	}
 
-	public function request_keluhan($id)
+	public function request_keluhan($id, $puskesmas_code = '')
 	{
 		$this->select_request_base();
 		$this->db
@@ -50,9 +50,17 @@ class Home_nakes_m extends MX_Controller
 			->join('users', 'requests.user_id = users.userId');
 		$this->join_riwayat_or_default();
 
+		$this->db->where('requests.request_status', 'Pending');
+		$this->db->group_start();
+		if (!empty($puskesmas_code) && $this->db->field_exists('assigned_puskesmas_code', 'requests')) {
+			$this->db->where('requests.assigned_puskesmas_code', $puskesmas_code);
+			$this->db->or_where('requests.dokter_id', $id);
+		} else {
+			$this->db->where('requests.dokter_id', $id);
+		}
+		$this->db->group_end();
+
 		return $this->db
-			->where('requests.request_status', 'Pending')
-			->where('requests.dokter_id', $id)
 			->order_by('requests.request_id', 'DESC')
 			->get();
 	}
@@ -169,7 +177,7 @@ class Home_nakes_m extends MX_Controller
 
 		return $this->db->insert('locations', $data);
 	}
-	public function accept_request($id, $id_user, $latitude, $longitude)
+	public function accept_request($id, $id_user, $latitude, $longitude, $puskesmas_code = '')
 	{
 		if (empty($id) || empty($id_user)) {
 			return false;
@@ -177,6 +185,7 @@ class Home_nakes_m extends MX_Controller
 
 		$data = [
 			'request_status' => 'Accepted',
+			'dokter_id' => $id_user,
 		];
 		if ($this->db->field_exists('updated_at', 'requests')) {
 			$data['updated_at'] = date('Y-m-d H:i:s');
@@ -187,12 +196,25 @@ class Home_nakes_m extends MX_Controller
 		if ($this->db->field_exists('longitude_dokter', 'requests')) {
 			$data['longitude_dokter'] = $longitude;
 		}
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$data['accepted_by_user_id'] = $id_user;
+		}
 
-		return $this->db
+		$this->db
 			->where('request_id', $id)
-			->where('dokter_id', $id_user)
-			->where('request_status', 'Pending')
-			->update('requests', $data) && $this->db->affected_rows() > 0;
+			->where('request_status', 'Pending');
+
+		$this->db->group_start();
+		if (!empty($puskesmas_code) && $this->db->field_exists('assigned_puskesmas_code', 'requests')) {
+			$this->db->where('assigned_puskesmas_code', $puskesmas_code);
+			$this->db->or_where('dokter_id', $id_user);
+		} else {
+			$this->db->where('dokter_id', $id_user);
+		}
+		$this->db->group_end();
+
+		$this->db->update('requests', $data);
+		return $this->db->affected_rows() > 0;
 	}
 	public function get_location_user($id)
 	{

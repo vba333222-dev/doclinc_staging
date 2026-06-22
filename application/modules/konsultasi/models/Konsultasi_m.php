@@ -22,7 +22,8 @@ class Konsultasi_m extends MX_Controller
 		$longitude,
 		$tanggal,
 		$foto = null,
-		$video = null
+		$video = null,
+		$routing = array()
 	) {
 		if (empty($id_user)) {
 			return false;
@@ -56,6 +57,11 @@ class Konsultasi_m extends MX_Controller
 		}
 		if ($this->db->field_exists('updated_at', 'requests')) {
 			$data['updated_at'] = date('Y-m-d H:i:s');
+		}
+		foreach (array('assigned_puskesmas_code', 'assigned_puskesmas_name', 'patient_latitude', 'patient_longitude') as $field) {
+			if ($this->db->field_exists($field, 'requests') && array_key_exists($field, $routing)) {
+				$data[$field] = $routing[$field];
+			}
 		}
 
 		$this->db->insert('requests', $data);

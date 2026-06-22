@@ -47,6 +47,7 @@ class Login extends MX_Controller
 				'nama' => $user->nama,
 				'email' => $user->email,
 				'role' => $user->role,
+				'remark' => property_exists($user, 'remark') ? $user->remark : null,
 				'picture' => property_exists($user, 'foto') ? $user->foto : null,
 				'logged_in' => TRUE
 			];

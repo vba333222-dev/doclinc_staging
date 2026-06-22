@@ -55,7 +55,13 @@ class Kelola_dokter_nakes extends MX_Controller
 
 		$status = $this->input->post('status', TRUE);
 		$status = in_array($status, array('aktif', 'nonaktif'), TRUE) ? $status : 'aktif';
-		$remark = $this->Kelola_dokter_nakes_m->normalize_remark($this->input->post('remark', TRUE));
+		$posted_remark = $this->input->post('remark', TRUE);
+		if ($this->Kelola_dokter_nakes_m->has_active_puskesmas() && !$this->Kelola_dokter_nakes_m->puskesmas_exists($posted_remark)) {
+			$this->session->set_flashdata('error', 'Puskesmas aktif wajib dipilih.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+		$remark = $this->Kelola_dokter_nakes_m->normalize_remark($posted_remark);
 
 		$data = array(
 			'nama' => $this->input->post('nama', TRUE),
@@ -71,12 +77,12 @@ class Kelola_dokter_nakes extends MX_Controller
 
 		$result = $this->Kelola_dokter_nakes_m->create_dokter_nakes($data);
 		if ($result) {
-			$this->session->set_flashdata('success', 'Dokter/Nakes berhasil ditambahkan.');
+			$this->session->set_flashdata('success', 'Akun Puskesmas/Nakes berhasil ditambahkan.');
 			redirect('kelola_dokter_nakes', 'refresh');
 			return;
 		}
 
-		$this->session->set_flashdata('error', 'Dokter/Nakes gagal ditambahkan.');
+		$this->session->set_flashdata('error', 'Akun Puskesmas/Nakes gagal ditambahkan.');
 		redirect('kelola_dokter_nakes', 'refresh');
 	}
 	public function aktifkan_user()

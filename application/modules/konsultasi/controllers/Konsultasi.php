@@ -11,6 +11,7 @@ class Konsultasi extends MX_Controller
 		parent::__construct();
 		$this->load->model('Konsultasi_m');
 		$this->load->helper('request_authz');
+		$this->load->helper('puskesmas_routing');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login', 'refresh');
 		}
@@ -25,6 +26,7 @@ class Konsultasi extends MX_Controller
 		$data['getFotoDokter'] = $this->Konsultasi_m->getFotoDokter($nama);
 		$data['getDataTokenDoctor'] = $this->Konsultasi_m->getDataTokenDoctor($nama);
 		$data['getDataPenunjangById'] = $this->Konsultasi_m->getDataPenunjangById($userid);
+		$data['puskesmas_options'] = doclinc_get_active_puskesmas();
 		$this->load->view('konsultasi_v', $data);
 	}
 
@@ -66,6 +68,7 @@ class Konsultasi extends MX_Controller
 		$alamat = $this->input->post('alamat');
 		$lattitude = $this->input->post('lat');
 		$longitude = $this->input->post('lng');
+		$manual_puskesmas_code = $this->input->post('assigned_puskesmas_code', TRUE);
 		$tanggal = $this->input->post('tanggal');
 
 		$foto = '';
@@ -81,14 +84,22 @@ class Konsultasi extends MX_Controller
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
 			return;
 		}
-		if (empty($pahlawan)) {
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Dokter belum dipilih']));
+		$assigned_puskesmas = doclinc_find_nearest_puskesmas($lattitude, $longitude);
+		if (!$assigned_puskesmas) {
+			$assigned_puskesmas = doclinc_get_puskesmas_by_code($manual_puskesmas_code);
+		}
+
+		if (!$assigned_puskesmas) {
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Puskesmas tujuan belum tersedia']));
 			return;
 		}
-		if (!$this->Konsultasi_m->is_active_doctor($pahlawan)) {
+		$assigned_puskesmas_code = $assigned_puskesmas->kode_pkm ?? $manual_puskesmas_code;
+		$assigned_puskesmas_name = $assigned_puskesmas->nama_puskesmas ?? '';
+		$queue_handler_user_id = doclinc_get_queue_handler_user_id($assigned_puskesmas_code);
+		if (!$queue_handler_user_id) {
 			$this->output->set_status_header(403);
-			doclinc_log_request_event('unauthorized_request_update', null, array('target' => 'create', 'dokter_id' => $pahlawan));
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Dokter tidak tersedia']));
+			doclinc_log_request_event('unauthorized_request_update', null, array('target' => 'create', 'puskesmas_code' => $assigned_puskesmas_code));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akun Puskesmas/Nakes belum tersedia']));
 			return;
 		}
 		if (empty($keluhan) || empty($alamat)) {
@@ -127,9 +138,27 @@ class Konsultasi extends MX_Controller
 		$riwayat = base64_encode($riwayat);
 
 		// Simpan data ke model
-		$data = $this->Konsultasi_m->save_konsultasi($id_user, $pahlawan, $riwayat, $keluhan, $alamat, $lattitude, $longitude, $tanggal, $foto, $video);
+		$data = $this->Konsultasi_m->save_konsultasi(
+			$id_user,
+			$queue_handler_user_id,
+			$riwayat,
+			$keluhan,
+			$alamat,
+			$lattitude,
+			$longitude,
+			$tanggal,
+			$foto,
+			$video,
+			array(
+				'assigned_puskesmas_code' => $assigned_puskesmas_code,
+				'assigned_puskesmas_name' => $assigned_puskesmas_name,
+				'patient_latitude' => is_numeric($lattitude) ? $lattitude : null,
+				'patient_longitude' => is_numeric($longitude) ? $longitude : null,
+			)
+		);
 		if ($data) {
-			doclinc_log_request_event('request_created', $data, array('dokter_id' => $pahlawan));
+			doclinc_log_request_event('request_created', $data, array('puskesmas_code' => $assigned_puskesmas_code));
+			doclinc_log_request_event('puskesmas_assigned', $data, array('puskesmas_code' => $assigned_puskesmas_code));
 			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Konsultasi berhasil dikirim']));
 			return;
 		}

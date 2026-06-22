@@ -390,6 +390,32 @@ foreach ($dataDoctor->result() as $doc) {
 				</div>
 				<div id="konsultasi_kesehatan" class="content animate__animated animate__fadeInUp animate__faster">
 					<h2 class="text-center mb-4">Konsultasi Kesehatan</h2>
+					<div class="card shadow mb-2 rounded-4 bg-white clickable-card"
+						data-requestId=""
+						data-userIdPasien=""
+						data-status=""
+						data-tanggal="<?= date('Y-m-d'); ?>"
+						data-tanggal_loc="<?= date('Y-m-d H:i:s'); ?>"
+						data-link="<?= base_url('konsultasi'); ?>">
+						<div class="card-body p-2">
+							<div class="d-flex hero-card">
+								<img class="rounded-4" src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>" width="100px" height="auto" alt="Puskesmas">
+								<div class="w-100 ms-2">
+									<div class="d-flex">
+										<p class="fw-bold mb-0 me-auto">Puskesmas Terdekat</p>
+										<div class="end-content">
+											<span class="badge rounded-pill status bg-success">Available</span>
+										</div>
+									</div>
+									<p class="mb-0 small">Konsultasi akan diarahkan ke puskesmas aktif sesuai lokasi atau pilihan Anda.</p>
+									<i class="far fa-clock"></i> <em>Siap menerima konsultasi</em>
+									<?php foreach ($getAllRequestJumlah->result() as $baris) { ?>
+										<input type="hidden" name="jumlah" id="jumlah" value="<?= $baris->jumlah; ?>" />
+									<?php } ?>
+								</div>
+							</div>
+						</div>
+					</div>
 					<?php
 					foreach ($getAllDataDoctor->result() as $row) {
 						$userIdPasien = $row->user_id;
