@@ -27,6 +27,9 @@ class Master_puskesmas extends MX_Controller
 
 	public function store()
 	{
+		if (!$this->require_post()) {
+			return;
+		}
 		$this->load->library('form_validation');
 		$this->form_validation->set_rules('kode_pkm', 'Kode Puskesmas', 'trim|required');
 		$this->form_validation->set_rules('nama_puskesmas', 'Nama Puskesmas', 'trim|required');
@@ -54,6 +57,9 @@ class Master_puskesmas extends MX_Controller
 
 	public function update($kode)
 	{
+		if (!$this->require_post()) {
+			return;
+		}
 		$this->load->library('form_validation');
 		$this->form_validation->set_rules('nama_puskesmas', 'Nama Puskesmas', 'trim|required');
 		$kode = trim((string) $kode);
@@ -85,6 +91,9 @@ class Master_puskesmas extends MX_Controller
 
 	private function set_status($status)
 	{
+		if (!$this->require_post()) {
+			return;
+		}
 		$kode = trim((string) $this->input->post('kode_pkm', TRUE));
 		if ($kode === '') {
 			$this->session->set_flashdata('error', 'Kode puskesmas tidak valid.');
@@ -135,5 +144,17 @@ class Master_puskesmas extends MX_Controller
 		}
 
 		return true;
+	}
+
+	private function require_post()
+	{
+		if ($this->input->method(TRUE) === 'POST') {
+			return true;
+		}
+
+		$this->output->set_status_header(405);
+		$this->session->set_flashdata('error', 'Metode tidak diizinkan.');
+		redirect('master_puskesmas', 'refresh');
+		return false;
 	}
 }

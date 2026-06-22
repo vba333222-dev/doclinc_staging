@@ -55,6 +55,9 @@ class Home extends MX_Controller
 	}
 	public function save_konsultasi()
 	{
+		if (!$this->require_post_json()) {
+			return;
+		}
 		$nama = $this->input->post('nama');
 		$keluhan = $this->input->post('keluhan');
 		$no_hp = $this->input->post('no_hp');
@@ -70,41 +73,60 @@ class Home extends MX_Controller
 
 	public function updateRequestById()
 	{
-		$id = $this->input->post('requestId');
+		if (!$this->require_post_json()) {
+			return;
+		}
+		$id = (int) $this->input->post('requestId');
+		if ($id < 1 || !doclinc_can_view_request($id, $this->session->userdata('id'), 'warga')) {
+			doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_update'));
+			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
 		if ($this->Home_m->updateRequestById($id)) {
 			$response = (['status' => 'success', 'message' => 'Data berhasil diupdate']);
 		} else {
 			doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_update'));
 			$response = (['status' => 'error', 'message' => 'Gagal mengupdate data']);
 		}
-		echo json_encode($response);
+		$this->output->set_output(json_encode($response));
 	}
 
 	public function deleterequestbyid()
 	{
-		$id = $this->input->post('requestId');
+		if (!$this->require_post_json()) {
+			return;
+		}
+		$id = (int) $this->input->post('requestId');
+		if ($id < 1 || !doclinc_can_view_request($id, $this->session->userdata('id'), 'warga')) {
+			doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_delete'));
+			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
 		if ($this->Home_m->deleteRequestById($id)) {
-			echo json_encode(['status' => 'success', 'message' => 'Data berhasil dihapus']);
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Data berhasil dihapus']));
 			return;
 		}
 
 		doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_delete'));
 		$this->output->set_status_header(403);
-		echo json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']);
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
 	}
 
 	public function submit_rating()
 	{
+		if (!$this->require_post_json()) {
+			return;
+		}
 		$iduser = $this->session->userdata('id');
-		$iddokter = $this->input->post('id_dokter');
+		$iddokter = (int) $this->input->post('id_dokter');
 		$rating = $this->input->post('rating');
 
 		$result = $this->Home_m->submit_rating($iduser, $iddokter, $rating);
 
 		if ($result) {
-			echo json_encode(['status' => 'success', 'message' => 'Rating berhasil dikirim']);
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Rating berhasil dikirim']));
 		} else {
-			echo json_encode(['status' => 'error', 'message' => 'Gagal mengirim rating']);
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Gagal mengirim rating']));
 		}
 	}
 
@@ -158,5 +180,18 @@ class Home extends MX_Controller
 			echo json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']);
 			exit;
 		}
+	}
+
+	private function require_post_json()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) === 'POST') {
+			return true;
+		}
+
+		$this->output
+			->set_status_header(405)
+			->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+		return false;
 	}
 }

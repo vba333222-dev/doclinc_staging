@@ -58,6 +58,9 @@ class Home_nakes extends MX_Controller
 
 	public function save_location()
 	{
+		if (!$this->require_post_json()) {
+			return;
+		}
 		$ip_address = $this->input->ip_address();
 		$data = array(
 			'id_user' => $this->session->userdata('id'),
@@ -72,19 +75,25 @@ class Home_nakes extends MX_Controller
 		if ($existing_location) {
 			// Jika ada, update data
 			$this->Home_nakes_m->update_location($data, $ip_address);
-			echo json_encode(['status' => 'updated']);
+			$this->output->set_output(json_encode(['status' => 'updated']));
 		} else {
 			// Jika tidak ada, insert data baru
 			$data['create_date'] = date('Y-m-d H:i:s');
 			$this->Home_nakes_m->save_location($data);
-			echo json_encode(['status' => 'inserted']);
+			$this->output->set_output(json_encode(['status' => 'inserted']));
 		}
 	}
 	public function accept_request()
 	{
 		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output
+				->set_status_header(405)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+			return;
+		}
 
-		$id = $this->input->post('id');
+		$id = (int) $this->input->post('id');
 		$id_user = $this->session->userdata('id');
 		$profile = $this->Home_nakes_m->get_profile_by_id($id_user);
 		$puskesmas_code = trim((string) (isset($profile['remark']) ? $profile['remark'] : ''));
@@ -161,6 +170,9 @@ class Home_nakes extends MX_Controller
 
 	public function updateprofile()
 	{
+		if (!$this->require_post_json()) {
+			return;
+		}
 		$response = ['status' => 'error', 'message' => 'Gagal menyimpan'];
 
 		$id = $this->session->userdata('id');
@@ -188,7 +200,7 @@ class Home_nakes extends MX_Controller
 				$data['foto'] = $uploadData['file_name'];
 			} else {
 				$response['message'] = $this->upload->display_errors('', '');
-				echo json_encode($response);
+				$this->output->set_output(json_encode($response));
 				return;
 			}
 		}
@@ -196,9 +208,22 @@ class Home_nakes extends MX_Controller
 		// Simpan lewat model
 		if ($this->Home_nakes_m->update_profile($id, $data)) {
 			$this->session->set_userdata($data); // Perbarui session
-			echo json_encode(['status' => 'success', 'message' => 'Profil berhasil diperbarui']);
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Profil berhasil diperbarui']));
 		} else {
-			echo json_encode(['status' => 'error', 'message' => 'Gagal memperbarui profil']);
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Gagal memperbarui profil']));
 		}
+	}
+
+	private function require_post_json()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) === 'POST') {
+			return true;
+		}
+
+		$this->output
+			->set_status_header(405)
+			->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+		return false;
 	}
 }

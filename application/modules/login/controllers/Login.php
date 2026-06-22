@@ -29,6 +29,10 @@ class Login extends MX_Controller
 
 	public function auth()
 	{
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output->set_status_header(405)->set_output('0');
+			return;
+		}
 		$username = htmlspecialchars($this->input->post('username'));
 		$password = (string) $this->input->post('password');
 		$location = htmlspecialchars($this->input->post('location'));

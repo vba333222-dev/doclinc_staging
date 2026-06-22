@@ -128,8 +128,14 @@ class Konsultasi_nakes extends MX_Controller
 	public function save_konsultasi_nakes()
 	{
 		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output
+				->set_status_header(405)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+			return;
+		}
 
-		$request_id = $this->input->post('request_id');
+		$request_id = (int) $this->input->post('request_id');
 		$doctor_id = $this->session->userdata('id');
 		$role = $this->session->userdata('role');
 		$diagnosa = $this->input->post('diagnosa');
