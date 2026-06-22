@@ -102,15 +102,18 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		$data = $this->Home_nakes_m->accept_request($id, $id_user, $latitude, $longitude, $puskesmas_code);
-		if ($data) {
-			doclinc_log_request_event('request_accepted', $id);
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Request konsultasi diterima']));
+		$result = $this->Home_nakes_m->accept_request($id, $id_user, $latitude, $longitude, $puskesmas_code);
+		if (!empty($result['status']) && $result['status'] === 'success') {
+			if (empty($result['already_accepted'])) {
+				doclinc_log_request_event('request_accepted', $id);
+			}
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => $result['message']]));
 			return;
 		}
 
 		doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'accept'));
-		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan atau bukan milik dokter login']));
+		$message = !empty($result['message']) ? $result['message'] : 'Request tidak ditemukan atau bukan milik dokter login';
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => $message]));
 	}
 	public function get_location_user()
 	{

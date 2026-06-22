@@ -113,11 +113,15 @@ class Home_nakes_m extends MX_Controller
 			->join('users', 'requests.user_id = users.userId');
 		$this->join_riwayat_or_default();
 
-		return $this->db
-			->where('requests.request_status', 'Accepted')
-			->where('requests.dokter_id', $id)
-			->order_by('requests.request_id', 'DESC')
-			->get();
+		$this->db->where('requests.request_status', 'Accepted');
+		$this->db->group_start();
+		$this->db->where('requests.dokter_id', $id);
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$this->db->or_where('requests.accepted_by_user_id', $id);
+		}
+		$this->db->group_end();
+
+		return $this->db->order_by('requests.request_id', 'DESC')->get();
 	}
 	public function request_keluhan_completed($id)
 	{
@@ -192,7 +196,28 @@ class Home_nakes_m extends MX_Controller
 	public function accept_request($id, $id_user, $latitude, $longitude, $puskesmas_code = '')
 	{
 		if (empty($id) || empty($id_user)) {
-			return false;
+			return array('status' => 'error', 'message' => 'Data request tidak lengkap');
+		}
+
+		$request = $this->db
+			->where('request_id', $id)
+			->get('requests')
+			->row();
+		if (!$request) {
+			return array('status' => 'error', 'message' => 'Request tidak ditemukan');
+		}
+
+		if ($request->request_status === 'Accepted') {
+			$accepted_by_user_id = isset($request->accepted_by_user_id) ? $request->accepted_by_user_id : null;
+			if ((string) $request->dokter_id === (string) $id_user || (string) $accepted_by_user_id === (string) $id_user) {
+				return array('status' => 'success', 'message' => 'Request konsultasi sudah diterima', 'already_accepted' => true);
+			}
+
+			return array('status' => 'error', 'message' => 'Request sudah diterima oleh nakes lain');
+		}
+
+		if ($request->request_status !== 'Pending') {
+			return array('status' => 'error', 'message' => 'Request tidak dapat diterima');
 		}
 
 		$data = [
@@ -219,7 +244,11 @@ class Home_nakes_m extends MX_Controller
 		$this->where_pending_queue_owner($id_user, $puskesmas_code);
 
 		$this->db->update('requests', $data);
-		return $this->db->affected_rows() > 0;
+		if ($this->db->affected_rows() > 0) {
+			return array('status' => 'success', 'message' => 'Request konsultasi diterima', 'already_accepted' => false);
+		}
+
+		return array('status' => 'error', 'message' => 'Request tidak ditemukan atau bukan milik dokter login');
 	}
 	public function get_location_user($id)
 	{
