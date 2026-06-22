@@ -1661,112 +1661,116 @@ foreach ($dataDoctor->result() as $doc) {
 
 	<!-- Notifikasi Chat -->
 	<script>
-		// Referensi data notifikasi
-		const notificationsRef = getFirebaseDatabase().ref('notifications');
+		const notificationListJsonUrl = <?= json_encode(base_url('notifikasi/list_json')); ?>;
+		const notificationMarkReadUrl = <?= json_encode(base_url('notifikasi/mark_read')); ?>;
 
-		const idUser = document.getElementById('id_user').value;
-		console.log(idUser);
-		var request_id = <?= json_encode($id_request ?? ''); ?>;
+		function getNotificationBadge() {
+			return document.getElementById('badgeNotif') || document.getElementById('badgeNotifs');
+		}
 
-
-		const currentUserId = idUser; // ID pengguna
-
-		// Element badge
-		const badge = document.getElementById('badgeNotif');
-
-		// Mendengarkan data notifikasi baru
-		notificationsRef.on('value', (snapshot) => {
-			const data = snapshot.val();
-
-			if (!data) {
-				badge.style.display = 'none';
-				notificationList.innerHTML = '<p>Tidak ada notifikasi</p>';
+		function setNotificationCount(count) {
+			const badge = getNotificationBadge();
+			if (!badge) {
 				return;
 			}
-
-			// Filter hanya notifikasi dengan user_id = 1
-			const filteredNotifications = Object.entries(data)
-				.filter(([key, item]) => item.userId == currentUserId) // Filter berdasarkan user_id
-				.map(([key, item]) => ({
-					key,
-					...item
-				})); // Ubah ke format array
-
-			const count = filteredNotifications.length;
-
-			console.log('New notification detected:', data);
-
-			// Tampilkan jumlah notifikasi
 			if (count > 0) {
 				badge.style.display = 'inline';
 				badge.textContent = count > 9 ? '9+' : count;
 			} else {
 				badge.style.display = 'none';
+				badge.textContent = '';
 			}
+		}
 
-			// Update daftar notifikasi
-			notificationList.innerHTML = ''; // Kosongkan daftar
-			filteredNotifications.forEach((item) => {
-				const notificationItem = document.createElement('div');
-				notificationItem.className = 'notification-item d-flex align-items-center p-2 border-bottom';
+		function renderNotificationItem(item) {
+			const notificationItem = document.createElement('div');
+			notificationItem.className = 'notification-item d-flex align-items-center p-2 border-bottom';
+			notificationItem.style.cursor = 'pointer';
 
-				// Icon untuk notifikasi
-				const icon = document.createElement('i');
-				icon.className = 'bi bi-bell-fill text-success me-3 fs-4';
-				notificationItem.appendChild(icon);
+			const icon = document.createElement('i');
+			icon.className = 'bi bi-bell-fill text-success me-3 fs-4';
+			notificationItem.appendChild(icon);
 
-				// Konten notifikasi
-				const content = document.createElement('div');
-				content.className = 'flex-grow-1';
-				const date = new Date(item.timestamp || Date.now()).toLocaleString('id-ID', {
-					year: 'numeric',
-					month: 'long',
-					day: 'numeric',
-					hour: '2-digit',
-					minute: '2-digit'
+			const content = document.createElement('div');
+			content.className = 'flex-grow-1';
+
+			const title = document.createElement('strong');
+			title.textContent = item.title || 'Notifikasi';
+			content.appendChild(title);
+			content.appendChild(document.createElement('br'));
+
+			const message = document.createElement('small');
+			message.textContent = item.message || 'Tidak ada detail';
+			content.appendChild(message);
+			content.appendChild(document.createElement('br'));
+
+			const timestamp = document.createElement('small');
+			timestamp.className = 'text-muted';
+			timestamp.textContent = item.created_at ? new Date(item.created_at.replace(' ', 'T')).toLocaleString('id-ID') : '';
+			content.appendChild(timestamp);
+
+			notificationItem.appendChild(content);
+			notificationItem.addEventListener('click', function() {
+				markNotificationRead(item.notification_id);
+			});
+
+			return notificationItem;
+		}
+
+		function renderDatabaseNotifications(items, count) {
+			const notificationList = document.getElementById('notificationList');
+			if (!notificationList) {
+				return;
+			}
+			setNotificationCount(count);
+			notificationList.innerHTML = '';
+			if (!items || !items.length) {
+				notificationList.innerHTML = '<p class="text-muted mb-0">Tidak ada notifikasi</p>';
+				return;
+			}
+			items.forEach(function(item) {
+				notificationList.appendChild(renderNotificationItem(item));
+			});
+		}
+
+		function loadDatabaseNotifications() {
+			fetch(notificationListJsonUrl, {
+					credentials: 'same-origin'
+				})
+				.then(function(response) {
+					return response.json();
+				})
+				.then(function(data) {
+					if (!data || data.status !== 'success') {
+						renderDatabaseNotifications([], 0);
+						return;
+					}
+					renderDatabaseNotifications(data.notifications || [], parseInt(data.unread_count || 0, 10));
+				})
+				.catch(function() {
+					renderDatabaseNotifications([], 0);
 				});
-				content.innerHTML = `<strong>${item.title || 'Notifikasi'}</strong><br><small>${item.text || 'Tidak ada detail'}</small><br><small class="text-muted">${date}</small>`;
-				notificationItem.appendChild(content);
+		}
 
-				// Tambahkan event listener untuk membuka halaman chat
-				notificationItem.addEventListener('click', () => {
-					if (item.receiver) {
-						window.location.href = `chat/chat?reqId=${item.receiver}&userId=${item.sender}`;
+		function markNotificationRead(notificationId) {
+			if (!notificationId) {
+				return;
+			}
+			const formData = new FormData();
+			formData.append('notification_id', notificationId);
+			fetch(notificationMarkReadUrl, {
+					method: 'POST',
+					body: formData,
+					credentials: 'same-origin'
+				})
+				.then(function(response) {
+					if (response.ok) {
+						loadDatabaseNotifications();
 					}
 				});
+		}
 
-				// Icon hapus notifikasi
-				const deleteIcon = document.createElement('i');
-				deleteIcon.className = 'bi bi-trash text-danger ms-3 fs-5';
-				deleteIcon.style.cursor = 'pointer';
-				deleteIcon.addEventListener('click', (e) => {
-					e.stopPropagation(); // Mencegah event click pada notifikasi
-					Swal.fire({
-						title: 'Hapus Notifikasi?',
-						text: 'Apakah Anda yakin ingin menghapus notifikasi ini?',
-						icon: 'warning',
-						showCancelButton: true,
-						confirmButtonText: 'Hapus',
-						cancelButtonText: 'Batal'
-					}).then((result) => {
-						if (result.isConfirmed) {
-							// Hapus notifikasi berdasarkan key
-							getFirebaseDatabase().ref(`notifications/${item.key}`).remove()
-								.then(() => {
-									Swal.fire('Berhasil', 'Notifikasi berhasil dihapus.', 'success');
-								})
-								.catch((error) => {
-									Swal.fire('Error', 'Gagal menghapus notifikasi.', 'error');
-									console.error('Error:', error);
-								});
-						}
-					});
-				});
-				notificationItem.appendChild(deleteIcon);
-
-				notificationList.appendChild(notificationItem);
-			});
-		});
+		document.addEventListener('DOMContentLoaded', loadDatabaseNotifications);
 	</script>
 
 	<!-- simpan lokasi ke firebase -->

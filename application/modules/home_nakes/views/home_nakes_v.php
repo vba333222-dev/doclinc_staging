@@ -1503,86 +1503,117 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 
 	<!-- Notifikasi -->
 	<script>
-		// Referensi data notifikasi
-		const notificationsRef = db.ref('notifications');
+		const notificationListJsonUrl = <?= json_encode(base_url('notifikasi/list_json')); ?>;
+		const notificationMarkReadUrl = <?= json_encode(base_url('notifikasi/mark_read')); ?>;
 
-		// Element badge
-		const badge = document.getElementById('badgeNotif');
+		function getNotificationBadge() {
+			return document.getElementById('badgeNotifs') || document.getElementById('badgeNotif');
+		}
 
-		// Mendengarkan data notifikasi baru
-		notificationsRef.on('value', (snapshot) => {
-			const data = snapshot.val();
-			const count = data ? Object.keys(data).length : 0;
-
-			console.log('New notification detected:', data);
-
-
-			// Tampilkan jumlah notifikasi
-			let userNotifications = data ? Object.values(data).filter(item => item.receiver === currentUser) : [];
-			let userCount = userNotifications.length;
-
-			if (userCount > 0) {
+		function setNotificationCount(count) {
+			const badge = getNotificationBadge();
+			if (!badge) {
+				return;
+			}
+			if (count > 0) {
 				badge.style.display = 'inline';
-				badge.textContent = userCount > 9 ? '9+' : userCount;
+				badge.textContent = count > 9 ? '9+' : count;
 			} else {
 				badge.style.display = 'none';
+				badge.textContent = '';
 			}
+		}
 
-			// Update daftar notifikasi
-			notificationList.innerHTML = ''; // Kosongkan daftar notifikasi
-			if (data) {
-				for (const key in data) {
-					const item = data[key];
-					// Filter notifikasi berdasarkan sender
-					if (item.receiver === currentUser) {
-						const notificationItem = document.createElement('div');
-						notificationItem.className = 'notification-item d-flex align-items-center p-2 border-bottom';
+		function renderNotificationItem(item) {
+			const notificationItem = document.createElement('div');
+			notificationItem.className = 'notification-item d-flex align-items-center p-2 border-bottom';
+			notificationItem.style.cursor = 'pointer';
 
-						const icon = document.createElement('i');
-						icon.className = 'bi bi-bell-fill text-success me-2';
-						icon.style.fontSize = '1.5rem';
+			const icon = document.createElement('i');
+			icon.className = 'bi bi-bell-fill text-success me-2';
+			icon.style.fontSize = '1.5rem';
+			notificationItem.appendChild(icon);
 
-						const textContainer = document.createElement('div');
-						textContainer.className = 'flex-grow-1';
+			const textContainer = document.createElement('div');
+			textContainer.className = 'flex-grow-1';
 
-						const title = document.createElement('p');
-						title.className = 'mb-0 fw-bold';
-						title.textContent = item.text || 'Notifikasi tanpa judul';
+			const title = document.createElement('p');
+			title.className = 'mb-0 fw-bold';
+			title.textContent = item.title || 'Notifikasi';
+			textContainer.appendChild(title);
 
-						const timestamp = document.createElement('small');
-						timestamp.className = 'text-muted';
-						timestamp.textContent = new Date(item.timestamp).toLocaleString();
+			const message = document.createElement('small');
+			message.className = 'd-block';
+			message.textContent = item.message || 'Tidak ada detail';
+			textContainer.appendChild(message);
 
-						textContainer.appendChild(title);
-						textContainer.appendChild(timestamp);
+			const timestamp = document.createElement('small');
+			timestamp.className = 'text-muted';
+			timestamp.textContent = item.created_at ? new Date(item.created_at.replace(' ', 'T')).toLocaleString('id-ID') : '';
+			textContainer.appendChild(timestamp);
 
-						const deleteIcon = document.createElement('i');
-						deleteIcon.className = 'bi bi-trash text-danger ms-2';
-						deleteIcon.style.cursor = 'pointer';
-						deleteIcon.title = 'Hapus notifikasi';
-						deleteIcon.addEventListener('click', (event) => {
-							// Mencegah event klik pada notifikasi item
-							event.stopPropagation();
-							// Hapus notifikasi dari Firebase berdasarkan key
-							notificationsRef.child(key).remove();
-						});
+			notificationItem.appendChild(textContainer);
+			notificationItem.addEventListener('click', function() {
+				markNotificationRead(item.notification_id);
+			});
 
-						notificationItem.appendChild(icon);
-						notificationItem.appendChild(textContainer);
-						notificationItem.appendChild(deleteIcon);
+			return notificationItem;
+		}
 
-						// Tambahkan event listener untuk membuka halaman chat saat notifikasi diklik
-						notificationItem.addEventListener('click', () => {
-							if (item.receiver) {
-								window.location.href = `chat/chat?reqId=${item.sender}&userId=${item.userId}`;
-							}
-						});
+		function renderDatabaseNotifications(items, count) {
+			const notificationList = document.getElementById('notificationList');
+			if (!notificationList) {
+				return;
+			}
+			setNotificationCount(count);
+			notificationList.innerHTML = '';
+			if (!items || !items.length) {
+				notificationList.innerHTML = '<p class="text-muted mb-0">Tidak ada notifikasi</p>';
+				return;
+			}
+			items.forEach(function(item) {
+				notificationList.appendChild(renderNotificationItem(item));
+			});
+		}
 
-						notificationList.appendChild(notificationItem);
+		function loadDatabaseNotifications() {
+			fetch(notificationListJsonUrl, {
+					credentials: 'same-origin'
+				})
+				.then(function(response) {
+					return response.json();
+				})
+				.then(function(data) {
+					if (!data || data.status !== 'success') {
+						renderDatabaseNotifications([], 0);
+						return;
 					}
-				}
+					renderDatabaseNotifications(data.notifications || [], parseInt(data.unread_count || 0, 10));
+				})
+				.catch(function() {
+					renderDatabaseNotifications([], 0);
+				});
+		}
+
+		function markNotificationRead(notificationId) {
+			if (!notificationId) {
+				return;
 			}
-		});
+			const formData = new FormData();
+			formData.append('notification_id', notificationId);
+			fetch(notificationMarkReadUrl, {
+					method: 'POST',
+					body: formData,
+					credentials: 'same-origin'
+				})
+				.then(function(response) {
+					if (response.ok) {
+						loadDatabaseNotifications();
+					}
+				});
+		}
+
+		document.addEventListener('DOMContentLoaded', loadDatabaseNotifications);
 	</script>
 
 	<!-- switch -->
