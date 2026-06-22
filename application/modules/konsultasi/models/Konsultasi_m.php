@@ -59,6 +59,7 @@ class Konsultasi_m extends MX_Controller
 		}
 
 		$this->db->insert('requests', $data);
+		$request_id = $this->db->insert_id();
 
 		// Cek apakah sudah ada riwayat untuk user tersebut
 		if ($this->db->table_exists('tbl_riwayat')) {
@@ -84,7 +85,22 @@ class Konsultasi_m extends MX_Controller
 		$this->db->trans_complete(); // Selesaikan transaksi
 
 		// Kembalikan status transaksi
-		return $this->db->trans_status(); // true jika berhasil, false jika gagal
+		return $this->db->trans_status() ? $request_id : false; // true jika berhasil, false jika gagal
+	}
+
+	public function is_active_doctor($dokter_id)
+	{
+		if (empty($dokter_id)) {
+			return false;
+		}
+
+		$this->db->where('userId', $dokter_id);
+		$this->db->where('role', 'dokter');
+		if ($this->db->field_exists('status', 'users')) {
+			$this->db->where('status', 'aktif');
+		}
+
+		return $this->db->count_all_results('users') > 0;
 	}
 
 	public function save_konsultasis($id_user, $dokter_id, $riwayat, $keluhan, $alamat, $lattitude, $longitude, $tanggal, $foto = null, $video = null)

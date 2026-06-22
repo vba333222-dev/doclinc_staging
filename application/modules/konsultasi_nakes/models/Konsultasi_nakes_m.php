@@ -7,19 +7,24 @@ class Konsultasi_nakes_m extends MX_Controller
 		$this->db  = $this->load->database('default', TRUE);
 	}
 
-	public function get_data_request($request_id)
+	public function get_data_request($request_id, $doctor_id = null)
 	{
 		$userIdSelect = $this->db->field_exists('userid', 'users') ? 'users.userid' : 'users.userId AS userid';
 		$tglSelect = $this->db->field_exists('tgl', 'users') ? 'users.tgl' : 'NULL AS tgl';
 
-		return $this->db
+		$this->db
 			->select('requests.*, users.nama')
 			->select($userIdSelect, FALSE)
 			->select($tglSelect, FALSE)
 			->from('requests')
 			->join('users', 'requests.user_id = users.userId')
 			->where('requests.request_status', 'Accepted')
-			->where('requests.request_id', $request_id)
+			->where('requests.request_id', $request_id);
+		if ($doctor_id !== null) {
+			$this->db->where('requests.dokter_id', $doctor_id);
+		}
+
+		return $this->db
 			->get();
 	}
 
@@ -36,13 +41,13 @@ class Konsultasi_nakes_m extends MX_Controller
 	// 					 create_user = '$user'");
 	// }
 
-	public function save_konsultasi_nakes($request_id, $diagnosa, $saran, $kriteria, $rujukan, $file_path, $terapi)
+	public function save_konsultasi_nakes($request_id, $diagnosa, $saran, $kriteria, $rujukan, $file_path, $terapi, $doctor_id = null)
 	{
 		$date = date('Y-m-d H:i:s');
-		$user = $this->session->userdata('id');
+		$user = $doctor_id ?: $this->session->userdata('id');
 		$terapi = is_array($terapi) ? $terapi : [];
 
-		$this->db->trans_start();
+		$this->db->trans_begin();
 
 		$request_data = ['request_status' => 'Completed'];
 		if ($this->db->field_exists('updated_at', 'requests')) {
@@ -50,7 +55,13 @@ class Konsultasi_nakes_m extends MX_Controller
 		}
 
 		$this->db->where('request_id', $request_id);
+		$this->db->where('dokter_id', $user);
+		$this->db->where('request_status', 'Accepted');
 		$this->db->update('requests', $request_data);
+		if ($this->db->affected_rows() < 1) {
+			$this->db->trans_rollback();
+			return false;
+		}
 
 		$data_konsul = [
 			'request_id' => $request_id,
@@ -107,8 +118,13 @@ class Konsultasi_nakes_m extends MX_Controller
 			}
 		}
 
-		$this->db->trans_complete();
-		return $this->db->trans_status();
+		if ($this->db->trans_status() === false) {
+			$this->db->trans_rollback();
+			return false;
+		}
+
+		$this->db->trans_commit();
+		return true;
 	}
 
 	private function build_treatment_summary($kriteria, $rujukan, $file_path, $terapi)

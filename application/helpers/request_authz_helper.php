@@ -1,0 +1,101 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+if (!function_exists('doclinc_current_user_id')) {
+	function doclinc_current_user_id()
+	{
+		$CI = &get_instance();
+		return $CI->session->userdata('id');
+	}
+}
+
+if (!function_exists('doclinc_current_user_role')) {
+	function doclinc_current_user_role()
+	{
+		$CI = &get_instance();
+		return $CI->session->userdata('role') ?: '';
+	}
+}
+
+if (!function_exists('doclinc_request_row')) {
+	function doclinc_request_row($request_id)
+	{
+		if (empty($request_id)) {
+			return null;
+		}
+
+		$CI = &get_instance();
+		return $CI->db
+			->where('request_id', $request_id)
+			->get('requests')
+			->row();
+	}
+}
+
+if (!function_exists('doclinc_can_view_request')) {
+	function doclinc_can_view_request($request_id, $user_id = null, $role = null)
+	{
+		$user_id = $user_id ?: doclinc_current_user_id();
+		$role = $role ?: doclinc_current_user_role();
+		$request = doclinc_request_row($request_id);
+
+		if (!$request || empty($user_id)) {
+			return false;
+		}
+
+		if ($role === 'warga') {
+			return (string) $request->user_id === (string) $user_id;
+		}
+
+		if ($role === 'dokter') {
+			return (string) $request->dokter_id === (string) $user_id;
+		}
+
+		return $role === 'admin';
+	}
+}
+
+if (!function_exists('doclinc_can_update_request')) {
+	function doclinc_can_update_request($request_id, $user_id = null, $role = null, $allowed_statuses = array())
+	{
+		$user_id = $user_id ?: doclinc_current_user_id();
+		$role = $role ?: doclinc_current_user_role();
+		$request = doclinc_request_row($request_id);
+
+		if (!$request || empty($user_id) || $role !== 'dokter') {
+			return false;
+		}
+
+		if ((string) $request->dokter_id !== (string) $user_id) {
+			return false;
+		}
+
+		return empty($allowed_statuses) || in_array($request->request_status, $allowed_statuses, true);
+	}
+}
+
+if (!function_exists('doclinc_log_request_event')) {
+	function doclinc_log_request_event($action, $request_id = null, $metadata = array())
+	{
+		$CI = &get_instance();
+		if (!$CI->db->table_exists('audit_logs')) {
+			return false;
+		}
+
+		$previous_debug = $CI->db->db_debug;
+		$CI->db->db_debug = false;
+		$result = $CI->db->insert('audit_logs', array(
+			'actor_user_id' => doclinc_current_user_id() ?: null,
+			'action' => $action,
+			'entity_type' => 'request',
+			'entity_id' => $request_id,
+			'ip_address' => $CI->input->ip_address(),
+			'user_agent' => substr((string) $CI->input->user_agent(), 0, 255),
+			'metadata_json' => empty($metadata) ? null : json_encode($metadata),
+			'created_at' => date('Y-m-d H:i:s'),
+		));
+		$CI->db->db_debug = $previous_debug;
+
+		return $result;
+	}
+}
