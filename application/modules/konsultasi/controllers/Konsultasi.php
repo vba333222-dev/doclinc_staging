@@ -59,6 +59,12 @@ class Konsultasi extends MX_Controller
 	public function save_konsultasi()
 	{
 		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output
+				->set_status_header(405)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+			return;
+		}
 
 		$id_user = $this->session->userdata('id');
 		$role = $this->session->userdata('role');

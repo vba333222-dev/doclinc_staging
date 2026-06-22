@@ -26,6 +26,9 @@ class Kelola_dokter_nakes extends MX_Controller
 
 	public function store()
 	{
+		if (!$this->require_post()) {
+			return;
+		}
 		$this->load->library('form_validation');
 
 		$this->form_validation->set_rules('nama', 'Nama', 'trim|required');
@@ -87,7 +90,10 @@ class Kelola_dokter_nakes extends MX_Controller
 	}
 	public function aktifkan_user()
 	{
-		$id_user = $this->input->post('id_user');
+		if (!$this->require_post()) {
+			return;
+		}
+		$id_user = (int) $this->input->post('id_user');
 		$remark_aktif = $this->input->post('remark_aktif');
 		$user = $this->session->userdata('username');
 		$this->Kelola_dokter_nakes_m->aktifkan_user($id_user, $user, $remark_aktif);
@@ -96,7 +102,10 @@ class Kelola_dokter_nakes extends MX_Controller
 	}
 	public function nonaktifkan_user()
 	{
-		$id_user = $this->input->post('id_user');
+		if (!$this->require_post()) {
+			return;
+		}
+		$id_user = (int) $this->input->post('id_user');
 		$remark_nonaktif = $this->input->post('remark_nonaktif');
 		$user = $this->session->userdata('username');
 		$this->Kelola_dokter_nakes_m->nonaktifkan_user($id_user, $user, $remark_nonaktif);
@@ -106,6 +115,9 @@ class Kelola_dokter_nakes extends MX_Controller
 
 	public function update($id_user)
 	{
+		if (!$this->require_post()) {
+			return;
+		}
 		$this->load->library('form_validation');
 		$id_user = (int) $id_user;
 		$this->form_validation->set_rules('nama', 'Nama', 'trim|required');
@@ -173,9 +185,24 @@ class Kelola_dokter_nakes extends MX_Controller
 
 	public function delete_dokter_nakes()
 	{
-		$id_dokter_nakes = $this->input->get('id_dokter_nakes');
+		if (!$this->require_post()) {
+			return;
+		}
+		$id_dokter_nakes = (int) $this->input->post('id_dokter_nakes');
 		$this->Kelola_dokter_nakes_m->delete_dokter_nakes($id_dokter_nakes);
 		$this->session->set_flashdata('success', 'Data berhasil dihapus.');
 		redirect('kelola_dokter_nakes', 'refresh');
+	}
+
+	private function require_post()
+	{
+		if ($this->input->method(TRUE) === 'POST') {
+			return true;
+		}
+
+		$this->output->set_status_header(405);
+		$this->session->set_flashdata('error', 'Metode tidak diizinkan.');
+		redirect('kelola_dokter_nakes', 'refresh');
+		return false;
 	}
 }

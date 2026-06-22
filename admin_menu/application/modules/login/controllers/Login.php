@@ -21,6 +21,9 @@
 		}
 
 		public function ceklogin(){
+			if ($this->input->method(TRUE) !== 'POST') {
+				return $this->output->set_status_header(405)->set_output('0');
+			}
 			$email = htmlspecialchars($this->input->post('email'));
 		    $password = (string) $this->input->post('password');
 		    $user_query = $this->Login_m->get_admin_by_email($email);
@@ -63,6 +66,10 @@
 	    	redirect('login','refresh');
 	    }
 	    public function reset_password(){
+			if ($this->input->method(TRUE) !== 'POST') {
+				redirect('login', 'refresh');
+				return;
+			}
 	    	$length = 8;
             $characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             $charactersLength = strlen($characters);

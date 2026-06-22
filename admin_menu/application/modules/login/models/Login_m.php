@@ -12,16 +12,23 @@
                 ->get('users');
         }
         public function cekUsername($email) {
-            $query=$this->db->query("SELECT
-                                        *
-                                    FROM
-                                        users 
-                                    WHERE email = '$email'");
-            return $query->result(); 
+            return $this->db
+                ->where('email', $email)
+                ->get('users')
+                ->result();
         }
         public function verification($decode_email){
             $now = date('Y-m-d H:i:s');
-            $this->db->query("UPDATE users SET status = 'aktif', modify_date = '$now' WHERE email = '$decode_email' ");
+            $data = array('status' => 'aktif');
+            if ($this->db->field_exists('modify_date', 'users')) {
+                $data['modify_date'] = $now;
+            }
+            if ($this->db->field_exists('updated_at', 'users')) {
+                $data['updated_at'] = $now;
+            }
+            return $this->db
+                ->where('email', $decode_email)
+                ->update('users', $data);
         }
         public function reset_password($email,$encrypted){
            return $this->db

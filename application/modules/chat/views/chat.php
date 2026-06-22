@@ -665,6 +665,7 @@ $session_id = $this->session->userdata('id') ?: '';
 		function uploadFileWithXHR(file, url, key) {
 			const formData = new FormData();
 			formData.append(key, file);
+			formData.append('request_id', document.getElementById('request_id').value);
 
 			const xhr = new XMLHttpRequest();
 			xhr.open("POST", url, true);

@@ -69,22 +69,25 @@ class Konsultasi_m extends MX_Controller
 
 		// Cek apakah sudah ada riwayat untuk user tersebut
 		if ($this->db->table_exists('tbl_riwayat')) {
-			$cek = $this->db->query("SELECT * FROM tbl_riwayat WHERE idUser = " . $this->db->escape($id_user))->row();
+			$cek = $this->db
+				->where('idUser', $id_user)
+				->get('tbl_riwayat')
+				->row();
 
 			if ($cek) {
-				$this->db->query(
-					"UPDATE tbl_riwayat SET
-				riwayat = " . $this->db->escape($riwayat) . ",
-				updated_at = NOW()
-				WHERE idUser = " . $this->db->escape($id_user)
-				);
+				$this->db
+					->where('idUser', $id_user)
+					->update('tbl_riwayat', array(
+						'riwayat' => $riwayat,
+						'updated_at' => date('Y-m-d H:i:s'),
+					));
 			} else {
-				$this->db->query("INSERT INTO tbl_riwayat SET
-				idUser = " . $this->db->escape($id_user) . ",
-				riwayat = " . $this->db->escape($riwayat) . ",
-				created_at = NOW(),
-				updated_at = NOW()
-			");
+				$this->db->insert('tbl_riwayat', array(
+					'idUser' => $id_user,
+					'riwayat' => $riwayat,
+					'created_at' => date('Y-m-d H:i:s'),
+					'updated_at' => date('Y-m-d H:i:s'),
+				));
 			}
 		}
 

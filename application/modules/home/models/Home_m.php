@@ -310,6 +310,10 @@ class Home_m extends MX_Controller
 
 	public function updateRequestById($id)
 	{
+		$id = (int) $id;
+		if ($id < 1) {
+			return false;
+		}
 
 		$data = [];
 		if ($this->db->field_exists('date', 'requests')) {
@@ -338,6 +342,10 @@ class Home_m extends MX_Controller
 
 	public function deleteRequestById($id)
 	{
+		$id = (int) $id;
+		if ($id < 1) {
+			return false;
+		}
 		$this->db->where('request_id', $id);
 		$this->db->where('user_id', $this->session->userdata('id')); // Pastikan user_id sesuai dengan session
 		$this->db->where('request_status', 'Pending'); // Pastikan status request adalah 'Pending'
