@@ -540,6 +540,7 @@ foreach ($dataDoctor->result() as $doc) {
 								$keluhan = $data->request_description;
 								$nama_dokter = $data->nama_dokter;
 								$status = $data->request_status;
+								$request_status = $status;
 								$lat = $data->lattitude;
 								$lng = $data->longitude;
 
@@ -573,6 +574,13 @@ foreach ($dataDoctor->result() as $doc) {
 										<input type="text" name="latitudes" id="latitudes" value="<?= $lat; ?>" hidden />
 										<input type="text" name="longitudes" id="longitudes" value="<?= $lng; ?>" hidden />
 										<span id="estimasi"></span>
+										<?php if ($request_status === 'Accepted') : ?>
+											<div class="mt-3">
+												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-success btn-sm rounded-pill">
+													<i class="fas fa-comments me-1"></i> Chat Konsultasi
+												</a>
+											</div>
+										<?php endif; ?>
 									</div>
 								</div>
 							<?php
@@ -638,6 +646,9 @@ foreach ($dataDoctor->result() as $doc) {
 										<button class="btn btn-sm btn-outline-success mt-2" onclick="downloadCard('card-<?= $card_id ?>')">
 											<i class="fas fa-file-download"></i> Download Resep
 										</button>
+										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-sm btn-outline-secondary mt-2">
+											<i class="fas fa-comments"></i> Lihat Chat
+										</a>
 									</div>
 								</div>
 							<?php } ?>

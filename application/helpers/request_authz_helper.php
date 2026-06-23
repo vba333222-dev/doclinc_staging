@@ -95,6 +95,48 @@ if (!function_exists('doclinc_can_update_request')) {
 	}
 }
 
+if (!function_exists('doclinc_can_view_chat')) {
+	function doclinc_can_view_chat($request_id, $user_id = null, $role = null)
+	{
+		$user_id = $user_id ?: doclinc_current_user_id();
+		$role = $role ?: doclinc_current_user_role();
+		$request = doclinc_request_row($request_id);
+
+		if (!$request || empty($user_id)) {
+			return false;
+		}
+
+		if (!in_array($request->request_status, array('Accepted', 'Completed', 'Cancelled'), true)) {
+			return false;
+		}
+
+		if ($role === 'warga') {
+			return (string) $request->user_id === (string) $user_id;
+		}
+
+		if ($role === 'dokter') {
+			if (!empty($request->dokter_id) && (string) $request->dokter_id === (string) $user_id) {
+				return true;
+			}
+			return isset($request->accepted_by_user_id)
+				&& !empty($request->accepted_by_user_id)
+				&& (string) $request->accepted_by_user_id === (string) $user_id;
+		}
+
+		return false;
+	}
+}
+
+if (!function_exists('doclinc_can_send_chat')) {
+	function doclinc_can_send_chat($request_id, $user_id = null, $role = null)
+	{
+		$request = doclinc_request_row($request_id);
+		return $request
+			&& $request->request_status === 'Accepted'
+			&& doclinc_can_view_chat($request_id, $user_id, $role);
+	}
+}
+
 if (!function_exists('doclinc_log_request_event')) {
 	function doclinc_log_request_event($action, $request_id = null, $metadata = array())
 	{

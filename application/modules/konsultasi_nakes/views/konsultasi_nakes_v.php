@@ -159,6 +159,11 @@ if ((string) $kriteria === '0') {
 		<input type="hidden" name="dokterid" id="dokterId" value="<?= html_escape($_SESSION['id']) ?>">
 		<form id="form_konsul_nakes" enctype="multipart/form-data">
 			<input type="hidden" name="request_id" id="idReq" value="<?= html_escape($request_id) ?>">
+			<div class="mb-3">
+				<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="btn btn-outline-success rounded-pill shadow-sm">
+					<i class="bi bi-chat-dots"></i> Chat Konsultasi
+				</a>
+			</div>
 			<div class="form-floating mb-3">
 				<input type="text" id="diagnosa" name="diagnosa" class="form-control shadow-sm border-success" placeholder="Diagnosa" required>
 				<label for="diagnosa"><i class="bi bi-heart-pulse"></i> Diagnosa*</label>
