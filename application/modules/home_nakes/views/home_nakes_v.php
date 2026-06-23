@@ -744,39 +744,46 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 	</div>
 	<!-- end chatting dokter dengan pasien -->
 
-	<?php foreach ($data_request_new->result() as $y => $x) { ?>
-		<!-- Modal Foto -->
-		<div class="modal fade" id="fotoModal_<?php echo $x->user_id; ?>" tabindex="-1" aria-labelledby="fotoModalLabel_<?php echo $x->user_id; ?>" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered modal-lg">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="fotoModalLabel_<?php echo $x->user_id; ?>">Preview Foto</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-					</div>
-					<div class="modal-body text-center">
-						<img src="<?php echo base_url('uploads/' . $x->photos); ?>" alt="Foto" class="img-fluid rounded border">
+	<?php foreach ($data_request_new->result() as $y => $x) {
+		$photo_file = isset($x->photos) ? trim((string) $x->photos) : '';
+		$video_file = isset($x->video) ? trim((string) $x->video) : '';
+	?>
+		<?php if ($photo_file !== '') : ?>
+			<!-- Modal Foto -->
+			<div class="modal fade" id="fotoModal_<?php echo $x->user_id; ?>" tabindex="-1" aria-labelledby="fotoModalLabel_<?php echo $x->user_id; ?>" aria-hidden="true">
+				<div class="modal-dialog modal-dialog-centered modal-lg">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="fotoModalLabel_<?php echo $x->user_id; ?>">Preview Foto</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body text-center">
+							<img src="<?php echo html_escape(base_url('uploads/' . rawurlencode($photo_file))); ?>" alt="Foto" class="img-fluid rounded border">
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
+		<?php endif; ?>
 
-		<!-- Modal Video -->
-		<div class="modal fade" id="videoModal_<?php echo $x->user_id; ?>" tabindex="-1" aria-labelledby="videoModalLabel_<?php echo $x->user_id; ?>" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered modal-lg">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="videoModalLabel_<?php echo $x->user_id; ?>">Preview Video</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-					</div>
-					<div class="modal-body text-center">
-						<video controls width="100%" class="rounded border">
-							<source src="<?php echo base_url('uploads/' . $x->video); ?>" type="video/mp4">
-							Browser Anda tidak mendukung tag video.
-						</video>
+		<?php if ($video_file !== '') : ?>
+			<!-- Modal Video -->
+			<div class="modal fade" id="videoModal_<?php echo $x->user_id; ?>" tabindex="-1" aria-labelledby="videoModalLabel_<?php echo $x->user_id; ?>" aria-hidden="true">
+				<div class="modal-dialog modal-dialog-centered modal-lg">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="videoModalLabel_<?php echo $x->user_id; ?>">Preview Video</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body text-center">
+							<video controls width="100%" class="rounded border">
+								<source src="<?php echo html_escape(base_url('uploads/' . rawurlencode($video_file))); ?>" type="video/mp4">
+								Browser Anda tidak mendukung tag video.
+							</video>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
+		<?php endif; ?>
 
 	<?php } ?>
 
@@ -1017,21 +1024,9 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 								}
 								const redirectUrl = response && response.redirect_url ? response.redirect_url : `<?= base_url('konsultasi_nakes/konsultasi/'); ?>${reqId}?kriteria=1`;
 
-								Swal.fire({
-									title: "Berhasil",
-									text: response && response.message ? response.message : "Anda menerima konsultasi",
-									icon: "success",
-									showConfirmButton: false,
-									timer: 2000,
-									timerProgressBar: true
-								}).then((result) => {
-									if (result.dismiss === Swal.DismissReason.timer) {
-										const finishRedirect = function() {
-											window.location.href = redirectUrl;
-										};
-
+								const runLegacyAcceptNotification = function() {
+									try {
 										if (typeof db === 'undefined' || !db || typeof db.ref !== 'function') {
-											finishRedirect();
 											return;
 										}
 
@@ -1096,13 +1091,23 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 													db.ref("messages").push(chatData);
 													db.ref("notifications").push(chatNotif);
 												}
+											}).catch(() => {});
+									} catch (error) {}
+								};
 
-												finishRedirect();
-											}).catch(() => {
-												finishRedirect();
-											});
-									}
+								runLegacyAcceptNotification();
+
+								Swal.fire({
+									title: "Berhasil",
+									text: response && response.message ? response.message : "Anda menerima konsultasi",
+									icon: "success",
+									showConfirmButton: false,
+									timer: 800,
+									timerProgressBar: true
 								});
+								window.setTimeout(function() {
+									window.location.href = redirectUrl;
+								}, 300);
 							},
 							error: function() {
 								Swal.fire("Gagal", "Request gagal diterima", "error");
