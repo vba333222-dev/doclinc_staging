@@ -1674,6 +1674,7 @@ foreach ($dataDoctor->result() as $doc) {
 	<script>
 		const notificationListJsonUrl = <?= json_encode(base_url('notifikasi/list_json')); ?>;
 		const notificationMarkReadUrl = <?= json_encode(base_url('notifikasi/mark_read')); ?>;
+		const notificationPollIntervalMs = 30000;
 
 		function getNotificationBadge() {
 			return document.getElementById('badgeNotif') || document.getElementById('badgeNotifs');
@@ -1745,22 +1746,39 @@ foreach ($dataDoctor->result() as $doc) {
 		}
 
 		function loadDatabaseNotifications() {
+			if (document.visibilityState === 'hidden') {
+				return;
+			}
 			fetch(notificationListJsonUrl, {
 					credentials: 'same-origin'
 				})
 				.then(function(response) {
+					if (!response.ok) {
+						throw new Error('notification_load_failed');
+					}
 					return response.json();
 				})
 				.then(function(data) {
 					if (!data || data.status !== 'success') {
-						renderDatabaseNotifications([], 0);
 						return;
 					}
 					renderDatabaseNotifications(data.notifications || [], parseInt(data.unread_count || 0, 10));
 				})
-				.catch(function() {
-					renderDatabaseNotifications([], 0);
-				});
+				.catch(function() {});
+		}
+
+		function startDatabaseNotificationPolling() {
+			if (window.doclincNotificationPollingStarted) {
+				return;
+			}
+			window.doclincNotificationPollingStarted = true;
+			loadDatabaseNotifications();
+			window.setInterval(loadDatabaseNotifications, notificationPollIntervalMs);
+			document.addEventListener('visibilitychange', function() {
+				if (document.visibilityState === 'visible') {
+					loadDatabaseNotifications();
+				}
+			});
 		}
 
 		function markNotificationRead(notification) {
@@ -1787,7 +1805,7 @@ foreach ($dataDoctor->result() as $doc) {
 				});
 		}
 
-		document.addEventListener('DOMContentLoaded', loadDatabaseNotifications);
+		document.addEventListener('DOMContentLoaded', startDatabaseNotificationPolling);
 		document.addEventListener('DOMContentLoaded', function() {
 			const highlightRequestId = new URLSearchParams(window.location.search).get('highlight_request_id');
 			if (!highlightRequestId) {

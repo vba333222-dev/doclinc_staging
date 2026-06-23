@@ -198,6 +198,19 @@ if (!function_exists('doclinc_mark_notification_read')) {
 		}
 
 		$CI = &get_instance();
+		$notification = $CI->db
+			->select('notification_id, is_read')
+			->where('notification_id', $notification_id)
+			->where('recipient_user_id', $user_id)
+			->get('notifications')
+			->row();
+		if (!$notification) {
+			return false;
+		}
+		if ((int) $notification->is_read === 1) {
+			return true;
+		}
+
 		$CI->db
 			->where('notification_id', $notification_id)
 			->where('recipient_user_id', $user_id)
