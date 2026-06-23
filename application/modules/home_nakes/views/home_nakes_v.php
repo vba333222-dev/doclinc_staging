@@ -446,7 +446,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
 							?>
-								<div class="card shadow mb-2">
+								<div class="card shadow mb-2" data-request-id="<?= (int) $x->request_id; ?>">
 									<div class="card-header d-flex align-items-center">
 										<p class="mb-0">
 											<em> <?php echo date('d-m-Y', strtotime($x->created_at)); ?> </em>
@@ -484,7 +484,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
 							?>
-								<div class="card shadow mb-2">
+								<div class="card shadow mb-2" data-request-id="<?= (int) $x->request_id; ?>">
 									<div class="card-header d-flex align-items-center">
 										<p class="mb-0">
 											<em> <?php echo date('d-m-Y', strtotime($x->created_at)); ?> </em>
@@ -547,7 +547,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 								$diagnosa = !empty($x->diagnosa) ? $x->diagnosa : (!empty($x->diagnosis) ? $x->diagnosis : '-');
 								$saran = !empty($x->saran) ? $x->saran : (!empty($x->recommendations) ? $x->recommendations : '-');
 							?>
-								<div class="card shadow mb-2">
+								<div class="card shadow mb-2" data-request-id="<?= (int) $x->request_id; ?>">
 									<div class="card-header d-flex align-items-center">
 										<p class="mb-0">
 											<em> <?php echo date('d-m-Y', strtotime($x->created_at)); ?> </em>
@@ -567,6 +567,11 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 										<p class="mb-1 small">
 											<span class="fw-bold"><i class='fas fa-comment-dots fs-4'></i> Saran :</span><br><?php echo $saran; ?>
 										</p>
+									</div>
+									<div class="card-footer">
+										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-secondary btn-sm rounded-pill">
+											<i class="fas fa-comments me-1"></i> Riwayat Chat
+										</a>
 									</div>
 								</div>
 							<?php } ?>
@@ -890,6 +895,19 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 			if (hash) {
 				showContent(hash.replace('#', ''));
 			}
+			var highlightRequestId = new URLSearchParams(window.location.search).get('highlight_request_id');
+			if (highlightRequestId) {
+				var cards = document.querySelectorAll('[data-request-id]');
+				cards.forEach(function(card) {
+					if (card.getAttribute('data-request-id') === highlightRequestId) {
+						card.classList.add('border', 'border-success', 'border-2');
+						card.scrollIntoView({
+							behavior: 'smooth',
+							block: 'center'
+						});
+					}
+				});
+			}
 		});
 
 		function showContent(tab) {
@@ -943,6 +961,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 		for (let i = 1; i <= jumlah_request; i++) {
 			// alert(i);
 			$('#terimaKonsul' + i).click(function(event) {
+				const acceptButton = this;
 				var id = $('#id_request' + i).val();
 				var id_user = $('#id_user').val();
 				var latitude = $('#latitude').val();
@@ -972,6 +991,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 				}).then((result) => {
 					/* Read more about isConfirmed, isDenied below */
 					if (result.isConfirmed) {
+						$(acceptButton).prop('disabled', true).addClass('disabled');
 						// Hanya kirim AJAX jika user menekan "Iya"
 						$.ajax({
 							url: '<?php echo base_url(); ?>home_nakes/accept_request',
@@ -992,8 +1012,10 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 								if (!(response == 1 || response === true || (response && response.status === 'success'))) {
 									const message = response && response.message ? response.message : 'Request gagal diterima';
 									Swal.fire("Gagal", message, "error");
+									$(acceptButton).prop('disabled', false).removeClass('disabled');
 									return;
 								}
+								const redirectUrl = response && response.redirect_url ? response.redirect_url : `<?= base_url('konsultasi_nakes/konsultasi/'); ?>${reqId}?kriteria=1`;
 
 								Swal.fire({
 									title: "Berhasil",
@@ -1003,15 +1025,25 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 									timer: 2000,
 									timerProgressBar: true
 								}).then((result) => {
-									const newMessageRef = db.ref("notiffromdoc").push();
-									newMessageRef.set({
-										id_req: id,
-										id_user: id_user,
-										status: 'Nakes Menuju Lokasi',
-										text: 'Nakes sedang Menyiapkan obat dan Kendaraan',
-										timestamp: Date.now()
-									});
 									if (result.dismiss === Swal.DismissReason.timer) {
+										const finishRedirect = function() {
+											window.location.href = redirectUrl;
+										};
+
+										if (typeof db === 'undefined' || !db || typeof db.ref !== 'function') {
+											finishRedirect();
+											return;
+										}
+
+										const newMessageRef = db.ref("notiffromdoc").push();
+										newMessageRef.set({
+											id_req: id,
+											id_user: id_user,
+											status: 'Nakes Menuju Lokasi',
+											text: 'Nakes sedang Menyiapkan obat dan Kendaraan',
+											timestamp: Date.now()
+										});
+
 										const waktuSalam = () => {
 											const jam = new Date().getHours();
 											if (jam < 11) return "pagi";
@@ -1047,7 +1079,6 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 											timestamp: Date.now()
 										};
 
-										// ✅ Cek apakah sudah ada pesan pembuka
 										db.ref("messages")
 											.orderByChild("receiver")
 											.equalTo(reqId)
@@ -1062,21 +1093,20 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 												});
 
 												if (!alreadySent) {
-													// Kirim hanya jika belum ada
 													db.ref("messages").push(chatData);
 													db.ref("notifications").push(chatNotif);
 												}
 
-												// Redirect tetap dilakukan
-												window.location.href = `<?= base_url('konsultasi_nakes/konsultasi/'); ?>${reqId}?kriteria=1`;
+												finishRedirect();
 											}).catch(() => {
-												window.location.href = `<?= base_url('konsultasi_nakes/konsultasi/'); ?>${reqId}?kriteria=1`;
+												finishRedirect();
 											});
 									}
 								});
 							},
 							error: function() {
 								Swal.fire("Gagal", "Request gagal diterima", "error");
+								$(acceptButton).prop('disabled', false).removeClass('disabled');
 							}
 						});
 					}
@@ -1557,7 +1587,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 
 			notificationItem.appendChild(textContainer);
 			notificationItem.addEventListener('click', function() {
-				markNotificationRead(item.notification_id);
+				markNotificationRead(item);
 			});
 
 			return notificationItem;
@@ -1598,7 +1628,9 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 				});
 		}
 
-		function markNotificationRead(notificationId) {
+		function markNotificationRead(notification) {
+			const notificationId = notification && notification.notification_id ? notification.notification_id : notification;
+			const actionUrl = notification && notification.action_url ? notification.action_url : '';
 			if (!notificationId) {
 				return;
 			}
@@ -1611,6 +1643,10 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 				})
 				.then(function(response) {
 					if (response.ok) {
+						if (actionUrl) {
+							window.location.href = actionUrl;
+							return;
+						}
 						loadDatabaseNotifications();
 					}
 				});

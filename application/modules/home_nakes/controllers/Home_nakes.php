@@ -129,7 +129,13 @@ class Home_nakes extends MX_Controller
 					);
 				}
 			}
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => $result['message']]));
+			$this->output->set_output(json_encode([
+				'status' => 'success',
+				'message' => $result['message'],
+				'request_id' => $id,
+				'request_status' => 'Accepted',
+				'redirect_url' => base_url('konsultasi_nakes/konsultasi/' . $id) . '?kriteria=1'
+			]));
 			return;
 		}
 

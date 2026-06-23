@@ -25,13 +25,19 @@ class Notifikasi extends MX_Controller
 		}
 
 		$user_id = (int) $this->session->userdata('id');
+		$role = $this->session->userdata('role') ?: '';
 		$limit = (int) $this->input->get('limit', TRUE);
 		$limit = $limit > 0 ? $limit : 20;
+		$notifications = doclinc_get_unread_notifications($user_id, $limit);
+		foreach ($notifications as &$notification) {
+			$notification['action_url'] = $this->notification_action_url($notification, $user_id, $role);
+		}
+		unset($notification);
 
 		$this->output->set_output(json_encode(array(
 			'status' => 'success',
 			'unread_count' => doclinc_count_unread_notifications($user_id),
-			'notifications' => doclinc_get_unread_notifications($user_id, $limit),
+			'notifications' => $notifications,
 		)));
 	}
 
@@ -62,5 +68,53 @@ class Notifikasi extends MX_Controller
 		}
 
 		$this->output->set_output(json_encode(array('status' => 'success')));
+	}
+
+	private function notification_action_url($notification, $user_id, $role)
+	{
+		$fallback = $role === 'dokter' ? base_url('home_nakes') : base_url('home');
+		if (empty($notification['entity_type']) || $notification['entity_type'] !== 'request') {
+			return $fallback;
+		}
+
+		$request_id = (int) (isset($notification['entity_id']) ? $notification['entity_id'] : 0);
+		if ($request_id < 1) {
+			return $fallback;
+		}
+
+		$request = $this->db
+			->where('request_id', $request_id)
+			->get('requests')
+			->row();
+		if (!$request) {
+			return $fallback;
+		}
+
+		if ($role === 'dokter') {
+			$is_handler = (string) $request->dokter_id === (string) $user_id
+				|| (isset($request->accepted_by_user_id) && (string) $request->accepted_by_user_id === (string) $user_id);
+			if ($request->request_status === 'Pending') {
+				return base_url('home_nakes?highlight_request_id=' . $request_id) . '#req_konsul';
+			}
+			if ($is_handler && $request->request_status === 'Accepted') {
+				if (isset($notification['event_type']) && $notification['event_type'] === 'chat_message') {
+					return base_url('chat?request_id=' . $request_id);
+				}
+				return base_url('konsultasi_nakes/konsultasi/' . $request_id) . '?kriteria=1';
+			}
+			if ($is_handler && in_array($request->request_status, array('Completed', 'Cancelled'), true)) {
+				return base_url('chat?request_id=' . $request_id);
+			}
+			return $fallback;
+		}
+
+		if ($role === 'warga' && (string) $request->user_id === (string) $user_id) {
+			if (in_array($request->request_status, array('Accepted', 'Completed', 'Cancelled'), true)) {
+				return base_url('chat?request_id=' . $request_id);
+			}
+			return base_url('home?highlight_request_id=' . $request_id) . '#riwayat';
+		}
+
+		return $fallback;
 	}
 }

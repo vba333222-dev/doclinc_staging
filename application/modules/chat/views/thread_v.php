@@ -2,7 +2,11 @@
 $request_id = isset($request_id) ? (int) $request_id : 0;
 $can_send = !empty($can_send);
 $current_user_id = isset($current_user_id) ? (int) $current_user_id : 0;
+$request_status = isset($request->request_status) ? (string) $request->request_status : '';
 $back_url = ($current_role === 'dokter') ? base_url('home_nakes') : base_url('home#riwayat');
+$readonly_message = in_array($request_status, array('Completed', 'Cancelled'), true)
+	? 'Konsultasi sudah selesai. Riwayat chat hanya dapat dibaca.'
+	: 'Chat ini hanya dapat dibaca.';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -162,7 +166,7 @@ $back_url = ($current_role === 'dokter') ? base_url('home_nakes') : base_url('ho
 					<button class="chat-send" type="submit">Kirim</button>
 				</div>
 			<?php else : ?>
-				<div class="chat-readonly">Chat ini hanya dapat dibaca.</div>
+				<div class="chat-readonly"><?= html_escape($readonly_message); ?></div>
 			<?php endif; ?>
 		</form>
 	</div>

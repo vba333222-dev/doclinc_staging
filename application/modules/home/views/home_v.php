@@ -560,7 +560,7 @@ foreach ($dataDoctor->result() as $doc) {
 									✅ Nakes telah menerima permintaan konsultasi Anda.
 								</div>
 
-								<div class="card shadow mb-2">
+								<div class="card shadow mb-2" data-request-id="<?= (int) $id_request; ?>">
 									<div class="card-header d-flex align-items-center">
 										<p class="mb-0"><em><?= $tanggal; ?></em></p>
 										<span id="statusNotif" class="badge text-bg-warning ms-auto animate__animated animate__flash animate__infinite animate__slower"><?= $status; ?></span>
@@ -603,7 +603,7 @@ foreach ($dataDoctor->result() as $doc) {
 
 								$tanggal_riwayat = date('d F Y', strtotime($tanggal));
 							?>
-								<div class="card shadow mb-2" id="card-<?= $card_id ?>">
+								<div class="card shadow mb-2" id="card-<?= $card_id ?>" data-request-id="<?= (int) $id_request; ?>">
 									<div class="card-header d-flex align-items-center">
 										<p class="mb-0"><em><?= $tanggal_riwayat; ?></em></p>
 										<span class="badge text-bg-secondary ms-auto">Selesai</span>
@@ -1722,7 +1722,7 @@ foreach ($dataDoctor->result() as $doc) {
 
 			notificationItem.appendChild(content);
 			notificationItem.addEventListener('click', function() {
-				markNotificationRead(item.notification_id);
+				markNotificationRead(item);
 			});
 
 			return notificationItem;
@@ -1763,7 +1763,9 @@ foreach ($dataDoctor->result() as $doc) {
 				});
 		}
 
-		function markNotificationRead(notificationId) {
+		function markNotificationRead(notification) {
+			const notificationId = notification && notification.notification_id ? notification.notification_id : notification;
+			const actionUrl = notification && notification.action_url ? notification.action_url : '';
 			if (!notificationId) {
 				return;
 			}
@@ -1776,12 +1778,31 @@ foreach ($dataDoctor->result() as $doc) {
 				})
 				.then(function(response) {
 					if (response.ok) {
+						if (actionUrl) {
+							window.location.href = actionUrl;
+							return;
+						}
 						loadDatabaseNotifications();
 					}
 				});
 		}
 
 		document.addEventListener('DOMContentLoaded', loadDatabaseNotifications);
+		document.addEventListener('DOMContentLoaded', function() {
+			const highlightRequestId = new URLSearchParams(window.location.search).get('highlight_request_id');
+			if (!highlightRequestId) {
+				return;
+			}
+			document.querySelectorAll('[data-request-id]').forEach(function(card) {
+				if (card.getAttribute('data-request-id') === highlightRequestId) {
+					card.classList.add('border', 'border-success', 'border-2');
+					card.scrollIntoView({
+						behavior: 'smooth',
+						block: 'center'
+					});
+				}
+			});
+		});
 	</script>
 
 	<!-- simpan lokasi ke firebase -->
