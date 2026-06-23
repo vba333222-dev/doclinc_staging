@@ -518,6 +518,9 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 										<a href="<?= base_url('konsultasi_nakes/konsultasi/' . $x->request_id) . '?kriteria=1' ?>" class="btn btn-success shadow-sm rounded-pill ms-auto">
 											<i class="fas fa-notes-medical me-2"></i> Lanjut Konsultasi
 										</a>
+										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill ms-2">
+											<i class="fas fa-comments me-2"></i> Chat
+										</a>
 									</div>
 								</div>
 							<?php
