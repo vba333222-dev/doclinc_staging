@@ -4,6 +4,14 @@ $can_send = !empty($can_send);
 $current_user_id = isset($current_user_id) ? (int) $current_user_id : 0;
 $request_status = isset($request->request_status) ? (string) $request->request_status : '';
 $back_url = ($current_role === 'dokter') ? base_url('home_nakes') : base_url('home#riwayat');
+$status_label = 'Chat belum tersedia';
+if ($request_status === 'Accepted') {
+	$status_label = 'Chat aktif';
+} elseif ($request_status === 'Completed') {
+	$status_label = 'Riwayat chat';
+} elseif ($request_status === 'Cancelled') {
+	$status_label = 'Riwayat chat dibatalkan';
+}
 $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), true)
 	? 'Konsultasi sudah selesai. Riwayat chat hanya dapat dibaca.'
 	: 'Chat ini hanya dapat dibaca.';
@@ -58,6 +66,18 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 		.chat-subtitle {
 			font-size: 12px;
 			opacity: 0.9;
+		}
+
+		.chat-status {
+			display: inline-flex;
+			align-items: center;
+			width: fit-content;
+			margin-top: 4px;
+			padding: 3px 8px;
+			border-radius: 999px;
+			background: rgba(255, 255, 255, 0.2);
+			font-size: 11px;
+			font-weight: 700;
 		}
 
 		.chat-list {
@@ -119,6 +139,11 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 			cursor: pointer;
 		}
 
+		.chat-send:disabled {
+			cursor: not-allowed;
+			opacity: 0.65;
+		}
+
 		.chat-muted,
 		.chat-error,
 		.chat-readonly {
@@ -152,6 +177,7 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 			<div>
 				<div class="chat-title">Chat Konsultasi</div>
 				<div class="chat-subtitle">Request #<?= html_escape($request_id); ?></div>
+				<div class="chat-status"><?= html_escape($status_label); ?></div>
 			</div>
 		</header>
 
@@ -175,6 +201,7 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 		const requestId = <?= json_encode($request_id); ?>;
 		const currentUserId = <?= json_encode($current_user_id); ?>;
 		const canSend = <?= json_encode($can_send); ?>;
+		const isReadOnly = <?= json_encode(!$can_send); ?>;
 		const messagesUrl = <?= json_encode(base_url('chat/messages')); ?>;
 		const sendUrl = <?= json_encode(base_url('chat/send')); ?>;
 		const markReadUrl = <?= json_encode(base_url('chat/mark_read')); ?>;
@@ -230,7 +257,7 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 						return;
 					}
 					if (!hasLoaded && (!data.messages || data.messages.length === 0)) {
-						document.getElementById('chatMessages').innerHTML = '<div class="chat-muted">Belum ada pesan.</div>';
+						document.getElementById('chatMessages').innerHTML = '<div class="chat-muted">Belum ada pesan pada konsultasi ini.</div>';
 						hasLoaded = true;
 					}
 					(data.messages || []).forEach(appendMessage);
@@ -256,8 +283,12 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 		document.addEventListener('DOMContentLoaded', function() {
 			loadMessages();
 			markRead();
-			setInterval(loadMessages, 7000);
-			setInterval(markRead, 15000);
+			if (isReadOnly) {
+				window.setTimeout(loadMessages, 30000);
+			} else {
+				setInterval(loadMessages, 7000);
+				setInterval(markRead, 15000);
+			}
 		});
 
 		const chatForm = document.getElementById('chatForm');
@@ -265,9 +296,14 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 			chatForm.addEventListener('submit', function(event) {
 				event.preventDefault();
 				const input = document.getElementById('messageText');
+				const sendButton = chatForm.querySelector('.chat-send');
 				const text = input ? input.value.trim() : '';
 				if (!text) {
 					return;
+				}
+
+				if (sendButton) {
+					sendButton.disabled = true;
 				}
 
 				const formData = new FormData();
@@ -285,6 +321,11 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 						if (data && data.status === 'success' && data.message) {
 							input.value = '';
 							appendMessage(data.message);
+						}
+					})
+					.finally(function() {
+						if (sendButton) {
+							sendButton.disabled = false;
 						}
 					});
 			});

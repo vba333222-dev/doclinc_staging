@@ -39,11 +39,12 @@ class Upload extends CI_Controller
 		}
 
 		if (!$this->upload->do_upload('foto')) {
-			http_response_code(400);
-			echo json_encode(['status' => 'error', 'message' => $this->upload->display_errors()]);
+			$this->output
+				->set_status_header(400)
+				->set_output(json_encode(['status' => 'error', 'message' => strip_tags($this->upload->display_errors())]));
 		} else {
 			$data = $this->upload->data();
-			echo json_encode(['status' => 'success', 'filename' => $data['file_name']]);
+			$this->output->set_output(json_encode(['status' => 'success', 'filename' => $data['file_name']]));
 		}
 	}
 
@@ -68,11 +69,12 @@ class Upload extends CI_Controller
 		}
 
 		if (!$this->upload->do_upload('video')) {
-			http_response_code(400);
-			echo json_encode(['status' => 'error', 'message' => $this->upload->display_errors()]);
+			$this->output
+				->set_status_header(400)
+				->set_output(json_encode(['status' => 'error', 'message' => strip_tags($this->upload->display_errors())]));
 		} else {
 			$data = $this->upload->data();
-			echo json_encode(['status' => 'success', 'filename' => $data['file_name']]);
+			$this->output->set_output(json_encode(['status' => 'success', 'filename' => $data['file_name']]));
 		}
 	}
 
