@@ -511,15 +511,15 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 											<span id="durations"></span>
 										</p>
 									</div>
-									<div class="card-footer d-flex">
+									<div class="card-footer d-flex flex-wrap gap-2">
 										<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-lat="<?php echo $x->lattitude; ?>" data-lng="<?php echo $x->longitude; ?>">
 											<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
 										</button>
-										<a href="<?= base_url('konsultasi_nakes/konsultasi/' . $x->request_id) . '?kriteria=1' ?>" class="btn btn-success shadow-sm rounded-pill ms-auto">
+										<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id) . '?kriteria=1'); ?>" class="btn btn-success shadow-sm rounded-pill">
 											<i class="fas fa-notes-medical me-2"></i> Lanjut Konsultasi
 										</a>
-										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill ms-2">
-											<i class="fas fa-comments me-2"></i> Chat
+										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
+											<i class="fas fa-comments me-2"></i> Chat Konsultasi
 										</a>
 									</div>
 								</div>
