@@ -87,6 +87,45 @@ class Chat_m extends CI_Model
 		return $row ? $this->format_message($row) : false;
 	}
 
+	public function send_image_message($request_id, $current_user_id, $relative_path, $mime_type = '', $original_name = '')
+	{
+		$request_id = (int) $request_id;
+		$current_user_id = (int) $current_user_id;
+		$relative_path = $this->safe_attachment_path($relative_path);
+
+		if (!$this->messages_ready() || !doclinc_can_send_chat($request_id, $current_user_id) || $relative_path === '') {
+			return false;
+		}
+
+		$data = array(
+			'request_id' => $request_id,
+			'sender_user_id' => $current_user_id,
+			'sender_role' => doclinc_current_user_role(),
+			'message_type' => 'image',
+			'message_text' => $relative_path,
+			'attachment_path' => $relative_path,
+			'attachment_mime' => substr(trim((string) $mime_type), 0, 120),
+			'attachment_original_name' => substr(basename((string) $original_name), 0, 180),
+			'is_read' => 0,
+			'created_at' => date('Y-m-d H:i:s'),
+		);
+
+		$this->db->insert('consultation_messages', $data);
+		$message_id = $this->db->insert_id();
+		if (!$message_id) {
+			return false;
+		}
+
+		$this->notify_recipient($request_id, $current_user_id);
+
+		$row = $this->db
+			->where('message_id', $message_id)
+			->get('consultation_messages')
+			->row_array();
+
+		return $row ? $this->format_message($row) : false;
+	}
+
 	public function mark_read($request_id, $current_user_id)
 	{
 		$request_id = (int) $request_id;
@@ -113,6 +152,11 @@ class Chat_m extends CI_Model
 
 	private function format_message($row)
 	{
+		$attachment_path = $this->safe_attachment_path(isset($row['attachment_path']) ? $row['attachment_path'] : '');
+		if ($attachment_path === '' && isset($row['message_type']) && $row['message_type'] === 'image') {
+			$attachment_path = $this->safe_attachment_path(isset($row['message_text']) ? $row['message_text'] : '');
+		}
+
 		return array(
 			'message_id' => (int) $row['message_id'],
 			'request_id' => (int) $row['request_id'],
@@ -120,12 +164,27 @@ class Chat_m extends CI_Model
 			'sender_role' => $row['sender_role'],
 			'message_type' => $row['message_type'],
 			'message_text' => $row['message_text'],
-			'attachment_path' => $row['attachment_path'],
+			'attachment_path' => $attachment_path,
+			'attachment_url' => $attachment_path !== '' ? base_url($attachment_path) : '',
 			'attachment_mime' => $row['attachment_mime'],
 			'attachment_original_name' => $row['attachment_original_name'],
 			'is_read' => (int) $row['is_read'],
 			'created_at' => $row['created_at'],
 		);
+	}
+
+	private function safe_attachment_path($path)
+	{
+		$path = trim(str_replace('\\', '/', (string) $path));
+		if ($path === '' || strpos($path, '..') !== false || strpos($path, ':') !== false || strpos($path, '//') !== false || $path[0] === '/') {
+			return '';
+		}
+
+		if (strpos($path, 'uploads/chat_images/') !== 0) {
+			return '';
+		}
+
+		return $path;
 	}
 
 	private function notify_recipient($request_id, $sender_user_id)

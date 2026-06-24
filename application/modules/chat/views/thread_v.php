@@ -102,6 +102,14 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 			background: #dcf8ec;
 		}
 
+		.chat-image {
+			display: block;
+			max-width: 100%;
+			max-height: 320px;
+			border-radius: 8px;
+			object-fit: contain;
+		}
+
 		.chat-time {
 			font-size: 11px;
 			color: #6c757d;
@@ -136,10 +144,26 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 			color: #fff;
 			font-weight: 700;
 			min-width: 76px;
+			padding: 0 14px;
+			cursor: pointer;
+		}
+
+		.chat-upload {
+			border: 1px solid #09ad74;
+			border-radius: 8px;
+			background: #fff;
+			color: #087e57;
+			font-weight: 700;
+			min-width: 46px;
 			cursor: pointer;
 		}
 
 		.chat-send:disabled {
+			cursor: not-allowed;
+			opacity: 0.65;
+		}
+
+		.chat-upload:disabled {
 			cursor: not-allowed;
 			opacity: 0.65;
 		}
@@ -189,6 +213,8 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 			<?php if ($can_send) : ?>
 				<div class="chat-input-row">
 					<textarea class="chat-input" id="messageText" rows="2" maxlength="2000" placeholder="Tulis pesan..." required></textarea>
+					<input type="file" id="imageInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden>
+					<button class="chat-upload" id="imageButton" type="button" aria-label="Kirim gambar">Gambar</button>
 					<button class="chat-send" type="submit">Kirim</button>
 				</div>
 			<?php else : ?>
@@ -204,6 +230,7 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 		const isReadOnly = <?= json_encode(!$can_send); ?>;
 		const messagesUrl = <?= json_encode(base_url('chat/messages')); ?>;
 		const sendUrl = <?= json_encode(base_url('chat/send')); ?>;
+		const imageUploadUrl = <?= json_encode(base_url('chat/foto')); ?>;
 		const markReadUrl = <?= json_encode(base_url('chat/mark_read')); ?>;
 		let lastMessageId = 0;
 		let hasLoaded = false;
@@ -213,6 +240,18 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 				return '';
 			}
 			return new Date(value.replace(' ', 'T')).toLocaleString('id-ID');
+		}
+
+		function isSafeImageUrl(value) {
+			if (!value) {
+				return false;
+			}
+			try {
+				const parsed = new URL(value, window.location.origin);
+				return parsed.origin === window.location.origin && parsed.pathname.indexOf('/uploads/chat_images/') !== -1;
+			} catch (error) {
+				return false;
+			}
 		}
 
 		function appendMessage(message) {
@@ -228,9 +267,23 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 			const bubble = document.createElement('div');
 			bubble.className = 'chat-bubble' + (parseInt(message.sender_user_id, 10) === currentUserId ? ' mine' : '');
 
-			const text = document.createElement('div');
-			text.textContent = message.message_text || '';
-			bubble.appendChild(text);
+			if (message.message_type === 'image' && isSafeImageUrl(message.attachment_url)) {
+				const link = document.createElement('a');
+				link.href = message.attachment_url;
+				link.target = '_blank';
+				link.rel = 'noopener';
+
+				const image = document.createElement('img');
+				image.className = 'chat-image';
+				image.src = message.attachment_url;
+				image.alt = 'Gambar konsultasi';
+				link.appendChild(image);
+				bubble.appendChild(link);
+			} else {
+				const text = document.createElement('div');
+				text.textContent = message.message_text || '';
+				bubble.appendChild(text);
+			}
 
 			const time = document.createElement('div');
 			time.className = 'chat-time';
@@ -329,6 +382,61 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 						}
 					});
 			});
+
+			const imageInput = document.getElementById('imageInput');
+			const imageButton = document.getElementById('imageButton');
+			if (imageButton && imageInput) {
+				imageButton.addEventListener('click', function() {
+					imageInput.click();
+				});
+
+				imageInput.addEventListener('change', function() {
+					const file = imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
+					if (!file) {
+						return;
+					}
+
+					const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+					if (allowedTypes.indexOf(file.type) === -1) {
+						alert('Format gambar tidak didukung.');
+						imageInput.value = '';
+						return;
+					}
+
+					if (file.size > 4 * 1024 * 1024) {
+						alert('Ukuran gambar maksimal 4 MB.');
+						imageInput.value = '';
+						return;
+					}
+
+					imageButton.disabled = true;
+					const formData = new FormData();
+					formData.append('request_id', requestId);
+					formData.append('foto', file);
+					fetch(imageUploadUrl, {
+							method: 'POST',
+							body: formData,
+							credentials: 'same-origin'
+						})
+						.then(function(response) {
+							return response.json();
+						})
+						.then(function(data) {
+							if (data && data.status === 'success' && data.message) {
+								appendMessage(data.message);
+							} else {
+								alert(data && data.message ? data.message : 'Gambar tidak dapat dikirim.');
+							}
+						})
+						.catch(function() {
+							alert('Gambar tidak dapat dikirim.');
+						})
+						.finally(function() {
+							imageButton.disabled = false;
+							imageInput.value = '';
+						});
+				});
+			}
 		}
 	</script>
 </body>
