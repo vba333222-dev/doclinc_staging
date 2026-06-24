@@ -172,15 +172,27 @@ if ($current_role === 'dokter') {
 		.chat-list {
 			flex: 1;
 			overflow-y: auto;
-			padding: 20px 20px 18px;
+			padding: 25px 20px 18px;
 			background: #f7f7f7;
+		}
+
+		.chat-message-row {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 14px;
+			margin-bottom: 21px;
+			width: 100%;
+		}
+
+		.chat-message-row.mine {
+			justify-content: space-between;
 		}
 
 		.chat-bubble {
 			max-width: min(300px, 86%);
 			border-radius: 15px;
-			padding: 11px 13px 8px;
-			margin-bottom: 18px;
+			padding: 12px 14px;
 			background: #f9f0da;
 			border: 0;
 			box-shadow: none;
@@ -192,7 +204,6 @@ if ($current_role === 'dokter') {
 		}
 
 		.chat-bubble.mine {
-			margin-left: auto;
 			background: #e1f0d6;
 		}
 
@@ -210,24 +221,19 @@ if ($current_role === 'dokter') {
 			line-height: 0;
 		}
 
-		.chat-sender {
-			font-size: 11px;
-			font-weight: 700;
-			color: #8c8c8c;
-			margin-bottom: 4px;
-		}
-
-		.chat-bubble.mine .chat-sender {
-			color: #437a13;
-		}
-
 		.chat-time {
+			width: 52px;
+			flex: 0 0 52px;
 			font-size: 11px;
 			color: #a8a8a8;
-			margin-top: 6px;
-			text-align: right;
+			margin-top: 3px;
+			text-align: left;
 			white-space: normal;
 			line-height: 14px;
+		}
+
+		.chat-message-row:not(.mine) .chat-time {
+			text-align: right;
 		}
 
 		.chat-form {
@@ -244,11 +250,11 @@ if ($current_role === 'dokter') {
 		.chat-input-row {
 			display: flex;
 			align-items: center;
-			gap: 8px;
+			gap: 6px;
 			min-height: 40px;
 			border: 1px solid #a8a8a8;
 			border-radius: 20px;
-			padding: 0 9px 0 12px;
+			padding: 0 9px 0 10px;
 			background: #ffffff;
 		}
 
@@ -343,7 +349,7 @@ if ($current_role === 'dokter') {
 			}
 
 			.chat-bubble {
-				max-width: min(300px, 88%);
+				max-width: min(300px, calc(100vw - 114px));
 			}
 		}
 	</style>
@@ -378,10 +384,10 @@ if ($current_role === 'dokter') {
 					<button class="chat-icon-button chat-upload" id="imageButton" type="button" aria-label="Kirim gambar">
 						<img src="<?= html_escape($asset_base . 'icon-chat-camera.svg'); ?>" alt="">
 					</button>
-					<textarea class="chat-input" id="messageText" rows="1" maxlength="2000" placeholder="Tulis pesan..." required></textarea>
 					<button class="chat-icon-button chat-attach" id="attachmentButton" type="button" aria-label="Lampirkan gambar">
 						<img src="<?= html_escape($asset_base . 'icon-chat-attach.svg'); ?>" alt="">
 					</button>
+					<textarea class="chat-input" id="messageText" rows="1" maxlength="2000" placeholder="Tulis pesan..." required></textarea>
 					<button class="chat-send" type="submit" aria-label="Kirim pesan">
 						<img src="<?= html_escape($asset_base . 'icon-chat-send.svg'); ?>" alt="">
 					</button>
@@ -408,7 +414,14 @@ if ($current_role === 'dokter') {
 			if (!value) {
 				return '';
 			}
-			return new Date(value.replace(' ', 'T')).toLocaleString('id-ID');
+			const date = new Date(value.replace(' ', 'T'));
+			if (isNaN(date.getTime())) {
+				return '';
+			}
+			return date.toLocaleTimeString('id-ID', {
+				hour: '2-digit',
+				minute: '2-digit'
+			});
 		}
 
 		function isSafeImageUrl(value) {
@@ -435,14 +448,16 @@ if ($current_role === 'dokter') {
 				hasLoaded = true;
 			}
 
-			const bubble = document.createElement('div');
 			const isMine = parseInt(message.sender_user_id, 10) === currentUserId;
+			const row = document.createElement('div');
+			row.className = 'chat-message-row' + (isMine ? ' mine' : '');
+
+			const bubble = document.createElement('div');
 			bubble.className = 'chat-bubble' + (isMine ? ' mine' : '');
 
-			const sender = document.createElement('div');
-			sender.className = 'chat-sender';
-			sender.textContent = isMine ? 'Anda' : 'Lawan bicara';
-			bubble.appendChild(sender);
+			const time = document.createElement('div');
+			time.className = 'chat-time';
+			time.textContent = formatDate(message.created_at);
 
 			if (message.message_type === 'image' && isSafeImageUrl(message.attachment_url)) {
 				const link = document.createElement('a');
@@ -463,12 +478,15 @@ if ($current_role === 'dokter') {
 				bubble.appendChild(text);
 			}
 
-			const time = document.createElement('div');
-			time.className = 'chat-time';
-			time.textContent = formatDate(message.created_at);
-			bubble.appendChild(time);
+			if (isMine) {
+				row.appendChild(time);
+				row.appendChild(bubble);
+			} else {
+				row.appendChild(bubble);
+				row.appendChild(time);
+			}
 
-			list.appendChild(bubble);
+			list.appendChild(row);
 			list.scrollTop = list.scrollHeight;
 			lastMessageId = Math.max(lastMessageId, parseInt(message.message_id, 10) || 0);
 		}
