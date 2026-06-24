@@ -126,6 +126,34 @@ class Chat_m extends CI_Model
 		return $row ? $this->format_message($row) : false;
 	}
 
+	public function image_upload_config()
+	{
+		return array(
+			'upload_path' => './uploads/chat_images/',
+			'allowed_types' => 'jpg|jpeg|png|webp',
+			'max_size' => 4096,
+			'encrypt_name' => TRUE,
+			'detect_mime' => TRUE,
+			'mod_mime_fix' => TRUE,
+			'remove_spaces' => TRUE,
+		);
+	}
+
+	public function send_uploaded_image_message($request_id, $current_user_id, $upload_data)
+	{
+		if (!is_array($upload_data) || empty($upload_data['file_name'])) {
+			return false;
+		}
+
+		return $this->send_image_message(
+			$request_id,
+			$current_user_id,
+			'uploads/chat_images/' . $upload_data['file_name'],
+			isset($upload_data['file_type']) ? $upload_data['file_type'] : '',
+			isset($upload_data['client_name']) ? $upload_data['client_name'] : ''
+		);
+	}
+
 	public function mark_read($request_id, $current_user_id)
 	{
 		$request_id = (int) $request_id;
