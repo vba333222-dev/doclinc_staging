@@ -9,6 +9,7 @@ class Upload extends CI_Controller
 		parent::__construct();
 		$this->load->helper(['form', 'url']);
 		$this->load->helper('request_authz');
+		$this->load->model('Chat_m');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			$this->output
 				->set_content_type('application/json')
@@ -24,9 +25,11 @@ class Upload extends CI_Controller
 			return;
 		}
 
-		$config['upload_path']   = './uploads/foto/';
-		$config['allowed_types'] = 'jpg|jpeg|png';
-		$config['max_size']      = 5120; // 5 MB
+		$request_id = (int) $this->input->post('request_id');
+		$user_id = (int) $this->session->userdata('id');
+		$config['upload_path']   = './uploads/chat_images/';
+		$config['allowed_types'] = 'jpg|jpeg|png|webp';
+		$config['max_size']      = 4096;
 		$config['encrypt_name']  = TRUE;
 		$config['detect_mime']   = TRUE;
 		$config['mod_mime_fix']  = TRUE;
@@ -44,38 +47,32 @@ class Upload extends CI_Controller
 				->set_output(json_encode(['status' => 'error', 'message' => strip_tags($this->upload->display_errors())]));
 		} else {
 			$data = $this->upload->data();
-			$this->output->set_output(json_encode(['status' => 'success', 'filename' => $data['file_name']]));
+			$relative_path = 'uploads/chat_images/' . $data['file_name'];
+			$message = $this->Chat_m->send_image_message(
+				$request_id,
+				$user_id,
+				$relative_path,
+				isset($data['file_type']) ? $data['file_type'] : '',
+				isset($data['client_name']) ? $data['client_name'] : ''
+			);
+			if (!$message) {
+				@unlink($data['full_path']);
+				$this->output
+					->set_status_header(400)
+					->set_output(json_encode(['status' => 'error', 'message' => 'Gambar tidak dapat dikirim']));
+				return;
+			}
+
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => $message]));
 		}
 	}
 
 	public function video()
 	{
-		if (!$this->authorize_upload_request()) {
-			return;
-		}
-
-		$config['upload_path']   = './uploads/video/';
-		$config['allowed_types'] = 'mp4|mov|avi|mkv';
-		$config['max_size']      = 51200; // 50 MB
-		$config['encrypt_name']  = TRUE;
-		$config['detect_mime']   = TRUE;
-		$config['mod_mime_fix']  = TRUE;
-		$config['remove_spaces'] = TRUE;
-
-		$this->load->library('upload', $config);
-
-		if (!is_dir($config['upload_path'])) {
-			mkdir($config['upload_path'], 0755, true);
-		}
-
-		if (!$this->upload->do_upload('video')) {
-			$this->output
-				->set_status_header(400)
-				->set_output(json_encode(['status' => 'error', 'message' => strip_tags($this->upload->display_errors())]));
-		} else {
-			$data = $this->upload->data();
-			$this->output->set_output(json_encode(['status' => 'success', 'filename' => $data['file_name']]));
-		}
+		$this->output
+			->set_content_type('application/json')
+			->set_status_header(400)
+			->set_output(json_encode(['status' => 'error', 'message' => 'Upload video belum tersedia']));
 	}
 
 	private function authorize_upload_request()
