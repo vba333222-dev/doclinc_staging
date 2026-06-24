@@ -5,8 +5,15 @@ $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '#';
 $map_provider = $this->config->item('map_provider') ?: 'none';
 $mapbox_public_token = $this->config->item('mapbox_public_token') ?: '';
+$profile_name = (string) $this->session->userdata('nama');
+$profile_photo = '';
+$profile_phone = '';
+$profile_address = '';
 foreach ($data_profile->result() as $x) {
 	$usia = $x->usia;
+	$profile_photo = !empty($x->foto) ? $x->foto : $profile_photo;
+	$profile_phone = !empty($x->no_hp) ? $x->no_hp : $profile_phone;
+	$profile_address = !empty($x->alamat) ? $x->alamat : $profile_address;
 }
 
 $dokter_id = []; // siapkan array kosong
@@ -264,6 +271,330 @@ foreach ($dataDoctor->result() as $doc) {
 				box-shadow: none !important;
 			}
 		}
+
+		:root {
+			--warga-bg: #f6f6f6;
+			--warga-card: #ffffff;
+			--warga-text: #333333;
+			--warga-muted: #8c8c8c;
+			--warga-soft: #a8a8a8;
+			--warga-green: #379a69;
+			--warga-red: #ff7676;
+			--warga-mint: #7ecca5;
+			--warga-icon: #606060;
+			--warga-shadow: 0 5px 10px rgba(168, 168, 168, 0.15);
+			--warga-header-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+		}
+
+		body {
+			background: var(--warga-bg) !important;
+			color: var(--warga-text);
+			font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+		}
+
+		#content-wrapper {
+			max-width: 430px;
+			margin: 0 auto;
+			min-height: 100vh;
+			background: var(--warga-bg);
+			overflow-x: hidden;
+			padding-bottom: 92px;
+		}
+
+		.contents {
+			background: var(--warga-bg);
+			min-height: 100vh;
+		}
+
+		#wave {
+			display: none;
+		}
+
+		.warga-app-header {
+			position: sticky;
+			top: 0;
+			z-index: 10;
+			height: 75px;
+			background: var(--warga-card);
+			box-shadow: var(--warga-header-shadow);
+			display: flex;
+			align-items: flex-end;
+			justify-content: center;
+			padding: 0 20px 13px;
+		}
+
+		.warga-back,
+		.warga-notify {
+			position: absolute;
+			bottom: 15px;
+			width: 36px;
+			height: 36px;
+			border-radius: 999px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--warga-text);
+			text-decoration: none;
+		}
+
+		.warga-back {
+			left: 12px;
+		}
+
+		.warga-notify {
+			right: 12px;
+		}
+
+		.warga-title {
+			font-size: 20px;
+			line-height: 1.2;
+			font-weight: 800;
+			color: var(--warga-text);
+		}
+
+		.notify-number {
+			position: absolute;
+			top: 0;
+			right: 0;
+			min-width: 18px;
+			height: 18px;
+			padding: 0 5px;
+			border-radius: 999px;
+			background: var(--warga-red);
+			color: #fff;
+			font-size: 10px;
+			line-height: 18px;
+			text-align: center;
+			font-weight: 700;
+		}
+
+		.warga-dashboard {
+			padding: 20px;
+		}
+
+		.warga-profile {
+			display: flex;
+			align-items: center;
+			gap: 16px;
+			margin-bottom: 20px;
+		}
+
+		.warga-avatar {
+			width: 57px;
+			height: 57px;
+			border-radius: 50%;
+			object-fit: cover;
+			border: 2px solid #d7c04b;
+			box-shadow: 0 0 0 2px rgba(55, 154, 105, 0.2);
+			flex: 0 0 auto;
+		}
+
+		.warga-profile-name {
+			margin: 0;
+			font-size: 20px;
+			font-weight: 800;
+			line-height: 1.25;
+			color: var(--warga-text);
+		}
+
+		.warga-profile-meta {
+			margin: 3px 0 0;
+			color: var(--warga-text);
+			font-size: 14px;
+		}
+
+		.warga-location-card {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			min-height: 65px;
+			padding: 14px 13px 14px 16px;
+			background: var(--warga-card);
+			border: 1px solid var(--warga-green);
+			border-radius: 10px;
+			margin-bottom: 19px;
+			color: var(--warga-text);
+			box-shadow: none;
+		}
+
+		.warga-location-title {
+			display: flex;
+			align-items: center;
+			gap: 7px;
+			min-width: 124px;
+			font-size: 14px;
+			font-weight: 800;
+			color: #b03d47;
+		}
+
+		.warga-location-text {
+			font-size: 13px;
+			color: var(--warga-text);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			flex: 1;
+		}
+
+		.warga-shortcuts {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 14px;
+			margin-bottom: 24px;
+		}
+
+		.warga-shortcut-card {
+			min-height: 142px;
+			background: #dcebdc;
+			color: var(--warga-text);
+			border-radius: 14px;
+			padding: 13px 12px;
+			text-decoration: none;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+			box-shadow: var(--warga-shadow);
+		}
+
+		.warga-shortcut-card:nth-child(2) {
+			background: #d7e6d9;
+		}
+
+		.warga-shortcut-card:nth-child(3) {
+			background: #d4e5d2;
+		}
+
+		.warga-shortcut-title {
+			font-size: 14px;
+			font-weight: 750;
+			line-height: 1.25;
+		}
+
+		.warga-shortcut-icon {
+			align-self: flex-end;
+			width: 48px;
+			height: 48px;
+			border-radius: 14px;
+			background: rgba(255, 255, 255, 0.55);
+			color: var(--warga-green);
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 26px;
+		}
+
+		.warga-section-title {
+			font-size: 16px;
+			font-weight: 800;
+			margin: 0 0 12px;
+			color: var(--warga-text);
+		}
+
+		.warga-card {
+			background: var(--warga-card);
+			border: 0;
+			border-radius: 20px;
+			box-shadow: var(--warga-shadow);
+			overflow: hidden;
+		}
+
+		.warga-request-card {
+			border-radius: 20px;
+			box-shadow: var(--warga-shadow);
+			border: 0;
+			overflow: hidden;
+		}
+
+		.warga-request-card .card-header {
+			background: var(--warga-card);
+			color: var(--warga-text);
+			border-bottom: 1px solid #f0f0f0;
+			padding: 13px 16px;
+		}
+
+		.warga-request-card .card-body {
+			padding: 15px 16px;
+		}
+
+		.warga-status {
+			border-radius: 999px;
+			padding: 6px 10px;
+			font-size: 11px;
+			font-weight: 800;
+		}
+
+		.warga-status-pending {
+			background: #fff3cd;
+			color: #8a6500;
+		}
+
+		.warga-status-accepted {
+			background: #e4f6ef;
+			color: #237650;
+		}
+
+		.warga-status-completed {
+			background: #eef0f2;
+			color: #606060;
+		}
+
+		.warga-label {
+			font-size: 12px;
+			font-weight: 800;
+			color: var(--warga-text);
+			margin-bottom: 4px;
+		}
+
+		.warga-value {
+			font-size: 13px;
+			color: var(--warga-muted);
+			margin-bottom: 10px;
+		}
+
+		.warga-action {
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 750;
+			padding: 8px 12px;
+		}
+
+		.warga-feed img {
+			border-radius: 12px;
+			box-shadow: var(--warga-shadow);
+		}
+
+		.nav-bottom-wrapper {
+			max-width: 430px;
+			margin: 0 auto;
+			left: 0;
+			right: 0;
+			background: var(--warga-card);
+			border-radius: 20px 20px 0 0;
+		}
+
+		.nav-bottom-wrapper .menu-item {
+			color: var(--warga-muted);
+			text-decoration: none;
+		}
+
+		.nav-bottom-wrapper .menu-item.active {
+			color: var(--warga-green);
+		}
+
+		@media (max-width: 360px) {
+			.warga-dashboard {
+				padding-left: 14px;
+				padding-right: 14px;
+			}
+
+			.warga-shortcuts {
+				gap: 10px;
+			}
+
+			.warga-shortcut-card {
+				padding: 12px 10px;
+			}
+		}
 	</style>
 </head>
 
@@ -282,41 +613,41 @@ foreach ($dataDoctor->result() as $doc) {
 
 	<div class="content-wrapper" id="content-wrapper">
 		<div class="contents">
-			<div class="hero bg-success p-3 overflow-hidden">
-				<a href="<?= html_escape($legacy_superapp_url); ?>" style="text-decoration: none; color: white; font-size: 1.5rem;">
-					<i class="fas fa-chevron-left icon"></i>
+			<header class="warga-app-header">
+				<a href="<?= html_escape($legacy_superapp_url); ?>" class="warga-back" aria-label="Kembali">
+					<i class="fas fa-chevron-left"></i>
 				</a>
-				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
-					<i class="bi bi-bell-fill fs-4"></i>
-					<!-- kalo ada notif fetch datanya dari sini ya, bukan dari dalem elemen span nya -->
+				<div class="warga-title">Docklinc</div>
+				<a class="warga-notify notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif" aria-label="Buka notifikasi">
+					<i class="bi bi-bell-fill fs-5"></i>
 					<span class="notify-number" id="badgeNotif">9+</span>
-					<!-- sampe sini -->
 				</a>
-				<div class="text-white mb-2">
-					<i class="fas fa-map-marker-alt me-2"></i><small><label for="" id="address"></label></small>
+			</header>
+			<div class="warga-dashboard">
+				<div class="warga-profile animate__animated animate__fadeInUp animate__faster">
+					<img class="warga-avatar" id="previewFoto" src="<?= doclinc_safe_profile_image_src($profile_photo); ?>" alt="Foto Profil">
+					<div class="min-w-0">
+						<h1 class="warga-profile-name"><?= html_escape($profile_name ?: 'Warga Doclinc'); ?></h1>
+						<p class="warga-profile-meta">
+							<?= html_escape($profile_phone ?: 'Nomor belum tersedia'); ?>
+							<i class="fas fa-check-circle text-success ms-1" aria-hidden="true"></i>
+						</p>
+						<p class="warga-profile-meta small mb-0">Kota: <span id="kota">Memuat...</span></p>
+					</div>
+				</div>
+				<div class="warga-location-card">
+					<div class="warga-location-title">
+						<i class="fas fa-map-marker-alt"></i>
+						<span>Lokasi Anda</span>
+					</div>
+					<small class="warga-location-text"><label for="" id="address"><?= html_escape($profile_address ?: 'Lokasi belum tersedia'); ?></label></small>
+					<i class="fas fa-chevron-right text-muted" aria-hidden="true"></i>
+				</div>
 
-					<input type="hidden" id="id_user" value="<?= $this->session->userdata('id'); ?>">
-					<input type="hidden" id="id_kabupaten" value="<?= $this->session->userdata('remark'); ?>">
-					<input type="hidden" id="address" placeholder="Latitude">
-					<input type="hidden" id="latitude" placeholder="Latitude">
-					<input type="hidden" id="longitude" placeholder="Longitude">
-				</div>
-				<div class="d-flex animate__animated animate__fadeInUp animate__faster">
-					<?php
-					foreach ($data_profile->result() as $x) {
-						$foto = $x->foto;
-					}
-					?>
-					<div class="flex-shrink-0">
-						<img class="rounded-4 shadow" id="previewFoto" src="<?= doclinc_safe_profile_image_src($foto); ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
-					</div>
-					<div class="flex-grow-1 ms-3 text-white">
-						<small>Hello,</small>
-						<h3 class="mb-0"><?= $this->session->userdata('nama'); ?></h3>
-						<p class="mb-0"><?= $usia ?></p>
-						<p>Kota: <span id="kota">Memuat...</span></p>
-					</div>
-				</div>
+				<input type="hidden" id="id_user" value="<?= html_escape($this->session->userdata('id')); ?>">
+				<input type="hidden" id="id_kabupaten" value="<?= html_escape($this->session->userdata('remark')); ?>">
+				<input type="hidden" id="latitude" placeholder="Latitude">
+				<input type="hidden" id="longitude" placeholder="Longitude">
 			</div>
 			<svg id="wave" style="transform:rotate(180deg); transition: 0.3s" viewBox="0 0 1440 120" version="1.1" xmlns="http://www.w3.org/2000/svg">
 				<defs>
@@ -336,44 +667,29 @@ foreach ($dataDoctor->result() as $doc) {
 			</svg>
 			<div class="position-relative">
 				<div id="beranda" class="content active animate__animated animate__fadeInUp animate__faster">
-					<div class="row g-3 mb-3">
-						<div class="col-3 text-center">
-							<a href="#" class="feature-menu" onclick="showContent('konsultasi_kesehatan')">
-								<div class="icon-wrapper mx-auto">
-									<i class="fas fa-user-md"></i>
-									<span class="filler"></span>
-								</div>
-								<span class="small">Konsultasi Kesehatan</span>
-							</a>
-						</div>
-						<div class="col-3 text-center">
-							<a href="#" data-bs-toggle="modal" class="feature-menu" onclick="showContent('riwayat')">
-								<div class="icon-wrapper mx-auto">
-									<i class="fas fa-briefcase-medical"></i>
-									<span class="filler"></span>
-								</div>
-								<span class="small">Catatan Kesehatan</span>
-							</a>
-						</div>
-						<div class="col-3 text-center">
-							<a href="#" class="feature-menu">
-								<div class="icon-wrapper mx-auto bg-secondary">
-									<i class="fas fa-bars"></i>
-									<span class="filler"></span>
-								</div>
-								<span class="text-muted small">Lainnya</span>
-							</a>
-						</div>
+					<div class="warga-shortcuts">
+						<a href="#" class="warga-shortcut-card" onclick="showContent('konsultasi_kesehatan')">
+							<span class="warga-shortcut-title">Konsultasi Baru</span>
+							<span class="warga-shortcut-icon"><i class="fas fa-user-md"></i></span>
+						</a>
+						<a href="#" class="warga-shortcut-card" onclick="showContent('riwayat')">
+							<span class="warga-shortcut-title">Riwayat Konsultasi</span>
+							<span class="warga-shortcut-icon"><i class="fas fa-notes-medical"></i></span>
+						</a>
+						<a href="#" class="warga-shortcut-card" onclick="showContent('riwayat')">
+							<span class="warga-shortcut-title">Medical Check Up</span>
+							<span class="warga-shortcut-icon"><i class="fas fa-stethoscope"></i></span>
+						</a>
 					</div>
 					<div class="row">
 						<div class="col">
 							<div class="mb-2 fw-bold position-relative d-flex align-items-center">
-								<p class="mb-0 me-2">News & Feed</p>
+								<p class="warga-section-title me-2">News & Feed</p>
 								<div class="flex-grow-1">
 									<hr class="m-0">
 								</div>
 							</div>
-							<div class="owl-carousel owl-theme">
+							<div class="owl-carousel owl-theme warga-feed">
 								<?php
 								foreach ($data_feeds->result() as $x) {
 								?>
@@ -389,28 +705,28 @@ foreach ($dataDoctor->result() as $doc) {
 					</div>
 				</div>
 				<div id="konsultasi_kesehatan" class="content animate__animated animate__fadeInUp animate__faster">
-					<h2 class="text-center mb-4">Konsultasi Kesehatan</h2>
-					<div class="card shadow mb-2 rounded-4 bg-white clickable-card"
+					<h2 class="warga-section-title">Konsultasi Kesehatan</h2>
+					<div class="card warga-card mb-3 clickable-card"
 						data-requestId=""
 						data-userIdPasien=""
 						data-status=""
 						data-tanggal="<?= date('Y-m-d'); ?>"
 						data-tanggal_loc="<?= date('Y-m-d H:i:s'); ?>"
 						data-link="<?= base_url('konsultasi'); ?>">
-						<div class="card-body p-2">
+						<div class="card-body p-3">
 							<div class="d-flex hero-card">
-								<img class="rounded-4" src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>" width="100px" height="auto" alt="Puskesmas">
-								<div class="w-100 ms-2">
+								<img class="rounded-4 me-3" src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>" width="92" height="92" style="object-fit: cover;" alt="Puskesmas">
+								<div class="w-100">
 									<div class="d-flex">
 										<p class="fw-bold mb-0 me-auto">Puskesmas Terdekat</p>
 										<div class="end-content">
-											<span class="badge rounded-pill status bg-success">Available</span>
+											<span class="badge rounded-pill bg-success warga-status warga-status-accepted status">Tersedia</span>
 										</div>
 									</div>
-									<p class="mb-0 small">Konsultasi akan diarahkan ke puskesmas aktif sesuai lokasi atau pilihan Anda.</p>
-									<i class="far fa-clock"></i> <em>Siap menerima konsultasi</em>
+									<p class="warga-value mb-2">Konsultasi akan diarahkan ke puskesmas aktif sesuai lokasi atau pilihan Anda.</p>
+									<p class="mb-0 small text-muted"><i class="far fa-clock"></i> Siap menerima konsultasi</p>
 									<?php foreach ($getAllRequestJumlah->result() as $baris) { ?>
-										<input type="hidden" name="jumlah" id="jumlah" value="<?= $baris->jumlah; ?>" />
+										<input type="hidden" name="jumlah" id="jumlah" value="<?= html_escape($baris->jumlah); ?>" />
 									<?php } ?>
 								</div>
 							</div>
@@ -426,21 +742,21 @@ foreach ($dataDoctor->result() as $doc) {
 						$tanggal_loc = $row->create_date;
 						$foto = $row->foto;
 					?>
-						<div class="card shadow mb-2 rounded-4 bg-white clickable-card"
-							data-requestId="<?= $row->request_id ?>"
-							data-userIdPasien="<?= $userIdPasien ?>"
-							data-status="<?= $status ?>"
-							data-tanggal="<?= $tanggal ?>"
-							data-tanggal_loc="<?= $tanggal_loc ?>"
-							data-link="<?= base_url('konsultasi'); ?>?nama=<?= $userId; ?>">
-							<div class="card-body p-2">
+						<div class="card warga-card mb-3 clickable-card"
+							data-requestId="<?= html_escape($row->request_id) ?>"
+							data-userIdPasien="<?= html_escape($userIdPasien) ?>"
+							data-status="<?= html_escape($status) ?>"
+							data-tanggal="<?= html_escape($tanggal) ?>"
+							data-tanggal_loc="<?= html_escape($tanggal_loc) ?>"
+							data-link="<?= html_escape(base_url('konsultasi') . '?nama=' . $userId); ?>">
+							<div class="card-body p-3">
 								<div class="d-flex hero-card">
-									<img class="rounded-4" id="gambar" src="<?= doclinc_safe_profile_image_src($row->foto ?? ''); ?>" width="100px" height="auto" alt="Foto Profil">
-									<div class="w-100 ms-2">
+									<img class="rounded-4 me-3" id="gambar" src="<?= doclinc_safe_profile_image_src($row->foto ?? ''); ?>" width="92" height="92" style="object-fit: cover;" alt="Petugas layanan">
+									<div class="w-100">
 										<div class="d-flex">
-											<p class="fw-bold mb-0 me-auto"><?= $nama_dokter; ?></p>
+											<p class="fw-bold mb-0 me-auto"><?= html_escape($nama_dokter); ?></p>
 											<div class="end-content">
-												<span class="badge rounded-pill status bg-success">Available</span>
+												<span class="badge rounded-pill bg-success warga-status warga-status-accepted status">Tersedia</span>
 											</div>
 										</div>
 
@@ -481,10 +797,11 @@ foreach ($dataDoctor->result() as $doc) {
 
 										</div>
 
-										<p class="mb-0" small>Estimasi :</p>
+										<p class="warga-value mb-0">Petugas layanan kesehatan</p>
+										<p class="mb-0 small text-muted">Estimasi :</p>
 										<!-- <input type="hidden" name="latitude" id="latitude" placeholder="Latitude" />
 										<input type="hidden" name="longitude" id="longitude" placeholder="Longitude" /> -->
-										<i class="far fa-clock"></i> <em class="hasil"></em>
+										<i class="far fa-clock text-muted"></i> <em class="hasil text-muted"></em>
 									</div>
 								</div>
 								<div></div>
@@ -493,7 +810,7 @@ foreach ($dataDoctor->result() as $doc) {
 									// $baris->jumlah;
 									$baris->user_id;
 								?>
-									<input type="hidden" name="jumlah" id="jumlah" value="<?= $baris->jumlah; ?>" />
+									<input type="hidden" name="jumlah" id="jumlah" value="<?= html_escape($baris->jumlah); ?>" />
 								<?php }
 								?>
 							</div>
@@ -521,7 +838,7 @@ foreach ($dataDoctor->result() as $doc) {
 					</div>
 				</div>
 				<div id="riwayat" class="content animate__animated animate__fadeInUp animate__faster">
-					<h2 class="text-center mb-4">Konsultasi Saya</h2>
+					<h2 class="warga-section-title">Konsultasi Saya</h2>
 					<ul class="nav nav-tabs nav-justified mb-3" id="myTab" role="tablist">
 						<li class="nav-item" role="presentation">
 							<button class="nav-link active" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="false">Saat ini</button>
@@ -547,10 +864,12 @@ foreach ($dataDoctor->result() as $doc) {
 								// jadikan tanggal di atas formatnya jadi 11 November 2024
 								$tanggal = date('d F Y', strtotime($tanggal));
 
+								$status_class = 'warga-status-pending';
 								if ($status == 'Pending') {
 									$status = 'Menunggu Konfirmasi';
 								} elseif ($status == 'Accepted') {
 									$status = 'Nakes Menuju Lokasi';
+									$status_class = 'warga-status-accepted';
 								}
 							?>
 
@@ -560,23 +879,23 @@ foreach ($dataDoctor->result() as $doc) {
 									✅ Nakes telah menerima permintaan konsultasi Anda.
 								</div>
 
-								<div class="card shadow mb-2" data-request-id="<?= (int) $id_request; ?>">
+								<div class="card warga-request-card mb-3" data-request-id="<?= (int) $id_request; ?>">
 									<div class="card-header d-flex align-items-center">
-										<p class="mb-0"><em><?= $tanggal; ?></em></p>
-										<span id="statusNotif" class="badge text-bg-warning ms-auto animate__animated animate__flash animate__infinite animate__slower"><?= $status; ?></span>
+										<p class="mb-0 fw-semibold"><em><?= html_escape($tanggal); ?></em></p>
+										<span id="statusNotif" class="warga-status <?= html_escape($status_class); ?> ms-auto"><?= html_escape($status); ?></span>
 									</div>
 									<div class="card-body">
-										<p class="mb-0 small fw-bold"><i class="fas fa-notes-medical fa-fw"></i> Keluhan :</p>
-										<textarea rows="4" class="form-control" readonly><?= $keluhan; ?></textarea>
-										<p class="mb-0 small fw-bold"><i class="fas fa-stethoscope fa-fw"></i> Dokter :</p>
-										<p class="mb-0"><?= $nama_dokter; ?></p>
-										<p class="mb-0 small fw-bold"><i class="far fa-clock fa-fw"></i> Estimasi :</p>
-										<input type="text" name="latitudes" id="latitudes" value="<?= $lat; ?>" hidden />
-										<input type="text" name="longitudes" id="longitudes" value="<?= $lng; ?>" hidden />
-										<span id="estimasi"></span>
+										<p class="warga-label"><i class="fas fa-notes-medical fa-fw"></i> Keluhan</p>
+										<textarea rows="3" class="form-control mb-3" readonly><?= html_escape($keluhan); ?></textarea>
+										<p class="warga-label"><i class="fas fa-clinic-medical fa-fw"></i> Layanan</p>
+										<p class="warga-value"><?= html_escape($nama_dokter ?: 'Puskesmas/Nakes'); ?></p>
+										<p class="warga-label"><i class="far fa-clock fa-fw"></i> Estimasi</p>
+										<input type="text" name="latitudes" id="latitudes" value="<?= html_escape($lat); ?>" hidden />
+										<input type="text" name="longitudes" id="longitudes" value="<?= html_escape($lng); ?>" hidden />
+										<span id="estimasi" class="warga-value d-block"></span>
 										<?php if ($request_status === 'Accepted') : ?>
 											<div class="mt-3">
-												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-success btn-sm rounded-pill">
+												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-success btn-sm warga-action">
 													<i class="fas fa-comments me-1"></i> Chat Konsultasi
 												</a>
 											</div>
@@ -603,25 +922,25 @@ foreach ($dataDoctor->result() as $doc) {
 
 								$tanggal_riwayat = date('d F Y', strtotime($tanggal));
 							?>
-								<div class="card shadow mb-2" id="card-<?= $card_id ?>" data-request-id="<?= (int) $id_request; ?>">
+								<div class="card warga-request-card mb-3" id="card-<?= html_escape($card_id) ?>" data-request-id="<?= (int) $id_request; ?>">
 									<div class="card-header d-flex align-items-center">
-										<p class="mb-0"><em><?= $tanggal_riwayat; ?></em></p>
-										<span class="badge text-bg-secondary ms-auto">Selesai</span>
+										<p class="mb-0 fw-semibold"><em><?= html_escape($tanggal_riwayat); ?></em></p>
+										<span class="warga-status warga-status-completed ms-auto">Selesai</span>
 									</div>
-									<input type="hidden" id="reqIdRat" value="<?= $id_request ?>">
+									<input type="hidden" id="reqIdRat" value="<?= html_escape($id_request) ?>">
 									<div class="card-body">
-										<p class="mb-0 small fw-bold"><i class="fas fa-notes-medical fa-fw"></i> Keluhan :</p>
-										<p class="mb-0"><?= $keluhan; ?></p>
-										<p class="mb-0 small fw-bold"><i class="fas fa-stethoscope fa-fw"></i> Dokter :</p>
-										<p class="mb-0"><?= $nama_dokter_riwayat; ?></p>
-										<input type="hidden" id="doktId" value="<?= $dokter_id; ?>">
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class="fas fa-user-md fs-4"></i> Diagnosa :</span><br><?php echo $diagnosa; ?>
+										<p class="warga-label"><i class="fas fa-notes-medical fa-fw"></i> Keluhan</p>
+										<p class="warga-value"><?= html_escape($keluhan); ?></p>
+										<p class="warga-label"><i class="fas fa-clinic-medical fa-fw"></i> Layanan</p>
+										<p class="warga-value"><?= html_escape($nama_dokter_riwayat); ?></p>
+										<input type="hidden" id="doktId" value="<?= html_escape($dokter_id); ?>">
+										<p class="warga-value">
+											<span class="warga-label d-block"><i class="fas fa-user-md"></i> Diagnosa</span><?= nl2br(html_escape($diagnosa)); ?>
 										</p>
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class='fas fa-comment-dots fs-4'></i> Saran :</span><br><?php echo $saran_dokter; ?>
+										<p class="warga-value">
+											<span class="warga-label d-block"><i class='fas fa-comment-dots'></i> Saran</span><?= nl2br(html_escape($saran_dokter)); ?>
 										</p>
-										<p class="mb-1 small fw-bold"><i class='fas fa-pills'></i> Obat :</p>
+										<p class="warga-label"><i class='fas fa-pills'></i> Obat</p>
 										<table class="table table-sm">
 											<thead>
 												<tr>
@@ -637,17 +956,17 @@ foreach ($dataDoctor->result() as $doc) {
 												?>
 													<tr>
 														<td><?= $no++; ?></td>
-														<td><?= $terapi->terapi; ?></td>
-														<td><?= $terapi->signa; ?></td>
+														<td><?= html_escape($terapi->terapi); ?></td>
+														<td><?= html_escape($terapi->signa); ?></td>
 													</tr>
 												<?php } ?>
 											</tbody>
 										</table>
-										<button class="btn btn-sm btn-outline-success mt-2" onclick="downloadCard('card-<?= $card_id ?>')">
+										<button class="btn btn-sm btn-outline-success warga-action mt-2" onclick="downloadCard('card-<?= html_escape($card_id) ?>')">
 											<i class="fas fa-file-download"></i> Download Resep
 										</button>
-										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-sm btn-outline-secondary mt-2">
-											<i class="fas fa-comments"></i> Lihat Chat
+										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-sm btn-outline-secondary warga-action mt-2">
+											<i class="fas fa-comments"></i> Riwayat Chat
 										</a>
 									</div>
 								</div>
