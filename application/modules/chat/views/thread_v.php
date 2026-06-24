@@ -30,37 +30,61 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 
 		body {
 			margin: 0;
-			background: #f5f7f6;
+			background: #eef5f2;
 			color: #20342d;
 			font-family: Arial, sans-serif;
+			line-height: 1.45;
 		}
 
 		.chat-shell {
 			max-width: 760px;
 			margin: 0 auto;
 			min-height: 100vh;
+			min-height: 100dvh;
 			display: flex;
 			flex-direction: column;
+			background: #f8fbfa;
+			box-shadow: 0 0 28px rgba(24, 64, 48, 0.08);
 		}
 
 		.chat-header {
-			background: #09ad74;
+			background: #078f62;
 			color: #fff;
 			padding: 14px 16px;
 			display: flex;
 			align-items: center;
 			gap: 12px;
+			position: sticky;
+			top: 0;
+			z-index: 2;
+			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
 		}
 
 		.chat-back {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 36px;
+			height: 36px;
+			border-radius: 999px;
+			background: rgba(255, 255, 255, 0.15);
 			color: #fff;
-			font-size: 24px;
+			font-size: 22px;
 			line-height: 1;
 			text-decoration: none;
 		}
 
+		.chat-back:focus-visible,
+		.chat-send:focus-visible,
+		.chat-upload:focus-visible,
+		.chat-input:focus-visible {
+			outline: 3px solid rgba(9, 173, 116, 0.32);
+			outline-offset: 2px;
+		}
+
 		.chat-title {
 			font-weight: 700;
+			font-size: 16px;
 		}
 
 		.chat-subtitle {
@@ -73,7 +97,7 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 			align-items: center;
 			width: fit-content;
 			margin-top: 4px;
-			padding: 3px 8px;
+			padding: 4px 9px;
 			border-radius: 999px;
 			background: rgba(255, 255, 255, 0.2);
 			font-size: 11px;
@@ -83,78 +107,109 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 		.chat-list {
 			flex: 1;
 			overflow-y: auto;
-			padding: 16px;
+			padding: 18px 16px 22px;
 		}
 
 		.chat-bubble {
-			max-width: 78%;
-			border-radius: 8px;
-			padding: 10px 12px;
-			margin-bottom: 10px;
+			max-width: min(78%, 560px);
+			border-radius: 16px 16px 16px 6px;
+			padding: 10px 12px 8px;
+			margin-bottom: 12px;
 			background: #fff;
-			box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+			border: 1px solid #e1ece7;
+			box-shadow: 0 4px 14px rgba(18, 58, 43, 0.08);
 			white-space: pre-wrap;
 			word-break: break-word;
 		}
 
 		.chat-bubble.mine {
 			margin-left: auto;
-			background: #dcf8ec;
+			background: #dff7ee;
+			border-color: #b8ead6;
+			border-radius: 16px 16px 6px 16px;
 		}
 
 		.chat-image {
 			display: block;
 			max-width: 100%;
-			max-height: 320px;
-			border-radius: 8px;
+			max-height: 280px;
+			border-radius: 12px;
 			object-fit: contain;
+			background: #f2f6f4;
+		}
+
+		.chat-image-link {
+			display: block;
+			line-height: 0;
+		}
+
+		.chat-sender {
+			font-size: 11px;
+			font-weight: 700;
+			color: #527066;
+			margin-bottom: 4px;
+		}
+
+		.chat-bubble.mine .chat-sender {
+			color: #087e57;
 		}
 
 		.chat-time {
 			font-size: 11px;
-			color: #6c757d;
-			margin-top: 4px;
+			color: #74877f;
+			margin-top: 6px;
+			text-align: right;
+			white-space: normal;
 		}
 
 		.chat-form {
 			background: #fff;
 			padding: 12px;
 			border-top: 1px solid #dde5e1;
+			position: sticky;
+			bottom: 0;
+			box-shadow: 0 -8px 18px rgba(18, 58, 43, 0.08);
 		}
 
 		.chat-input-row {
 			display: flex;
 			gap: 8px;
+			align-items: flex-end;
 		}
 
 		.chat-input {
 			flex: 1;
 			min-height: 48px;
+			max-height: 132px;
 			resize: vertical;
 			border: 1px solid #c7d8d1;
-			border-radius: 8px;
-			padding: 10px;
+			border-radius: 12px;
+			padding: 11px 12px;
 			font: inherit;
+			background: #fbfdfc;
 		}
 
 		.chat-send {
 			border: 0;
-			border-radius: 8px;
+			border-radius: 12px;
 			background: #09ad74;
 			color: #fff;
 			font-weight: 700;
 			min-width: 76px;
-			padding: 0 14px;
+			min-height: 48px;
+			padding: 0 16px;
 			cursor: pointer;
 		}
 
 		.chat-upload {
 			border: 1px solid #09ad74;
-			border-radius: 8px;
+			border-radius: 12px;
 			background: #fff;
 			color: #087e57;
 			font-weight: 700;
-			min-width: 46px;
+			min-width: 56px;
+			min-height: 48px;
+			padding: 0 12px;
 			cursor: pointer;
 		}
 
@@ -178,6 +233,10 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 
 		.chat-muted {
 			color: #6c757d;
+			background: #fff;
+			border: 1px solid #e1ece7;
+			border-radius: 14px;
+			padding: 12px;
 		}
 
 		.chat-error {
@@ -186,10 +245,44 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 
 		.chat-readonly {
 			margin: 0;
-			padding: 10px 12px;
-			border-radius: 8px;
+			padding: 12px;
+			border-radius: 12px;
 			background: #eef3f1;
 			color: #455b53;
+			border: 1px solid #d7e5df;
+		}
+
+		@media (max-width: 520px) {
+			.chat-shell {
+				max-width: none;
+				box-shadow: none;
+			}
+
+			.chat-header {
+				padding: 12px;
+			}
+
+			.chat-list {
+				padding: 14px 10px 18px;
+			}
+
+			.chat-bubble {
+				max-width: 88%;
+			}
+
+			.chat-input-row {
+				gap: 6px;
+			}
+
+			.chat-upload {
+				min-width: 50px;
+				padding: 0 10px;
+			}
+
+			.chat-send {
+				min-width: 64px;
+				padding: 0 12px;
+			}
 		}
 	</style>
 </head>
@@ -214,7 +307,7 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 				<div class="chat-input-row">
 					<textarea class="chat-input" id="messageText" rows="2" maxlength="2000" placeholder="Tulis pesan..." required></textarea>
 					<input type="file" id="imageInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden>
-					<button class="chat-upload" id="imageButton" type="button" aria-label="Kirim gambar">Gambar</button>
+					<button class="chat-upload" id="imageButton" type="button" aria-label="Kirim gambar">Foto</button>
 					<button class="chat-send" type="submit">Kirim</button>
 				</div>
 			<?php else : ?>
@@ -265,10 +358,17 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 			}
 
 			const bubble = document.createElement('div');
-			bubble.className = 'chat-bubble' + (parseInt(message.sender_user_id, 10) === currentUserId ? ' mine' : '');
+			const isMine = parseInt(message.sender_user_id, 10) === currentUserId;
+			bubble.className = 'chat-bubble' + (isMine ? ' mine' : '');
+
+			const sender = document.createElement('div');
+			sender.className = 'chat-sender';
+			sender.textContent = isMine ? 'Anda' : 'Lawan bicara';
+			bubble.appendChild(sender);
 
 			if (message.message_type === 'image' && isSafeImageUrl(message.attachment_url)) {
 				const link = document.createElement('a');
+				link.className = 'chat-image-link';
 				link.href = message.attachment_url;
 				link.target = '_blank';
 				link.rel = 'noopener';
