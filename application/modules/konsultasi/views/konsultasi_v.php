@@ -46,6 +46,7 @@ $longitudeA = '';
 $dokter_id = $dokter;
 $nama = '';
 $token = '';
+$ui_asset_base = base_url('assets/doclinc_ui/konsultasi_nakes/');
 
 $this->load->model('Konsultasi_m');
 $coordinate = $this->Konsultasi_m->getAllDataLocations($dokter);
@@ -85,202 +86,490 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" integrity="sha512-tS3S5qG0BlhnQROyJXvNjeEM4UpMXHrQfTGmbQ1gKmelCxlSEBUaxhRBj/EFTzpbP4RVSrpEikbmdJobCvhE3g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css" integrity="sha512-sMXtMNL1zRzolHYKEujM2AqCLUR9F2C4/05cdbxjjLSRvMQIciEPCQZo++nk7go3BtSuK9kfa/s+a4f4i5pLkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<style>
+		:root {
+			--dk-bg: #f7f7f7;
+			--dk-text: #333333;
+			--dk-muted: #8c8c8c;
+			--dk-line: #cecece;
+			--dk-green: #379a69;
+			--dk-accent: #50bfa5;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		body.consultation-form-page {
+			margin: 0;
+			min-height: 100vh;
+			background: #e9e9e9;
+			color: var(--dk-text);
+			font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+		}
+
+		.consult-shell {
+			width: 100%;
+			max-width: 414px;
+			min-height: 100vh;
+			margin: 0 auto;
+			background: var(--dk-bg);
+			overflow-x: hidden;
+			position: relative;
+			padding-bottom: 92px;
+		}
+
+		.consult-header {
+			height: 75px;
+			background: #ffffff;
+			box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			position: sticky;
+			top: 0;
+			z-index: 5;
+		}
+
+		.consult-back {
+			position: absolute;
+			left: 20px;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 32px;
+			height: 32px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			border: 0;
+			background: transparent;
+		}
+
+		.consult-back img {
+			width: 22px;
+			height: 22px;
+		}
+
+		.consult-title {
+			margin: 0;
+			font-size: 20px;
+			font-weight: 700;
+			line-height: 24px;
+			color: var(--dk-text);
+		}
+
+		.consult-main {
+			padding: 38px 20px 24px;
+		}
+
+		.consult-card {
+			background: #ffffff;
+			border: 1px solid var(--dk-accent);
+			border-radius: 20px;
+			padding: 24px 20px 25px;
+			margin-bottom: 30px;
+		}
+
+		.consult-card-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 16px;
+			margin-bottom: 26px;
+		}
+
+		.consult-card-title {
+			margin: 0;
+			font-size: 20px;
+			line-height: 24px;
+			font-weight: 700;
+			color: var(--dk-green);
+		}
+
+		.consult-card-icon {
+			width: 22px;
+			height: 22px;
+			object-fit: contain;
+			flex: 0 0 auto;
+		}
+
+		.consult-field {
+			width: 100%;
+			min-height: 48px;
+			border: 1px solid var(--dk-line);
+			border-radius: 10px;
+			padding: 12px 20px;
+			background: #ffffff;
+			color: var(--dk-text);
+			font-size: 15px;
+			line-height: 22px;
+			box-shadow: none !important;
+		}
+
+		.consult-field::placeholder {
+			color: var(--dk-muted);
+			opacity: 1;
+		}
+
+		.consult-field:focus {
+			border-color: var(--dk-accent);
+			box-shadow: 0 0 0 3px rgba(80, 191, 165, 0.14) !important;
+		}
+
+		.consult-input-stack {
+			display: grid;
+			gap: 17px;
+		}
+
+		.consult-field-large {
+			height: 182px;
+			resize: none;
+		}
+
+		.consult-field-keluhan {
+			height: 154px;
+			resize: none;
+		}
+
+		.consult-field-address {
+			height: 154px;
+			resize: none;
+			font-size: 16px;
+			line-height: 24px;
+		}
+
+		.consult-helper {
+			display: block;
+			margin: 8px 0 0;
+			color: var(--dk-muted);
+			font-size: 12px;
+			line-height: 18px;
+		}
+
+		.consult-upload-stack {
+			display: grid;
+			gap: 20px;
+		}
+
+		.consult-upload-box {
+			position: relative;
+			min-height: 65px;
+			border: 1px dashed #d0d0d0;
+			border-radius: 10px;
+			background: #eaeaea;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 14px;
+			overflow: hidden;
+			cursor: pointer;
+		}
+
+		.consult-upload-box input[type="file"] {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			opacity: 0;
+			cursor: pointer;
+		}
+
+		.consult-upload-box img {
+			width: 26px;
+			height: 26px;
+			object-fit: contain;
+		}
+
+		.consult-upload-text {
+			color: var(--dk-text);
+			font-size: 15px;
+			line-height: 20px;
+		}
+
+		.consult-upload-text strong {
+			color: #00796b;
+			font-weight: 700;
+		}
+
+		.consult-preview {
+			margin-top: 12px;
+		}
+
+		.consult-preview img,
+		.consult-preview video {
+			width: 100%;
+			border-radius: 10px;
+			border: 1px solid var(--dk-line);
+		}
+
+		.consult-consent {
+			display: flex;
+			align-items: center;
+			gap: 15px;
+			margin: 2px 0 30px;
+			color: var(--dk-text);
+			font-size: 16px;
+			line-height: 22px;
+		}
+
+		.consult-consent .form-check-input {
+			width: 30px;
+			height: 30px;
+			margin: 0;
+			border: 2px solid var(--dk-line);
+			border-radius: 5px;
+			box-shadow: none;
+			flex: 0 0 auto;
+		}
+
+		.consult-consent .form-check-input:checked {
+			background-color: #ffffff;
+			border-color: var(--dk-line);
+			background-image: url("<?= html_escape($ui_asset_base . 'icon-check.svg'); ?>");
+			background-size: 20px 20px;
+		}
+
+		.consult-submit {
+			width: 100%;
+			height: 51px;
+			border: 0;
+			border-radius: 10px;
+			background: var(--dk-green);
+			color: #ffffff;
+			font-size: 17px;
+			font-weight: 700;
+			line-height: 20px;
+			box-shadow: none;
+		}
+
+		.consult-submit:disabled {
+			opacity: 0.72;
+		}
+
+		.consult-bottom-nav {
+			position: fixed;
+			left: 50%;
+			bottom: 0;
+			transform: translateX(-50%);
+			width: 100%;
+			max-width: 414px;
+			height: 69px;
+			background: #ffffff;
+			display: grid;
+			grid-template-columns: 1fr 1fr auto 1fr;
+			align-items: center;
+			gap: 14px;
+			padding: 8px 20px 11px;
+			box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.05);
+			z-index: 10;
+		}
+
+		.consult-nav-link {
+			min-width: 45px;
+			min-height: 45px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			text-decoration: none;
+			color: #606060;
+		}
+
+		.consult-nav-link img {
+			width: 31px;
+			height: 31px;
+			object-fit: contain;
+		}
+
+		.consult-nav-link.active {
+			min-width: 135px;
+			height: 48px;
+			padding: 0 17px;
+			border-radius: 50px;
+			background: #606060;
+			color: #ffffff;
+			gap: 8px;
+			font-size: 15px;
+			font-weight: 400;
+		}
+
+		.consult-nav-link.active img {
+			width: 34px;
+			height: 34px;
+		}
+
+		#map {
+			display: none;
+		}
+
+		@media (max-width: 360px) {
+			.consult-main {
+				padding-left: 14px;
+				padding-right: 14px;
+			}
+
+			.consult-card {
+				padding-left: 16px;
+				padding-right: 16px;
+			}
+
+			.consult-bottom-nav {
+				padding-left: 12px;
+				padding-right: 12px;
+				gap: 8px;
+			}
+
+			.consult-nav-link.active {
+				min-width: 118px;
+				padding: 0 12px;
+			}
+		}
+	</style>
 </head>
 
-<body class="bg-light">
-	<div class="backtohome">
-		<a href="<?= base_url('home#konsultasi_kesehatan'); ?>">
-			<i class="fas fa-arrow-left"></i>
-		</a>
-		<span class="ms-auto">Konsultasi</span>
-	</div>
-	<div class="hero bg-success px-3 pb-3 overflow-hidden">
-		<div class="d-flex align-items-center animate__animated animate__fadeInUp animate__faster">
-			<div class="flex-shrink-0">
-				<img class="rounded-4 shadow"
-					src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>"
-					width="100px"
-					height="100px">
-			</div>
-			<div class="px-2 mx-auto text-white">
-				<div class="text-center fw-bold"><i class="far fa-clock"></i>
-					<label id="result"></label>
-				</div>
-				<!-- <hr class="my-1 border-3 rounded-pill"> -->
-				<div class="progress" role="progressbar" aria-label="Animated striped example" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="height: .4rem;">
-					<div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 100%;"></div>
-				</div>
-				<div class="text-center">
-					<?php
-					$this->load->model('Konsultasi_m');
-					$hasil = $this->Konsultasi_m->getLocation($dokter);
-					?>
-					<i class="fas fa-map-marker-alt me-2"></i><small><?= html_escape($hasil['location'] ?? 'Lokasi belum tersedia'); ?></small>
-				</div>
-			</div>
-			<?php
-			$foto = '';
-			foreach ($getFotoDokter->result() as $row_foto) {
-				$foto = $row_foto->foto ?? '';
-			}
-			?>
-			<!-- buat syntax untuk menampilan nama dokter dan jadikan dibawah image -->
-			<?php
-			// ambil data dari controller konsultasi
-			foreach ($getDataDoctor->result() as $row) {
-				$dokter_id = $row->userId;
-				$nama = $row->nama;
+<body class="consultation-form-page">
+	<?php
+	$this->load->model('Konsultasi_m');
+	$hasil = $this->Konsultasi_m->getLocation($dokter);
+	$foto = '';
+	foreach ($getFotoDokter->result() as $row_foto) {
+		$foto = $row_foto->foto ?? '';
+	}
+	foreach ($getDataDoctor->result() as $row) {
+		$dokter_id = $row->userId;
+		$nama = $row->nama;
+	}
+	?>
+	<div class="consult-shell">
+		<header class="consult-header">
+			<a class="consult-back" href="<?= html_escape(base_url('home#konsultasi_kesehatan')); ?>" aria-label="Kembali">
+				<img src="<?= html_escape($ui_asset_base . 'icon-back.svg'); ?>" alt="">
+			</a>
+			<h1 class="consult-title">Konsultasi</h1>
+		</header>
+		<span id="result" class="d-none"></span>
 
-				// if ($nama == 'pahlawan1') {
-				// 	$dokter_id = '1';
-				// } elseif ($nama == 'pahlawan2') {
-				// 	$dokter_id = '2';
-				// } elseif ($nama == 'pahlawan3') {
-				// 	$dokter_id = '3';
-				// }
-			}
-			?>
+		<main id="pahlawan_1" class="consult-main content animate__animated animate__fadeInUp animate__faster">
+			<form id="form_konsul" action="<?= html_escape(base_url('konsultasi/save_konsultasi')); ?>" method="post" enctype="multipart/form-data">
+				<input type="hidden" id="nama" value="<?= html_escape($_SESSION['username'] ?? ''); ?>" placeholder="Nama Lengkap" readonly>
+				<input type="hidden" name="dokter_id" id="dokter_id" value="<?= html_escape($dokter_id); ?>" placeholder="Dokter ID" readonly>
+				<input type="hidden" name="namadokter" id="namadokter" value="<?= html_escape($nama); ?>" placeholder="Dokter ID" readonly>
 
-			<img class="rounded-4" id="gambar" src="<?= doclinc_safe_profile_image_src($foto); ?>" width="100px" height="auto" alt="Foto Profil">
-		</div>
-	</div>
-	</div>
-	<svg id="wave" style="transform:rotate(180deg); transition: 0.3s" viewBox="0 0 1440 120" version="1.1" xmlns="http://www.w3.org/2000/svg">
-		<defs>
-			<linearGradient id="sw-gradient-0" x1="0" x2="0" y1="1" y2="0">
-				<stop stop-color="rgba(9, 173, 116, 1)" offset="0%"></stop>
-				<stop stop-color="rgba(140.457, 255, 215.189, 1)" offset="100%"></stop>
-			</linearGradient>
-		</defs>
-		<path style="transform:translate(0, 0px); opacity:1" fill="url(#sw-gradient-0)" d="M0,48L48,48C96,48,192,48,288,56C384,64,480,80,576,88C672,96,768,96,864,86C960,76,1056,56,1152,48C1248,40,1344,44,1440,42C1536,40,1632,32,1728,42C1824,52,1920,80,2016,78C2112,76,2208,44,2304,40C2400,36,2496,60,2592,76C2688,92,2784,100,2880,98C2976,96,3072,84,3168,74C3264,64,3360,56,3456,54C3552,52,3648,56,3744,54C3840,52,3936,44,4032,48C4128,52,4224,68,4320,64C4416,60,4512,36,4608,30C4704,24,4800,36,4896,44C4992,52,5088,56,5184,52C5280,48,5376,36,5472,44C5568,52,5664,80,5760,94C5856,108,5952,108,6048,98C6144,88,6240,68,6336,50C6432,32,6528,16,6624,18C6720,20,6816,40,6864,50L6912,60L6912,120L6864,120C6816,120,6720,120,6624,120C6528,120,6432,120,6336,120C6240,120,6144,120,6048,120C5952,120,5856,120,5760,120C5664,120,5568,120,5472,120C5376,120,5280,120,5184,120C5088,120,4992,120,4896,120C4800,120,4704,120,4608,120C4512,120,4416,120,4320,120C4224,120,4128,120,4032,120C3936,120,3840,120,3744,120C3648,120,3552,120,3456,120C3360,120,3264,120,3168,120C3072,120,2976,120,2880,120C2784,120,2688,120,2592,120C2496,120,2400,120,2304,120C2208,120,2112,120,2016,120C1920,120,1824,120,1728,120C1632,120,1536,120,1440,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
-		<defs>
-			<linearGradient id="sw-gradient-1" x1="0" x2="0" y1="1" y2="0">
-				<stop stop-color="rgba(9, 173, 116, 1)" offset="0%"></stop>
-				<stop stop-color="rgba(9, 173, 116, 1)" offset="100%"></stop>
-			</linearGradient>
-		</defs>
-		<path style="transform:translate(0, 50px); opacity:0.9" fill="url(#sw-gradient-1)" d="M0,60L48,54C96,48,192,36,288,28C384,20,480,16,576,24C672,32,768,52,864,62C960,72,1056,72,1152,64C1248,56,1344,40,1440,30C1536,20,1632,16,1728,30C1824,44,1920,76,2016,86C2112,96,2208,84,2304,68C2400,52,2496,32,2592,34C2688,36,2784,60,2880,68C2976,76,3072,68,3168,58C3264,48,3360,36,3456,26C3552,16,3648,8,3744,18C3840,28,3936,56,4032,68C4128,80,4224,76,4320,74C4416,72,4512,72,4608,72C4704,72,4800,72,4896,66C4992,60,5088,48,5184,44C5280,40,5376,44,5472,46C5568,48,5664,48,5760,46C5856,44,5952,40,6048,46C6144,52,6240,68,6336,72C6432,76,6528,68,6624,60C6720,52,6816,44,6864,40L6912,36L6912,120L6864,120C6816,120,6720,120,6624,120C6528,120,6432,120,6336,120C6240,120,6144,120,6048,120C5952,120,5856,120,5760,120C5664,120,5568,120,5472,120C5376,120,5280,120,5184,120C5088,120,4992,120,4896,120C4800,120,4704,120,4608,120C4512,120,4416,120,4320,120C4224,120,4128,120,4032,120C3936,120,3840,120,3744,120C3648,120,3552,120,3456,120C3360,120,3264,120,3168,120C3072,120,2976,120,2880,120C2784,120,2688,120,2592,120C2496,120,2400,120,2304,120C2208,120,2112,120,2016,120C1920,120,1824,120,1728,120C1632,120,1536,120,1440,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
-	</svg>
-	<div id="pahlawan_1" class="content animate__animated animate__fadeInUp animate__faster" style="padding: 15px;">
-		<form id="form_konsul" action="<?= html_escape(base_url('konsultasi/save_konsultasi')); ?>" method="post" enctype="multipart/form-data">
-			<div class="form-floating mb-2">
-				<input type="hidden" class="form-control shadow border-success" id="nama" value="<?php echo $_SESSION['username']; ?>" placeholder="Nama Lengkap" readonly>
-			</div>
-			<div class="form-floating mb-2">
-				<input type="hidden" class="form-control shadow border-success" name="dokter_id" id="dokter_id" value="<?= html_escape($dokter_id); ?>" placeholder="Dokter ID" readonly>
-				<input type="hidden" class="form-control shadow border-success" name="namadokter" id="namadokter" value="<?= html_escape($nama); ?>" placeholder="Dokter ID" readonly>
-			</div>
-			<div class="form-floating mb-2">
-				<select class="form-select shadow border-success" name="assigned_puskesmas_code" id="assigned_puskesmas_code">
-					<option value="">Pilih Puskesmas Tujuan</option>
-					<?php foreach (($puskesmas_options ?? array()) as $puskesmas): ?>
-						<option value="<?= html_escape($puskesmas->kode_pkm ?? ''); ?>">
-							<?= html_escape($puskesmas->nama_puskesmas ?? '-'); ?> (<?= html_escape($puskesmas->kode_pkm ?? '-'); ?>)
-						</option>
-					<?php endforeach; ?>
-				</select>
-				<label for="assigned_puskesmas_code">Puskesmas Tujuan</label>
-				<small class="text-muted">Jika lokasi aktif, sistem akan memilih puskesmas terdekat.</small>
-			</div>
-			<div class="form-floating mb-2">
-				<!-- Textarea utama -->
-				<div class="mb-3">
-					<label for="data_penunjang" class="form-label">Data Penunjang</label>
-					<textarea
-						id="data_penunjang"
-						name="data_penunjang"
-						class="form-control shadow border-success"
-						placeholder="Klik untuk isi Data Penunjang"
-						style="height: 180px;"
-						readonly
-						required>
-						<?php echo !empty($getDataPenunjangById) ? htmlspecialchars($getDataPenunjangById) : '';
-						?>
-					</textarea>
-				</div>
-			</div>
-			<div class="form-floating mb-2">
-				<!-- Textarea Utama (Keluhan) -->
-				<div class="mb-3">
-					<label for="keluhan" class="form-label">Keluhan</label>
+				<section class="consult-card">
+					<div class="consult-card-header">
+						<h2 class="consult-card-title">Riwayat Kesehatan</h2>
+						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
+					</div>
+					<div class="consult-input-stack">
+						<select class="consult-field form-select" name="assigned_puskesmas_code" id="assigned_puskesmas_code">
+							<option value="">Pilih Puskesmas Tujuan</option>
+							<?php foreach (($puskesmas_options ?? array()) as $puskesmas): ?>
+								<option value="<?= html_escape($puskesmas->kode_pkm ?? ''); ?>">
+									<?= html_escape($puskesmas->nama_puskesmas ?? '-'); ?> (<?= html_escape($puskesmas->kode_pkm ?? '-'); ?>)
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<small class="consult-helper">Jika lokasi aktif, sistem akan memilih puskesmas terdekat.</small>
+						<textarea
+							id="data_penunjang"
+							name="data_penunjang"
+							class="consult-field consult-field-large form-control"
+							placeholder="Penyakit yang pernah diderita&#10;Alergi&#10;Obat yang sedang dikonsumsi&#10;Tinggi Badan:        Cm&#10;Berat Badan:        Kg"
+							readonly
+							required><?= !empty($getDataPenunjangById) ? html_escape($getDataPenunjangById) : ''; ?></textarea>
+					</div>
+				</section>
+
+				<section class="consult-card">
+					<div class="consult-card-header">
+						<h2 class="consult-card-title">Keluhan</h2>
+						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
+					</div>
 					<textarea
 						id="keluhan"
 						name="keluhan"
-						class="form-control shadow border-success"
-						placeholder="Klik untuk isi keluhan"
-						style="height: 180px;"
+						class="consult-field consult-field-keluhan form-control"
+						placeholder="Deskripsikan keluhan sakit anda"
 						readonly
 						required></textarea>
-				</div>
-			</div>
-			<?php
-			// ambil data dari controller konsultasi
-			foreach ($getDataTokenDoctor->result() as $row) {
-				$phone = $row->phone;
-				$token = $row->token;
-			}
-			// echo "isi token: " . $token;
-			?>
-			<input type="text" name="token" id="token" value="<?php echo html_escape($token); ?>" style="display: none;" readonly>
-			<div class="form-floating mb-2 d-none">
-				<input type="hidden" class="form-control shadow border-success" id="no_hp" value="<?= html_escape($_SESSION['no_hp'] ?? '') ?>" placeholder="Nomor HP" readonly>
-				<label for="no_hp">Nomor HP</label>
-			</div>
+				</section>
 
-			<div class="card shadow mb-3">
-				<div class="card-header bg-success text-white">
-					<i class="fas fa-paperclip"></i> Opsional untuk sakit luar
-				</div>
-				<div class="card-body">
-					<!-- Upload Foto -->
-					<div class="form-floating mb-3">
-						<input type="file" class="form-control shadow border-success" id="file" name="foto" accept="image/*">
-						<label for="file">Upload Foto</label>
-						<!-- Nama File -->
-						<input type="hidden" id="fileName" name="foto" class="form-control shadow border-success" readonly>
-						<button type="button" class="form-control shadow border-success" onclick="window.flutter_inappwebview.callHandler('takePhoto')" hidden>
+				<?php
+				foreach ($getDataTokenDoctor->result() as $row) {
+					$phone = $row->phone;
+					$token = $row->token;
+				}
+				?>
+				<input type="hidden" name="token" id="token" value="<?= html_escape($token); ?>" readonly>
+				<input type="hidden" id="no_hp" value="<?= html_escape($_SESSION['no_hp'] ?? '') ?>" placeholder="Nomor HP" readonly>
+
+				<section class="consult-card">
+					<div class="consult-card-header">
+						<h2 class="consult-card-title">Foto / Video <span class="d-inline-block">(untuk sakit luar)</span></h2>
+						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
+					</div>
+					<div class="consult-upload-stack">
+						<label class="consult-upload-box" for="file">
+							<img src="<?= html_escape($ui_asset_base . 'icon-upload.svg'); ?>" alt="">
+							<span class="consult-upload-text">Pilih file <strong>Foto</strong></span>
+							<input type="file" id="file" name="foto" accept="image/*">
+						</label>
+						<input type="hidden" id="fileName" name="foto" class="form-control" readonly>
+						<button type="button" onclick="window.flutter_inappwebview.callHandler('takePhoto')" hidden>
 							Ambil Foto dari Kamera
 						</button>
-					</div>
-					<!-- Preview Foto -->
-					<div id="previewContainer" class="mb-3 d-none">
-						<img id="preview" src="" alt="Preview Foto" class="img-fluid rounded border border-success" />
-					</div>
+						<div id="previewContainer" class="consult-preview d-none">
+							<img id="preview" src="" alt="Preview Foto">
+						</div>
 
-					<!-- Upload Video -->
-					<div class="form-floating mb-3">
-						<input type="file" class="form-control shadow border-primary" id="file_video" name="video" accept="video/*">
-						<label for="file_video">Upload Video</label>
+						<label class="consult-upload-box" for="file_video">
+							<img src="<?= html_escape($ui_asset_base . 'icon-upload.svg'); ?>" alt="">
+							<span class="consult-upload-text">Pilih file <strong>Foto</strong></span>
+							<input type="file" id="file_video" name="video" accept="video/*">
+						</label>
+						<div id="previewVideoContainer" class="consult-preview d-none">
+							<video id="previewVideo" controls></video>
+						</div>
 					</div>
-					<!-- Preview Video -->
-					<div id="previewVideoContainer" class="d-none">
-						<video id="previewVideo" controls width="100%" class="rounded border border-primary"></video>
+				</section>
+
+				<section class="consult-card">
+					<div class="consult-card-header">
+						<h2 class="consult-card-title">Data Diri</h2>
+						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-plus.svg'); ?>" alt="">
 					</div>
-				</div>
-			</div>
+					<textarea id="address" name="alamat" class="consult-field consult-field-address form-control" placeholder="Alamat"></textarea>
+					<input type="text" class="d-none" name="lat" id="latitude" placeholder="Latitude">
+					<input type="text" class="d-none" name="lng" id="longitude" placeholder="Longitude">
+					<div id="map"></div>
+				</section>
 
+				<input type="hidden" id="tanggal" name="tanggal" value="<?= html_escape(date('d-m-Y')); ?>" readonly>
+				<input type="hidden" id="id_user" name="id_user" value="<?= html_escape($this->session->userdata('id')); ?>">
 
-			<div class="form-floating mb-2">
-				<textarea id="address" name="alamat" class="form-control shadow border-success" placeholder="Alamat: ..." style="height: 100px"></textarea>
-				<label for="alamat">Alamat</label>
-				<input type="text" class="d-none" name="lat" id="latitude" placeholder="Latitude">
-				<input type="text" class="d-none" name="lng" id="longitude" placeholder="Longitude">
-				<div id="map"></div>
-			</div>
-			<div class="form-floating mb-2">
-				<input type="text" class="form-control shadow border-success" id="tanggal" name="tanggal" value="<?php echo date('d-m-Y'); ?>" placeholder="tanggal" readonly>
+				<label class="consult-consent" for="kunjung">
+					<input class="form-check-input" type="checkbox" role="switch" id="kunjung" name="kunjung">
+					<span>Bersedia dikunjungi dokter</span>
+				</label>
 
-				<input type="hidden" id="id_user" name="id_user" value="<?= $this->session->userdata('id'); ?>">
-				<label for="Tanggal">Tanggal </label>
-			</div>
-			<div class="form-check form-switch mb-2">
-				<input class="form-check-input" type="checkbox" role="switch" id="kunjung" name="kunjung">
-				<label class="form-check-label" for="kunjung">Bersedia dikunjungi dokter</label>
-			</div>
-			<div class="d-grid">
-				<button type="button" class="btn btn-success shadow" id="save_konsul">Kirim</button>
-			</div>
-		</form>
+				<button type="button" class="consult-submit" id="save_konsul">Kirim Form</button>
+			</form>
+		</main>
+
+		<nav class="consult-bottom-nav" aria-label="Navigasi utama">
+			<a class="consult-nav-link" href="<?= html_escape(base_url('home')); ?>" aria-label="Home">
+				<img src="<?= html_escape($ui_asset_base . 'bottom-home.svg'); ?>" alt="">
+			</a>
+			<a class="consult-nav-link" href="<?= html_escape(base_url('home#riwayat')); ?>" aria-label="Medical Record">
+				<img src="<?= html_escape($ui_asset_base . 'bottom-medical-record.svg'); ?>" alt="">
+			</a>
+			<a class="consult-nav-link active" href="<?= html_escape(base_url('home#konsultasi_kesehatan')); ?>" aria-label="Konsultasi">
+				<img src="<?= html_escape($ui_asset_base . 'bottom-consultation.svg'); ?>" alt="">
+				<span>Konsultasi</span>
+			</a>
+			<a class="consult-nav-link" href="<?= html_escape(base_url('home')); ?>" aria-label="Pasien">
+				<img src="<?= html_escape($ui_asset_base . 'bottom-patient.svg'); ?>" alt="">
+			</a>
+		</nav>
 	</div>
 
 	<!-- Modal Bootstrap -->
@@ -530,7 +819,7 @@ Lama keluhan:
 					}
 					if (!(response == 1 || (response && response.status === 'success'))) {
 						const message = response && response.message ? response.message : 'Konsultasi gagal dikirim';
-						$('#save_konsul').prop('disabled', false).text('Kirim');
+						$('#save_konsul').prop('disabled', false).text('Kirim Form');
 						Swal.fire("Gagal!", message, "error");
 						return;
 					}
@@ -590,7 +879,7 @@ Lama keluhan:
 				},
 				error: function() {
 					// Jika terjadi error, munculkan kembali tombol kirim
-					$('#save_konsul').prop('disabled', false).text('Kirim');
+					$('#save_konsul').prop('disabled', false).text('Kirim Form');
 					alert('Terjadi kesalahan saat mengirim data. Silakan coba lagi.');
 				}
 			});
