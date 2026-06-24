@@ -341,7 +341,9 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 			}
 			try {
 				const parsed = new URL(value, window.location.origin);
-				return parsed.origin === window.location.origin && parsed.pathname.indexOf('/uploads/chat_images/') !== -1;
+				return parsed.origin === window.location.origin &&
+					parsed.pathname.indexOf('/uploads/chat_images/') === 0 &&
+					/\.(jpe?g|png|webp)$/i.test(parsed.pathname);
 			} catch (error) {
 				return false;
 			}

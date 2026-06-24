@@ -184,6 +184,11 @@ class Chat_m extends CI_Model
 			return '';
 		}
 
+		$extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+		if (!in_array($extension, array('jpg', 'jpeg', 'png', 'webp'), true)) {
+			return '';
+		}
+
 		return $path;
 	}
 
