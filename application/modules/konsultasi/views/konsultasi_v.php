@@ -221,6 +221,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			gap: 17px;
 		}
 
+		.consult-field-group {
+			display: grid;
+			gap: 8px;
+		}
+
+		.consult-field-label {
+			margin: 0;
+			color: var(--dk-text);
+			font-size: 14px;
+			font-weight: 600;
+			line-height: 18px;
+		}
+
+		.consult-grid-two {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 20px;
+		}
+
 		.consult-field-large {
 			height: 182px;
 			resize: none;
@@ -236,6 +255,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			resize: none;
 			font-size: 16px;
 			line-height: 24px;
+		}
+
+		.consult-backend-payload {
+			position: absolute;
+			left: -9999px;
+			width: 1px;
+			height: 1px;
+			opacity: 0;
+			pointer-events: none;
 		}
 
 		.consult-helper {
@@ -422,6 +450,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				min-width: 118px;
 				padding: 0 12px;
 			}
+
+			.consult-grid-two {
+				grid-template-columns: 1fr;
+				gap: 17px;
+			}
 		}
 	</style>
 </head>
@@ -469,11 +502,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							<?php endforeach; ?>
 						</select>
 						<small class="consult-helper">Jika lokasi aktif, sistem akan memilih puskesmas terdekat.</small>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_penyakit_pernah">Penyakit yang pernah diderita</label>
+							<input type="text" id="ui_penyakit_pernah" class="consult-field form-control" placeholder="Contoh: asma, hipertensi, atau kosongkan jika tidak ada">
+						</div>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_riwayat_keluarga">Riwayat penyakit keluarga</label>
+							<input type="text" id="ui_riwayat_keluarga" class="consult-field form-control" placeholder="Contoh: diabetes, jantung, atau kosongkan">
+						</div>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_alergi">Alergi</label>
+							<input type="text" id="ui_alergi" class="consult-field form-control" placeholder="Contoh: obat, makanan, atau kosongkan">
+						</div>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_obat_dikonsumsi">Obat yang sedang dikonsumsi</label>
+							<input type="text" id="ui_obat_dikonsumsi" class="consult-field form-control" placeholder="Nama obat jika ada">
+						</div>
+						<div class="consult-grid-two">
+							<div class="consult-field-group">
+								<label class="consult-field-label" for="ui_tinggi_badan">Tinggi badan</label>
+								<input type="text" id="ui_tinggi_badan" class="consult-field form-control" inputmode="decimal" placeholder="Cm">
+							</div>
+							<div class="consult-field-group">
+								<label class="consult-field-label" for="ui_berat_badan">Berat badan</label>
+								<input type="text" id="ui_berat_badan" class="consult-field form-control" inputmode="decimal" placeholder="Kg">
+							</div>
+						</div>
 						<textarea
 							id="data_penunjang"
 							name="data_penunjang"
-							class="consult-field consult-field-large form-control"
-							placeholder="Penyakit yang pernah diderita&#10;Alergi&#10;Obat yang sedang dikonsumsi&#10;Tinggi Badan:        Cm&#10;Berat Badan:        Kg"
+							class="consult-backend-payload"
 							readonly
 							required><?= !empty($getDataPenunjangById) ? html_escape($getDataPenunjangById) : ''; ?></textarea>
 					</div>
@@ -484,11 +542,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						<h2 class="consult-card-title">Keluhan</h2>
 						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
 					</div>
+					<div class="consult-input-stack">
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_keluhan_utama">Keluhan utama</label>
+							<input type="text" id="ui_keluhan_utama" class="consult-field form-control" placeholder="Contoh: demam, batuk, nyeri perut" required>
+						</div>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_lama_keluhan">Lama keluhan</label>
+							<input type="text" id="ui_lama_keluhan" class="consult-field form-control" placeholder="Contoh: 2 hari, 1 minggu" required>
+						</div>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_gejala_tambahan">Gejala tambahan</label>
+							<input type="text" id="ui_gejala_tambahan" class="consult-field form-control" placeholder="Contoh: mual, pusing, sesak, atau kosongkan">
+						</div>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_deskripsi_keluhan">Deskripsi keluhan sakit anda</label>
+							<textarea id="ui_deskripsi_keluhan" class="consult-field consult-field-keluhan form-control" placeholder="Ceritakan kondisi yang dirasakan dengan bahasa sehari-hari" required></textarea>
+						</div>
+					</div>
 					<textarea
 						id="keluhan"
 						name="keluhan"
-						class="consult-field consult-field-keluhan form-control"
-						placeholder="Deskripsikan keluhan sakit anda"
+						class="consult-backend-payload"
 						readonly
 						required></textarea>
 				</section>
@@ -769,7 +844,81 @@ Lama keluhan:
 
 	<!-- simpan konsultasi dan maps -->
 	<script>
+		function getStructuredValue(id) {
+			const element = document.getElementById(id);
+			return element ? element.value.trim() : '';
+		}
+
+		function optionalStructuredValue(id) {
+			const value = getStructuredValue(id);
+			return value !== '' ? value : '-';
+		}
+
+		function focusStructuredField(id) {
+			const element = document.getElementById(id);
+			if (!element) {
+				return;
+			}
+
+			element.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center'
+			});
+			element.focus();
+		}
+
+		function syncStructuredConsultationFields() {
+			const keluhanUtama = getStructuredValue('ui_keluhan_utama');
+			const lamaKeluhan = getStructuredValue('ui_lama_keluhan');
+			const deskripsiKeluhan = getStructuredValue('ui_deskripsi_keluhan');
+
+			if (keluhanUtama === '') {
+				alert('Silakan isi keluhan utama.');
+				focusStructuredField('ui_keluhan_utama');
+				return false;
+			}
+
+			if (lamaKeluhan === '') {
+				alert('Silakan isi lama keluhan.');
+				focusStructuredField('ui_lama_keluhan');
+				return false;
+			}
+
+			if (deskripsiKeluhan === '') {
+				alert('Silakan isi deskripsi keluhan.');
+				focusStructuredField('ui_deskripsi_keluhan');
+				return false;
+			}
+
+			const keluhanPayload = [
+				'**Anamnesa**',
+				'Keluhan utama: ' + keluhanUtama,
+				'Lama keluhan: ' + lamaKeluhan,
+				'Gejala tambahan: ' + optionalStructuredValue('ui_gejala_tambahan'),
+				'Deskripsi keluhan: ' + deskripsiKeluhan
+			].join("\n");
+
+			const dataPenunjangPayload = [
+				'**Riwayat Kesehatan**',
+				'Penyakit yang pernah diderita: ' + optionalStructuredValue('ui_penyakit_pernah'),
+				'Riwayat penyakit keluarga: ' + optionalStructuredValue('ui_riwayat_keluarga'),
+				'Alergi: ' + optionalStructuredValue('ui_alergi'),
+				'Obat yang sedang dikonsumsi: ' + optionalStructuredValue('ui_obat_dikonsumsi'),
+				'Tinggi badan: ' + optionalStructuredValue('ui_tinggi_badan') + ' Cm',
+				'Berat badan: ' + optionalStructuredValue('ui_berat_badan') + ' Kg'
+			].join("\n");
+
+			document.getElementById('keluhan').value = keluhanPayload;
+			document.getElementById('data_penunjang').value = dataPenunjangPayload;
+
+			return true;
+		}
+
 		$('#save_konsul').click(function() {
+			if (!syncStructuredConsultationFields()) {
+				return;
+			}
+
 			var id_user = $('#id_user').val();
 			var nama = $('#nama').val();
 			var dokter_id = $('#dokter_id').val();
