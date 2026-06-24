@@ -27,13 +27,7 @@ class Upload extends CI_Controller
 
 		$request_id = (int) $this->input->post('request_id');
 		$user_id = (int) $this->session->userdata('id');
-		$config['upload_path']   = './uploads/chat_images/';
-		$config['allowed_types'] = 'jpg|jpeg|png|webp';
-		$config['max_size']      = 4096;
-		$config['encrypt_name']  = TRUE;
-		$config['detect_mime']   = TRUE;
-		$config['mod_mime_fix']  = TRUE;
-		$config['remove_spaces'] = TRUE;
+		$config = $this->Chat_m->image_upload_config();
 
 		$this->load->library('upload', $config);
 
@@ -47,14 +41,7 @@ class Upload extends CI_Controller
 				->set_output(json_encode(['status' => 'error', 'message' => strip_tags($this->upload->display_errors())]));
 		} else {
 			$data = $this->upload->data();
-			$relative_path = 'uploads/chat_images/' . $data['file_name'];
-			$message = $this->Chat_m->send_image_message(
-				$request_id,
-				$user_id,
-				$relative_path,
-				isset($data['file_type']) ? $data['file_type'] : '',
-				isset($data['client_name']) ? $data['client_name'] : ''
-			);
+			$message = $this->Chat_m->send_uploaded_image_message($request_id, $user_id, $data);
 			if (!$message) {
 				@unlink($data['full_path']);
 				$this->output
