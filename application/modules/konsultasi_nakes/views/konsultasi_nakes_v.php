@@ -391,11 +391,7 @@ if (!function_exists('formatComplaintText')) {
 		}
 
 		.terapi-scroll {
-			overflow-x: auto;
-			-webkit-overflow-scrolling: touch;
-			border: 1px solid #E7ECE9;
-			border-radius: 14px;
-			background: #fff;
+			display: none;
 		}
 
 		#tabelTerapi {
@@ -440,7 +436,8 @@ if (!function_exists('formatComplaintText')) {
 		}
 
 		.mobile-terapi-editor {
-			display: none;
+			display: grid;
+			gap: 12px;
 		}
 
 		.mobile-terapi-card {
@@ -579,15 +576,6 @@ if (!function_exists('formatComplaintText')) {
 		}
 
 		@media (max-width: 480px) {
-			.mobile-terapi-editor {
-				display: grid;
-				gap: 12px;
-			}
-
-			.terapi-scroll {
-				display: none;
-			}
-
 			#tabelTerapi {
 				min-width: 0;
 				width: 100%;
@@ -966,7 +954,7 @@ if (!function_exists('formatComplaintText')) {
 		var mobileTerapiRows = [];
 
 		function isMobileTerapiMode() {
-			return window.matchMedia && window.matchMedia('(max-width: 480px)').matches;
+			return true;
 		}
 
 		function getMobileTerapiValue(selector) {
@@ -1127,10 +1115,8 @@ if (!function_exists('formatComplaintText')) {
 		$('#ui_mobile_terapi_add').on('click', addMobileTerapiRow);
 
 		$(function() {
-			if (isMobileTerapiMode()) {
-				hydrateMobileTerapiRowsFromTable();
-				renderMobileTerapiList();
-			}
+			hydrateMobileTerapiRowsFromTable();
+			renderMobileTerapiList();
 		});
 
 		$('#save_konsul_nakes').click(function() {
@@ -1155,10 +1141,8 @@ if (!function_exists('formatComplaintText')) {
 			formData.set("saran", saran);
 			formData.set("kriteria", kriteria);
 
-			if (isMobileTerapiMode()) {
-				hydrateMobileTerapiRowsFromTable();
-				syncMobileTerapiRowsToTable();
-			}
+			hydrateMobileTerapiRowsFromTable();
+			syncMobileTerapiRowsToTable();
 
 			// Hilangkan tombol kirim selama proses berlangsung
 			$('#save_konsul_nakes').prop('disabled', true).text('Mengirim...');
