@@ -56,6 +56,23 @@ if (!function_exists('doclinc_history_format_complaint')) {
 		return $html !== '' ? $html : nl2br(html_escape($text), false);
 	}
 }
+
+$nakes_name = strtoupper((string) $this->session->userdata('nama'));
+$nakes_birthdate = !empty($profile['tgl']) ? $profile['tgl'] : null;
+$nakes_age = '-';
+if (!empty($nakes_birthdate)) {
+	try {
+		$birthDate = new DateTime($nakes_birthdate);
+		$today = new DateTime();
+		$nakes_age = $today->diff($birthDate)->y . ' tahun';
+	} catch (Exception $e) {
+		$nakes_age = '-';
+	}
+}
+$nakes_pending_count = isset($data_request_new) ? (int) $data_request_new->num_rows() : 0;
+$nakes_active_count = isset($data_request_accept) ? (int) $data_request_accept->num_rows() : 0;
+$nakes_completed_count = isset($data_request_completed) ? (int) $data_request_completed->num_rows() : 0;
+$nakes_today_total = $nakes_pending_count + $nakes_active_count;
 ?>
 <!DOCTYPE html>
 <html>
@@ -388,7 +405,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 	</style>
 </head>
 
-<body class="bg-light">
+<body class="bg-light dl-dashboard-body dl-nakes-dashboard">
 	<div id="preloader">
 		<div class="text-center">
 			<img class="animate__animated animate__bounceIn mb-3" src="<?= base_url(); ?>assets/images/doklincwhite.png" alt="" height="50px">
@@ -398,10 +415,10 @@ if (!function_exists('doclinc_history_format_complaint')) {
 			</div> Memuat... </p>
 		</div>
 	</div>
-	<div class="content-wrapper" id="content-wrapper">
+	<div class="content-wrapper dl-shell" id="content-wrapper">
 		<div class="contents">
-			<div class="hero bg-success p-3 overflow-hidden">
-				<a href="<?= html_escape($legacy_superapp_url); ?>" style="text-decoration: none; color: white; font-size: 1.5rem;">
+			<div class="hero bg-success p-3 overflow-hidden dl-appbar dl-nakes-appbar">
+				<a href="<?= html_escape($legacy_superapp_url); ?>" class="dl-back-link" aria-label="Kembali">
 					<i class="fas fa-chevron-left icon"></i>
 				</a>
 				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
@@ -410,7 +427,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 					<span class="notify-number" id="badgeNotif">9+</span>
 					<!-- sampe sini -->
 				</a>
-				<div class="text-white me-4">
+				<div class="text-white me-4 dl-location-row">
 					<p class="mb-2" style="line-height:1;">
 						<i class="fas fa-map-marker-alt me-2"></i><span class="small" id="address_label"></span>
 					</p>
@@ -420,21 +437,14 @@ if (!function_exists('doclinc_history_format_complaint')) {
 					<input type="hidden" id="longitude" placeholder="Longitude">
 					<div id="map"></div>
 				</div>
-				<div class="d-flex animate__animated animate__fadeInUp animate__faster">
+				<div class="d-flex animate__animated animate__fadeInUp animate__faster dl-profile-row">
 					<div class="flex-shrink-0">
-						<img class="rounded-4 shadow" src="<?= doclinc_safe_profile_image_src($profile['foto'] ?? ''); ?>" width="100px" height="100px" alt="Foto Profil">
+						<img class="rounded-4 shadow dl-profile-photo" src="<?= doclinc_safe_profile_image_src($profile['foto'] ?? ''); ?>" width="100px" height="100px" alt="Foto Profil">
 					</div>
-					<div class="flex-grow-1 ms-3 text-white">
-						<small>Hello,</small>
-						<h3 class="mb-0"> <?= strtoupper($this->session->userdata('nama')); ?> </h3>
-						<p class="mb-0">
-							<?php
-							$birthDate = new DateTime($profile['tgl']);
-							$today = new DateTime();
-							$age = $today->diff($birthDate)->y;
-							echo $age . " tahun";
-							?>
-						</p>
+					<div class="flex-grow-1 ms-3 text-white dl-profile-copy">
+						<small>Selamat Pagi,</small>
+						<h3 class="mb-0"><?= html_escape($nakes_name); ?></h3>
+						<p class="mb-0"><?= html_escape($nakes_age); ?></p>
 					</div>
 				</div>
 			</div>
@@ -456,52 +466,69 @@ if (!function_exists('doclinc_history_format_complaint')) {
 			</svg>
 			<div class="position-relative">
 				<div id="beranda" class="content active animate__animated animate__fadeInUp animate__faster">
-					<div class="row g-3 mb-3">
-						<div class="col-3 text-center">
-							<a href="#" class="feature-menu" onclick="showContent('req_konsul')">
-								<div class="icon-wrapper mx-auto">
-									<i class="fas fa-user-md"></i>
-									<span class="filler"></span>
-								</div>
-								<span class="small">Permintaan Konsultasi</span>
-							</a>
+					<div class="dl-nakes-segment">
+						<a href="#req_konsul" class="active" onclick="showContent('req_konsul')">Permintaan</a>
+						<a href="#riwayat_konsul" onclick="showContent('riwayat_konsul')">Aktif</a>
+					</div>
+					<div class="dl-nakes-stats">
+						<div class="dl-nakes-stat-card">
+							<span>Total Hari Ini</span>
+							<strong><?= html_escape(str_pad((string) $nakes_today_total, 2, '0', STR_PAD_LEFT)); ?></strong>
 						</div>
-						<div class="col-3 text-center">
-							<a href="#" class="feature-menu" onclick="showContent('riwayat_konsul')">
-								<div class="icon-wrapper mx-auto">
-									<i class="fas fa-history"></i>
-									<span class="filler"></span>
-								</div>
-								<span class="small">Riwayat Konsultasi</span>
-							</a>
-						</div>
-						<div class="col-3 text-center">
-							<a href="#" class="feature-menu">
-								<div class="icon-wrapper mx-auto bg-secondary">
-									<i class="fas fa-bars"></i>
-									<span class="filler"></span>
-								</div>
-								<span class="text-muted small">Lainnya</span>
-							</a>
+						<div class="dl-nakes-stat-card">
+							<span>Menunggu</span>
+							<strong><?= html_escape(str_pad((string) $nakes_pending_count, 2, '0', STR_PAD_LEFT)); ?></strong>
 						</div>
 					</div>
-					<div class="row">
-						<div class="col">
-							<!--<small class="fw-bold">News & Feed</small>-->
+					<div class="dl-section-header">
+						<h2 class="dl-section-title">Ringkasan Layanan</h2>
+						<a href="#riwayat_konsul" class="dl-nakes-link" onclick="showContent('riwayat_konsul')">Lihat Riwayat</a>
+					</div>
+					<div class="dl-feature-grid">
+						<a href="#req_konsul" class="dl-feature-card" onclick="showContent('req_konsul')">
+							<div class="icon-wrapper">
+								<i class="fas fa-user-md"></i>
+								<span class="filler"></span>
+							</div>
+							<span class="small">Permintaan Konsultasi</span>
+						</a>
+						<a href="#riwayat_konsul" class="dl-feature-card" onclick="showContent('riwayat_konsul')">
+							<div class="icon-wrapper">
+								<i class="fas fa-history"></i>
+								<span class="filler"></span>
+							</div>
+							<span class="small">Riwayat Konsultasi</span>
+						</a>
+						<a href="#" class="dl-feature-card" onclick="showContent('profile')">
+							<div class="icon-wrapper">
+								<i class="fas fa-user"></i>
+								<span class="filler"></span>
+							</div>
+							<span class="small">Profil Nakes</span>
+						</a>
+						<div class="dl-feature-card dl-nakes-summary-card">
+							<div class="icon-wrapper">
+								<i class="fas fa-check-circle"></i>
+								<span class="filler"></span>
+							</div>
+							<span class="small"><?= html_escape((string) $nakes_completed_count); ?> selesai</span>
 						</div>
 					</div>
 				</div>
 				<div id="req_konsul" class="content animate__animated animate__fadeInUp animate__faster">
-					<h2 class="text-center mb-4">Permintaan Konsultasi</h2>
-					<div class="row g-2">
+					<div class="dl-section-header dl-nakes-page-header">
+						<h2 class="dl-section-title">Permintaan Masuk</h2>
+						<span class="dl-nakes-link"><?= html_escape((string) $nakes_pending_count); ?> menunggu</span>
+					</div>
+					<div class="dl-nakes-request-list">
 						<?php
 						$i = 1;
 						if ($data_request_new->num_rows() < 1) {
 						?>
-							<center>
-								<img src="<?= base_url('assets/images/not found.svg'); ?>" width="200px">
-								<p class="mb-0 mt-3">No data.</p>
-							</center>
+							<div class="dl-empty-state text-center">
+								<img src="<?= html_escape(base_url('assets/images/not found.svg')); ?>" width="150" alt="Tidak ada data">
+								<p class="mb-0 mt-3">Belum ada permintaan konsultasi baru.</p>
+							</div>
 							<?php
 						} else {
 							$CI = &get_instance();
@@ -510,20 +537,30 @@ if (!function_exists('doclinc_history_format_complaint')) {
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
 							?>
-								<div class="col-md-4">
-									<div class="card shadow request-card" data-lat="<?= $x->lattitude; ?>" data-lng="<?= $x->longitude; ?>">
-										<div class="card-header d-flex align-items-center">
-											<p class="mb-0">
-												<em> <?php echo date('d-m-Y', strtotime($x->created_at)); ?> </em>
-											</p>
-											<span class="badge text-bg-danger ms-auto animate__animated animate__flash animate__infinite animate__slower">New</span>
+								<div class="dl-nakes-request-item">
+									<div class="card shadow request-card dl-nakes-request-card" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
+										<div class="card-header d-flex align-items-start gap-3">
+											<div class="dl-nakes-avatar-icon">
+												<i class="fas fa-user"></i>
+											</div>
+											<div class="flex-grow-1">
+												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
+												<span>ID: #REQ-<?= html_escape((int) $x->request_id); ?></span>
+											</div>
+											<span class="dl-badge animate__animated animate__flash animate__infinite animate__slower">Baru</span>
 										</div>
 										<div id="cekStatus"></div>
 										<div class="card-body">
-											<b><?php echo strtoupper($x->nama); ?></b> menginginkan konsultasi kesehatan dengan Anda. Keluhannya adalah <b> <?php echo $keluhan ?></b>.<br />
-											Riwayat: <b><?= $riwayat ?></b>.<br>
-											<i class="fas fa-file fa-fw"></i>
-											Evidence :
+											<div class="dl-nakes-complaint-box">
+												<span>Keluhan</span>
+												<p><?= doclinc_history_safe_lines($keluhan); ?></p>
+											</div>
+											<div class="dl-nakes-meta-list">
+												<div><i class="fas fa-file fa-fw"></i><span>Riwayat</span><strong><?= doclinc_history_safe_text($riwayat); ?></strong></div>
+												<div><i class="fas fa-map-marker-alt fa-fw"></i><span>Alamat</span><strong><?= doclinc_history_safe_text($x->location); ?></strong></div>
+												<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong class="distance">Menghitung...</strong></div>
+												<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong class="duration">Menghitung...</strong></div>
+											</div>
 											<!-- <a class="btn btn-info btn-sm">Lihat Foto</a> <a class="btn btn-info btn-sm">Lihat Video</a> -->
 											<?php if (!empty($x->photos)) : ?>
 												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#fotoModal_<?php echo $x->user_id; ?>">Lihat Foto</button>
@@ -533,34 +570,31 @@ if (!function_exists('doclinc_history_format_complaint')) {
 											<?php if (!empty($x->video)) : ?>
 												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#videoModal_<?php echo $x->user_id; ?>">Lihat Video</button>
 											<?php endif; ?>
-											<br />
-											<i class="fas fa-map-marker-alt fa-fw"></i> Alamat : <b><?php echo $x->location; ?></b><br>
-											<i class="fas fa-motorcycle fa-fw"></i> Jarak : <b><span class="distance">Menghitung...</span></b> <br />
-											<i class="far fa-clock fa-fw"></i> Estimasi : <b><span class="duration">Menghitung...</span></b> <br />
-											<hr class="my-2">
-											<i class="far fa-question-circle fa-fw"></i> Konfirmasikan kunjungan Anda:
-											<div class="form-check form-switch mb-2">
+											<div class="dl-nakes-visit-toggle">
+												<i class="far fa-question-circle fa-fw"></i> Konfirmasikan kunjungan Anda:
+											</div>
+											<div class="form-check form-switch mb-0">
 												<label class="form-check-label" for="kunjung" id="labelKunjung">Tidak</label>
 												<input class="form-check-input" type="checkbox" role="switch" id="kunjung" name="kunjung">
 											</div>
 										</div>
 										<div class="card-footer">
-											<div class="row g-2">
+											<div class="row g-2 dl-nakes-actions">
 												<div class="col d-grid">
-													<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-lat="<?= $x->lattitude; ?>" data-lng="<?= $x->longitude; ?>">
+													<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 														<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
 													</button>
 												</div>
 												<div class="col d-grid">
-													<input type="hidden" id="id_request<?php echo $i; ?>" value="<?php echo $x->request_id; ?>">
+													<input type="hidden" id="id_request<?php echo $i; ?>" value="<?= html_escape((int) $x->request_id); ?>">
 													<button type="button" class="btn btn-success shadow-sm rounded-pill start-chat"
 														id="terimaKonsul<?php echo $i; ?>"
-														data-reqid="<?= $x->request_id; ?>"
-														data-userid="<?= $x->user_id; ?>"
-														data-dokterid="<?= $x->dokter_id; ?>"
-														data-namapasien="<?= $x->nama; ?>"
-														data-riwayat="<?= $riwayat ?>"
-														data-keluhan="<?= $keluhan ?>">
+														data-reqid="<?= html_escape((int) $x->request_id); ?>"
+														data-userid="<?= html_escape((int) $x->user_id); ?>"
+														data-dokterid="<?= html_escape((int) $x->dokter_id); ?>"
+														data-namapasien="<?= html_escape($x->nama); ?>"
+														data-riwayat="<?= html_escape($riwayat); ?>"
+														data-keluhan="<?= html_escape($keluhan); ?>">
 														<i class="fa fa-comment-medical me-2"></i> Terima Konsultasi
 													</button>
 												</div>
@@ -578,8 +612,11 @@ if (!function_exists('doclinc_history_format_complaint')) {
 					</div>
 				</div>
 				<div id="riwayat_konsul" class="content animate__animated animate__fadeInUp animate__faster">
-					<h2 class="text-center mb-4">Riwayat Konsultasi</h2>
-					<ul class="nav nav-tabs nav-justified mb-3" id="myTab" role="tablist">
+					<div class="dl-section-header dl-nakes-page-header">
+						<h2 class="dl-section-title">Riwayat Konsultasi</h2>
+						<span class="dl-nakes-link"><?= html_escape((string) $nakes_active_count); ?> aktif</span>
+					</div>
+					<ul class="nav nav-tabs nav-justified mb-3 dl-tabs" id="myTab" role="tablist">
 						<li class="nav-item" role="presentation">
 							<button class="nav-link active" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="false">Saat ini</button>
 						</li>
@@ -596,29 +633,29 @@ if (!function_exists('doclinc_history_format_complaint')) {
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
 							?>
-								<div class="card shadow mb-2" data-request-id="<?= (int) $x->request_id; ?>">
-									<div class="card-header d-flex align-items-center">
-										<p class="mb-0">
-											<em> <?php echo date('d-m-Y', strtotime($x->created_at)); ?> </em>
-										</p>
-										<span class="badge text-bg-warning ms-auto animate__animated animate__flash animate__infinite animate__slower" id="status-konsul">New</span>
+								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>">
+									<div class="card-header d-flex align-items-start gap-3">
+										<div class="dl-nakes-avatar-icon">
+											<i class="fas fa-user"></i>
+										</div>
+										<div class="flex-grow-1">
+											<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
+											<span><?= html_escape(date('d-m-Y', strtotime($x->created_at))); ?> · #REQ-<?= html_escape((int) $x->request_id); ?></span>
+										</div>
+										<span class="dl-badge animate__animated animate__flash animate__infinite animate__slower" id="status-konsul">Baru</span>
 									</div>
 									<div class="card-body">
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class="fas fa-head-side-mask fa-fw"></i> Pasien :</span><br><?php echo strtoupper($x->nama); ?>
-										</p>
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class="fas fa-notes-medical fa-fw"></i> Keluhan :</span><br><?php echo $keluhan ?>
-										</p>
-										<p class="mb-0 small">
-											<span class="fw-bold"><i class="far fa-clock fa-fw"></i> Estimasi :</span><br><?php echo $x->duration; ?>
-										</p>
-										<p class="mb-0 small">
-											<span class="fw-bold"><i class="fas fa-motorcycle fa-fw"></i> Jarak :</span><br><?php echo $x->distance; ?>
-										</p>
+										<div class="dl-nakes-complaint-box">
+											<span>Keluhan</span>
+											<p><?= doclinc_history_safe_lines($keluhan); ?></p>
+										</div>
+										<div class="dl-nakes-meta-list">
+											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong><?= doclinc_history_safe_text($x->duration); ?></strong></div>
+											<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong><?= doclinc_history_safe_text($x->distance); ?></strong></div>
+										</div>
 									</div>
 									<div class="card-footer d-flex">
-										<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-lat="<?php echo $x->lattitude; ?>" data-lng="<?php echo $x->longitude; ?>">
+										<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 											<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
 										</button>
 										<!-- <button class="btn btn-success shadow-sm rounded-pill ms-auto" id="tombolSaran">Berikan Saran</button> -->
@@ -634,35 +671,31 @@ if (!function_exists('doclinc_history_format_complaint')) {
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
 							?>
-								<div class="card shadow mb-2" data-request-id="<?= (int) $x->request_id; ?>">
-									<div class="card-header d-flex align-items-center">
-										<p class="mb-0">
-											<em> <?php echo date('d-m-Y', strtotime($x->created_at)); ?> </em>
-										</p>
-										<span class="badge text-bg-info ms-auto animate__animated animate__flash animate__infinite animate__slower" id="status-konsul">Accepted</span>
+								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>">
+									<div class="card-header d-flex align-items-start gap-3">
+										<div class="dl-nakes-avatar-icon">
+											<i class="fas fa-user-check"></i>
+										</div>
+										<div class="flex-grow-1">
+											<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
+											<span><?= html_escape(date('d-m-Y', strtotime($x->created_at))); ?> · #REQ-<?= html_escape((int) $x->request_id); ?></span>
+										</div>
+										<span class="dl-badge animate__animated animate__flash animate__infinite animate__slower" id="status-konsul">Accepted</span>
 									</div>
 									<div class="card-body">
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class="fas fa-head-side-mask fa-fw"></i> Pasien :</span><br><?php echo strtoupper($x->nama); ?>
-										</p>
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class="fas fa-notes-medical fa-fw"></i> Keluhan :</span><br><?php echo $keluhan ?>
-										</p>
-										<input type="text" id="lat-des-acc" value="<?php echo $x->lattitude; ?>" hidden>
-										<input type="text" id="lng-des-acc" value="<?php echo $x->longitude; ?>" hidden>
-										<p class="mb-0 small">
-											<span class="fw-bold"><i class="fas fa-motorcycle fa-fw"></i> Jarak :</span><br>
-											<!-- <?php echo $x->distance; ?> -->
-											<span id="distances"></span>
-										</p>
-										<p class="mb-0 small">
-											<span class="fw-bold"><i class="far fa-clock fa-fw"></i> Estimasi :</span><br>
-											<!-- <?php echo $x->duration; ?> -->
-											<span id="durations"></span>
-										</p>
+										<div class="dl-nakes-complaint-box">
+											<span>Keluhan</span>
+											<p><?= doclinc_history_safe_lines($keluhan); ?></p>
+										</div>
+										<input type="text" id="lat-des-acc" value="<?= html_escape($x->lattitude); ?>" hidden>
+										<input type="text" id="lng-des-acc" value="<?= html_escape($x->longitude); ?>" hidden>
+										<div class="dl-nakes-meta-list">
+											<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong id="distances"></strong></div>
+											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong id="durations"></strong></div>
+										</div>
 									</div>
-									<div class="card-footer d-flex flex-wrap gap-2">
-										<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-lat="<?php echo $x->lattitude; ?>" data-lng="<?php echo $x->longitude; ?>">
+									<div class="card-footer d-flex flex-wrap gap-2 dl-nakes-actions">
+										<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 											<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
 										</button>
 										<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id) . '?kriteria=1'); ?>" class="btn btn-success shadow-sm rounded-pill">
@@ -795,24 +828,24 @@ if (!function_exists('doclinc_history_format_complaint')) {
 			</div>
 		</div>
 	</div>
-	<div class="nav-bottom-wrapper shadow-lg rounded-top-4" id="nav-bottom-wrapper">
+	<div class="nav-bottom-wrapper shadow-lg rounded-top-4 dl-bottom-nav" id="nav-bottom-wrapper">
 		<div class="container-fluid px-0">
 			<div class="row g-0 text-center p-2 menu animate__animated animate__slideInUp animate__faster">
 				<a href="#" id="beranda-tab" class="col menu-item active" onclick="showContent('beranda')" aria-label="Home">
 					<i class="fas fa-home fs-4"></i>
-					<span class="d-block small"> Home</span>
+					<span class="d-block small">Beranda</span>
 				</a>
 				<a href="#req_konsul" id="req_konsul-tab" class="col menu-item" onclick="showContent('req_konsul')" aria-label="Requests">
 					<i class="fas fa-user-md fs-4"></i>
-					<span class="d-block small"> Requests</span>
+					<span class="d-block small">Permintaan</span>
 				</a>
 				<a href="#riwayat_konsul" id="riwayat_konsul-tab" class="col menu-item" onclick="showContent('riwayat_konsul')" aria-label="History">
 					<i class="fas fa-history fs-4"></i>
-					<span class="d-block small"> History</span>
+					<span class="d-block small">Riwayat</span>
 				</a>
 				<a href="#" id="profile-tab" class="col menu-item" onclick="showContent('profile')" aria-label="Profile">
 					<i class="fas fa-user fs-4"></i>
-					<span class="d-block small"> Profile</span>
+					<span class="d-block small">Profil</span>
 				</a>
 			</div>
 		</div>
