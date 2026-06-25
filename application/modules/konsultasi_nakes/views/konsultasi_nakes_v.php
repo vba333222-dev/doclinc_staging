@@ -747,9 +747,9 @@ if (!function_exists('formatComplaintText')) {
 									<input type="text" id="ui_mobile_terapi_nama" class="form-control" placeholder="Tulis nama obat atau terapi">
 								</div>
 								<div>
-									<label class="mobile-field-label" for="ui_mobile_terapi_jumlah">Jumlah / frekuensi</label>
+									<label class="mobile-field-label" for="ui_mobile_terapi_jumlah">Frekuensi / Signa</label>
 									<select id="ui_mobile_terapi_jumlah" class="form-select">
-										<option value="" selected>Pilih frekuensi</option>
+										<option value="" selected>Pilih frekuensi/signa</option>
 										<option value="1x sehari">1x sehari</option>
 										<option value="2x sehari">2x sehari</option>
 										<option value="3x sehari">3x sehari</option>
@@ -783,7 +783,7 @@ if (!function_exists('formatComplaintText')) {
 									<tr>
 										<th>No.</th>
 										<th>Terapi</th>
-										<th>Jumlah Obat</th>
+										<th>Frekuensi / Signa</th>
 										<th>Cara Minum</th>
 										<th>Keterangan</th>
 										<th>Aksi</th>
@@ -793,9 +793,9 @@ if (!function_exists('formatComplaintText')) {
 									<tr>
 										<td data-label="No.">1</td>
 										<td data-label="Terapi" contenteditable="true" class="terapi-autocomplete">Terapi*</td>
-										<td data-label="Jumlah / Frekuensi">
+										<td data-label="Frekuensi / Signa">
 											<select class="form-select form-select-sm border-success">
-												<option value="" selected disabled>Pilih frekuensi</option>
+												<option value="" selected disabled>Pilih frekuensi/signa</option>
 												<option value="1x sehari">1x sehari</option>
 												<option value="2x sehari">2x sehari</option>
 												<option value="3x sehari">3x sehari</option>
@@ -976,7 +976,7 @@ if (!function_exists('formatComplaintText')) {
 			}
 
 			if (getMobileTerapiValue('#ui_mobile_terapi_jumlah') === "") {
-				showMobileTerapiMessage("Pilih jumlah/frekuensi obat.");
+				showMobileTerapiMessage("Pilih frekuensi/signa obat.");
 				return false;
 			}
 
@@ -1015,7 +1015,7 @@ if (!function_exists('formatComplaintText')) {
 					<div class="mobile-terapi-item">
 						<p class="mobile-terapi-name">${escapeMobileTerapiText(item.terapi)}</p>
 						<div class="mobile-terapi-meta">
-							<span><strong>Jumlah / frekuensi:</strong> ${escapeMobileTerapiText(item.jumlah)}</span>
+							<span><strong>Frekuensi / signa:</strong> ${escapeMobileTerapiText(item.jumlah)}</span>
 							<span><strong>Cara minum / pakai:</strong> ${escapeMobileTerapiText(item.cara)}</span>
 							<span><strong>Keterangan:</strong> ${keterangan}</span>
 						</div>
@@ -1040,7 +1040,7 @@ if (!function_exists('formatComplaintText')) {
 			const $row = $('<tr></tr>');
 			const $cellNo = $('<td data-label="No."></td>').text(index + 1);
 			const $cellTerapi = $('<td data-label="Terapi" contenteditable="true" class="terapi-autocomplete"></td>').text(isPlaceholder ? 'Terapi*' : rowData.terapi);
-			const $cellJumlah = $('<td data-label="Jumlah / Frekuensi"></td>').append(buildTerapiSelect(['1x sehari', '2x sehari', '3x sehari', '4x sehari'], 'Pilih frekuensi', isPlaceholder ? '' : rowData.jumlah));
+			const $cellJumlah = $('<td data-label="Frekuensi / Signa"></td>').append(buildTerapiSelect(['1x sehari', '2x sehari', '3x sehari', '4x sehari'], 'Pilih frekuensi/signa', isPlaceholder ? '' : rowData.jumlah));
 			const $cellCara = $('<td data-label="Cara Minum / Cara Pakai"></td>').append(buildTerapiSelect(['Sesudah makan', 'Sebelum makan'], 'Pilih cara pakai', isPlaceholder ? '' : rowData.cara));
 			const $cellKeterangan = $('<td data-label="Keterangan" contenteditable="true"></td>').text(isPlaceholder ? 'Masukkan keterangan' : rowData.keterangan);
 			const $cellAksi = $('<td data-label="Aksi"></td>');
@@ -1152,7 +1152,7 @@ if (!function_exists('formatComplaintText')) {
 			var terapiData = [];
 			$("#tabelTerapi tbody tr").each(function(index, row) {
 				var terapi = getTerapiName(row);
-				var signa = getTerapiJumlah(row); // Jumlah Obat
+				var signa = getTerapiJumlah(row);
 				var caraMinum = getTerapiCara(row); // Cara Minum
 				var keterangan = getTerapiKeterangan(row);
 
@@ -1328,7 +1328,7 @@ if (!function_exists('formatComplaintText')) {
 				return false;
 			}
 			if (getTerapiJumlah(row) === "") {
-				showTerapiRowMessage("Pilih jumlah/frekuensi obat.");
+				showTerapiRowMessage("Pilih frekuensi/signa obat.");
 				return false;
 			}
 			if (getTerapiCara(row) === "") {
@@ -1361,7 +1361,7 @@ if (!function_exists('formatComplaintText')) {
 			let cellAksi = newRow.insertCell(5);
 			cellNo.setAttribute("data-label", "No.");
 			cellTerapi.setAttribute("data-label", "Terapi");
-			cellJumlahObat.setAttribute("data-label", "Jumlah / Frekuensi");
+			cellJumlahObat.setAttribute("data-label", "Frekuensi / Signa");
 			cellCaraMinum.setAttribute("data-label", "Cara Minum / Cara Pakai");
 			cellKeterangan.setAttribute("data-label", "Keterangan");
 			cellAksi.setAttribute("data-label", "Aksi");
@@ -1376,7 +1376,7 @@ if (!function_exists('formatComplaintText')) {
 
 			cellJumlahObat.innerHTML = `
 				<select class="form-select form-select-sm border-success">
-					<option value="" selected disabled>Pilih frekuensi</option>
+					<option value="" selected disabled>Pilih frekuensi/signa</option>
 					<option value="1x sehari">1x sehari</option>
 					<option value="2x sehari">2x sehari</option>
 					<option value="3x sehari">3x sehari</option>
