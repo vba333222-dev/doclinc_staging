@@ -623,18 +623,18 @@ a.feature-menu {
 }
 
 .dl-nakes-dashboard {
-    --dl-stitch-bg: #edfdf3;
-    --dl-stitch-surface-low: #e7f7ed;
-    --dl-stitch-surface-card: #ffffff;
-    --dl-stitch-surface-soft: #e2f2e8;
-    --dl-stitch-primary: #006a41;
-    --dl-stitch-primary-ui: #379A69;
+    --dl-stitch-bg: var(--dl-bg);
+    --dl-stitch-surface-low: var(--dl-surface-soft);
+    --dl-stitch-surface-card: var(--dl-surface);
+    --dl-stitch-surface-soft: #edfdf3;
+    --dl-stitch-primary: var(--dl-primary);
+    --dl-stitch-primary-ui: var(--dl-primary);
     --dl-stitch-secondary-container: #89f6da;
     --dl-stitch-secondary-text: #00725e;
-    --dl-stitch-text: #111e18;
-    --dl-stitch-muted: #3e4941;
-    --dl-stitch-outline: #becabf;
-    background: var(--dl-stitch-bg) !important;
+    --dl-stitch-text: var(--dl-text);
+    --dl-stitch-muted: var(--dl-muted);
+    --dl-stitch-outline: var(--dl-line);
+    background: var(--dl-bg) !important;
 }
 
 .dl-nakes-dashboard .dl-shell {
@@ -651,14 +651,15 @@ a.feature-menu {
 
 .dl-nakes-dashboard .dl-nakes-appbar {
     min-height: 64px;
-    background: var(--dl-stitch-bg) !important;
-    border-bottom: 1px solid var(--dl-stitch-outline);
+    background: #edfdf3 !important;
+    border-bottom: 1px solid var(--dl-line);
 }
 
 .dl-nakes-dashboard .dl-profile-row h3 {
     max-width: 228px;
     color: var(--dl-stitch-primary);
-    font-size: 16px;
+    font-size: 15px;
+    font-weight: 800;
     line-height: 20px;
 }
 
@@ -672,8 +673,8 @@ a.feature-menu {
     gap: 4px;
     padding: 4px;
     margin-bottom: 16px;
-    background: var(--dl-stitch-surface-low);
-    border: 1px solid rgba(190, 202, 191, 0.72);
+    background: var(--dl-surface);
+    border: 1px solid var(--dl-line);
     border-radius: 16px;
 }
 
@@ -685,8 +686,8 @@ a.feature-menu {
     align-items: center;
     justify-content: center;
     color: var(--dl-stitch-muted);
-    font-size: 14px;
-    font-weight: 800;
+    font-size: 13px;
+    font-weight: 700;
     text-decoration: none;
 }
 
@@ -729,15 +730,15 @@ a.feature-menu {
 
 .dl-nakes-stat-card strong {
     color: var(--dl-stitch-primary);
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 800;
-    line-height: 30px;
+    line-height: 28px;
 }
 
 .dl-nakes-link {
     color: var(--dl-stitch-primary-ui);
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 700;
     text-decoration: none;
 }
 
@@ -770,8 +771,8 @@ a.feature-menu {
 .dl-nakes-request-card .card-header strong {
     display: block;
     color: var(--dl-stitch-text);
-    font-size: 15px;
-    font-weight: 800;
+    font-size: 14px;
+    font-weight: 700;
     line-height: 20px;
     word-break: break-word;
 }
@@ -816,7 +817,7 @@ a.feature-menu {
     margin: 0;
     color: var(--dl-stitch-text);
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 500;
     line-height: 20px;
     word-break: break-word;
 }
@@ -866,8 +867,8 @@ a.feature-menu {
 .dl-nakes-request-card .card-footer .btn {
     min-height: 44px;
     border-radius: 14px !important;
-    font-size: 13px;
-    font-weight: 800;
+    font-size: 14px;
+    font-weight: 700;
 }
 
 .dl-nakes-dashboard .btn-success {
