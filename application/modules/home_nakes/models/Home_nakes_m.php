@@ -160,9 +160,15 @@ class Home_nakes_m extends MX_Controller
 			}
 		}
 
+		$this->db->where('requests.request_status', 'Completed');
+		$this->db->group_start();
+		$this->db->where('requests.dokter_id', $id);
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$this->db->or_where('requests.accepted_by_user_id', $id);
+		}
+		$this->db->group_end();
+
 		return $this->db
-			->where('requests.request_status', 'Completed')
-			->where('requests.dokter_id', $id)
 			->order_by('requests.request_id', 'DESC')
 			->get();
 	}
