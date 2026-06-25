@@ -78,6 +78,9 @@ if (!function_exists('doclinc_history_format_complaint')) {
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" integrity="sha512-tS3S5qG0BlhnQROyJXvNjeEM4UpMXHrQfTGmbQ1gKmelCxlSEBUaxhRBj/EFTzpbP4RVSrpEikbmdJobCvhE3g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -430,7 +433,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 	</style>
 </head>
 
-<body class="bg-light">
+<body class="bg-light dl-dashboard-body">
 	<div id="preloader">
 		<div class="text-center">
 			<img class="animate__animated animate__bounceIn mb-3" src="<?= base_url(); ?>assets/images/doklincwhite.png" alt="" height="50px">
@@ -443,10 +446,10 @@ if (!function_exists('doclinc_history_format_complaint')) {
 		</div>
 	</div>
 
-	<div class="content-wrapper" id="content-wrapper">
+	<div class="content-wrapper dl-shell" id="content-wrapper">
 		<div class="contents">
-			<div class="hero bg-success p-3 overflow-hidden">
-				<a href="<?= html_escape($legacy_superapp_url); ?>" style="text-decoration: none; color: white; font-size: 1.5rem;">
+			<div class="hero bg-success p-3 overflow-hidden dl-appbar">
+				<a class="dl-back-link" href="<?= html_escape($legacy_superapp_url); ?>" style="text-decoration: none; color: white; font-size: 1.5rem;" aria-label="Kembali">
 					<i class="fas fa-chevron-left icon"></i>
 				</a>
 				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
@@ -455,7 +458,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 					<span class="notify-number" id="badgeNotif">9+</span>
 					<!-- sampe sini -->
 				</a>
-				<div class="text-white mb-2">
+				<div class="text-white mb-2 dl-location-row">
 					<i class="fas fa-map-marker-alt me-2"></i><small><label for="" id="address"></label></small>
 
 					<input type="hidden" id="id_user" value="<?= $this->session->userdata('id'); ?>">
@@ -464,19 +467,19 @@ if (!function_exists('doclinc_history_format_complaint')) {
 					<input type="hidden" id="latitude" placeholder="Latitude">
 					<input type="hidden" id="longitude" placeholder="Longitude">
 				</div>
-				<div class="d-flex animate__animated animate__fadeInUp animate__faster">
+				<div class="d-flex animate__animated animate__fadeInUp animate__faster dl-profile-row">
 					<?php
 					foreach ($data_profile->result() as $x) {
 						$foto = $x->foto;
 					}
 					?>
 					<div class="flex-shrink-0">
-						<img class="rounded-4 shadow" id="previewFoto" src="<?= doclinc_safe_profile_image_src($foto); ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+						<img class="rounded-4 shadow dl-profile-photo" id="previewFoto" src="<?= doclinc_safe_profile_image_src($foto); ?>" alt="Foto Profil" style="width: 100px; height: 100px; object-fit: cover;">
 					</div>
-					<div class="flex-grow-1 ms-3 text-white">
-						<small>Hello,</small>
-						<h3 class="mb-0"><?= $this->session->userdata('nama'); ?></h3>
-						<p class="mb-0"><?= $usia ?></p>
+					<div class="flex-grow-1 ms-3 text-white dl-profile-copy">
+						<small>Selamat Datang</small>
+						<h3 class="mb-0"><?= html_escape($this->session->userdata('nama')); ?></h3>
+						<p class="mb-0"><?= html_escape($usia); ?></p>
 						<p>Kota: <span id="kota">Memuat...</span></p>
 					</div>
 				</div>
@@ -499,39 +502,82 @@ if (!function_exists('doclinc_history_format_complaint')) {
 			</svg>
 			<div class="position-relative">
 				<div id="beranda" class="content active animate__animated animate__fadeInUp animate__faster">
-					<div class="row g-3 mb-3">
-						<div class="col-3 text-center">
-							<a href="#" class="feature-menu" onclick="showContent('konsultasi_kesehatan')">
-								<div class="icon-wrapper mx-auto">
-									<i class="fas fa-user-md"></i>
-									<span class="filler"></span>
-								</div>
-								<span class="small">Konsultasi Kesehatan</span>
+					<section class="dl-hero">
+						<div class="dl-hero-content">
+							<h2 class="dl-hero-title">Mulai Konsultasi</h2>
+							<p class="dl-hero-text">Ceritakan keluhan Anda agar nakes dapat membantu.</p>
+							<a href="#" class="dl-btn-secondary" onclick="showContent('konsultasi_kesehatan')">
+								Buat Konsultasi <i class="fas fa-plus-circle"></i>
 							</a>
 						</div>
-						<div class="col-3 text-center">
-							<a href="#" data-bs-toggle="modal" class="feature-menu" onclick="showContent('riwayat')">
-								<div class="icon-wrapper mx-auto">
-									<i class="fas fa-briefcase-medical"></i>
-									<span class="filler"></span>
-								</div>
-								<span class="small">Catatan Kesehatan</span>
-							</a>
-						</div>
-						<div class="col-3 text-center">
-							<a href="#" class="feature-menu">
-								<div class="icon-wrapper mx-auto bg-secondary">
-									<i class="fas fa-bars"></i>
-									<span class="filler"></span>
-								</div>
-								<span class="text-muted small">Lainnya</span>
-							</a>
-						</div>
+					</section>
+					<div class="dl-feature-grid">
+						<a href="#" class="feature-menu dl-feature-card" onclick="showContent('konsultasi_kesehatan')">
+							<div class="icon-wrapper">
+								<i class="fas fa-user-md"></i>
+								<span class="filler"></span>
+							</div>
+							<span class="small">Konsultasi Kesehatan</span>
+						</a>
+						<a href="#" data-bs-toggle="modal" class="feature-menu dl-feature-card" onclick="showContent('riwayat')">
+							<div class="icon-wrapper">
+								<i class="fas fa-briefcase-medical"></i>
+								<span class="filler"></span>
+							</div>
+							<span class="small">Catatan Kesehatan</span>
+						</a>
+						<a href="#" class="feature-menu dl-feature-card">
+							<div class="icon-wrapper bg-secondary">
+								<i class="fas fa-bars"></i>
+								<span class="filler"></span>
+							</div>
+							<span class="text-muted small">Lainnya</span>
+						</a>
 					</div>
+					<section>
+						<div class="dl-section-header">
+							<h3 class="dl-section-title">Konsultasi Saat Ini</h3>
+							<a href="#" class="history-meta text-decoration-none" onclick="showContent('riwayat')">Lihat Semua</a>
+						</div>
+						<?php if (!empty($getAllDataRequests)) : ?>
+							<?php foreach ($getAllDataRequests as $dlCurrentRequest) :
+								$dl_current_status = !empty($dlCurrentRequest->request_status) ? $dlCurrentRequest->request_status : '-';
+								$dl_status_label = $dl_current_status === 'Accepted' ? 'Diterima' : ($dl_current_status === 'Pending' ? 'Menunggu' : $dl_current_status);
+								$dl_current_date = !empty($dlCurrentRequest->date) ? date('d-m-Y', strtotime($dlCurrentRequest->date)) : '-';
+								$dl_current_keluhan = !empty($dlCurrentRequest->request_description) ? $dlCurrentRequest->request_description : 'Keluhan tersimpan';
+							?>
+								<div class="dl-card p-3" data-request-id="<?= (int) $dlCurrentRequest->request_id; ?>">
+									<div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+										<div>
+											<div class="d-flex align-items-center gap-2 mb-1">
+												<strong>Request #<?= html_escape((int) $dlCurrentRequest->request_id); ?></strong>
+												<span class="dl-badge px-2 py-1"><?= html_escape($dl_status_label); ?></span>
+											</div>
+											<div class="history-meta"><i class="far fa-calendar-alt me-1"></i><?= html_escape($dl_current_date); ?></div>
+										</div>
+										<div class="icon-wrapper">
+											<i class="fas fa-clipboard-list"></i>
+											<span class="filler"></span>
+										</div>
+									</div>
+									<div class="history-section mb-3">
+										<span class="history-result-label">Keluhan</span>
+										<div class="history-result-value"><?= doclinc_history_safe_lines($dl_current_keluhan); ?></div>
+									</div>
+									<a href="#" class="dl-btn-secondary w-100" onclick="showContent('riwayat')">Lihat Detail</a>
+								</div>
+							<?php break;
+							endforeach; ?>
+						<?php else : ?>
+							<div class="dl-empty-state text-center">
+								<p class="history-empty-text mb-0">Belum ada konsultasi aktif.</p>
+							</div>
+						<?php endif; ?>
+					</section>
 					<div class="row">
 						<div class="col">
-							<div class="mb-2 fw-bold position-relative d-flex align-items-center">
-								<p class="mb-0 me-2">News & Feed</p>
+							<div class="dl-section-header">
+								<p class="dl-section-title">News & Feed</p>
 								<div class="flex-grow-1">
 									<hr class="m-0">
 								</div>
@@ -552,15 +598,15 @@ if (!function_exists('doclinc_history_format_complaint')) {
 					</div>
 				</div>
 				<div id="konsultasi_kesehatan" class="content animate__animated animate__fadeInUp animate__faster">
-					<h2 class="text-center mb-4">Konsultasi Kesehatan</h2>
-					<div class="card shadow mb-2 rounded-4 bg-white clickable-card"
+					<h2 class="dl-section-title mb-3">Konsultasi Kesehatan</h2>
+					<div class="card shadow mb-2 rounded-4 bg-white clickable-card dl-card"
 						data-requestId=""
 						data-userIdPasien=""
 						data-status=""
 						data-tanggal="<?= date('Y-m-d'); ?>"
 						data-tanggal_loc="<?= date('Y-m-d H:i:s'); ?>"
 						data-link="<?= base_url('konsultasi'); ?>">
-						<div class="card-body p-2">
+						<div class="card-body p-3">
 							<div class="d-flex hero-card">
 								<img class="rounded-4" src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>" width="100px" height="auto" alt="Puskesmas">
 								<div class="w-100 ms-2">
@@ -589,14 +635,14 @@ if (!function_exists('doclinc_history_format_complaint')) {
 						$tanggal_loc = $row->create_date;
 						$foto = $row->foto;
 					?>
-						<div class="card shadow mb-2 rounded-4 bg-white clickable-card"
+						<div class="card shadow mb-2 rounded-4 bg-white clickable-card dl-card"
 							data-requestId="<?= $row->request_id ?>"
 							data-userIdPasien="<?= $userIdPasien ?>"
 							data-status="<?= $status ?>"
 							data-tanggal="<?= $tanggal ?>"
 							data-tanggal_loc="<?= $tanggal_loc ?>"
 							data-link="<?= base_url('konsultasi'); ?>?nama=<?= $userId; ?>">
-							<div class="card-body p-2">
+							<div class="card-body p-3">
 								<div class="d-flex hero-card">
 									<img class="rounded-4" id="gambar" src="<?= doclinc_safe_profile_image_src($row->foto ?? ''); ?>" width="100px" height="auto" alt="Foto Profil">
 									<div class="w-100 ms-2">
@@ -684,8 +730,8 @@ if (!function_exists('doclinc_history_format_complaint')) {
 					</div>
 				</div>
 				<div id="riwayat" class="content animate__animated animate__fadeInUp animate__faster">
-					<h2 class="text-center mb-4">Konsultasi Saya</h2>
-					<ul class="nav nav-tabs nav-justified mb-3" id="myTab" role="tablist">
+					<h2 class="dl-section-title mb-3">Konsultasi Saya</h2>
+					<ul class="nav nav-tabs nav-justified mb-3 dl-tabs" id="myTab" role="tablist">
 						<li class="nav-item" role="presentation">
 							<button class="nav-link active" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="false">Saat ini</button>
 						</li>
@@ -723,7 +769,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 									✅ Nakes telah menerima permintaan konsultasi Anda.
 								</div>
 
-								<div class="card shadow mb-2" data-request-id="<?= (int) $id_request; ?>">
+								<div class="card shadow mb-2 dl-card" data-request-id="<?= (int) $id_request; ?>">
 									<div class="card-header d-flex align-items-center">
 										<p class="mb-0"><em><?= $tanggal; ?></em></p>
 										<span id="statusNotif" class="badge text-bg-warning ms-auto animate__animated animate__flash animate__infinite animate__slower"><?= $status; ?></span>
@@ -739,7 +785,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 										<span id="estimasi"></span>
 										<?php if ($request_status === 'Accepted') : ?>
 											<div class="mt-3">
-												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-success btn-sm rounded-pill">
+												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-success btn-sm rounded-pill dl-btn-primary">
 													<i class="fas fa-comments me-1"></i> Chat Konsultasi
 												</a>
 											</div>
@@ -755,7 +801,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 							<?php
 							if (empty($getAllDataRequestsCompleted)) {
 							?>
-								<div class="text-center py-4">
+								<div class="text-center py-4 dl-empty-state">
 									<img src="<?= html_escape(base_url('assets/images/not found.svg')); ?>" width="180" alt="Tidak ada data">
 									<p class="mb-0 mt-3 text-muted">Belum ada riwayat konsultasi selesai.</p>
 								</div>
@@ -776,7 +822,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 								$terapi_list = !empty($data->terapi_list) && is_array($data->terapi_list) ? $data->terapi_list : [];
 								$tanggal_riwayat = !empty($tanggal) ? date('d F Y', strtotime($tanggal)) : '-';
 							?>
-								<div class="card shadow mb-3 history-result-card" id="card-<?= html_escape($card_id); ?>" data-request-id="<?= $id_request; ?>">
+								<div class="card shadow mb-3 history-result-card dl-card" id="card-<?= html_escape($card_id); ?>" data-request-id="<?= $id_request; ?>">
 									<div class="card-header d-flex align-items-start gap-3">
 										<div class="flex-grow-1">
 											<div class="history-request-id">Request #<?= html_escape($id_request); ?></div>
@@ -828,10 +874,10 @@ if (!function_exists('doclinc_history_format_complaint')) {
 											</div>
 										</div>
 										<input type="hidden" id="doktId" value="<?= html_escape($dokter_id); ?>">
-										<button class="btn btn-sm btn-outline-success mt-2" onclick="downloadCard('card-<?= html_escape($card_id); ?>')">
+										<button class="btn btn-sm btn-outline-success mt-2 dl-btn-secondary" onclick="downloadCard('card-<?= html_escape($card_id); ?>')">
 											<i class="fas fa-file-download"></i> Download Resep
 										</button>
-										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-sm btn-outline-secondary mt-2">
+										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-sm btn-outline-secondary mt-2 dl-btn-secondary">
 											<i class="fas fa-comments"></i> Lihat Chat
 										</a>
 									</div>
@@ -857,9 +903,9 @@ if (!function_exists('doclinc_history_format_complaint')) {
 						$role = $x->role;
 					}
 					?>
-					<div class="card shadow-sm border-0 rounded-4">
+					<div class="card shadow-sm border-0 rounded-4 dl-card">
 						<div class="card-body">
-							<h4 class="text-center text-success mb-4">Profil Pengguna</h4>
+							<h4 class="dl-section-title text-center mb-4">Profil Pengguna</h4>
 							<div class="form-floating mb-3">
 								<input type="text" class="form-control shadow-sm border-success" id="nama_lengkap" value="<?= $nama; ?>" placeholder="Nama Lengkap" readonly>
 								<label for="nama_lengkap"><i class="fas fa-user"></i> Nama Lengkap</label>
@@ -933,12 +979,12 @@ if (!function_exists('doclinc_history_format_complaint')) {
 	</div>
 
 	<!-- menubar bottom -->
-	<div class="nav-bottom-wrapper shadow-lg rounded-top-4" id="nav-bottom-wrapper">
+	<div class="nav-bottom-wrapper shadow-lg rounded-top-4 dl-bottom-nav" id="nav-bottom-wrapper">
 		<div class="container-fluid px-0">
 			<div class="row g-0 text-center p-2 menu animate__animated animate__slideInUp animate__faster">
 				<a href="#" id="beranda-tab" class="col menu-item active" onclick="showContent('beranda')">
 					<i class="fas fa-home fs-4"></i>
-					<span class="d-block small mt-1">Home</span>
+					<span class="d-block small mt-1">Beranda</span>
 				</a>
 				<a href="#" id="konsultasi_kesehatan-tab" class="col menu-item" onclick="showContent('konsultasi_kesehatan')">
 					<i class="fas fa-user-md fs-4"></i>
