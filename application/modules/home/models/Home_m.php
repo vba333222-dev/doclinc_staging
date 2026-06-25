@@ -96,70 +96,6 @@ class Home_m extends MX_Controller
 		);
 	}
 
-	private function completed_result_expression($table, $field)
-	{
-		if (!$this->db->table_exists($table) || !$this->db->field_exists($field, $table)) {
-			return 'NULL';
-		}
-
-		return "NULLIF({$table}.{$field}, '')";
-	}
-
-	private function select_completed_result_fields($has_konsultasi, $has_medicalrecords)
-	{
-		$medical_diagnosis = $this->completed_result_expression('medicalrecords', 'diagnosis');
-		$legacy_diagnosa = $this->completed_result_expression('konsultasi', 'diagnosa');
-		$medical_recommendations = $this->completed_result_expression('medicalrecords', 'recommendations');
-		$legacy_saran = $this->completed_result_expression('konsultasi', 'saran');
-		$medical_treatment = $this->completed_result_expression('medicalrecords', 'treatment');
-		$legacy_treatment = $this->completed_result_expression('konsultasi', 'treatment');
-
-		if ($has_konsultasi) {
-			foreach (['konsul_id', 'kriteria', 'rujukan', 'foto', 'create_date', 'create_user'] as $field) {
-				if ($this->db->field_exists($field, 'konsultasi')) {
-					$this->db->select("konsultasi.{$field} AS {$field}", FALSE);
-				} elseif ($field === 'konsul_id') {
-					$this->db->select('NULL AS konsul_id', FALSE);
-				}
-			}
-			$this->db
-				->select($this->db->field_exists('diagnosa', 'konsultasi') ? 'konsultasi.diagnosa AS legacy_diagnosa' : 'NULL AS legacy_diagnosa', FALSE)
-				->select($this->db->field_exists('saran', 'konsultasi') ? 'konsultasi.saran AS legacy_saran' : 'NULL AS legacy_saran', FALSE);
-		} else {
-			$this->db
-				->select(($has_medicalrecords && $this->db->field_exists('record_id', 'medicalrecords')) ? 'medicalrecords.record_id AS konsul_id' : 'NULL AS konsul_id', FALSE)
-				->select('NULL AS legacy_diagnosa', FALSE)
-				->select('NULL AS legacy_saran', FALSE);
-		}
-
-		if ($has_medicalrecords) {
-			$this->db
-				->select($this->db->field_exists('record_id', 'medicalrecords') ? 'medicalrecords.record_id AS record_id' : 'NULL AS record_id', FALSE)
-				->select($this->db->field_exists('diagnosis', 'medicalrecords') ? 'medicalrecords.diagnosis AS medicalrecord_diagnosis' : 'NULL AS medicalrecord_diagnosis', FALSE)
-				->select($this->db->field_exists('treatment', 'medicalrecords') ? 'medicalrecords.treatment AS medicalrecord_treatment' : 'NULL AS medicalrecord_treatment', FALSE)
-				->select($this->db->field_exists('recommendations', 'medicalrecords') ? 'medicalrecords.recommendations AS medicalrecord_recommendations' : 'NULL AS medicalrecord_recommendations', FALSE)
-				->select($this->db->field_exists('created_at', 'medicalrecords') ? 'medicalrecords.created_at AS result_created_at' : 'NULL AS result_created_at', FALSE);
-		} else {
-			$this->db
-				->select('NULL AS record_id', FALSE)
-				->select('NULL AS medicalrecord_diagnosis', FALSE)
-				->select('NULL AS medicalrecord_treatment', FALSE)
-				->select('NULL AS medicalrecord_recommendations', FALSE)
-				->select('NULL AS result_created_at', FALSE);
-		}
-
-		$diagnosis_expr = "COALESCE({$medical_diagnosis}, {$legacy_diagnosa}, '-')";
-		$recommendations_expr = "COALESCE({$medical_recommendations}, {$legacy_saran}, '-')";
-		$treatment_expr = "COALESCE({$medical_treatment}, {$legacy_treatment})";
-
-		$this->db
-			->select("{$diagnosis_expr} AS diagnosa", FALSE)
-			->select("{$diagnosis_expr} AS diagnosis", FALSE)
-			->select("{$recommendations_expr} AS saran", FALSE)
-			->select("{$recommendations_expr} AS recommendations", FALSE)
-			->select("{$treatment_expr} AS treatment", FALSE);
-	}
-
 	public function getAllDataLocations($nama)
 	{
 		// 		$query = $this->db->query("SELECT latitude, longitude, location, name FROM locations WHERE name='$nama' AND date(locations.create_date)=date(now())");
@@ -220,10 +156,7 @@ class Home_m extends MX_Controller
 
 	public function getAllDataRequestsCompleted($user_id)
 	{
-		$has_konsultasi = $this->db->table_exists('konsultasi');
-		$has_medicalrecords = $this->db->table_exists('medicalrecords');
-
-		if (!$has_konsultasi && !$has_medicalrecords) {
+		if (!$this->db->table_exists('konsultasi') && !$this->db->table_exists('medicalrecords')) {
 			return [];
 		}
 
@@ -240,13 +173,26 @@ class Home_m extends MX_Controller
 		$this->db->join('users', 'requests.user_id = users.userId');
 		$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id', 'left');
 		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
-		if ($has_medicalrecords) {
-			$this->db->join('medicalrecords', 'requests.request_id = medicalrecords.request_id', 'left');
+		if ($this->db->table_exists('konsultasi')) {
+			$this->db
+				->select('konsultasi.*')
+				->join('konsultasi', 'requests.request_id = konsultasi.request_id', 'left');
+			foreach (['diagnosa', 'saran', 'diagnosis', 'treatment', 'recommendations'] as $field) {
+				if (!$this->db->field_exists($field, 'konsultasi')) {
+					$this->db->select("NULL AS {$field}", FALSE);
+				}
+			}
+		} else {
+			$this->db
+				->select('medicalrecords.record_id AS konsul_id')
+				->select('medicalrecords.diagnosis AS diagnosa')
+				->select('medicalrecords.recommendations AS saran')
+				->select('medicalrecords.diagnosis AS diagnosis')
+				->select('medicalrecords.treatment AS treatment')
+				->select('medicalrecords.recommendations AS recommendations')
+				->select('medicalrecords.created_at AS result_created_at')
+				->join('medicalrecords', 'requests.request_id = medicalrecords.request_id', 'left');
 		}
-		if ($has_konsultasi) {
-			$this->db->join('konsultasi', 'requests.request_id = konsultasi.request_id', 'left');
-		}
-		$this->select_completed_result_fields($has_konsultasi, $has_medicalrecords);
 		$this->db->where('requests.request_status', 'Completed');
 		$this->db->where('requests.user_id', $user_id);
 		$this->db->order_by('requests.request_id', 'DESC');
@@ -255,7 +201,7 @@ class Home_m extends MX_Controller
 
 		// Ambil terapi untuk semua konsultasi yang ditemukan
 		foreach ($hasil as &$row) {
-			$row->terapi_list = ($has_konsultasi && !empty($row->konsul_id)) ? $this->getTerapiByKonsulId($row->konsul_id) : [];
+			$row->terapi_list = $this->db->table_exists('konsultasi') ? $this->getTerapiByKonsulId($row->konsul_id) : [];
 
 			try {
 				$row->request_description = $CI->encryption->decrypt(base64_decode($row->request_description));
