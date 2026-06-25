@@ -621,3 +621,283 @@ a.feature-menu {
         box-shadow: 0 18px 40px rgba(31, 42, 36, 0.08);
     }
 }
+
+.dl-nakes-dashboard {
+    --dl-stitch-bg: #edfdf3;
+    --dl-stitch-surface-low: #e7f7ed;
+    --dl-stitch-surface-card: #ffffff;
+    --dl-stitch-surface-soft: #e2f2e8;
+    --dl-stitch-primary: #006a41;
+    --dl-stitch-primary-ui: #379A69;
+    --dl-stitch-secondary-container: #89f6da;
+    --dl-stitch-secondary-text: #00725e;
+    --dl-stitch-text: #111e18;
+    --dl-stitch-muted: #3e4941;
+    --dl-stitch-outline: #becabf;
+    background: var(--dl-stitch-bg) !important;
+}
+
+.dl-nakes-dashboard .dl-shell {
+    background: var(--dl-stitch-bg);
+}
+
+.dl-nakes-dashboard .dl-shell > .contents {
+    padding-top: 72px;
+}
+
+.dl-nakes-dashboard .content {
+    padding: 16px 20px 28px;
+}
+
+.dl-nakes-dashboard .dl-nakes-appbar {
+    min-height: 64px;
+    background: var(--dl-stitch-bg) !important;
+    border-bottom: 1px solid var(--dl-stitch-outline);
+}
+
+.dl-nakes-dashboard .dl-profile-row h3 {
+    max-width: 228px;
+    color: var(--dl-stitch-primary);
+    font-size: 16px;
+    line-height: 20px;
+}
+
+.dl-nakes-dashboard .dl-profile-row small,
+.dl-nakes-dashboard .dl-profile-row p {
+    color: var(--dl-stitch-muted);
+}
+
+.dl-nakes-segment {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 16px;
+    background: var(--dl-stitch-surface-low);
+    border: 1px solid rgba(190, 202, 191, 0.72);
+    border-radius: 16px;
+}
+
+.dl-nakes-segment a {
+    flex: 1 1 0;
+    min-height: 40px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dl-stitch-muted);
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.dl-nakes-segment a.active,
+.dl-nakes-segment a:focus,
+.dl-nakes-segment a:hover {
+    background: var(--dl-stitch-primary);
+    color: #fff;
+}
+
+.dl-nakes-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.dl-nakes-stat-card,
+.dl-nakes-request-card,
+.dl-nakes-dashboard .history-result-card {
+    background: var(--dl-stitch-surface-card) !important;
+    border: 1px solid var(--dl-stitch-outline) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 4px 12px rgba(31, 42, 36, 0.04) !important;
+}
+
+.dl-nakes-stat-card {
+    min-height: 92px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.dl-nakes-stat-card span {
+    color: var(--dl-stitch-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 16px;
+}
+
+.dl-nakes-stat-card strong {
+    color: var(--dl-stitch-primary);
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 30px;
+}
+
+.dl-nakes-link {
+    color: var(--dl-stitch-primary-ui);
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.dl-nakes-summary-card {
+    pointer-events: none;
+}
+
+.dl-nakes-page-header {
+    margin-top: 0;
+}
+
+.dl-nakes-request-list {
+    display: grid;
+    gap: 14px;
+}
+
+.dl-nakes-request-item {
+    min-width: 0;
+}
+
+.dl-nakes-request-card {
+    overflow: hidden;
+}
+
+.dl-nakes-request-card .card-header {
+    padding: 16px;
+    border-bottom: 0 !important;
+}
+
+.dl-nakes-request-card .card-header strong {
+    display: block;
+    color: var(--dl-stitch-text);
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 20px;
+    word-break: break-word;
+}
+
+.dl-nakes-request-card .card-header span:not(.dl-badge) {
+    display: block;
+    color: var(--dl-stitch-muted);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+}
+
+.dl-nakes-avatar-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    flex: 0 0 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--dl-stitch-surface-soft);
+    color: var(--dl-stitch-primary);
+}
+
+.dl-nakes-complaint-box {
+    padding: 12px;
+    border: 1px solid rgba(190, 202, 191, 0.55);
+    border-radius: 14px;
+    background: var(--dl-stitch-surface-low);
+}
+
+.dl-nakes-complaint-box span {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--dl-stitch-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 16px;
+}
+
+.dl-nakes-complaint-box p {
+    margin: 0;
+    color: var(--dl-stitch-text);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 20px;
+    word-break: break-word;
+}
+
+.dl-nakes-meta-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.dl-nakes-meta-list > div {
+    display: grid;
+    grid-template-columns: 22px minmax(76px, auto) minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    color: var(--dl-stitch-muted);
+    font-size: 12px;
+    line-height: 18px;
+}
+
+.dl-nakes-meta-list i {
+    color: var(--dl-stitch-primary-ui);
+    margin-top: 2px;
+}
+
+.dl-nakes-meta-list span {
+    font-weight: 700;
+}
+
+.dl-nakes-meta-list strong {
+    color: var(--dl-stitch-text);
+    font-weight: 700;
+    min-width: 0;
+    word-break: break-word;
+}
+
+.dl-nakes-visit-toggle {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(190, 202, 191, 0.55);
+    color: var(--dl-stitch-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.dl-nakes-actions .btn,
+.dl-nakes-request-card .card-footer .btn {
+    min-height: 44px;
+    border-radius: 14px !important;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.dl-nakes-dashboard .btn-success {
+    background: var(--dl-stitch-primary-ui) !important;
+    border-color: var(--dl-stitch-primary-ui) !important;
+}
+
+.dl-nakes-dashboard .btn-outline-success {
+    color: var(--dl-stitch-primary-ui) !important;
+    border-color: var(--dl-stitch-primary-ui) !important;
+    background: #fff !important;
+}
+
+.dl-nakes-dashboard .btn-outline-success:hover {
+    color: #fff !important;
+    background: var(--dl-stitch-primary-ui) !important;
+}
+
+.dl-nakes-dashboard .dl-bottom-nav {
+    background: #fff !important;
+    border-top-color: var(--dl-stitch-outline);
+}
+
+.dl-nakes-dashboard .dl-bottom-nav .menu > .menu-item.active {
+    background: var(--dl-stitch-secondary-container) !important;
+    color: var(--dl-stitch-secondary-text) !important;
+}
+
+@media (min-width: 768px) {
+    .dl-nakes-dashboard .dl-nakes-request-list {
+        grid-template-columns: 1fr;
+    }
+}
