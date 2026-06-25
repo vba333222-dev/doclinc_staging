@@ -262,6 +262,7 @@ if (isset($keluhan) && $keluhan !== '') {
 			-webkit-overflow-scrolling: touch;
 			border: 1px solid #E7ECE9;
 			border-radius: 14px;
+			background: #fff;
 		}
 
 		#tabelTerapi {
@@ -281,6 +282,36 @@ if (isset($keluhan) && $keluhan !== '') {
 
 		#tabelTerapi .btn {
 			border-radius: 10px;
+		}
+
+		.terapi-helper {
+			margin: -4px 0 10px;
+			color: var(--doclinc-muted);
+			font-size: 12px;
+			line-height: 1.5;
+		}
+
+		.terapi-row-message {
+			display: none;
+			margin: 0 0 10px;
+			padding: 9px 11px;
+			border-radius: 12px;
+			background: #FFF7E6;
+			color: #9A5B00;
+			font-size: 13px;
+			font-weight: 600;
+		}
+
+		.terapi-row-message.is-visible {
+			display: block;
+		}
+
+		.btn-terapi-action {
+			min-width: 40px;
+			min-height: 40px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
 		}
 
 		.ui-autocomplete {
@@ -387,6 +418,8 @@ if (isset($keluhan) && $keluhan !== '') {
 				</div>
 				<div class="mb-3">
 					<h3 class="section-heading"><i class="bi bi-capsule"></i> Obat / Farmakoterapi</h3>
+					<p class="terapi-helper">Bagian ini digunakan untuk mencatat obat/farmakoterapi bila diberikan. Kosongkan bila tidak ada obat.</p>
+					<div id="terapiRowMessage" class="terapi-row-message" role="alert"></div>
 					<div class="terapi-scroll">
 						<table class="table table-sm table-hover table-striped" id="tabelTerapi">
 								<thead class="table-success">
@@ -405,6 +438,7 @@ if (isset($keluhan) && $keluhan !== '') {
 										<td contenteditable="true" class="terapi-autocomplete">Terapi*</td>
 										<td>
 											<select class="form-select form-select-sm border-success">
+												<option value="" selected disabled>Pilih frekuensi</option>
 												<option value="1x sehari">1x sehari</option>
 												<option value="2x sehari">2x sehari</option>
 												<option value="3x sehari">3x sehari</option>
@@ -413,13 +447,14 @@ if (isset($keluhan) && $keluhan !== '') {
 										</td>
 										<td>
 											<select class="form-select form-select-sm border-success">
+												<option value="" selected disabled>Pilih cara pakai</option>
 												<option value="Sesudah makan">Sesudah makan</option>
 												<option value="Sebelum makan">Sebelum makan</option>
 											</select>
 										</td>
 										<td contenteditable="true">Masukkan keterangan</td>
 										<td>
-											<button type="button" class="btn btn-success btn-sm" onclick="tambahBaris(this)">
+											<button type="button" class="btn btn-success btn-sm btn-terapi-action" onclick="tambahBaris(this)">
 												<i class="bi bi-plus-circle"></i>
 											</button>
 										</td>
@@ -588,12 +623,12 @@ if (isset($keluhan) && $keluhan !== '') {
 			// Ambil terapi dari tabel
 			var terapiData = [];
 			$("#tabelTerapi tbody tr").each(function(index, row) {
-				var terapi = $(row).find("td:eq(1)").text().trim();
-				var signa = $(row).find("td:eq(2) select").val(); // Jumlah Obat
-				var caraMinum = $(row).find("td:eq(3) select").val(); // Cara Minum
-				var keterangan = $(row).find("td:eq(4)").text().trim();
+				var terapi = getTerapiName(row);
+				var signa = getTerapiJumlah(row); // Jumlah Obat
+				var caraMinum = getTerapiCara(row); // Cara Minum
+				var keterangan = getTerapiKeterangan(row);
 
-				if (terapi !== "" && terapi !== "Terapi*") {
+				if (!isTerapiPlaceholder(terapi)) {
 					terapiData.push({
 						terapi: terapi,
 						jumlah: signa,
@@ -725,14 +760,62 @@ if (isset($keluhan) && $keluhan !== '') {
 
 	<!-- tambah bari dan hapus bari -->
 	<script>
-		function tambahBaris(button) {
-			let row = button.parentElement.parentElement;
-			let terapi = row.cells[1].innerText.trim();
-			let keterangan = row.cells[2].innerText.trim();
+		function normalizeTerapiText(value) {
+			return (value || "").replace(/\s+/g, " ").trim();
+		}
 
-			// Cek apakah semua kolom terisi sebelum menambah baris baru
-			if (terapi === "" || keterangan === "") {
-				alert("Harap isi semua kolom sebelum menambahkan baris baru!");
+		function isTerapiPlaceholder(value) {
+			const normalized = normalizeTerapiText(value).toLowerCase();
+			return normalized === "" || normalized === "terapi*";
+		}
+
+		function getTerapiName(row) {
+			return normalizeTerapiText($(row).find("td:eq(1)").text());
+		}
+
+		function getTerapiJumlah(row) {
+			return normalizeTerapiText($(row).find("td:eq(2) select").val());
+		}
+
+		function getTerapiCara(row) {
+			return normalizeTerapiText($(row).find("td:eq(3) select").val());
+		}
+
+		function getTerapiKeterangan(row) {
+			const value = normalizeTerapiText($(row).find("td:eq(4)").text());
+			return value.toLowerCase() === "masukkan keterangan" ? "" : value;
+		}
+
+		function showTerapiRowMessage(message) {
+			$('#terapiRowMessage').text(message).addClass('is-visible');
+		}
+
+		function clearTerapiRowMessage() {
+			$('#terapiRowMessage').text('').removeClass('is-visible');
+		}
+
+		function validateTerapiRow(row) {
+			if (isTerapiPlaceholder(getTerapiName(row))) {
+				showTerapiRowMessage("Isi nama obat/terapi terlebih dahulu.");
+				return false;
+			}
+			if (getTerapiJumlah(row) === "") {
+				showTerapiRowMessage("Pilih jumlah/frekuensi obat.");
+				return false;
+			}
+			if (getTerapiCara(row) === "") {
+				showTerapiRowMessage("Pilih cara minum/cara pakai.");
+				return false;
+			}
+
+			clearTerapiRowMessage();
+			return true;
+		}
+
+		function tambahBaris(button) {
+			let row = button.closest("tr");
+
+			if (!validateTerapiRow(row)) {
 				return;
 			}
 
@@ -755,9 +838,11 @@ if (isset($keluhan) && $keluhan !== '') {
 			// Buat sel yang bisa diedit
 			cellTerapi.classList.add("terapi-autocomplete");
 			cellTerapi.contentEditable = "true";
+			cellTerapi.innerText = "Terapi*";
 
 			cellJumlahObat.innerHTML = `
-				<select class="form-select form-select-sm">
+				<select class="form-select form-select-sm border-success">
+					<option value="" selected disabled>Pilih frekuensi</option>
 					<option value="1x sehari">1x sehari</option>
 					<option value="2x sehari">2x sehari</option>
 					<option value="3x sehari">3x sehari</option>
@@ -766,24 +851,26 @@ if (isset($keluhan) && $keluhan !== '') {
 			`;
 
 			cellCaraMinum.innerHTML = `
-				<select class="form-select form-select-sm">
+				<select class="form-select form-select-sm border-success">
+					<option value="" selected disabled>Pilih cara pakai</option>
 					<option value="Sesudah makan">Sesudah makan</option>
 					<option value="Sebelum makan">Sebelum makan</option>
 				</select>
 			`;
 
 			cellKeterangan.contentEditable = "true";
+			cellKeterangan.innerText = "";
 
 			// Tambahkan tombol tambah & hapus di baris baru
 			let addButton = document.createElement("button");
 			addButton.innerHTML = '<i class="bi bi-plus-circle"></i>'; // Add icon
-			addButton.className = "btn btn-success btn-sm";
+			addButton.className = "btn btn-success btn-sm btn-terapi-action";
 			addButton.type = "button";
 			addButton.setAttribute("onclick", "tambahBaris(this)");
 
 			let removeButton = document.createElement("button");
 			removeButton.innerHTML = '<i class="bi bi-dash-circle"></i>'; // Remove icon
-			removeButton.className = "btn btn-danger btn-sm";
+			removeButton.className = "btn btn-danger btn-sm btn-terapi-action";
 			removeButton.type = "button";
 			removeButton.setAttribute("onclick", "hapusBaris(this)");
 
@@ -830,14 +917,14 @@ if (isset($keluhan) && $keluhan !== '') {
 					// Baris terakhir punya tombol tambah dan hapus
 					let addButton = document.createElement("button");
 					addButton.innerHTML = '<i class="bi bi-plus-circle"></i>'; // Add icon
-					addButton.className = "btn btn-success btn-sm";
+					addButton.className = "btn btn-success btn-sm btn-terapi-action";
 					addButton.type = "button";
 					addButton.setAttribute("onclick", "tambahBaris(this)");
 					aksiCell.appendChild(addButton);
 
 					let removeButton = document.createElement("button");
 					removeButton.innerHTML = '<i class="bi bi-dash-circle"></i>'; // Remove icon
-					removeButton.className = "btn btn-danger btn-sm";
+					removeButton.className = "btn btn-danger btn-sm btn-terapi-action";
 					removeButton.type = "button";
 					removeButton.setAttribute("onclick", "hapusBaris(this)");
 					aksiCell.appendChild(removeButton);
@@ -845,7 +932,7 @@ if (isset($keluhan) && $keluhan !== '') {
 					// Baris lainnya hanya memiliki tombol hapus
 					let removeButton = document.createElement("button");
 					removeButton.innerHTML = '<i class="bi bi-dash-circle"></i>'; // Remove icon
-					removeButton.className = "btn btn-danger btn-sm";
+					removeButton.className = "btn btn-danger btn-sm btn-terapi-action";
 					removeButton.type = "button";
 					removeButton.setAttribute("onclick", "hapusBaris(this)");
 					aksiCell.appendChild(removeButton);
