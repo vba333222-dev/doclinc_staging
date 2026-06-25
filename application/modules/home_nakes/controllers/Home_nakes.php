@@ -14,6 +14,9 @@ class Home_nakes extends MX_Controller
 	}
 	public function index()
 	{
+		if (!$this->require_dokter_session()) {
+			return;
+		}
 
 		$uid = $this->session->userdata('id');
 		$name = $this->session->userdata('username');
@@ -91,6 +94,12 @@ class Home_nakes extends MX_Controller
 			$this->output
 				->set_status_header(405)
 				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+			return;
+		}
+		if ($this->session->userdata('role') !== 'dokter') {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
 			return;
 		}
 
@@ -243,6 +252,26 @@ class Home_nakes extends MX_Controller
 		$this->output
 			->set_status_header(405)
 			->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+		return false;
+	}
+
+	private function require_dokter_session()
+	{
+		if ($this->session->userdata('role') === 'dokter') {
+			return true;
+		}
+
+		$role = $this->session->userdata('role');
+		if ($role === 'warga') {
+			redirect('home');
+			return false;
+		}
+		if ($role === 'admin') {
+			redirect('home_admin');
+			return false;
+		}
+
+		redirect('login');
 		return false;
 	}
 }

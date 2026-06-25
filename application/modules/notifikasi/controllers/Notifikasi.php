@@ -7,6 +7,7 @@ class Notifikasi extends MX_Controller
 	{
 		parent::__construct();
 		$this->load->helper('notification');
+		$this->load->helper('request_authz');
 	}
 
 	public function index()
@@ -79,6 +80,9 @@ class Notifikasi extends MX_Controller
 
 		$request_id = (int) (isset($notification['entity_id']) ? $notification['entity_id'] : 0);
 		if ($request_id < 1) {
+			return $fallback;
+		}
+		if (!doclinc_can_view_request($request_id, $user_id, $role)) {
 			return $fallback;
 		}
 
