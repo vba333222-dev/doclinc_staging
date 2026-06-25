@@ -28,6 +28,88 @@ if (isset($keluhan) && $keluhan !== '') {
 	}
 }
 
+if (!function_exists('formatComplaintText')) {
+	function formatComplaintText($text)
+	{
+		$lines = preg_split('/\r\n|\r|\n/', (string) $text);
+		$groups = [];
+		$current = null;
+
+		foreach ($lines as $line) {
+			$line = trim($line);
+			if ($line === '') {
+				continue;
+			}
+
+			if (preg_match('/^\*\*(.+?)\*\*$/', $line, $matches)) {
+				if ($current !== null) {
+					$groups[] = $current;
+				}
+				$current = [
+					'title' => trim($matches[1]),
+					'items' => []
+				];
+				continue;
+			}
+
+			if ($current === null) {
+				$current = [
+					'title' => '',
+					'items' => []
+				];
+			}
+
+			if (strpos($line, ':') !== false) {
+				list($label, $value) = explode(':', $line, 2);
+				$current['items'][] = [
+					'type' => 'pair',
+					'label' => trim($label),
+					'value' => trim($value)
+				];
+			} else {
+				$current['items'][] = [
+					'type' => 'text',
+					'value' => $line
+				];
+			}
+		}
+
+		if ($current !== null) {
+			$groups[] = $current;
+		}
+
+		if (empty($groups)) {
+			return '<p class="complaint-text">' . nl2br(html_escape((string) $text)) . '</p>';
+		}
+
+		$html = '<div class="complaint-groups">';
+		foreach ($groups as $group) {
+			$html .= '<div class="complaint-group">';
+			if (!empty($group['title'])) {
+				$html .= '<h3 class="complaint-group-title">' . html_escape($group['title']) . '</h3>';
+			}
+			if (!empty($group['items'])) {
+				$html .= '<div class="complaint-items">';
+				foreach ($group['items'] as $item) {
+					if ($item['type'] === 'pair') {
+						$html .= '<div class="complaint-item">';
+						$html .= '<span class="complaint-label">' . html_escape($item['label']) . '</span>';
+						$html .= '<span class="complaint-value">' . nl2br(html_escape($item['value'] !== '' ? $item['value'] : '-')) . '</span>';
+						$html .= '</div>';
+					} else {
+						$html .= '<p class="complaint-free-text">' . nl2br(html_escape($item['value'])) . '</p>';
+					}
+				}
+				$html .= '</div>';
+			}
+			$html .= '</div>';
+		}
+		$html .= '</div>';
+
+		return $html;
+	}
+}
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -180,6 +262,57 @@ if (isset($keluhan) && $keluhan !== '') {
 			color: var(--doclinc-text);
 			font-size: 15px;
 			line-height: 1.6;
+			overflow-wrap: anywhere;
+		}
+
+		.complaint-groups {
+			display: grid;
+			gap: 12px;
+		}
+
+		.complaint-group {
+			padding: 12px;
+			border: 1px solid #E7ECE9;
+			border-radius: 16px;
+			background: #FBFDFC;
+		}
+
+		.complaint-group-title {
+			margin: 0 0 10px;
+			color: var(--doclinc-green);
+			font-size: 15px;
+			font-weight: 800;
+		}
+
+		.complaint-items {
+			display: grid;
+			gap: 8px;
+		}
+
+		.complaint-item {
+			display: grid;
+			gap: 3px;
+			padding-bottom: 8px;
+			border-bottom: 1px solid #E7ECE9;
+		}
+
+		.complaint-item:last-child {
+			padding-bottom: 0;
+			border-bottom: 0;
+		}
+
+		.complaint-label {
+			color: var(--doclinc-muted);
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.complaint-value,
+		.complaint-free-text {
+			margin: 0;
+			color: var(--doclinc-text);
+			font-size: 14px;
+			line-height: 1.45;
 			overflow-wrap: anywhere;
 		}
 
@@ -346,6 +479,102 @@ if (isset($keluhan) && $keluhan !== '') {
 				padding-bottom: 24px;
 			}
 		}
+
+		@media (max-width: 480px) {
+			.terapi-scroll {
+				overflow-x: visible;
+				border: 0;
+				background: transparent;
+			}
+
+			#tabelTerapi {
+				min-width: 0;
+				width: 100%;
+				border-collapse: separate;
+				border-spacing: 0 12px;
+			}
+
+			#tabelTerapi thead {
+				display: none;
+			}
+
+			#tabelTerapi,
+			#tabelTerapi tbody,
+			#tabelTerapi tr,
+			#tabelTerapi td {
+				display: block;
+				width: 100%;
+			}
+
+			#tabelTerapi tr {
+				padding: 12px;
+				border: 1px solid #E7ECE9;
+				border-radius: 16px;
+				background: #fff;
+				box-shadow: 0 8px 20px rgba(31, 42, 36, 0.05);
+			}
+
+			#tabelTerapi td {
+				padding: 0 0 10px;
+				border: 0;
+			}
+
+			#tabelTerapi td:last-child {
+				padding-bottom: 0;
+			}
+
+			#tabelTerapi td::before {
+				content: attr(data-label);
+				display: block;
+				margin-bottom: 5px;
+				color: var(--doclinc-muted);
+				font-size: 11px;
+				font-weight: 800;
+				text-transform: uppercase;
+			}
+
+			#tabelTerapi td:first-child {
+				color: var(--doclinc-green);
+				font-weight: 800;
+			}
+
+			#tabelTerapi td:first-child::before {
+				display: inline;
+				margin-right: 6px;
+			}
+
+			#tabelTerapi .form-select,
+			#tabelTerapi .terapi-autocomplete,
+			#tabelTerapi td[contenteditable="true"] {
+				width: 100%;
+				max-width: none;
+			}
+
+			#tabelTerapi .terapi-autocomplete,
+			#tabelTerapi td[contenteditable="true"] {
+				min-height: 42px;
+				padding: 9px 10px;
+				border: 1px solid var(--doclinc-border);
+				border-radius: 10px;
+				background: #fff;
+				white-space: normal;
+			}
+
+			#tabelTerapi td[data-label="Aksi"] {
+				display: flex;
+				gap: 8px;
+				flex-wrap: wrap;
+			}
+
+			#tabelTerapi td[data-label="Aksi"]::before {
+				flex-basis: 100%;
+			}
+
+			.btn-terapi-action {
+				flex: 1 1 46%;
+				min-height: 44px;
+			}
+		}
 	</style>
 </head>
 
@@ -395,7 +624,7 @@ if (isset($keluhan) && $keluhan !== '') {
 
 			<section class="consult-card">
 				<h2 class="section-heading"><i class="bi bi-clipboard2-pulse"></i> Keluhan Pasien</h2>
-				<p class="complaint-text"><?= nl2br(html_escape($keluhan_pasien)); ?></p>
+				<?= formatComplaintText($keluhan_pasien); ?>
 			</section>
 
 			<section class="consult-card chat-card">
@@ -434,9 +663,9 @@ if (isset($keluhan) && $keluhan !== '') {
 								</thead>
 								<tbody>
 									<tr>
-										<td>1</td>
-										<td contenteditable="true" class="terapi-autocomplete">Terapi*</td>
-										<td>
+										<td data-label="No.">1</td>
+										<td data-label="Terapi" contenteditable="true" class="terapi-autocomplete">Terapi*</td>
+										<td data-label="Jumlah / Frekuensi">
 											<select class="form-select form-select-sm border-success">
 												<option value="" selected disabled>Pilih frekuensi</option>
 												<option value="1x sehari">1x sehari</option>
@@ -445,15 +674,15 @@ if (isset($keluhan) && $keluhan !== '') {
 												<option value="4x sehari">4x sehari</option>
 											</select>
 										</td>
-										<td>
+										<td data-label="Cara Minum / Cara Pakai">
 											<select class="form-select form-select-sm border-success">
 												<option value="" selected disabled>Pilih cara pakai</option>
 												<option value="Sesudah makan">Sesudah makan</option>
 												<option value="Sebelum makan">Sebelum makan</option>
 											</select>
 										</td>
-										<td contenteditable="true">Masukkan keterangan</td>
-										<td>
+										<td data-label="Keterangan" contenteditable="true">Masukkan keterangan</td>
+										<td data-label="Aksi">
 											<button type="button" class="btn btn-success btn-sm btn-terapi-action" onclick="tambahBaris(this)">
 												<i class="bi bi-plus-circle"></i>
 											</button>
@@ -831,6 +1060,12 @@ if (isset($keluhan) && $keluhan !== '') {
 			let cellCaraMinum = newRow.insertCell(3);
 			let cellKeterangan = newRow.insertCell(4);
 			let cellAksi = newRow.insertCell(5);
+			cellNo.setAttribute("data-label", "No.");
+			cellTerapi.setAttribute("data-label", "Terapi");
+			cellJumlahObat.setAttribute("data-label", "Jumlah / Frekuensi");
+			cellCaraMinum.setAttribute("data-label", "Cara Minum / Cara Pakai");
+			cellKeterangan.setAttribute("data-label", "Keterangan");
+			cellAksi.setAttribute("data-label", "Aksi");
 
 			// Nomor otomatis (tanpa menghitung header)
 			cellNo.innerHTML = rowCount - 1;
