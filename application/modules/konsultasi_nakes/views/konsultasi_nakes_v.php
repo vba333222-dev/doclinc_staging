@@ -439,6 +439,104 @@ if (!function_exists('formatComplaintText')) {
 			display: block;
 		}
 
+		.mobile-terapi-editor {
+			display: none;
+		}
+
+		.mobile-terapi-card {
+			display: grid;
+			gap: 12px;
+			padding: 14px;
+			border: 1px solid #E7ECE9;
+			border-radius: 16px;
+			background: #FBFDFC;
+		}
+
+		.mobile-terapi-fields {
+			display: grid;
+			gap: 10px;
+		}
+
+		.mobile-field-label {
+			display: block;
+			margin-bottom: 5px;
+			color: var(--doclinc-muted);
+			font-size: 12px;
+			font-weight: 800;
+		}
+
+		.mobile-terapi-add {
+			min-height: 46px;
+			border: 0;
+			border-radius: 14px;
+			background: var(--doclinc-green);
+			color: #fff;
+			font-weight: 800;
+		}
+
+		.mobile-terapi-message {
+			display: none;
+			padding: 9px 11px;
+			border-radius: 12px;
+			background: #FFF7E6;
+			color: #9A5B00;
+			font-size: 13px;
+			font-weight: 600;
+		}
+
+		.mobile-terapi-message.is-visible {
+			display: block;
+		}
+
+		.mobile-terapi-list {
+			display: grid;
+			gap: 10px;
+		}
+
+		.mobile-terapi-empty {
+			margin: 0;
+			padding: 12px;
+			border: 1px dashed #BFDCD2;
+			border-radius: 14px;
+			background: #fff;
+			color: var(--doclinc-muted);
+			font-size: 13px;
+			line-height: 1.5;
+		}
+
+		.mobile-terapi-item {
+			display: grid;
+			gap: 8px;
+			padding: 12px;
+			border: 1px solid #DDEAE5;
+			border-radius: 14px;
+			background: #fff;
+			box-shadow: 0 8px 18px rgba(31, 42, 36, 0.05);
+		}
+
+		.mobile-terapi-name {
+			margin: 0;
+			color: var(--doclinc-text);
+			font-size: 14px;
+			font-weight: 800;
+			overflow-wrap: anywhere;
+		}
+
+		.mobile-terapi-meta {
+			display: grid;
+			gap: 5px;
+			margin: 0;
+			color: var(--doclinc-muted);
+			font-size: 12px;
+			line-height: 1.45;
+		}
+
+		.mobile-terapi-remove {
+			min-height: 40px;
+			border-radius: 12px;
+			font-weight: 700;
+		}
+
 		.btn-terapi-action {
 			min-width: 40px;
 			min-height: 40px;
@@ -481,10 +579,13 @@ if (!function_exists('formatComplaintText')) {
 		}
 
 		@media (max-width: 480px) {
+			.mobile-terapi-editor {
+				display: grid;
+				gap: 12px;
+			}
+
 			.terapi-scroll {
-				overflow-x: visible;
-				border: 0;
-				background: transparent;
+				display: none;
 			}
 
 			#tabelTerapi {
@@ -649,6 +750,45 @@ if (!function_exists('formatComplaintText')) {
 					<h3 class="section-heading"><i class="bi bi-capsule"></i> Obat / Farmakoterapi</h3>
 					<p class="terapi-helper">Bagian ini digunakan untuk mencatat obat/farmakoterapi bila diberikan. Kosongkan bila tidak ada obat.</p>
 					<div id="terapiRowMessage" class="terapi-row-message" role="alert"></div>
+					<div class="mobile-terapi-editor" aria-label="Editor farmakoterapi mobile">
+						<div class="mobile-terapi-card">
+							<div id="ui_mobile_terapi_message" class="mobile-terapi-message" role="alert"></div>
+							<div class="mobile-terapi-fields">
+								<div>
+									<label class="mobile-field-label" for="ui_mobile_terapi_nama">Nama obat / terapi</label>
+									<input type="text" id="ui_mobile_terapi_nama" class="form-control" placeholder="Tulis nama obat atau terapi">
+								</div>
+								<div>
+									<label class="mobile-field-label" for="ui_mobile_terapi_jumlah">Jumlah / frekuensi</label>
+									<select id="ui_mobile_terapi_jumlah" class="form-select">
+										<option value="" selected>Pilih frekuensi</option>
+										<option value="1x sehari">1x sehari</option>
+										<option value="2x sehari">2x sehari</option>
+										<option value="3x sehari">3x sehari</option>
+										<option value="4x sehari">4x sehari</option>
+									</select>
+								</div>
+								<div>
+									<label class="mobile-field-label" for="ui_mobile_terapi_cara">Cara minum / cara pakai</label>
+									<select id="ui_mobile_terapi_cara" class="form-select">
+										<option value="" selected>Pilih cara pakai</option>
+										<option value="Sesudah makan">Sesudah makan</option>
+										<option value="Sebelum makan">Sebelum makan</option>
+									</select>
+								</div>
+								<div>
+									<label class="mobile-field-label" for="ui_mobile_terapi_keterangan">Keterangan</label>
+									<textarea id="ui_mobile_terapi_keterangan" class="form-control" rows="3" placeholder="Opsional"></textarea>
+								</div>
+							</div>
+							<button type="button" id="ui_mobile_terapi_add" class="mobile-terapi-add">
+								<i class="bi bi-plus-circle"></i> Tambah Obat
+							</button>
+						</div>
+						<div id="ui_mobile_terapi_list" class="mobile-terapi-list">
+							<p class="mobile-terapi-empty">Belum ada obat yang ditambahkan. Kosongkan jika tidak ada farmakoterapi.</p>
+						</div>
+					</div>
 					<div class="terapi-scroll">
 						<table class="table table-sm table-hover table-striped" id="tabelTerapi">
 								<thead class="table-success">
@@ -823,6 +963,176 @@ if (!function_exists('formatComplaintText')) {
 			$('#saran').val([saranUtama, dokumentasi].join("\n\n"));
 		}
 
+		var mobileTerapiRows = [];
+
+		function isMobileTerapiMode() {
+			return window.matchMedia && window.matchMedia('(max-width: 480px)').matches;
+		}
+
+		function getMobileTerapiValue(selector) {
+			return normalizeTerapiText($(selector).val());
+		}
+
+		function showMobileTerapiMessage(message) {
+			$('#ui_mobile_terapi_message').text(message).addClass('is-visible');
+		}
+
+		function clearMobileTerapiMessage() {
+			$('#ui_mobile_terapi_message').text('').removeClass('is-visible');
+		}
+
+		function validateMobileTerapiEditor() {
+			if (isTerapiPlaceholder(getMobileTerapiValue('#ui_mobile_terapi_nama'))) {
+				showMobileTerapiMessage("Isi nama obat/terapi terlebih dahulu.");
+				return false;
+			}
+
+			if (getMobileTerapiValue('#ui_mobile_terapi_jumlah') === "") {
+				showMobileTerapiMessage("Pilih jumlah/frekuensi obat.");
+				return false;
+			}
+
+			if (getMobileTerapiValue('#ui_mobile_terapi_cara') === "") {
+				showMobileTerapiMessage("Pilih cara minum/cara pakai.");
+				return false;
+			}
+
+			clearMobileTerapiMessage();
+			return true;
+		}
+
+		function clearMobileTerapiEditor() {
+			$('#ui_mobile_terapi_nama').val('');
+			$('#ui_mobile_terapi_jumlah').val('');
+			$('#ui_mobile_terapi_cara').val('');
+			$('#ui_mobile_terapi_keterangan').val('');
+		}
+
+		function escapeMobileTerapiText(value) {
+			return $('<div>').text(value || '').html();
+		}
+
+		function renderMobileTerapiList() {
+			const $list = $('#ui_mobile_terapi_list');
+			$list.empty();
+
+			if (mobileTerapiRows.length === 0) {
+				$list.append('<p class="mobile-terapi-empty">Belum ada obat yang ditambahkan. Kosongkan jika tidak ada farmakoterapi.</p>');
+				return;
+			}
+
+			mobileTerapiRows.forEach(function(item, index) {
+				const keterangan = item.keterangan ? escapeMobileTerapiText(item.keterangan) : 'Tanpa keterangan';
+				$list.append(`
+					<div class="mobile-terapi-item">
+						<p class="mobile-terapi-name">${escapeMobileTerapiText(item.terapi)}</p>
+						<div class="mobile-terapi-meta">
+							<span><strong>Jumlah / frekuensi:</strong> ${escapeMobileTerapiText(item.jumlah)}</span>
+							<span><strong>Cara minum / pakai:</strong> ${escapeMobileTerapiText(item.cara)}</span>
+							<span><strong>Keterangan:</strong> ${keterangan}</span>
+						</div>
+						<button type="button" class="btn btn-outline-danger mobile-terapi-remove" onclick="removeMobileTerapiRow(${index})">
+							<i class="bi bi-trash"></i> Hapus
+						</button>
+					</div>
+				`);
+			});
+		}
+
+		function buildTerapiSelect(options, placeholder, selectedValue) {
+			const $select = $('<select class="form-select form-select-sm border-success"></select>');
+			$select.append($('<option></option>').val('').text(placeholder).prop('disabled', true).prop('selected', selectedValue === ''));
+			options.forEach(function(optionValue) {
+				$select.append($('<option></option>').val(optionValue).text(optionValue).prop('selected', selectedValue === optionValue));
+			});
+			return $select;
+		}
+
+		function appendTerapiTableRow(rowData, index, isPlaceholder) {
+			const $row = $('<tr></tr>');
+			const $cellNo = $('<td data-label="No."></td>').text(index + 1);
+			const $cellTerapi = $('<td data-label="Terapi" contenteditable="true" class="terapi-autocomplete"></td>').text(isPlaceholder ? 'Terapi*' : rowData.terapi);
+			const $cellJumlah = $('<td data-label="Jumlah / Frekuensi"></td>').append(buildTerapiSelect(['1x sehari', '2x sehari', '3x sehari', '4x sehari'], 'Pilih frekuensi', isPlaceholder ? '' : rowData.jumlah));
+			const $cellCara = $('<td data-label="Cara Minum / Cara Pakai"></td>').append(buildTerapiSelect(['Sesudah makan', 'Sebelum makan'], 'Pilih cara pakai', isPlaceholder ? '' : rowData.cara));
+			const $cellKeterangan = $('<td data-label="Keterangan" contenteditable="true"></td>').text(isPlaceholder ? 'Masukkan keterangan' : rowData.keterangan);
+			const $cellAksi = $('<td data-label="Aksi"></td>');
+
+			$row.append($cellNo, $cellTerapi, $cellJumlah, $cellCara, $cellKeterangan, $cellAksi);
+			$('#tabelTerapi tbody').append($row);
+		}
+
+		function syncMobileTerapiRowsToTable() {
+			const $tbody = $('#tabelTerapi tbody');
+			$tbody.empty();
+
+			if (mobileTerapiRows.length === 0) {
+				appendTerapiTableRow({
+					terapi: '',
+					jumlah: '',
+					cara: '',
+					keterangan: ''
+				}, 0, true);
+				$tbody.find('td[data-label="Aksi"]').append('<button type="button" class="btn btn-success btn-sm btn-terapi-action" onclick="tambahBaris(this)"><i class="bi bi-plus-circle"></i></button>');
+				return;
+			}
+
+			mobileTerapiRows.forEach(function(item, index) {
+				appendTerapiTableRow(item, index, false);
+			});
+			updateTombolAksi();
+		}
+
+		function hydrateMobileTerapiRowsFromTable() {
+			if (mobileTerapiRows.length > 0) {
+				return;
+			}
+
+			$("#tabelTerapi tbody tr").each(function(index, row) {
+				var terapi = getTerapiName(row);
+
+				if (!isTerapiPlaceholder(terapi)) {
+					mobileTerapiRows.push({
+						terapi: terapi,
+						jumlah: getTerapiJumlah(row),
+						cara: getTerapiCara(row),
+						keterangan: getTerapiKeterangan(row)
+					});
+				}
+			});
+		}
+
+		function addMobileTerapiRow() {
+			if (!validateMobileTerapiEditor()) {
+				return;
+			}
+
+			mobileTerapiRows.push({
+				terapi: getMobileTerapiValue('#ui_mobile_terapi_nama'),
+				jumlah: getMobileTerapiValue('#ui_mobile_terapi_jumlah'),
+				cara: getMobileTerapiValue('#ui_mobile_terapi_cara'),
+				keterangan: getMobileTerapiValue('#ui_mobile_terapi_keterangan')
+			});
+
+			clearMobileTerapiEditor();
+			renderMobileTerapiList();
+			syncMobileTerapiRowsToTable();
+		}
+
+		function removeMobileTerapiRow(index) {
+			mobileTerapiRows.splice(index, 1);
+			renderMobileTerapiList();
+			syncMobileTerapiRowsToTable();
+		}
+
+		$('#ui_mobile_terapi_add').on('click', addMobileTerapiRow);
+
+		$(function() {
+			if (isMobileTerapiMode()) {
+				hydrateMobileTerapiRowsFromTable();
+				renderMobileTerapiList();
+			}
+		});
+
 		$('#save_konsul_nakes').click(function() {
 			const userId = document.getElementById('userId').value;
 			const dokterId = document.getElementById('dokterId').value;
@@ -844,6 +1154,11 @@ if (!function_exists('formatComplaintText')) {
 			formData.set("diagnosa", diagnosa);
 			formData.set("saran", saran);
 			formData.set("kriteria", kriteria);
+
+			if (isMobileTerapiMode()) {
+				hydrateMobileTerapiRowsFromTable();
+				syncMobileTerapiRowsToTable();
+			}
 
 			// Hilangkan tombol kirim selama proses berlangsung
 			$('#save_konsul_nakes').prop('disabled', true).text('Mengirim...');
