@@ -11,6 +11,23 @@ if ((string) $kriteria === '0') {
 	$kriteria = 'Kunjungan Nakes';
 }
 
+$keluhan_pasien = 'Keluhan tidak dapat ditampilkan.';
+if (isset($keluhan) && $keluhan !== '') {
+	try {
+		$CI = &get_instance();
+		$CI->load->library('encryption');
+		$decoded_keluhan = base64_decode($keluhan);
+		if ($decoded_keluhan !== FALSE) {
+			$decrypted_keluhan = $CI->encryption->decrypt($decoded_keluhan);
+			if ($decrypted_keluhan !== FALSE && trim((string) $decrypted_keluhan) !== '') {
+				$keluhan_pasien = (string) $decrypted_keluhan;
+			}
+		}
+	} catch (Exception $e) {
+		$keluhan_pasien = 'Keluhan tidak dapat ditampilkan.';
+	}
+}
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -32,77 +49,235 @@ if ((string) $kriteria === '0') {
 	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
 	<style>
-		.diagnosa-container {
-			display: flex;
-			flex-wrap: wrap;
+		:root {
+			--doclinc-green: #379A69;
+			--doclinc-mint: #50BFA5;
+			--doclinc-bg: #F7F7F7;
+			--doclinc-border: #CECECE;
+			--doclinc-text: #1F2A24;
+			--doclinc-muted: #66756D;
 		}
 
-		.diagnosa-item {
+		body {
+			background: var(--doclinc-bg);
+			color: var(--doclinc-text);
+			font-size: 15px;
+		}
+
+		.consult-shell {
+			max-width: 414px;
+			min-height: 100vh;
+			margin: 0 auto;
+			background: var(--doclinc-bg);
+			padding: 14px;
+		}
+
+		.consult-header {
 			display: flex;
 			align-items: center;
-			width: calc(50% - 10px);
-			/* 2 kolom jika lebih dari 5 item */
-			padding: 8px;
-			border-bottom: 1px solid #ddd;
+			gap: 12px;
+			padding: 8px 0 16px;
 		}
 
-		.diagnosa-item label {
-			flex-grow: 1;
-			font-size: 16px;
+		.consult-back {
+			width: 40px;
+			height: 40px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 14px;
+			background: #fff;
+			color: var(--doclinc-green);
+			text-decoration: none;
+			box-shadow: 0 8px 22px rgba(31, 42, 36, 0.08);
 		}
 
-		.diagnosa-item input[type="checkbox"] {
-			width: 18px;
-			height: 18px;
-			accent-color: gray;
+		.consult-title {
+			flex: 1;
+			min-width: 0;
 		}
 
-		.card {
+		.consult-title h1 {
+			margin: 0;
+			font-size: 20px;
+			font-weight: 700;
+			letter-spacing: 0;
+			color: var(--doclinc-text);
+		}
+
+		.consult-subtitle {
+			margin: 2px 0 0;
+			color: var(--doclinc-muted);
+			font-size: 12px;
+		}
+
+		.status-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 6px 10px;
+			border-radius: 999px;
+			background: rgba(80, 191, 165, 0.18);
+			color: var(--doclinc-green);
+			font-size: 12px;
+			font-weight: 700;
+			white-space: nowrap;
+		}
+
+		.consult-card {
 			width: 100%;
+			background: #fff;
+			border: 1px solid rgba(80, 191, 165, 0.45);
+			border-radius: 20px;
+			box-shadow: 0 10px 28px rgba(31, 42, 36, 0.06);
+			padding: 16px;
+			margin-bottom: 14px;
+		}
+
+		.section-heading {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin: 0 0 12px;
+			color: var(--doclinc-green);
+			font-size: 15px;
+			font-weight: 700;
+		}
+
+		.summary-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 10px;
+		}
+
+		.summary-item {
+			padding: 10px;
+			border: 1px solid #E7ECE9;
+			border-radius: 14px;
+			background: #FBFDFC;
+			min-width: 0;
+		}
+
+		.summary-label {
+			display: block;
+			margin-bottom: 4px;
+			color: var(--doclinc-muted);
+			font-size: 11px;
+			font-weight: 700;
+			text-transform: uppercase;
+		}
+
+		.summary-value {
+			display: block;
+			color: var(--doclinc-text);
+			font-size: 14px;
+			font-weight: 600;
+			overflow-wrap: anywhere;
+		}
+
+		.complaint-text {
+			margin: 0;
+			color: var(--doclinc-text);
+			font-size: 15px;
+			line-height: 1.6;
+			overflow-wrap: anywhere;
+		}
+
+		.chat-card {
+			background: linear-gradient(135deg, #379A69 0%, #50BFA5 100%);
+			color: #fff;
+			border: 0;
+		}
+
+		.chat-copy {
+			margin: 0 0 12px;
+			font-size: 13px;
+			opacity: 0.92;
+		}
+
+		.chat-button,
+		.primary-action {
+			width: 100%;
+			min-height: 48px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			border: 0;
+			border-radius: 14px;
+			font-weight: 700;
+			text-decoration: none;
+		}
+
+		.chat-button {
+			background: #fff;
+			color: var(--doclinc-green);
+		}
+
+		.primary-action {
+			background: var(--doclinc-green);
+			color: #fff;
 		}
 
 		.form-control,
 		.form-select {
 			width: 100%;
+			border-color: var(--doclinc-border);
+			border-radius: 10px;
 		}
 
-		/* Jika kurang dari 5 data, tampil ke bawah */
-		.diagnosa-container.few-items .diagnosa-item {
-			width: 100%;
+		.form-control:focus,
+		.form-select:focus {
+			border-color: var(--doclinc-mint);
+			box-shadow: 0 0 0 0.2rem rgba(80, 191, 165, 0.18);
 		}
 
-		.btn {
-			border: none;
-			padding: 5px 10px;
-			cursor: pointer;
-			font-size: 16px;
-			border-radius: 5px;
+		.form-floating>label {
+			color: var(--doclinc-muted);
 		}
 
-		.btn-add {
-			background-color: gray;
-			color: white;
+		.optional-note {
+			margin: -6px 0 10px;
+			color: var(--doclinc-muted);
+			font-size: 12px;
 		}
 
-		.btn-remove {
-			background-color: gray;
-			color: white;
+		.terapi-scroll {
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			border: 1px solid #E7ECE9;
+			border-radius: 14px;
+		}
+
+		#tabelTerapi {
+			min-width: 680px;
+			margin-bottom: 0;
+		}
+
+		#tabelTerapi th {
+			color: var(--doclinc-green);
+			font-size: 12px;
+			white-space: nowrap;
+		}
+
+		#tabelTerapi td {
+			vertical-align: middle;
+		}
+
+		#tabelTerapi .btn {
+			border-radius: 10px;
 		}
 
 		.ui-autocomplete {
 			z-index: 1056 !important;
-			/* Modal Bootstrap biasanya z-index 1050-1055 */
 		}
 
 		.terapi-autocomplete {
-			max-width: 80px;
-			/* atur lebar maksimum kolom */
+			max-width: 180px;
 			white-space: nowrap;
-			/* jangan bungkus ke baris baru */
 			overflow: hidden;
-			/* sembunyikan yang melebihi lebar */
 			text-overflow: ellipsis;
-			/* tampilkan titik-titik (...) */
+			cursor: pointer;
 		}
 
 		.terapi-autocomplete:hover {
@@ -112,134 +287,159 @@ if ((string) $kriteria === '0') {
 			z-index: 1;
 			background: #fff;
 		}
+
+		#preview-image {
+			max-width: 100%;
+			margin-top: 10px;
+			border-radius: 14px;
+		}
+
+		@media (min-width: 768px) {
+			.consult-shell {
+				padding-top: 24px;
+				padding-bottom: 24px;
+			}
+		}
 	</style>
 </head>
 
-<body class="bg-light">
-	<div class="backtohome">
-		<a href="<?= base_url('home_nakes'); ?>">
-			<i class="fas fa-arrow-left"></i>
-		</a>
-		<span class="ms-auto">Pemeriksaan Pasien</span>
-	</div>
-	<div class="hero bg-success px-3 pb-3 overflow-hidden">
-		<div class="d-flex align-items-start animate__animated animate__fadeInUp animate__faster">
-			<img class="rounded-4 shadow" src="<?= base_url(); ?>assets/images/rahmat.jpg" width="80px" height="80px">
-			<div class="ms-2 text-white">
-				<p class="mb-0"><b><?= strtoupper($nama_pasien); ?></b> <?= $umur ?> Tahun</p>
-				<p class="mb-0"><b>Keluhan</b> :
-					<?php
-					$CI = &get_instance();
-					$CI->load->library('encryption');
-					$keluhan = $CI->encryption->decrypt(base64_decode($keluhan));
-					echo $keluhan;
-					?>
-				</p>
+<body>
+	<div class="consult-shell">
+		<header class="consult-header">
+			<a href="<?= base_url('home_nakes'); ?>" class="consult-back" aria-label="Kembali ke beranda nakes">
+				<i class="fas fa-arrow-left"></i>
+			</a>
+			<div class="consult-title">
+				<h1>Pemeriksaan Pasien</h1>
+				<p class="consult-subtitle">Request #<?= html_escape($request_id) ?></p>
 			</div>
-		</div>
-	</div>
-	<svg id="wave" style="transform:rotate(180deg); transition: 0.3s" viewBox="0 0 1440 120" version="1.1" xmlns="http://www.w3.org/2000/svg">
-		<defs>
-			<linearGradient id="sw-gradient-0" x1="0" x2="0" y1="1" y2="0">
-				<stop stop-color="rgba(9, 173, 116, 1)" offset="0%"></stop>
-				<stop stop-color="rgba(140.457, 255, 215.189, 1)" offset="100%"></stop>
-			</linearGradient>
-		</defs>
-		<path style="transform:translate(0, 0px); opacity:1" fill="url(#sw-gradient-0)" d="M0,48L48,48C96,48,192,48,288,56C384,64,480,80,576,88C672,96,768,96,864,86C960,76,1056,56,1152,48C1248,40,1344,44,1440,42C1536,40,1632,32,1728,42C1824,52,1920,80,2016,78C2112,76,2208,44,2304,40C2400,36,2496,60,2592,76C2688,92,2784,100,2880,98C2976,96,3072,84,3168,74C3264,64,3360,56,3456,54C3552,52,3648,56,3744,54C3840,52,3936,44,4032,48C4128,52,4224,68,4320,64C4416,60,4512,36,4608,30C4704,24,4800,36,4896,44C4992,52,5088,56,5184,52C5280,48,5376,36,5472,44C5568,52,5664,80,5760,94C5856,108,5952,108,6048,98C6144,88,6240,68,6336,50C6432,32,6528,16,6624,18C6720,20,6816,40,6864,50L6912,60L6912,120L6864,120C6816,120,6720,120,6624,120C6528,120,6432,120,6336,120C6240,120,6144,120,6048,120C5952,120,5856,120,5760,120C5664,120,5568,120,5472,120C5376,120,5280,120,5184,120C5088,120,4992,120,4896,120C4800,120,4704,120,4608,120C4512,120,4416,120,4320,120C4224,120,4128,120,4032,120C3936,120,3840,120,3744,120C3648,120,3552,120,3456,120C3360,120,3264,120,3168,120C3072,120,2976,120,2880,120C2784,120,2688,120,2592,120C2496,120,2400,120,2304,120C2208,120,2112,120,2016,120C1920,120,1824,120,1728,120C1632,120,1536,120,1440,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
-		<defs>
-			<linearGradient id="sw-gradient-1" x1="0" x2="0" y1="1" y2="0">
-				<stop stop-color="rgba(9, 173, 116, 1)" offset="0%"></stop>
-				<stop stop-color="rgba(9, 173, 116, 1)" offset="100%"></stop>
-			</linearGradient>
-		</defs>
-		<path style="transform:translate(0, 50px); opacity:0.9" fill="url(#sw-gradient-1)" d="M0,60L48,54C96,48,192,36,288,28C384,20,480,16,576,24C672,32,768,52,864,62C960,72,1056,72,1152,64C1248,56,1344,40,1440,30C1536,20,1632,16,1728,30C1824,44,1920,76,2016,86C2112,96,2208,84,2304,68C2400,52,2496,32,2592,34C2688,36,2784,60,2880,68C2976,76,3072,68,3168,58C3264,48,3360,36,3456,26C3552,16,3648,8,3744,18C3840,28,3936,56,4032,68C4128,80,4224,76,4320,74C4416,72,4512,72,4608,72C4704,72,4800,72,4896,66C4992,60,5088,48,5184,44C5280,40,5376,44,5472,46C5568,48,5664,48,5760,46C5856,44,5952,40,6048,46C6144,52,6240,68,6336,72C6432,76,6528,68,6624,60C6720,52,6816,44,6864,40L6912,36L6912,120L6864,120C6816,120,6720,120,6624,120C6528,120,6432,120,6336,120C6240,120,6144,120,6048,120C5952,120,5856,120,5760,120C5664,120,5568,120,5472,120C5376,120,5280,120,5184,120C5088,120,4992,120,4896,120C4800,120,4704,120,4608,120C4512,120,4416,120,4320,120C4224,120,4128,120,4032,120C3936,120,3840,120,3744,120C3648,120,3552,120,3456,120C3360,120,3264,120,3168,120C3072,120,2976,120,2880,120C2784,120,2688,120,2592,120C2496,120,2400,120,2304,120C2208,120,2112,120,2016,120C1920,120,1824,120,1728,120C1632,120,1536,120,1440,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
-	</svg>
-	<div class="content animate__animated animate__fadeInUp animate__faster" style="padding: 15px;">
+			<span class="status-badge"><i class="bi bi-check-circle-fill"></i> Accepted</span>
+		</header>
+
+		<main class="content animate__animated animate__fadeInUp animate__faster">
+			<section class="consult-card">
+				<h2 class="section-heading"><i class="bi bi-person-vcard"></i> Ringkasan Pasien</h2>
+				<div class="summary-grid">
+					<div class="summary-item">
+						<span class="summary-label">Nama Pasien</span>
+						<span class="summary-value"><?= html_escape(strtoupper($nama_pasien)); ?></span>
+					</div>
+					<div class="summary-item">
+						<span class="summary-label">Umur</span>
+						<span class="summary-value"><?= html_escape($umur) ?> Tahun</span>
+					</div>
+					<div class="summary-item">
+						<span class="summary-label">User ID</span>
+						<span class="summary-value"><?= html_escape($userid) ?></span>
+					</div>
+					<div class="summary-item">
+						<span class="summary-label">Request ID</span>
+						<span class="summary-value">#<?= html_escape($request_id) ?></span>
+					</div>
+					<div class="summary-item">
+						<span class="summary-label">Kriteria</span>
+						<span class="summary-value"><?= html_escape($kriteria !== '' ? $kriteria : '-') ?></span>
+					</div>
+					<div class="summary-item">
+						<span class="summary-label">Konteks</span>
+						<span class="summary-value">Puskesmas / Nakes</span>
+					</div>
+				</div>
+			</section>
+
+			<section class="consult-card">
+				<h2 class="section-heading"><i class="bi bi-clipboard2-pulse"></i> Keluhan Pasien</h2>
+				<p class="complaint-text"><?= nl2br(html_escape($keluhan_pasien)); ?></p>
+			</section>
+
+			<section class="consult-card chat-card">
+				<h2 class="section-heading text-white"><i class="bi bi-chat-dots"></i> Chat Konsultasi</h2>
+				<p class="chat-copy">Buka percakapan aktif untuk membaca konteks tambahan dari pasien.</p>
+				<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="chat-button">
+					<i class="bi bi-chat-dots-fill"></i> Chat Konsultasi
+				</a>
+			</section>
+
 		<input type="hidden" name="userid" id="userId" value="<?= html_escape($userid) ?>">
 		<input type="hidden" name="dokterid" id="dokterId" value="<?= html_escape($_SESSION['id']) ?>">
 		<form id="form_konsul_nakes" enctype="multipart/form-data">
 			<input type="hidden" name="request_id" id="idReq" value="<?= html_escape($request_id) ?>">
-			<div class="mb-3">
-				<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="btn btn-outline-success rounded-pill shadow-sm">
-					<i class="bi bi-chat-dots"></i> Chat Konsultasi
-				</a>
-			</div>
-			<div class="form-floating mb-3">
-				<input type="text" id="diagnosa" name="diagnosa" class="form-control shadow-sm border-success" placeholder="Diagnosa" required>
-				<label for="diagnosa"><i class="bi bi-heart-pulse"></i> Diagnosa*</label>
-			</div>
-			<div class="card shadow-sm mb-3 border border-success">
-				<div class="card-header bg-success text-white d-flex align-items-center">
-					<p class="mb-0"><i class="bi bi-capsule"></i> Terapi*</p>
+			<section class="consult-card">
+				<h2 class="section-heading"><i class="bi bi-clipboard-check"></i> Selesaikan Konsultasi</h2>
+				<div class="form-floating mb-3">
+					<input type="text" id="diagnosa" name="diagnosa" class="form-control" placeholder="Diagnosa" required>
+					<label for="diagnosa"><i class="bi bi-heart-pulse"></i> Diagnosa*</label>
 				</div>
-				<div class="card-body">
-					<div class="table-responsive">
+				<div class="mb-3">
+					<h3 class="section-heading"><i class="bi bi-capsule"></i> Tindakan / Terapi*</h3>
+					<div class="terapi-scroll">
 						<table class="table table-sm table-hover table-striped" id="tabelTerapi">
-							<thead class="table-success">
-								<tr>
-									<th>No.</th>
-									<th>Terapi</th>
-									<th>Jumlah Obat</th>
-									<th>Cara Minum</th>
-									<th>Keterangan</th>
-									<th>Aksi</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr>
-									<td>1</td>
-									<td contenteditable="true" class="terapi-autocomplete">Terapi*</td>
-									<td>
-										<select class="form-select form-select-sm border-success">
-											<option value="1x sehari">1x sehari</option>
-											<option value="2x sehari">2x sehari</option>
-											<option value="3x sehari">3x sehari</option>
-											<option value="4x sehari">4x sehari</option>
-										</select>
-									</td>
-									<td>
-										<select class="form-select form-select-sm border-success">
-											<option value="Sesudah makan">Sesudah makan</option>
-											<option value="Sebelum makan">Sebelum makan</option>
-										</select>
-									</td>
-									<td contenteditable="true">Masukkan keterangan</td>
-									<td>
-										<button type="button" class="btn btn-success btn-sm" onclick="tambahBaris(this)">
-											<i class="bi bi-plus-circle"></i>
-										</button>
-									</td>
-								</tr>
-							</tbody>
-						</table>
+								<thead class="table-success">
+									<tr>
+										<th>No.</th>
+										<th>Terapi</th>
+										<th>Jumlah Obat</th>
+										<th>Cara Minum</th>
+										<th>Keterangan</th>
+										<th>Aksi</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>1</td>
+										<td contenteditable="true" class="terapi-autocomplete">Terapi*</td>
+										<td>
+											<select class="form-select form-select-sm border-success">
+												<option value="1x sehari">1x sehari</option>
+												<option value="2x sehari">2x sehari</option>
+												<option value="3x sehari">3x sehari</option>
+												<option value="4x sehari">4x sehari</option>
+											</select>
+										</td>
+										<td>
+											<select class="form-select form-select-sm border-success">
+												<option value="Sesudah makan">Sesudah makan</option>
+												<option value="Sebelum makan">Sebelum makan</option>
+											</select>
+										</td>
+										<td contenteditable="true">Masukkan keterangan</td>
+										<td>
+											<button type="button" class="btn btn-success btn-sm" onclick="tambahBaris(this)">
+												<i class="bi bi-plus-circle"></i>
+											</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
 					</div>
 				</div>
-			</div>
-			<div class="form-floating mb-3">
-				<textarea id="saran" name="saran" class="form-control shadow-sm border-success" placeholder="Saran" style="height: 200px"></textarea>
-				<label for="saran"><i class="bi bi-chat-dots"></i> Saran*</label>
-			</div>
-			<div class="form-floating mb-3">
-				<input type="text" id="kriteria" name="kriteria" class="form-control shadow-sm border-success" value="<?= html_escape($kriteria) ?>" readonly>
-				<label for="kriteria"><i class="bi bi-clipboard-check"></i> Kriteria*</label>
-			</div>
-			<?php if ($kriteria === 'Kunjungan Nakes') : ?>
 				<div class="form-floating mb-3">
-					<input type="file" class="form-control shadow-sm border-success" id="file" name="file" accept="image/*">
-					<label for="file"><i class="bi bi-camera"></i> Foto bersama pasien*</label>
-					<img id="preview-image" src="#" alt="Preview Foto" style="display:none; max-width: 200px; margin-top: 10px;" class="img-thumbnail" />
+					<textarea id="saran" name="saran" class="form-control" placeholder="Saran" style="height: 160px"></textarea>
+					<label for="saran"><i class="bi bi-chat-dots"></i> Rekomendasi / Saran*</label>
 				</div>
-			<?php endif; ?>
-			<div class="form-floating mb-3">
-				<input type="text" class="form-control shadow-sm border-success" id="rujukan" name="rujukan" placeholder="Rujukan">
-				<label for="rujukan"><i class="bi bi-arrow-right-circle"></i> Saran Rujukan*</label>
-			</div>
-			<div class="d-grid">
-				<button type="button" class="btn btn-success shadow-sm" id="save_konsul_nakes">
-					<i class="bi bi-save"></i> Simpan
+				<div class="form-floating mb-3">
+					<input type="text" id="kriteria" name="kriteria" class="form-control" value="<?= html_escape($kriteria) ?>" readonly>
+					<label for="kriteria"><i class="bi bi-clipboard-check"></i> Kriteria*</label>
+				</div>
+				<?php if ($kriteria === 'Kunjungan Nakes') : ?>
+					<div class="form-floating mb-2">
+						<input type="file" class="form-control" id="file" name="file" accept="image/*">
+						<label for="file"><i class="bi bi-camera"></i> Foto Kunjungan</label>
+						<img id="preview-image" src="#" alt="Preview Foto" style="display:none;" class="img-thumbnail" />
+					</div>
+					<p class="optional-note">Opsional sesuai kebutuhan dokumentasi kunjungan.</p>
+				<?php endif; ?>
+				<div class="form-floating mb-2">
+					<input type="text" class="form-control" id="rujukan" name="rujukan" placeholder="Rujukan">
+					<label for="rujukan"><i class="bi bi-arrow-right-circle"></i> Rujukan</label>
+				</div>
+				<p class="optional-note">Opsional jika pasien tidak memerlukan rujukan.</p>
+				<button type="button" class="primary-action shadow-sm" id="save_konsul_nakes">
+					<i class="bi bi-check2-circle"></i> Selesaikan Konsultasi
 				</button>
-			</div>
+			</section>
 		</form>
+		</main>
 	</div>
 
 	<!-- Modal -->
@@ -394,7 +594,7 @@ if ((string) $kriteria === '0') {
 					} else {
 						const message = response && response.message ? response.message : "Konsultasi gagal disimpan";
 						Swal.fire("Gagal!", message, "error");
-						$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-save"></i> Simpan');
+						$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan Konsultasi');
 					}
 				},
 				error: function(xhr, status, error) {
@@ -409,7 +609,7 @@ if ((string) $kriteria === '0') {
 						} catch (e) {}
 					}
 					Swal.fire("Gagal!", message, "error");
-					$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-save"></i> Simpan');
+					$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan Konsultasi');
 				}
 			});
 		});
