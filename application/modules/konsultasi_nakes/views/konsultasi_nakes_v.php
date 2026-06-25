@@ -242,6 +242,21 @@ if (isset($keluhan) && $keluhan !== '') {
 			font-size: 12px;
 		}
 
+		.documentation-group {
+			display: grid;
+			gap: 12px;
+			margin-bottom: 16px;
+		}
+
+		.documentation-field {
+			min-height: 118px;
+			resize: vertical;
+		}
+
+		.backend-field {
+			display: none;
+		}
+
 		.terapi-scroll {
 			overflow-x: auto;
 			-webkit-overflow-scrolling: touch;
@@ -371,7 +386,7 @@ if (isset($keluhan) && $keluhan !== '') {
 					<label for="diagnosa"><i class="bi bi-heart-pulse"></i> Diagnosa*</label>
 				</div>
 				<div class="mb-3">
-					<h3 class="section-heading"><i class="bi bi-capsule"></i> Tindakan / Terapi*</h3>
+					<h3 class="section-heading"><i class="bi bi-capsule"></i> Obat / Farmakoterapi</h3>
 					<div class="terapi-scroll">
 						<table class="table table-sm table-hover table-striped" id="tabelTerapi">
 								<thead class="table-success">
@@ -413,14 +428,39 @@ if (isset($keluhan) && $keluhan !== '') {
 							</table>
 					</div>
 				</div>
-				<div class="form-floating mb-3">
-					<textarea id="saran" name="saran" class="form-control" placeholder="Saran" style="height: 160px"></textarea>
-					<label for="saran"><i class="bi bi-chat-dots"></i> Rekomendasi / Saran*</label>
+				<div class="documentation-group">
+					<h3 class="section-heading mb-0"><i class="bi bi-journal-medical"></i> Dokumentasi Tindakan</h3>
+					<div class="form-floating">
+						<textarea id="ui_tindakan_non_obat" class="form-control documentation-field" placeholder="Edukasi pasien, anjuran istirahat, hidrasi/nutrisi, perawatan sederhana, observasi mandiri"></textarea>
+						<label for="ui_tindakan_non_obat">Tindakan Non-Obat</label>
+					</div>
+					<div class="form-floating">
+						<textarea id="ui_pemeriksaan_monitoring" class="form-control documentation-field" placeholder="Suhu, tekanan darah, nadi, saturasi, pemeriksaan fisik ringkas, pemeriksaan penunjang jika ada"></textarea>
+						<label for="ui_pemeriksaan_monitoring">Pemeriksaan / Monitoring</label>
+					</div>
+					<div class="form-floating">
+						<textarea id="ui_followup_edukasi" class="form-control documentation-field" placeholder="Kapan kontrol ulang, kondisi yang perlu segera diperiksa, edukasi singkat untuk pasien"></textarea>
+						<label for="ui_followup_edukasi">Follow-up / Edukasi Tanda Bahaya</label>
+					</div>
+					<div class="form-floating">
+						<textarea id="ui_catatan_tindakan_lain" class="form-control documentation-field" placeholder="Catatan tambahan tindakan atau observasi"></textarea>
+						<label for="ui_catatan_tindakan_lain">Catatan Tindakan Lain</label>
+					</div>
 				</div>
+				<div class="form-floating mb-3">
+					<textarea id="ui_saran_utama" class="form-control" placeholder="Rekomendasi atau saran utama untuk pasien" style="height: 150px"></textarea>
+					<label for="ui_saran_utama"><i class="bi bi-chat-dots"></i> Rekomendasi / Saran Utama*</label>
+				</div>
+				<textarea id="saran" name="saran" class="backend-field" aria-hidden="true"></textarea>
 				<div class="form-floating mb-3">
 					<input type="text" id="kriteria" name="kriteria" class="form-control" value="<?= html_escape($kriteria) ?>" readonly>
 					<label for="kriteria"><i class="bi bi-clipboard-check"></i> Kriteria*</label>
 				</div>
+				<div class="form-floating mb-2">
+					<input type="text" class="form-control" id="rujukan" name="rujukan" placeholder="Rujukan">
+					<label for="rujukan"><i class="bi bi-arrow-right-circle"></i> Rujukan</label>
+				</div>
+				<p class="optional-note">Opsional jika pasien tidak memerlukan rujukan.</p>
 				<?php if ($kriteria === 'Kunjungan Nakes') : ?>
 					<div class="form-floating mb-2">
 						<input type="file" class="form-control" id="file" name="file" accept="image/*">
@@ -429,11 +469,6 @@ if (isset($keluhan) && $keluhan !== '') {
 					</div>
 					<p class="optional-note">Opsional sesuai kebutuhan dokumentasi kunjungan.</p>
 				<?php endif; ?>
-				<div class="form-floating mb-2">
-					<input type="text" class="form-control" id="rujukan" name="rujukan" placeholder="Rujukan">
-					<label for="rujukan"><i class="bi bi-arrow-right-circle"></i> Rujukan</label>
-				</div>
-				<p class="optional-note">Opsional jika pasien tidak memerlukan rujukan.</p>
 				<button type="button" class="primary-action shadow-sm" id="save_konsul_nakes">
 					<i class="bi bi-check2-circle"></i> Selesaikan Konsultasi
 				</button>
@@ -498,15 +533,43 @@ if (isset($keluhan) && $keluhan !== '') {
 			}
 		}
 
+		function nakesDocumentationValue(selector) {
+			const value = $(selector).val();
+			const trimmed = value ? value.trim() : "";
+			return trimmed !== "" ? trimmed : "-";
+		}
+
+		function syncNakesDocumentationFields() {
+			const saranUtama = nakesDocumentationValue('#ui_saran_utama');
+			const dokumentasi = [
+				"--- Dokumentasi Tindakan ---",
+				"Tindakan Non-Obat:",
+				nakesDocumentationValue('#ui_tindakan_non_obat'),
+				"",
+				"Pemeriksaan / Monitoring:",
+				nakesDocumentationValue('#ui_pemeriksaan_monitoring'),
+				"",
+				"Follow-up / Edukasi:",
+				nakesDocumentationValue('#ui_followup_edukasi'),
+				"",
+				"Catatan Tindakan Lain:",
+				nakesDocumentationValue('#ui_catatan_tindakan_lain')
+			].join("\n");
+
+			$('#saran').val([saranUtama, dokumentasi].join("\n\n"));
+		}
+
 		$('#save_konsul_nakes').click(function() {
 			const userId = document.getElementById('userId').value;
 			const dokterId = document.getElementById('dokterId').value;
 			const idReq = document.getElementById('idReq').value;
 			const diagnosa = $('#diagnosa').val().trim();
+			const saranUtama = $('#ui_saran_utama').val().trim();
+			syncNakesDocumentationFields();
 			const saran = $('#saran').val().trim();
 			const kriteria = $('#kriteria').val().trim();
 
-			if (!idReq || !diagnosa || !saran || !kriteria) {
+			if (!idReq || !diagnosa || !saranUtama || !saran || !kriteria) {
 				Swal.fire("Gagal!", "Data tidak lengkap", "error");
 				return;
 			}
@@ -530,7 +593,7 @@ if (isset($keluhan) && $keluhan !== '') {
 				var caraMinum = $(row).find("td:eq(3) select").val(); // Cara Minum
 				var keterangan = $(row).find("td:eq(4)").text().trim();
 
-				if (terapi !== "") {
+				if (terapi !== "" && terapi !== "Terapi*") {
 					terapiData.push({
 						terapi: terapi,
 						jumlah: signa,
