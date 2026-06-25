@@ -3,6 +3,59 @@ $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '#';
 $map_provider = $this->config->item('map_provider') ?: 'none';
+
+if (!function_exists('doclinc_history_safe_text')) {
+	function doclinc_history_safe_text($value, $fallback = '-')
+	{
+		$text = trim((string) $value);
+		return html_escape($text !== '' ? $text : $fallback);
+	}
+}
+
+if (!function_exists('doclinc_history_safe_lines')) {
+	function doclinc_history_safe_lines($value, $fallback = '-')
+	{
+		$text = trim((string) $value);
+		return nl2br(html_escape($text !== '' ? $text : $fallback), false);
+	}
+}
+
+if (!function_exists('doclinc_history_format_complaint')) {
+	function doclinc_history_format_complaint($value)
+	{
+		$text = trim((string) $value);
+		if ($text === '') {
+			return '<p class="history-empty-text mb-0">Keluhan tersimpan</p>';
+		}
+
+		$lines = preg_split('/\R/u', $text);
+		$html = '';
+		foreach ($lines as $line) {
+			$line = trim($line);
+			if ($line === '') {
+				continue;
+			}
+
+			if (preg_match('/^\*\*(.+?)\*\*$/', $line, $match)) {
+				$html .= '<div class="history-complaint-heading">' . html_escape(trim($match[1])) . '</div>';
+				continue;
+			}
+
+			if (strpos($line, ':') !== false) {
+				list($label, $content) = explode(':', $line, 2);
+				$html .= '<div class="history-complaint-row">';
+				$html .= '<span class="history-complaint-label">' . html_escape(trim($label)) . '</span>';
+				$html .= '<span class="history-complaint-value">' . html_escape(trim($content) !== '' ? trim($content) : '-') . '</span>';
+				$html .= '</div>';
+				continue;
+			}
+
+			$html .= '<p class="history-free-text mb-1">' . html_escape($line) . '</p>';
+		}
+
+		return $html !== '' ? $html : nl2br(html_escape($text), false);
+	}
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -30,6 +83,103 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 		.card-header {
 			background-color: #09AD74;
 			color: white;
+		}
+
+		.history-result-card {
+			border: 0;
+			border-radius: 20px;
+			overflow: hidden;
+			background: #fff;
+		}
+
+		.history-result-card .card-header {
+			background: #fff;
+			color: #333;
+			border-bottom: 1px solid #e8f3ee;
+			padding: 14px 16px;
+		}
+
+		.history-request-id {
+			color: #379A69;
+			font-weight: 700;
+			font-size: 13px;
+		}
+
+		.history-meta {
+			color: #6c757d;
+			font-size: 12px;
+			line-height: 1.5;
+		}
+
+		.history-status-badge {
+			background: #dff4ec;
+			color: #379A69;
+			border: 1px solid rgba(55, 154, 105, 0.24);
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+			padding: 6px 10px;
+		}
+
+		.history-section {
+			border: 1px solid #e8f3ee;
+			border-radius: 16px;
+			padding: 13px;
+			margin-bottom: 12px;
+			background: #fff;
+		}
+
+		.history-section-title {
+			color: #379A69;
+			font-weight: 700;
+			font-size: 13px;
+			margin-bottom: 8px;
+		}
+
+		.history-result-label,
+		.history-complaint-label {
+			display: block;
+			color: #6c757d;
+			font-size: 12px;
+			font-weight: 700;
+			margin-bottom: 2px;
+		}
+
+		.history-result-value,
+		.history-complaint-value,
+		.history-free-text {
+			color: #333;
+			font-size: 14px;
+			line-height: 1.5;
+			word-break: break-word;
+		}
+
+		.history-complaint-heading {
+			color: #379A69;
+			font-weight: 700;
+			font-size: 14px;
+			margin: 10px 0 6px;
+		}
+
+		.history-complaint-heading:first-child {
+			margin-top: 0;
+		}
+
+		.history-complaint-row,
+		.history-result-row {
+			padding: 8px 0;
+			border-bottom: 1px solid #f0f0f0;
+		}
+
+		.history-complaint-row:last-child,
+		.history-result-row:last-child {
+			border-bottom: 0;
+			padding-bottom: 0;
+		}
+
+		.history-empty-text {
+			color: #6c757d;
+			font-size: 13px;
 		}
 
 		.header {
@@ -533,6 +683,14 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 							<?php
 							$CI = &get_instance();
 							$CI->load->library('encryption');
+							if ($data_request_completed->num_rows() < 1) {
+							?>
+								<div class="text-center py-4">
+									<img src="<?= html_escape(base_url('assets/images/not found.svg')); ?>" width="180" alt="Tidak ada data">
+									<p class="mb-0 mt-3 text-muted">Belum ada riwayat konsultasi selesai.</p>
+								</div>
+							<?php
+							}
 							foreach ($data_request_completed->result() as $x) {
 								try {
 									$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
@@ -546,27 +704,48 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 								}
 								$diagnosa = !empty($x->diagnosa) ? $x->diagnosa : (!empty($x->diagnosis) ? $x->diagnosis : '-');
 								$saran = !empty($x->saran) ? $x->saran : (!empty($x->recommendations) ? $x->recommendations : '-');
+								$treatment = !empty($x->treatment) ? $x->treatment : '';
+								$puskesmas = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : '';
+								$tanggal_selesai = !empty($x->created_at) ? date('d-m-Y', strtotime($x->created_at)) : '-';
 							?>
-								<div class="card shadow mb-2" data-request-id="<?= (int) $x->request_id; ?>">
-									<div class="card-header d-flex align-items-center">
-										<p class="mb-0">
-											<em> <?php echo date('d-m-Y', strtotime($x->created_at)); ?> </em>
-										</p>
-										<span class="badge text-bg-success ms-auto animate__animated animate__flash animate__infinite animate__slower" id="status-konsul">Completed</span>
+								<div class="card shadow mb-3 history-result-card" data-request-id="<?= (int) $x->request_id; ?>">
+									<div class="card-header d-flex align-items-start gap-3">
+										<div class="flex-grow-1">
+											<div class="history-request-id">Request #<?= html_escape((int) $x->request_id); ?></div>
+											<div class="history-meta">
+												<?= doclinc_history_safe_text($tanggal_selesai); ?><br>
+												Pasien: <?= doclinc_history_safe_text(strtoupper((string) $x->nama)); ?>
+												<?php if ($puskesmas !== '') : ?>
+													<br><?= doclinc_history_safe_text($puskesmas); ?>
+												<?php endif; ?>
+											</div>
+										</div>
+										<span class="history-status-badge">Completed</span>
 									</div>
 									<div class="card-body">
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class="fas fa-head-side-mask fa-fw"></i> Pasien :</span><br><?php echo strtoupper($x->nama); ?>
-										</p>
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class="fas fa-notes-medical fa-fw"></i> Keluhan :</span><br><?php echo $keluhan; ?>
-										</p>
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class="fas fa-user-md fs-4"></i> Diagnosa :</span><br><?php echo $diagnosa; ?>
-										</p>
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class='fas fa-comment-dots fs-4'></i> Saran :</span><br><?php echo $saran; ?>
-										</p>
+										<div class="history-section">
+											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan Awal</div>
+											<?= doclinc_history_format_complaint($keluhan); ?>
+										</div>
+										<div class="history-section">
+											<div class="history-section-title"><i class="fas fa-file-medical-alt me-1"></i> Hasil Konsultasi</div>
+											<div class="history-result-row">
+												<span class="history-result-label">Diagnosa</span>
+												<div class="history-result-value"><?= doclinc_history_safe_lines($diagnosa); ?></div>
+											</div>
+											<div class="history-result-row">
+												<span class="history-result-label">Terapi / Tindakan</span>
+												<?php if ($treatment !== '') : ?>
+													<div class="history-result-value"><?= doclinc_history_safe_lines($treatment); ?></div>
+												<?php else : ?>
+													<p class="history-empty-text mb-0">Belum ada terapi/tindakan yang tercatat.</p>
+												<?php endif; ?>
+											</div>
+											<div class="history-result-row">
+												<span class="history-result-label">Rekomendasi / Saran</span>
+												<div class="history-result-value"><?= doclinc_history_safe_lines($saran); ?></div>
+											</div>
+										</div>
 									</div>
 									<div class="card-footer">
 										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-secondary btn-sm rounded-pill">

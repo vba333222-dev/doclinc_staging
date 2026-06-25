@@ -13,6 +13,59 @@ $dokter_id = []; // siapkan array kosong
 foreach ($dataDoctor->result() as $doc) {
 	$dokter_id[] = $doc->professional_id; // tambahkan ke array
 }
+
+if (!function_exists('doclinc_history_safe_text')) {
+	function doclinc_history_safe_text($value, $fallback = '-')
+	{
+		$text = trim((string) $value);
+		return html_escape($text !== '' ? $text : $fallback);
+	}
+}
+
+if (!function_exists('doclinc_history_safe_lines')) {
+	function doclinc_history_safe_lines($value, $fallback = '-')
+	{
+		$text = trim((string) $value);
+		return nl2br(html_escape($text !== '' ? $text : $fallback), false);
+	}
+}
+
+if (!function_exists('doclinc_history_format_complaint')) {
+	function doclinc_history_format_complaint($value)
+	{
+		$text = trim((string) $value);
+		if ($text === '') {
+			return '<p class="history-empty-text mb-0">Keluhan tersimpan</p>';
+		}
+
+		$lines = preg_split('/\R/u', $text);
+		$html = '';
+		foreach ($lines as $line) {
+			$line = trim($line);
+			if ($line === '') {
+				continue;
+			}
+
+			if (preg_match('/^\*\*(.+?)\*\*$/', $line, $match)) {
+				$html .= '<div class="history-complaint-heading">' . html_escape(trim($match[1])) . '</div>';
+				continue;
+			}
+
+			if (strpos($line, ':') !== false) {
+				list($label, $content) = explode(':', $line, 2);
+				$html .= '<div class="history-complaint-row">';
+				$html .= '<span class="history-complaint-label">' . html_escape(trim($label)) . '</span>';
+				$html .= '<span class="history-complaint-value">' . html_escape(trim($content) !== '' ? trim($content) : '-') . '</span>';
+				$html .= '</div>';
+				continue;
+			}
+
+			$html .= '<p class="history-free-text mb-1">' . html_escape($line) . '</p>';
+		}
+
+		return $html !== '' ? $html : nl2br(html_escape($text), false);
+	}
+}
 ?>
 
 <!DOCTYPE html>
@@ -42,6 +95,116 @@ foreach ($dataDoctor->result() as $doc) {
 		.card-header {
 			background-color: #09AD74;
 			color: white;
+		}
+
+		.history-result-card {
+			border: 0;
+			border-radius: 20px;
+			overflow: hidden;
+			background: #fff;
+		}
+
+		.history-result-card .card-header {
+			background: #fff;
+			color: #333;
+			border-bottom: 1px solid #e8f3ee;
+			padding: 14px 16px;
+		}
+
+		.history-request-id {
+			color: #379A69;
+			font-weight: 700;
+			font-size: 13px;
+		}
+
+		.history-meta {
+			color: #6c757d;
+			font-size: 12px;
+			line-height: 1.5;
+		}
+
+		.history-status-badge {
+			background: #dff4ec;
+			color: #379A69;
+			border: 1px solid rgba(55, 154, 105, 0.24);
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+			padding: 6px 10px;
+		}
+
+		.history-section {
+			border: 1px solid #e8f3ee;
+			border-radius: 16px;
+			padding: 13px;
+			margin-bottom: 12px;
+			background: #fff;
+		}
+
+		.history-section-title {
+			color: #379A69;
+			font-weight: 700;
+			font-size: 13px;
+			margin-bottom: 8px;
+		}
+
+		.history-result-label,
+		.history-complaint-label {
+			display: block;
+			color: #6c757d;
+			font-size: 12px;
+			font-weight: 700;
+			margin-bottom: 2px;
+		}
+
+		.history-result-value,
+		.history-complaint-value,
+		.history-free-text {
+			color: #333;
+			font-size: 14px;
+			line-height: 1.5;
+			word-break: break-word;
+		}
+
+		.history-complaint-heading {
+			color: #379A69;
+			font-weight: 700;
+			font-size: 14px;
+			margin: 10px 0 6px;
+		}
+
+		.history-complaint-heading:first-child {
+			margin-top: 0;
+		}
+
+		.history-complaint-row,
+		.history-result-row {
+			padding: 8px 0;
+			border-bottom: 1px solid #f0f0f0;
+		}
+
+		.history-complaint-row:last-child,
+		.history-result-row:last-child {
+			border-bottom: 0;
+			padding-bottom: 0;
+		}
+
+		.history-therapy-list {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		.history-therapy-item {
+			border: 1px solid #e5e5e5;
+			border-radius: 14px;
+			padding: 10px;
+			background: #fafafa;
+		}
+
+		.history-empty-text {
+			color: #6c757d;
+			font-size: 13px;
 		}
 
 		.header {
@@ -590,9 +753,17 @@ foreach ($dataDoctor->result() as $doc) {
 						<!-- Tab Riwayat -->
 						<div class="tab-pane fade" id="selesai-tab-pane" role="tabpanel" aria-labelledby="selesai-tab" tabindex="0">
 							<?php
+							if (empty($getAllDataRequestsCompleted)) {
+							?>
+								<div class="text-center py-4">
+									<img src="<?= html_escape(base_url('assets/images/not found.svg')); ?>" width="180" alt="Tidak ada data">
+									<p class="mb-0 mt-3 text-muted">Belum ada riwayat konsultasi selesai.</p>
+								</div>
+							<?php
+							}
 							foreach ($getAllDataRequestsCompleted as $data) {
-								$id_request = $data->request_id;
-								$tanggal = $data->date;
+								$id_request = (int) $data->request_id;
+								$tanggal = !empty($data->date) ? $data->date : '';
 								$keluhan = !empty($data->request_description) ? $data->request_description : 'Keluhan tersimpan';
 								$saran	 = !empty($data->recommendations) ? $data->recommendations : '-';
 								$dokter_id = $data->dokter_id;
@@ -600,50 +771,64 @@ foreach ($dataDoctor->result() as $doc) {
 								$diagnosa = !empty($data->diagnosa) ? $data->diagnosa : (!empty($data->diagnosis) ? $data->diagnosis : '-');
 								$saran_dokter = !empty($data->saran) ? $data->saran : $saran;
 								$card_id = !empty($data->konsul_id) ? $data->konsul_id : $id_request;
-
-								$tanggal_riwayat = date('d F Y', strtotime($tanggal));
+								$treatment = !empty($data->treatment) ? $data->treatment : '';
+								$puskesmas = !empty($data->assigned_puskesmas_name) ? $data->assigned_puskesmas_name : '';
+								$terapi_list = !empty($data->terapi_list) && is_array($data->terapi_list) ? $data->terapi_list : [];
+								$tanggal_riwayat = !empty($tanggal) ? date('d F Y', strtotime($tanggal)) : '-';
 							?>
-								<div class="card shadow mb-2" id="card-<?= $card_id ?>" data-request-id="<?= (int) $id_request; ?>">
-									<div class="card-header d-flex align-items-center">
-										<p class="mb-0"><em><?= $tanggal_riwayat; ?></em></p>
-										<span class="badge text-bg-secondary ms-auto">Selesai</span>
+								<div class="card shadow mb-3 history-result-card" id="card-<?= html_escape($card_id); ?>" data-request-id="<?= $id_request; ?>">
+									<div class="card-header d-flex align-items-start gap-3">
+										<div class="flex-grow-1">
+											<div class="history-request-id">Request #<?= html_escape($id_request); ?></div>
+											<div class="history-meta">
+												<?= doclinc_history_safe_text($tanggal_riwayat); ?><br>
+												<?php if ($puskesmas !== '') : ?>
+													<?= doclinc_history_safe_text($puskesmas); ?><br>
+												<?php endif; ?>
+												Nakes: <?= doclinc_history_safe_text($nama_dokter_riwayat); ?>
+											</div>
+										</div>
+										<span class="history-status-badge">Completed</span>
 									</div>
-									<input type="hidden" id="reqIdRat" value="<?= $id_request ?>">
+									<input type="hidden" id="reqIdRat" value="<?= $id_request; ?>">
 									<div class="card-body">
-										<p class="mb-0 small fw-bold"><i class="fas fa-notes-medical fa-fw"></i> Keluhan :</p>
-										<p class="mb-0"><?= $keluhan; ?></p>
-										<p class="mb-0 small fw-bold"><i class="fas fa-stethoscope fa-fw"></i> Dokter :</p>
-										<p class="mb-0"><?= $nama_dokter_riwayat; ?></p>
-										<input type="hidden" id="doktId" value="<?= $dokter_id; ?>">
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class="fas fa-user-md fs-4"></i> Diagnosa :</span><br><?php echo $diagnosa; ?>
-										</p>
-										<p class="mb-1 small">
-											<span class="fw-bold"><i class='fas fa-comment-dots fs-4'></i> Saran :</span><br><?php echo $saran_dokter; ?>
-										</p>
-										<p class="mb-1 small fw-bold"><i class='fas fa-pills'></i> Obat :</p>
-										<table class="table table-sm">
-											<thead>
-												<tr>
-													<th>No</th>
-													<th>Nama Terapi</th>
-													<th>Keterangan</th>
-												</tr>
-											</thead>
-											<tbody>
-												<?php
-												$no = 1;
-												foreach ($data->terapi_list as $terapi) {
-												?>
-													<tr>
-														<td><?= $no++; ?></td>
-														<td><?= $terapi->terapi; ?></td>
-														<td><?= $terapi->signa; ?></td>
-													</tr>
-												<?php } ?>
-											</tbody>
-										</table>
-										<button class="btn btn-sm btn-outline-success mt-2" onclick="downloadCard('card-<?= $card_id ?>')">
+										<div class="history-section">
+											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan Awal</div>
+											<?= doclinc_history_format_complaint($keluhan); ?>
+										</div>
+										<div class="history-section">
+											<div class="history-section-title"><i class="fas fa-file-medical-alt me-1"></i> Hasil Konsultasi</div>
+											<div class="history-result-row">
+												<span class="history-result-label">Diagnosa</span>
+												<div class="history-result-value"><?= doclinc_history_safe_lines($diagnosa); ?></div>
+											</div>
+											<div class="history-result-row">
+												<span class="history-result-label">Terapi / Tindakan / Obat</span>
+												<?php if (!empty($terapi_list)) : ?>
+													<div class="history-therapy-list">
+														<?php foreach ($terapi_list as $index => $terapi) : ?>
+															<div class="history-therapy-item">
+																<div class="fw-bold"><?= html_escape(($index + 1) . '. ' . trim((string) ($terapi->terapi ?? '-'))); ?></div>
+																<div class="history-meta"><?= doclinc_history_safe_text($terapi->signa ?? '-'); ?></div>
+																<?php if (!empty($terapi->keterangan)) : ?>
+																	<div class="history-result-value mt-1"><?= doclinc_history_safe_lines($terapi->keterangan); ?></div>
+																<?php endif; ?>
+															</div>
+														<?php endforeach; ?>
+													</div>
+												<?php elseif ($treatment !== '') : ?>
+													<div class="history-result-value"><?= doclinc_history_safe_lines($treatment); ?></div>
+												<?php else : ?>
+													<p class="history-empty-text mb-0">Belum ada terapi/tindakan yang tercatat.</p>
+												<?php endif; ?>
+											</div>
+											<div class="history-result-row">
+												<span class="history-result-label">Rekomendasi / Saran</span>
+												<div class="history-result-value"><?= doclinc_history_safe_lines($saran_dokter); ?></div>
+											</div>
+										</div>
+										<input type="hidden" id="doktId" value="<?= html_escape($dokter_id); ?>">
+										<button class="btn btn-sm btn-outline-success mt-2" onclick="downloadCard('card-<?= html_escape($card_id); ?>')">
 											<i class="fas fa-file-download"></i> Download Resep
 										</button>
 										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-sm btn-outline-secondary mt-2">
