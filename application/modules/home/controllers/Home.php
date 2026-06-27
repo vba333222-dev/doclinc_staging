@@ -7,6 +7,7 @@ class Home extends MX_Controller
 		parent::__construct();
 		$this->load->model('Home_m');
 		$this->load->helper('request_authz');
+		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login');
 		}
@@ -110,6 +111,64 @@ class Home extends MX_Controller
 		doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_delete'));
 		$this->output->set_status_header(403);
 		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+	}
+
+	public function cancel_request()
+	{
+		if (!$this->require_post_json()) {
+			return;
+		}
+
+		$request_id = (int) ($this->input->post('request_id') ?: $this->input->post('requestId'));
+		$user_id = (int) $this->session->userdata('id');
+		$role = $this->session->userdata('role');
+		if ($role !== 'warga' || $request_id < 1 || !doclinc_can_cancel_request($request_id, $user_id, $role)) {
+			if (function_exists('doclinc_log_request_event')) {
+				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'warga_cancel'));
+			}
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+
+		$request = doclinc_request_row($request_id);
+		if (!$this->Home_m->cancel_request($request_id, $user_id)) {
+			if (function_exists('doclinc_log_request_event')) {
+				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'warga_cancel'));
+			}
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak dapat dibatalkan']));
+			return;
+		}
+
+		if (function_exists('doclinc_log_request_event')) {
+			doclinc_log_request_event('request_cancelled', $request_id);
+		}
+		if ($request && function_exists('doclinc_notify_user')) {
+			$recipient_id = isset($request->accepted_by_user_id) && !empty($request->accepted_by_user_id)
+				? $request->accepted_by_user_id
+				: (isset($request->dokter_id) ? $request->dokter_id : null);
+			if (!empty($recipient_id)) {
+				doclinc_notify_user(
+					$recipient_id,
+					'request_cancelled',
+					'request',
+					$request_id,
+					'Konsultasi dibatalkan',
+					'Permintaan konsultasi dibatalkan oleh pasien.',
+					$user_id
+				);
+			}
+		}
+
+		$this->output->set_output(json_encode([
+			'status' => 'success',
+			'message' => 'Request berhasil dibatalkan',
+			'request_id' => $request_id,
+			'request_status' => 'Cancelled'
+		]));
 	}
 
 	public function submit_rating()
