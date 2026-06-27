@@ -564,7 +564,14 @@ if (!function_exists('doclinc_history_format_complaint')) {
 										<span class="history-result-label">Keluhan</span>
 										<div class="history-result-value"><?= doclinc_history_safe_lines($dl_current_keluhan); ?></div>
 									</div>
-									<a href="#" class="dl-btn-secondary w-100" onclick="showContent('riwayat')">Lihat Detail</a>
+									<div class="d-grid gap-2">
+										<a href="#" class="dl-btn-secondary w-100" onclick="showContent('riwayat')">Lihat Detail</a>
+										<?php if ($dl_current_status === 'Pending') : ?>
+											<button type="button" class="btn btn-sm btn-outline-danger rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $dlCurrentRequest->request_id); ?>">
+												<i class="fas fa-times-circle me-1"></i> Batalkan
+											</button>
+										<?php endif; ?>
+									</div>
 								</div>
 							<?php break;
 							endforeach; ?>
@@ -788,6 +795,12 @@ if (!function_exists('doclinc_history_format_complaint')) {
 												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-success btn-sm rounded-pill dl-btn-primary">
 													<i class="fas fa-comments me-1"></i> Chat Konsultasi
 												</a>
+											</div>
+										<?php elseif ($request_status === 'Pending') : ?>
+											<div class="mt-3">
+												<button type="button" class="btn btn-outline-danger btn-sm rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $id_request); ?>">
+													<i class="fas fa-times-circle me-1"></i> Batalkan
+												</button>
 											</div>
 										<?php endif; ?>
 									</div>
@@ -1327,6 +1340,70 @@ if (!function_exists('doclinc_history_format_complaint')) {
 					items: 3
 				}
 			}
+		});
+
+		$(document).on('click', '.cancel-warga-request', function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+
+			const button = $(this);
+			const requestId = button.data('request-id');
+			if (!requestId) {
+				Swal.fire('Gagal', 'Data request tidak ditemukan.', 'error');
+				return;
+			}
+
+			Swal.fire({
+				title: 'Batalkan konsultasi?',
+				text: 'Permintaan konsultasi yang dibatalkan tidak dapat dilanjutkan.',
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonText: 'Ya, batalkan',
+				confirmButtonColor: '#dc3545',
+				cancelButtonText: 'Tidak'
+			}).then((result) => {
+				if (!result.isConfirmed) {
+					return;
+				}
+
+				button.prop('disabled', true).addClass('disabled');
+				$.ajax({
+					url: '<?= base_url('home/cancel_request'); ?>',
+					type: 'POST',
+					dataType: 'json',
+					data: {
+						request_id: requestId
+					},
+					success: function(response) {
+						if (typeof response === 'string') {
+							try {
+								response = JSON.parse(response);
+							} catch (error) {}
+						}
+						if (response && response.status === 'success') {
+							Swal.fire({
+								title: 'Berhasil',
+								text: response.message || 'Konsultasi berhasil dibatalkan.',
+								icon: 'success',
+								showConfirmButton: false,
+								timer: 1200,
+								timerProgressBar: true
+							}).then(() => {
+								window.location.reload();
+							});
+							return;
+						}
+
+						button.prop('disabled', false).removeClass('disabled');
+						Swal.fire('Gagal', response && response.message ? response.message : 'Konsultasi tidak dapat dibatalkan.', 'error');
+					},
+					error: function(xhr) {
+						button.prop('disabled', false).removeClass('disabled');
+						const response = xhr.responseJSON || {};
+						Swal.fire('Gagal', response.message || 'Konsultasi tidak dapat dibatalkan.', 'error');
+					}
+				});
+			});
 		});
 	</script>
 

@@ -589,6 +589,11 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 													</button>
 												</div>
 												<div class="col d-grid">
+													<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
+														<i class="fas fa-times-circle me-2"></i> Tolak
+													</button>
+												</div>
+												<div class="col d-grid">
 													<input type="hidden" id="id_request<?php echo $i; ?>" value="<?= html_escape((int) $x->request_id); ?>">
 													<button type="button" class="btn btn-success shadow-sm rounded-pill start-chat"
 														id="terimaKonsul<?php echo $i; ?>"
@@ -661,6 +666,9 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 											<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
 										</button>
+										<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill ms-2 cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
+											<i class="fas fa-times-circle me-2"></i> Tolak
+										</button>
 										<!-- <button class="btn btn-success shadow-sm rounded-pill ms-auto" id="tombolSaran">Berikan Saran</button> -->
 									</div>
 								</div>
@@ -707,6 +715,9 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
 											<i class="fas fa-comments me-2"></i> Chat Konsultasi
 										</a>
+										<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
+											<i class="fas fa-times-circle me-2"></i> Batalkan
+										</button>
 									</div>
 								</div>
 							<?php
@@ -1363,6 +1374,70 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				});
 			});
 		}
+
+		$(document).on('click', '.cancel-nakes-request', function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+
+			const button = $(this);
+			const requestId = button.data('request-id');
+			if (!requestId) {
+				Swal.fire('Gagal', 'Data request tidak ditemukan.', 'error');
+				return;
+			}
+
+			Swal.fire({
+				title: 'Batalkan konsultasi?',
+				text: 'Permintaan konsultasi akan ditandai dibatalkan.',
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonText: 'Ya, batalkan',
+				confirmButtonColor: '#dc3545',
+				cancelButtonText: 'Tidak'
+			}).then((result) => {
+				if (!result.isConfirmed) {
+					return;
+				}
+
+				button.prop('disabled', true).addClass('disabled');
+				$.ajax({
+					url: '<?= base_url('home_nakes/cancel_request'); ?>',
+					type: 'POST',
+					dataType: 'json',
+					data: {
+						request_id: requestId
+					},
+					success: function(response) {
+						if (typeof response === 'string') {
+							try {
+								response = JSON.parse(response);
+							} catch (error) {}
+						}
+						if (response && response.status === 'success') {
+							Swal.fire({
+								title: 'Berhasil',
+								text: response.message || 'Konsultasi berhasil dibatalkan.',
+								icon: 'success',
+								showConfirmButton: false,
+								timer: 1200,
+								timerProgressBar: true
+							}).then(() => {
+								window.location.reload();
+							});
+							return;
+						}
+
+						button.prop('disabled', false).removeClass('disabled');
+						Swal.fire('Gagal', response && response.message ? response.message : 'Konsultasi tidak dapat dibatalkan.', 'error');
+					},
+					error: function(xhr) {
+						button.prop('disabled', false).removeClass('disabled');
+						const response = xhr.responseJSON || {};
+						Swal.fire('Gagal', response.message || 'Konsultasi tidak dapat dibatalkan.', 'error');
+					}
+				});
+			});
+		});
 	</script>
 
 	<script>
