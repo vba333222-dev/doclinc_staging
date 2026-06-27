@@ -73,7 +73,7 @@ class Notifikasi extends MX_Controller
 
 	private function notification_action_url($notification, $user_id, $role)
 	{
-		$fallback = $role === 'dokter' ? base_url('home_nakes') : base_url('home');
+		$fallback = base_url('notifikasi');
 		if (empty($notification['entity_type']) || $notification['entity_type'] !== 'request') {
 			return $fallback;
 		}
