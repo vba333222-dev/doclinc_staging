@@ -32,6 +32,17 @@ class Konsultasi_m extends MX_Controller
 			return false;
 		}
 
+		$has_patient_location = $this->is_valid_latitude($lattitude) && $this->is_valid_longitude($longitude);
+		$legacy_latitude = $has_patient_location ? (string) (float) $lattitude : '';
+		$legacy_longitude = $has_patient_location ? (string) (float) $longitude : '';
+		$patient_latitude = $has_patient_location ? (float) $lattitude : null;
+		$patient_longitude = $has_patient_location ? (float) $longitude : null;
+		if (array_key_exists('patient_latitude', $routing) && array_key_exists('patient_longitude', $routing)) {
+			$routing_has_patient_location = $this->is_valid_latitude($routing['patient_latitude']) && $this->is_valid_longitude($routing['patient_longitude']);
+			$patient_latitude = $routing_has_patient_location ? (float) $routing['patient_latitude'] : null;
+			$patient_longitude = $routing_has_patient_location ? (float) $routing['patient_longitude'] : null;
+		}
+
 		$this->db->trans_start(); // Mulai transaksi
 
 		$data = [
@@ -40,8 +51,8 @@ class Konsultasi_m extends MX_Controller
 			'request_description' => $keluhan,
 			'request_status' => 'Pending',
 			'location' => $alamat,
-			'lattitude' => $lattitude,
-			'longitude' => $longitude,
+			'lattitude' => $legacy_latitude,
+			'longitude' => $legacy_longitude,
 		];
 		if ($this->db->field_exists('date', 'requests')) {
 			$data['date'] = date('Y-m-d', strtotime($tanggal));
@@ -58,6 +69,8 @@ class Konsultasi_m extends MX_Controller
 		if ($this->db->field_exists('updated_at', 'requests')) {
 			$data['updated_at'] = date('Y-m-d H:i:s');
 		}
+		$routing['patient_latitude'] = $patient_latitude;
+		$routing['patient_longitude'] = $patient_longitude;
 		foreach (array('assigned_puskesmas_code', 'assigned_puskesmas_name', 'patient_latitude', 'patient_longitude') as $field) {
 			if ($this->db->field_exists($field, 'requests') && array_key_exists($field, $routing)) {
 				$data[$field] = $routing[$field];
@@ -245,5 +258,15 @@ class Konsultasi_m extends MX_Controller
 		$hasil = $CI->encryption->decrypt(base64_decode($query->riwayat));
 
 		return $hasil;
+	}
+
+	private function is_valid_latitude($value)
+	{
+		return is_numeric($value) && (float) $value >= -90 && (float) $value <= 90;
+	}
+
+	private function is_valid_longitude($value)
+	{
+		return is_numeric($value) && (float) $value >= -180 && (float) $value <= 180;
 	}
 }

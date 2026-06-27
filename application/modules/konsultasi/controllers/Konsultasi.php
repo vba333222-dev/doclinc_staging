@@ -77,6 +77,11 @@ class Konsultasi extends MX_Controller
 		$longitude = $this->input->post('lng');
 		$manual_puskesmas_code = $this->input->post('assigned_puskesmas_code', TRUE);
 		$tanggal = $this->input->post('tanggal');
+		$has_patient_location = $this->is_valid_latitude($lattitude) && $this->is_valid_longitude($longitude);
+		$patient_latitude = $has_patient_location ? (float) $lattitude : null;
+		$patient_longitude = $has_patient_location ? (float) $longitude : null;
+		$lattitude = $has_patient_location ? (string) $patient_latitude : '';
+		$longitude = $has_patient_location ? (string) $patient_longitude : '';
 
 		$foto = '';
 		$video = '';
@@ -91,7 +96,7 @@ class Konsultasi extends MX_Controller
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
 			return;
 		}
-		$assigned_puskesmas = doclinc_find_nearest_puskesmas($lattitude, $longitude);
+		$assigned_puskesmas = $has_patient_location ? doclinc_find_nearest_puskesmas($patient_latitude, $patient_longitude) : null;
 		if (!$assigned_puskesmas) {
 			$assigned_puskesmas = doclinc_get_puskesmas_by_code($manual_puskesmas_code);
 		}
@@ -167,8 +172,8 @@ class Konsultasi extends MX_Controller
 			array(
 				'assigned_puskesmas_code' => $assigned_puskesmas_code,
 				'assigned_puskesmas_name' => $assigned_puskesmas_name,
-				'patient_latitude' => is_numeric($lattitude) ? $lattitude : null,
-				'patient_longitude' => is_numeric($longitude) ? $longitude : null,
+				'patient_latitude' => $patient_latitude,
+				'patient_longitude' => $patient_longitude,
 			)
 		);
 		if ($data) {
@@ -258,5 +263,15 @@ class Konsultasi extends MX_Controller
 		$this->output
 			->set_content_type('application/javascript')
 			->set_output(file_get_contents(FCPATH . 'firebase-messaging-sw.js'));
+	}
+
+	private function is_valid_latitude($value)
+	{
+		return is_numeric($value) && (float) $value >= -90 && (float) $value <= 90;
+	}
+
+	private function is_valid_longitude($value)
+	{
+		return is_numeric($value) && (float) $value >= -180 && (float) $value <= 180;
 	}
 }

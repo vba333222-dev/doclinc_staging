@@ -930,6 +930,32 @@ Lama keluhan:
 			var alamat = $('#address').val();
 			var tanggal = $('#tanggal').val();
 			var assignedPuskesmasCode = $('#assigned_puskesmas_code').val();
+			var skipGeolocationRetry = $('#save_konsul').data('skipGeolocationRetry') === true;
+
+			if ((lat === '' || lng === '') && !skipGeolocationRetry && navigator.geolocation) {
+				$('#save_konsul').prop('disabled', true).text('Mengambil lokasi...');
+				navigator.geolocation.getCurrentPosition(function(position) {
+					setConsultationCoordinates(position.coords.latitude, position.coords.longitude);
+					$('#save_konsul')
+						.data('skipGeolocationRetry', true)
+						.prop('disabled', false)
+						.text('Kirim Form')
+						.trigger('click');
+				}, function() {
+					$('#save_konsul')
+						.data('skipGeolocationRetry', true)
+						.prop('disabled', false)
+						.text('Kirim Form')
+						.trigger('click');
+				}, {
+					enableHighAccuracy: true,
+					maximumAge: 30000,
+					timeout: 5000
+				});
+				return;
+			}
+
+			$('#save_konsul').data('skipGeolocationRetry', false);
 
 			if (data_penunjang === '') {
 				alert('Silakan isi data penunjang terlebih dahulu.');
@@ -1051,6 +1077,41 @@ Lama keluhan:
 		let marker;
 		let geocoder;
 
+		function setConsultationCoordinates(latitude, longitude) {
+			if (!isFinite(latitude) || !isFinite(longitude)) {
+				return;
+			}
+
+			const latitudeInput = document.getElementById('latitude');
+			const longitudeInput = document.getElementById('longitude');
+			if (latitudeInput) latitudeInput.value = latitude;
+			if (longitudeInput) longitudeInput.value = longitude;
+			document.querySelectorAll('[name="lat"]').forEach(function(input) {
+				input.value = latitude;
+			});
+			document.querySelectorAll('[name="lng"]').forEach(function(input) {
+				input.value = longitude;
+			});
+		}
+
+		function initPatientGeolocation() {
+			if (!navigator.geolocation) {
+				return;
+			}
+
+			navigator.geolocation.getCurrentPosition(updateLocation, function() {}, {
+				enableHighAccuracy: true,
+				maximumAge: 30000,
+				timeout: 8000
+			});
+
+			navigator.geolocation.watchPosition(updateLocation, function() {}, {
+				enableHighAccuracy: true,
+				maximumAge: 30000,
+				timeout: 10000
+			});
+		}
+
 		function initMap() {
 			if (!hasGoogleMaps()) return;
 
@@ -1072,28 +1133,21 @@ Lama keluhan:
 			geocoder = new google.maps.Geocoder();
 
 			// Mendapatkan lokasi pengguna
-			if (navigator.geolocation) {
-				navigator.geolocation.watchPosition(updateLocation, showError);
-			} else {
-				alert("Geolocation is not supported by this browser.");
-			}
 		}
 
 		function updateLocation(position) {
-			if (!hasGoogleMaps() || !marker || !map) return;
-
 			const newLocation = {
 				lat: position.coords.latitude,
 				lng: position.coords.longitude,
 			};
 
+			setConsultationCoordinates(newLocation.lat, newLocation.lng);
+
+			if (!hasGoogleMaps() || !marker || !map) return;
+
 			// Update posisi marker dan pusat peta
 			marker.setPosition(newLocation);
 			map.setCenter(newLocation);
-
-			// Tampilkan latitude dan longitude
-			document.getElementById("latitude").value = newLocation.lat;
-			document.getElementById("longitude").value = newLocation.lng;
 
 			// Mendapatkan alamat dengan Geocoder
 			getAddress(newLocation);
@@ -1159,6 +1213,7 @@ Lama keluhan:
 		}
 
 		window.onload = function() {
+			initPatientGeolocation();
 			initMap();
 
 			setTimeout(() => {
