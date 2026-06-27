@@ -95,6 +95,60 @@ if (!function_exists('doclinc_can_update_request')) {
 	}
 }
 
+if (!function_exists('doclinc_can_cancel_request')) {
+	function doclinc_can_cancel_request($request_id, $user_id = null, $role = null)
+	{
+		$request_id = (int) $request_id;
+		$user_id = $user_id ?: doclinc_current_user_id();
+		$role = $role ?: doclinc_current_user_role();
+		$CI = &get_instance();
+		$request = doclinc_request_row($request_id);
+
+		if (!$request || empty($user_id) || in_array($request->request_status, array('Completed', 'Cancelled'), true)) {
+			return false;
+		}
+
+		if ($role === 'warga') {
+			return $request->request_status === 'Pending'
+				&& (string) $request->user_id === (string) $user_id;
+		}
+
+		if ($role !== 'dokter') {
+			return false;
+		}
+
+		if ($request->request_status === 'Accepted') {
+			if ((string) $request->dokter_id === (string) $user_id) {
+				return true;
+			}
+
+			return isset($request->accepted_by_user_id)
+				&& !empty($request->accepted_by_user_id)
+				&& (string) $request->accepted_by_user_id === (string) $user_id;
+		}
+
+		if ($request->request_status !== 'Pending') {
+			return false;
+		}
+
+		if (!empty($request->dokter_id) && (string) $request->dokter_id === (string) $user_id) {
+			return true;
+		}
+
+		$user = $CI->db
+			->select('remark')
+			->where('userId', $user_id)
+			->where('role', 'dokter')
+			->get('users')
+			->row();
+
+		return $user
+			&& trim((string) $user->remark) !== ''
+			&& isset($request->assigned_puskesmas_code)
+			&& trim((string) $request->assigned_puskesmas_code) === trim((string) $user->remark);
+	}
+}
+
 if (!function_exists('doclinc_can_view_chat')) {
 	function doclinc_can_view_chat($request_id, $user_id = null, $role = null)
 	{

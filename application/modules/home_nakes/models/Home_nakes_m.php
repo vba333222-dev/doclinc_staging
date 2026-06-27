@@ -257,6 +257,56 @@ class Home_nakes_m extends MX_Controller
 
 		return array('status' => 'error', 'message' => 'Request tidak ditemukan atau bukan milik dokter login');
 	}
+	public function cancel_request($request_id, $user_id, $puskesmas_code = '')
+	{
+		$request_id = (int) $request_id;
+		$user_id = (int) $user_id;
+		if ($request_id < 1 || $user_id < 1) {
+			return array('status' => 'error', 'message' => 'Data request tidak lengkap');
+		}
+
+		$request = $this->db
+			->where('request_id', $request_id)
+			->get('requests')
+			->row();
+		if (!$request) {
+			return array('status' => 'error', 'message' => 'Request tidak ditemukan');
+		}
+
+		if (in_array($request->request_status, array('Completed', 'Cancelled'), true)) {
+			return array('status' => 'error', 'message' => 'Request tidak dapat dibatalkan');
+		}
+		if (!in_array($request->request_status, array('Pending', 'Accepted'), true)) {
+			return array('status' => 'error', 'message' => 'Request tidak dapat dibatalkan');
+		}
+
+		$data = array('request_status' => 'Cancelled');
+		if ($this->db->field_exists('updated_at', 'requests')) {
+			$data['updated_at'] = date('Y-m-d H:i:s');
+		}
+
+		$this->db
+			->where('request_id', $request_id)
+			->where_in('request_status', array($request->request_status));
+
+		if ($request->request_status === 'Pending') {
+			$this->where_pending_queue_owner($user_id, $puskesmas_code);
+		} else {
+			$this->db->group_start();
+			$this->db->where('dokter_id', $user_id);
+			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+				$this->db->or_where('accepted_by_user_id', $user_id);
+			}
+			$this->db->group_end();
+		}
+
+		$this->db->update('requests', $data);
+		if ($this->db->affected_rows() > 0) {
+			return array('status' => 'success', 'message' => 'Request berhasil dibatalkan');
+		}
+
+		return array('status' => 'error', 'message' => 'Request tidak ditemukan atau akses tidak diizinkan');
+	}
 	public function get_location_user($id)
 	{
 		if (!$this->db->table_exists('locations')) {

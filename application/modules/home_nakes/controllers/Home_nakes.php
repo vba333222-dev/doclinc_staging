@@ -152,6 +152,74 @@ class Home_nakes extends MX_Controller
 		$message = !empty($result['message']) ? $result['message'] : 'Request tidak ditemukan atau bukan milik dokter login';
 		$this->output->set_output(json_encode(['status' => 'error', 'message' => $message]));
 	}
+	public function cancel_request()
+	{
+		if (!$this->require_post_json()) {
+			return;
+		}
+		if ($this->session->userdata('role') !== 'dokter') {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+
+		$request_id = (int) ($this->input->post('request_id') ?: $this->input->post('id'));
+		$user_id = (int) $this->session->userdata('id');
+		if ($request_id < 1 || !doclinc_can_cancel_request($request_id, $user_id, 'dokter')) {
+			if (function_exists('doclinc_log_request_event')) {
+				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'nakes_cancel'));
+			}
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+
+		$profile = $this->Home_nakes_m->get_profile_by_id($user_id);
+		$puskesmas_code = trim((string) (isset($profile['remark']) ? $profile['remark'] : ''));
+		if ($puskesmas_code === '') {
+			$puskesmas_code = trim((string) $this->session->userdata('remark'));
+		}
+		if ($puskesmas_code !== '') {
+			$this->session->set_userdata('remark', $puskesmas_code);
+		}
+
+		$request = doclinc_request_row($request_id);
+		$result = $this->Home_nakes_m->cancel_request($request_id, $user_id, $puskesmas_code);
+		if (empty($result['status']) || $result['status'] !== 'success') {
+			if (function_exists('doclinc_log_request_event')) {
+				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'nakes_cancel'));
+			}
+			$message = !empty($result['message']) ? $result['message'] : 'Request tidak dapat dibatalkan';
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => $message]));
+			return;
+		}
+
+		if (function_exists('doclinc_log_request_event')) {
+			doclinc_log_request_event('request_cancelled', $request_id);
+		}
+		if ($request && function_exists('doclinc_notify_user')) {
+			doclinc_notify_user(
+				$request->user_id,
+				'request_cancelled',
+				'request',
+				$request_id,
+				'Konsultasi dibatalkan',
+				'Permintaan konsultasi Anda dibatalkan oleh petugas.',
+				$user_id
+			);
+		}
+
+		$this->output->set_output(json_encode([
+			'status' => 'success',
+			'message' => $result['message'],
+			'request_id' => $request_id,
+			'request_status' => 'Cancelled'
+		]));
+	}
 	public function get_location_user()
 	{
 		$name = $_SESSION['name'];

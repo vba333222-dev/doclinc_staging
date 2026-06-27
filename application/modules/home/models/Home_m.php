@@ -346,6 +346,28 @@ class Home_m extends MX_Controller
 		}
 	}
 
+	public function cancel_request($request_id, $user_id)
+	{
+		$request_id = (int) $request_id;
+		$user_id = (int) $user_id;
+		if ($request_id < 1 || $user_id < 1) {
+			return false;
+		}
+
+		$data = array('request_status' => 'Cancelled');
+		if ($this->db->field_exists('updated_at', 'requests')) {
+			$data['updated_at'] = date('Y-m-d H:i:s');
+		}
+
+		$this->db
+			->where('request_id', $request_id)
+			->where('user_id', $user_id)
+			->where_in('request_status', array('Pending'))
+			->update('requests', $data);
+
+		return $this->db->affected_rows() > 0;
+	}
+
 	public function deleteRequestById($id)
 	{
 		$id = (int) $id;
