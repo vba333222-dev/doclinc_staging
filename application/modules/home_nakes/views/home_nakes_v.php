@@ -715,9 +715,13 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
 											<i class="fas fa-comments me-2"></i> Chat Konsultasi
 										</a>
+										<button type="button" class="btn btn-outline-primary shadow-sm rounded-pill start-nakes-visit-tracking" data-request-id="<?= html_escape((int) $x->request_id); ?>">
+											<i class="fas fa-location-arrow me-2"></i> Aktifkan Lokasi Visit
+										</button>
 										<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
 											<i class="fas fa-times-circle me-2"></i> Batalkan
 										</button>
+										<span class="small text-muted w-100 visit-tracking-status" data-tracking-status="<?= html_escape((int) $x->request_id); ?>"></span>
 									</div>
 								</div>
 							<?php
@@ -1438,6 +1442,117 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				});
 			});
 		});
+	</script>
+
+	<script>
+		(function(window, $) {
+			const ns = window.doclincVisitTracking = window.doclincVisitTracking || {};
+			const updateVisitLocationUrl = <?= json_encode(base_url('home_nakes/update_visit_location')); ?>;
+			const minPostIntervalMs = 10000;
+			const watches = ns.watches = ns.watches || {};
+
+			function setTrackingStatus(requestId, message, isError) {
+				const element = document.querySelector('[data-tracking-status="' + requestId + '"]');
+				if (!element) return;
+				element.textContent = message || '';
+				element.classList.toggle('text-danger', !!isError);
+				element.classList.toggle('text-success', !isError && !!message);
+			}
+
+			function stopTracking(requestId) {
+				const state = watches[requestId];
+				if (state && navigator.geolocation && state.watchId !== null) {
+					navigator.geolocation.clearWatch(state.watchId);
+				}
+				delete watches[requestId];
+			}
+
+			function postVisitLocation(requestId, position) {
+				const state = watches[requestId];
+				if (!state) return;
+
+				const now = Date.now();
+				if (now - state.lastSentAt < minPostIntervalMs) return;
+				state.lastSentAt = now;
+
+				$.ajax({
+					url: updateVisitLocationUrl,
+					type: 'POST',
+					dataType: 'json',
+					data: {
+						request_id: requestId,
+						latitude: position.coords.latitude,
+						longitude: position.coords.longitude,
+						accuracy: position.coords.accuracy || ''
+					},
+					success: function(response) {
+						if (typeof response === 'string') {
+							try {
+								response = JSON.parse(response);
+							} catch (error) {}
+						}
+
+						if (response && response.status === 'success') {
+							setTrackingStatus(requestId, 'Lokasi berhasil diperbarui');
+							return;
+						}
+
+						setTrackingStatus(requestId, response && response.message ? response.message : 'Gagal mengirim lokasi', true);
+					},
+					error: function(xhr) {
+						const response = xhr.responseJSON || {};
+						setTrackingStatus(requestId, response.message || 'Gagal mengirim lokasi', true);
+						if (xhr.status === 400 || xhr.status === 403 || xhr.status === 404 || xhr.status === 405) {
+							stopTracking(requestId);
+						}
+					}
+				});
+			}
+
+			ns.startNakesVisitTracking = function(requestId) {
+				if (!navigator.geolocation) {
+					setTrackingStatus(requestId, 'Izin lokasi ditolak', true);
+					return;
+				}
+
+				if (watches[requestId]) {
+					setTrackingStatus(requestId, 'Tracking lokasi aktif');
+					return;
+				}
+
+				setTrackingStatus(requestId, 'Tracking lokasi aktif');
+				const watchId = navigator.geolocation.watchPosition(
+					function(position) {
+						postVisitLocation(requestId, position);
+					},
+					function(error) {
+						const message = error && error.code === 1 ? 'Izin lokasi ditolak' : 'Gagal mengirim lokasi';
+						setTrackingStatus(requestId, message, true);
+						stopTracking(requestId);
+					}, {
+						enableHighAccuracy: true,
+						maximumAge: 30000,
+						timeout: 10000
+					}
+				);
+
+				watches[requestId] = {
+					watchId: watchId,
+					lastSentAt: 0
+				};
+			};
+
+			$(document).on('click', '.start-nakes-visit-tracking', function(event) {
+				event.preventDefault();
+				const requestId = $(this).data('request-id');
+				if (!requestId) return;
+				ns.startNakesVisitTracking(requestId);
+			});
+
+			$(window).on('beforeunload', function() {
+				Object.keys(watches).forEach(stopTracking);
+			});
+		})(window, jQuery);
 	</script>
 
 	<script>
