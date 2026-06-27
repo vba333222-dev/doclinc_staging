@@ -9,6 +9,14 @@ class Home_nakes extends MX_Controller
 		$this->load->helper('request_authz');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
+			if ($this->router->fetch_method() === 'update_visit_location') {
+				$this->output
+					->set_content_type('application/json')
+					->set_status_header(401)
+					->set_output(json_encode(['status' => 'error', 'message' => 'Login diperlukan']));
+				$this->output->_display();
+				exit;
+			}
 			redirect('login');
 		}
 	}
@@ -220,6 +228,59 @@ class Home_nakes extends MX_Controller
 			'request_status' => 'Cancelled'
 		]));
 	}
+	public function update_visit_location()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output
+				->set_status_header(405)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+			return;
+		}
+		if ($this->session->userdata('role') !== 'dokter') {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+
+		$request_id = (int) $this->input->post('request_id');
+		$latitude = $this->input->post('latitude');
+		$longitude = $this->input->post('longitude');
+		$user_id = (int) $this->session->userdata('id');
+		if ($request_id < 1 || !$this->is_valid_latitude($latitude) || !$this->is_valid_longitude($longitude)) {
+			$this->output
+				->set_status_header(400)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Data lokasi tidak valid']));
+			return;
+		}
+
+		$request = doclinc_request_row($request_id);
+		if (!$request) {
+			$this->output
+				->set_status_header(404)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan']));
+			return;
+		}
+		if (!doclinc_can_update_visit_location($request_id, $user_id, 'dokter')) {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+
+		if (!$this->Home_nakes_m->update_visit_location($request_id, $user_id, (float) $latitude, (float) $longitude)) {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Lokasi nakes tidak dapat diperbarui']));
+			return;
+		}
+
+		$this->output->set_output(json_encode([
+			'status' => 'success',
+			'message' => 'Lokasi nakes diperbarui'
+		]));
+	}
 	public function get_location_user()
 	{
 		$name = $_SESSION['name'];
@@ -341,5 +402,15 @@ class Home_nakes extends MX_Controller
 
 		redirect('login');
 		return false;
+	}
+
+	private function is_valid_latitude($value)
+	{
+		return is_numeric($value) && (float) $value >= -90 && (float) $value <= 90;
+	}
+
+	private function is_valid_longitude($value)
+	{
+		return is_numeric($value) && (float) $value >= -180 && (float) $value <= 180;
 	}
 }

@@ -368,6 +368,36 @@ class Home_m extends MX_Controller
 		return $this->db->affected_rows() > 0;
 	}
 
+	public function get_visit_location($request_id, $user_id)
+	{
+		$request_id = (int) $request_id;
+		$user_id = (int) $user_id;
+		if ($request_id < 1 || $user_id < 1) {
+			return null;
+		}
+
+		$select = array(
+			'request_id',
+			'request_status',
+			'user_id',
+			$this->db->field_exists('lattitude', 'requests') ? 'lattitude' : 'NULL AS lattitude',
+			$this->db->field_exists('longitude', 'requests') ? 'longitude' : 'NULL AS longitude',
+			$this->db->field_exists('lattitude_dokter', 'requests') ? 'lattitude_dokter' : 'NULL AS lattitude_dokter',
+			$this->db->field_exists('longitude_dokter', 'requests') ? 'longitude_dokter' : 'NULL AS longitude_dokter',
+			$this->db->field_exists('patient_latitude', 'requests') ? 'patient_latitude' : 'NULL AS patient_latitude',
+			$this->db->field_exists('patient_longitude', 'requests') ? 'patient_longitude' : 'NULL AS patient_longitude',
+			$this->db->field_exists('updated_at', 'requests') ? 'updated_at' : 'NULL AS updated_at',
+		);
+
+		return $this->db
+			->select(implode(', ', $select), FALSE)
+			->where('request_id', $request_id)
+			->where('user_id', $user_id)
+			->where('request_status', 'Accepted')
+			->get('requests')
+			->row();
+	}
+
 	public function deleteRequestById($id)
 	{
 		$id = (int) $id;

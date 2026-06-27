@@ -9,6 +9,14 @@ class Home extends MX_Controller
 		$this->load->helper('request_authz');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
+			if ($this->router->fetch_method() === 'visit_location') {
+				$this->output
+					->set_content_type('application/json')
+					->set_status_header(401)
+					->set_output(json_encode(['status' => 'error', 'message' => 'Login diperlukan']));
+				$this->output->_display();
+				exit;
+			}
 			redirect('login');
 		}
 		$this->load->helper('maps');
@@ -171,6 +179,87 @@ class Home extends MX_Controller
 		]));
 	}
 
+	public function visit_location()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) !== 'GET') {
+			$this->output
+				->set_status_header(405)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+			return;
+		}
+
+		$request_id = (int) $this->input->get('request_id', TRUE);
+		$user_id = (int) $this->session->userdata('id');
+		$role = $this->session->userdata('role');
+		if ($request_id < 1) {
+			$this->output
+				->set_status_header(400)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Data request tidak valid']));
+			return;
+		}
+		if ($role !== 'warga') {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+
+		$request = doclinc_request_row($request_id);
+		if (!$request) {
+			$this->output
+				->set_status_header(404)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan']));
+			return;
+		}
+		if (!doclinc_can_view_visit_location($request_id, $user_id, $role)) {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+
+		$row = $this->Home_m->get_visit_location($request_id, $user_id);
+		if (!$row) {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+
+		if (!$this->is_valid_latitude($row->lattitude_dokter) || !$this->is_valid_longitude($row->longitude_dokter)) {
+			$this->output->set_output(json_encode([
+				'status' => 'pending',
+				'message' => 'Lokasi nakes belum tersedia'
+			]));
+			return;
+		}
+
+		$patient_latitude = null;
+		$patient_longitude = null;
+		if ($this->is_valid_latitude($row->patient_latitude) && $this->is_valid_longitude($row->patient_longitude)) {
+			$patient_latitude = (float) $row->patient_latitude;
+			$patient_longitude = (float) $row->patient_longitude;
+		} elseif ($this->is_valid_latitude($row->lattitude) && $this->is_valid_longitude($row->longitude)) {
+			$patient_latitude = (float) $row->lattitude;
+			$patient_longitude = (float) $row->longitude;
+		}
+
+		$this->output->set_output(json_encode([
+			'status' => 'success',
+			'request_status' => 'Accepted',
+			'nakes' => [
+				'latitude' => (float) $row->lattitude_dokter,
+				'longitude' => (float) $row->longitude_dokter,
+				'updated_at' => $row->updated_at,
+			],
+			'patient' => [
+				'latitude' => $patient_latitude,
+				'longitude' => $patient_longitude,
+			],
+		]));
+	}
+
 	public function submit_rating()
 	{
 		if (!$this->require_post_json()) {
@@ -252,5 +341,15 @@ class Home extends MX_Controller
 			->set_status_header(405)
 			->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
 		return false;
+	}
+
+	private function is_valid_latitude($value)
+	{
+		return is_numeric($value) && (float) $value >= -90 && (float) $value <= 90;
+	}
+
+	private function is_valid_longitude($value)
+	{
+		return is_numeric($value) && (float) $value >= -180 && (float) $value <= 180;
 	}
 }

@@ -307,6 +307,36 @@ class Home_nakes_m extends MX_Controller
 
 		return array('status' => 'error', 'message' => 'Request tidak ditemukan atau akses tidak diizinkan');
 	}
+	public function update_visit_location($request_id, $user_id, $latitude, $longitude)
+	{
+		$request_id = (int) $request_id;
+		$user_id = (int) $user_id;
+		if ($request_id < 1 || $user_id < 1) {
+			return false;
+		}
+
+		$data = array(
+			'lattitude_dokter' => $latitude,
+			'longitude_dokter' => $longitude,
+		);
+		if ($this->db->field_exists('updated_at', 'requests')) {
+			$data['updated_at'] = date('Y-m-d H:i:s');
+		}
+
+		$this->db
+			->where('request_id', $request_id)
+			->where('request_status', 'Accepted')
+			->group_start()
+			->where('dokter_id', $user_id);
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$this->db->or_where('accepted_by_user_id', $user_id);
+		}
+		$this->db
+			->group_end()
+			->update('requests', $data);
+
+		return $this->db->affected_rows() > 0;
+	}
 	public function get_location_user($id)
 	{
 		if (!$this->db->table_exists('locations')) {
