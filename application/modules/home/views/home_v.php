@@ -85,6 +85,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" integrity="sha512-tS3S5qG0BlhnQROyJXvNjeEM4UpMXHrQfTGmbQ1gKmelCxlSEBUaxhRBj/EFTzpbP4RVSrpEikbmdJobCvhE3g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css" integrity="sha512-sMXtMNL1zRzolHYKEujM2AqCLUR9F2C4/05cdbxjjLSRvMQIciEPCQZo++nk7go3BtSuK9kfa/s+a4f4i5pLkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQnQibJusfUbJYYXQkPBQeTfeCieLNY=" crossorigin="">
 	<style type="text/css">
 		.content {
 			display: none;
@@ -208,6 +209,20 @@ if (!function_exists('doclinc_history_format_complaint')) {
 		.history-empty-text {
 			color: #6c757d;
 			font-size: 13px;
+		}
+
+		.doclinc-visit-map {
+			width: 100%;
+			height: 220px;
+			border: 1px solid #d8eee5;
+			border-radius: 12px;
+			overflow: hidden;
+			background: #eef5f2;
+		}
+
+		.doclinc-visit-status {
+			font-size: 12px;
+			color: #6c757d;
 		}
 
 		.header {
@@ -795,6 +810,11 @@ if (!function_exists('doclinc_history_format_complaint')) {
 												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-success btn-sm rounded-pill dl-btn-primary">
 													<i class="fas fa-comments me-1"></i> Chat Konsultasi
 												</a>
+												<button type="button" class="btn btn-outline-success btn-sm rounded-pill ms-1 visit-location-toggle" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
+													<i class="fas fa-map-marker-alt me-1"></i> Lihat Lokasi Nakes
+												</button>
+												<div class="doclinc-visit-status mt-2" data-visit-status="<?= html_escape((int) $id_request); ?>"></div>
+												<div id="visit-map-<?= html_escape((int) $id_request); ?>" class="doclinc-visit-map mt-2 d-none"></div>
 											</div>
 										<?php elseif ($request_status === 'Pending') : ?>
 											<div class="mt-3">
@@ -1111,6 +1131,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
 		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
 	<?php endif; ?>
@@ -1128,6 +1149,176 @@ if (!function_exists('doclinc_history_format_complaint')) {
 	<?php endif; ?>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+	<script>
+		(function(window, $) {
+			const ns = window.doclincVisitTracking = window.doclincVisitTracking || {};
+			const visitMapboxToken = <?= json_encode($mapbox_public_token); ?>;
+			const visitLocationUrl = <?= json_encode(base_url('home/visit_location')); ?>;
+			const pollIntervalMs = 12000;
+			const maps = ns.maps = ns.maps || {};
+			const timers = ns.timers = ns.timers || {};
+
+			function parseLocation(location) {
+				if (!location) return null;
+				const lat = parseFloat(location.latitude);
+				const lng = parseFloat(location.longitude);
+				if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+				return {
+					latitude: lat,
+					longitude: lng,
+					updated_at: location.updated_at || ''
+				};
+			}
+
+			function setVisitStatus(requestId, message, isError) {
+				const element = document.querySelector('[data-visit-status="' + requestId + '"]');
+				if (!element) return;
+				element.textContent = message || '';
+				element.classList.toggle('text-danger', !!isError);
+				element.classList.toggle('text-success', !isError && !!message);
+			}
+
+			function stopPolling(requestId) {
+				if (timers[requestId]) {
+					clearTimeout(timers[requestId]);
+					delete timers[requestId];
+				}
+			}
+
+			ns.initVisitMap = function(containerId, patientLocation, nakesLocation) {
+				if (!visitMapboxToken || !window.L) return null;
+				const container = document.getElementById(containerId);
+				if (!container) return null;
+
+				let state = maps[containerId];
+				const center = nakesLocation || patientLocation || {
+					latitude: -6.0176,
+					longitude: 106.0530
+				};
+
+				if (!state) {
+					const map = L.map(container).setView([center.latitude, center.longitude], 14);
+					L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=' + encodeURIComponent(visitMapboxToken), {
+						maxZoom: 19,
+						tileSize: 512,
+						zoomOffset: -1,
+						attribution: '&copy; OpenStreetMap contributors &copy; Mapbox'
+					}).addTo(map);
+					state = maps[containerId] = {
+						map: map,
+						markers: {}
+					};
+				}
+
+				setTimeout(function() {
+					state.map.invalidateSize();
+				}, 50);
+
+				return state;
+			};
+
+			ns.updateVisitMapMarkers = function(containerId, patientLocation, nakesLocation) {
+				const state = maps[containerId];
+				if (!state) return;
+				const bounds = [];
+
+				function upsertMarker(name, location, label) {
+					if (!location) return;
+					const latLng = [location.latitude, location.longitude];
+					if (!state.markers[name]) {
+						state.markers[name] = L.marker(latLng).addTo(state.map).bindPopup(label);
+					} else {
+						state.markers[name].setLatLng(latLng);
+					}
+					bounds.push(latLng);
+				}
+
+				upsertMarker('patient', patientLocation, 'Lokasi pasien');
+				upsertMarker('nakes', nakesLocation, 'Lokasi nakes');
+
+				if (bounds.length > 1) {
+					state.map.fitBounds(bounds, {
+						padding: [24, 24],
+						maxZoom: 16
+					});
+				} else if (bounds.length === 1) {
+					state.map.setView(bounds[0], Math.max(state.map.getZoom(), 14));
+				}
+			};
+
+			ns.pollVisitLocation = function(requestId, mapContainerId) {
+				stopPolling(requestId);
+
+				if (!visitMapboxToken) {
+					setVisitStatus(requestId, 'Konfigurasi peta belum tersedia', true);
+					return;
+				}
+
+				function poll() {
+					$.ajax({
+						url: visitLocationUrl,
+						type: 'GET',
+						dataType: 'json',
+						data: {
+							request_id: requestId
+						},
+						success: function(response) {
+							if (typeof response === 'string') {
+								try {
+									response = JSON.parse(response);
+								} catch (error) {}
+							}
+
+							if (response && response.request_status && response.request_status !== 'Accepted') {
+								setVisitStatus(requestId, 'Tracking lokasi dihentikan');
+								stopPolling(requestId);
+								return;
+							}
+
+							if (response && response.status === 'success') {
+								const patientLocation = parseLocation(response.patient);
+								const nakesLocation = parseLocation(response.nakes);
+								const state = ns.initVisitMap(mapContainerId, patientLocation, nakesLocation);
+								if (state) {
+									ns.updateVisitMapMarkers(mapContainerId, patientLocation, nakesLocation);
+								}
+								setVisitStatus(requestId, nakesLocation ? 'Lokasi nakes tersedia' : 'Lokasi nakes belum tersedia');
+							} else if (response && response.status === 'pending') {
+								setVisitStatus(requestId, response.message || 'Lokasi nakes belum tersedia');
+							} else {
+								setVisitStatus(requestId, response && response.message ? response.message : 'Gagal memuat lokasi nakes', true);
+							}
+
+							timers[requestId] = setTimeout(poll, pollIntervalMs);
+						},
+						error: function(xhr) {
+							const response = xhr.responseJSON || {};
+							setVisitStatus(requestId, response.message || 'Gagal memuat lokasi nakes', true);
+							if (xhr.status === 403 || xhr.status === 404 || xhr.status === 405) {
+								stopPolling(requestId);
+								return;
+							}
+							timers[requestId] = setTimeout(poll, pollIntervalMs);
+						}
+					});
+				}
+
+				poll();
+			};
+
+			$(document).on('click', '.visit-location-toggle', function(event) {
+				event.preventDefault();
+				const button = $(this);
+				const requestId = button.data('request-id');
+				const mapContainerId = button.data('map-id');
+				if (!requestId || !mapContainerId) return;
+
+				$('#' + mapContainerId).removeClass('d-none');
+				ns.pollVisitLocation(requestId, mapContainerId);
+			});
+		})(window, jQuery);
+	</script>
 
 	<!-- popup jam operasional -->
 	<script>
