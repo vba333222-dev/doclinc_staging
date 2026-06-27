@@ -167,13 +167,29 @@ class Home_m extends MX_Controller
 			? 'requests.date AS date'
 			: ($this->db->field_exists('updated_at', 'requests') ? 'DATE(requests.updated_at) AS date' : 'DATE(requests.created_at) AS date');
 
-		// Ambil data utama (konsultasi dan user tanpa join terapi)
+		// Ambil data utama (hasil konsultasi dan user tanpa join terapi)
 		$this->db->select("requests.*, {$request_date_select}, users.nama, COALESCE(m_dokter.name, dokter_user.nama, 'Dokter') AS nama_dokter", FALSE);
 		$this->db->from('requests');
 		$this->db->join('users', 'requests.user_id = users.userId');
 		$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id', 'left');
 		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
-		if ($this->db->table_exists('konsultasi')) {
+		if ($this->db->table_exists('medicalrecords')) {
+			$this->db
+				->select('medicalrecords.record_id AS medical_record_id')
+				->select('medicalrecords.diagnosis AS diagnosa')
+				->select('medicalrecords.recommendations AS saran')
+				->select('medicalrecords.diagnosis AS diagnosis')
+				->select('medicalrecords.treatment AS treatment')
+				->select('medicalrecords.recommendations AS recommendations')
+				->select('medicalrecords.created_at AS result_created_at')
+				->join('(SELECT request_id, MAX(record_id) AS record_id FROM medicalrecords GROUP BY request_id) latest_medicalrecords', 'latest_medicalrecords.request_id = requests.request_id', 'left', FALSE)
+				->join('medicalrecords', 'medicalrecords.record_id = latest_medicalrecords.record_id', 'left');
+			if ($this->db->table_exists('konsultasi')) {
+				$this->db->select('(SELECT k.konsul_id FROM konsultasi k WHERE k.request_id = requests.request_id ORDER BY k.konsul_id DESC LIMIT 1) AS konsul_id', FALSE);
+			} else {
+				$this->db->select('NULL AS konsul_id', FALSE);
+			}
+		} else {
 			$this->db
 				->select('konsultasi.*')
 				->join('konsultasi', 'requests.request_id = konsultasi.request_id', 'left');
@@ -182,16 +198,6 @@ class Home_m extends MX_Controller
 					$this->db->select("NULL AS {$field}", FALSE);
 				}
 			}
-		} else {
-			$this->db
-				->select('medicalrecords.record_id AS konsul_id')
-				->select('medicalrecords.diagnosis AS diagnosa')
-				->select('medicalrecords.recommendations AS saran')
-				->select('medicalrecords.diagnosis AS diagnosis')
-				->select('medicalrecords.treatment AS treatment')
-				->select('medicalrecords.recommendations AS recommendations')
-				->select('medicalrecords.created_at AS result_created_at')
-				->join('medicalrecords', 'requests.request_id = medicalrecords.request_id', 'left');
 		}
 		$this->db->where('requests.request_status', 'Completed');
 		$this->db->where('requests.user_id', $user_id);
@@ -201,7 +207,7 @@ class Home_m extends MX_Controller
 
 		// Ambil terapi untuk semua konsultasi yang ditemukan
 		foreach ($hasil as &$row) {
-			$row->terapi_list = $this->db->table_exists('konsultasi') ? $this->getTerapiByKonsulId($row->konsul_id) : [];
+			$row->terapi_list = $this->db->table_exists('konsultasi') && !empty($row->konsul_id) ? $this->getTerapiByKonsulId($row->konsul_id) : [];
 
 			try {
 				$row->request_description = $CI->encryption->decrypt(base64_decode($row->request_description));

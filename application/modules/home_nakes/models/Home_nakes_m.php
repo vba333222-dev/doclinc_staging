@@ -130,26 +130,27 @@ class Home_nakes_m extends MX_Controller
 			->from('requests')
 			->join('users', 'requests.user_id = users.userId');
 		$this->join_riwayat_or_default();
-		if ($this->db->table_exists('konsultasi')) {
+		if ($this->db->table_exists('medicalrecords')) {
 			$this->db
-				->select('konsultasi.*')
-				->join('konsultasi', 'requests.request_id = konsultasi.request_id', 'left');
-			foreach (['diagnosa', 'saran', 'diagnosis', 'treatment', 'recommendations'] as $field) {
-				if (!$this->db->field_exists($field, 'konsultasi')) {
-					$this->db->select("NULL AS {$field}", FALSE);
-				}
-			}
+				->select('medicalrecords.record_id AS medical_record_id')
+				->select('medicalrecords.diagnosis AS diagnosa')
+				->select('medicalrecords.recommendations AS saran')
+				->select('medicalrecords.diagnosis AS diagnosis')
+				->select('medicalrecords.treatment AS treatment')
+				->select('medicalrecords.recommendations AS recommendations')
+				->select('medicalrecords.created_at AS result_created_at')
+				->join('(SELECT request_id, MAX(record_id) AS record_id FROM medicalrecords GROUP BY request_id) latest_medicalrecords', 'latest_medicalrecords.request_id = requests.request_id', 'left', FALSE)
+				->join('medicalrecords', 'medicalrecords.record_id = latest_medicalrecords.record_id', 'left');
 		} else {
-			if ($this->db->table_exists('medicalrecords')) {
+			if ($this->db->table_exists('konsultasi')) {
 				$this->db
-					->select('medicalrecords.record_id AS konsul_id')
-					->select('medicalrecords.diagnosis AS diagnosa')
-					->select('medicalrecords.recommendations AS saran')
-					->select('medicalrecords.diagnosis AS diagnosis')
-					->select('medicalrecords.treatment AS treatment')
-					->select('medicalrecords.recommendations AS recommendations')
-					->select('medicalrecords.created_at AS result_created_at')
-					->join('medicalrecords', 'requests.request_id = medicalrecords.request_id', 'left');
+					->select('konsultasi.*')
+					->join('konsultasi', 'requests.request_id = konsultasi.request_id', 'left');
+				foreach (['diagnosa', 'saran', 'diagnosis', 'treatment', 'recommendations'] as $field) {
+					if (!$this->db->field_exists($field, 'konsultasi')) {
+						$this->db->select("NULL AS {$field}", FALSE);
+					}
+				}
 			} else {
 				$this->db
 					->select('NULL AS diagnosa', FALSE)
