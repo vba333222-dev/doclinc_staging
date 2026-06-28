@@ -225,6 +225,57 @@ if (!function_exists('doclinc_history_format_complaint')) {
 			color: #6c757d;
 		}
 
+		.doclinc-visit-marker {
+			position: relative;
+			width: 78px;
+			height: 58px;
+			pointer-events: auto;
+		}
+
+		.doclinc-visit-marker-pin {
+			position: absolute;
+			left: 50%;
+			top: 24px;
+			width: 18px;
+			height: 18px;
+			border: 3px solid #fff;
+			border-radius: 50% 50% 50% 0;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
+			transform: translate(-50%, -50%) rotate(-45deg);
+		}
+
+		.doclinc-visit-marker-label {
+			position: absolute;
+			left: 50%;
+			border-radius: 999px;
+			color: #fff;
+			font-size: 11px;
+			font-weight: 700;
+			line-height: 1;
+			padding: 5px 8px;
+			white-space: nowrap;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+			transform: translateX(-50%);
+		}
+
+		.doclinc-visit-marker--patient .doclinc-visit-marker-pin,
+		.doclinc-visit-marker--patient .doclinc-visit-marker-label {
+			background: #0d6efd;
+		}
+
+		.doclinc-visit-marker--patient .doclinc-visit-marker-label {
+			top: 39px;
+		}
+
+		.doclinc-visit-marker--nakes .doclinc-visit-marker-pin,
+		.doclinc-visit-marker--nakes .doclinc-visit-marker-label {
+			background: #dc3545;
+		}
+
+		.doclinc-visit-marker--nakes .doclinc-visit-marker-label {
+			bottom: 39px;
+		}
+
 		.header {
 			background-color: #09AD74;
 			color: white;
@@ -1186,6 +1237,19 @@ if (!function_exists('doclinc_history_format_complaint')) {
 				}
 			}
 
+			function createVisitMarkerIcon(type, label) {
+				return L.divIcon({
+					className: '',
+					html: '<div class="doclinc-visit-marker doclinc-visit-marker--' + type + '">' +
+						'<span class="doclinc-visit-marker-label">' + label + '</span>' +
+						'<span class="doclinc-visit-marker-pin"></span>' +
+						'</div>',
+					iconSize: [78, 58],
+					iconAnchor: [39, 24],
+					popupAnchor: [0, -26]
+				});
+			}
+
 			ns.initVisitMap = function(containerId, patientLocation, nakesLocation) {
 				if (!visitMapboxToken || !window.L) return null;
 				const container = document.getElementById(containerId);
@@ -1209,6 +1273,9 @@ if (!function_exists('doclinc_history_format_complaint')) {
 						map: map,
 						markers: {}
 					};
+					setTimeout(function() {
+						map.invalidateSize();
+					}, 0);
 				}
 
 				setTimeout(function() {
@@ -1226,25 +1293,33 @@ if (!function_exists('doclinc_history_format_complaint')) {
 				function upsertMarker(name, location, label) {
 					if (!location) return;
 					const latLng = [location.latitude, location.longitude];
+					const isNakes = name === 'nakes';
 					if (!state.markers[name]) {
-						state.markers[name] = L.marker(latLng).addTo(state.map).bindPopup(label);
+						state.markers[name] = L.marker(latLng, {
+							icon: createVisitMarkerIcon(name, isNakes ? 'Nakes' : 'Pasien'),
+							zIndexOffset: isNakes ? 1000 : 0
+						}).addTo(state.map).bindPopup(label);
 					} else {
 						state.markers[name].setLatLng(latLng);
 					}
 					bounds.push(latLng);
 				}
 
-				upsertMarker('patient', patientLocation, 'Lokasi pasien');
-				upsertMarker('nakes', nakesLocation, 'Lokasi nakes');
+				upsertMarker('patient', patientLocation, 'Pasien');
+				upsertMarker('nakes', nakesLocation, 'Nakes');
 
 				if (bounds.length > 1) {
 					state.map.fitBounds(bounds, {
-						padding: [24, 24],
+						padding: [48, 48],
 						maxZoom: 16
 					});
 				} else if (bounds.length === 1) {
 					state.map.setView(bounds[0], Math.max(state.map.getZoom(), 14));
 				}
+
+				setTimeout(function() {
+					state.map.invalidateSize();
+				}, 0);
 			};
 
 			ns.pollVisitLocation = function(requestId, mapContainerId) {
@@ -1315,6 +1390,11 @@ if (!function_exists('doclinc_history_format_complaint')) {
 				if (!requestId || !mapContainerId) return;
 
 				$('#' + mapContainerId).removeClass('d-none');
+				if (maps[mapContainerId] && maps[mapContainerId].map) {
+					setTimeout(function() {
+						maps[mapContainerId].map.invalidateSize();
+					}, 0);
+				}
 				ns.pollVisitLocation(requestId, mapContainerId);
 			});
 		})(window, jQuery);
