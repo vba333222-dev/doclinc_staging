@@ -493,15 +493,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
 					</div>
 					<div class="consult-input-stack">
-						<select class="consult-field form-select" name="assigned_puskesmas_code" id="assigned_puskesmas_code">
-							<option value="">Pilih Puskesmas Tujuan</option>
-							<?php foreach (($puskesmas_options ?? array()) as $puskesmas): ?>
-								<option value="<?= html_escape($puskesmas->kode_pkm ?? ''); ?>">
-									<?= html_escape($puskesmas->nama_puskesmas ?? '-'); ?> (<?= html_escape($puskesmas->kode_pkm ?? '-'); ?>)
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<small class="consult-helper">Jika lokasi aktif, sistem akan memilih puskesmas terdekat.</small>
+						<small class="consult-helper">Puskesmas tujuan akan ditentukan otomatis dari lokasi Anda.</small>
 						<div class="consult-field-group">
 							<label class="consult-field-label" for="ui_penyakit_pernah">Penyakit yang pernah diderita</label>
 							<input type="text" id="ui_penyakit_pernah" class="consult-field form-control" placeholder="Contoh: asma, hipertensi, atau kosongkan jika tidak ada">
@@ -929,7 +921,6 @@ Lama keluhan:
 			var lng = $('#longitude').val();
 			var alamat = $('#address').val();
 			var tanggal = $('#tanggal').val();
-			var assignedPuskesmasCode = $('#assigned_puskesmas_code').val();
 			var skipGeolocationRetry = $('#save_konsul').data('skipGeolocationRetry') === true;
 
 			if ((lat === '' || lng === '') && !skipGeolocationRetry && navigator.geolocation) {
@@ -963,8 +954,8 @@ Lama keluhan:
 			} else if (keluhan === '') {
 				alert('Silakan isi keluhan terlebih dahulu.');
 				return;
-			} else if (assignedPuskesmasCode === '' && (lat === '' || lng === '')) {
-				Swal.fire("Gagal!", "Silakan pilih Puskesmas Tujuan.", "error");
+			} else if (lat === '' || lng === '') {
+				Swal.fire("Gagal!", "Lokasi pasien belum tersedia. Aktifkan izin lokasi lalu coba lagi.", "error");
 				return;
 			}
 

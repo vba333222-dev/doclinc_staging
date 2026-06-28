@@ -35,8 +35,10 @@ class Home extends MX_Controller
 				if ($userid) {
 					$statuses = ['Pending', 'Accepted'];
 					$x['getAllDataRequests'] = $this->Home_m->getAllDataRequests($userid, $statuses);
+					$x['active_consultation_request'] = doclinc_active_consultation_request($userid);
 				} else {
 					$x['getAllDataRequests'] = [];
+					$x['active_consultation_request'] = null;
 				}
 
 				$x['getAllDataRequestsCompleted'] = $this->Home_m->getAllDataRequestsCompleted($userid);
