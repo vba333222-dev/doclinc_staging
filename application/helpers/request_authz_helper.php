@@ -135,6 +135,48 @@ if (!function_exists('doclinc_request_puskesmas_label')) {
 	}
 }
 
+if (!function_exists('doclinc_consultation_mode_label')) {
+	function doclinc_consultation_mode_label($mode)
+	{
+		$mode = strtolower(trim((string) $mode));
+		if ($mode === 'visit') {
+			return 'Kunjungan Nakes';
+		}
+		if ($mode === 'non_visit') {
+			return 'Konsultasi Non-Kunjungan';
+		}
+
+		return 'Belum ditentukan';
+	}
+}
+
+if (!function_exists('doclinc_request_handling_nakes_name')) {
+	function doclinc_request_handling_nakes_name($request)
+	{
+		if (!$request) {
+			return '';
+		}
+
+		foreach (array('handling_nakes_name', 'assigned_nakes_name', 'accepted_nakes_name') as $field) {
+			if (isset($request->{$field}) && trim((string) $request->{$field}) !== '') {
+				return trim((string) $request->{$field});
+			}
+		}
+
+		if (isset($request->request_status) && $request->request_status === 'Pending') {
+			return '';
+		}
+
+		foreach (array('dokter_user_name', 'nama_dokter') as $field) {
+			if (isset($request->{$field}) && trim((string) $request->{$field}) !== '') {
+				return trim((string) $request->{$field});
+			}
+		}
+
+		return '';
+	}
+}
+
 if (!function_exists('doclinc_request_handling_nakes_id')) {
 	function doclinc_request_handling_nakes_id($request)
 	{
@@ -296,10 +338,10 @@ if (!function_exists('doclinc_visit_status_label')) {
 	function doclinc_visit_status_label($status)
 	{
 		$labels = array(
-			'not_started' => 'Menunggu nakes memulai kunjungan',
+			'not_started' => 'Belum dimulai',
 			'en_route' => 'Nakes menuju lokasi',
 			'arrived' => 'Nakes tiba di lokasi',
-			'in_service' => 'Nakes sedang menangani',
+			'in_service' => 'Sedang ditangani',
 			'completed' => 'Kunjungan selesai',
 		);
 

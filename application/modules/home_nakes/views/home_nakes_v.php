@@ -540,6 +540,9 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
 								$queue_code = doclinc_request_queue_code($x);
+								$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
+								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
+								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
 							?>
 								<div class="dl-nakes-request-item">
 									<div class="card shadow request-card dl-nakes-request-card" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
@@ -560,6 +563,8 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 												<p><?= doclinc_history_safe_lines($keluhan); ?></p>
 											</div>
 											<div class="dl-nakes-meta-list">
+												<div><i class="fas fa-user-md fa-fw"></i><span>PIC Nakes</span><strong><?= html_escape($handling_nakes_label); ?></strong></div>
+												<div><i class="fas fa-clipboard-check fa-fw"></i><span>Mode</span><strong><?= html_escape($mode_label); ?></strong></div>
 												<div><i class="fas fa-file fa-fw"></i><span>Riwayat</span><strong><?= doclinc_history_safe_text($riwayat); ?></strong></div>
 												<div><i class="fas fa-map-marker-alt fa-fw"></i><span>Alamat</span><strong><?= doclinc_history_safe_text($x->location); ?></strong></div>
 												<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong class="distance">Menghitung...</strong></div>
@@ -642,6 +647,9 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
 								$queue_code = doclinc_request_queue_code($x);
+								$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
+								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
+								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
 							?>
 								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>">
 									<div class="card-header d-flex align-items-start gap-3">
@@ -660,6 +668,8 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 											<p><?= doclinc_history_safe_lines($keluhan); ?></p>
 										</div>
 										<div class="dl-nakes-meta-list">
+											<div><i class="fas fa-user-md fa-fw"></i><span>PIC Nakes</span><strong><?= html_escape($handling_nakes_label); ?></strong></div>
+											<div><i class="fas fa-clipboard-check fa-fw"></i><span>Mode</span><strong><?= html_escape($mode_label); ?></strong></div>
 											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong><?= doclinc_history_safe_text($x->duration); ?></strong></div>
 											<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong><?= doclinc_history_safe_text($x->distance); ?></strong></div>
 										</div>
@@ -686,6 +696,9 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 								$queue_code = doclinc_request_queue_code($x);
 								$visit_status = isset($x->visit_status) ? doclinc_normalize_visit_status($x->visit_status) : '';
 								$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
+								$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
+								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
+								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
 								$visit_next_status = array(
 									'not_started' => 'en_route',
 									'en_route' => 'arrived',
@@ -713,6 +726,8 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										<input type="text" id="lat-des-acc" value="<?= html_escape($x->lattitude); ?>" hidden>
 										<input type="text" id="lng-des-acc" value="<?= html_escape($x->longitude); ?>" hidden>
 										<div class="dl-nakes-meta-list">
+											<div><i class="fas fa-user-md fa-fw"></i><span>PIC Nakes</span><strong><?= html_escape($handling_nakes_label); ?></strong></div>
+											<div><i class="fas fa-clipboard-check fa-fw"></i><span>Mode</span><strong><?= html_escape($mode_label); ?></strong></div>
 											<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong id="distances"></strong></div>
 											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong id="durations"></strong></div>
 										</div>
@@ -781,6 +796,9 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 								$puskesmas = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : '';
 								$tanggal_selesai = !empty($x->created_at) ? date('d-m-Y', strtotime($x->created_at)) : '-';
 								$queue_code = doclinc_request_queue_code($x);
+								$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
+								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
+								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
 							?>
 								<div class="card shadow mb-3 history-result-card" data-request-id="<?= (int) $x->request_id; ?>">
 									<div class="card-header d-flex align-items-start gap-3">
@@ -789,6 +807,8 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 											<div class="history-meta">
 												<?= doclinc_history_safe_text($tanggal_selesai); ?><br>
 												Pasien: <?= doclinc_history_safe_text(strtoupper((string) $x->nama)); ?>
+												<br><?= html_escape($handling_nakes_label); ?>
+												<br>Mode: <?= html_escape($mode_label); ?>
 												<?php if ($puskesmas !== '') : ?>
 													<br><?= doclinc_history_safe_text($puskesmas); ?>
 												<?php endif; ?>
