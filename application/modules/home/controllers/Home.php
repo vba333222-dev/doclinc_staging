@@ -7,6 +7,7 @@ class Home extends MX_Controller
 		parent::__construct();
 		$this->load->model('Home_m');
 		$this->load->helper('request_authz');
+		$this->load->helper('visit_routing');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			if ($this->router->fetch_method() === 'visit_location') {
@@ -260,6 +261,14 @@ class Home extends MX_Controller
 		if ($this->is_valid_latitude($row->lattitude_dokter) && $this->is_valid_longitude($row->longitude_dokter)) {
 			$nakes_latitude = (float) $row->lattitude_dokter;
 			$nakes_longitude = (float) $row->longitude_dokter;
+		}
+		if ($patient_latitude !== null && $patient_longitude !== null && $nakes_latitude !== null && $nakes_longitude !== null) {
+			$visit_workflow['route'] = doclinc_visit_route_payload(
+				$nakes_latitude,
+				$nakes_longitude,
+				$patient_latitude,
+				$patient_longitude
+			);
 		}
 
 		$location_payload = [

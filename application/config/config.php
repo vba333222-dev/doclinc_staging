@@ -558,5 +558,8 @@ $config['firebase_enabled'] = filter_var(getenv('FIREBASE_ENABLED') ?: false, FI
 $config['legacy_superapp_url'] = getenv('LEGACY_SUPERAPP_URL') ?: '';
 $config['map_provider'] = getenv('MAP_PROVIDER') ?: 'none';
 $config['mapbox_public_token'] = getenv('MAPBOX_PUBLIC_TOKEN') ?: '';
+$config['routing_provider'] = getenv('ROUTING_PROVIDER') ?: 'none';
+$config['valhalla_base_url'] = getenv('VALHALLA_BASE_URL') ?: '';
+$config['routing_timeout_seconds'] = getenv('ROUTING_TIMEOUT_SECONDS') ?: 3;
 
 $config['api_access_token'] = getenv('API_ACCESS_TOKEN') ?: '';
