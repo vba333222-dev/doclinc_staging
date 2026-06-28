@@ -27,7 +27,10 @@ class Konsultasi extends MX_Controller
 		$data['getFotoDokter'] = $this->Konsultasi_m->getFotoDokter($nama);
 		$data['getDataTokenDoctor'] = $this->Konsultasi_m->getDataTokenDoctor($nama);
 		$data['getDataPenunjangById'] = $this->Konsultasi_m->getDataPenunjangById($userid);
-		$data['puskesmas_options'] = doclinc_get_active_puskesmas();
+		if (doclinc_active_consultation_request($userid)) {
+			redirect('home#riwayat');
+			return;
+		}
 		$this->load->view('konsultasi_v', $data);
 	}
 
@@ -75,7 +78,6 @@ class Konsultasi extends MX_Controller
 		$alamat = $this->input->post('alamat');
 		$lattitude = $this->input->post('lat');
 		$longitude = $this->input->post('lng');
-		$manual_puskesmas_code = $this->input->post('assigned_puskesmas_code', TRUE);
 		$tanggal = $this->input->post('tanggal');
 		$has_patient_location = $this->is_valid_latitude($lattitude) && $this->is_valid_longitude($longitude);
 		$patient_latitude = $has_patient_location ? (float) $lattitude : null;
@@ -96,18 +98,28 @@ class Konsultasi extends MX_Controller
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
 			return;
 		}
-		$assigned_puskesmas = $has_patient_location ? doclinc_find_nearest_puskesmas($patient_latitude, $patient_longitude) : null;
-		if (!$assigned_puskesmas) {
-			$assigned_puskesmas = doclinc_get_puskesmas_by_code($manual_puskesmas_code);
-		}
-
-		if (!$assigned_puskesmas) {
-			log_message('error', 'Konsultasi warga gagal: puskesmas tujuan tidak valid. user_id=' . $id_user . ' puskesmas_code=' . $manual_puskesmas_code);
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Puskesmas tujuan belum tersedia']));
+		if (doclinc_active_consultation_request($id_user)) {
+			$this->output->set_status_header(409);
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.']));
 			return;
 		}
-		$assigned_puskesmas_code = $assigned_puskesmas->kode_pkm ?? $manual_puskesmas_code;
+		if (!$has_patient_location) {
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Lokasi pasien belum tersedia. Aktifkan izin lokasi lalu coba lagi.']));
+			return;
+		}
+
+		$assigned_puskesmas = doclinc_find_puskesmas_by_service_area($patient_latitude, $patient_longitude);
+		if (!$assigned_puskesmas) {
+			log_message('error', 'Konsultasi warga gagal: lokasi tidak masuk area layanan. user_id=' . $id_user . ' lat=' . $patient_latitude . ' lng=' . $patient_longitude);
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Lokasi Anda belum masuk area layanan puskesmas aktif.']));
+			return;
+		}
+		$assigned_puskesmas_code = $assigned_puskesmas->kode_pkm ?? '';
 		$assigned_puskesmas_name = $assigned_puskesmas->nama_puskesmas ?? '';
+		if ($assigned_puskesmas_code === '') {
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Puskesmas tujuan belum dapat ditentukan dari lokasi Anda.']));
+			return;
+		}
 		$queue_handler_user_id = doclinc_get_queue_handler_user_id($assigned_puskesmas_code);
 		if (!$queue_handler_user_id) {
 			$this->output->set_status_header(403);

@@ -32,6 +32,31 @@ if (!function_exists('doclinc_request_row')) {
 	}
 }
 
+if (!function_exists('doclinc_active_consultation_request')) {
+	function doclinc_active_consultation_request($user_id)
+	{
+		$user_id = (int) $user_id;
+		if ($user_id < 1) {
+			return null;
+		}
+
+		$CI = &get_instance();
+		$CI->db
+			->where('user_id', $user_id)
+			->where_in('request_status', array('Pending', 'Accepted'));
+
+		if ($CI->db->field_exists('created_at', 'requests')) {
+			$CI->db->order_by('created_at', 'DESC');
+		}
+
+		return $CI->db
+			->order_by('request_id', 'DESC')
+			->limit(1)
+			->get('requests')
+			->row();
+	}
+}
+
 if (!function_exists('doclinc_queue_bucket')) {
 	function doclinc_queue_bucket($assigned_puskesmas_code)
 	{
@@ -106,7 +131,7 @@ if (!function_exists('doclinc_request_puskesmas_label')) {
 			return trim((string) $request->assigned_puskesmas_name);
 		}
 
-		return 'Puskesmas tujuan belum tersedia';
+		return 'Data puskesmas belum lengkap';
 	}
 }
 

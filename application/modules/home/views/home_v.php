@@ -66,6 +66,9 @@ if (!function_exists('doclinc_history_format_complaint')) {
 		return $html !== '' ? $html : nl2br(html_escape($text), false);
 	}
 }
+
+$doclinc_active_request = isset($active_consultation_request) ? $active_consultation_request : null;
+$doclinc_has_active_request = !empty($doclinc_active_request);
 ?>
 
 <!DOCTYPE html>
@@ -572,18 +575,25 @@ if (!function_exists('doclinc_history_format_complaint')) {
 						<div class="dl-hero-content">
 							<h2 class="dl-hero-title">Mulai Konsultasi</h2>
 							<p class="dl-hero-text">Ceritakan keluhan Anda agar nakes dapat membantu.</p>
-							<a href="#" class="dl-btn-secondary" onclick="showContent('konsultasi_kesehatan')">
-								Buat Konsultasi <i class="fas fa-plus-circle"></i>
-							</a>
+							<?php if ($doclinc_has_active_request) : ?>
+								<a href="#" class="dl-btn-secondary" onclick="showContent('riwayat')">
+									Lihat Konsultasi Aktif <i class="fas fa-clipboard-list"></i>
+								</a>
+								<p class="history-empty-text mt-2 mb-0">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.</p>
+							<?php else : ?>
+								<a href="#" class="dl-btn-secondary" onclick="showContent('konsultasi_kesehatan')">
+									Buat Konsultasi <i class="fas fa-plus-circle"></i>
+								</a>
+							<?php endif; ?>
 						</div>
 					</section>
 					<div class="dl-feature-grid">
-						<a href="#" class="feature-menu dl-feature-card" onclick="showContent('konsultasi_kesehatan')">
+						<a href="#" class="feature-menu dl-feature-card<?= $doclinc_has_active_request ? ' disabled' : ''; ?>" onclick="<?= $doclinc_has_active_request ? "showContent('riwayat')" : "showContent('konsultasi_kesehatan')"; ?>">
 							<div class="icon-wrapper">
 								<i class="fas fa-user-md"></i>
 								<span class="filler"></span>
 							</div>
-							<span class="small">Konsultasi Kesehatan</span>
+							<span class="small"><?= $doclinc_has_active_request ? 'Konsultasi Aktif' : 'Konsultasi Kesehatan'; ?></span>
 						</a>
 						<a href="#" data-bs-toggle="modal" class="feature-menu dl-feature-card" onclick="showContent('riwayat')">
 							<div class="icon-wrapper">
@@ -675,6 +685,12 @@ if (!function_exists('doclinc_history_format_complaint')) {
 				</div>
 				<div id="konsultasi_kesehatan" class="content animate__animated animate__fadeInUp animate__faster">
 					<h2 class="dl-section-title mb-3">Konsultasi Kesehatan</h2>
+					<?php if ($doclinc_has_active_request) : ?>
+						<div class="dl-empty-state text-center">
+							<p class="history-empty-text mb-3">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.</p>
+							<a href="#" class="dl-btn-secondary" onclick="showContent('riwayat')">Lihat Konsultasi Aktif</a>
+						</div>
+					<?php else : ?>
 					<div class="card shadow mb-2 rounded-4 bg-white clickable-card dl-card"
 						data-requestId=""
 						data-userIdPasien=""
@@ -692,7 +708,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 											<span class="badge rounded-pill status bg-success">Available</span>
 										</div>
 									</div>
-									<p class="mb-0 small">Konsultasi akan diarahkan ke puskesmas aktif sesuai lokasi atau pilihan Anda.</p>
+									<p class="mb-0 small">Konsultasi akan diarahkan otomatis ke puskesmas aktif sesuai lokasi Anda.</p>
 									<i class="far fa-clock"></i> <em>Siap menerima konsultasi</em>
 									<?php foreach ($getAllRequestJumlah->result() as $baris) { ?>
 										<input type="hidden" name="jumlah" id="jumlah" value="<?= $baris->jumlah; ?>" />
@@ -701,7 +717,9 @@ if (!function_exists('doclinc_history_format_complaint')) {
 							</div>
 						</div>
 					</div>
+					<?php endif; ?>
 					<?php
+					if (!$doclinc_has_active_request) :
 					foreach ($getAllDataDoctor->result() as $row) {
 						$userIdPasien = $row->user_id;
 						$userId = $row->userId;
@@ -878,11 +896,12 @@ if (!function_exists('doclinc_history_format_complaint')) {
 											</div>
 										<?php endif; ?>
 									</div>
-								</div>
-							<?php
-							}
-							?>
 						</div>
+					<?php
+					}
+					endif;
+					?>
+				</div>
 						<!-- Tab Riwayat -->
 						<div class="tab-pane fade" id="selesai-tab-pane" role="tabpanel" aria-labelledby="selesai-tab" tabindex="0">
 							<?php
