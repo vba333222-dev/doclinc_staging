@@ -22,9 +22,30 @@ class Home_nakes_m extends MX_Controller
 	private function select_request_base()
 	{
 		$this->db->select('requests.*, users.nama');
+		$handler_name_parts = array();
+		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+			$handler_name_parts[] = 'assigned_nakes_user.nama';
+		}
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$handler_name_parts[] = 'accepted_nakes_user.nama';
+		}
+		$explicit_handler_name_expr = !empty($handler_name_parts) ? 'COALESCE(' . implode(', ', $handler_name_parts) . ')' : 'NULL';
+		$legacy_handler_name_expr = 'COALESCE(' . implode(', ', array_merge($handler_name_parts, array('dokter_user.nama'))) . ')';
+		$this->db->select("CASE WHEN requests.request_status = 'Pending' THEN {$explicit_handler_name_expr} ELSE {$legacy_handler_name_expr} END AS handling_nakes_name", FALSE);
 		foreach ($this->optional_request_selects() as $select) {
 			$this->db->select($select, FALSE);
 		}
+	}
+
+	private function join_handling_nakes_display()
+	{
+		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+			$this->db->join('users AS assigned_nakes_user', 'requests.assigned_nakes_user_id = assigned_nakes_user.userId', 'left');
+		}
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$this->db->join('users AS accepted_nakes_user', 'requests.accepted_by_user_id = accepted_nakes_user.userId', 'left');
+		}
+		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
 	}
 
 	private function join_riwayat_or_default()
@@ -87,6 +108,7 @@ class Home_nakes_m extends MX_Controller
 		$this->db
 			->from('requests')
 			->join('users', 'requests.user_id = users.userId', 'left');
+		$this->join_handling_nakes_display();
 		$this->join_riwayat_or_default();
 
 		$this->db->where('requests.request_status', 'Pending');
@@ -131,6 +153,7 @@ class Home_nakes_m extends MX_Controller
 		$this->db
 			->from('requests')
 			->join('users', 'requests.user_id = users.userId');
+		$this->join_handling_nakes_display();
 		$this->join_riwayat_or_default();
 
 		$this->db->where('requests.request_status', 'Accepted');
@@ -144,6 +167,7 @@ class Home_nakes_m extends MX_Controller
 		$this->db
 			->from('requests')
 			->join('users', 'requests.user_id = users.userId');
+		$this->join_handling_nakes_display();
 		$this->join_riwayat_or_default();
 		if ($this->db->table_exists('medicalrecords')) {
 			$this->db

@@ -860,7 +860,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$visit_status = isset($data->visit_status) ? doclinc_normalize_visit_status($data->visit_status) : '';
 								$visit_label = $visit_status !== '' ? doclinc_visit_status_label($visit_status) : '';
 								$consultation_mode = isset($data->consultation_mode) ? trim((string) $data->consultation_mode) : '';
-								$mode_label = $consultation_mode === 'visit' ? 'Kunjungan nakes' : ($consultation_mode === 'non_visit' ? 'Konsultasi tanpa kunjungan' : '');
+								$mode_label = doclinc_consultation_mode_label($consultation_mode);
+								$handling_nakes_name = doclinc_request_handling_nakes_name($data);
+								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
 
 								// jadikan tanggal di atas formatnya jadi 11 November 2024
 								$tanggal = date('d F Y', strtotime($tanggal));
@@ -887,20 +889,17 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 										<span class="badge text-bg-warning ms-auto animate__animated animate__flash animate__infinite animate__slower"><?= html_escape($status); ?></span>
 									</div>
 									<div class="card-body">
-										<?php if ($visit_label !== '' || $mode_label !== '') : ?>
-											<div class="mb-2">
-												<?php if ($mode_label !== '') : ?>
-													<span class="badge text-bg-light border"><?= html_escape($mode_label); ?></span>
-												<?php endif; ?>
-												<?php if ($visit_label !== '') : ?>
-													<span class="badge text-bg-light border"><?= html_escape($visit_label); ?></span>
-												<?php endif; ?>
-											</div>
-										<?php endif; ?>
+										<div class="mb-2">
+											<span class="badge text-bg-light border"><?= html_escape($mode_label); ?></span>
+											<?php if ($visit_label !== '') : ?>
+												<span class="badge text-bg-light border"><?= html_escape($visit_label); ?></span>
+											<?php endif; ?>
+										</div>
+										<div class="history-meta mb-2"><?= html_escape($handling_nakes_label); ?></div>
 										<p class="mb-0 small fw-bold"><i class="fas fa-notes-medical fa-fw"></i> Keluhan :</p>
 										<textarea rows="4" class="form-control" readonly><?= html_escape($keluhan); ?></textarea>
 										<p class="mb-0 small fw-bold"><i class="fas fa-stethoscope fa-fw"></i> Nakes :</p>
-										<p class="mb-0"><?= html_escape($nama_dokter); ?></p>
+										<p class="mb-0"><?= html_escape($handling_nakes_name !== '' ? $handling_nakes_name : 'Menunggu nakes menerima konsultasi'); ?></p>
 										<p class="mb-0 small fw-bold"><i class="far fa-clock fa-fw"></i> Estimasi :</p>
 										<input type="text" name="latitudes" id="latitudes" value="<?= $lat; ?>" hidden />
 										<input type="text" name="longitudes" id="longitudes" value="<?= $lng; ?>" hidden />

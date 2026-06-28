@@ -134,11 +134,28 @@ class Home_m extends MX_Controller
 			? 'requests.date AS date'
 			: 'DATE(requests.created_at) AS date';
 
+		$handler_name_parts = array();
+		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+			$handler_name_parts[] = 'assigned_nakes_user.nama';
+		}
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$handler_name_parts[] = 'accepted_nakes_user.nama';
+		}
+		$explicit_handler_name_expr = !empty($handler_name_parts) ? 'COALESCE(' . implode(', ', $handler_name_parts) . ')' : 'NULL';
+		$legacy_handler_name_expr = 'COALESCE(' . implode(', ', array_merge($handler_name_parts, array('dokter_user.nama', 'm_dokter.name'))) . ')';
+		$handler_name_expr = "CASE WHEN requests.request_status = 'Pending' THEN {$explicit_handler_name_expr} ELSE {$legacy_handler_name_expr} END";
+
 		// Query database
-		$this->db->select("requests.*, {$request_date_select}, COALESCE(m_dokter.name, dokter_user.nama, 'Nakes') AS nama_dokter", FALSE);
+		$this->db->select("requests.*, {$request_date_select}, COALESCE({$handler_name_expr}, 'Nakes') AS nama_dokter, {$handler_name_expr} AS handling_nakes_name", FALSE);
 		$this->db->from('requests');
 		$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id', 'left');
 		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
+		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+			$this->db->join('users AS assigned_nakes_user', 'requests.assigned_nakes_user_id = assigned_nakes_user.userId', 'left');
+		}
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$this->db->join('users AS accepted_nakes_user', 'requests.accepted_by_user_id = accepted_nakes_user.userId', 'left');
+		}
 		$this->db->where('requests.user_id', $user_id);
 		$this->db->where_in('requests.request_status', $statuses);
 		$this->db->order_by('requests.request_id', 'DESC');
