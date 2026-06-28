@@ -150,6 +150,55 @@ if (!function_exists('doclinc_consultation_mode_label')) {
 	}
 }
 
+if (!function_exists('doclinc_format_distance_text')) {
+	function doclinc_format_distance_text($meters)
+	{
+		if (!is_numeric($meters)) {
+			return 'Menghitung...';
+		}
+
+		$meters = max(0, (float) $meters);
+		if ($meters < 1000) {
+			return number_format($meters, 0, ',', '.') . ' m';
+		}
+
+		return number_format($meters / 1000, 1, ',', '.') . ' km';
+	}
+}
+
+if (!function_exists('doclinc_format_eta_text')) {
+	function doclinc_format_eta_text($seconds)
+	{
+		if (!is_numeric($seconds)) {
+			return 'Menghitung...';
+		}
+
+		$minutes = max(1, (int) ceil(((float) $seconds) / 60));
+		if ($minutes < 60) {
+			return $minutes . ' menit';
+		}
+
+		$hours = (int) floor($minutes / 60);
+		$remaining = $minutes % 60;
+		return $remaining > 0 ? $hours . ' jam ' . $remaining . ' menit' : $hours . ' jam';
+	}
+}
+
+if (!function_exists('doclinc_visit_route_pending_payload')) {
+	function doclinc_visit_route_pending_payload()
+	{
+		return array(
+			'distance_m' => null,
+			'duration_s' => null,
+			'distance_text' => 'Menghitung...',
+			'eta_text' => 'Menghitung...',
+			'geometry' => null,
+			'provider' => null,
+			'calculated_at' => null,
+		);
+	}
+}
+
 if (!function_exists('doclinc_request_handling_nakes_name')) {
 	function doclinc_request_handling_nakes_name($request)
 	{
