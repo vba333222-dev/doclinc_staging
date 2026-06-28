@@ -135,11 +135,13 @@ class Home_m extends MX_Controller
 			: 'DATE(requests.created_at) AS date';
 
 		// Query database
-		$this->db->select("requests.*, {$request_date_select}, m_dokter.name AS nama_dokter", FALSE);
-		$this->db->from("m_dokter");
-		$this->db->join("requests", "requests.dokter_id=m_dokter.professional_id", "inner");
-		$this->db->where("user_id", $user_id);
-		$this->db->where_in("request_status", $statuses);
+		$this->db->select("requests.*, {$request_date_select}, COALESCE(m_dokter.name, dokter_user.nama, 'Nakes') AS nama_dokter", FALSE);
+		$this->db->from('requests');
+		$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id', 'left');
+		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
+		$this->db->where('requests.user_id', $user_id);
+		$this->db->where_in('requests.request_status', $statuses);
+		$this->db->order_by('requests.request_id', 'DESC');
 		$result = $this->db->get()->result();
 
 		// Dekripsi field request_description
