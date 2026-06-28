@@ -152,6 +152,16 @@ if (!function_exists('doclinc_request_handling_nakes_id')) {
 	}
 }
 
+if (!function_exists('doclinc_request_is_handled_by_nakes')) {
+	function doclinc_request_is_handled_by_nakes($request, $nakes_user_id)
+	{
+		$handling_nakes_id = doclinc_request_handling_nakes_id($request);
+		return $handling_nakes_id !== null
+			&& trim((string) $handling_nakes_id) !== ''
+			&& (string) $handling_nakes_id === (string) $nakes_user_id;
+	}
+}
+
 if (!function_exists('doclinc_can_view_request')) {
 	function doclinc_can_view_request($request_id, $user_id = null, $role = null)
 	{
@@ -169,10 +179,7 @@ if (!function_exists('doclinc_can_view_request')) {
 		}
 
 		if ($role === 'dokter') {
-			if (!empty($request->dokter_id) && (string) $request->dokter_id === (string) $user_id) {
-				return true;
-			}
-			if (isset($request->accepted_by_user_id) && !empty($request->accepted_by_user_id) && (string) $request->accepted_by_user_id === (string) $user_id) {
+			if (doclinc_request_is_handled_by_nakes($request, $user_id)) {
 				return true;
 			}
 
@@ -205,10 +212,8 @@ if (!function_exists('doclinc_can_update_request')) {
 			return false;
 		}
 
-		if ((string) $request->dokter_id !== (string) $user_id) {
-			if (!isset($request->accepted_by_user_id) || (string) $request->accepted_by_user_id !== (string) $user_id) {
-				return false;
-			}
+		if (!doclinc_request_is_handled_by_nakes($request, $user_id)) {
+			return false;
 		}
 
 		return empty($allowed_statuses) || in_array($request->request_status, $allowed_statuses, true);
@@ -238,13 +243,7 @@ if (!function_exists('doclinc_can_cancel_request')) {
 		}
 
 		if ($request->request_status === 'Accepted') {
-			if ((string) $request->dokter_id === (string) $user_id) {
-				return true;
-			}
-
-			return isset($request->accepted_by_user_id)
-				&& !empty($request->accepted_by_user_id)
-				&& (string) $request->accepted_by_user_id === (string) $user_id;
+			return doclinc_request_is_handled_by_nakes($request, $user_id);
 		}
 
 		if ($request->request_status !== 'Pending') {
@@ -280,13 +279,7 @@ if (!function_exists('doclinc_can_update_visit_location')) {
 			return false;
 		}
 
-		if (!empty($request->dokter_id) && (string) $request->dokter_id === (string) $user_id) {
-			return true;
-		}
-
-		return isset($request->accepted_by_user_id)
-			&& !empty($request->accepted_by_user_id)
-			&& (string) $request->accepted_by_user_id === (string) $user_id;
+		return doclinc_request_is_handled_by_nakes($request, $user_id);
 	}
 }
 
@@ -380,12 +373,7 @@ if (!function_exists('doclinc_can_view_chat')) {
 		}
 
 		if ($role === 'dokter') {
-			if (!empty($request->dokter_id) && (string) $request->dokter_id === (string) $user_id) {
-				return true;
-			}
-			return isset($request->accepted_by_user_id)
-				&& !empty($request->accepted_by_user_id)
-				&& (string) $request->accepted_by_user_id === (string) $user_id;
+			return doclinc_request_is_handled_by_nakes($request, $user_id);
 		}
 
 		return false;

@@ -157,9 +157,7 @@ class Home extends MX_Controller
 			doclinc_log_request_event('request_cancelled', $request_id);
 		}
 		if ($request && function_exists('doclinc_notify_user')) {
-			$recipient_id = isset($request->accepted_by_user_id) && !empty($request->accepted_by_user_id)
-				? $request->accepted_by_user_id
-				: (isset($request->dokter_id) ? $request->dokter_id : null);
+			$recipient_id = doclinc_request_handling_nakes_id($request);
 			if (!empty($recipient_id)) {
 				doclinc_notify_user(
 					$recipient_id,

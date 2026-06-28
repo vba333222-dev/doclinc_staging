@@ -7,6 +7,26 @@ class Konsultasi_nakes_m extends MX_Controller
 		$this->db  = $this->load->database('default', TRUE);
 	}
 
+	private function where_handling_nakes_owner($user_id, $prefix = '')
+	{
+		$this->db->group_start();
+		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+			$this->db->where($prefix . 'assigned_nakes_user_id', $user_id);
+			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+				$this->db->or_where($prefix . 'accepted_by_user_id', $user_id);
+			}
+			if ($this->db->field_exists('dokter_id', 'requests')) {
+				$this->db->or_where($prefix . 'dokter_id', $user_id);
+			}
+		} else {
+			$this->db->where($prefix . 'dokter_id', $user_id);
+			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+				$this->db->or_where($prefix . 'accepted_by_user_id', $user_id);
+			}
+		}
+		$this->db->group_end();
+	}
+
 	public function get_data_request($request_id, $doctor_id = null)
 	{
 		$userIdSelect = $this->db->field_exists('userid', 'users') ? 'users.userid' : 'users.userId AS userid';
@@ -21,12 +41,7 @@ class Konsultasi_nakes_m extends MX_Controller
 			->where('requests.request_status', 'Accepted')
 			->where('requests.request_id', $request_id);
 		if ($doctor_id !== null) {
-			$this->db->group_start();
-			$this->db->where('requests.dokter_id', $doctor_id);
-			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
-				$this->db->or_where('requests.accepted_by_user_id', $doctor_id);
-			}
-			$this->db->group_end();
+			$this->where_handling_nakes_owner($doctor_id, 'requests.');
 		}
 
 		return $this->db
@@ -63,12 +78,7 @@ class Konsultasi_nakes_m extends MX_Controller
 		}
 
 		$this->db->where('request_id', $request_id);
-		$this->db->group_start();
-		$this->db->where('dokter_id', $user);
-		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
-			$this->db->or_where('accepted_by_user_id', $user);
-		}
-		$this->db->group_end();
+		$this->where_handling_nakes_owner($user);
 		$this->db->where('request_status', 'Accepted');
 		if ($this->db->field_exists('visit_completed_at', 'requests')) {
 			$this->db->set('visit_completed_at', 'COALESCE(visit_completed_at, ' . $this->db->escape($date) . ')', FALSE);
