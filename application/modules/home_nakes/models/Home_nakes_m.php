@@ -243,6 +243,15 @@ class Home_nakes_m extends MX_Controller
 		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
 			$data['accepted_by_user_id'] = $id_user;
 		}
+		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+			$data['assigned_nakes_user_id'] = $id_user;
+		}
+		if ($this->db->field_exists('assigned_nakes_at', 'requests')) {
+			$data['assigned_nakes_at'] = date('Y-m-d H:i:s');
+		}
+		if ($this->db->field_exists('assigned_nakes_by_user_id', 'requests')) {
+			$data['assigned_nakes_by_user_id'] = $id_user;
+		}
 		if ($this->db->field_exists('visit_status', 'requests')) {
 			$data['visit_status'] = 'not_started';
 		}

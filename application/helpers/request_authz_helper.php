@@ -135,6 +135,23 @@ if (!function_exists('doclinc_request_puskesmas_label')) {
 	}
 }
 
+if (!function_exists('doclinc_request_handling_nakes_id')) {
+	function doclinc_request_handling_nakes_id($request)
+	{
+		if (!$request) {
+			return null;
+		}
+
+		foreach (array('assigned_nakes_user_id', 'accepted_by_user_id', 'dokter_id') as $field) {
+			if (isset($request->{$field}) && trim((string) $request->{$field}) !== '') {
+				return $request->{$field};
+			}
+		}
+
+		return null;
+	}
+}
+
 if (!function_exists('doclinc_can_view_request')) {
 	function doclinc_can_view_request($request_id, $user_id = null, $role = null)
 	{
