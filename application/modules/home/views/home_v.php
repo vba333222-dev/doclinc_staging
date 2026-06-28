@@ -69,6 +69,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 
 $doclinc_active_request = isset($active_consultation_request) ? $active_consultation_request : null;
 $doclinc_has_active_request = !empty($doclinc_active_request);
+$doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_active_request->request_id) ? (int) $doclinc_active_request->request_id : 0;
 ?>
 
 <!DOCTYPE html>
@@ -576,7 +577,7 @@ $doclinc_has_active_request = !empty($doclinc_active_request);
 							<h2 class="dl-hero-title">Mulai Konsultasi</h2>
 							<p class="dl-hero-text">Ceritakan keluhan Anda agar nakes dapat membantu.</p>
 							<?php if ($doclinc_has_active_request) : ?>
-								<a href="#" class="dl-btn-secondary" onclick="showContent('riwayat')">
+								<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">
 									Lihat Konsultasi Aktif <i class="fas fa-clipboard-list"></i>
 								</a>
 								<p class="history-empty-text mt-2 mb-0">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.</p>
@@ -588,7 +589,7 @@ $doclinc_has_active_request = !empty($doclinc_active_request);
 						</div>
 					</section>
 					<div class="dl-feature-grid">
-						<a href="#" class="feature-menu dl-feature-card<?= $doclinc_has_active_request ? ' disabled' : ''; ?>" onclick="<?= $doclinc_has_active_request ? "showContent('riwayat')" : "showContent('konsultasi_kesehatan')"; ?>">
+						<a href="<?= html_escape($doclinc_has_active_request ? base_url('home#riwayat') : '#'); ?>" class="feature-menu dl-feature-card<?= $doclinc_has_active_request ? ' disabled' : ''; ?>" onclick="<?= $doclinc_has_active_request ? 'openActiveConsultation(' . html_escape($doclinc_active_request_id) . '); return false;' : "showContent('konsultasi_kesehatan'); return false;"; ?>">
 							<div class="icon-wrapper">
 								<i class="fas fa-user-md"></i>
 								<span class="filler"></span>
@@ -613,7 +614,7 @@ $doclinc_has_active_request = !empty($doclinc_active_request);
 					<section>
 						<div class="dl-section-header">
 							<h3 class="dl-section-title">Konsultasi Saat Ini</h3>
-							<a href="#" class="history-meta text-decoration-none" onclick="showContent('riwayat')">Lihat Semua</a>
+							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="history-meta text-decoration-none" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat Semua</a>
 						</div>
 						<?php if (!empty($getAllDataRequests)) : ?>
 							<?php foreach ($getAllDataRequests as $dlCurrentRequest) :
@@ -644,7 +645,7 @@ $doclinc_has_active_request = !empty($doclinc_active_request);
 										<div class="history-result-value"><?= doclinc_history_safe_lines($dl_current_keluhan); ?></div>
 									</div>
 									<div class="d-grid gap-2">
-										<a href="#" class="dl-btn-secondary w-100" onclick="showContent('riwayat')">Lihat Detail</a>
+										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary w-100" onclick="openActiveConsultation(<?= html_escape((int) $dlCurrentRequest->request_id); ?>); return false;">Lihat Detail</a>
 										<?php if ($dl_current_status === 'Pending') : ?>
 											<button type="button" class="btn btn-sm btn-outline-danger rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $dlCurrentRequest->request_id); ?>">
 												<i class="fas fa-times-circle me-1"></i> Batalkan
@@ -688,7 +689,7 @@ $doclinc_has_active_request = !empty($doclinc_active_request);
 					<?php if ($doclinc_has_active_request) : ?>
 						<div class="dl-empty-state text-center">
 							<p class="history-empty-text mb-3">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.</p>
-							<a href="#" class="dl-btn-secondary" onclick="showContent('riwayat')">Lihat Konsultasi Aktif</a>
+							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat Konsultasi Aktif</a>
 						</div>
 					<?php else : ?>
 					<div class="card shadow mb-2 rounded-4 bg-white clickable-card dl-card"
@@ -802,7 +803,8 @@ $doclinc_has_active_request = !empty($doclinc_active_request);
 							</div>
 						</div>
 
-					<?php } ?>
+					<?php }
+					endif; ?>
 
 					<div class=" card shadow mb-2 rounded-4 bg-white" hidden>
 						<div class="card-body p-2">
@@ -837,6 +839,13 @@ $doclinc_has_active_request = !empty($doclinc_active_request);
 					<div class="tab-content" id="myTabContent">
 						<div class="tab-pane fade show active" id="proses-tab-pane" role="tabpanel" aria-labelledby="proses-tab" tabindex="0">
 							<?php
+							if (empty($getAllDataRequests)) :
+							?>
+								<div class="text-center py-4 dl-empty-state">
+									<p class="history-empty-text mb-0">Belum ada konsultasi aktif.</p>
+								</div>
+							<?php
+							endif;
 							foreach ($getAllDataRequests as $data) {
 								$id_request = $data->request_id;
 								$tanggal = $data->date;
@@ -846,6 +855,12 @@ $doclinc_has_active_request = !empty($doclinc_active_request);
 								$request_status = $status;
 								$lat = $data->lattitude;
 								$lng = $data->longitude;
+								$puskesmas_label = doclinc_request_puskesmas_label($data);
+								$queue_number_label = doclinc_request_queue_number_label($data);
+								$visit_status = isset($data->visit_status) ? doclinc_normalize_visit_status($data->visit_status) : '';
+								$visit_label = $visit_status !== '' ? doclinc_visit_status_label($visit_status) : '';
+								$consultation_mode = isset($data->consultation_mode) ? trim((string) $data->consultation_mode) : '';
+								$mode_label = $consultation_mode === 'visit' ? 'Kunjungan nakes' : ($consultation_mode === 'non_visit' ? 'Konsultasi tanpa kunjungan' : '');
 
 								// jadikan tanggal di atas formatnya jadi 11 November 2024
 								$tanggal = date('d F Y', strtotime($tanggal));
@@ -865,14 +880,27 @@ $doclinc_has_active_request = !empty($doclinc_active_request);
 
 								<div class="card shadow mb-2 dl-card" data-request-id="<?= (int) $id_request; ?>">
 									<div class="card-header d-flex align-items-center">
-										<p class="mb-0"><em><?= $tanggal; ?></em></p>
-										<span id="statusNotif" class="badge text-bg-warning ms-auto animate__animated animate__flash animate__infinite animate__slower"><?= $status; ?></span>
+										<div>
+											<p class="mb-0 fw-bold"><?= html_escape($puskesmas_label); ?></p>
+											<p class="mb-0 history-meta"><?= html_escape($queue_number_label); ?> · <?= html_escape($tanggal); ?></p>
+										</div>
+										<span class="badge text-bg-warning ms-auto animate__animated animate__flash animate__infinite animate__slower"><?= html_escape($status); ?></span>
 									</div>
 									<div class="card-body">
+										<?php if ($visit_label !== '' || $mode_label !== '') : ?>
+											<div class="mb-2">
+												<?php if ($mode_label !== '') : ?>
+													<span class="badge text-bg-light border"><?= html_escape($mode_label); ?></span>
+												<?php endif; ?>
+												<?php if ($visit_label !== '') : ?>
+													<span class="badge text-bg-light border"><?= html_escape($visit_label); ?></span>
+												<?php endif; ?>
+											</div>
+										<?php endif; ?>
 										<p class="mb-0 small fw-bold"><i class="fas fa-notes-medical fa-fw"></i> Keluhan :</p>
-										<textarea rows="4" class="form-control" readonly><?= $keluhan; ?></textarea>
-										<p class="mb-0 small fw-bold"><i class="fas fa-stethoscope fa-fw"></i> Dokter :</p>
-										<p class="mb-0"><?= $nama_dokter; ?></p>
+										<textarea rows="4" class="form-control" readonly><?= html_escape($keluhan); ?></textarea>
+										<p class="mb-0 small fw-bold"><i class="fas fa-stethoscope fa-fw"></i> Nakes :</p>
+										<p class="mb-0"><?= html_escape($nama_dokter); ?></p>
 										<p class="mb-0 small fw-bold"><i class="far fa-clock fa-fw"></i> Estimasi :</p>
 										<input type="text" name="latitudes" id="latitudes" value="<?= $lat; ?>" hidden />
 										<input type="text" name="longitudes" id="longitudes" value="<?= $lng; ?>" hidden />
@@ -899,7 +927,6 @@ $doclinc_has_active_request = !empty($doclinc_active_request);
 						</div>
 					<?php
 					}
-					endif;
 					?>
 				</div>
 						<!-- Tab Riwayat -->
@@ -1577,6 +1604,28 @@ $doclinc_has_active_request = !empty($doclinc_active_request);
 			if (targetMenu) {
 				targetMenu.classList.add('active');
 			}
+		}
+
+		function openActiveConsultation(requestId) {
+			showContent('riwayat');
+
+			const prosesTab = document.getElementById('proses-tab');
+			if (prosesTab && typeof bootstrap !== 'undefined') {
+				const tab = new bootstrap.Tab(prosesTab);
+				tab.show();
+			}
+
+			window.location.hash = 'riwayat';
+			setTimeout(function() {
+				const selector = requestId ? '.dl-card[data-request-id="' + requestId + '"]' : '#proses-tab-pane';
+				const target = document.querySelector(selector) || document.getElementById('proses-tab-pane');
+				if (target) {
+					target.scrollIntoView({
+						behavior: 'smooth',
+						block: 'start'
+					});
+				}
+			}, 100);
 		}
 
 		$('#btn-logout').click(function(event) {
