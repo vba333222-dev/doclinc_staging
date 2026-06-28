@@ -37,6 +37,7 @@ class Konsultasi_nakes extends MX_Controller
 		$x['userid'] = $request->userid;
 		$x['nama_pasien'] = $request->nama;
 		$x['keluhan'] = $request->request_description;
+		$x['queue_code'] = doclinc_request_queue_code($request);
 		$x['tgl_lahir'] = !empty($request->tgl) ? $request->tgl : null;
 		$x['umur'] = '-';
 		$x['kriteria'] = '';

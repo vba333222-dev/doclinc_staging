@@ -675,7 +675,7 @@ if (!function_exists('formatComplaintText')) {
 			</a>
 			<div class="consult-title">
 				<h1>Pemeriksaan Pasien</h1>
-				<p class="consult-subtitle">Request #<?= html_escape($request_id) ?></p>
+				<p class="consult-subtitle">No. Antrian: <?= html_escape($queue_code) ?></p>
 			</div>
 			<span class="status-badge"><i class="bi bi-check-circle-fill"></i> Accepted</span>
 		</header>
@@ -697,8 +697,8 @@ if (!function_exists('formatComplaintText')) {
 						<span class="summary-value"><?= html_escape($userid) ?></span>
 					</div>
 					<div class="summary-item">
-						<span class="summary-label">Request ID</span>
-						<span class="summary-value">#<?= html_escape($request_id) ?></span>
+						<span class="summary-label">No. Antrian</span>
+						<span class="summary-value"><?= html_escape($queue_code) ?></span>
 					</div>
 					<div class="summary-item">
 						<span class="summary-label">Kriteria</span>

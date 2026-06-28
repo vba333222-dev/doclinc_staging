@@ -539,6 +539,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 							foreach ($data_request_new->result() as $y => $x) {
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
+								$queue_code = doclinc_request_queue_code($x);
 							?>
 								<div class="dl-nakes-request-item">
 									<div class="card shadow request-card dl-nakes-request-card" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
@@ -548,7 +549,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 											</div>
 											<div class="flex-grow-1">
 												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
-												<span>ID: #REQ-<?= html_escape((int) $x->request_id); ?></span>
+												<span>No. Antrian: <?= html_escape($queue_code); ?></span>
 											</div>
 											<span class="dl-badge animate__animated animate__flash animate__infinite animate__slower">Baru</span>
 										</div>
@@ -640,6 +641,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 							foreach ($data_request_new->result() as $x) {
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
+								$queue_code = doclinc_request_queue_code($x);
 							?>
 								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>">
 									<div class="card-header d-flex align-items-start gap-3">
@@ -648,7 +650,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										</div>
 										<div class="flex-grow-1">
 											<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
-											<span><?= html_escape(date('d-m-Y', strtotime($x->created_at))); ?> · #REQ-<?= html_escape((int) $x->request_id); ?></span>
+											<span><?= html_escape(date('d-m-Y', strtotime($x->created_at))); ?> · No. Antrian: <?= html_escape($queue_code); ?></span>
 										</div>
 										<span class="dl-badge animate__animated animate__flash animate__infinite animate__slower" id="status-konsul">Baru</span>
 									</div>
@@ -681,6 +683,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 							foreach ($data_request_accept->result() as $x) {
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
+								$queue_code = doclinc_request_queue_code($x);
 								$visit_status = isset($x->visit_status) ? doclinc_normalize_visit_status($x->visit_status) : '';
 								$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
 								$visit_next_status = array(
@@ -698,7 +701,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										</div>
 										<div class="flex-grow-1">
 											<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
-											<span><?= html_escape(date('d-m-Y', strtotime($x->created_at))); ?> · #REQ-<?= html_escape((int) $x->request_id); ?></span>
+											<span><?= html_escape(date('d-m-Y', strtotime($x->created_at))); ?> · No. Antrian: <?= html_escape($queue_code); ?></span>
 										</div>
 										<span class="dl-badge animate__animated animate__flash animate__infinite animate__slower" id="status-konsul">Accepted</span>
 									</div>
@@ -777,11 +780,12 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 								$treatment = !empty($x->treatment) ? $x->treatment : '';
 								$puskesmas = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : '';
 								$tanggal_selesai = !empty($x->created_at) ? date('d-m-Y', strtotime($x->created_at)) : '-';
+								$queue_code = doclinc_request_queue_code($x);
 							?>
 								<div class="card shadow mb-3 history-result-card" data-request-id="<?= (int) $x->request_id; ?>">
 									<div class="card-header d-flex align-items-start gap-3">
 										<div class="flex-grow-1">
-											<div class="history-request-id">Request #<?= html_escape((int) $x->request_id); ?></div>
+											<div class="history-request-id">No. Antrian: <?= html_escape($queue_code); ?></div>
 											<div class="history-meta">
 												<?= doclinc_history_safe_text($tanggal_selesai); ?><br>
 												Pasien: <?= doclinc_history_safe_text(strtoupper((string) $x->nama)); ?>

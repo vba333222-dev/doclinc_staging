@@ -32,6 +32,7 @@ class Konsultasi_m extends MX_Controller
 			return false;
 		}
 
+		$now = date('Y-m-d H:i:s');
 		$has_patient_location = $this->is_valid_latitude($lattitude) && $this->is_valid_longitude($longitude);
 		$legacy_latitude = $has_patient_location ? (string) (float) $lattitude : '';
 		$legacy_longitude = $has_patient_location ? (string) (float) $longitude : '';
@@ -64,10 +65,10 @@ class Konsultasi_m extends MX_Controller
 			$data['video'] = $video;
 		}
 		if ($this->db->field_exists('created_at', 'requests')) {
-			$data['created_at'] = date('Y-m-d H:i:s');
+			$data['created_at'] = $now;
 		}
 		if ($this->db->field_exists('updated_at', 'requests')) {
-			$data['updated_at'] = date('Y-m-d H:i:s');
+			$data['updated_at'] = $now;
 		}
 		$routing['patient_latitude'] = $patient_latitude;
 		$routing['patient_longitude'] = $patient_longitude;
@@ -76,6 +77,7 @@ class Konsultasi_m extends MX_Controller
 				$data[$field] = $routing[$field];
 			}
 		}
+		$this->apply_queue_fields($data, $tanggal, $now);
 
 		$this->db->insert('requests', $data);
 		$request_id = $this->db->insert_id();
@@ -110,6 +112,58 @@ class Konsultasi_m extends MX_Controller
 		return $this->db->trans_status() ? $request_id : false; // true jika berhasil, false jika gagal
 	}
 
+	private function apply_queue_fields(&$data, $tanggal, $now)
+	{
+		foreach (array('queue_date', 'queue_number', 'queue_code') as $field) {
+			if (!$this->db->field_exists($field, 'requests')) {
+				return;
+			}
+		}
+
+		$queue_date = $this->resolve_queue_date($tanggal, $now);
+		$bucket = $this->queue_bucket(isset($data['assigned_puskesmas_code']) ? $data['assigned_puskesmas_code'] : '');
+		$queue_number = $this->next_queue_number($bucket, $queue_date);
+
+		$data['queue_date'] = $queue_date;
+		$data['queue_number'] = $queue_number;
+		$data['queue_code'] = $bucket . '-' . date('Ymd', strtotime($queue_date)) . '-' . str_pad((string) $queue_number, 3, '0', STR_PAD_LEFT);
+	}
+
+	private function resolve_queue_date($tanggal, $now)
+	{
+		if ($this->db->field_exists('created_at', 'requests')) {
+			return date('Y-m-d', strtotime($now));
+		}
+		if ($this->db->field_exists('date', 'requests') && !empty($tanggal)) {
+			return date('Y-m-d', strtotime($tanggal));
+		}
+
+		return date('Y-m-d');
+	}
+
+	private function queue_bucket($assigned_puskesmas_code)
+	{
+		$bucket = trim((string) $assigned_puskesmas_code);
+		return $bucket !== '' ? $bucket : 'LEGACY';
+	}
+
+	private function next_queue_number($bucket, $queue_date)
+	{
+		$this->db->select('MAX(queue_number) AS max_queue_number', FALSE);
+		$this->db->where('queue_date', $queue_date);
+		if ($bucket === 'LEGACY') {
+			$this->db->group_start();
+			$this->db->where('assigned_puskesmas_code IS NULL', null, false);
+			$this->db->or_where("TRIM(assigned_puskesmas_code) = ''", null, false);
+			$this->db->group_end();
+		} else {
+			$this->db->where('TRIM(assigned_puskesmas_code) = ' . $this->db->escape($bucket), null, false);
+		}
+
+		$row = $this->db->get('requests')->row();
+		return ((int) ($row ? $row->max_queue_number : 0)) + 1;
+	}
+
 	public function is_active_doctor($dokter_id)
 	{
 		if (empty($dokter_id)) {
@@ -129,6 +183,7 @@ class Konsultasi_m extends MX_Controller
 	{
 
 		$this->db->trans_start();
+		$now = date('Y-m-d H:i:s');
 
 		$data = [
 			'user_id'             => $id_user,
@@ -148,6 +203,13 @@ class Konsultasi_m extends MX_Controller
 		if ($this->db->field_exists('video', 'requests')) {
 			$data['video'] = $video;
 		}
+		if ($this->db->field_exists('created_at', 'requests')) {
+			$data['created_at'] = $now;
+		}
+		if ($this->db->field_exists('updated_at', 'requests')) {
+			$data['updated_at'] = $now;
+		}
+		$this->apply_queue_fields($data, $tanggal, $now);
 
 		$this->db->insert('requests', $data);
 		// $this->db->insert_id(); // atau return true/false kalau kamu tidak perlu ID-nya
