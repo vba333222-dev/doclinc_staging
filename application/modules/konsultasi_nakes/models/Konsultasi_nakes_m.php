@@ -76,6 +76,12 @@ class Konsultasi_nakes_m extends MX_Controller
 		if ($this->db->field_exists('visit_status', 'requests')) {
 			$request_data['visit_status'] = 'completed';
 		}
+		if ($this->db->field_exists('consultation_mode', 'requests')) {
+			$consultation_mode = $this->consultation_mode_from_kriteria($kriteria);
+			if ($consultation_mode !== null) {
+				$request_data['consultation_mode'] = $consultation_mode;
+			}
+		}
 
 		$this->db->where('request_id', $request_id);
 		$this->where_handling_nakes_owner($user);
@@ -151,6 +157,19 @@ class Konsultasi_nakes_m extends MX_Controller
 
 		$this->db->trans_commit();
 		return true;
+	}
+
+	private function consultation_mode_from_kriteria($kriteria)
+	{
+		$normalized = strtolower(trim((string) $kriteria));
+		if ($normalized === '1' || $normalized === 'kunjungan nakes') {
+			return 'visit';
+		}
+		if ($normalized === '0' || $normalized === 'selesai konsultasi') {
+			return 'non_visit';
+		}
+
+		return null;
 	}
 
 	private function build_treatment_summary($kriteria, $rujukan, $file_path, $terapi)
