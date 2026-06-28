@@ -53,9 +53,11 @@ class Doclinc_queue_number_migration extends CI_Controller
 			? "COALESCE(NULLIF(TRIM(`assigned_puskesmas_code`), ''), 'LEGACY')"
 			: "'LEGACY'";
 		$created_order = $this->db->field_exists('created_at', 'requests') ? '`created_at` ASC,' : '';
+		$has_updated_at = $this->db->field_exists('updated_at', 'requests');
+		$updated_at_select = $has_updated_at ? ', updated_at' : '';
 
 		$rows = $this->db
-			->select("request_id, {$bucket_expr} AS queue_bucket, COALESCE({$date_expr}, CURDATE()) AS resolved_queue_date", false)
+			->select("request_id{$updated_at_select}, {$bucket_expr} AS queue_bucket, COALESCE({$date_expr}, CURDATE()) AS resolved_queue_date", false)
 			->where("(queue_code IS NULL OR TRIM(queue_code) = '')", null, false)
 			->order_by('resolved_queue_date ASC, queue_bucket ASC, ' . $created_order . ' request_id ASC', '', false)
 			->get('requests')
@@ -74,15 +76,19 @@ class Doclinc_queue_number_migration extends CI_Controller
 			$counters[$key]++;
 			$queue_number = $counters[$key];
 			$queue_code = $bucket . '-' . date('Ymd', strtotime($queue_date)) . '-' . str_pad((string) $queue_number, 3, '0', STR_PAD_LEFT);
+			$data = array(
+				'queue_date' => $queue_date,
+				'queue_number' => $queue_number,
+				'queue_code' => $queue_code,
+			);
+			if ($has_updated_at) {
+				$data['updated_at'] = isset($row->updated_at) ? $row->updated_at : null;
+			}
 
 			$this->db
 				->where('request_id', $row->request_id)
 				->where("(queue_code IS NULL OR TRIM(queue_code) = '')", null, false)
-				->update('requests', array(
-					'queue_date' => $queue_date,
-					'queue_number' => $queue_number,
-					'queue_code' => $queue_code,
-				));
+				->update('requests', $data);
 		}
 
 		echo "[ok] backfilled " . count($rows) . " queue codes\n";
