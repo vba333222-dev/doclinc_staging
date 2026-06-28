@@ -1033,7 +1033,7 @@ $session_id = $this->session->userdata('id') ?: '';
 
 		const uid = document.getElementById("uid").value;
 
-		console.log("Request ID:", request_id);
+		console.log("Internal request id:", request_id);
 		console.log("User ID:", user_id);
 		console.log("Username:", username);
 		console.log("Uid:", uid);

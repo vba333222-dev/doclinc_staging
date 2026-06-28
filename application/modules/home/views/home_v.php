@@ -611,12 +611,13 @@ if (!function_exists('doclinc_history_format_complaint')) {
 								$dl_status_label = $dl_current_status === 'Accepted' ? 'Diterima' : ($dl_current_status === 'Pending' ? 'Menunggu' : $dl_current_status);
 								$dl_current_date = !empty($dlCurrentRequest->date) ? date('d-m-Y', strtotime($dlCurrentRequest->date)) : '-';
 								$dl_current_keluhan = !empty($dlCurrentRequest->request_description) ? $dlCurrentRequest->request_description : 'Keluhan tersimpan';
+								$dl_queue_code = doclinc_request_queue_code($dlCurrentRequest);
 							?>
 								<div class="dl-card p-3" data-request-id="<?= (int) $dlCurrentRequest->request_id; ?>">
 									<div class="d-flex justify-content-between align-items-start gap-3 mb-3">
 										<div>
 											<div class="d-flex align-items-center gap-2 mb-1">
-												<strong>Request #<?= html_escape((int) $dlCurrentRequest->request_id); ?></strong>
+												<strong>No. Antrian: <?= html_escape($dl_queue_code); ?></strong>
 												<span class="dl-badge px-2 py-1"><?= html_escape($dl_status_label); ?></span>
 											</div>
 											<div class="history-meta"><i class="far fa-calendar-alt me-1"></i><?= html_escape($dl_current_date); ?></div>
@@ -905,11 +906,12 @@ if (!function_exists('doclinc_history_format_complaint')) {
 								$puskesmas = !empty($data->assigned_puskesmas_name) ? $data->assigned_puskesmas_name : '';
 								$terapi_list = !empty($data->terapi_list) && is_array($data->terapi_list) ? $data->terapi_list : [];
 								$tanggal_riwayat = !empty($tanggal) ? date('d F Y', strtotime($tanggal)) : '-';
+								$queue_code = doclinc_request_queue_code($data);
 							?>
 								<div class="card shadow mb-3 history-result-card dl-card" id="card-<?= html_escape($card_id); ?>" data-request-id="<?= $id_request; ?>">
 									<div class="card-header d-flex align-items-start gap-3">
 										<div class="flex-grow-1">
-											<div class="history-request-id">Request #<?= html_escape($id_request); ?></div>
+											<div class="history-request-id">No. Antrian: <?= html_escape($queue_code); ?></div>
 											<div class="history-meta">
 												<?= doclinc_history_safe_text($tanggal_riwayat); ?><br>
 												<?php if ($puskesmas !== '') : ?>
@@ -2229,7 +2231,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 										});
 
 										console.log("Id Warga:", userIdWarga);
-										console.log("Request ID:", reqIds);
+										console.log("Internal request id:", reqIds);
 
 										window.location.href = link;
 									}

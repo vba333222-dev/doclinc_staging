@@ -32,6 +32,55 @@ if (!function_exists('doclinc_request_row')) {
 	}
 }
 
+if (!function_exists('doclinc_queue_bucket')) {
+	function doclinc_queue_bucket($assigned_puskesmas_code)
+	{
+		$bucket = trim((string) $assigned_puskesmas_code);
+		return $bucket !== '' ? $bucket : 'LEGACY';
+	}
+}
+
+if (!function_exists('doclinc_queue_date_value')) {
+	function doclinc_queue_date_value($request)
+	{
+		if (!$request) {
+			return date('Ymd');
+		}
+
+		foreach (array('queue_date', 'created_at', 'date') as $field) {
+			if (isset($request->{$field}) && trim((string) $request->{$field}) !== '') {
+				$time = strtotime((string) $request->{$field});
+				if ($time) {
+					return date('Ymd', $time);
+				}
+			}
+		}
+
+		return date('Ymd');
+	}
+}
+
+if (!function_exists('doclinc_request_queue_code')) {
+	function doclinc_request_queue_code($request)
+	{
+		if (!$request) {
+			return '';
+		}
+
+		if (isset($request->queue_code) && trim((string) $request->queue_code) !== '') {
+			return trim((string) $request->queue_code);
+		}
+
+		$bucket = doclinc_queue_bucket(isset($request->assigned_puskesmas_code) ? $request->assigned_puskesmas_code : '');
+		$date = doclinc_queue_date_value($request);
+		$number = isset($request->queue_number) && (int) $request->queue_number > 0
+			? (int) $request->queue_number
+			: (isset($request->request_id) ? (int) $request->request_id : 0);
+
+		return $bucket . '-' . $date . '-' . str_pad((string) $number, 3, '0', STR_PAD_LEFT);
+	}
+}
+
 if (!function_exists('doclinc_can_view_request')) {
 	function doclinc_can_view_request($request_id, $user_id = null, $role = null)
 	{
