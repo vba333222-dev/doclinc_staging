@@ -81,6 +81,35 @@ if (!function_exists('doclinc_request_queue_code')) {
 	}
 }
 
+if (!function_exists('doclinc_request_queue_number_label')) {
+	function doclinc_request_queue_number_label($request)
+	{
+		$number = null;
+		if ($request && isset($request->queue_number) && (int) $request->queue_number > 0) {
+			$number = (int) $request->queue_number;
+		} elseif ($request && isset($request->queue_code) && preg_match('/-(\d+)$/', trim((string) $request->queue_code), $match)) {
+			$number = (int) $match[1];
+		}
+
+		if ($number === null || $number < 1) {
+			return 'No. -';
+		}
+
+		return 'No. ' . str_pad((string) $number, 2, '0', STR_PAD_LEFT);
+	}
+}
+
+if (!function_exists('doclinc_request_puskesmas_label')) {
+	function doclinc_request_puskesmas_label($request)
+	{
+		if ($request && isset($request->assigned_puskesmas_name) && trim((string) $request->assigned_puskesmas_name) !== '') {
+			return trim((string) $request->assigned_puskesmas_name);
+		}
+
+		return 'Puskesmas tujuan belum tersedia';
+	}
+}
+
 if (!function_exists('doclinc_can_view_request')) {
 	function doclinc_can_view_request($request_id, $user_id = null, $role = null)
 	{
