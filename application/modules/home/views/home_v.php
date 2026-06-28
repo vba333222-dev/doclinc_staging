@@ -946,6 +946,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$saran	 = !empty($data->recommendations) ? $data->recommendations : '-';
 								$dokter_id = $data->dokter_id;
 								$nama_dokter_riwayat = !empty($data->nama_dokter) ? $data->nama_dokter : 'Dokter';
+								$handling_nakes_name = doclinc_request_handling_nakes_name($data);
+								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
+								$mode_label = doclinc_consultation_mode_label(isset($data->consultation_mode) ? $data->consultation_mode : '');
 								$diagnosa = !empty($data->diagnosa) ? $data->diagnosa : (!empty($data->diagnosis) ? $data->diagnosis : '-');
 								$saran_dokter = !empty($data->saran) ? $data->saran : $saran;
 								$card_id = !empty($data->konsul_id) ? $data->konsul_id : $id_request;
@@ -963,7 +966,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											<div class="history-meta fw-bold"><?= html_escape($queue_number_label); ?></div>
 											<div class="history-meta">
 												<?= doclinc_history_safe_text($tanggal_riwayat); ?><br>
-												Nakes: <?= doclinc_history_safe_text($nama_dokter_riwayat); ?>
+												<?= html_escape($handling_nakes_label); ?><br>
+												Mode: <?= html_escape($mode_label); ?>
 											</div>
 										</div>
 										<span class="history-status-badge">Completed</span>

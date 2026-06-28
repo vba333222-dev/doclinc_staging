@@ -186,12 +186,29 @@ class Home_m extends MX_Controller
 			? 'requests.date AS date'
 			: ($this->db->field_exists('updated_at', 'requests') ? 'DATE(requests.updated_at) AS date' : 'DATE(requests.created_at) AS date');
 
+		$handler_name_parts = array();
+		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+			$handler_name_parts[] = 'assigned_nakes_user.nama';
+		}
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$handler_name_parts[] = 'accepted_nakes_user.nama';
+		}
+		$handler_name_parts[] = 'dokter_user.nama';
+		$handler_name_parts[] = 'm_dokter.name';
+		$handler_name_expr = 'COALESCE(' . implode(', ', $handler_name_parts) . ", 'Dokter')";
+
 		// Ambil data utama (hasil konsultasi dan user tanpa join terapi)
-		$this->db->select("requests.*, {$request_date_select}, users.nama, COALESCE(m_dokter.name, dokter_user.nama, 'Dokter') AS nama_dokter", FALSE);
+		$this->db->select("requests.*, {$request_date_select}, users.nama, {$handler_name_expr} AS nama_dokter, {$handler_name_expr} AS handling_nakes_name", FALSE);
 		$this->db->from('requests');
 		$this->db->join('users', 'requests.user_id = users.userId');
 		$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id', 'left');
 		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
+		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+			$this->db->join('users AS assigned_nakes_user', 'requests.assigned_nakes_user_id = assigned_nakes_user.userId', 'left');
+		}
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$this->db->join('users AS accepted_nakes_user', 'requests.accepted_by_user_id = accepted_nakes_user.userId', 'left');
+		}
 		if ($this->db->table_exists('medicalrecords')) {
 			$this->db
 				->select('medicalrecords.record_id AS medical_record_id')
