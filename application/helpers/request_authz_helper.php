@@ -170,6 +170,61 @@ if (!function_exists('doclinc_can_update_visit_location')) {
 	}
 }
 
+if (!function_exists('doclinc_normalize_visit_status')) {
+	function doclinc_normalize_visit_status($status)
+	{
+		$status = strtolower(trim((string) $status));
+		$allowed = array('not_started', 'en_route', 'arrived', 'in_service', 'completed');
+		return in_array($status, $allowed, true) ? $status : '';
+	}
+}
+
+if (!function_exists('doclinc_visit_status_label')) {
+	function doclinc_visit_status_label($status)
+	{
+		$labels = array(
+			'not_started' => 'Menunggu nakes memulai kunjungan',
+			'en_route' => 'Nakes menuju lokasi',
+			'arrived' => 'Nakes tiba di lokasi',
+			'in_service' => 'Nakes sedang menangani',
+			'completed' => 'Kunjungan selesai',
+		);
+
+		$status = doclinc_normalize_visit_status($status);
+		return isset($labels[$status]) ? $labels[$status] : $labels['not_started'];
+	}
+}
+
+if (!function_exists('doclinc_allowed_visit_status_transition')) {
+	function doclinc_allowed_visit_status_transition($current, $next)
+	{
+		$current = doclinc_normalize_visit_status($current) ?: 'not_started';
+		$next = doclinc_normalize_visit_status($next);
+		if ($next === '') {
+			return false;
+		}
+		if ($current === $next) {
+			return true;
+		}
+
+		$allowed = array(
+			'not_started' => 'en_route',
+			'en_route' => 'arrived',
+			'arrived' => 'in_service',
+			'in_service' => 'completed',
+		);
+
+		return isset($allowed[$current]) && $allowed[$current] === $next;
+	}
+}
+
+if (!function_exists('doclinc_can_update_visit_status')) {
+	function doclinc_can_update_visit_status($request_id, $user_id = null, $role = null)
+	{
+		return doclinc_can_update_visit_location($request_id, $user_id, $role);
+	}
+}
+
 if (!function_exists('doclinc_can_view_visit_location')) {
 	function doclinc_can_view_visit_location($request_id, $user_id = null, $role = null)
 	{

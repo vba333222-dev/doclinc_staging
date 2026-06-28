@@ -9,7 +9,7 @@ class Home_nakes extends MX_Controller
 		$this->load->helper('request_authz');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if ($this->router->fetch_method() === 'update_visit_location') {
+			if (in_array($this->router->fetch_method(), array('update_visit_location', 'update_visit_status'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -280,6 +280,72 @@ class Home_nakes extends MX_Controller
 			'status' => 'success',
 			'message' => 'Lokasi nakes diperbarui'
 		]));
+	}
+	public function update_visit_status()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output
+				->set_status_header(405)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+			return;
+		}
+		if ($this->session->userdata('role') !== 'dokter') {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+
+		$request_id = (int) $this->input->post('request_id');
+		$visit_status = doclinc_normalize_visit_status($this->input->post('visit_status'));
+		$user_id = (int) $this->session->userdata('id');
+		if ($request_id < 1 || $visit_status === '') {
+			$this->output
+				->set_status_header(400)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Data status kunjungan tidak valid']));
+			return;
+		}
+
+		$request = doclinc_request_row($request_id);
+		if (!$request) {
+			$this->output
+				->set_status_header(404)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan']));
+			return;
+		}
+		if (!doclinc_can_update_visit_status($request_id, $user_id, 'dokter')) {
+			if (function_exists('doclinc_log_request_event')) {
+				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'visit_status', 'visit_status' => $visit_status));
+			}
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+
+		$result = $this->Home_nakes_m->update_visit_status($request_id, $user_id, $visit_status);
+		if (empty($result['status']) || $result['status'] !== 'success') {
+			$this->output
+				->set_status_header(400)
+				->set_output(json_encode(array(
+					'status' => 'error',
+					'message' => !empty($result['message']) ? $result['message'] : 'Status kunjungan tidak dapat diperbarui',
+				)));
+			return;
+		}
+
+		if (function_exists('doclinc_log_request_event')) {
+			doclinc_log_request_event('visit_status_updated', $request_id, array('visit_status' => $result['visit_status']));
+		}
+
+		$this->output->set_output(json_encode(array(
+			'status' => 'success',
+			'message' => $result['message'],
+			'request_id' => $request_id,
+			'visit_status' => $result['visit_status'],
+			'visit_status_label' => $result['visit_status_label'],
+		)));
 	}
 	public function get_location_user()
 	{

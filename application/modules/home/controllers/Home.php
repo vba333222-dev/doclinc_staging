@@ -227,11 +227,24 @@ class Home extends MX_Controller
 			return;
 		}
 
+		$visit_status = isset($row->visit_status) && $row->visit_status !== null
+			? doclinc_normalize_visit_status($row->visit_status)
+			: '';
+		$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
+		$visit_workflow = [
+			'visit_status' => $visit_status,
+			'visit_status_label' => doclinc_visit_status_label($visit_status),
+			'visit_started_at' => isset($row->visit_started_at) ? $row->visit_started_at : null,
+			'visit_arrived_at' => isset($row->visit_arrived_at) ? $row->visit_arrived_at : null,
+			'visit_in_service_at' => isset($row->visit_in_service_at) ? $row->visit_in_service_at : null,
+			'visit_completed_at' => isset($row->visit_completed_at) ? $row->visit_completed_at : null,
+		];
+
 		if (!$this->is_valid_latitude($row->lattitude_dokter) || !$this->is_valid_longitude($row->longitude_dokter)) {
-			$this->output->set_output(json_encode([
+			$this->output->set_output(json_encode(array_merge([
 				'status' => 'pending',
 				'message' => 'Lokasi nakes belum tersedia'
-			]));
+			], $visit_workflow)));
 			return;
 		}
 
@@ -245,7 +258,7 @@ class Home extends MX_Controller
 			$patient_longitude = (float) $row->longitude;
 		}
 
-		$this->output->set_output(json_encode([
+		$this->output->set_output(json_encode(array_merge([
 			'status' => 'success',
 			'request_status' => 'Accepted',
 			'nakes' => [
@@ -257,7 +270,7 @@ class Home extends MX_Controller
 				'latitude' => $patient_latitude,
 				'longitude' => $patient_longitude,
 			],
-		]));
+		], $visit_workflow)));
 	}
 
 	public function submit_rating()
