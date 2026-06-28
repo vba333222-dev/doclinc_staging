@@ -232,21 +232,18 @@ class Home extends MX_Controller
 			: '';
 		$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
 		$visit_workflow = [
+			'request_id' => $request_id,
+			'request_status' => $row->request_status,
 			'visit_status' => $visit_status,
 			'visit_status_label' => doclinc_visit_status_label($visit_status),
+			'consultation_mode' => isset($row->consultation_mode) ? $row->consultation_mode : null,
+			'consultation_mode_label' => function_exists('doclinc_consultation_mode_label') ? doclinc_consultation_mode_label(isset($row->consultation_mode) ? $row->consultation_mode : null) : '',
 			'visit_started_at' => isset($row->visit_started_at) ? $row->visit_started_at : null,
 			'visit_arrived_at' => isset($row->visit_arrived_at) ? $row->visit_arrived_at : null,
 			'visit_in_service_at' => isset($row->visit_in_service_at) ? $row->visit_in_service_at : null,
 			'visit_completed_at' => isset($row->visit_completed_at) ? $row->visit_completed_at : null,
+			'route' => function_exists('doclinc_visit_route_pending_payload') ? doclinc_visit_route_pending_payload() : array(),
 		];
-
-		if (!$this->is_valid_latitude($row->lattitude_dokter) || !$this->is_valid_longitude($row->longitude_dokter)) {
-			$this->output->set_output(json_encode(array_merge([
-				'status' => 'pending',
-				'message' => 'Lokasi nakes belum tersedia'
-			], $visit_workflow)));
-			return;
-		}
 
 		$patient_latitude = null;
 		$patient_longitude = null;
@@ -258,19 +255,44 @@ class Home extends MX_Controller
 			$patient_longitude = (float) $row->longitude;
 		}
 
-		$this->output->set_output(json_encode(array_merge([
-			'status' => 'success',
-			'request_status' => 'Accepted',
+		$nakes_latitude = null;
+		$nakes_longitude = null;
+		if ($this->is_valid_latitude($row->lattitude_dokter) && $this->is_valid_longitude($row->longitude_dokter)) {
+			$nakes_latitude = (float) $row->lattitude_dokter;
+			$nakes_longitude = (float) $row->longitude_dokter;
+		}
+
+		$location_payload = [
 			'nakes' => [
-				'latitude' => (float) $row->lattitude_dokter,
-				'longitude' => (float) $row->longitude_dokter,
-				'updated_at' => $row->updated_at,
+				'latitude' => $nakes_latitude,
+				'longitude' => $nakes_longitude,
+				'lat' => $nakes_latitude,
+				'lng' => $nakes_longitude,
+				'accuracy' => isset($row->nakes_accuracy) && is_numeric($row->nakes_accuracy) ? (float) $row->nakes_accuracy : null,
+				'heading' => isset($row->nakes_heading) && is_numeric($row->nakes_heading) ? (float) $row->nakes_heading : null,
+				'speed' => isset($row->nakes_speed) && is_numeric($row->nakes_speed) ? (float) $row->nakes_speed : null,
+				'updated_at' => isset($row->updated_at) ? $row->updated_at : null,
 			],
 			'patient' => [
 				'latitude' => $patient_latitude,
 				'longitude' => $patient_longitude,
+				'lat' => $patient_latitude,
+				'lng' => $patient_longitude,
 			],
-		], $visit_workflow)));
+		];
+
+		if ($nakes_latitude === null || $nakes_longitude === null) {
+			$this->output->set_output(json_encode(array_merge([
+				'status' => 'pending',
+				'message' => 'Lokasi nakes belum tersedia',
+			], $visit_workflow, $location_payload)));
+			return;
+		}
+
+		$this->output->set_output(json_encode(array_merge([
+			'status' => 'success',
+			'message' => 'Lokasi nakes tersedia',
+		], $visit_workflow, $location_payload)));
 	}
 
 	public function submit_rating()

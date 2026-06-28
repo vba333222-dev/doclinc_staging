@@ -424,10 +424,14 @@ class Home_m extends MX_Controller
 			$this->db->field_exists('patient_longitude', 'requests') ? 'patient_longitude' : 'NULL AS patient_longitude',
 			$this->db->field_exists('updated_at', 'requests') ? 'updated_at' : 'NULL AS updated_at',
 			$this->db->field_exists('visit_status', 'requests') ? 'visit_status' : 'NULL AS visit_status',
+			$this->db->field_exists('consultation_mode', 'requests') ? 'consultation_mode' : 'NULL AS consultation_mode',
 			$this->db->field_exists('visit_started_at', 'requests') ? 'visit_started_at' : 'NULL AS visit_started_at',
 			$this->db->field_exists('visit_arrived_at', 'requests') ? 'visit_arrived_at' : 'NULL AS visit_arrived_at',
 			$this->db->field_exists('visit_in_service_at', 'requests') ? 'visit_in_service_at' : 'NULL AS visit_in_service_at',
 			$this->db->field_exists('visit_completed_at', 'requests') ? 'visit_completed_at' : 'NULL AS visit_completed_at',
+			$this->db->field_exists('nakes_accuracy', 'requests') ? 'nakes_accuracy' : 'NULL AS nakes_accuracy',
+			$this->db->field_exists('nakes_heading', 'requests') ? 'nakes_heading' : 'NULL AS nakes_heading',
+			$this->db->field_exists('nakes_speed', 'requests') ? 'nakes_speed' : 'NULL AS nakes_speed',
 		);
 
 		return $this->db
