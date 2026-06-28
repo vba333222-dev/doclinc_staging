@@ -4,6 +4,10 @@ $can_send = !empty($can_send);
 $current_user_id = isset($current_user_id) ? (int) $current_user_id : 0;
 $request_status = isset($request->request_status) ? (string) $request->request_status : '';
 $queue_code = doclinc_request_queue_code($request);
+$queue_display = 'No. Antrian: ' . $queue_code;
+if ($current_role !== 'dokter') {
+	$queue_display = doclinc_request_puskesmas_label($request) . ' · ' . doclinc_request_queue_number_label($request);
+}
 $back_url = ($current_role === 'dokter') ? base_url('home_nakes') : base_url('home#riwayat');
 $status_label = 'Chat belum tersedia';
 if ($request_status === 'Accepted') {
@@ -370,7 +374,7 @@ if ($current_role === 'dokter') {
 			<div class="chat-profile-text">
 				<p class="chat-name"><?= html_escape($partner_name); ?></p>
 				<p class="chat-subtitle"><?= html_escape($partner_subtitle); ?></p>
-				<div class="chat-status"><?= html_escape($status_label); ?> · No. Antrian: <?= html_escape($queue_code); ?></div>
+				<div class="chat-status"><?= html_escape($status_label); ?> · <?= html_escape($queue_display); ?></div>
 			</div>
 		</section>
 
