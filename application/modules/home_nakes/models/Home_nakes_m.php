@@ -365,6 +365,9 @@ class Home_nakes_m extends MX_Controller
 
 		$date = date('Y-m-d H:i:s');
 		$data = array('visit_status' => $next_status);
+		if ($this->db->field_exists('consultation_mode', 'requests')) {
+			$data['consultation_mode'] = 'visit';
+		}
 		$timestamp_fields = array(
 			'en_route' => 'visit_started_at',
 			'arrived' => 'visit_arrived_at',
@@ -416,6 +419,9 @@ class Home_nakes_m extends MX_Controller
 			'lattitude_dokter' => $latitude,
 			'longitude_dokter' => $longitude,
 		);
+		if ($this->db->field_exists('consultation_mode', 'requests')) {
+			$data['consultation_mode'] = 'visit';
+		}
 		if ($this->db->field_exists('updated_at', 'requests')) {
 			$data['updated_at'] = date('Y-m-d H:i:s');
 		}
