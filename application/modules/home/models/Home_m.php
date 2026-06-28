@@ -387,6 +387,11 @@ class Home_m extends MX_Controller
 			$this->db->field_exists('patient_latitude', 'requests') ? 'patient_latitude' : 'NULL AS patient_latitude',
 			$this->db->field_exists('patient_longitude', 'requests') ? 'patient_longitude' : 'NULL AS patient_longitude',
 			$this->db->field_exists('updated_at', 'requests') ? 'updated_at' : 'NULL AS updated_at',
+			$this->db->field_exists('visit_status', 'requests') ? 'visit_status' : 'NULL AS visit_status',
+			$this->db->field_exists('visit_started_at', 'requests') ? 'visit_started_at' : 'NULL AS visit_started_at',
+			$this->db->field_exists('visit_arrived_at', 'requests') ? 'visit_arrived_at' : 'NULL AS visit_arrived_at',
+			$this->db->field_exists('visit_in_service_at', 'requests') ? 'visit_in_service_at' : 'NULL AS visit_in_service_at',
+			$this->db->field_exists('visit_completed_at', 'requests') ? 'visit_completed_at' : 'NULL AS visit_completed_at',
 		);
 
 		return $this->db

@@ -58,6 +58,9 @@ class Konsultasi_nakes_m extends MX_Controller
 		if ($this->db->field_exists('updated_at', 'requests')) {
 			$request_data['updated_at'] = $date;
 		}
+		if ($this->db->field_exists('visit_status', 'requests')) {
+			$request_data['visit_status'] = 'completed';
+		}
 
 		$this->db->where('request_id', $request_id);
 		$this->db->group_start();
@@ -67,6 +70,9 @@ class Konsultasi_nakes_m extends MX_Controller
 		}
 		$this->db->group_end();
 		$this->db->where('request_status', 'Accepted');
+		if ($this->db->field_exists('visit_completed_at', 'requests')) {
+			$this->db->set('visit_completed_at', 'COALESCE(visit_completed_at, ' . $this->db->escape($date) . ')', FALSE);
+		}
 		$this->db->update('requests', $request_data);
 		if ($this->db->affected_rows() < 1) {
 			$this->db->trans_rollback();

@@ -681,6 +681,15 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 							foreach ($data_request_accept->result() as $x) {
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
+								$visit_status = isset($x->visit_status) ? doclinc_normalize_visit_status($x->visit_status) : '';
+								$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
+								$visit_next_status = array(
+									'not_started' => 'en_route',
+									'en_route' => 'arrived',
+									'arrived' => 'in_service',
+									'in_service' => 'completed',
+									'completed' => '',
+								);
 							?>
 								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>">
 									<div class="card-header d-flex align-items-start gap-3">
@@ -703,6 +712,16 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										<div class="dl-nakes-meta-list">
 											<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong id="distances"></strong></div>
 											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong id="durations"></strong></div>
+										</div>
+										<div class="mt-3 visit-workflow-control" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
+											<div class="small text-muted mb-2">Status kunjungan: <span class="fw-bold visit-workflow-label"><?= html_escape(doclinc_visit_status_label($visit_status)); ?></span></div>
+											<div class="d-flex flex-wrap gap-2">
+												<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="en_route" <?= $visit_next_status[$visit_status] === 'en_route' ? '' : 'disabled'; ?>>Mulai Perjalanan</button>
+												<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived" <?= $visit_next_status[$visit_status] === 'arrived' ? '' : 'disabled'; ?>>Tiba di Lokasi</button>
+												<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="in_service" <?= $visit_next_status[$visit_status] === 'in_service' ? '' : 'disabled'; ?>>Mulai Penanganan</button>
+												<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="completed" <?= $visit_next_status[$visit_status] === 'completed' ? '' : 'disabled'; ?>>Kunjungan Selesai</button>
+											</div>
+											<div class="small mt-2 visit-workflow-message" data-visit-workflow-message="<?= html_escape((int) $x->request_id); ?>"></div>
 										</div>
 									</div>
 									<div class="card-footer d-flex flex-wrap gap-2 dl-nakes-actions">
@@ -1448,8 +1467,16 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 		(function(window, $) {
 			const ns = window.doclincVisitTracking = window.doclincVisitTracking || {};
 			const updateVisitLocationUrl = <?= json_encode(base_url('home_nakes/update_visit_location')); ?>;
+			const updateVisitStatusUrl = <?= json_encode(base_url('home_nakes/update_visit_status')); ?>;
 			const minPostIntervalMs = 10000;
 			const watches = ns.watches = ns.watches || {};
+			const nextVisitStatuses = {
+				not_started: 'en_route',
+				en_route: 'arrived',
+				arrived: 'in_service',
+				in_service: 'completed',
+				completed: ''
+			};
 
 			function setTrackingStatus(requestId, message, isError) {
 				const element = document.querySelector('[data-tracking-status="' + requestId + '"]');
@@ -1457,6 +1484,28 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				element.textContent = message || '';
 				element.classList.toggle('text-danger', !!isError);
 				element.classList.toggle('text-success', !isError && !!message);
+			}
+
+			function setVisitWorkflowMessage(requestId, message, isError) {
+				const element = document.querySelector('[data-visit-workflow-message="' + requestId + '"]');
+				if (!element) return;
+				element.textContent = message || '';
+				element.classList.toggle('text-danger', !!isError);
+				element.classList.toggle('text-success', !isError && !!message);
+			}
+
+			function refreshVisitWorkflowControl(requestId, visitStatus, label) {
+				const container = document.querySelector('[data-visit-workflow="' + requestId + '"]');
+				if (!container) return;
+				container.setAttribute('data-current-status', visitStatus);
+				const labelElement = container.querySelector('.visit-workflow-label');
+				if (labelElement) {
+					labelElement.textContent = label || visitStatus;
+				}
+				const nextStatus = nextVisitStatuses[visitStatus] || '';
+				container.querySelectorAll('.visit-status-update').forEach(function(button) {
+					button.disabled = button.getAttribute('data-visit-status') !== nextStatus;
+				});
 			}
 
 			function stopTracking(requestId) {
@@ -1547,6 +1596,47 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				const requestId = $(this).data('request-id');
 				if (!requestId) return;
 				ns.startNakesVisitTracking(requestId);
+			});
+
+			$(document).on('click', '.visit-status-update', function(event) {
+				event.preventDefault();
+				const button = $(this);
+				const requestId = button.data('request-id');
+				const visitStatus = button.data('visit-status');
+				if (!requestId || !visitStatus) return;
+
+				button.prop('disabled', true);
+				setVisitWorkflowMessage(requestId, 'Memperbarui status kunjungan...');
+				$.ajax({
+					url: updateVisitStatusUrl,
+					type: 'POST',
+					dataType: 'json',
+					data: {
+						request_id: requestId,
+						visit_status: visitStatus
+					},
+					success: function(response) {
+						if (typeof response === 'string') {
+							try {
+								response = JSON.parse(response);
+							} catch (error) {}
+						}
+
+						if (response && response.status === 'success') {
+							refreshVisitWorkflowControl(requestId, response.visit_status, response.visit_status_label);
+							setVisitWorkflowMessage(requestId, response.message || 'Status kunjungan diperbarui');
+							return;
+						}
+
+						button.prop('disabled', false);
+						setVisitWorkflowMessage(requestId, response && response.message ? response.message : 'Status kunjungan tidak dapat diperbarui', true);
+					},
+					error: function(xhr) {
+						const response = xhr.responseJSON || {};
+						button.prop('disabled', false);
+						setVisitWorkflowMessage(requestId, response.message || 'Status kunjungan tidak dapat diperbarui', true);
+					}
+				});
 			});
 
 			$(window).on('beforeunload', function() {

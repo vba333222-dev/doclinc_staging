@@ -1230,6 +1230,12 @@ if (!function_exists('doclinc_history_format_complaint')) {
 				element.classList.toggle('text-success', !isError && !!message);
 			}
 
+			function getVisitStatusMessage(response, fallback) {
+				const label = response && response.visit_status_label ? response.visit_status_label : '';
+				if (!label) return fallback;
+				return fallback ? label + ' - ' + fallback : label;
+			}
+
 			function stopPolling(requestId) {
 				if (timers[requestId]) {
 					clearTimeout(timers[requestId]);
@@ -1358,9 +1364,9 @@ if (!function_exists('doclinc_history_format_complaint')) {
 								if (state) {
 									ns.updateVisitMapMarkers(mapContainerId, patientLocation, nakesLocation);
 								}
-								setVisitStatus(requestId, nakesLocation ? 'Lokasi nakes tersedia' : 'Lokasi nakes belum tersedia');
+								setVisitStatus(requestId, getVisitStatusMessage(response, nakesLocation ? 'Lokasi nakes tersedia' : 'Lokasi nakes belum tersedia'));
 							} else if (response && response.status === 'pending') {
-								setVisitStatus(requestId, response.message || 'Lokasi nakes belum tersedia');
+								setVisitStatus(requestId, getVisitStatusMessage(response, response.message || 'Lokasi nakes belum tersedia'));
 							} else {
 								setVisitStatus(requestId, response && response.message ? response.message : 'Gagal memuat lokasi nakes', true);
 							}

@@ -243,6 +243,9 @@ class Home_nakes_m extends MX_Controller
 		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
 			$data['accepted_by_user_id'] = $id_user;
 		}
+		if ($this->db->field_exists('visit_status', 'requests')) {
+			$data['visit_status'] = 'not_started';
+		}
 
 		$this->db
 			->where('request_id', $id)
@@ -306,6 +309,87 @@ class Home_nakes_m extends MX_Controller
 		}
 
 		return array('status' => 'error', 'message' => 'Request tidak ditemukan atau akses tidak diizinkan');
+	}
+	public function update_visit_status($request_id, $user_id, $next_status)
+	{
+		$request_id = (int) $request_id;
+		$user_id = (int) $user_id;
+		$next_status = function_exists('doclinc_normalize_visit_status') ? doclinc_normalize_visit_status($next_status) : '';
+		if ($request_id < 1 || $user_id < 1 || $next_status === '') {
+			return array('status' => 'error', 'message' => 'Data status kunjungan tidak valid');
+		}
+
+		$required_fields = array('request_id', 'request_status', 'dokter_id', 'visit_status');
+		foreach ($required_fields as $field) {
+			if (!$this->db->field_exists($field, 'requests')) {
+				return array('status' => 'error', 'message' => 'Kolom status kunjungan belum tersedia');
+			}
+		}
+
+		$request = $this->db
+			->where('request_id', $request_id)
+			->get('requests')
+			->row();
+		if (!$request) {
+			return array('status' => 'error', 'message' => 'Request tidak ditemukan');
+		}
+		if ($request->request_status !== 'Accepted') {
+			return array('status' => 'error', 'message' => 'Status kunjungan hanya dapat diperbarui untuk konsultasi aktif');
+		}
+
+		$current_status = function_exists('doclinc_normalize_visit_status')
+			? (doclinc_normalize_visit_status($request->visit_status) ?: 'not_started')
+			: ($request->visit_status ?: 'not_started');
+		if (function_exists('doclinc_allowed_visit_status_transition') && !doclinc_allowed_visit_status_transition($current_status, $next_status)) {
+			return array('status' => 'error', 'message' => 'Perubahan status kunjungan tidak valid');
+		}
+
+		$date = date('Y-m-d H:i:s');
+		$data = array('visit_status' => $next_status);
+		$timestamp_fields = array(
+			'en_route' => 'visit_started_at',
+			'arrived' => 'visit_arrived_at',
+			'in_service' => 'visit_in_service_at',
+			'completed' => 'visit_completed_at',
+		);
+		if (isset($timestamp_fields[$next_status])) {
+			$timestamp_field = $timestamp_fields[$next_status];
+			if ($this->db->field_exists($timestamp_field, 'requests') && empty($request->{$timestamp_field})) {
+				$data[$timestamp_field] = $date;
+			}
+		}
+		if ($this->db->field_exists('updated_at', 'requests')) {
+			$data['updated_at'] = $date;
+		}
+
+		$this->db
+			->where('request_id', $request_id)
+			->where('request_status', 'Accepted')
+			->group_start()
+			->where('dokter_id', $user_id);
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$this->db->or_where('accepted_by_user_id', $user_id);
+		}
+		$this->db
+			->group_end()
+			->update('requests', $data);
+
+		if ($this->db->affected_rows() < 1 && $current_status !== $next_status) {
+			return array('status' => 'error', 'message' => 'Status kunjungan tidak dapat diperbarui');
+		}
+
+		$row = $this->db
+			->where('request_id', $request_id)
+			->get('requests')
+			->row();
+		$visit_status = $row && isset($row->visit_status) ? $row->visit_status : $next_status;
+
+		return array(
+			'status' => 'success',
+			'message' => 'Status kunjungan diperbarui',
+			'visit_status' => $visit_status,
+			'visit_status_label' => function_exists('doclinc_visit_status_label') ? doclinc_visit_status_label($visit_status) : $visit_status,
+		);
 	}
 	public function update_visit_location($request_id, $user_id, $latitude, $longitude)
 	{
