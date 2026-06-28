@@ -61,6 +61,26 @@ class Home_nakes_m extends MX_Controller
 		$this->db->group_end();
 	}
 
+	private function where_handling_nakes_owner($id, $prefix = '')
+	{
+		$this->db->group_start();
+		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+			$this->db->where($prefix . 'assigned_nakes_user_id', $id);
+			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+				$this->db->or_where($prefix . 'accepted_by_user_id', $id);
+			}
+			if ($this->db->field_exists('dokter_id', 'requests')) {
+				$this->db->or_where($prefix . 'dokter_id', $id);
+			}
+		} else {
+			$this->db->where($prefix . 'dokter_id', $id);
+			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+				$this->db->or_where($prefix . 'accepted_by_user_id', $id);
+			}
+		}
+		$this->db->group_end();
+	}
+
 	public function request_keluhan($id, $puskesmas_code = '')
 	{
 		$this->select_request_base();
@@ -114,12 +134,7 @@ class Home_nakes_m extends MX_Controller
 		$this->join_riwayat_or_default();
 
 		$this->db->where('requests.request_status', 'Accepted');
-		$this->db->group_start();
-		$this->db->where('requests.dokter_id', $id);
-		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
-			$this->db->or_where('requests.accepted_by_user_id', $id);
-		}
-		$this->db->group_end();
+		$this->where_handling_nakes_owner($id, 'requests.');
 
 		return $this->db->order_by('requests.request_id', 'DESC')->get();
 	}
@@ -162,12 +177,7 @@ class Home_nakes_m extends MX_Controller
 		}
 
 		$this->db->where('requests.request_status', 'Completed');
-		$this->db->group_start();
-		$this->db->where('requests.dokter_id', $id);
-		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
-			$this->db->or_where('requests.accepted_by_user_id', $id);
-		}
-		$this->db->group_end();
+		$this->where_handling_nakes_owner($id, 'requests.');
 
 		return $this->db
 			->order_by('requests.request_id', 'DESC')
@@ -216,7 +226,12 @@ class Home_nakes_m extends MX_Controller
 
 		if ($request->request_status === 'Accepted') {
 			$accepted_by_user_id = isset($request->accepted_by_user_id) ? $request->accepted_by_user_id : null;
-			if ((string) $request->dokter_id === (string) $id_user || (string) $accepted_by_user_id === (string) $id_user) {
+			$assigned_nakes_user_id = isset($request->assigned_nakes_user_id) ? $request->assigned_nakes_user_id : null;
+			if (
+				(string) $request->dokter_id === (string) $id_user
+				|| (string) $accepted_by_user_id === (string) $id_user
+				|| (string) $assigned_nakes_user_id === (string) $id_user
+			) {
 				return array('status' => 'success', 'message' => 'Request konsultasi sudah diterima', 'already_accepted' => true);
 			}
 
@@ -304,12 +319,7 @@ class Home_nakes_m extends MX_Controller
 		if ($request->request_status === 'Pending') {
 			$this->where_pending_queue_owner($user_id, $puskesmas_code);
 		} else {
-			$this->db->group_start();
-			$this->db->where('dokter_id', $user_id);
-			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
-				$this->db->or_where('accepted_by_user_id', $user_id);
-			}
-			$this->db->group_end();
+			$this->where_handling_nakes_owner($user_id);
 		}
 
 		$this->db->update('requests', $data);
@@ -373,15 +383,9 @@ class Home_nakes_m extends MX_Controller
 
 		$this->db
 			->where('request_id', $request_id)
-			->where('request_status', 'Accepted')
-			->group_start()
-			->where('dokter_id', $user_id);
-		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
-			$this->db->or_where('accepted_by_user_id', $user_id);
-		}
-		$this->db
-			->group_end()
-			->update('requests', $data);
+			->where('request_status', 'Accepted');
+		$this->where_handling_nakes_owner($user_id);
+		$this->db->update('requests', $data);
 
 		if ($this->db->affected_rows() < 1 && $current_status !== $next_status) {
 			return array('status' => 'error', 'message' => 'Status kunjungan tidak dapat diperbarui');
@@ -418,15 +422,9 @@ class Home_nakes_m extends MX_Controller
 
 		$this->db
 			->where('request_id', $request_id)
-			->where('request_status', 'Accepted')
-			->group_start()
-			->where('dokter_id', $user_id);
-		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
-			$this->db->or_where('accepted_by_user_id', $user_id);
-		}
-		$this->db
-			->group_end()
-			->update('requests', $data);
+			->where('request_status', 'Accepted');
+		$this->where_handling_nakes_owner($user_id);
+		$this->db->update('requests', $data);
 
 		return $this->db->affected_rows() > 0;
 	}

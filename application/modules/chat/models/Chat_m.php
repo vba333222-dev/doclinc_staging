@@ -229,11 +229,7 @@ class Chat_m extends CI_Model
 
 		$recipient_user_id = null;
 		if ((string) $request->user_id === (string) $sender_user_id) {
-			if (!empty($request->accepted_by_user_id)) {
-				$recipient_user_id = $request->accepted_by_user_id;
-			} elseif (!empty($request->dokter_id)) {
-				$recipient_user_id = $request->dokter_id;
-			}
+			$recipient_user_id = doclinc_request_handling_nakes_id($request);
 		} else {
 			$recipient_user_id = $request->user_id;
 		}
