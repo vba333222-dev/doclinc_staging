@@ -217,11 +217,75 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 		.doclinc-visit-map {
 			width: 100%;
-			height: 220px;
+			height: min(66vh, 520px);
+			min-height: 320px;
 			border: 1px solid #d8eee5;
 			border-radius: 12px;
 			overflow: hidden;
 			background: #eef5f2;
+		}
+
+		.visit-map-toolbar {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			justify-content: flex-end;
+			margin-top: 10px;
+		}
+
+		.visit-map-toolbar .btn {
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+			padding: 7px 12px;
+		}
+
+		.visit-route-card {
+			border: 1px solid #d8eee5;
+			border-radius: 12px;
+			background: #fff;
+			box-shadow: 0 8px 24px rgba(15, 66, 42, 0.08);
+			padding: 12px;
+		}
+
+		.visit-route-card-title {
+			color: #1f513c;
+			font-size: 14px;
+			font-weight: 800;
+			margin-bottom: 8px;
+		}
+
+		.visit-route-card-row {
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+			color: #5d6b66;
+			font-size: 12px;
+			line-height: 1.5;
+			padding: 2px 0;
+		}
+
+		.visit-route-card-row strong {
+			color: #1f513c;
+			text-align: right;
+		}
+
+		.visit-route-status {
+			display: inline-flex;
+			align-items: center;
+			border-radius: 999px;
+			background: #e5f7ef;
+			color: #087a52;
+			font-size: 12px;
+			font-weight: 800;
+			padding: 5px 10px;
+		}
+
+		@media (max-width: 575.98px) {
+			.doclinc-visit-map {
+				height: 58vh;
+				min-height: 340px;
+			}
 		}
 
 		.doclinc-visit-status {
@@ -913,7 +977,33 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 													<i class="fas fa-map-marker-alt me-1"></i> Lihat Lokasi Nakes
 												</button>
 												<div class="doclinc-visit-status mt-2" data-visit-status="<?= html_escape((int) $id_request); ?>"></div>
+												<div class="visit-map-toolbar d-none" data-visit-toolbar="<?= html_escape((int) $id_request); ?>">
+													<button type="button" class="btn btn-light border visit-route-recenter" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
+														<i class="fas fa-crosshairs me-1"></i> Pusatkan rute
+													</button>
+													<button type="button" class="btn btn-success visit-route-refresh" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
+														<i class="fas fa-sync-alt me-1"></i> Perbarui
+													</button>
+												</div>
 												<div id="visit-map-<?= html_escape((int) $id_request); ?>" class="doclinc-visit-map mt-2 d-none"></div>
+												<div class="visit-route-card mt-2 d-none" data-visit-route-card="<?= html_escape((int) $id_request); ?>">
+													<div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+														<div class="visit-route-card-title">Nakes menuju lokasi Anda</div>
+														<span class="visit-route-status" data-visit-route-status="<?= html_escape((int) $id_request); ?>">Menghitung...</span>
+													</div>
+													<div class="visit-route-card-row">
+														<span>Jarak</span>
+														<strong data-visit-route-distance="<?= html_escape((int) $id_request); ?>">Menghitung...</strong>
+													</div>
+													<div class="visit-route-card-row">
+														<span>Estimasi tiba</span>
+														<strong data-visit-route-eta="<?= html_escape((int) $id_request); ?>">Menghitung...</strong>
+													</div>
+													<div class="visit-route-card-row">
+														<span>Terakhir diperbarui</span>
+														<strong data-visit-route-updated="<?= html_escape((int) $id_request); ?>">-</strong>
+													</div>
+												</div>
 											</div>
 										<?php elseif ($request_status === 'Pending') : ?>
 											<div class="mt-3">
@@ -1284,6 +1374,40 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				element.classList.toggle('text-success', !isError && !!message);
 			}
 
+			function setVisitRouteSummary(requestId, response) {
+				const route = response && response.route ? response.route : {};
+				const patient = response && response.patient ? response.patient : null;
+				const nakes = response && response.nakes ? response.nakes : null;
+				const card = document.querySelector('[data-visit-route-card="' + requestId + '"]');
+				const toolbar = document.querySelector('[data-visit-toolbar="' + requestId + '"]');
+				const distanceElement = document.querySelector('[data-visit-route-distance="' + requestId + '"]');
+				const etaElement = document.querySelector('[data-visit-route-eta="' + requestId + '"]');
+				const updatedElement = document.querySelector('[data-visit-route-updated="' + requestId + '"]');
+				const statusElement = document.querySelector('[data-visit-route-status="' + requestId + '"]');
+				const hasDistance = !!(route && (route.distance_text || route.eta_text));
+				const hasGeometry = !!(route && route.geometry && route.geometry.type === 'LineString');
+				const patientAvailable = !patient || patient.available !== false;
+				const nakesAvailable = !!(nakes && nakes.available !== false && nakes.latitude && nakes.longitude);
+				let statusText = 'Menghitung...';
+
+				if (!patientAvailable) {
+					statusText = 'Lokasi pasien belum tersedia';
+				} else if (!nakesAvailable) {
+					statusText = 'Menunggu lokasi nakes';
+				} else if (route && route.provider === 'valhalla') {
+					statusText = 'Rute aktif';
+				} else if (!hasGeometry && hasDistance) {
+					statusText = 'Rute dihitung';
+				}
+
+				if (card) card.classList.remove('d-none');
+				if (toolbar) toolbar.classList.remove('d-none');
+				if (distanceElement) distanceElement.textContent = route && route.distance_text ? route.distance_text : 'Menghitung...';
+				if (etaElement) etaElement.textContent = route && route.eta_text ? route.eta_text : 'Menghitung...';
+				if (updatedElement) updatedElement.textContent = route && route.calculated_at ? route.calculated_at : (response && response.status === 'success' ? new Date().toLocaleString('id-ID') : '-');
+				if (statusElement) statusElement.textContent = statusText;
+			}
+
 			function getVisitStatusMessage(response, fallback) {
 				const label = response && response.visit_status_label ? response.visit_status_label : '';
 				const mode = response && response.consultation_mode_label ? response.consultation_mode_label : '';
@@ -1331,7 +1455,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}
 
 			ns.initVisitMap = function(containerId, patientLocation, nakesLocation) {
-				if (!visitMapboxToken || !window.L) return null;
+				if (!window.L) return null;
 				const container = document.getElementById(containerId);
 				if (!container) return null;
 
@@ -1343,16 +1467,21 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 				if (!state) {
 					const map = L.map(container).setView([center.latitude, center.longitude], 14);
-					L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=' + encodeURIComponent(visitMapboxToken), {
+					const tileUrl = visitMapboxToken ?
+						'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=' + encodeURIComponent(visitMapboxToken) :
+						'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+					L.tileLayer(tileUrl, {
 						maxZoom: 19,
-						tileSize: 512,
-						zoomOffset: -1,
-						attribution: '&copy; OpenStreetMap contributors &copy; Mapbox'
+						tileSize: visitMapboxToken ? 512 : 256,
+						zoomOffset: visitMapboxToken ? -1 : 0,
+						attribution: visitMapboxToken ? '&copy; OpenStreetMap contributors &copy; Mapbox' : '&copy; OpenStreetMap contributors'
 					}).addTo(map);
 					state = maps[containerId] = {
 						map: map,
 						markers: {},
-						routeLine: null
+						routeOutlineLine: null,
+						routeLine: null,
+						lastBounds: null
 					};
 					setTimeout(function() {
 						map.invalidateSize();
@@ -1365,6 +1494,19 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 				return state;
 			};
+
+			function fitVisitBounds(state, bounds) {
+				if (!state || !state.map || !bounds || !bounds.length) return;
+				state.lastBounds = bounds.slice();
+				if (bounds.length > 1) {
+					state.map.fitBounds(bounds, {
+						padding: [54, 54],
+						maxZoom: 17
+					});
+				} else {
+					state.map.setView(bounds[0], Math.max(state.map.getZoom(), 14));
+				}
+			}
 
 			ns.updateVisitMapMarkers = function(containerId, patientLocation, nakesLocation, route) {
 				const state = maps[containerId];
@@ -1389,43 +1531,51 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				upsertMarker('patient', patientLocation, 'Pasien');
 				upsertMarker('nakes', nakesLocation, 'Nakes');
 
+				if (state.routeOutlineLine) {
+					state.map.removeLayer(state.routeOutlineLine);
+					state.routeOutlineLine = null;
+				}
 				if (state.routeLine) {
 					state.map.removeLayer(state.routeLine);
 					state.routeLine = null;
 				}
 				const routePoints = routeLatLngs(route);
 				if (routePoints.length > 1) {
+					state.routeOutlineLine = L.polyline(routePoints, {
+						weight: 10,
+						opacity: 0.32,
+						color: '#052e1f',
+						lineCap: 'round',
+						lineJoin: 'round'
+					}).addTo(state.map);
 					state.routeLine = L.polyline(routePoints, {
-						weight: 5,
-						opacity: 0.9,
-						color: '#09AD74'
+						weight: 6,
+						opacity: 0.95,
+						color: '#09AD74',
+						lineCap: 'round',
+						lineJoin: 'round'
 					}).addTo(state.map);
 					routePoints.forEach(function(latLng) {
 						bounds.push(latLng);
 					});
 				}
 
-				if (bounds.length > 1) {
-					state.map.fitBounds(bounds, {
-						padding: [48, 48],
-						maxZoom: 16
-					});
-				} else if (bounds.length === 1) {
-					state.map.setView(bounds[0], Math.max(state.map.getZoom(), 14));
-				}
+				fitVisitBounds(state, bounds);
 
 				setTimeout(function() {
 					state.map.invalidateSize();
 				}, 0);
 			};
 
+			ns.recenterVisitRoute = function(mapContainerId) {
+				const state = maps[mapContainerId];
+				if (!state || !state.map) return;
+				state.map.invalidateSize();
+				fitVisitBounds(state, state.lastBounds || []);
+			};
+
 			ns.pollVisitLocation = function(requestId, mapContainerId) {
 				stopPolling(requestId);
-
-				if (!visitMapboxToken) {
-					setVisitStatus(requestId, 'Konfigurasi peta belum tersedia', true);
-					return;
-				}
 
 				function poll() {
 					$.ajax({
@@ -1455,10 +1605,13 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								if (state) {
 									ns.updateVisitMapMarkers(mapContainerId, patientLocation, nakesLocation, response.route);
 								}
+								setVisitRouteSummary(requestId, response);
 								setVisitStatus(requestId, getVisitStatusMessage(response, nakesLocation ? 'Lokasi nakes tersedia' : 'Lokasi nakes belum tersedia'));
 							} else if (response && response.status === 'pending') {
+								setVisitRouteSummary(requestId, response);
 								setVisitStatus(requestId, getVisitStatusMessage(response, response.message || 'Lokasi nakes belum tersedia'));
 							} else {
+								setVisitRouteSummary(requestId, response || {});
 								setVisitStatus(requestId, response && response.message ? response.message : 'Gagal memuat lokasi nakes', true);
 							}
 
@@ -1492,6 +1645,23 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						maps[mapContainerId].map.invalidateSize();
 					}, 0);
 				}
+				ns.pollVisitLocation(requestId, mapContainerId);
+			});
+
+			$(document).on('click', '.visit-route-recenter', function(event) {
+				event.preventDefault();
+				const mapContainerId = $(this).data('map-id');
+				if (!mapContainerId) return;
+				ns.recenterVisitRoute(mapContainerId);
+			});
+
+			$(document).on('click', '.visit-route-refresh', function(event) {
+				event.preventDefault();
+				const button = $(this);
+				const requestId = button.data('request-id');
+				const mapContainerId = button.data('map-id');
+				if (!requestId || !mapContainerId) return;
+				$('#' + mapContainerId).removeClass('d-none');
 				ns.pollVisitLocation(requestId, mapContainerId);
 			});
 		})(window, jQuery);
