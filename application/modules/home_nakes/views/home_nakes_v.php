@@ -204,6 +204,95 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			font-size: 13px;
 		}
 
+		#offcanvasMapTujuan .offcanvas-body {
+			background: #eef5f2;
+		}
+
+		#maps {
+			min-height: 55vh;
+			background: #eef5f2;
+		}
+
+		#nakesVisitMapCanvas {
+			min-height: inherit;
+		}
+
+		.visit-map-toolbar {
+			position: absolute;
+			top: 16px;
+			right: 14px;
+			z-index: 1000;
+			display: flex;
+			gap: 8px;
+		}
+
+		.visit-map-toolbar .btn {
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 800;
+			padding: 8px 12px;
+			box-shadow: 0 8px 24px rgba(15, 66, 42, 0.16);
+		}
+
+		.visit-route-card {
+			position: absolute;
+			left: 14px;
+			right: 14px;
+			bottom: 16px;
+			z-index: 1000;
+			border: 1px solid #d8eee5;
+			border-radius: 16px;
+			background: rgba(255, 255, 255, 0.96);
+			box-shadow: 0 16px 32px rgba(15, 66, 42, 0.18);
+			padding: 14px;
+		}
+
+		.visit-route-card-title {
+			color: #1f513c;
+			font-size: 15px;
+			font-weight: 800;
+			margin-bottom: 8px;
+		}
+
+		.visit-route-card-row {
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+			color: #5d6b66;
+			font-size: 12px;
+			line-height: 1.5;
+			padding: 2px 0;
+		}
+
+		.visit-route-card-row strong {
+			color: #1f513c;
+			text-align: right;
+		}
+
+		.visit-route-status {
+			display: inline-flex;
+			align-items: center;
+			border-radius: 999px;
+			background: #e5f7ef;
+			color: #087a52;
+			font-size: 12px;
+			font-weight: 800;
+			padding: 5px 10px;
+			white-space: nowrap;
+		}
+
+		@media (max-width: 575.98px) {
+			#maps {
+				min-height: 70vh;
+			}
+
+			.visit-map-toolbar {
+				left: 14px;
+				right: 14px;
+				justify-content: flex-end;
+			}
+		}
+
 		.header {
 			background-color: #09AD74;
 			color: white;
@@ -982,9 +1071,36 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 		</div>
 		<div class="offcanvas-body p-0">
 			<div id="maps" class="w-100 h-100 position-relative">
-				<div class="position-absolute top-0 start-50 translate-middle-x mt-3 bg-white shadow rounded-pill px-4 py-2 d-flex align-items-center" style="z-index: 1000;">
+				<div id="nakesVisitMapCanvas" class="w-100 h-100"></div>
+				<div class="position-absolute top-0 start-0 mt-3 ms-3 bg-white shadow rounded-pill px-4 py-2 d-flex align-items-center" style="z-index: 1000;">
 					<i class="bi bi-pin-map-fill text-success me-2 fs-5"></i>
 					<span class="text-muted small" id="nakesVisitMapStatus">Menampilkan lokasi pasien...</span>
+				</div>
+				<div class="visit-map-toolbar">
+					<button type="button" class="btn btn-light border" id="nakesVisitRecenter">
+						<i class="fas fa-crosshairs me-1"></i> Pusatkan rute
+					</button>
+					<button type="button" class="btn btn-success" id="nakesVisitRefresh">
+						<i class="fas fa-sync-alt me-1"></i> Perbarui
+					</button>
+				</div>
+				<div class="visit-route-card">
+					<div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+						<div class="visit-route-card-title">Rute Anda ke Pasien</div>
+						<span class="visit-route-status" id="nakesVisitRouteStatus">Menghitung...</span>
+					</div>
+					<div class="visit-route-card-row">
+						<span>Jarak</span>
+						<strong id="nakesVisitRouteDistance">Menghitung...</strong>
+					</div>
+					<div class="visit-route-card-row">
+						<span>Estimasi perjalanan</span>
+						<strong id="nakesVisitRouteEta">Menghitung...</strong>
+					</div>
+					<div class="visit-route-card-row">
+						<span>Terakhir diperbarui</span>
+						<strong id="nakesVisitRouteUpdated">-</strong>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -1504,10 +1620,15 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			const mapState = ns.nakesMapState = ns.nakesMapState || {
 				leaflet: null,
 				leafletMarkers: {},
+				leafletRouteOutlineLine: null,
 				leafletRouteLine: null,
 				google: null,
 				googleMarkers: {},
+				googleRouteOutlineLine: null,
 				googleRouteLine: null,
+				lastLeafletBounds: null,
+				lastGoogleBounds: null,
+				currentRequestId: null,
 				loadedRequests: {}
 			};
 			const nextVisitStatuses = {
@@ -1541,6 +1662,35 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				const eta = route && route.eta_text ? route.eta_text : 'Menghitung...';
 				if (distanceElement) distanceElement.textContent = distance;
 				if (etaElement) etaElement.textContent = eta;
+			}
+
+			function setTextById(id, text) {
+				const element = document.getElementById(id);
+				if (element) element.textContent = text;
+			}
+
+			function setNakesRouteSummary(response, patientLocation, nakesLocation) {
+				const route = response && response.route ? response.route : {};
+				const hasDistance = !!(route && (route.distance_text || route.eta_text));
+				const hasGeometry = !!(route && route.geometry && route.geometry.type === 'LineString');
+				const patientAvailable = !!patientLocation;
+				const nakesAvailable = !!nakesLocation;
+				let statusText = 'Menghitung...';
+
+				if (!patientAvailable) {
+					statusText = 'Lokasi pasien belum tersedia';
+				} else if (!nakesAvailable) {
+					statusText = 'Menunggu lokasi nakes';
+				} else if (route && route.provider === 'valhalla') {
+					statusText = 'Rute aktif';
+				} else if (!hasGeometry && hasDistance) {
+					statusText = 'Rute dihitung';
+				}
+
+				setTextById('nakesVisitRouteDistance', route && route.distance_text ? route.distance_text : 'Menghitung...');
+				setTextById('nakesVisitRouteEta', route && route.eta_text ? route.eta_text : 'Menghitung...');
+				setTextById('nakesVisitRouteUpdated', route && route.calculated_at ? route.calculated_at : (response && response.status ? new Date().toLocaleString('id-ID') : '-'));
+				setTextById('nakesVisitRouteStatus', statusText);
 			}
 
 			function parseLocation(location) {
@@ -1625,7 +1775,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			}
 
 			function renderLeafletMap(patientLocation, nakesLocation, route) {
-				const container = document.getElementById('maps');
+				const container = document.getElementById('nakesVisitMapCanvas') || document.getElementById('maps');
 				if (!container || !window.L) return false;
 				const center = nakesLocation || patientLocation || {
 					latitude: -6.0176,
@@ -1661,25 +1811,39 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 
 				upsertMarker('patient', patientLocation, 'Pasien');
 				upsertMarker('nakes', nakesLocation, 'Nakes');
+				if (mapState.leafletRouteOutlineLine) {
+					mapState.leaflet.removeLayer(mapState.leafletRouteOutlineLine);
+					mapState.leafletRouteOutlineLine = null;
+				}
 				if (mapState.leafletRouteLine) {
 					mapState.leaflet.removeLayer(mapState.leafletRouteLine);
 					mapState.leafletRouteLine = null;
 				}
 				const routePoints = routeLatLngs(route);
 				if (routePoints.length > 1) {
+					mapState.leafletRouteOutlineLine = L.polyline(routePoints, {
+						weight: 10,
+						opacity: 0.32,
+						color: '#052e1f',
+						lineCap: 'round',
+						lineJoin: 'round'
+					}).addTo(mapState.leaflet);
 					mapState.leafletRouteLine = L.polyline(routePoints, {
-						weight: 5,
-						opacity: 0.9,
-						color: '#09AD74'
+						weight: 6,
+						opacity: 0.95,
+						color: '#09AD74',
+						lineCap: 'round',
+						lineJoin: 'round'
 					}).addTo(mapState.leaflet);
 					routePoints.forEach(function(latLng) {
 						bounds.push(latLng);
 					});
 				}
+				mapState.lastLeafletBounds = bounds.slice();
 				if (bounds.length > 1) {
 					mapState.leaflet.fitBounds(bounds, {
-						padding: [48, 48],
-						maxZoom: 16
+						padding: [58, 58],
+						maxZoom: 17
 					});
 				} else if (bounds.length === 1) {
 					mapState.leaflet.setView(bounds[0], Math.max(mapState.leaflet.getZoom(), 14));
@@ -1692,7 +1856,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 
 			function renderGoogleMap(patientLocation, nakesLocation, route) {
 				if (!hasGoogleMaps()) return false;
-				const container = document.getElementById('maps');
+				const container = document.getElementById('nakesVisitMapCanvas') || document.getElementById('maps');
 				if (!container) return false;
 				const center = nakesLocation || patientLocation || {
 					latitude: -6.0176,
@@ -1728,16 +1892,27 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 
 				upsertMarker('patient', patientLocation, 'Pasien');
 				upsertMarker('nakes', nakesLocation, 'Nakes');
+				if (mapState.googleRouteOutlineLine) {
+					mapState.googleRouteOutlineLine.setMap(null);
+					mapState.googleRouteOutlineLine = null;
+				}
 				if (mapState.googleRouteLine) {
 					mapState.googleRouteLine.setMap(null);
 					mapState.googleRouteLine = null;
 				}
 				const routePath = routeGooglePath(route);
 				if (routePath.length > 1) {
+					mapState.googleRouteOutlineLine = new google.maps.Polyline({
+						path: routePath,
+						strokeWeight: 10,
+						strokeOpacity: 0.32,
+						strokeColor: '#052e1f',
+						map: mapState.google
+					});
 					mapState.googleRouteLine = new google.maps.Polyline({
 						path: routePath,
-						strokeWeight: 5,
-						strokeOpacity: 0.9,
+						strokeWeight: 6,
+						strokeOpacity: 0.95,
 						strokeColor: '#09AD74',
 						map: mapState.google
 					});
@@ -1745,6 +1920,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						bounds.extend(latLng);
 					});
 				}
+				mapState.lastGoogleBounds = bounds;
 				if (patientLocation && nakesLocation) {
 					mapState.google.fitBounds(bounds);
 				} else if (patientLocation || nakesLocation) {
@@ -1757,6 +1933,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			function renderVisitMap(requestId, response, fallbackPatientLocation) {
 				const patientLocation = parseLocation(response && response.patient) || fallbackPatientLocation || null;
 				const nakesLocation = parseLocation(response && response.nakes);
+				setNakesRouteSummary(response || {}, patientLocation, nakesLocation);
 				if (response && response.route) {
 					setRouteText(requestId, response.route);
 				}
@@ -1779,13 +1956,18 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				}
 				if (requestId) {
 					mapState.loadedRequests[requestId] = true;
+					mapState.currentRequestId = requestId;
 				}
 				return true;
 			}
 
-			function fetchNakesVisitLocation(requestId) {
+			function fetchNakesVisitLocation(requestId, updateDeviceLocation) {
+				if (updateDeviceLocation === undefined) {
+					updateDeviceLocation = true;
+				}
 				const fallbackPatientLocation = inlinePatientLocation(requestId);
 				document.body.setAttribute('data-current-visit-request-id', requestId);
+				mapState.currentRequestId = requestId;
 				setMapStatus('Memuat lokasi pasien...');
 				$.ajax({
 					url: nakesVisitLocationUrl,
@@ -1806,7 +1988,9 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						}
 						if (response && response.status) {
 							renderVisitMap(requestId, response, fallbackPatientLocation);
-							refreshDeviceLocation(requestId);
+							if (updateDeviceLocation) {
+								refreshDeviceLocation(requestId);
+							}
 							return;
 						}
 						renderVisitMap(requestId, response || {}, fallbackPatientLocation);
@@ -1838,6 +2022,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						postVisitLocation(requestId, position, true);
 					},
 					function() {
+						setTextById('nakesVisitRouteStatus', 'Lokasi perangkat belum aktif');
 						if (hasLoadedVisitMap(requestId)) {
 							setTrackingStatus(requestId, 'Aktifkan lokasi perangkat untuk memperbarui posisi Anda');
 						} else {
@@ -1981,6 +2166,45 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				} : null);
 			});
 
+			$(document).on('click', '#nakesVisitRecenter', function(event) {
+				event.preventDefault();
+				if (mapState.leaflet && mapState.lastLeafletBounds && mapState.lastLeafletBounds.length) {
+					mapState.leaflet.invalidateSize();
+					if (mapState.lastLeafletBounds.length > 1) {
+						mapState.leaflet.fitBounds(mapState.lastLeafletBounds, {
+							padding: [58, 58],
+							maxZoom: 17
+						});
+					} else {
+						mapState.leaflet.setView(mapState.lastLeafletBounds[0], Math.max(mapState.leaflet.getZoom(), 14));
+					}
+					return;
+				}
+				if (mapState.google && mapState.lastGoogleBounds) {
+					mapState.google.fitBounds(mapState.lastGoogleBounds);
+				}
+			});
+
+			$(document).on('click', '#nakesVisitRefresh', function(event) {
+				event.preventDefault();
+				const requestId = mapState.currentRequestId || document.body.getAttribute('data-current-visit-request-id');
+				if (!requestId) return;
+				fetchNakesVisitLocation(requestId, false);
+			});
+
+			const nakesMapOffcanvas = document.getElementById('offcanvasMapTujuan');
+			if (nakesMapOffcanvas) {
+				nakesMapOffcanvas.addEventListener('shown.bs.offcanvas', function() {
+					if (mapState.leaflet) {
+						mapState.leaflet.invalidateSize();
+					}
+					const requestId = mapState.currentRequestId || document.body.getAttribute('data-current-visit-request-id');
+					if (requestId) {
+						$('#nakesVisitRecenter').trigger('click');
+					}
+				});
+			}
+
 			$(document).on('click', '.visit-status-update', function(event) {
 				event.preventDefault();
 				const button = $(this);
@@ -2042,7 +2266,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 		function initMap() {
 			if (!hasGoogleMaps()) return;
 
-			map = new google.maps.Map(document.getElementById("maps"), {
+			map = new google.maps.Map(document.getElementById("nakesVisitMapCanvas") || document.getElementById("maps"), {
 				zoom: 12,
 				center: {
 					lat: -6.1751,
