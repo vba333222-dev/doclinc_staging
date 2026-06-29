@@ -352,6 +352,239 @@ if (!function_exists('formatComplaintText')) {
 			color: #fff;
 		}
 
+		.dl-nakes-completion-form {
+			display: grid;
+			gap: 14px;
+		}
+
+		.dl-completion-intro {
+			display: grid;
+			gap: 6px;
+			margin-bottom: 14px;
+		}
+
+		.dl-completion-kicker {
+			margin: 0;
+			color: var(--doclinc-green);
+			font-size: 12px;
+			font-weight: 800;
+			letter-spacing: 0.02em;
+			text-transform: uppercase;
+		}
+
+		.dl-completion-copy,
+		.dl-form-helper {
+			margin: 0;
+			color: var(--doclinc-muted);
+			font-size: 13px;
+			line-height: 1.5;
+		}
+
+		.dl-form-section {
+			display: grid;
+			gap: 12px;
+			padding: 14px;
+			border: 1px solid #E7ECE9;
+			border-radius: 18px;
+			background: #FBFDFC;
+		}
+
+		.dl-form-section-header {
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+		}
+
+		.dl-form-section-icon {
+			width: 36px;
+			height: 36px;
+			flex: 0 0 36px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 12px;
+			background: #E8F7F1;
+			color: var(--doclinc-green);
+		}
+
+		.dl-form-section-title {
+			margin: 0;
+			color: var(--doclinc-text);
+			font-size: 15px;
+			font-weight: 800;
+		}
+
+		.dl-completion-review {
+			display: flex;
+			gap: 10px;
+			padding: 12px;
+			border-radius: 16px;
+			background: #F5FAF7;
+			color: var(--doclinc-text);
+			font-size: 13px;
+			line-height: 1.5;
+		}
+
+		.dl-completion-review i {
+			color: var(--doclinc-green);
+			margin-top: 2px;
+		}
+
+		.dl-submit-panel {
+			position: sticky;
+			bottom: 0;
+			z-index: 5;
+			margin: 0 -16px -16px;
+			padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+			border-top: 1px solid #E7ECE9;
+			background: rgba(255, 255, 255, 0.96);
+			backdrop-filter: blur(10px);
+		}
+
+		.dl-upload-card {
+			padding: 12px;
+			border: 1px dashed #BFDCD2;
+			border-radius: 16px;
+			background: #FFFFFF;
+		}
+
+		.dl-bottom-sheet-backdrop {
+			position: fixed;
+			inset: 0;
+			z-index: 1060;
+			display: none;
+			align-items: flex-end;
+			justify-content: center;
+			background: rgba(12, 28, 20, 0.42);
+			padding: 16px 12px 0;
+		}
+
+		.dl-bottom-sheet-backdrop.is-open {
+			display: flex;
+		}
+
+		.dl-bottom-sheet {
+			width: min(100%, 414px);
+			max-height: min(84vh, 680px);
+			overflow-y: auto;
+			padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
+			border-radius: 26px 26px 0 0;
+			background: #FFFFFF;
+			box-shadow: 0 -18px 45px rgba(16, 32, 24, 0.22);
+		}
+
+		.dl-bottom-sheet-handle {
+			width: 46px;
+			height: 5px;
+			margin: 0 auto 16px;
+			border-radius: 999px;
+			background: #D5E2DB;
+		}
+
+		.dl-confirm-header {
+			display: flex;
+			align-items: flex-start;
+			gap: 12px;
+			margin-bottom: 16px;
+		}
+
+		.dl-confirm-icon {
+			width: 44px;
+			height: 44px;
+			flex: 0 0 44px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 16px;
+			background: #E8F7F1;
+			color: var(--doclinc-green);
+			font-size: 20px;
+		}
+
+		.dl-confirm-title {
+			margin: 0 0 6px;
+			color: var(--doclinc-text);
+			font-size: 20px;
+			font-weight: 900;
+			line-height: 1.25;
+		}
+
+		.dl-confirm-copy {
+			margin: 0;
+			color: var(--doclinc-muted);
+			font-size: 13px;
+			line-height: 1.5;
+		}
+
+		.dl-confirm-summary,
+		.dl-confirm-checklist {
+			display: grid;
+			gap: 10px;
+			margin-bottom: 14px;
+			padding: 12px;
+			border: 1px solid #E7ECE9;
+			border-radius: 18px;
+			background: #FBFDFC;
+		}
+
+		.dl-confirm-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			color: var(--doclinc-text);
+			font-size: 13px;
+		}
+
+		.dl-confirm-label {
+			color: var(--doclinc-muted);
+			font-weight: 700;
+		}
+
+		.dl-confirm-value {
+			font-weight: 800;
+			text-align: right;
+			overflow-wrap: anywhere;
+		}
+
+		.dl-confirm-check {
+			display: flex;
+			align-items: center;
+			gap: 9px;
+			color: var(--doclinc-text);
+			font-size: 13px;
+			font-weight: 700;
+		}
+
+		.dl-confirm-check i {
+			color: var(--doclinc-green);
+		}
+
+		.dl-confirm-actions {
+			display: grid;
+			gap: 10px;
+			margin-top: 16px;
+		}
+
+		.dl-confirm-primary,
+		.dl-confirm-secondary {
+			min-height: 48px;
+			border-radius: 999px;
+			font-weight: 800;
+		}
+
+		.dl-confirm-primary {
+			border: 0;
+			background: var(--doclinc-green);
+			color: #FFFFFF;
+		}
+
+		.dl-confirm-secondary {
+			border: 1px solid #CFE2DA;
+			background: #FFFFFF;
+			color: var(--doclinc-text);
+		}
+
 		.form-control,
 		.form-select {
 			width: 100%;
@@ -668,20 +901,20 @@ if (!function_exists('formatComplaintText')) {
 </head>
 
 <body>
-	<div class="consult-shell">
-		<header class="consult-header">
+	<div class="consult-shell dl-mobile-shell dl-nakes-shell dl-completion-shell">
+		<header class="consult-header dl-mobile-topbar">
 			<a href="<?= base_url('home_nakes'); ?>" class="consult-back" aria-label="Kembali ke beranda nakes">
 				<i class="fas fa-arrow-left"></i>
 			</a>
 			<div class="consult-title">
-				<h1>Pemeriksaan Pasien</h1>
+				<h1>Penyelesaian Konsultasi</h1>
 				<p class="consult-subtitle">No. Antrian: <?= html_escape($queue_code) ?></p>
 			</div>
-			<span class="status-badge"><i class="bi bi-check-circle-fill"></i> Accepted</span>
+			<span class="status-badge"><i class="bi bi-check-circle-fill"></i> Sedang ditangani</span>
 		</header>
 
 		<main class="content animate__animated animate__fadeInUp animate__faster">
-			<section class="consult-card">
+			<section class="consult-card dl-nakes-summary-card dl-record-summary">
 				<h2 class="section-heading"><i class="bi bi-person-vcard"></i> Ringkasan Pasien</h2>
 				<div class="summary-grid">
 					<div class="summary-item">
@@ -726,17 +959,35 @@ if (!function_exists('formatComplaintText')) {
 
 		<input type="hidden" name="userid" id="userId" value="<?= html_escape($userid) ?>">
 		<input type="hidden" name="dokterid" id="dokterId" value="<?= html_escape($_SESSION['id']) ?>">
-		<form id="form_konsul_nakes" enctype="multipart/form-data">
+		<form id="form_konsul_nakes" enctype="multipart/form-data" class="dl-nakes-completion-form dl-medical-record-form">
 			<input type="hidden" name="request_id" id="idReq" value="<?= html_escape($request_id) ?>">
-			<section class="consult-card">
-				<h2 class="section-heading"><i class="bi bi-clipboard-check"></i> Selesaikan Konsultasi</h2>
-				<div class="form-floating mb-3">
-					<input type="text" id="diagnosa" name="diagnosa" class="form-control" placeholder="Diagnosa" required>
-					<label for="diagnosa"><i class="bi bi-heart-pulse"></i> Diagnosa*</label>
+			<section class="consult-card dl-completion-card">
+				<div class="dl-completion-intro">
+					<p class="dl-completion-kicker">Hasil konsultasi</p>
+					<h2 class="section-heading mb-0"><i class="bi bi-clipboard-check"></i> Lengkapi catatan akhir</h2>
+					<p class="dl-completion-copy">Catatan ini akan menjadi hasil konsultasi yang dapat dibaca warga pada riwayat layanan.</p>
 				</div>
-				<div class="mb-3">
-					<h3 class="section-heading"><i class="bi bi-capsule"></i> Obat / Farmakoterapi</h3>
-					<p class="terapi-helper">Bagian ini digunakan untuk mencatat obat/farmakoterapi bila diberikan. Kosongkan bila tidak ada obat.</p>
+				<div class="dl-form-section dl-diagnosis-section">
+					<div class="dl-form-section-header">
+						<span class="dl-form-section-icon"><i class="bi bi-heart-pulse"></i></span>
+						<div>
+							<h3 class="dl-form-section-title">Diagnosis</h3>
+							<p class="dl-form-helper">Tuliskan diagnosis atau kesimpulan pemeriksaan.</p>
+						</div>
+					</div>
+					<div class="form-floating">
+					<input type="text" id="diagnosa" name="diagnosa" class="form-control" placeholder="Diagnosa" required>
+					<label for="diagnosa">Diagnosis*</label>
+					</div>
+				</div>
+				<div class="dl-form-section dl-treatment-section">
+					<div class="dl-form-section-header">
+						<span class="dl-form-section-icon"><i class="bi bi-capsule"></i></span>
+						<div>
+							<h3 class="dl-form-section-title">Terapi atau tindakan</h3>
+							<p class="dl-form-helper">Catat terapi, tindakan, atau pengobatan yang diberikan. Kosongkan jika tidak ada obat.</p>
+						</div>
+					</div>
 					<div id="terapiRowMessage" class="terapi-row-message" role="alert"></div>
 					<div class="mobile-terapi-editor" aria-label="Editor farmakoterapi mobile">
 						<div class="mobile-terapi-card">
@@ -817,11 +1068,18 @@ if (!function_exists('formatComplaintText')) {
 										</td>
 									</tr>
 								</tbody>
-							</table>
+						</table>
 					</div>
 				</div>
+				<div class="dl-form-section dl-record-section">
+					<div class="dl-form-section-header">
+						<span class="dl-form-section-icon"><i class="bi bi-journal-medical"></i></span>
+						<div>
+							<h3 class="dl-form-section-title">Catatan pemeriksaan</h3>
+							<p class="dl-form-helper">Isi informasi tindakan non-obat, pemeriksaan, dan edukasi lanjutan jika tersedia.</p>
+						</div>
+					</div>
 				<div class="documentation-group">
-					<h3 class="section-heading mb-0"><i class="bi bi-journal-medical"></i> Dokumentasi Tindakan</h3>
 					<div class="form-floating">
 						<textarea id="ui_tindakan_non_obat" class="form-control documentation-field" placeholder="Edukasi pasien, anjuran istirahat, hidrasi/nutrisi, perawatan sederhana, observasi mandiri"></textarea>
 						<label for="ui_tindakan_non_obat">Tindakan Non-Obat</label>
@@ -839,34 +1097,94 @@ if (!function_exists('formatComplaintText')) {
 						<label for="ui_catatan_tindakan_lain">Catatan Tindakan Lain</label>
 					</div>
 				</div>
-				<div class="form-floating mb-3">
+				</div>
+				<div class="dl-form-section dl-recommendation-section">
+					<div class="dl-form-section-header">
+						<span class="dl-form-section-icon"><i class="bi bi-chat-dots"></i></span>
+						<div>
+							<h3 class="dl-form-section-title">Saran petugas</h3>
+							<p class="dl-form-helper">Berikan saran perawatan atau langkah lanjutan untuk warga.</p>
+						</div>
+					</div>
+				<div class="form-floating">
 					<textarea id="ui_saran_utama" class="form-control" placeholder="Rekomendasi atau saran utama untuk pasien" style="height: 150px"></textarea>
-					<label for="ui_saran_utama"><i class="bi bi-chat-dots"></i> Rekomendasi / Saran Utama*</label>
+					<label for="ui_saran_utama">Saran utama*</label>
+				</div>
 				</div>
 				<textarea id="saran" name="saran" class="backend-field" aria-hidden="true"></textarea>
-				<div class="form-floating mb-3">
+				<div class="dl-form-section dl-form-meta-section">
+				<div class="form-floating">
 					<input type="text" id="kriteria" name="kriteria" class="form-control" value="<?= html_escape($kriteria) ?>" readonly>
-					<label for="kriteria"><i class="bi bi-clipboard-check"></i> Kriteria*</label>
+					<label for="kriteria">Mode layanan*</label>
 				</div>
-				<div class="form-floating mb-2">
+				<div class="form-floating">
 					<input type="text" class="form-control" id="rujukan" name="rujukan" placeholder="Rujukan">
-					<label for="rujukan"><i class="bi bi-arrow-right-circle"></i> Rujukan</label>
+					<label for="rujukan">Rujukan</label>
 				</div>
 				<p class="optional-note">Opsional jika pasien tidak memerlukan rujukan.</p>
 				<?php if ($kriteria === 'Kunjungan Nakes') : ?>
-					<div class="form-floating mb-2">
+					<div class="dl-upload-card dl-form-upload dl-submit-upload">
+					<div class="form-floating">
 						<input type="file" class="form-control" id="file" name="file" accept="image/*">
 						<label for="file"><i class="bi bi-camera"></i> Foto Kunjungan</label>
 						<img id="preview-image" src="#" alt="Preview Foto" style="display:none;" class="img-thumbnail" />
 					</div>
 					<p class="optional-note">Opsional sesuai kebutuhan dokumentasi kunjungan.</p>
+					</div>
 				<?php endif; ?>
-				<button type="button" class="primary-action shadow-sm" id="save_konsul_nakes">
+				</div>
+				<div class="dl-completion-review">
+					<i class="bi bi-info-circle"></i>
+					<span>Pastikan hasil konsultasi sudah benar sebelum diselesaikan.</span>
+				</div>
+				<div class="dl-submit-panel dl-submit-action">
+				<button type="button" class="primary-action shadow-sm dl-submit-button" id="save_konsul_nakes">
 					<i class="bi bi-check2-circle"></i> Selesaikan Konsultasi
 				</button>
+				</div>
 			</section>
 		</form>
 		</main>
+	</div>
+
+	<div class="dl-bottom-sheet-backdrop dl-completion-confirm-backdrop" id="completionConfirmSheet" aria-hidden="true">
+		<div class="dl-bottom-sheet dl-completion-confirm-sheet" role="dialog" aria-modal="true" aria-labelledby="completionConfirmTitle">
+			<div class="dl-bottom-sheet-handle" aria-hidden="true"></div>
+			<div class="dl-confirm-header">
+				<span class="dl-confirm-icon"><i class="bi bi-check2-circle"></i></span>
+				<div>
+					<h2 class="dl-confirm-title" id="completionConfirmTitle">Selesaikan konsultasi?</h2>
+					<p class="dl-confirm-copy">Setelah diselesaikan, hasil konsultasi akan tersimpan dan riwayat warga dapat dibaca.</p>
+				</div>
+			</div>
+			<div class="dl-confirm-summary">
+				<div class="dl-confirm-row">
+					<span class="dl-confirm-label">No. Antrian</span>
+					<span class="dl-confirm-value"><?= html_escape($queue_code !== '' ? $queue_code : '-') ?></span>
+				</div>
+				<div class="dl-confirm-row">
+					<span class="dl-confirm-label">Pasien</span>
+					<span class="dl-confirm-value"><?= html_escape(strtoupper($nama_pasien) !== '' ? strtoupper($nama_pasien) : '-') ?></span>
+				</div>
+				<div class="dl-confirm-row">
+					<span class="dl-confirm-label">Mode layanan</span>
+					<span class="dl-confirm-value"><?= html_escape($kriteria !== '' ? $kriteria : '-') ?></span>
+				</div>
+			</div>
+			<div class="dl-confirm-checklist">
+				<div class="dl-confirm-check"><i class="bi bi-check-circle-fill"></i> Diagnosis sudah diperiksa</div>
+				<div class="dl-confirm-check"><i class="bi bi-check-circle-fill"></i> Terapi atau tindakan sudah ditinjau</div>
+				<div class="dl-confirm-check"><i class="bi bi-check-circle-fill"></i> Saran petugas sudah siap dikirim</div>
+				<?php if ($kriteria === 'Kunjungan Nakes') : ?>
+					<div class="dl-confirm-check"><i class="bi bi-paperclip"></i> Lampiran kunjungan bersifat opsional</div>
+				<?php endif; ?>
+			</div>
+			<p class="dl-confirm-copy">Pastikan diagnosis, terapi, dan saran sudah benar sebelum melanjutkan.</p>
+			<div class="dl-confirm-actions">
+				<button type="button" class="dl-confirm-primary dl-submit-confirm" id="confirmCompleteConsultation">Ya, Selesaikan</button>
+				<button type="button" class="dl-confirm-secondary" data-close-completion-confirm>Kembali</button>
+			</div>
+		</div>
 	</div>
 
 	<!-- Modal -->
@@ -1119,7 +1437,28 @@ if (!function_exists('formatComplaintText')) {
 			renderMobileTerapiList();
 		});
 
-		$('#save_konsul_nakes').click(function() {
+		function openCompletionConfirmSheet() {
+			$('#completionConfirmSheet').addClass('is-open').attr('aria-hidden', 'false');
+		}
+
+		function closeCompletionConfirmSheet() {
+			$('#completionConfirmSheet').removeClass('is-open').attr('aria-hidden', 'true');
+		}
+
+		$('#completionConfirmSheet').on('click', function(event) {
+			if (event.target === this) {
+				closeCompletionConfirmSheet();
+			}
+		});
+
+		$('[data-close-completion-confirm]').on('click', closeCompletionConfirmSheet);
+
+		$('#confirmCompleteConsultation').on('click', function() {
+			closeCompletionConfirmSheet();
+			$('#save_konsul_nakes').trigger('click', [true]);
+		});
+
+		$('#save_konsul_nakes').click(function(event, isConfirmed) {
 			const userId = document.getElementById('userId').value;
 			const dokterId = document.getElementById('dokterId').value;
 			const idReq = document.getElementById('idReq').value;
@@ -1131,6 +1470,11 @@ if (!function_exists('formatComplaintText')) {
 
 			if (!idReq || !diagnosa || !saranUtama || !saran || !kriteria) {
 				Swal.fire("Gagal!", "Data tidak lengkap", "error");
+				return;
+			}
+
+			if (!isConfirmed) {
+				openCompletionConfirmSheet();
 				return;
 			}
 
