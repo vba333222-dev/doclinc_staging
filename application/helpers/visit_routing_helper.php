@@ -45,12 +45,14 @@ if (!function_exists('doclinc_visit_route_payload')) {
 			return doclinc_visit_route_pending_payload();
 		}
 
+		$geometry = doclinc_visit_route_valhalla_geometry($response);
+
 		return array(
 			'distance_m' => $distance_m,
 			'duration_s' => $duration_s,
 			'distance_text' => doclinc_format_distance_text($distance_m),
 			'eta_text' => doclinc_format_eta_text($duration_s),
-			'geometry' => null,
+			'geometry' => $geometry,
 			'provider' => 'valhalla',
 			'calculated_at' => date('Y-m-d H:i:s'),
 		);
@@ -82,6 +84,103 @@ if (!function_exists('doclinc_visit_route_coordinates_valid')) {
 			&& is_numeric($dest_lat) && (float) $dest_lat >= -90 && (float) $dest_lat <= 90
 			&& is_numeric($origin_lng) && (float) $origin_lng >= -180 && (float) $origin_lng <= 180
 			&& is_numeric($dest_lng) && (float) $dest_lng >= -180 && (float) $dest_lng <= 180;
+	}
+}
+
+if (!function_exists('doclinc_visit_route_valhalla_geometry')) {
+	function doclinc_visit_route_valhalla_geometry($response)
+	{
+		if (empty($response['trip']['legs']) || !is_array($response['trip']['legs'])) {
+			return null;
+		}
+
+		$coordinates = array();
+		foreach ($response['trip']['legs'] as $leg) {
+			if (empty($leg['shape']) || !is_string($leg['shape'])) {
+				continue;
+			}
+
+			$leg_coordinates = doclinc_decode_valhalla_polyline6($leg['shape']);
+			if (empty($leg_coordinates)) {
+				continue;
+			}
+
+			foreach ($leg_coordinates as $coordinate) {
+				$count = count($coordinates);
+				if ($count > 0 && $coordinates[$count - 1][0] === $coordinate[0] && $coordinates[$count - 1][1] === $coordinate[1]) {
+					continue;
+				}
+				$coordinates[] = $coordinate;
+			}
+		}
+
+		return count($coordinates) > 1 ? array(
+			'type' => 'LineString',
+			'coordinates' => $coordinates,
+		) : null;
+	}
+}
+
+if (!function_exists('doclinc_decode_valhalla_polyline6')) {
+	function doclinc_decode_valhalla_polyline6($encoded)
+	{
+		$encoded = (string) $encoded;
+		if ($encoded === '') {
+			return array();
+		}
+
+		$coordinates = array();
+		$index = 0;
+		$length = strlen($encoded);
+		$lat = 0;
+		$lng = 0;
+		$precision = 1000000;
+
+		while ($index < $length) {
+			$lat_change = doclinc_decode_valhalla_polyline_value($encoded, $index, $length);
+			if ($lat_change === null) {
+				return array();
+			}
+			$lng_change = doclinc_decode_valhalla_polyline_value($encoded, $index, $length);
+			if ($lng_change === null) {
+				return array();
+			}
+
+			$lat += $lat_change;
+			$lng += $lng_change;
+			$decoded_lat = $lat / $precision;
+			$decoded_lng = $lng / $precision;
+			if ($decoded_lat < -90 || $decoded_lat > 90 || $decoded_lng < -180 || $decoded_lng > 180) {
+				return array();
+			}
+
+			$coordinates[] = array($decoded_lng, $decoded_lat);
+		}
+
+		return $coordinates;
+	}
+}
+
+if (!function_exists('doclinc_decode_valhalla_polyline_value')) {
+	function doclinc_decode_valhalla_polyline_value($encoded, &$index, $length)
+	{
+		$result = 0;
+		$shift = 0;
+
+		do {
+			if ($index >= $length || $shift > 30) {
+				return null;
+			}
+
+			$byte = ord($encoded[$index++]) - 63;
+			if ($byte < 0) {
+				return null;
+			}
+			$result |= ($byte & 0x1f) << $shift;
+			$shift += 5;
+		} while ($byte >= 0x20);
+
+		return ($result & 1) ? ~($result >> 1) : ($result >> 1);
 	}
 }
 
