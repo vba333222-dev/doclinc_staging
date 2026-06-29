@@ -161,6 +161,45 @@ class Home_nakes_m extends MX_Controller
 
 		return $this->db->order_by('requests.request_id', 'DESC')->get();
 	}
+	public function get_visit_location($request_id, $nakes_user_id)
+	{
+		$request_id = (int) $request_id;
+		$nakes_user_id = (int) $nakes_user_id;
+		if ($request_id < 1 || $nakes_user_id < 1) {
+			return null;
+		}
+
+		$fields = array(
+			'request_id',
+			'request_status',
+			'visit_status',
+			'consultation_mode',
+			'lattitude',
+			'longitude',
+			'lattitude_dokter',
+			'longitude_dokter',
+			'dokter_id',
+			'accepted_by_user_id',
+			'assigned_nakes_user_id',
+			'assigned_puskesmas_code',
+			'assigned_puskesmas_name',
+			'patient_latitude',
+			'patient_longitude',
+			'updated_at',
+		);
+		$select = array();
+		foreach ($fields as $field) {
+			$select[] = $this->db->field_exists($field, 'requests') ? $field : 'NULL AS ' . $field;
+		}
+
+		$this->db
+			->select(implode(', ', $select), FALSE)
+			->where('request_id', $request_id)
+			->where('request_status', 'Accepted');
+		$this->where_handling_nakes_owner($nakes_user_id);
+
+		return $this->db->get('requests')->row();
+	}
 	public function request_keluhan_completed($id)
 	{
 		$this->select_request_base();

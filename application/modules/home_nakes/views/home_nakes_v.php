@@ -3,6 +3,7 @@ $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '#';
 $map_provider = $this->config->item('map_provider') ?: 'none';
+$mapbox_public_token = $this->config->item('mapbox_public_token') ?: '';
 
 if (!function_exists('doclinc_history_safe_text')) {
 	function doclinc_history_safe_text($value, $fallback = '-')
@@ -90,6 +91,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/css/bootstrap-select.min.css" integrity="sha512-g2SduJKxa4Lbn3GW+Q7rNz+pKP9AWMR++Ta8fgwsZRCUsawjPvF/BxSMkGS61VsR9yinGoEgrHPGPn2mrj8+4w==" crossorigin="anonymous" referrerpolicy="no-referrer">
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 	<style type="text/css">
 		.content {
 			display: none;
@@ -545,7 +547,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
 							?>
 								<div class="dl-nakes-request-item">
-									<div class="card shadow request-card dl-nakes-request-card" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
+									<div class="card shadow request-card dl-nakes-request-card" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 										<div class="card-header d-flex align-items-start gap-3">
 											<div class="dl-nakes-avatar-icon">
 												<i class="fas fa-user"></i>
@@ -590,7 +592,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										<div class="card-footer">
 											<div class="row g-2 dl-nakes-actions">
 												<div class="col d-grid">
-													<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
+													<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 														<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
 													</button>
 												</div>
@@ -651,7 +653,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
 							?>
-								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>">
+								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
 									<div class="card-header d-flex align-items-start gap-3">
 										<div class="dl-nakes-avatar-icon">
 											<i class="fas fa-user"></i>
@@ -675,7 +677,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										</div>
 									</div>
 									<div class="card-footer d-flex">
-										<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
+										<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 											<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
 										</button>
 										<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill ms-2 cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
@@ -707,7 +709,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 									'completed' => '',
 								);
 							?>
-								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>">
+								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
 									<div class="card-header d-flex align-items-start gap-3">
 										<div class="dl-nakes-avatar-icon">
 											<i class="fas fa-user-check"></i>
@@ -723,13 +725,13 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 											<span>Keluhan</span>
 											<p><?= doclinc_history_safe_lines($keluhan); ?></p>
 										</div>
-										<input type="text" id="lat-des-acc" value="<?= html_escape($x->lattitude); ?>" hidden>
-										<input type="text" id="lng-des-acc" value="<?= html_escape($x->longitude); ?>" hidden>
+										<input type="text" class="visit-patient-lat d-none" value="<?= html_escape($x->lattitude); ?>">
+										<input type="text" class="visit-patient-lng d-none" value="<?= html_escape($x->longitude); ?>">
 										<div class="dl-nakes-meta-list">
 											<div><i class="fas fa-user-md fa-fw"></i><span>PIC Nakes</span><strong><?= html_escape($handling_nakes_label); ?></strong></div>
 											<div><i class="fas fa-clipboard-check fa-fw"></i><span>Mode</span><strong><?= html_escape($mode_label); ?></strong></div>
-											<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong id="distances" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</strong></div>
-											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong id="durations" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</strong></div>
+											<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong class="visit-route-distance" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</strong></div>
+											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong class="visit-route-eta" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</strong></div>
 										</div>
 										<div class="mt-3 visit-workflow-control" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
 											<div class="small text-muted mb-2">Status kunjungan: <span class="fw-bold visit-workflow-label"><?= html_escape(doclinc_visit_status_label($visit_status)); ?></span></div>
@@ -743,7 +745,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										</div>
 									</div>
 									<div class="card-footer d-flex flex-wrap gap-2 dl-nakes-actions">
-										<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
+										<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 											<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
 										</button>
 										<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id) . '?kriteria=1'); ?>" class="btn btn-success shadow-sm rounded-pill">
@@ -982,7 +984,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			<div id="maps" class="w-100 h-100 position-relative">
 				<div class="position-absolute top-0 start-50 translate-middle-x mt-3 bg-white shadow rounded-pill px-4 py-2 d-flex align-items-center" style="z-index: 1000;">
 					<i class="bi bi-pin-map-fill text-success me-2 fs-5"></i>
-					<span class="text-muted small">Menampilkan rute ke lokasi pasien...</span>
+					<span class="text-muted small" id="nakesVisitMapStatus">Menampilkan lokasi pasien...</span>
 				</div>
 			</div>
 		</div>
@@ -1065,6 +1067,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
 		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
 	<?php endif; ?>
@@ -1491,9 +1494,17 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 		(function(window, $) {
 			const ns = window.doclincVisitTracking = window.doclincVisitTracking || {};
 			const updateVisitLocationUrl = <?= json_encode(base_url('home_nakes/update_visit_location')); ?>;
+			const nakesVisitLocationUrl = <?= json_encode(base_url('home_nakes/visit_location')); ?>;
 			const updateVisitStatusUrl = <?= json_encode(base_url('home_nakes/update_visit_status')); ?>;
+			const visitMapboxToken = <?= json_encode($mapbox_public_token); ?>;
 			const minPostIntervalMs = 10000;
 			const watches = ns.watches = ns.watches || {};
+			const mapState = ns.nakesMapState = ns.nakesMapState || {
+				leaflet: null,
+				leafletMarkers: {},
+				google: null,
+				googleMarkers: {}
+			};
 			const nextVisitStatuses = {
 				not_started: 'en_route',
 				en_route: 'arrived',
@@ -1525,6 +1536,194 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				const eta = route && route.eta_text ? route.eta_text : 'Menghitung...';
 				if (distanceElement) distanceElement.textContent = distance;
 				if (etaElement) etaElement.textContent = eta;
+			}
+
+			function parseLocation(location) {
+				if (!location || location.available === false) return null;
+				const lat = parseFloat(location.latitude);
+				const lng = parseFloat(location.longitude);
+				if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+				return {
+					latitude: lat,
+					longitude: lng
+				};
+			}
+
+			function inlinePatientLocation(requestId) {
+				const card = document.querySelector('[data-visit-request-id="' + requestId + '"]');
+				if (!card) return null;
+				const lat = parseFloat(card.getAttribute('data-patient-lat'));
+				const lng = parseFloat(card.getAttribute('data-patient-lng'));
+				if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+				return {
+					latitude: lat,
+					longitude: lng
+				};
+			}
+
+			function setMapStatus(message, isError) {
+				const element = document.getElementById('nakesVisitMapStatus');
+				if (!element) return;
+				element.textContent = message || '';
+				element.classList.toggle('text-danger', !!isError);
+				element.classList.toggle('text-muted', !isError);
+			}
+
+			function visitLatLng(location) {
+				return [location.latitude, location.longitude];
+			}
+
+			function renderLeafletMap(patientLocation, nakesLocation) {
+				const container = document.getElementById('maps');
+				if (!container || !window.L) return false;
+				const center = nakesLocation || patientLocation || {
+					latitude: -6.0176,
+					longitude: 106.0530
+				};
+
+				if (!mapState.leaflet) {
+					mapState.leaflet = L.map(container).setView(visitLatLng(center), 14);
+					const tileUrl = visitMapboxToken ?
+						'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=' + encodeURIComponent(visitMapboxToken) :
+						'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+					L.tileLayer(tileUrl, {
+						maxZoom: 19,
+						tileSize: visitMapboxToken ? 512 : 256,
+						zoomOffset: visitMapboxToken ? -1 : 0,
+						attribution: visitMapboxToken ? '&copy; OpenStreetMap contributors &copy; Mapbox' : '&copy; OpenStreetMap contributors'
+					}).addTo(mapState.leaflet);
+				}
+
+				const bounds = [];
+				function upsertMarker(name, location, label) {
+					if (!location) return;
+					const latLng = visitLatLng(location);
+					if (!mapState.leafletMarkers[name]) {
+						mapState.leafletMarkers[name] = L.marker(latLng).addTo(mapState.leaflet).bindPopup(label);
+					} else {
+						mapState.leafletMarkers[name].setLatLng(latLng);
+					}
+					bounds.push(latLng);
+				}
+
+				upsertMarker('patient', patientLocation, 'Pasien');
+				upsertMarker('nakes', nakesLocation, 'Nakes');
+				if (bounds.length > 1) {
+					mapState.leaflet.fitBounds(bounds, {
+						padding: [48, 48],
+						maxZoom: 16
+					});
+				} else if (bounds.length === 1) {
+					mapState.leaflet.setView(bounds[0], Math.max(mapState.leaflet.getZoom(), 14));
+				}
+				setTimeout(function() {
+					mapState.leaflet.invalidateSize();
+				}, 100);
+				return true;
+			}
+
+			function renderGoogleMap(patientLocation, nakesLocation) {
+				if (!hasGoogleMaps()) return false;
+				const container = document.getElementById('maps');
+				if (!container) return false;
+				const center = nakesLocation || patientLocation || {
+					latitude: -6.0176,
+					longitude: 106.0530
+				};
+				if (!mapState.google) {
+					mapState.google = new google.maps.Map(container, {
+						zoom: 14,
+						center: {
+							lat: center.latitude,
+							lng: center.longitude
+						}
+					});
+				}
+
+				const bounds = new google.maps.LatLngBounds();
+				function upsertMarker(name, location, label) {
+					if (!location) return;
+					const latLng = new google.maps.LatLng(location.latitude, location.longitude);
+					if (!mapState.googleMarkers[name]) {
+						mapState.googleMarkers[name] = new google.maps.Marker({
+							map: mapState.google,
+							position: latLng,
+							title: label
+						});
+					} else {
+						mapState.googleMarkers[name].setPosition(latLng);
+					}
+					bounds.extend(latLng);
+				}
+
+				upsertMarker('patient', patientLocation, 'Pasien');
+				upsertMarker('nakes', nakesLocation, 'Nakes');
+				if (patientLocation && nakesLocation) {
+					mapState.google.fitBounds(bounds);
+				} else if (patientLocation || nakesLocation) {
+					mapState.google.setCenter(bounds.getCenter());
+					mapState.google.setZoom(14);
+				}
+				return true;
+			}
+
+			function renderVisitMap(requestId, response, fallbackPatientLocation) {
+				const patientLocation = parseLocation(response && response.patient) || fallbackPatientLocation || null;
+				const nakesLocation = parseLocation(response && response.nakes);
+				if (response && response.route) {
+					setRouteText(requestId, response.route);
+				}
+
+				if (!patientLocation) {
+					setMapStatus('Lokasi pasien belum tersedia', true);
+					return;
+				}
+				if (!nakesLocation) {
+					setMapStatus('Aktifkan lokasi untuk menghitung jarak');
+				} else {
+					setMapStatus(response && response.message ? response.message : 'OK');
+				}
+
+				const rendered = renderGoogleMap(patientLocation, nakesLocation) || renderLeafletMap(patientLocation, nakesLocation);
+				if (!rendered) {
+					setMapStatus('Peta belum tersedia', true);
+				}
+			}
+
+			function fetchNakesVisitLocation(requestId) {
+				const fallbackPatientLocation = inlinePatientLocation(requestId);
+				document.body.setAttribute('data-current-visit-request-id', requestId);
+				setMapStatus('Memuat lokasi pasien...');
+				$.ajax({
+					url: nakesVisitLocationUrl,
+					type: 'GET',
+					dataType: 'json',
+					data: {
+						request_id: requestId
+					},
+					success: function(response) {
+						if (typeof response === 'string') {
+							try {
+								response = JSON.parse(response);
+							} catch (error) {}
+						}
+						if (response && response.status) {
+							renderVisitMap(requestId, response, fallbackPatientLocation);
+							return;
+						}
+						renderVisitMap(requestId, response || {}, fallbackPatientLocation);
+						if (!fallbackPatientLocation) {
+							setMapStatus(response && response.message ? response.message : 'Lokasi pasien belum tersedia', true);
+						}
+					},
+					error: function(xhr) {
+						renderVisitMap(requestId, {}, fallbackPatientLocation);
+						if (!fallbackPatientLocation) {
+							const response = xhr.responseJSON || {};
+							setMapStatus(response.message || 'Lokasi pasien belum tersedia', true);
+						}
+					}
+				});
 			}
 
 			function refreshVisitWorkflowControl(requestId, visitStatus, label) {
@@ -1576,6 +1775,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 
 						if (response && response.status === 'success') {
 							setRouteText(requestId, response.route);
+							renderVisitMap(requestId, response, inlinePatientLocation(requestId));
 							setTrackingStatus(requestId, 'Lokasi berhasil diperbarui');
 							return;
 						}
@@ -1630,6 +1830,20 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				const requestId = $(this).data('request-id');
 				if (!requestId) return;
 				ns.startNakesVisitTracking(requestId);
+			});
+
+			$(document).on('click', '.lihat-map', function() {
+				const requestId = $(this).data('request-id');
+				const lat = parseFloat($(this).data('lat'));
+				const lng = parseFloat($(this).data('lng'));
+				if (requestId) {
+					fetchNakesVisitLocation(requestId);
+					return;
+				}
+				renderVisitMap('', {}, Number.isFinite(lat) && Number.isFinite(lng) ? {
+					latitude: lat,
+					longitude: lng
+				} : null);
 			});
 
 			$(document).on('click', '.visit-status-update', function(event) {
@@ -1814,7 +2028,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 		}
 
 		function updateDestination(lat, lng) {
-			if (!hasGoogleMaps() || !destinationMarker) return;
+			if (!hasGoogleMaps() || !destinationMarker || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
 			const destination = new google.maps.LatLng(lat, lng);
 			destinationMarker.setPosition(destination);
@@ -1856,11 +2070,13 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 		function hitungJarakAcc() {
 			if (!hasGoogleMaps() || !userLocation) return;
 
-			// buatkan code untuk destination
+			const currentRequestId = document.body.getAttribute('data-current-visit-request-id');
+			const currentCard = currentRequestId ? document.querySelector('[data-visit-request-id="' + currentRequestId + '"]') : null;
 			const destinations = {
-				lat: parseFloat(document.getElementById("lat-des-acc").value),
-				lng: parseFloat(document.getElementById("lng-des-acc").value)
+				lat: currentCard ? parseFloat(currentCard.getAttribute('data-patient-lat')) : null,
+				lng: currentCard ? parseFloat(currentCard.getAttribute('data-patient-lng')) : null
 			}
+			if (!Number.isFinite(destinations.lat) || !Number.isFinite(destinations.lng)) return;
 
 			console.log(destinations);
 

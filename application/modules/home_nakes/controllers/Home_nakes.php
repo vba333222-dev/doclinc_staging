@@ -10,7 +10,7 @@ class Home_nakes extends MX_Controller
 		$this->load->helper('visit_routing');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if (in_array($this->router->fetch_method(), array('update_visit_location', 'update_visit_status'), true)) {
+			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -229,6 +229,48 @@ class Home_nakes extends MX_Controller
 			'request_status' => 'Cancelled'
 		]));
 	}
+	public function visit_location()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) !== 'GET') {
+			$this->output
+				->set_status_header(405)
+				->set_output(json_encode(array('status' => false, 'message' => 'Metode tidak diizinkan')));
+			return;
+		}
+		if ($this->session->userdata('role') !== 'dokter') {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(array('status' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+
+		$request_id = (int) $this->input->get('request_id', TRUE);
+		$user_id = (int) $this->session->userdata('id');
+		if ($request_id < 1) {
+			$this->output
+				->set_status_header(400)
+				->set_output(json_encode(array('status' => false, 'message' => 'Data request tidak valid')));
+			return;
+		}
+
+		if (!doclinc_can_update_visit_location($request_id, $user_id, 'dokter')) {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(array('status' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+
+		$row = $this->Home_nakes_m->get_visit_location($request_id, $user_id);
+		if (!$row) {
+			$this->output
+				->set_status_header(404)
+				->set_output(json_encode(array('status' => false, 'message' => 'Request tidak ditemukan')));
+			return;
+		}
+
+		$this->output->set_output(json_encode($this->build_nakes_visit_location_payload($row, true)));
+	}
 	public function update_visit_location()
 	{
 		$this->output->set_content_type('application/json');
@@ -277,30 +319,12 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		$route = doclinc_visit_route_pending_payload();
-		$patient_latitude = null;
-		$patient_longitude = null;
-		if (isset($request->patient_latitude) && $this->is_valid_latitude($request->patient_latitude) && isset($request->patient_longitude) && $this->is_valid_longitude($request->patient_longitude)) {
-			$patient_latitude = (float) $request->patient_latitude;
-			$patient_longitude = (float) $request->patient_longitude;
-		} elseif (isset($request->lattitude) && $this->is_valid_latitude($request->lattitude) && isset($request->longitude) && $this->is_valid_longitude($request->longitude)) {
-			$patient_latitude = (float) $request->lattitude;
-			$patient_longitude = (float) $request->longitude;
-		}
-		if ($patient_latitude !== null && $patient_longitude !== null) {
-			$route = doclinc_visit_route_payload(
-				(float) $latitude,
-				(float) $longitude,
-				$patient_latitude,
-				$patient_longitude
-			);
-		}
-
-		$this->output->set_output(json_encode([
+		$row = $this->Home_nakes_m->get_visit_location($request_id, $user_id);
+		$payload = $row ? $this->build_nakes_visit_location_payload($row, 'success', (float) $latitude, (float) $longitude) : array();
+		$this->output->set_output(json_encode(array_merge($payload, [
 			'status' => 'success',
-			'message' => 'Lokasi nakes diperbarui',
-			'route' => $route
-		]));
+			'message' => 'Lokasi nakes diperbarui'
+		])));
 	}
 	public function update_visit_status()
 	{
@@ -499,5 +523,58 @@ class Home_nakes extends MX_Controller
 	private function is_valid_longitude($value)
 	{
 		return is_numeric($value) && (float) $value >= -180 && (float) $value <= 180;
+	}
+
+	private function build_nakes_visit_location_payload($row, $status, $override_nakes_latitude = null, $override_nakes_longitude = null)
+	{
+		$route = function_exists('doclinc_visit_route_pending_payload') ? doclinc_visit_route_pending_payload() : array();
+		$patient_latitude = null;
+		$patient_longitude = null;
+		if (isset($row->patient_latitude) && $this->is_valid_latitude($row->patient_latitude) && isset($row->patient_longitude) && $this->is_valid_longitude($row->patient_longitude)) {
+			$patient_latitude = (float) $row->patient_latitude;
+			$patient_longitude = (float) $row->patient_longitude;
+		} elseif (isset($row->lattitude) && $this->is_valid_latitude($row->lattitude) && isset($row->longitude) && $this->is_valid_longitude($row->longitude)) {
+			$patient_latitude = (float) $row->lattitude;
+			$patient_longitude = (float) $row->longitude;
+		}
+
+		$nakes_latitude = null;
+		$nakes_longitude = null;
+		if ($this->is_valid_latitude($override_nakes_latitude) && $this->is_valid_longitude($override_nakes_longitude)) {
+			$nakes_latitude = (float) $override_nakes_latitude;
+			$nakes_longitude = (float) $override_nakes_longitude;
+		} elseif (isset($row->lattitude_dokter) && $this->is_valid_latitude($row->lattitude_dokter) && isset($row->longitude_dokter) && $this->is_valid_longitude($row->longitude_dokter)) {
+			$nakes_latitude = (float) $row->lattitude_dokter;
+			$nakes_longitude = (float) $row->longitude_dokter;
+		}
+
+		$message = 'OK';
+		if ($patient_latitude === null || $patient_longitude === null) {
+			$message = 'Lokasi pasien belum tersedia';
+		} elseif ($nakes_latitude === null || $nakes_longitude === null) {
+			$message = 'Aktifkan lokasi untuk menghitung jarak';
+		} else {
+			$route = doclinc_visit_route_payload($nakes_latitude, $nakes_longitude, $patient_latitude, $patient_longitude);
+		}
+
+		return array(
+			'status' => $status,
+			'message' => $message,
+			'request_id' => isset($row->request_id) ? (int) $row->request_id : null,
+			'request_status' => isset($row->request_status) ? $row->request_status : null,
+			'visit_status' => isset($row->visit_status) ? $row->visit_status : null,
+			'consultation_mode' => isset($row->consultation_mode) ? $row->consultation_mode : null,
+			'patient' => array(
+				'latitude' => $patient_latitude,
+				'longitude' => $patient_longitude,
+				'available' => $patient_latitude !== null && $patient_longitude !== null,
+			),
+			'nakes' => array(
+				'latitude' => $nakes_latitude,
+				'longitude' => $nakes_longitude,
+				'available' => $nakes_latitude !== null && $nakes_longitude !== null,
+			),
+			'route' => $route,
+		);
 	}
 }
