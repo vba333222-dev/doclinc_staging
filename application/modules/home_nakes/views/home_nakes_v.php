@@ -728,8 +728,8 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										<div class="dl-nakes-meta-list">
 											<div><i class="fas fa-user-md fa-fw"></i><span>PIC Nakes</span><strong><?= html_escape($handling_nakes_label); ?></strong></div>
 											<div><i class="fas fa-clipboard-check fa-fw"></i><span>Mode</span><strong><?= html_escape($mode_label); ?></strong></div>
-											<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong id="distances"></strong></div>
-											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong id="durations"></strong></div>
+											<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong id="distances" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</strong></div>
+											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong id="durations" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</strong></div>
 										</div>
 										<div class="mt-3 visit-workflow-control" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
 											<div class="small text-muted mb-2">Status kunjungan: <span class="fw-bold visit-workflow-label"><?= html_escape(doclinc_visit_status_label($visit_status)); ?></span></div>
@@ -1518,6 +1518,15 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				element.classList.toggle('text-success', !isError && !!message);
 			}
 
+			function setRouteText(requestId, route) {
+				const distanceElement = document.querySelector('[data-route-distance="' + requestId + '"]');
+				const etaElement = document.querySelector('[data-route-eta="' + requestId + '"]');
+				const distance = route && route.distance_text ? route.distance_text : 'Menghitung...';
+				const eta = route && route.eta_text ? route.eta_text : 'Menghitung...';
+				if (distanceElement) distanceElement.textContent = distance;
+				if (etaElement) etaElement.textContent = eta;
+			}
+
 			function refreshVisitWorkflowControl(requestId, visitStatus, label) {
 				const container = document.querySelector('[data-visit-workflow="' + requestId + '"]');
 				if (!container) return;
@@ -1566,6 +1575,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						}
 
 						if (response && response.status === 'success') {
+							setRouteText(requestId, response.route);
 							setTrackingStatus(requestId, 'Lokasi berhasil diperbarui');
 							return;
 						}
@@ -1868,8 +1878,14 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			services.getDistanceMatrix(requests, function(response, status) {
 				if (status === "OK") {
 					const results = response.rows[0].elements[0];
-					document.getElementById("distances").innerText = results.distance.text;
-					document.getElementById("durations").innerText = results.duration.text;
+					const distanceElement = document.getElementById("distances");
+					const durationElement = document.getElementById("durations");
+					if (distanceElement && !distanceElement.hasAttribute('data-route-distance')) {
+						distanceElement.innerText = results.distance.text;
+					}
+					if (durationElement && !durationElement.hasAttribute('data-route-eta')) {
+						durationElement.innerText = results.duration.text;
+					}
 				}
 			});
 
