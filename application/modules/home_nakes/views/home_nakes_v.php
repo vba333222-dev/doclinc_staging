@@ -1087,6 +1087,8 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 	<script>
 		const mapProvider = <?= json_encode($map_provider); ?>;
 		const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
+		const wargaPinIconUrl = <?= json_encode(base_url('assets/doclinc_ui/konsultasi_nakes/warga-pin.svg')); ?>;
+		const nakesPinIconUrl = <?= json_encode(base_url('assets/doclinc_ui/konsultasi_nakes/nakes-pin.svg')); ?>;
 
 		function getFirebaseDatabase() {
 			const noopRef = {
@@ -1502,8 +1504,10 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			const mapState = ns.nakesMapState = ns.nakesMapState || {
 				leaflet: null,
 				leafletMarkers: {},
+				leafletRouteLine: null,
 				google: null,
 				googleMarkers: {},
+				googleRouteLine: null,
 				loadedRequests: {}
 			};
 			const nextVisitStatuses = {
@@ -1578,7 +1582,49 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				return [location.latitude, location.longitude];
 			}
 
-			function renderLeafletMap(patientLocation, nakesLocation) {
+			function routeLatLngs(route) {
+				if (!route || !route.geometry || route.geometry.type !== 'LineString' || !Array.isArray(route.geometry.coordinates)) {
+					return [];
+				}
+				return route.geometry.coordinates
+					.map(function(coordinate) {
+						if (!Array.isArray(coordinate) || coordinate.length < 2) return null;
+						const lng = parseFloat(coordinate[0]);
+						const lat = parseFloat(coordinate[1]);
+						if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+						return [lat, lng];
+					})
+					.filter(Boolean);
+			}
+
+			function routeGooglePath(route) {
+				return routeLatLngs(route).map(function(latLng) {
+					return {
+						lat: latLng[0],
+						lng: latLng[1]
+					};
+				});
+			}
+
+			function leafletPinIcon(type) {
+				return L.icon({
+					iconUrl: type === 'nakes' ? nakesPinIconUrl : wargaPinIconUrl,
+					iconSize: [44, 44],
+					iconAnchor: [22, 44],
+					popupAnchor: [0, -40]
+				});
+			}
+
+			function googlePinIcon(type) {
+				if (!hasGoogleMaps()) return null;
+				return {
+					url: type === 'nakes' ? nakesPinIconUrl : wargaPinIconUrl,
+					scaledSize: new google.maps.Size(44, 44),
+					anchor: new google.maps.Point(22, 44)
+				};
+			}
+
+			function renderLeafletMap(patientLocation, nakesLocation, route) {
 				const container = document.getElementById('maps');
 				if (!container || !window.L) return false;
 				const center = nakesLocation || patientLocation || {
@@ -1604,7 +1650,9 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 					if (!location) return;
 					const latLng = visitLatLng(location);
 					if (!mapState.leafletMarkers[name]) {
-						mapState.leafletMarkers[name] = L.marker(latLng).addTo(mapState.leaflet).bindPopup(label);
+						mapState.leafletMarkers[name] = L.marker(latLng, {
+							icon: leafletPinIcon(name)
+						}).addTo(mapState.leaflet).bindPopup(label);
 					} else {
 						mapState.leafletMarkers[name].setLatLng(latLng);
 					}
@@ -1613,6 +1661,21 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 
 				upsertMarker('patient', patientLocation, 'Pasien');
 				upsertMarker('nakes', nakesLocation, 'Nakes');
+				if (mapState.leafletRouteLine) {
+					mapState.leaflet.removeLayer(mapState.leafletRouteLine);
+					mapState.leafletRouteLine = null;
+				}
+				const routePoints = routeLatLngs(route);
+				if (routePoints.length > 1) {
+					mapState.leafletRouteLine = L.polyline(routePoints, {
+						weight: 5,
+						opacity: 0.9,
+						color: '#09AD74'
+					}).addTo(mapState.leaflet);
+					routePoints.forEach(function(latLng) {
+						bounds.push(latLng);
+					});
+				}
 				if (bounds.length > 1) {
 					mapState.leaflet.fitBounds(bounds, {
 						padding: [48, 48],
@@ -1627,7 +1690,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				return true;
 			}
 
-			function renderGoogleMap(patientLocation, nakesLocation) {
+			function renderGoogleMap(patientLocation, nakesLocation, route) {
 				if (!hasGoogleMaps()) return false;
 				const container = document.getElementById('maps');
 				if (!container) return false;
@@ -1653,16 +1716,35 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						mapState.googleMarkers[name] = new google.maps.Marker({
 							map: mapState.google,
 							position: latLng,
-							title: label
+							title: label,
+							icon: googlePinIcon(name)
 						});
 					} else {
 						mapState.googleMarkers[name].setPosition(latLng);
+						mapState.googleMarkers[name].setIcon(googlePinIcon(name));
 					}
 					bounds.extend(latLng);
 				}
 
 				upsertMarker('patient', patientLocation, 'Pasien');
 				upsertMarker('nakes', nakesLocation, 'Nakes');
+				if (mapState.googleRouteLine) {
+					mapState.googleRouteLine.setMap(null);
+					mapState.googleRouteLine = null;
+				}
+				const routePath = routeGooglePath(route);
+				if (routePath.length > 1) {
+					mapState.googleRouteLine = new google.maps.Polyline({
+						path: routePath,
+						strokeWeight: 5,
+						strokeOpacity: 0.9,
+						strokeColor: '#09AD74',
+						map: mapState.google
+					});
+					routePath.forEach(function(latLng) {
+						bounds.extend(latLng);
+					});
+				}
 				if (patientLocation && nakesLocation) {
 					mapState.google.fitBounds(bounds);
 				} else if (patientLocation || nakesLocation) {
@@ -1689,7 +1771,8 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 					setMapStatus(response && response.message ? response.message : 'OK');
 				}
 
-				const rendered = renderGoogleMap(patientLocation, nakesLocation) || renderLeafletMap(patientLocation, nakesLocation);
+				const route = response && response.route ? response.route : null;
+				const rendered = renderGoogleMap(patientLocation, nakesLocation, route) || renderLeafletMap(patientLocation, nakesLocation, route);
 				if (!rendered) {
 					setMapStatus('Peta belum tersedia', true);
 					return false;
@@ -1969,12 +2052,20 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 
 			userMarker = new google.maps.Marker({
 				map: map,
-				icon: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+				icon: {
+					url: nakesPinIconUrl,
+					scaledSize: new google.maps.Size(44, 44),
+					anchor: new google.maps.Point(22, 44)
+				}
 			});
 
 			destinationMarker = new google.maps.Marker({
 				map: map,
-				icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
+				icon: {
+					url: wargaPinIconUrl,
+					scaledSize: new google.maps.Size(44, 44),
+					anchor: new google.maps.Point(22, 44)
+				}
 			});
 
 			geocoder = new google.maps.Geocoder();

@@ -1258,6 +1258,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			const ns = window.doclincVisitTracking = window.doclincVisitTracking || {};
 			const visitMapboxToken = <?= json_encode($mapbox_public_token); ?>;
 			const visitLocationUrl = <?= json_encode(base_url('home/visit_location')); ?>;
+			const wargaPinIconUrl = <?= json_encode(base_url('assets/doclinc_ui/konsultasi_nakes/warga-pin.svg')); ?>;
+			const nakesPinIconUrl = <?= json_encode(base_url('assets/doclinc_ui/konsultasi_nakes/nakes-pin.svg')); ?>;
 			const pollIntervalMs = 12000;
 			const maps = ns.maps = ns.maps || {};
 			const timers = ns.timers = ns.timers || {};
@@ -1304,17 +1306,28 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				}
 			}
 
-			function createVisitMarkerIcon(type, label) {
-				return L.divIcon({
-					className: '',
-					html: '<div class="doclinc-visit-marker doclinc-visit-marker--' + type + '">' +
-						'<span class="doclinc-visit-marker-label">' + label + '</span>' +
-						'<span class="doclinc-visit-marker-pin"></span>' +
-						'</div>',
-					iconSize: [78, 58],
-					iconAnchor: [39, 24],
-					popupAnchor: [0, -26]
+			function createVisitMarkerIcon(type) {
+				return L.icon({
+					iconUrl: type === 'nakes' ? nakesPinIconUrl : wargaPinIconUrl,
+					iconSize: [44, 44],
+					iconAnchor: [22, 44],
+					popupAnchor: [0, -40]
 				});
+			}
+
+			function routeLatLngs(route) {
+				if (!route || !route.geometry || route.geometry.type !== 'LineString' || !Array.isArray(route.geometry.coordinates)) {
+					return [];
+				}
+				return route.geometry.coordinates
+					.map(function(coordinate) {
+						if (!Array.isArray(coordinate) || coordinate.length < 2) return null;
+						const lng = parseFloat(coordinate[0]);
+						const lat = parseFloat(coordinate[1]);
+						if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+						return [lat, lng];
+					})
+					.filter(Boolean);
 			}
 
 			ns.initVisitMap = function(containerId, patientLocation, nakesLocation) {
@@ -1338,7 +1351,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					}).addTo(map);
 					state = maps[containerId] = {
 						map: map,
-						markers: {}
+						markers: {},
+						routeLine: null
 					};
 					setTimeout(function() {
 						map.invalidateSize();
@@ -1352,7 +1366,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				return state;
 			};
 
-			ns.updateVisitMapMarkers = function(containerId, patientLocation, nakesLocation) {
+			ns.updateVisitMapMarkers = function(containerId, patientLocation, nakesLocation, route) {
 				const state = maps[containerId];
 				if (!state) return;
 				const bounds = [];
@@ -1363,7 +1377,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					const isNakes = name === 'nakes';
 					if (!state.markers[name]) {
 						state.markers[name] = L.marker(latLng, {
-							icon: createVisitMarkerIcon(name, isNakes ? 'Nakes' : 'Pasien'),
+							icon: createVisitMarkerIcon(name),
 							zIndexOffset: isNakes ? 1000 : 0
 						}).addTo(state.map).bindPopup(label);
 					} else {
@@ -1374,6 +1388,22 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 				upsertMarker('patient', patientLocation, 'Pasien');
 				upsertMarker('nakes', nakesLocation, 'Nakes');
+
+				if (state.routeLine) {
+					state.map.removeLayer(state.routeLine);
+					state.routeLine = null;
+				}
+				const routePoints = routeLatLngs(route);
+				if (routePoints.length > 1) {
+					state.routeLine = L.polyline(routePoints, {
+						weight: 5,
+						opacity: 0.9,
+						color: '#09AD74'
+					}).addTo(state.map);
+					routePoints.forEach(function(latLng) {
+						bounds.push(latLng);
+					});
+				}
 
 				if (bounds.length > 1) {
 					state.map.fitBounds(bounds, {
@@ -1423,7 +1453,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								const nakesLocation = parseLocation(response.nakes);
 								const state = ns.initVisitMap(mapContainerId, patientLocation, nakesLocation);
 								if (state) {
-									ns.updateVisitMapMarkers(mapContainerId, patientLocation, nakesLocation);
+									ns.updateVisitMapMarkers(mapContainerId, patientLocation, nakesLocation, response.route);
 								}
 								setVisitStatus(requestId, getVisitStatusMessage(response, nakesLocation ? 'Lokasi nakes tersedia' : 'Lokasi nakes belum tersedia'));
 							} else if (response && response.status === 'pending') {
