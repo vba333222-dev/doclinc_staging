@@ -281,10 +281,197 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			padding: 5px 10px;
 		}
 
+		.dl-warga-tracking-panel {
+			position: relative;
+			margin-top: 14px;
+			padding: 12px;
+			border: 1px solid #d8eee5;
+			border-radius: 24px;
+			background: #f6faf8;
+			overflow: hidden;
+		}
+
+		.dl-tracking-actions {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 10px;
+			margin-bottom: 12px;
+		}
+
+		.dl-tracking-actions .btn,
+		.dl-route-footer-actions .btn {
+			min-height: 44px;
+			border-radius: 999px;
+			font-size: 13px;
+			font-weight: 800;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			white-space: normal;
+		}
+
+		.dl-map-panel {
+			position: relative;
+			border-radius: 24px;
+			overflow: hidden;
+			background: #eef5f2;
+		}
+
+		.dl-map-panel .doclinc-visit-map {
+			height: min(64vh, 560px);
+			min-height: 430px;
+			margin-top: 0 !important;
+			border: 0;
+			border-radius: 24px;
+		}
+
+		.dl-map-panel .visit-map-toolbar {
+			position: absolute;
+			top: 12px;
+			right: 12px;
+			z-index: 500;
+			margin-top: 0;
+		}
+
+		.dl-map-panel .visit-map-toolbar .btn {
+			min-height: 40px;
+			background: rgba(255, 255, 255, 0.95);
+			box-shadow: 0 10px 28px rgba(17, 83, 58, 0.16);
+		}
+
+		.dl-route-bottom-sheet.visit-route-card {
+			position: relative;
+			z-index: 501;
+			margin: -108px 12px 12px !important;
+			padding: 16px;
+			border-radius: 24px;
+			border-color: rgba(216, 238, 229, 0.95);
+			box-shadow: 0 18px 42px rgba(15, 66, 42, 0.16);
+		}
+
+		.dl-route-head {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			gap: 12px;
+			margin-bottom: 12px;
+		}
+
+		.dl-route-kicker {
+			display: block;
+			color: #658176;
+			font-size: 11px;
+			font-weight: 800;
+			text-transform: uppercase;
+			letter-spacing: .04em;
+			margin-bottom: 2px;
+		}
+
+		.dl-route-subtitle {
+			color: #5d6b66;
+			font-size: 12px;
+			line-height: 1.45;
+			margin: 0;
+		}
+
+		.dl-location-state {
+			display: flex;
+			gap: 10px;
+			align-items: flex-start;
+			padding: 10px 12px;
+			margin-bottom: 12px;
+			border: 1px solid #e1efe8;
+			border-radius: 18px;
+			background: #f7fbf9;
+			color: #416154;
+			font-size: 12px;
+			line-height: 1.35;
+		}
+
+		.dl-location-state i {
+			color: #0d8f63;
+			margin-top: 2px;
+		}
+
+		.dl-location-state strong,
+		.dl-location-state small {
+			display: block;
+		}
+
+		.dl-location-state small {
+			color: #6b7d75;
+			margin-top: 2px;
+		}
+
+		.dl-route-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px;
+		}
+
+		.dl-route-grid .visit-route-card-row {
+			display: block;
+			min-height: 70px;
+			padding: 10px;
+			border: 1px solid #eef4f1;
+			border-radius: 16px;
+			background: #fbfdfc;
+		}
+
+		.dl-route-grid .visit-route-card-row span,
+		.dl-route-grid .visit-route-card-row strong {
+			display: block;
+			text-align: left;
+		}
+
+		.dl-route-grid .visit-route-card-row span {
+			margin-bottom: 5px;
+			color: #65766f;
+			font-size: 11px;
+			font-weight: 700;
+		}
+
+		.dl-route-grid .visit-route-card-row strong {
+			color: #183f31;
+			font-size: 13px;
+			line-height: 1.3;
+		}
+
+		.dl-route-card-row-wide {
+			grid-column: 1 / -1;
+		}
+
+		.dl-route-footer-actions {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 10px;
+			margin-top: 14px;
+		}
+
 		@media (max-width: 575.98px) {
 			.doclinc-visit-map {
 				height: 58vh;
 				min-height: 340px;
+			}
+
+			.dl-warga-tracking-panel {
+				margin-left: -4px;
+				margin-right: -4px;
+				padding: 10px;
+			}
+
+			.dl-map-panel .doclinc-visit-map {
+				height: 64vh;
+				min-height: 430px;
+			}
+
+			.dl-route-bottom-sheet.visit-route-card {
+				margin: -112px 10px 10px !important;
+			}
+
+			.dl-route-grid,
+			.dl-route-footer-actions {
+				grid-template-columns: 1fr;
 			}
 		}
 
@@ -567,7 +754,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 	</style>
 </head>
 
-<body class="bg-light dl-dashboard-body">
+<body class="bg-light dl-dashboard-body dl-warga-home">
 	<div id="preloader">
 		<div class="text-center">
 			<img class="animate__animated animate__bounceIn mb-3" src="<?= base_url(); ?>assets/images/doklincwhite.png" alt="" height="50px">
@@ -586,6 +773,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				<a class="dl-back-link" href="<?= html_escape($legacy_superapp_url); ?>" style="text-decoration: none; color: white; font-size: 1.5rem;" aria-label="Kembali">
 					<i class="fas fa-chevron-left icon"></i>
 				</a>
+				<h1 class="dl-mobile-app-title">Doclinc</h1>
 				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
 					<i class="bi bi-bell-fill fs-4"></i>
 					<!-- kalo ada notif fetch datanya dari sini ya, bukan dari dalem elemen span nya -->
@@ -636,45 +824,182 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			</svg>
 			<div class="position-relative">
 				<div id="beranda" class="content active animate__animated animate__fadeInUp animate__faster">
-					<section class="dl-hero">
-						<div class="dl-hero-content">
-							<h2 class="dl-hero-title">Mulai Konsultasi</h2>
-							<p class="dl-hero-text">Ceritakan keluhan Anda agar nakes dapat membantu.</p>
-							<?php if ($doclinc_has_active_request) : ?>
-								<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">
-									Lihat Konsultasi Aktif <i class="fas fa-clipboard-list"></i>
-								</a>
-								<p class="history-empty-text mt-2 mb-0">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.</p>
+					<section class="dl-home-greeting">
+						<h2>Halo, <?= html_escape($this->session->userdata('nama')); ?></h2>
+						<p>Butuh bantuan kesehatan hari ini?</p>
+					</section>
+
+					<section class="dl-consultation-status-card<?= $doclinc_has_active_request ? ' is-active' : ''; ?>">
+						<?php if ($doclinc_has_active_request) : ?>
+							<?php
+							$dl_active_status = !empty($doclinc_active_request->request_status) ? (string) $doclinc_active_request->request_status : '';
+							$dl_active_status_label = $dl_active_status === 'Accepted' ? 'Diterima petugas' : ($dl_active_status === 'Pending' ? 'Menunggu petugas' : ($dl_active_status === 'Completed' ? 'Selesai' : ($dl_active_status === 'Cancelled' ? 'Dibatalkan' : 'Konsultasi aktif')));
+							$dl_active_status_message = $dl_active_status === 'Accepted' ? 'Petugas sudah menerima konsultasi Anda.' : 'Permintaan konsultasi Anda sedang menunggu petugas.';
+							$dl_active_puskesmas_label = doclinc_request_puskesmas_label($doclinc_active_request);
+							$dl_active_queue_raw = isset($doclinc_active_request->queue_number) && $doclinc_active_request->queue_number !== null && $doclinc_active_request->queue_number !== ''
+								? str_pad((string) $doclinc_active_request->queue_number, 2, '0', STR_PAD_LEFT)
+								: '';
+							$dl_active_queue_label = $dl_active_queue_raw !== '' ? $dl_active_queue_raw : doclinc_request_queue_number_label($doclinc_active_request);
+							$dl_active_mode = isset($doclinc_active_request->consultation_mode) ? trim((string) $doclinc_active_request->consultation_mode) : '';
+							$dl_active_mode_label = doclinc_consultation_mode_label($dl_active_mode);
+							$dl_active_is_visit = $dl_active_mode === 'visit';
+							$dl_active_mode_display = $dl_active_mode_label !== '' ? $dl_active_mode_label : ($dl_active_is_visit ? 'Kunjungan Nakes' : 'Konsultasi Chat');
+							$dl_active_nakes_name = doclinc_request_handling_nakes_name($doclinc_active_request);
+							$dl_active_nakes_display = $dl_active_nakes_name !== '' ? $dl_active_nakes_name : 'Belum ditentukan';
+							$dl_active_complaint = !empty($doclinc_active_request->request_description) ? $doclinc_active_request->request_description : 'Keluhan tersimpan';
+							$dl_active_submitted_raw = '';
+							foreach (array('created_at', 'updated_at', 'create_date', 'date') as $dl_date_field) {
+								if (!empty($doclinc_active_request->{$dl_date_field})) {
+									$dl_active_submitted_raw = $doclinc_active_request->{$dl_date_field};
+									break;
+								}
+							}
+							$dl_active_submitted_label = '-';
+							if ($dl_active_submitted_raw !== '' && strtotime($dl_active_submitted_raw) !== false) {
+								$dl_active_submitted_label = date('d M Y, H:i', strtotime($dl_active_submitted_raw)) . ' WIB';
+							}
+							?>
+							<?php if ($dl_active_status === 'Pending') : ?>
+								<div class="dl-pending-status-card">
+									<div class="dl-pending-status-hero">
+										<span class="dl-consultation-status-pill is-pending">
+											<i class="far fa-clock"></i>
+											Menunggu petugas
+										</span>
+										<div class="dl-pending-status-icon" aria-hidden="true">
+											<i class="fas fa-hourglass-half"></i>
+										</div>
+										<h3>Menunggu petugas</h3>
+										<p>Permintaan konsultasi Anda sedang menunggu petugas.</p>
+										<span class="dl-pending-queue-value">No. <?= html_escape($dl_active_queue_label); ?></span>
+									</div>
+									<div class="dl-pending-info-card">
+										<i class="fas fa-info-circle"></i>
+										<p>Anda tidak perlu membuat permintaan baru. Petugas akan meninjau konsultasi ini dari puskesmas tujuan.</p>
+									</div>
+									<div class="dl-pending-detail-grid">
+										<div class="dl-pending-detail-row">
+											<i class="fas fa-clinic-medical"></i>
+											<div>
+												<span>Puskesmas tujuan</span>
+												<strong><?= html_escape($dl_active_puskesmas_label); ?></strong>
+											</div>
+										</div>
+										<div class="dl-pending-detail-row">
+											<i class="far fa-calendar-alt"></i>
+											<div>
+												<span>Diajukan pada</span>
+												<strong><?= html_escape($dl_active_submitted_label); ?></strong>
+											</div>
+										</div>
+										<div class="dl-pending-detail-row">
+											<i class="fas fa-notes-medical"></i>
+											<div>
+												<span>Keluhan</span>
+												<strong><?= doclinc_history_safe_lines($dl_active_complaint); ?></strong>
+											</div>
+										</div>
+									</div>
+									<div class="dl-pending-actions">
+										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-mobile-primary-action" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat Detail</a>
+										<button type="button" class="dl-mobile-secondary-action is-danger cancel-warga-request" data-request-id="<?= html_escape((int) $doclinc_active_request_id); ?>" data-cancel-queue="<?= html_escape($dl_active_queue_label); ?>" data-cancel-puskesmas="<?= html_escape($dl_active_puskesmas_label); ?>" data-cancel-complaint="<?= html_escape(strip_tags((string) $dl_active_complaint)); ?>">
+											Batalkan Permintaan
+										</button>
+									</div>
+								</div>
 							<?php else : ?>
-								<a href="#" class="dl-btn-secondary" onclick="showContent('konsultasi_kesehatan')">
-									Buat Konsultasi <i class="fas fa-plus-circle"></i>
-								</a>
+								<div class="dl-consultation-active-head">
+									<span class="dl-consultation-status-pill<?= $dl_active_status === 'Accepted' ? ' is-accepted' : ' is-pending'; ?>">
+										<i class="<?= $dl_active_status === 'Accepted' ? 'fas fa-check-circle' : 'far fa-clock'; ?>"></i>
+										<?= html_escape($dl_active_status_label); ?>
+									</span>
+									<a href="<?= html_escape(base_url('home#riwayat')); ?>" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat Detail</a>
+								</div>
+								<div class="dl-consultation-active-body">
+									<div class="dl-consultation-queue-box">
+										<span>No. Antrian</span>
+										<strong><?= html_escape($dl_active_queue_label); ?></strong>
+									</div>
+									<div class="dl-consultation-active-main">
+										<h3><?= html_escape($dl_active_puskesmas_label); ?></h3>
+										<p><?= html_escape($dl_active_status_message); ?></p>
+										<div class="dl-consultation-meta-chip">
+											<i class="<?= $dl_active_is_visit ? 'fas fa-home' : 'fas fa-comments'; ?>"></i>
+											<span>Mode layanan: <?= html_escape($dl_active_mode_display); ?></span>
+										</div>
+										<div class="dl-consultation-meta-chip">
+											<i class="fas fa-user-nurse"></i>
+											<span>Ditangani oleh: <?= html_escape($dl_active_nakes_display); ?></span>
+										</div>
+									</div>
+								</div>
+								<div class="dl-consultation-complaint">
+									<span>Ringkasan keluhan</span>
+									<p><?= doclinc_history_safe_lines($dl_active_complaint); ?></p>
+								</div>
+								<div class="dl-consultation-active-actions">
+									<?php if ($dl_active_status === 'Accepted' && !$dl_active_is_visit) : ?>
+										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $doclinc_active_request_id)); ?>" class="dl-mobile-primary-action">
+											<i class="fas fa-comments"></i> Chat Petugas
+										</a>
+										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-mobile-secondary-action" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat Detail</a>
+									<?php elseif ($dl_active_status === 'Accepted') : ?>
+										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-mobile-primary-action" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">
+											<i class="fas fa-map-marker-alt"></i> Lacak Kunjungan
+										</a>
+										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $doclinc_active_request_id)); ?>" class="dl-mobile-secondary-action">
+											<i class="fas fa-comments"></i> Chat Petugas
+										</a>
+									<?php endif; ?>
+								</div>
 							<?php endif; ?>
+						<?php else : ?>
+							<div class="dl-mobile-icon-badge">
+								<i class="fas fa-briefcase-medical"></i>
+							</div>
+							<h3>Belum ada konsultasi aktif</h3>
+							<p>Mulai konsultasi untuk terhubung dengan petugas puskesmas.</p>
+							<a href="#" class="dl-mobile-primary-action" onclick="showContent('konsultasi_kesehatan'); return false;">
+								Buat Konsultasi
+							</a>
+						<?php endif; ?>
+					</section>
+
+					<div class="dl-warga-location-hint">
+						<i class="fas fa-map-marker-alt"></i>
+						<p>Puskesmas akan dipilih otomatis berdasarkan lokasi Anda.</p>
+					</div>
+
+					<section class="dl-warga-services">
+						<h3 class="dl-section-title">Layanan</h3>
+						<div class="dl-warga-service-grid">
+							<a href="<?= html_escape($doclinc_has_active_request ? base_url('home#riwayat') : '#'); ?>" class="dl-warga-service-card is-wide<?= $doclinc_has_active_request ? ' disabled' : ''; ?>" onclick="<?= $doclinc_has_active_request ? 'openActiveConsultation(' . html_escape($doclinc_active_request_id) . '); return false;' : "showContent('konsultasi_kesehatan'); return false;"; ?>">
+								<span class="dl-warga-service-icon">
+									<i class="fas fa-comments"></i>
+								</span>
+								<span class="dl-warga-service-copy">
+									<strong><?= $doclinc_has_active_request ? 'Konsultasi Aktif' : 'Konsultasi Kesehatan'; ?></strong>
+									<small>Konsultasi dengan petugas puskesmas</small>
+								</span>
+								<i class="fas fa-chevron-right dl-warga-service-arrow"></i>
+							</a>
+							<a href="#" class="dl-warga-service-card" onclick="showContent('konsultasi_kesehatan'); return false;">
+								<span class="dl-warga-service-icon is-mint">
+									<i class="fas fa-home"></i>
+								</span>
+								<strong>Kunjungan Nakes</strong>
+								<small>Pemeriksaan di rumah</small>
+							</a>
+							<a href="#" class="dl-warga-service-card" onclick="showContent('riwayat'); return false;">
+								<span class="dl-warga-service-icon is-muted">
+									<i class="fas fa-history"></i>
+								</span>
+								<strong>Riwayat</strong>
+								<small>Catatan kesehatan Anda</small>
+							</a>
 						</div>
 					</section>
-					<div class="dl-feature-grid">
-						<a href="<?= html_escape($doclinc_has_active_request ? base_url('home#riwayat') : '#'); ?>" class="feature-menu dl-feature-card<?= $doclinc_has_active_request ? ' disabled' : ''; ?>" onclick="<?= $doclinc_has_active_request ? 'openActiveConsultation(' . html_escape($doclinc_active_request_id) . '); return false;' : "showContent('konsultasi_kesehatan'); return false;"; ?>">
-							<div class="icon-wrapper">
-								<i class="fas fa-user-md"></i>
-								<span class="filler"></span>
-							</div>
-							<span class="small"><?= $doclinc_has_active_request ? 'Konsultasi Aktif' : 'Konsultasi Kesehatan'; ?></span>
-						</a>
-						<a href="#" data-bs-toggle="modal" class="feature-menu dl-feature-card" onclick="showContent('riwayat')">
-							<div class="icon-wrapper">
-								<i class="fas fa-briefcase-medical"></i>
-								<span class="filler"></span>
-							</div>
-							<span class="small">Catatan Kesehatan</span>
-						</a>
-						<a href="#" class="feature-menu dl-feature-card">
-							<div class="icon-wrapper bg-secondary">
-								<i class="fas fa-bars"></i>
-								<span class="filler"></span>
-							</div>
-							<span class="text-muted small">Lainnya</span>
-						</a>
-					</div>
+
 					<section>
 						<div class="dl-section-header">
 							<h3 class="dl-section-title">Konsultasi Saat Ini</h3>
@@ -683,7 +1008,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						<?php if (!empty($getAllDataRequests)) : ?>
 							<?php foreach ($getAllDataRequests as $dlCurrentRequest) :
 								$dl_current_status = !empty($dlCurrentRequest->request_status) ? $dlCurrentRequest->request_status : '-';
-								$dl_status_label = $dl_current_status === 'Accepted' ? 'Diterima' : ($dl_current_status === 'Pending' ? 'Menunggu' : $dl_current_status);
+								$dl_status_label = $dl_current_status === 'Accepted' ? 'Diterima petugas' : ($dl_current_status === 'Pending' ? 'Menunggu petugas' : ($dl_current_status === 'Completed' ? 'Selesai' : ($dl_current_status === 'Cancelled' ? 'Dibatalkan' : $dl_current_status)));
 								$dl_current_date = !empty($dlCurrentRequest->date) ? date('d-m-Y', strtotime($dlCurrentRequest->date)) : '-';
 								$dl_current_keluhan = !empty($dlCurrentRequest->request_description) ? $dlCurrentRequest->request_description : 'Keluhan tersimpan';
 								$dl_puskesmas_label = doclinc_request_puskesmas_label($dlCurrentRequest);
@@ -711,7 +1036,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									<div class="d-grid gap-2">
 										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary w-100" onclick="openActiveConsultation(<?= html_escape((int) $dlCurrentRequest->request_id); ?>); return false;">Lihat Detail</a>
 										<?php if ($dl_current_status === 'Pending') : ?>
-											<button type="button" class="btn btn-sm btn-outline-danger rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $dlCurrentRequest->request_id); ?>">
+											<button type="button" class="btn btn-sm btn-outline-danger rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $dlCurrentRequest->request_id); ?>" data-cancel-queue="<?= html_escape($dl_queue_number_label); ?>" data-cancel-puskesmas="<?= html_escape($dl_puskesmas_label); ?>" data-cancel-complaint="<?= html_escape(strip_tags((string) $dl_current_keluhan)); ?>">
 												<i class="fas fa-times-circle me-1"></i> Batalkan
 											</button>
 										<?php endif; ?>
@@ -969,45 +1294,82 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 										<input type="text" name="longitudes" id="longitudes" value="<?= $lng; ?>" hidden />
 										<span id="estimasi"></span>
 										<?php if ($request_status === 'Accepted') : ?>
-											<div class="mt-3">
-												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-success btn-sm rounded-pill dl-btn-primary">
-													<i class="fas fa-comments me-1"></i> Chat Konsultasi
-												</a>
-												<button type="button" class="btn btn-outline-success btn-sm rounded-pill ms-1 visit-location-toggle" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
-													<i class="fas fa-map-marker-alt me-1"></i> Lihat Lokasi Nakes
-												</button>
-												<div class="doclinc-visit-status mt-2" data-visit-status="<?= html_escape((int) $id_request); ?>"></div>
-												<div class="visit-map-toolbar d-none" data-visit-toolbar="<?= html_escape((int) $id_request); ?>">
-													<button type="button" class="btn btn-light border visit-route-recenter" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
-														<i class="fas fa-crosshairs me-1"></i> Pusatkan rute
+											<div class="dl-mobile-tracking-panel dl-warga-tracking-panel dl-route-tracking-panel">
+												<div class="dl-tracking-actions">
+													<button type="button" class="btn btn-success btn-sm rounded-pill visit-location-toggle dl-tracking-open-button" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
+														<i class="fas fa-map-marker-alt me-1"></i> Lacak Kunjungan
 													</button>
-													<button type="button" class="btn btn-success visit-route-refresh" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
-														<i class="fas fa-sync-alt me-1"></i> Perbarui
-													</button>
+													<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-outline-success btn-sm rounded-pill dl-tracking-chat-link">
+														<i class="fas fa-comments me-1"></i> Chat Petugas
+													</a>
 												</div>
-												<div id="visit-map-<?= html_escape((int) $id_request); ?>" class="doclinc-visit-map mt-2 d-none"></div>
-												<div class="visit-route-card mt-2 d-none" data-visit-route-card="<?= html_escape((int) $id_request); ?>">
-													<div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-														<div class="visit-route-card-title">Nakes menuju lokasi Anda</div>
-														<span class="visit-route-status" data-visit-route-status="<?= html_escape((int) $id_request); ?>">Menghitung...</span>
+												<div class="doclinc-visit-status mt-2 dl-visit-status-copy" data-visit-status="<?= html_escape((int) $id_request); ?>"></div>
+												<div class="dl-map-panel dl-location-map-panel">
+													<div class="visit-map-toolbar d-none dl-map-floating-actions" data-visit-toolbar="<?= html_escape((int) $id_request); ?>">
+														<button type="button" class="btn btn-light border visit-route-recenter" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
+															<i class="fas fa-crosshairs me-1"></i> Pusatkan rute
+														</button>
+														<button type="button" class="btn btn-success visit-route-refresh" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
+															<i class="fas fa-sync-alt me-1"></i> Refresh
+														</button>
 													</div>
-													<div class="visit-route-card-row">
-														<span>Jarak</span>
-														<strong data-visit-route-distance="<?= html_escape((int) $id_request); ?>">Menghitung...</strong>
-													</div>
-													<div class="visit-route-card-row">
-														<span>Estimasi tiba</span>
-														<strong data-visit-route-eta="<?= html_escape((int) $id_request); ?>">Menghitung...</strong>
-													</div>
-													<div class="visit-route-card-row">
-														<span>Terakhir diperbarui</span>
-														<strong data-visit-route-updated="<?= html_escape((int) $id_request); ?>">-</strong>
+													<div id="visit-map-<?= html_escape((int) $id_request); ?>" class="doclinc-visit-map mt-2 d-none dl-map-canvas"></div>
+													<div class="visit-route-card mt-2 d-none dl-route-bottom-sheet dl-bottom-sheet-route" data-visit-route-card="<?= html_escape((int) $id_request); ?>">
+														<div class="dl-route-head">
+															<div>
+																<span class="dl-route-kicker">Kunjungan Nakes</span>
+																<div class="visit-route-card-title">Lacak Kunjungan</div>
+																<p class="dl-route-subtitle">Pantau posisi petugas dan estimasi kedatangan.</p>
+															</div>
+															<span class="visit-route-status" data-visit-route-status="<?= html_escape((int) $id_request); ?>">Menghitung...</span>
+														</div>
+														<div class="dl-location-state">
+															<i class="fas fa-route"></i>
+															<div>
+																<strong>Lokasi nakes belum tersedia</strong>
+																<small>Coba perbarui beberapa saat lagi.</small>
+															</div>
+														</div>
+														<div class="dl-route-grid">
+															<div class="visit-route-card-row">
+																<span>Jarak</span>
+																<strong data-visit-route-distance="<?= html_escape((int) $id_request); ?>">Menghitung...</strong>
+															</div>
+															<div class="visit-route-card-row">
+																<span>Estimasi tiba</span>
+																<strong data-visit-route-eta="<?= html_escape((int) $id_request); ?>">Menghitung...</strong>
+															</div>
+															<div class="visit-route-card-row">
+																<span>Status kunjungan</span>
+																<strong><?= html_escape($visit_label !== '' ? $visit_label : 'Diterima petugas'); ?></strong>
+															</div>
+															<div class="visit-route-card-row">
+																<span>Terakhir diperbarui</span>
+																<strong data-visit-route-updated="<?= html_escape((int) $id_request); ?>">-</strong>
+															</div>
+															<div class="visit-route-card-row dl-route-card-row-wide">
+																<span>Puskesmas tujuan</span>
+																<strong><?= html_escape($puskesmas_label !== '' ? $puskesmas_label : 'Belum tersedia'); ?></strong>
+															</div>
+															<div class="visit-route-card-row dl-route-card-row-wide">
+																<span>Ditangani oleh</span>
+																<strong><?= html_escape($handling_nakes_name !== '' ? $handling_nakes_name : 'Petugas belum ditentukan'); ?></strong>
+															</div>
+														</div>
+														<div class="dl-route-footer-actions">
+															<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-success btn-sm rounded-pill">
+																<i class="fas fa-comments me-1"></i> Chat Petugas
+															</a>
+															<button type="button" class="btn btn-outline-success btn-sm rounded-pill visit-route-refresh" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
+																<i class="fas fa-sync-alt me-1"></i> Refresh Lokasi
+															</button>
+														</div>
 													</div>
 												</div>
 											</div>
 										<?php elseif ($request_status === 'Pending') : ?>
 											<div class="mt-3">
-												<button type="button" class="btn btn-outline-danger btn-sm rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $id_request); ?>">
+												<button type="button" class="btn btn-outline-danger btn-sm rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $id_request); ?>" data-cancel-queue="<?= html_escape($queue_number_label); ?>" data-cancel-puskesmas="<?= html_escape($puskesmas_label); ?>" data-cancel-complaint="<?= html_escape(strip_tags((string) $keluhan)); ?>">
 													<i class="fas fa-times-circle me-1"></i> Batalkan
 												</button>
 											</div>
@@ -1048,38 +1410,61 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$tanggal_riwayat = !empty($tanggal) ? date('d F Y', strtotime($tanggal)) : '-';
 								$puskesmas_label = doclinc_request_puskesmas_label($data);
 								$queue_number_label = doclinc_request_queue_number_label($data);
+								$diagnosa_display = trim((string) $diagnosa) !== '' && trim((string) $diagnosa) !== '-' ? $diagnosa : 'Belum tersedia';
+								$saran_display = trim((string) $saran_dokter) !== '' && trim((string) $saran_dokter) !== '-' ? $saran_dokter : 'Tidak ada catatan tambahan';
+								$mode_display = trim((string) $mode_label) !== '' ? $mode_label : 'Belum tersedia';
+								$handling_nakes_display = $handling_nakes_name !== '' ? $handling_nakes_name : 'Belum tersedia';
 							?>
-								<div class="card shadow mb-3 history-result-card dl-card" id="card-<?= html_escape($card_id); ?>" data-request-id="<?= $id_request; ?>">
-									<div class="card-header d-flex align-items-start gap-3">
-										<div class="flex-grow-1">
-											<div class="history-request-id"><?= html_escape($puskesmas_label); ?></div>
-											<div class="history-meta fw-bold"><?= html_escape($queue_number_label); ?></div>
-											<div class="history-meta">
-												<?= doclinc_history_safe_text($tanggal_riwayat); ?><br>
-												<?= html_escape($handling_nakes_label); ?><br>
-												Mode: <?= html_escape($mode_label); ?>
+								<div class="card shadow mb-3 history-result-card dl-card dl-history-detail-card" id="card-<?= html_escape($card_id); ?>" data-request-id="<?= $id_request; ?>">
+									<div class="card-header dl-history-detail-header">
+										<div class="dl-history-detail-appbar">
+											<div>
+												<span class="dl-history-detail-kicker">Detail Riwayat</span>
+												<h3>Hasil konsultasi</h3>
+											</div>
+											<span class="dl-history-status-chip">Selesai</span>
+										</div>
+										<div class="dl-summary-card">
+											<div class="dl-summary-item">
+												<span>Tanggal konsultasi</span>
+												<strong><?= doclinc_history_safe_text($tanggal_riwayat); ?></strong>
+											</div>
+											<div class="dl-summary-item">
+												<span>No. Antrian</span>
+												<strong><?= html_escape($queue_number_label); ?></strong>
+											</div>
+											<div class="dl-summary-item">
+												<span>Puskesmas tujuan</span>
+												<strong><?= html_escape($puskesmas_label); ?></strong>
+											</div>
+											<div class="dl-summary-item">
+												<span>Ditangani oleh</span>
+												<strong><?= html_escape($handling_nakes_display); ?></strong>
+											</div>
+											<div class="dl-summary-item">
+												<span>Mode layanan</span>
+												<strong><?= html_escape($mode_display); ?></strong>
 											</div>
 										</div>
-										<span class="history-status-badge">Completed</span>
 									</div>
 									<input type="hidden" id="reqIdRat" value="<?= $id_request; ?>">
-									<div class="card-body">
-										<div class="history-section">
-											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan Awal</div>
+									<div class="card-body dl-history-detail-body">
+										<div class="history-section dl-record-section">
+											<div class="history-section-title dl-record-title"><i class="fas fa-notes-medical me-1"></i> Keluhan awal</div>
 											<?= doclinc_history_format_complaint($keluhan); ?>
 										</div>
-										<div class="history-section">
-											<div class="history-section-title"><i class="fas fa-file-medical-alt me-1"></i> Hasil Konsultasi</div>
-											<div class="history-result-row">
-												<span class="history-result-label">Diagnosa</span>
-												<div class="history-result-value"><?= doclinc_history_safe_lines($diagnosa); ?></div>
+										<div class="history-section dl-record-section dl-result-section">
+											<div class="history-section-title dl-record-title"><i class="fas fa-file-medical-alt me-1"></i> Hasil konsultasi</div>
+											<div class="history-result-row dl-result-row">
+												<span class="history-result-label">Diagnosis</span>
+												<div class="history-result-value"><?= doclinc_history_safe_lines($diagnosa_display); ?></div>
 											</div>
-											<div class="history-result-row">
-												<span class="history-result-label">Terapi / Tindakan / Obat</span>
+											<div class="history-result-row dl-result-row">
+												<span class="history-result-label">Terapi atau tindakan</span>
 												<?php if (!empty($terapi_list)) : ?>
-													<div class="history-therapy-list">
+													<div class="history-therapy-list dl-record-therapy-list">
 														<?php foreach ($terapi_list as $index => $terapi) : ?>
-															<div class="history-therapy-item">
+															<div class="history-therapy-item dl-record-therapy-item">
 																<div class="fw-bold"><?= html_escape(($index + 1) . '. ' . trim((string) ($terapi->terapi ?? '-'))); ?></div>
 																<div class="history-meta"><?= doclinc_history_safe_text($terapi->signa ?? '-'); ?></div>
 																<?php if (!empty($terapi->keterangan)) : ?>
@@ -1091,21 +1476,28 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												<?php elseif ($treatment !== '') : ?>
 													<div class="history-result-value"><?= doclinc_history_safe_lines($treatment); ?></div>
 												<?php else : ?>
-													<p class="history-empty-text mb-0">Belum ada terapi/tindakan yang tercatat.</p>
+													<p class="history-empty-text mb-0">Tidak ada catatan tambahan</p>
 												<?php endif; ?>
 											</div>
-											<div class="history-result-row">
-												<span class="history-result-label">Rekomendasi / Saran</span>
-												<div class="history-result-value"><?= doclinc_history_safe_lines($saran_dokter); ?></div>
+											<div class="history-result-row dl-result-row">
+												<span class="history-result-label">Saran petugas</span>
+												<div class="history-result-value dl-result-advice"><?= doclinc_history_safe_lines($saran_display); ?></div>
 											</div>
 										</div>
+										<div class="history-section dl-record-section dl-record-attachment">
+											<div class="history-section-title dl-record-title"><i class="fas fa-paperclip me-1"></i> Lampiran</div>
+											<p class="history-empty-text mb-0">Belum tersedia</p>
+										</div>
 										<input type="hidden" id="doktId" value="<?= html_escape($dokter_id); ?>">
-										<button class="btn btn-sm btn-outline-success mt-2 dl-btn-secondary" onclick="downloadCard('card-<?= html_escape($card_id); ?>')">
+										<div class="dl-history-detail-actions">
+											<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="dl-mobile-primary-action dl-history-chat-action">
+												<i class="fas fa-comments"></i> Lihat Riwayat Chat
+											</a>
+											<button class="btn btn-sm btn-outline-success dl-btn-secondary dl-history-download-action" onclick="downloadCard('card-<?= html_escape($card_id); ?>')">
 											<i class="fas fa-file-download"></i> Download Resep
-										</button>
-										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-sm btn-outline-secondary mt-2 dl-btn-secondary">
-											<i class="fas fa-comments"></i> Lihat Chat
-										</a>
+											</button>
+											<a href="#riwayat" class="dl-mobile-secondary-action" onclick="showContent('riwayat'); return false;">Kembali ke Riwayat</a>
+										</div>
 									</div>
 								</div>
 							<?php } ?>
@@ -1279,6 +1671,37 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			<div id="notificationList" class="notification-list"></div>
 		</div>
 	</div>
+
+	<div class="dl-bottom-sheet-backdrop dl-cancel-sheet-backdrop" id="dlCancelSheetBackdrop" hidden></div>
+	<section class="dl-bottom-sheet dl-cancel-sheet" id="dlCancelSheet" role="dialog" aria-modal="true" aria-labelledby="dlCancelSheetTitle" hidden>
+		<div class="dl-bottom-sheet-handle" aria-hidden="true"></div>
+		<button type="button" class="dl-cancel-close" data-dl-cancel-close aria-label="Tutup konfirmasi pembatalan">
+			<i class="fas fa-times"></i>
+		</button>
+		<div class="dl-cancel-icon" aria-hidden="true">
+			<i class="fas fa-exclamation"></i>
+		</div>
+		<h2 id="dlCancelSheetTitle">Batalkan permintaan konsultasi?</h2>
+		<p class="dl-cancel-description">Jika dibatalkan, petugas tidak akan melanjutkan permintaan ini. Anda bisa membuat permintaan baru setelah pembatalan selesai.</p>
+		<div class="dl-cancel-summary" aria-label="Ringkasan konsultasi">
+			<div class="dl-cancel-summary-row">
+				<span>No. Antrian</span>
+				<strong id="dlCancelSheetQueue">-</strong>
+			</div>
+			<div class="dl-cancel-summary-row">
+				<span>Puskesmas tujuan</span>
+				<strong id="dlCancelSheetPuskesmas">-</strong>
+			</div>
+			<div class="dl-cancel-summary-row">
+				<span>Keluhan</span>
+				<strong id="dlCancelSheetComplaint">-</strong>
+			</div>
+		</div>
+		<div class="dl-cancel-actions">
+			<button type="button" class="dl-danger-action" id="dlCancelSheetConfirm">Ya, Batalkan</button>
+			<button type="button" class="dl-cancel-secondary-action" data-dl-cancel-close>Kembali</button>
+		</div>
+	</section>
 
 	<div class="modal fade" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel" aria-hidden="false">
 		<div class="modal-dialog modal-dialog-centered">
@@ -1902,30 +2325,103 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}
 		});
 
+		(function() {
+			const sheet = document.getElementById('dlCancelSheet');
+			const backdrop = document.getElementById('dlCancelSheetBackdrop');
+			const confirmButton = document.getElementById('dlCancelSheetConfirm');
+			const queueText = document.getElementById('dlCancelSheetQueue');
+			const puskesmasText = document.getElementById('dlCancelSheetPuskesmas');
+			const complaintText = document.getElementById('dlCancelSheetComplaint');
+			let pendingCancelButton = null;
+
+			if (!sheet || !backdrop || !confirmButton) {
+				return;
+			}
+
+			function setText(element, value) {
+				if (!element) {
+					return;
+				}
+				const cleanValue = value && String(value).trim() ? String(value).trim() : '-';
+				element.textContent = cleanValue.length > 96 ? cleanValue.substring(0, 96) + '...' : cleanValue;
+			}
+
+			function openCancelSheet(button) {
+				pendingCancelButton = button;
+				setText(queueText, button.getAttribute('data-cancel-queue'));
+				setText(puskesmasText, button.getAttribute('data-cancel-puskesmas'));
+				setText(complaintText, button.getAttribute('data-cancel-complaint'));
+				sheet.hidden = false;
+				backdrop.hidden = false;
+				document.body.classList.add('dl-bottom-sheet-open');
+				window.requestAnimationFrame(function() {
+					sheet.classList.add('is-open');
+					backdrop.classList.add('is-open');
+					confirmButton.focus();
+				});
+			}
+
+			function closeCancelSheet() {
+				sheet.classList.remove('is-open');
+				backdrop.classList.remove('is-open');
+				document.body.classList.remove('dl-bottom-sheet-open');
+				window.setTimeout(function() {
+					if (!sheet.classList.contains('is-open')) {
+						sheet.hidden = true;
+						backdrop.hidden = true;
+						pendingCancelButton = null;
+					}
+				}, 180);
+			}
+
+			document.addEventListener('click', function(event) {
+				const cancelButton = event.target.closest('.cancel-warga-request');
+				if (!cancelButton || cancelButton.getAttribute('data-sheet-confirmed') === '1') {
+					return;
+				}
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				openCancelSheet(cancelButton);
+			}, true);
+
+			confirmButton.addEventListener('click', function() {
+				if (!pendingCancelButton) {
+					closeCancelSheet();
+					return;
+				}
+				const button = pendingCancelButton;
+				button.setAttribute('data-sheet-confirmed', '1');
+				closeCancelSheet();
+				window.setTimeout(function() {
+					button.click();
+				}, 0);
+			});
+
+			backdrop.addEventListener('click', closeCancelSheet);
+			document.querySelectorAll('[data-dl-cancel-close]').forEach(function(button) {
+				button.addEventListener('click', closeCancelSheet);
+			});
+			document.addEventListener('keydown', function(event) {
+				if (event.key === 'Escape' && !sheet.hidden) {
+					closeCancelSheet();
+				}
+			});
+		})();
+
 		$(document).on('click', '.cancel-warga-request', function(event) {
 			event.preventDefault();
 			event.stopPropagation();
 
 			const button = $(this);
 			const requestId = button.data('request-id');
+			const sheetConfirmed = button.attr('data-sheet-confirmed') === '1';
 			if (!requestId) {
 				Swal.fire('Gagal', 'Data request tidak ditemukan.', 'error');
 				return;
 			}
 
-			Swal.fire({
-				title: 'Batalkan konsultasi?',
-				text: 'Permintaan konsultasi yang dibatalkan tidak dapat dilanjutkan.',
-				icon: 'warning',
-				showCancelButton: true,
-				confirmButtonText: 'Ya, batalkan',
-				confirmButtonColor: '#dc3545',
-				cancelButtonText: 'Tidak'
-			}).then((result) => {
-				if (!result.isConfirmed) {
-					return;
-				}
-
+			const runCancelRequest = function() {
+				button.removeAttr('data-sheet-confirmed');
 				button.prop('disabled', true).addClass('disabled');
 				$.ajax({
 					url: '<?= base_url('home/cancel_request'); ?>',
@@ -1963,6 +2459,25 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						Swal.fire('Gagal', response.message || 'Konsultasi tidak dapat dibatalkan.', 'error');
 					}
 				});
+			};
+
+			if (sheetConfirmed) {
+				runCancelRequest();
+				return;
+			}
+
+			Swal.fire({
+				title: 'Batalkan konsultasi?',
+				text: 'Permintaan konsultasi yang dibatalkan tidak dapat dilanjutkan.',
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonText: 'Ya, batalkan',
+				confirmButtonColor: '#dc3545',
+				cancelButtonText: 'Tidak'
+			}).then((result) => {
+				if (result.isConfirmed) {
+					runCancelRequest();
+				}
 			});
 		});
 	</script>
