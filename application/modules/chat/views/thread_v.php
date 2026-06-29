@@ -3,32 +3,19 @@ $request_id = isset($request_id) ? (int) $request_id : 0;
 $can_send = !empty($can_send);
 $current_user_id = isset($current_user_id) ? (int) $current_user_id : 0;
 $request_status = isset($request->request_status) ? (string) $request->request_status : '';
-$is_nakes_chat = isset($current_role) && $current_role === 'dokter';
-$chat_shell_role_class = $is_nakes_chat ? 'dl-nakes-chat-shell' : 'dl-warga-chat-shell';
-$puskesmas_display = doclinc_request_puskesmas_label($request);
-$queue_number_display = doclinc_request_queue_number_label($request);
 $queue_code = doclinc_request_queue_code($request);
 $queue_display = 'No. Antrian: ' . $queue_code;
-if (!$is_nakes_chat) {
-	$queue_display = $puskesmas_display . ' · ' . $queue_number_display;
+if ($current_role !== 'dokter') {
+	$queue_display = doclinc_request_puskesmas_label($request) . ' · ' . doclinc_request_queue_number_label($request);
 }
-$consultation_mode = isset($request->consultation_mode) ? trim((string) $request->consultation_mode) : '';
-$mode_label = function_exists('doclinc_consultation_mode_label') ? doclinc_consultation_mode_label($consultation_mode) : '';
-$back_url = $is_nakes_chat ? base_url('home_nakes') : base_url('home#riwayat');
-$detail_url = $is_nakes_chat && $request_id > 0 ? base_url('konsultasi_nakes/konsultasi/' . $request_id) . '?kriteria=1' : '';
+$back_url = ($current_role === 'dokter') ? base_url('home_nakes') : base_url('home#riwayat');
 $status_label = 'Chat belum tersedia';
-$status_class = 'is-waiting';
 if ($request_status === 'Accepted') {
-	$status_label = $is_nakes_chat ? 'Sedang ditangani' : 'Diterima petugas';
-	$status_class = 'is-active';
-} elseif ($request_status === 'Pending') {
-	$status_label = 'Menunggu petugas';
+	$status_label = 'Chat aktif';
 } elseif ($request_status === 'Completed') {
-	$status_label = 'Selesai';
-	$status_class = 'is-finished';
+	$status_label = 'Riwayat chat';
 } elseif ($request_status === 'Cancelled') {
-	$status_label = 'Dibatalkan';
-	$status_class = 'is-cancelled';
+	$status_label = 'Riwayat chat dibatalkan';
 }
 $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), true)
 	? 'Konsultasi sudah selesai. Riwayat chat hanya dapat dibaca.'
@@ -36,17 +23,13 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 $asset_base = base_url('assets/doclinc_ui/chat/');
 $partner_name = 'Petugas Puskesmas';
 $partner_subtitle = 'Konsultasi kesehatan';
-if ($is_nakes_chat) {
+if ($current_role === 'dokter') {
 	$partner_name = isset($request->nama) && $request->nama !== '' ? $request->nama : 'Pasien';
 	$partner_subtitle = isset($request->assigned_puskesmas_name) && $request->assigned_puskesmas_name !== '' ? $request->assigned_puskesmas_name : 'Permintaan konsultasi';
 } else {
 	$partner_name = isset($request->assigned_puskesmas_name) && $request->assigned_puskesmas_name !== '' ? $request->assigned_puskesmas_name : (isset($request->nama_dokter) && $request->nama_dokter !== '' ? $request->nama_dokter : 'Petugas Puskesmas');
 	$partner_subtitle = 'Nakes akan membantu konsultasi Anda';
 }
-$chat_header_title = $is_nakes_chat ? $partner_name : 'Chat Konsultasi';
-$chat_header_subtitle = $is_nakes_chat ? $queue_display : $queue_display;
-$chat_context_label = $is_nakes_chat ? 'Pasien' : 'Layanan';
-$chat_status_context = $mode_label !== '' ? $status_label . ' · ' . $mode_label : $status_label;
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -374,379 +357,48 @@ $chat_status_context = $mode_label !== '' ? $status_label . ' · ' . $mode_label
 				max-width: min(300px, calc(100vw - 114px));
 			}
 		}
-
-		.dl-mobile-chat-shell {
-			max-width: 430px;
-			min-height: 100vh;
-			min-height: 100dvh;
-			background: #f5faf7;
-			border-radius: 0;
-			box-shadow: 0 18px 42px rgba(31, 42, 36, 0.08);
-		}
-
-		.dl-chat-header {
-			height: auto;
-			min-height: 68px;
-			padding: max(14px, env(safe-area-inset-top)) 20px 12px;
-			justify-content: flex-start;
-			gap: 12px;
-			background: rgba(255, 255, 255, 0.96);
-			border-bottom: 1px solid rgba(190, 202, 191, 0.55);
-			box-shadow: 0 8px 24px rgba(31, 42, 36, 0.05);
-		}
-
-		.dl-chat-back {
-			position: static;
-			width: 44px;
-			height: 44px;
-			border-radius: 999px;
-			background: #eef6f1;
-			color: #163d2a;
-			flex: 0 0 44px;
-		}
-
-		.dl-chat-title-block {
-			min-width: 0;
-			display: grid;
-			gap: 2px;
-		}
-
-		.dl-chat-title {
-			font-size: 18px;
-			font-weight: 800;
-			line-height: 24px;
-			color: #17231d;
-		}
-
-		.dl-chat-subtitle-top {
-			margin: 0;
-			color: #617268;
-			font-size: 12px;
-			font-weight: 700;
-			line-height: 16px;
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-		}
-
-		.dl-thread-context-card {
-			height: auto;
-			margin: 14px 16px 0;
-			padding: 14px;
-			border: 1px solid rgba(190, 202, 191, 0.72);
-			border-radius: 22px;
-			background: #ffffff;
-			box-shadow: 0 10px 26px rgba(31, 42, 36, 0.06);
-		}
-
-		.dl-thread-avatar {
-			width: 52px;
-			height: 52px;
-			border-radius: 16px;
-		}
-
-		.dl-thread-name {
-			color: #17231d;
-			font-size: 15px;
-			font-weight: 800;
-			line-height: 20px;
-		}
-
-		.dl-thread-subtitle {
-			color: #617268;
-			font-size: 12px;
-			font-weight: 600;
-			line-height: 17px;
-		}
-
-		.dl-chat-status-pill {
-			min-height: 26px;
-			margin-top: 8px;
-			gap: 6px;
-			padding: 4px 10px;
-			background: #e8f6ed;
-			color: #08764f;
-			font-size: 11px;
-			line-height: 16px;
-		}
-
-		.dl-chat-status-pill::before {
-			content: "";
-			width: 7px;
-			height: 7px;
-			border-radius: 999px;
-			background: currentColor;
-		}
-
-		.dl-chat-status-pill.is-finished,
-		.dl-chat-status-pill.is-cancelled {
-			background: #f1f4f2;
-			color: #617268;
-		}
-
-		.dl-thread-meta-row {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 8px;
-			margin-top: 10px;
-		}
-
-		.dl-thread-meta-chip {
-			display: inline-flex;
-			align-items: center;
-			min-height: 28px;
-			max-width: 100%;
-			padding: 5px 10px;
-			border-radius: 999px;
-			background: #f5faf7;
-			color: #42554a;
-			font-size: 11px;
-			font-weight: 700;
-			line-height: 16px;
-		}
-
-		.dl-thread-detail-link {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			min-height: 36px;
-			margin-top: 12px;
-			padding: 8px 12px;
-			border-radius: 999px;
-			background: #0a7b55;
-			color: #ffffff;
-			font-size: 12px;
-			font-weight: 800;
-			line-height: 16px;
-			text-decoration: none;
-		}
-
-		.dl-thread-detail-link:focus-visible {
-			outline: 3px solid rgba(10, 123, 85, 0.24);
-			outline-offset: 2px;
-		}
-
-		.dl-nakes-chat-shell .dl-chat-header {
-			min-height: 78px;
-		}
-
-		.dl-nakes-chat-shell .dl-chat-title {
-			font-size: 18px;
-			line-height: 23px;
-		}
-
-		.dl-nakes-chat-shell .dl-chat-status-pill.is-active {
-			background: #e8f6ed;
-			color: #08764f;
-		}
-
-		.dl-nakes-chat-shell .dl-thread-context-card {
-			border-radius: 20px;
-		}
-
-		.dl-nakes-chat-shell .dl-thread-avatar {
-			background: #e8f6ed;
-		}
-
-		.dl-nakes-chat-shell .dl-message-list {
-			background:
-				radial-gradient(circle at top right, rgba(211, 239, 224, 0.58), transparent 30%),
-				#f5faf7;
-		}
-
-		.dl-message-list {
-			padding: 18px 16px 104px;
-			background:
-				radial-gradient(circle at top left, rgba(211, 239, 224, 0.52), transparent 28%),
-				#f5faf7;
-		}
-
-		.dl-message-row {
-			gap: 8px;
-			margin-bottom: 18px;
-			align-items: flex-end;
-			justify-content: flex-start;
-		}
-
-		.dl-message-row.mine {
-			justify-content: flex-end;
-		}
-
-		.dl-message-bubble {
-			max-width: min(292px, 78vw);
-			padding: 12px 14px;
-			border: 1px solid rgba(190, 202, 191, 0.68);
-			border-radius: 18px 18px 18px 6px;
-			background: #ffffff;
-			box-shadow: 0 5px 14px rgba(31, 42, 36, 0.05);
-			color: #17231d;
-		}
-
-		.dl-message-bubble.mine {
-			border-color: #0a7b55;
-			border-radius: 18px 18px 6px 18px;
-			background: #0a7b55;
-			color: #ffffff;
-		}
-
-		.dl-message-time {
-			width: auto;
-			flex: 0 0 auto;
-			margin: 0 2px 3px;
-			color: #7a8b81;
-			font-size: 10px;
-			font-weight: 700;
-		}
-
-		.dl-message-image {
-			border-radius: 14px;
-			background: rgba(255, 255, 255, 0.22);
-		}
-
-		.dl-chat-state {
-			margin: 18px auto;
-			max-width: 280px;
-			border-radius: 18px;
-			background: rgba(255, 255, 255, 0.92);
-			color: #617268;
-		}
-
-		.dl-chat-composer {
-			position: fixed;
-			right: 0;
-			bottom: 0;
-			left: 0;
-			width: 100%;
-			max-width: 430px;
-			min-height: 86px;
-			margin: 0 auto;
-			padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-			background: rgba(255, 255, 255, 0.98);
-			border-top: 1px solid rgba(190, 202, 191, 0.6);
-			box-shadow: 0 -12px 26px rgba(31, 42, 36, 0.08);
-			z-index: 5;
-		}
-
-		.dl-chat-input-row {
-			min-height: 52px;
-			gap: 8px;
-			padding: 5px;
-			border: 1px solid rgba(190, 202, 191, 0.85);
-			border-radius: 999px;
-			background: #f5faf7;
-		}
-
-		.dl-upload-action,
-		.dl-chat-send {
-			width: 44px;
-			height: 44px;
-			border-radius: 999px;
-		}
-
-		.dl-upload-action {
-			background: #ffffff;
-			border: 1px solid rgba(190, 202, 191, 0.72);
-		}
-
-		.dl-chat-send {
-			background: #0a7b55;
-			box-shadow: 0 8px 18px rgba(10, 123, 85, 0.22);
-		}
-
-		.dl-chat-input {
-			height: 42px;
-			min-height: 42px;
-			padding: 10px 4px;
-			font-size: 14px;
-		}
-
-		.dl-upload-hint {
-			margin: 8px 4px 0;
-			color: #617268;
-			font-size: 11px;
-			font-weight: 700;
-			line-height: 16px;
-		}
-
-		.dl-readonly-banner {
-			margin: 0;
-			padding: 14px 16px;
-			border-radius: 18px;
-			background: #f5faf7;
-			border: 1px solid rgba(190, 202, 191, 0.8);
-			color: #42554a;
-			font-size: 13px;
-			font-weight: 700;
-			line-height: 19px;
-		}
-
-		@media (max-width: 520px) {
-			.dl-mobile-chat-shell,
-			.dl-chat-composer {
-				max-width: none;
-			}
-
-			.dl-message-bubble {
-				max-width: min(292px, calc(100vw - 96px));
-			}
-		}
 	</style>
 </head>
 
 <body>
-	<div class="chat-shell dl-mobile-chat-shell <?= html_escape($chat_shell_role_class); ?>">
-		<header class="chat-header dl-chat-header">
-			<a href="<?= html_escape($back_url); ?>" class="chat-back dl-chat-back" aria-label="Kembali">
+	<div class="chat-shell">
+		<header class="chat-header">
+			<a href="<?= html_escape($back_url); ?>" class="chat-back" aria-label="Kembali">
 				<img src="<?= html_escape($asset_base . 'icon-chat-back.svg'); ?>" alt="">
 			</a>
-			<div class="dl-chat-title-block">
-				<div class="chat-title dl-chat-title"><?= html_escape($chat_header_title); ?></div>
-				<p class="dl-chat-subtitle-top"><?= html_escape($chat_header_subtitle); ?></p>
-			</div>
+			<div class="chat-title">Konsultasi</div>
 		</header>
 
-		<section class="chat-profile dl-thread-context-card" aria-label="Informasi konsultasi">
-			<img class="chat-avatar dl-thread-avatar" src="<?= html_escape($asset_base . 'doctor-placeholder.jpg'); ?>" alt="Profil layanan">
+		<section class="chat-profile" aria-label="Informasi konsultasi">
+			<img class="chat-avatar" src="<?= html_escape($asset_base . 'doctor-placeholder.jpg'); ?>" alt="Profil layanan">
 			<div class="chat-profile-text">
-				<p class="dl-chat-subtitle-top"><?= html_escape($chat_context_label); ?></p>
-				<p class="chat-name dl-thread-name"><?= html_escape($partner_name); ?></p>
-				<p class="chat-subtitle dl-thread-subtitle"><?= html_escape($partner_subtitle); ?></p>
-				<div class="chat-status dl-chat-status-pill <?= html_escape($status_class); ?>"><?= html_escape($chat_status_context); ?></div>
-				<div class="dl-thread-meta-row">
-					<span class="dl-thread-meta-chip">No. Antrian: <?= html_escape($queue_number_display); ?></span>
-					<span class="dl-thread-meta-chip">Puskesmas tujuan: <?= html_escape($puskesmas_display); ?></span>
-					<?php if ($mode_label !== '') : ?>
-						<span class="dl-thread-meta-chip"><?= html_escape($mode_label); ?></span>
-					<?php endif; ?>
-				</div>
-				<?php if ($detail_url !== '') : ?>
-					<a href="<?= html_escape($detail_url); ?>" class="dl-thread-detail-link">Detail Konsultasi</a>
-				<?php endif; ?>
+				<p class="chat-name"><?= html_escape($partner_name); ?></p>
+				<p class="chat-subtitle"><?= html_escape($partner_subtitle); ?></p>
+				<div class="chat-status"><?= html_escape($status_label); ?> · <?= html_escape($queue_display); ?></div>
 			</div>
 		</section>
 
-		<main class="chat-list dl-message-list dl-thread-message-list" id="chatMessages">
-			<div class="chat-muted dl-chat-state">Memuat pesan...</div>
+		<main class="chat-list" id="chatMessages">
+			<div class="chat-muted">Memuat pesan...</div>
 		</main>
 
-		<form class="chat-form dl-chat-composer" id="chatForm">
+		<form class="chat-form" id="chatForm">
 			<?php if ($can_send) : ?>
-				<div class="chat-input-row dl-chat-input-row">
+				<div class="chat-input-row">
 					<input type="file" id="imageInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden>
-					<button class="chat-icon-button chat-upload dl-upload-action" id="imageButton" type="button" aria-label="Lampirkan gambar">
+					<button class="chat-icon-button chat-upload" id="imageButton" type="button" aria-label="Kirim gambar">
 						<img src="<?= html_escape($asset_base . 'icon-chat-camera.svg'); ?>" alt="">
 					</button>
-					<button class="chat-icon-button chat-attach dl-upload-action" id="attachmentButton" type="button" aria-label="Lampirkan gambar">
+					<button class="chat-icon-button chat-attach" id="attachmentButton" type="button" aria-label="Lampirkan gambar">
 						<img src="<?= html_escape($asset_base . 'icon-chat-attach.svg'); ?>" alt="">
 					</button>
-					<textarea class="chat-input dl-chat-input" id="messageText" rows="1" maxlength="2000" placeholder="Tulis pesan..." required></textarea>
-					<button class="chat-send dl-chat-send" type="submit" aria-label="Kirim pesan">
+					<textarea class="chat-input" id="messageText" rows="1" maxlength="2000" placeholder="Tulis pesan..." required></textarea>
+					<button class="chat-send" type="submit" aria-label="Kirim pesan">
 						<img src="<?= html_escape($asset_base . 'icon-chat-send.svg'); ?>" alt="">
 					</button>
 				</div>
-				<div class="dl-upload-hint" id="imageUploadHint">Lampirkan gambar jika diperlukan.</div>
 			<?php else : ?>
-				<div class="chat-readonly dl-readonly-banner"><?= html_escape($readonly_message); ?></div>
+				<div class="chat-readonly"><?= html_escape($readonly_message); ?></div>
 			<?php endif; ?>
 		</form>
 	</div>
@@ -803,13 +455,13 @@ $chat_status_context = $mode_label !== '' ? $status_label . ' · ' . $mode_label
 
 			const isMine = parseInt(message.sender_user_id, 10) === currentUserId;
 			const row = document.createElement('div');
-			row.className = 'chat-message-row dl-message-row' + (isMine ? ' mine' : '');
+			row.className = 'chat-message-row' + (isMine ? ' mine' : '');
 
 			const bubble = document.createElement('div');
-			bubble.className = 'chat-bubble dl-message-bubble' + (isMine ? ' mine' : '');
+			bubble.className = 'chat-bubble' + (isMine ? ' mine' : '');
 
 			const time = document.createElement('div');
-			time.className = 'chat-time dl-message-time';
+			time.className = 'chat-time';
 			time.textContent = formatDate(message.created_at);
 
 			if (message.message_type === 'image' && isSafeImageUrl(message.attachment_url)) {
@@ -820,7 +472,7 @@ $chat_status_context = $mode_label !== '' ? $status_label . ' · ' . $mode_label
 				link.rel = 'noopener';
 
 				const image = document.createElement('img');
-				image.className = 'chat-image dl-message-image';
+				image.className = 'chat-image';
 				image.src = message.attachment_url;
 				image.alt = 'Gambar konsultasi';
 				link.appendChild(image);
@@ -859,14 +511,14 @@ $chat_status_context = $mode_label !== '' ? $status_label . ' · ' . $mode_label
 						return;
 					}
 					if (!hasLoaded && (!data.messages || data.messages.length === 0)) {
-						document.getElementById('chatMessages').innerHTML = '<div class="chat-muted dl-chat-state">Belum ada pesan pada konsultasi ini.</div>';
+						document.getElementById('chatMessages').innerHTML = '<div class="chat-muted">Belum ada pesan pada konsultasi ini.</div>';
 						hasLoaded = true;
 					}
 					(data.messages || []).forEach(appendMessage);
 				})
 				.catch(function() {
 					if (!hasLoaded) {
-						document.getElementById('chatMessages').innerHTML = '<div class="chat-error dl-chat-state">Chat tidak tersedia.</div>';
+						document.getElementById('chatMessages').innerHTML = '<div class="chat-error">Chat tidak tersedia.</div>';
 						hasLoaded = true;
 					}
 				});
@@ -935,7 +587,6 @@ $chat_status_context = $mode_label !== '' ? $status_label . ' · ' . $mode_label
 			const imageInput = document.getElementById('imageInput');
 			const imageButton = document.getElementById('imageButton');
 			const attachmentButton = document.getElementById('attachmentButton');
-			const imageUploadHint = document.getElementById('imageUploadHint');
 			if (imageButton && imageInput) {
 				imageButton.addEventListener('click', function() {
 					imageInput.click();
@@ -956,25 +607,16 @@ $chat_status_context = $mode_label !== '' ? $status_label . ' · ' . $mode_label
 					const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
 					if (allowedTypes.indexOf(file.type) === -1) {
 						alert('Format gambar tidak didukung.');
-						if (imageUploadHint) {
-							imageUploadHint.textContent = 'File belum dapat digunakan. Pilih file lain.';
-						}
 						imageInput.value = '';
 						return;
 					}
 
 					if (file.size > 4 * 1024 * 1024) {
 						alert('Ukuran gambar maksimal 4 MB.');
-						if (imageUploadHint) {
-							imageUploadHint.textContent = 'Ukuran gambar maksimal 4 MB.';
-						}
 						imageInput.value = '';
 						return;
 					}
 
-					if (imageUploadHint) {
-						imageUploadHint.textContent = 'Mengirim gambar...';
-					}
 					imageButton.disabled = true;
 					if (attachmentButton) {
 						attachmentButton.disabled = true;
@@ -993,20 +635,11 @@ $chat_status_context = $mode_label !== '' ? $status_label . ' · ' . $mode_label
 						.then(function(data) {
 							if (data && data.status === 'success' && data.message) {
 								appendMessage(data.message);
-								if (imageUploadHint) {
-									imageUploadHint.textContent = 'Gambar berhasil dikirim.';
-								}
 							} else {
-								if (imageUploadHint) {
-									imageUploadHint.textContent = 'Pesan belum terkirim. Coba lagi.';
-								}
 								alert(data && data.message ? data.message : 'Gambar tidak dapat dikirim.');
 							}
 						})
 						.catch(function() {
-							if (imageUploadHint) {
-								imageUploadHint.textContent = 'Pesan belum terkirim. Coba lagi.';
-							}
 							alert('Gambar tidak dapat dikirim.');
 						})
 						.finally(function() {
@@ -1015,11 +648,6 @@ $chat_status_context = $mode_label !== '' ? $status_label . ' · ' . $mode_label
 								attachmentButton.disabled = false;
 							}
 							imageInput.value = '';
-							if (imageUploadHint) {
-								window.setTimeout(function() {
-									imageUploadHint.textContent = 'Lampirkan gambar jika diperlukan.';
-								}, 2200);
-							}
 						});
 				});
 			}

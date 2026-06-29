@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		body.consultation-form-page {
 			margin: 0;
 			min-height: 100vh;
-			background: #f0f5f2;
+			background: #e9e9e9;
 			color: var(--dk-text);
 			font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 		}
@@ -113,17 +113,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			max-width: 414px;
 			min-height: 100vh;
 			margin: 0 auto;
-			background: #f6faf7;
+			background: var(--dk-bg);
 			overflow-x: hidden;
 			position: relative;
 			padding-bottom: 92px;
 		}
 
 		.consult-header {
-			height: 64px;
+			height: 75px;
 			background: #ffffff;
-			border-bottom: 1px solid #dce8e1;
-			box-shadow: none;
+			box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -153,23 +152,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-title {
 			margin: 0;
-			font-size: 21px;
-			font-weight: 800;
-			line-height: 28px;
-			color: #004f2f;
+			font-size: 20px;
+			font-weight: 700;
+			line-height: 24px;
+			color: var(--dk-text);
 		}
 
 		.consult-main {
-			padding: 22px 20px 24px;
+			padding: 38px 20px 24px;
 		}
 
 		.consult-card {
 			background: #ffffff;
-			border: 1px solid #dce8e1;
-			border-radius: 18px;
-			padding: 18px 16px;
-			margin-bottom: 20px;
-			box-shadow: 0 10px 24px rgba(10, 60, 38, 0.04);
+			border: 1px solid var(--dk-accent);
+			border-radius: 20px;
+			padding: 24px 20px 25px;
+			margin-bottom: 30px;
 		}
 
 		.consult-card-header {
@@ -177,15 +175,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			align-items: center;
 			justify-content: space-between;
 			gap: 16px;
-			margin-bottom: 18px;
+			margin-bottom: 26px;
 		}
 
 		.consult-card-title {
 			margin: 0;
-			font-size: 17px;
+			font-size: 20px;
 			line-height: 24px;
 			font-weight: 700;
-			color: #102018;
+			color: var(--dk-green);
 		}
 
 		.consult-card-icon {
@@ -199,8 +197,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			width: 100%;
 			min-height: 48px;
 			border: 1px solid var(--dk-line);
-			border-radius: 12px;
-			padding: 12px 14px;
+			border-radius: 10px;
+			padding: 12px 20px;
 			background: #ffffff;
 			color: var(--dk-text);
 			font-size: 15px;
@@ -220,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-input-stack {
 			display: grid;
-			gap: 16px;
+			gap: 17px;
 		}
 
 		.consult-field-group {
@@ -248,487 +246,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		.consult-field-keluhan {
-			height: 126px;
+			height: 154px;
 			resize: none;
-		}
-
-		.dl-form-stepper {
-			display: grid;
-			grid-template-columns: minmax(58px, 1fr) 12px minmax(58px, 1fr) 12px minmax(58px, 1fr) 12px minmax(58px, 1fr) 12px minmax(58px, 1fr);
-			align-items: start;
-			gap: 6px;
-			margin: 0 0 18px;
-			overflow-x: auto;
-			padding-bottom: 4px;
-			scrollbar-width: none;
-		}
-
-		.dl-form-stepper::-webkit-scrollbar {
-			display: none;
-		}
-
-		.dl-form-step {
-			min-width: 58px;
-			display: grid;
-			justify-items: center;
-			gap: 7px;
-			color: #526158;
-			font-size: 11px;
-			font-weight: 700;
-			line-height: 14px;
-			text-align: center;
-		}
-
-		.dl-form-step span {
-			width: 32px;
-			height: 32px;
-			border-radius: 50%;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: #dfe3e1;
-			color: #526158;
-			font-size: 12px;
-			font-weight: 800;
-		}
-
-		.dl-form-step.is-active {
-			color: #004f2f;
-		}
-
-		.dl-form-step.is-active span {
-			background: #006a41;
-			color: #ffffff;
-		}
-
-		.dl-form-step.is-complete {
-			color: #006a41;
-		}
-
-		.dl-form-step.is-complete span {
-			background: #004f2f;
-			color: #ffffff;
-		}
-
-		.dl-form-step-line.is-complete {
-			background: #006a41;
-		}
-
-		.dl-form-step-line {
-			height: 2px;
-			min-width: 12px;
-			margin-top: 15px;
-			background: #bec9bf;
-			border-radius: 999px;
-		}
-
-		.dl-form-step-card {
-			border-color: #dce8e1;
-			padding: 18px 16px 16px;
-		}
-
-		.dl-form-step-heading {
-			margin-bottom: 22px;
-		}
-
-		.dl-form-step-eyebrow {
-			display: inline-flex;
-			align-items: center;
-			min-height: 28px;
-			margin-bottom: 12px;
-			padding: 5px 10px;
-			border-radius: 999px;
-			background: #e6f7ef;
-			color: #006a41;
-			font-size: 12px;
-			font-weight: 800;
-			line-height: 16px;
-		}
-
-		.dl-form-step-heading h2 {
-			margin: 0 0 6px;
-			color: #102018;
-			font-size: 20px;
-			font-weight: 800;
-			line-height: 28px;
-		}
-
-		.dl-form-step-heading p {
-			margin: 0;
-			color: #526158;
-			font-size: 14px;
-			line-height: 20px;
-		}
-
-		.dl-form-inline-helper {
-			display: flex;
-			align-items: flex-start;
-			gap: 8px;
-			margin-top: 8px;
-			color: #526158;
-			font-size: 12px;
-			line-height: 18px;
-		}
-
-		.dl-form-inline-helper i {
-			margin-top: 2px;
-			color: #006a41;
-		}
-
-		.dl-form-chip-row {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 8px;
-			margin-top: 2px;
-		}
-
-		.dl-form-chip {
-			min-height: 36px;
-			display: inline-flex;
-			align-items: center;
-			padding: 8px 14px;
-			border: 1px solid #dce8e1;
-			border-radius: 999px;
-			background: #ffffff;
-			color: #526158;
-			font-size: 13px;
-			font-weight: 600;
-			line-height: 18px;
-		}
-
-		.dl-form-privacy-card {
-			position: relative;
-			overflow: hidden;
-			margin-bottom: 20px;
-			padding: 18px 16px;
-			border: 1px solid #d6f3e6;
-			border-radius: 18px;
-			background: #e8faf5;
-		}
-
-		.dl-form-privacy-card h3 {
-			margin: 0 0 4px;
-			color: #004f2f;
-			font-size: 15px;
-			font-weight: 800;
-			line-height: 20px;
-		}
-
-		.dl-form-privacy-card p {
-			max-width: 75%;
-			margin: 0;
-			color: #005142;
-			font-size: 12px;
-			line-height: 18px;
-		}
-
-		.dl-form-privacy-card i {
-			position: absolute;
-			right: -10px;
-			bottom: -16px;
-			color: rgba(0, 106, 65, 0.12);
-			font-size: 82px;
-		}
-
-		.dl-form-next-note {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: 8px;
-			margin: 0 0 10px;
-			color: #526158;
-			font-size: 12px;
-			line-height: 16px;
-			text-align: center;
-		}
-
-		.dl-form-next-note i {
-			color: #006a41;
-		}
-
-		.dl-history-card {
-			padding: 18px 16px 16px;
-		}
-
-		.dl-history-title-row {
-			display: flex;
-			align-items: flex-start;
-			gap: 10px;
-			margin-bottom: 20px;
-		}
-
-		.dl-history-title-icon {
-			width: 36px;
-			height: 36px;
-			border-radius: 12px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: #e6f7ef;
-			color: #006a41;
-			flex: 0 0 auto;
-		}
-
-		.dl-history-title-row h2 {
-			margin: 0 0 4px;
-			color: #102018;
-			font-size: 19px;
-			font-weight: 800;
-			line-height: 26px;
-		}
-
-		.dl-history-title-row p {
-			margin: 0;
-			color: #526158;
-			font-size: 13px;
-			line-height: 19px;
-		}
-
-		.dl-history-section {
-			display: grid;
-			gap: 14px;
-			padding: 14px;
-			border: 1px solid #e5eee8;
-			border-radius: 16px;
-			background: #fbfdfc;
-		}
-
-		.dl-history-section + .dl-history-section {
-			margin-top: 14px;
-		}
-
-		.dl-history-section-title {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			margin: 0;
-			color: #004f2f;
-			font-size: 13px;
-			font-weight: 800;
-			line-height: 18px;
-		}
-
-		.dl-history-section-title i {
-			color: #168a55;
-		}
-
-		.dl-history-helper-card {
-			display: flex;
-			align-items: flex-start;
-			gap: 10px;
-			margin-top: 14px;
-			padding: 14px;
-			border: 1px solid rgba(22, 138, 85, 0.12);
-			border-radius: 16px;
-			background: #e8faf5;
-		}
-
-		.dl-history-helper-card i {
-			margin-top: 2px;
-			color: #168a55;
-		}
-
-		.dl-history-helper-card strong {
-			display: block;
-			margin-bottom: 2px;
-			color: #004f2f;
-			font-size: 12px;
-			line-height: 16px;
-		}
-
-		.dl-history-helper-card span {
-			display: block;
-			color: #526158;
-			font-size: 12px;
-			line-height: 18px;
-		}
-
-		.dl-location-card {
-			padding: 18px 16px 16px;
-		}
-
-		.dl-location-map-panel {
-			position: relative;
-			min-height: 156px;
-			margin: 0 -16px 16px;
-			overflow: hidden;
-			border-radius: 0 0 22px 22px;
-			background:
-				radial-gradient(circle at 50% 48%, rgba(0, 106, 65, 0.18) 0 16px, transparent 17px),
-				linear-gradient(135deg, rgba(230, 247, 239, 0.9), rgba(220, 232, 225, 0.75));
-			border-bottom: 1px solid #dce8e1;
-		}
-
-		.dl-location-map-panel::before,
-		.dl-location-map-panel::after {
-			content: "";
-			position: absolute;
-			inset: 18px -30px auto;
-			height: 1px;
-			background: rgba(111, 122, 113, 0.2);
-			transform: rotate(-14deg);
-			box-shadow: 0 42px 0 rgba(111, 122, 113, 0.18), 0 84px 0 rgba(111, 122, 113, 0.16);
-		}
-
-		.dl-location-map-panel::after {
-			inset: 8px auto auto -40px;
-			width: 130%;
-			transform: rotate(24deg);
-		}
-
-		.dl-location-pin {
-			position: absolute;
-			left: 50%;
-			top: 50%;
-			width: 50px;
-			height: 50px;
-			border-radius: 50%;
-			transform: translate(-50%, -50%);
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: rgba(0, 106, 65, 0.16);
-			color: #006a41;
-			z-index: 1;
-		}
-
-		.dl-location-pin::before {
-			content: "";
-			width: 16px;
-			height: 16px;
-			border: 3px solid #ffffff;
-			border-radius: 50%;
-			background: #006a41;
-			box-shadow: 0 8px 18px rgba(0, 79, 47, 0.22);
-		}
-
-		.dl-location-sheet-handle {
-			width: 42px;
-			height: 4px;
-			margin: -2px auto 14px;
-			border-radius: 999px;
-			background: #dce8e1;
-		}
-
-		.dl-location-status-card {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 12px;
-			margin-bottom: 16px;
-		}
-
-		.dl-location-status-pill {
-			min-height: 30px;
-			display: inline-flex;
-			align-items: center;
-			gap: 8px;
-			padding: 6px 12px;
-			border-radius: 999px;
-			background: #e8faf5;
-			color: #006a41;
-			font-size: 12px;
-			font-weight: 800;
-			line-height: 16px;
-		}
-
-		.dl-location-status-pill.is-warning {
-			background: #fff7e6;
-			color: #8a5a00;
-		}
-
-		.dl-location-accuracy {
-			color: #526158;
-			font-size: 12px;
-			line-height: 16px;
-			text-align: right;
-		}
-
-		.dl-location-address-box {
-			margin-bottom: 14px;
-		}
-
-		.dl-location-address-box h2 {
-			margin: 0 0 6px;
-			color: #102018;
-			font-size: 19px;
-			font-weight: 800;
-			line-height: 26px;
-		}
-
-		.dl-location-address-box p {
-			margin: 0;
-			color: #526158;
-			font-size: 13px;
-			line-height: 19px;
-		}
-
-		.dl-location-puskesmas-card {
-			display: flex;
-			gap: 12px;
-			margin: 16px 0;
-			padding: 14px;
-			border: 1px solid #dce8e1;
-			border-radius: 16px;
-			background: #f0f5f2;
-		}
-
-		.dl-location-puskesmas-icon {
-			width: 40px;
-			height: 40px;
-			border-radius: 12px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: #e6f7ef;
-			color: #006a41;
-			flex: 0 0 auto;
-		}
-
-		.dl-location-puskesmas-card strong {
-			display: block;
-			margin-bottom: 3px;
-			color: #004f2f;
-			font-size: 14px;
-			line-height: 20px;
-		}
-
-		.dl-location-puskesmas-card span {
-			display: block;
-			color: #526158;
-			font-size: 12px;
-			line-height: 18px;
-		}
-
-		.dl-location-helper {
-			display: flex;
-			gap: 10px;
-			margin: 0 0 16px;
-			color: #526158;
-			font-size: 12px;
-			line-height: 18px;
-		}
-
-		.dl-location-helper i {
-			margin-top: 2px;
-			color: #2563eb;
-		}
-
-		.dl-location-actions {
-			display: grid;
-			gap: 10px;
-		}
-
-		.dl-location-refresh {
-			width: 100%;
-			min-height: 48px;
-			border: 1px solid #dce8e1;
-			border-radius: 14px;
-			background: #ffffff;
-			color: #006a41;
-			font-size: 15px;
-			font-weight: 800;
-			line-height: 20px;
 		}
 
 		.consult-field-address {
@@ -758,216 +277,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		.consult-upload-stack {
 			display: grid;
 			gap: 20px;
-		}
-
-		.dl-media-card {
-			padding: 18px 16px 16px;
-		}
-
-		.dl-media-intro {
-			display: flex;
-			gap: 10px;
-			margin-bottom: 16px;
-			padding: 14px;
-			border: 1px solid #d6f3e6;
-			border-radius: 16px;
-			background: #e8faf5;
-			color: #526158;
-			font-size: 13px;
-			line-height: 19px;
-		}
-
-		.dl-media-intro i {
-			margin-top: 2px;
-			color: #006a41;
-		}
-
-		.dl-media-upload-grid {
-			display: grid;
-			grid-template-columns: 1fr;
-			gap: 14px;
-		}
-
-		.dl-upload-card {
-			position: relative;
-			min-height: 142px;
-			border: 2px dashed #dce8e1;
-			border-radius: 18px;
-			background: #ffffff;
-			display: grid;
-			align-content: center;
-			justify-items: center;
-			gap: 8px;
-			padding: 18px 14px;
-			text-align: center;
-			color: #004f2f;
-			cursor: pointer;
-			transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-		}
-
-		.dl-upload-card input[type="file"] {
-			position: absolute;
-			inset: 0;
-			width: 100%;
-			height: 100%;
-			opacity: 0;
-			cursor: pointer;
-		}
-
-		.dl-upload-card:active {
-			transform: scale(0.98);
-		}
-
-		.dl-upload-icon {
-			width: 44px;
-			height: 44px;
-			border-radius: 14px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: #e6f7ef;
-			color: #006a41;
-			font-size: 19px;
-		}
-
-		.dl-upload-card strong {
-			display: block;
-			color: #102018;
-			font-size: 15px;
-			line-height: 20px;
-		}
-
-		.dl-upload-card span {
-			display: block;
-			color: #526158;
-			font-size: 12px;
-			line-height: 17px;
-		}
-
-		.dl-upload-action {
-			min-height: 34px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			margin-top: 4px;
-			padding: 7px 12px;
-			border-radius: 999px;
-			background: #006a41;
-			color: #ffffff !important;
-			font-size: 12px !important;
-			font-weight: 800;
-			line-height: 16px !important;
-		}
-
-		.dl-upload-file-name {
-			margin: 8px 0 0;
-			color: #526158;
-			font-size: 12px;
-			line-height: 18px;
-		}
-
-		.dl-media-helper {
-			display: flex;
-			gap: 10px;
-			margin-top: 14px;
-			color: #526158;
-			font-size: 12px;
-			line-height: 18px;
-		}
-
-		.dl-media-helper i {
-			margin-top: 2px;
-			color: #2563eb;
-		}
-
-		.dl-review-card {
-			padding: 18px 16px 16px;
-		}
-
-		.dl-review-list {
-			display: grid;
-			gap: 12px;
-		}
-
-		.dl-review-item {
-			display: grid;
-			grid-template-columns: 38px 1fr auto;
-			gap: 12px;
-			align-items: start;
-			padding: 14px;
-			border: 1px solid #dce8e1;
-			border-radius: 16px;
-			background: #ffffff;
-		}
-
-		.dl-review-icon {
-			width: 38px;
-			height: 38px;
-			border-radius: 12px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: #e6f7ef;
-			color: #006a41;
-		}
-
-		.dl-review-item h3 {
-			margin: 0 0 4px;
-			color: #102018;
-			font-size: 15px;
-			font-weight: 800;
-			line-height: 20px;
-		}
-
-		.dl-review-item p {
-			margin: 0;
-			color: #526158;
-			font-size: 13px;
-			line-height: 19px;
-		}
-
-		.dl-review-status {
-			min-height: 28px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			padding: 5px 9px;
-			border-radius: 999px;
-			background: #f0f5f2;
-			color: #526158;
-			font-size: 11px;
-			font-weight: 800;
-			line-height: 14px;
-			white-space: nowrap;
-		}
-
-		.dl-review-status.is-complete {
-			background: #e8faf5;
-			color: #006a41;
-		}
-
-		.dl-review-submit-note {
-			display: flex;
-			gap: 10px;
-			margin-top: 16px;
-			padding: 14px;
-			border: 1px solid #d6f3e6;
-			border-radius: 16px;
-			background: #e8faf5;
-			color: #005142;
-			font-size: 12px;
-			line-height: 18px;
-		}
-
-		.dl-review-submit-note i {
-			margin-top: 2px;
-			color: #006a41;
-		}
-
-		@media (min-width: 380px) {
-			.dl-media-upload-grid {
-				grid-template-columns: 1fr 1fr;
-			}
 		}
 
 		.consult-upload-box {
@@ -1050,10 +359,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-submit {
 			width: 100%;
-			min-height: 52px;
+			height: 51px;
 			border: 0;
-			border-radius: 999px;
-			background: #006a41;
+			border-radius: 10px;
+			background: var(--dk-green);
 			color: #ffffff;
 			font-size: 17px;
 			font-weight: 700;
@@ -1168,7 +477,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			<a class="consult-back" href="<?= html_escape(base_url('home#konsultasi_kesehatan')); ?>" aria-label="Kembali">
 				<img src="<?= html_escape($ui_asset_base . 'icon-back.svg'); ?>" alt="">
 			</a>
-			<h1 class="consult-title">Buat Konsultasi</h1>
+			<h1 class="consult-title">Konsultasi</h1>
 		</header>
 		<span id="result" class="d-none"></span>
 
@@ -1178,119 +487,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				<input type="hidden" name="dokter_id" id="dokter_id" value="<?= html_escape($dokter_id); ?>" placeholder="Dokter ID" readonly>
 				<input type="hidden" name="namadokter" id="namadokter" value="<?= html_escape($nama); ?>" placeholder="Dokter ID" readonly>
 
-				<div class="dl-form-stepper" aria-label="Langkah pembuatan konsultasi">
-					<div class="dl-form-step is-complete"><span><i class="fas fa-check" aria-hidden="true"></i></span>Keluhan</div>
-					<div class="dl-form-step-line is-complete" aria-hidden="true"></div>
-					<div class="dl-form-step is-complete"><span><i class="fas fa-check" aria-hidden="true"></i></span>Riwayat</div>
-					<div class="dl-form-step-line is-complete" aria-hidden="true"></div>
-					<div class="dl-form-step is-complete"><span><i class="fas fa-check" aria-hidden="true"></i></span>Lokasi</div>
-					<div class="dl-form-step-line is-complete" aria-hidden="true"></div>
-					<div class="dl-form-step is-complete"><span><i class="fas fa-check" aria-hidden="true"></i></span>Media</div>
-					<div class="dl-form-step-line is-complete" aria-hidden="true"></div>
-					<div class="dl-form-step is-active"><span>5</span>Review</div>
-				</div>
-
-				<section class="consult-card dl-form-step-card">
-					<div class="dl-form-step-heading">
-						<span class="dl-form-step-eyebrow">Langkah 1 dari 5</span>
-						<h2>Apa keluhan Anda?</h2>
-						<p>Ceritakan keluhan utama yang Anda rasakan agar petugas dapat memahami kondisi Anda.</p>
+				<section class="consult-card">
+					<div class="consult-card-header">
+						<h2 class="consult-card-title">Riwayat Kesehatan</h2>
+						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
 					</div>
 					<div class="consult-input-stack">
+						<small class="consult-helper">Puskesmas tujuan akan ditentukan otomatis dari lokasi Anda.</small>
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_keluhan_utama">Keluhan utama</label>
-							<input type="text" id="ui_keluhan_utama" class="consult-field form-control" placeholder="Contoh: demam tinggi, sakit perut" required>
-							<span class="dl-form-inline-helper"><i class="fas fa-info-circle" aria-hidden="true"></i>Tuliskan gejala yang paling terasa terlebih dahulu.</span>
-						</div>
-						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_lama_keluhan">Sejak kapan dirasakan?</label>
-							<input type="text" id="ui_lama_keluhan" class="consult-field form-control" placeholder="Contoh: 2 hari yang lalu" required>
+							<label class="consult-field-label" for="ui_penyakit_pernah">Penyakit yang pernah diderita</label>
+							<input type="text" id="ui_penyakit_pernah" class="consult-field form-control" placeholder="Contoh: asma, hipertensi, atau kosongkan jika tidak ada">
 						</div>
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_deskripsi_keluhan">Detail keluhan</label>
-							<textarea id="ui_deskripsi_keluhan" class="consult-field consult-field-keluhan form-control" placeholder="Contoh: demam naik turun disertai mual dan nafsu makan menurun." required></textarea>
-							<span class="dl-form-inline-helper"><i class="fas fa-pen" aria-hidden="true"></i>Gunakan bahasa sehari-hari. Lengkapi data yang ditandai sebelum mengirim.</span>
+							<label class="consult-field-label" for="ui_riwayat_keluarga">Riwayat penyakit keluarga</label>
+							<input type="text" id="ui_riwayat_keluarga" class="consult-field form-control" placeholder="Contoh: diabetes, jantung, atau kosongkan">
 						</div>
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_gejala_tambahan">Gejala tambahan <span class="fw-normal text-muted">(opsional)</span></label>
-							<input type="text" id="ui_gejala_tambahan" class="consult-field form-control" placeholder="Contoh: mual, pusing, sesak">
-							<div class="dl-form-chip-row" aria-hidden="true">
-								<span class="dl-form-chip">Demam</span>
-								<span class="dl-form-chip">Batuk</span>
-								<span class="dl-form-chip">Nyeri</span>
-								<span class="dl-form-chip">Mual</span>
-								<span class="dl-form-chip">Sesak</span>
-							</div>
+							<label class="consult-field-label" for="ui_alergi">Alergi</label>
+							<input type="text" id="ui_alergi" class="consult-field form-control" placeholder="Contoh: obat, makanan, atau kosongkan">
 						</div>
-					</div>
-					<textarea
-						id="keluhan"
-						name="keluhan"
-						class="consult-backend-payload"
-						readonly
-						required></textarea>
-				</section>
-
-				<div class="dl-form-privacy-card">
-					<h3>Privasi Terjamin</h3>
-					<p>Keluhan Anda hanya dilihat oleh tenaga kesehatan resmi Doclinc untuk kebutuhan layanan.</p>
-					<i class="fas fa-shield-alt" aria-hidden="true"></i>
-				</div>
-
-				<section class="consult-card dl-history-card">
-					<div class="dl-form-step-heading">
-						<span class="dl-form-step-eyebrow">Langkah 2 dari 5</span>
-					</div>
-					<div class="dl-history-title-row">
-						<span class="dl-history-title-icon"><i class="fas fa-notes-medical" aria-hidden="true"></i></span>
-						<div>
-							<h2>Riwayat kesehatan</h2>
-							<p>Informasi ini membantu petugas memahami kondisi Anda dengan lebih baik.</p>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_obat_dikonsumsi">Obat yang sedang dikonsumsi</label>
+							<input type="text" id="ui_obat_dikonsumsi" class="consult-field form-control" placeholder="Nama obat jika ada">
 						</div>
-					</div>
-					<div class="consult-input-stack">
-						<div class="dl-history-section">
-							<p class="dl-history-section-title"><i class="fas fa-heartbeat" aria-hidden="true"></i>Kondisi kesehatan</p>
+						<div class="consult-grid-two">
 							<div class="consult-field-group">
-								<label class="consult-field-label" for="ui_penyakit_pernah">Riwayat penyakit</label>
-								<input type="text" id="ui_penyakit_pernah" class="consult-field form-control" placeholder="Contoh: diabetes, hipertensi, asma, atau Tidak ada">
-								<span class="dl-form-inline-helper"><i class="fas fa-info-circle" aria-hidden="true"></i>Tuliskan “Tidak ada” jika tidak memiliki riwayat penyakit.</span>
+								<label class="consult-field-label" for="ui_tinggi_badan">Tinggi badan</label>
+								<input type="text" id="ui_tinggi_badan" class="consult-field form-control" inputmode="decimal" placeholder="Cm">
 							</div>
 							<div class="consult-field-group">
-								<label class="consult-field-label" for="ui_riwayat_keluarga">Riwayat penyakit keluarga</label>
-								<input type="text" id="ui_riwayat_keluarga" class="consult-field form-control" placeholder="Contoh: diabetes, jantung, atau Tidak ada">
-							</div>
-						</div>
-						<div class="dl-history-section">
-							<p class="dl-history-section-title"><i class="fas fa-pills" aria-hidden="true"></i>Alergi dan obat</p>
-							<div class="consult-field-group">
-								<label class="consult-field-label" for="ui_alergi">Alergi</label>
-								<input type="text" id="ui_alergi" class="consult-field form-control" placeholder="Contoh: penisilin, telur, seafood, atau Tidak ada">
-								<span class="dl-form-inline-helper"><i class="fas fa-shield-alt" aria-hidden="true"></i>Informasi alergi membantu petugas menghindari risiko pemberian obat.</span>
-							</div>
-							<div class="consult-field-group">
-								<label class="consult-field-label" for="ui_obat_dikonsumsi">Obat yang sedang dikonsumsi</label>
-								<input type="text" id="ui_obat_dikonsumsi" class="consult-field form-control" placeholder="Nama obat, vitamin, atau Tidak ada">
-							</div>
-						</div>
-						<div class="dl-history-section">
-							<p class="dl-history-section-title"><i class="fas fa-ruler-combined" aria-hidden="true"></i>Data tubuh</p>
-							<div class="consult-grid-two">
-								<div class="consult-field-group">
-									<label class="consult-field-label" for="ui_tinggi_badan">Tinggi badan</label>
-									<input type="text" id="ui_tinggi_badan" class="consult-field form-control" inputmode="decimal" placeholder="Cm">
-								</div>
-								<div class="consult-field-group">
-									<label class="consult-field-label" for="ui_berat_badan">Berat badan</label>
-									<input type="text" id="ui_berat_badan" class="consult-field form-control" inputmode="decimal" placeholder="Kg">
-								</div>
-							</div>
-						</div>
-						<div class="dl-history-helper-card">
-							<i class="fas fa-info-circle" aria-hidden="true"></i>
-							<div>
-								<strong>Informasi Penting</strong>
-								<span>Isi seperlunya. Jika tidak ada riwayat, alergi, atau obat, tuliskan “Tidak ada”.</span>
+								<label class="consult-field-label" for="ui_berat_badan">Berat badan</label>
+								<input type="text" id="ui_berat_badan" class="consult-field form-control" inputmode="decimal" placeholder="Kg">
 							</div>
 						</div>
 						<textarea
@@ -1302,6 +529,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					</div>
 				</section>
 
+				<section class="consult-card">
+					<div class="consult-card-header">
+						<h2 class="consult-card-title">Keluhan</h2>
+						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
+					</div>
+					<div class="consult-input-stack">
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_keluhan_utama">Keluhan utama</label>
+							<input type="text" id="ui_keluhan_utama" class="consult-field form-control" placeholder="Contoh: demam, batuk, nyeri perut" required>
+						</div>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_lama_keluhan">Lama keluhan</label>
+							<input type="text" id="ui_lama_keluhan" class="consult-field form-control" placeholder="Contoh: 2 hari, 1 minggu" required>
+						</div>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_gejala_tambahan">Gejala tambahan</label>
+							<input type="text" id="ui_gejala_tambahan" class="consult-field form-control" placeholder="Contoh: mual, pusing, sesak, atau kosongkan">
+						</div>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_deskripsi_keluhan">Deskripsi keluhan sakit anda</label>
+							<textarea id="ui_deskripsi_keluhan" class="consult-field consult-field-keluhan form-control" placeholder="Ceritakan kondisi yang dirasakan dengan bahasa sehari-hari" required></textarea>
+						</div>
+					</div>
+					<textarea
+						id="keluhan"
+						name="keluhan"
+						class="consult-backend-payload"
+						readonly
+						required></textarea>
+				</section>
+
 				<?php
 				foreach ($getDataTokenDoctor->result() as $row) {
 					$phone = $row->phone;
@@ -1311,36 +569,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				<input type="hidden" name="token" id="token" value="<?= html_escape($token); ?>" readonly>
 				<input type="hidden" id="no_hp" value="<?= html_escape($_SESSION['no_hp'] ?? '') ?>" placeholder="Nomor HP" readonly>
 
-				<section class="consult-card dl-media-card">
-					<div class="dl-form-step-heading">
-						<span class="dl-form-step-eyebrow">Langkah 4 dari 5</span>
-						<h2>Tambahkan foto atau video</h2>
-						<p>Lampiran membantu petugas memahami kondisi Anda. Lewati jika tidak diperlukan.</p>
-					</div>
-					<div class="dl-media-intro">
-						<i class="fas fa-info-circle" aria-hidden="true"></i>
-						<span>Gunakan lampiran untuk kondisi yang terlihat, misalnya ruam, luka, bengkak, atau gerakan yang sulit dijelaskan.</span>
+				<section class="consult-card">
+					<div class="consult-card-header">
+						<h2 class="consult-card-title">Foto / Video <span class="d-inline-block">(untuk sakit luar)</span></h2>
+						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
 					</div>
 					<div class="consult-upload-stack">
-						<div class="dl-media-upload-grid">
-							<label class="dl-upload-card" for="file">
-								<span class="dl-upload-icon"><i class="fas fa-camera" aria-hidden="true"></i></span>
-								<strong>Foto kondisi/keluhan</strong>
-								<span>Format gambar dari kamera atau galeri.</span>
-								<span class="dl-upload-action">Pilih Foto</span>
-								<input type="file" id="file" name="foto" accept="image/*">
-							</label>
-
-							<label class="dl-upload-card" for="file_video">
-								<span class="dl-upload-icon"><i class="fas fa-video" aria-hidden="true"></i></span>
-								<strong>Video pendukung</strong>
-								<span>Tambahkan video jika membantu menjelaskan kondisi.</span>
-								<span class="dl-upload-action">Pilih Video</span>
-								<input type="file" id="file_video" name="video" accept="video/*">
-							</label>
-						</div>
-						<p class="dl-upload-file-name" id="dl_photo_file_name">Foto: Belum ada file dipilih</p>
-						<p class="dl-upload-file-name" id="dl_video_file_name">Video: Belum ada file dipilih</p>
+						<label class="consult-upload-box" for="file">
+							<img src="<?= html_escape($ui_asset_base . 'icon-upload.svg'); ?>" alt="">
+							<span class="consult-upload-text">Pilih file <strong>Foto</strong></span>
+							<input type="file" id="file" name="foto" accept="image/*">
+						</label>
 						<input type="hidden" id="fileName" name="foto" class="form-control" readonly>
 						<button type="button" onclick="window.flutter_inappwebview.callHandler('takePhoto')" hidden>
 							Ambil Foto dari Kamera
@@ -1349,102 +588,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							<img id="preview" src="" alt="Preview Foto">
 						</div>
 
+						<label class="consult-upload-box" for="file_video">
+							<img src="<?= html_escape($ui_asset_base . 'icon-upload.svg'); ?>" alt="">
+							<span class="consult-upload-text">Pilih file <strong>Foto</strong></span>
+							<input type="file" id="file_video" name="video" accept="video/*">
+						</label>
 						<div id="previewVideoContainer" class="consult-preview d-none">
 							<video id="previewVideo" controls></video>
 						</div>
-						<p class="dl-media-helper"><i class="fas fa-shield-alt" aria-hidden="true"></i><span>File bersifat pendukung dan tidak wajib. Pilih file lain jika file belum dapat digunakan.</span></p>
 					</div>
 				</section>
 
-				<section class="consult-card dl-location-card">
-					<div class="dl-form-step-heading">
-						<span class="dl-form-step-eyebrow">Langkah 3 dari 5</span>
-						<h2>Konfirmasi lokasi Anda</h2>
-						<p>Lokasi digunakan untuk menentukan puskesmas dan petugas terdekat.</p>
+				<section class="consult-card">
+					<div class="consult-card-header">
+						<h2 class="consult-card-title">Data Diri</h2>
+						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-plus.svg'); ?>" alt="">
 					</div>
-					<div class="dl-location-map-panel" aria-hidden="true">
-						<span class="dl-location-pin"></span>
-					</div>
-					<div class="dl-location-sheet-handle" aria-hidden="true"></div>
-					<div class="dl-location-status-card">
-						<span class="dl-location-status-pill is-warning" id="dl_location_status"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i>Sedang mengambil lokasi...</span>
-						<span class="dl-location-accuracy" id="dl_location_accuracy">Koordinat belum tersedia</span>
-					</div>
-					<div class="dl-location-address-box">
-						<h2 id="dl_location_address_title">Lokasi belum tersedia</h2>
-						<p id="dl_location_address_hint">Aktifkan izin lokasi agar petugas dapat menemukan alamat Anda.</p>
-					</div>
-					<div class="dl-location-puskesmas-card">
-						<span class="dl-location-puskesmas-icon"><i class="fas fa-clinic-medical" aria-hidden="true"></i></span>
-						<div>
-							<strong>Puskesmas ditentukan otomatis</strong>
-							<span>Berdasarkan area layanan dari lokasi Anda saat ini.</span>
-						</div>
-					</div>
-					<p class="dl-location-helper"><i class="fas fa-info-circle" aria-hidden="true"></i><span>Pastikan titik lokasi sesuai alamat Anda. Jika belum tepat, tekan Perbarui Lokasi.</span></p>
-					<label class="consult-field-label" for="address">Alamat terdeteksi</label>
-					<textarea id="address" name="alamat" class="consult-field consult-field-address form-control" placeholder="Alamat akan terisi otomatis jika izin lokasi aktif"></textarea>
+					<textarea id="address" name="alamat" class="consult-field consult-field-address form-control" placeholder="Alamat"></textarea>
 					<input type="text" class="d-none" name="lat" id="latitude" placeholder="Latitude">
 					<input type="text" class="d-none" name="lng" id="longitude" placeholder="Longitude">
 					<div id="map"></div>
-					<div class="dl-location-actions">
-						<button type="button" class="dl-location-refresh" id="dl_refresh_location"><i class="fas fa-location-arrow" aria-hidden="true"></i> Perbarui Lokasi</button>
-					</div>
 				</section>
 
 				<input type="hidden" id="tanggal" name="tanggal" value="<?= html_escape(date('d-m-Y')); ?>" readonly>
 				<input type="hidden" id="id_user" name="id_user" value="<?= html_escape($this->session->userdata('id')); ?>">
-
-				<section class="consult-card dl-review-card">
-					<div class="dl-form-step-heading">
-						<span class="dl-form-step-eyebrow">Langkah 5 dari 5</span>
-						<h2>Periksa kembali data Anda</h2>
-						<p>Pastikan keluhan, riwayat, lokasi, dan lampiran sudah sesuai sebelum dikirim.</p>
-					</div>
-					<div class="dl-review-list">
-						<div class="dl-review-item">
-							<span class="dl-review-icon"><i class="fas fa-comment-medical" aria-hidden="true"></i></span>
-							<div>
-								<h3>Ringkasan keluhan</h3>
-								<p id="dl_review_keluhan">Belum diisi</p>
-							</div>
-							<span class="dl-review-status" id="dl_review_keluhan_status">Belum diisi</span>
-						</div>
-						<div class="dl-review-item">
-							<span class="dl-review-icon"><i class="fas fa-notes-medical" aria-hidden="true"></i></span>
-							<div>
-								<h3>Riwayat kesehatan</h3>
-								<p id="dl_review_riwayat">Belum diisi</p>
-							</div>
-							<span class="dl-review-status" id="dl_review_riwayat_status">Belum diisi</span>
-						</div>
-						<div class="dl-review-item">
-							<span class="dl-review-icon"><i class="fas fa-map-marker-alt" aria-hidden="true"></i></span>
-							<div>
-								<h3>Lokasi</h3>
-								<p id="dl_review_lokasi">Lokasi belum tersedia</p>
-							</div>
-							<span class="dl-review-status" id="dl_review_lokasi_status">Belum siap</span>
-						</div>
-						<div class="dl-review-item">
-							<span class="dl-review-icon"><i class="fas fa-paperclip" aria-hidden="true"></i></span>
-							<div>
-								<h3>Lampiran</h3>
-								<p id="dl_review_media">Belum ada lampiran</p>
-							</div>
-							<span class="dl-review-status" id="dl_review_media_status">Opsional</span>
-						</div>
-					</div>
-					<p class="dl-review-submit-note"><i class="fas fa-shield-alt" aria-hidden="true"></i><span>Konsultasi akan dikirim ke petugas berdasarkan lokasi Anda. Lengkapi data yang ditandai sebelum mengirim.</span></p>
-				</section>
 
 				<label class="consult-consent" for="kunjung">
 					<input class="form-check-input" type="checkbox" role="switch" id="kunjung" name="kunjung">
 					<span>Bersedia dikunjungi dokter</span>
 				</label>
 
-				<p class="dl-form-next-note"><i class="fas fa-lock" aria-hidden="true"></i>Data Anda aman digunakan untuk layanan kesehatan.</p>
-				<button type="button" class="consult-submit" id="save_konsul">Kirim Konsultasi</button>
+				<button type="button" class="consult-submit" id="save_konsul">Kirim Form</button>
 			</form>
 		</main>
 
@@ -1756,13 +930,13 @@ Lama keluhan:
 					$('#save_konsul')
 						.data('skipGeolocationRetry', true)
 						.prop('disabled', false)
-						.text('Kirim Konsultasi')
+						.text('Kirim Form')
 						.trigger('click');
 				}, function() {
 					$('#save_konsul')
 						.data('skipGeolocationRetry', true)
 						.prop('disabled', false)
-						.text('Kirim Konsultasi')
+						.text('Kirim Form')
 						.trigger('click');
 				}, {
 					enableHighAccuracy: true,
@@ -1894,59 +1068,6 @@ Lama keluhan:
 		let marker;
 		let geocoder;
 
-		function updateLocationStatus(state, message, detail) {
-			const status = document.getElementById('dl_location_status');
-			const accuracy = document.getElementById('dl_location_accuracy');
-			const title = document.getElementById('dl_location_address_title');
-			const hint = document.getElementById('dl_location_address_hint');
-
-			if (!status) {
-				return;
-			}
-
-			status.classList.toggle('is-warning', state !== 'success');
-			if (state === 'success') {
-				status.innerHTML = '<i class="fas fa-check-circle" aria-hidden="true"></i>Lokasi terdeteksi';
-				if (title) title.textContent = 'Lokasi terdeteksi';
-				if (hint) hint.textContent = message || 'Koordinat lokasi Anda sudah tersimpan.';
-			} else {
-				status.innerHTML = '<i class="fas fa-exclamation-circle" aria-hidden="true"></i>' + message;
-				if (title) title.textContent = message;
-				if (hint) hint.textContent = detail || 'Aktifkan izin lokasi agar petugas dapat menemukan alamat Anda.';
-			}
-
-			if (accuracy) {
-				accuracy.textContent = detail || accuracy.textContent;
-			}
-		}
-
-		function syncLocationDisplay(latitude, longitude) {
-			const accuracy = document.getElementById('dl_location_accuracy');
-			if (accuracy) {
-				accuracy.textContent = Number(latitude).toFixed(5) + ', ' + Number(longitude).toFixed(5);
-			}
-		}
-
-		function dlRefreshPatientLocation() {
-			if (!navigator.geolocation) {
-				updateLocationStatus('error', 'Lokasi belum tersedia', 'Browser ini belum mendukung akses lokasi.');
-				return;
-			}
-
-			updateLocationStatus('loading', 'Sedang mengambil lokasi...', 'Mohon tunggu sebentar.');
-			navigator.geolocation.getCurrentPosition(updateLocation, function(error) {
-				if (error && error.code === error.PERMISSION_DENIED) {
-					updateLocationStatus('error', 'Izin lokasi belum aktif', 'Aktifkan izin lokasi agar petugas dapat menemukan alamat Anda.');
-					return;
-				}
-				updateLocationStatus('error', 'Lokasi belum tersedia', 'Coba perbarui lokasi atau pastikan sinyal perangkat stabil.');
-			}, {
-				enableHighAccuracy: true,
-				maximumAge: 30000,
-				timeout: 8000
-			});
-		}
-
 		function setConsultationCoordinates(latitude, longitude) {
 			if (!isFinite(latitude) || !isFinite(longitude)) {
 				return;
@@ -1962,27 +1083,14 @@ Lama keluhan:
 			document.querySelectorAll('[name="lng"]').forEach(function(input) {
 				input.value = longitude;
 			});
-			syncLocationDisplay(latitude, longitude);
-			if (typeof dlUpdateReviewSummary === 'function') {
-				dlUpdateReviewSummary();
-			}
 		}
 
 		function initPatientGeolocation() {
 			if (!navigator.geolocation) {
-				updateLocationStatus('error', 'Lokasi belum tersedia', 'Browser ini belum mendukung akses lokasi.');
 				return;
 			}
 
-			updateLocationStatus('loading', 'Sedang mengambil lokasi...', 'Mohon tunggu sebentar.');
-
-			navigator.geolocation.getCurrentPosition(updateLocation, function(error) {
-				if (error && error.code === error.PERMISSION_DENIED) {
-					updateLocationStatus('error', 'Izin lokasi belum aktif', 'Aktifkan izin lokasi agar petugas dapat menemukan alamat Anda.');
-					return;
-				}
-				updateLocationStatus('error', 'Lokasi belum tersedia', 'Coba perbarui lokasi atau pastikan sinyal perangkat stabil.');
-			}, {
+			navigator.geolocation.getCurrentPosition(updateLocation, function() {}, {
 				enableHighAccuracy: true,
 				maximumAge: 30000,
 				timeout: 8000
@@ -2025,7 +1133,6 @@ Lama keluhan:
 			};
 
 			setConsultationCoordinates(newLocation.lat, newLocation.lng);
-			updateLocationStatus('success', 'Koordinat lokasi Anda sudah tersimpan.', Number(newLocation.lat).toFixed(5) + ', ' + Number(newLocation.lng).toFixed(5));
 
 			if (!hasGoogleMaps() || !marker || !map) return;
 
@@ -2070,10 +1177,6 @@ Lama keluhan:
 				if (status === "OK") {
 					if (results[0]) {
 						document.getElementById("address").value = results[0].formatted_address;
-						const title = document.getElementById('dl_location_address_title');
-						const hint = document.getElementById('dl_location_address_hint');
-						if (title) title.textContent = results[0].formatted_address;
-						if (hint) hint.textContent = 'Alamat ini digunakan untuk menentukan puskesmas dan petugas terdekat.';
 					} else {
 						document.getElementById("address").value = "No results found";
 					}
@@ -2104,84 +1207,10 @@ Lama keluhan:
 			initPatientGeolocation();
 			initMap();
 
-			const refreshLocationButton = document.getElementById('dl_refresh_location');
-			if (refreshLocationButton) {
-				refreshLocationButton.addEventListener('click', dlRefreshPatientLocation);
-			}
-
 			setTimeout(() => {
 				sendData();
 			}, 100);
 		}
-
-		function dlTextValue(id) {
-			const element = document.getElementById(id);
-			return element && element.value ? element.value.trim() : '';
-		}
-
-		function dlSetReviewStatus(textId, statusId, value, completeLabel) {
-			const text = document.getElementById(textId);
-			const status = document.getElementById(statusId);
-			const isComplete = value !== '';
-
-			if (text) {
-				text.textContent = isComplete ? value : 'Belum diisi';
-			}
-
-			if (status) {
-				status.textContent = isComplete ? completeLabel : 'Belum diisi';
-				status.classList.toggle('is-complete', isComplete);
-			}
-		}
-
-		function dlUpdateReviewSummary() {
-			const keluhan = dlTextValue('ui_keluhan_utama');
-			const lamaKeluhan = dlTextValue('ui_lama_keluhan');
-			const riwayat = dlTextValue('ui_penyakit_pernah');
-			const alergi = dlTextValue('ui_alergi');
-			const alamat = dlTextValue('address');
-			const latitude = dlTextValue('latitude');
-			const longitude = dlTextValue('longitude');
-			const foto = document.getElementById('file');
-			const video = document.getElementById('file_video');
-
-			const keluhanSummary = keluhan !== '' ? keluhan + (lamaKeluhan !== '' ? ' - ' + lamaKeluhan : '') : '';
-			const riwayatSummary = riwayat !== '' || alergi !== '' ? 'Riwayat: ' + (riwayat || 'Tidak ada') + '. Alergi: ' + (alergi || 'Tidak ada') : '';
-			const lokasiSummary = alamat !== '' ? alamat : (latitude !== '' && longitude !== '' ? latitude + ', ' + longitude : '');
-			const mediaParts = [];
-
-			if (foto && foto.files && foto.files[0]) {
-				mediaParts.push('Foto: ' + foto.files[0].name);
-			}
-
-			if (video && video.files && video.files[0]) {
-				mediaParts.push('Video: ' + video.files[0].name);
-			}
-
-			dlSetReviewStatus('dl_review_keluhan', 'dl_review_keluhan_status', keluhanSummary, 'Terisi');
-			dlSetReviewStatus('dl_review_riwayat', 'dl_review_riwayat_status', riwayatSummary, 'Terisi');
-			dlSetReviewStatus('dl_review_lokasi', 'dl_review_lokasi_status', lokasiSummary, 'Siap');
-
-			const mediaText = document.getElementById('dl_review_media');
-			const mediaStatus = document.getElementById('dl_review_media_status');
-			if (mediaText) {
-				mediaText.textContent = mediaParts.length ? mediaParts.join(' | ') : 'Belum ada lampiran';
-			}
-			if (mediaStatus) {
-				mediaStatus.textContent = mediaParts.length ? 'Sudah ditambahkan' : 'Opsional';
-				mediaStatus.classList.toggle('is-complete', mediaParts.length > 0);
-			}
-		}
-
-		['ui_keluhan_utama', 'ui_lama_keluhan', 'ui_penyakit_pernah', 'ui_alergi', 'address', 'latitude', 'longitude'].forEach(function(id) {
-			const element = document.getElementById(id);
-			if (element) {
-				element.addEventListener('input', dlUpdateReviewSummary);
-				element.addEventListener('change', dlUpdateReviewSummary);
-			}
-		});
-
-		document.addEventListener('DOMContentLoaded', dlUpdateReviewSummary);
 	</script>
 
 	<!-- ambil foto dari kamera dengan flutter native -->
@@ -2193,18 +1222,11 @@ Lama keluhan:
 			const preview = document.getElementById('preview');
 			const container = document.getElementById('previewContainer');
 			const nameElement = document.getElementById('fileName');
-			const displayName = document.getElementById('dl_photo_file_name');
 
 			preview.src = dataUrl;
 			container.classList.remove('d-none');
 			nameElement.value = fileName;
 			nameElement.classList.remove('d-none');
-			if (displayName) {
-				displayName.textContent = 'Foto: ' + fileName;
-			}
-			if (typeof dlUpdateReviewSummary === 'function') {
-				dlUpdateReviewSummary();
-			}
 
 			photoFileName = fileName;
 
@@ -2233,13 +1255,6 @@ Lama keluhan:
 					container.classList.remove('d-none');
 				};
 				reader.readAsDataURL(file);
-				const displayName = document.getElementById('dl_photo_file_name');
-				if (displayName) {
-					displayName.textContent = 'Foto: ' + file.name;
-				}
-				if (typeof dlUpdateReviewSummary === 'function') {
-					dlUpdateReviewSummary();
-				}
 			}
 		});
 
@@ -2255,13 +1270,6 @@ Lama keluhan:
 					container.classList.remove('d-none');
 				};
 				reader.readAsDataURL(file);
-				const displayName = document.getElementById('dl_video_file_name');
-				if (displayName) {
-					displayName.textContent = 'Video: ' + file.name;
-				}
-				if (typeof dlUpdateReviewSummary === 'function') {
-					dlUpdateReviewSummary();
-				}
 			}
 		});
 	</script>

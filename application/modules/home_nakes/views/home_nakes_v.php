@@ -74,23 +74,6 @@ $nakes_pending_count = isset($data_request_new) ? (int) $data_request_new->num_r
 $nakes_active_count = isset($data_request_accept) ? (int) $data_request_accept->num_rows() : 0;
 $nakes_completed_count = isset($data_request_completed) ? (int) $data_request_completed->num_rows() : 0;
 $nakes_today_total = $nakes_pending_count + $nakes_active_count;
-$nakes_role_label = 'Nakes';
-$nakes_puskesmas_label = !empty($profile['puskesmas']) ? $profile['puskesmas'] : (!empty($profile['assigned_puskesmas_name']) ? $profile['assigned_puskesmas_name'] : 'Puskesmas layanan');
-$nakes_is_idle = $nakes_pending_count < 1 && $nakes_active_count < 1;
-$nakes_pending_preview = $nakes_pending_count > 0 && isset($data_request_new) ? $data_request_new->row() : null;
-$nakes_active_preview = $nakes_active_count > 0 && isset($data_request_accept) ? $data_request_accept->row() : null;
-$nakes_pending_preview_complaint = '';
-$nakes_active_preview_complaint = '';
-if ($nakes_pending_preview || $nakes_active_preview) {
-	$CI = &get_instance();
-	$CI->load->library('encryption');
-	if ($nakes_pending_preview && !empty($nakes_pending_preview->request_description)) {
-		$nakes_pending_preview_complaint = (string) $CI->encryption->decrypt(base64_decode($nakes_pending_preview->request_description));
-	}
-	if ($nakes_active_preview && !empty($nakes_active_preview->request_description)) {
-		$nakes_active_preview_complaint = (string) $CI->encryption->decrypt(base64_decode($nakes_active_preview->request_description));
-	}
-}
 ?>
 <!DOCTYPE html>
 <html>
@@ -219,252 +202,6 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 		.history-empty-text {
 			color: #6c757d;
 			font-size: 13px;
-		}
-
-		.dl-nakes-history-screen {
-			padding-bottom: 96px;
-		}
-
-		.dl-history-topbar {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-			margin-bottom: 14px;
-			padding: 4px 0;
-		}
-
-		.dl-history-back {
-			width: 44px;
-			height: 44px;
-			flex: 0 0 44px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			border: 1px solid #d9ece4;
-			border-radius: 999px;
-			background: #fff;
-			color: #255C44;
-			text-decoration: none;
-		}
-
-		.dl-history-title {
-			flex: 1;
-			min-width: 0;
-		}
-
-		.dl-history-title span {
-			display: block;
-			color: #6E7B73;
-			font-size: 12px;
-			font-weight: 700;
-		}
-
-		.dl-history-title strong {
-			display: block;
-			color: #15251D;
-			font-size: 20px;
-			font-weight: 900;
-			line-height: 1.2;
-		}
-
-		.dl-history-count-chip {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			min-height: 34px;
-			padding: 7px 11px;
-			border-radius: 999px;
-			background: #E6F5EE;
-			color: #256B4B;
-			font-size: 12px;
-			font-weight: 800;
-			white-space: nowrap;
-		}
-
-		.dl-history-summary-card {
-			display: grid;
-			gap: 8px;
-			margin-bottom: 14px;
-			padding: 14px;
-			border: 1px solid #DDEDE5;
-			border-radius: 18px;
-			background: linear-gradient(135deg, #F7FCF9 0%, #FFFFFF 100%);
-		}
-
-		.dl-history-summary-card span {
-			color: #6E7B73;
-			font-size: 12px;
-			font-weight: 700;
-		}
-
-		.dl-history-summary-card strong {
-			color: #15251D;
-			font-size: 18px;
-			font-weight: 900;
-		}
-
-		.dl-history-list {
-			gap: 14px;
-		}
-
-		.dl-history-list.show.active {
-			display: grid;
-		}
-
-		.history-result-card.dl-nakes-history-card {
-			margin-bottom: 0 !important;
-			border: 1px solid #DDEDE5;
-			border-radius: 20px;
-			box-shadow: 0 14px 32px rgba(24, 64, 43, 0.08) !important;
-		}
-
-		.dl-history-card-header {
-			display: grid;
-			gap: 12px;
-			padding: 16px !important;
-			background: #fff !important;
-		}
-
-		.dl-history-card-main {
-			display: flex;
-			align-items: flex-start;
-			justify-content: space-between;
-			gap: 12px;
-		}
-
-		.dl-history-patient {
-			display: flex;
-			gap: 12px;
-			min-width: 0;
-		}
-
-		.dl-history-avatar {
-			width: 44px;
-			height: 44px;
-			flex: 0 0 44px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			border-radius: 16px;
-			background: #E6F5EE;
-			color: #379A69;
-		}
-
-		.dl-history-patient span {
-			display: block;
-			color: #6E7B73;
-			font-size: 12px;
-			font-weight: 700;
-		}
-
-		.dl-history-patient strong {
-			display: block;
-			color: #15251D;
-			font-size: 16px;
-			font-weight: 900;
-			line-height: 1.25;
-			overflow-wrap: anywhere;
-		}
-
-		.dl-history-meta-grid {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 10px;
-		}
-
-		.dl-history-meta-item {
-			padding: 10px;
-			border-radius: 14px;
-			background: #F6FAF8;
-		}
-
-		.dl-history-meta-item span {
-			display: block;
-			color: #6E7B73;
-			font-size: 11px;
-			font-weight: 800;
-			margin-bottom: 3px;
-		}
-
-		.dl-history-meta-item strong {
-			display: block;
-			color: #15251D;
-			font-size: 13px;
-			font-weight: 800;
-			line-height: 1.35;
-			overflow-wrap: anywhere;
-		}
-
-		.dl-history-result-preview {
-			border: 1px solid #E6F0EA;
-			border-radius: 16px;
-			padding: 12px;
-			background: #FBFEFC;
-		}
-
-		.dl-history-action-row {
-			display: flex;
-			gap: 10px;
-			flex-wrap: wrap;
-			padding: 0 16px 16px !important;
-			border-top: 0;
-			background: #fff;
-		}
-
-		.dl-history-action-row .btn {
-			min-height: 44px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			gap: 6px;
-			border-radius: 999px;
-			font-weight: 800;
-		}
-
-		.dl-history-empty-state {
-			display: grid;
-			place-items: center;
-			gap: 10px;
-			padding: 28px 18px;
-			border: 1px dashed #BFDCD2;
-			border-radius: 20px;
-			background: #FBFEFC;
-			text-align: center;
-		}
-
-		.dl-history-empty-state i {
-			width: 52px;
-			height: 52px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			border-radius: 18px;
-			background: #E6F5EE;
-			color: #379A69;
-			font-size: 22px;
-		}
-
-		.dl-history-empty-state strong {
-			color: #15251D;
-			font-size: 16px;
-			font-weight: 900;
-		}
-
-		.dl-history-empty-state p {
-			margin: 0;
-			color: #6E7B73;
-			font-size: 13px;
-			line-height: 1.5;
-		}
-
-		@media (max-width: 390px) {
-			.dl-history-meta-grid {
-				grid-template-columns: 1fr;
-			}
-
-			.dl-history-card-main {
-				flex-direction: column;
-			}
 		}
 
 		#offcanvasMapTujuan .offcanvas-body {
@@ -781,10 +518,10 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
 					<i class="bi bi-bell-fill fs-4"></i>
 					<!-- kalo ada notif fetch datanya dari sini ya, bukan dari dalem elemen span nya -->
-					<span class="notify-number" id="badgeNotif" style="display: none;">0</span>
+					<span class="notify-number" id="badgeNotif">9+</span>
 					<!-- sampe sini -->
 				</a>
-				<div class="text-white me-4 dl-location-row dl-status-location-row">
+				<div class="text-white me-4 dl-location-row">
 					<p class="mb-2" style="line-height:1;">
 						<i class="fas fa-map-marker-alt me-2"></i><span class="small" id="address_label"></span>
 					</p>
@@ -794,14 +531,14 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 					<input type="hidden" id="longitude" placeholder="Longitude">
 					<div id="map"></div>
 				</div>
-				<div class="d-flex animate__animated animate__fadeInUp animate__faster dl-profile-row dl-mobile-nakes-profile-row">
+				<div class="d-flex animate__animated animate__fadeInUp animate__faster dl-profile-row">
 					<div class="flex-shrink-0">
 						<img class="rounded-4 shadow dl-profile-photo" src="<?= doclinc_safe_profile_image_src($profile['foto'] ?? ''); ?>" width="100px" height="100px" alt="Foto Profil">
 					</div>
 					<div class="flex-grow-1 ms-3 text-white dl-profile-copy">
-						<small>Dashboard Nakes</small>
+						<small>Selamat Pagi,</small>
 						<h3 class="mb-0"><?= html_escape($nakes_name); ?></h3>
-						<p class="mb-0"><?= html_escape($nakes_role_label); ?> · <?= html_escape($nakes_puskesmas_label); ?></p>
+						<p class="mb-0"><?= html_escape($nakes_age); ?></p>
 					</div>
 				</div>
 			</div>
@@ -827,131 +564,21 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 						<a href="#req_konsul" class="active" onclick="showContent('req_konsul')">Permintaan</a>
 						<a href="#riwayat_konsul" onclick="showContent('riwayat_konsul')">Aktif</a>
 					</div>
-					<section class="dl-dashboard-work-status">
-						<div class="dl-status-work-card">
-							<div class="dl-status-work-icon">
-								<i class="fas fa-user-nurse"></i>
-							</div>
-							<div>
-								<span>Status kerja</span>
-								<strong>Siap menerima permintaan</strong>
-								<p>Permintaan konsultasi warga akan tampil saat masuk.</p>
-							</div>
+					<div class="dl-nakes-stats">
+						<div class="dl-nakes-stat-card">
+							<span>Total Hari Ini</span>
+							<strong><?= html_escape(str_pad((string) $nakes_today_total, 2, '0', STR_PAD_LEFT)); ?></strong>
 						</div>
-						<div class="dl-status-location-card">
-							<i class="fas fa-location-arrow"></i>
-							<div>
-								<span>Status lokasi</span>
-								<strong id="dlNakesLocationStatus">Lokasi belum aktif</strong>
-								<p>Aktifkan lokasi saat menangani kunjungan.</p>
-							</div>
-						</div>
-					</section>
-					<div class="dl-nakes-stats dl-stats-summary-grid">
-						<div class="dl-nakes-stat-card dl-stats-card">
+						<div class="dl-nakes-stat-card">
 							<span>Menunggu</span>
 							<strong><?= html_escape(str_pad((string) $nakes_pending_count, 2, '0', STR_PAD_LEFT)); ?></strong>
 						</div>
-						<div class="dl-nakes-stat-card dl-stats-card">
-							<span>Aktif</span>
-							<strong><?= html_escape(str_pad((string) $nakes_active_count, 2, '0', STR_PAD_LEFT)); ?></strong>
-						</div>
-						<div class="dl-nakes-stat-card dl-stats-card is-completed">
-							<span>Selesai</span>
-							<strong><?= html_escape(str_pad((string) $nakes_completed_count, 2, '0', STR_PAD_LEFT)); ?></strong>
-						</div>
 					</div>
-					<?php if ($nakes_active_preview) :
-						$active_preview_queue = doclinc_request_queue_code($nakes_active_preview);
-						$active_preview_mode = doclinc_consultation_mode_label(isset($nakes_active_preview->consultation_mode) ? $nakes_active_preview->consultation_mode : '');
-					?>
-						<section class="dl-dashboard-priority-section dl-active-preview-section">
-							<div class="dl-section-header">
-								<h2 class="dl-section-title">Konsultasi Aktif</h2>
-								<a href="#riwayat_konsul" class="dl-nakes-link" onclick="showContent('riwayat_konsul'); return false;">Lihat semua</a>
-							</div>
-							<div class="dl-worklist-preview-card dl-active-preview-card" data-request-id="<?= html_escape((int) $nakes_active_preview->request_id); ?>">
-								<div class="dl-worklist-preview-head">
-									<div class="dl-nakes-avatar-icon">
-										<i class="fas fa-user-injured"></i>
-									</div>
-									<div>
-										<span class="dl-status-chip is-active">Sedang ditangani</span>
-										<h3><?= html_escape(strtoupper((string) $nakes_active_preview->nama)); ?></h3>
-										<p>No. Antrian: <?= html_escape($active_preview_queue); ?><?= $active_preview_mode !== '' ? ' · ' . html_escape($active_preview_mode) : ''; ?></p>
-									</div>
-								</div>
-								<div class="dl-worklist-complaint">
-									<span>Keluhan</span>
-									<p><?= doclinc_history_safe_lines($nakes_active_preview_complaint, 'Keluhan tersimpan'); ?></p>
-								</div>
-								<div class="dl-worklist-actions">
-									<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $nakes_active_preview->request_id) . '?kriteria=1'); ?>" class="dl-mobile-primary-action">
-										<i class="fas fa-notes-medical"></i> Lanjutkan
-									</a>
-									<a href="<?= html_escape(base_url('chat?request_id=' . (int) $nakes_active_preview->request_id)); ?>" class="dl-mobile-secondary-action">
-										<i class="fas fa-comments"></i> Chat
-									</a>
-								</div>
-							</div>
-						</section>
-					<?php endif; ?>
-					<section class="dl-dashboard-priority-section dl-queue-preview-section">
-						<div class="dl-section-header">
-							<h2 class="dl-section-title">Permintaan Masuk</h2>
-							<a href="#req_konsul" class="dl-nakes-link" onclick="showContent('req_konsul'); return false;">Lihat semua</a>
-						</div>
-						<?php if ($nakes_pending_preview) :
-							$pending_preview_queue = doclinc_request_queue_code($nakes_pending_preview);
-							$pending_preview_mode = doclinc_consultation_mode_label(isset($nakes_pending_preview->consultation_mode) ? $nakes_pending_preview->consultation_mode : '');
-						?>
-							<div class="dl-worklist-preview-card dl-queue-preview-card" data-request-id="<?= html_escape((int) $nakes_pending_preview->request_id); ?>">
-								<div class="dl-worklist-preview-head">
-									<div class="dl-nakes-avatar-icon">
-										<i class="fas fa-user"></i>
-									</div>
-									<div>
-										<span class="dl-status-chip is-waiting">Menunggu</span>
-										<h3><?= html_escape(strtoupper((string) $nakes_pending_preview->nama)); ?></h3>
-										<p>No. Antrian: <?= html_escape($pending_preview_queue); ?><?= $pending_preview_mode !== '' ? ' · ' . html_escape($pending_preview_mode) : ''; ?></p>
-									</div>
-								</div>
-								<div class="dl-worklist-complaint">
-									<span>Keluhan</span>
-									<p><?= doclinc_history_safe_lines($nakes_pending_preview_complaint, 'Keluhan tersimpan'); ?></p>
-								</div>
-								<div class="dl-worklist-actions">
-									<a href="#req_konsul" class="dl-mobile-primary-action" onclick="showContent('req_konsul'); return false;">
-										<i class="fas fa-list-alt"></i> Lihat Permintaan
-									</a>
-									<button type="button" class="dl-mobile-secondary-action lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $nakes_pending_preview->request_id); ?>" data-lat="<?= html_escape($nakes_pending_preview->lattitude); ?>" data-lng="<?= html_escape($nakes_pending_preview->longitude); ?>">
-										<i class="fas fa-map-marker-alt"></i> Lihat Lokasi
-									</button>
-								</div>
-							</div>
-						<?php else : ?>
-							<div class="dl-queue-empty-card">
-								<i class="fas fa-inbox"></i>
-								<p>Belum ada permintaan baru</p>
-								<span>Permintaan konsultasi dari warga akan tampil di sini.</span>
-							</div>
-						<?php endif; ?>
-					</section>
-					<?php if ($nakes_is_idle) : ?>
-						<section class="dl-idle-card">
-							<div class="dl-idle-illustration">
-								<i class="fas fa-inbox"></i>
-							</div>
-							<h2>Belum ada permintaan baru</h2>
-							<p>Permintaan konsultasi dari warga akan tampil di sini.</p>
-							<a href="#req_konsul" class="dl-mobile-primary-action" onclick="showContent('req_konsul'); return false;">Lihat Permintaan</a>
-						</section>
-					<?php endif; ?>
 					<div class="dl-section-header">
 						<h2 class="dl-section-title">Ringkasan Layanan</h2>
 						<a href="#riwayat_konsul" class="dl-nakes-link" onclick="showContent('riwayat_konsul')">Lihat Riwayat</a>
 					</div>
-					<div class="dl-feature-grid dl-worklist-shortcuts">
+					<div class="dl-feature-grid">
 						<a href="#req_konsul" class="dl-feature-card" onclick="showContent('req_konsul')">
 							<div class="icon-wrapper">
 								<i class="fas fa-user-md"></i>
@@ -966,13 +593,6 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 							</div>
 							<span class="small">Riwayat Konsultasi</span>
 						</a>
-						<a href="#" class="dl-feature-card" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
-							<div class="icon-wrapper">
-								<i class="fas fa-bell"></i>
-								<span class="filler"></span>
-							</div>
-							<span class="small">Notifikasi</span>
-						</a>
 						<a href="#" class="dl-feature-card" onclick="showContent('profile')">
 							<div class="icon-wrapper">
 								<i class="fas fa-user"></i>
@@ -980,35 +600,28 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 							</div>
 							<span class="small">Profil Nakes</span>
 						</a>
+						<div class="dl-feature-card dl-nakes-summary-card">
+							<div class="icon-wrapper">
+								<i class="fas fa-check-circle"></i>
+								<span class="filler"></span>
+							</div>
+							<span class="small"><?= html_escape((string) $nakes_completed_count); ?> selesai</span>
+						</div>
 					</div>
 				</div>
 				<div id="req_konsul" class="content animate__animated animate__fadeInUp animate__faster">
 					<div class="dl-section-header dl-nakes-page-header">
-						<a href="#beranda" class="dl-nakes-back-link" onclick="showContent('beranda'); return false;" aria-label="Kembali ke dashboard">
-							<i class="fas fa-arrow-left"></i>
-						</a>
-						<div>
-							<h2 class="dl-section-title">Permintaan Masuk</h2>
-							<p><?= html_escape($nakes_puskesmas_label); ?></p>
-						</div>
+						<h2 class="dl-section-title">Permintaan Masuk</h2>
 						<span class="dl-nakes-link"><?= html_escape((string) $nakes_pending_count); ?> menunggu</span>
-					</div>
-					<div class="dl-request-summary-card">
-						<div>
-							<span>Worklist hari ini</span>
-							<strong><?= html_escape((string) $nakes_pending_count); ?> permintaan menunggu</strong>
-						</div>
-						<i class="fas fa-clipboard-list"></i>
 					</div>
 					<div class="dl-nakes-request-list">
 						<?php
 						$i = 1;
 						if ($data_request_new->num_rows() < 1) {
 						?>
-							<div class="dl-queue-empty-card dl-request-empty-card">
-								<i class="fas fa-inbox"></i>
-								<p>Belum ada permintaan masuk</p>
-								<span>Permintaan konsultasi dari warga akan tampil di sini.</span>
+							<div class="dl-empty-state text-center">
+								<img src="<?= html_escape(base_url('assets/images/not found.svg')); ?>" width="150" alt="Tidak ada data">
+								<p class="mb-0 mt-3">Belum ada permintaan konsultasi baru.</p>
 							</div>
 							<?php
 						} else {
@@ -1021,38 +634,32 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 								$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
 								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
-								$request_date_label = !empty($x->created_at) ? date('d M Y H:i', strtotime($x->created_at)) : 'Belum tersedia';
 							?>
 								<div class="dl-nakes-request-item">
-									<div class="card shadow request-card dl-nakes-request-card dl-request-worklist-card" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
-										<div class="card-header dl-request-card-header">
-											<div class="dl-request-patient-row">
-												<div class="dl-request-queue-number">
-													<span>No. Antrian</span>
-													<strong><?= html_escape($queue_code); ?></strong>
-												</div>
-												<div class="dl-request-patient-info">
-													<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
-													<span class="dl-status-chip is-waiting">Menunggu</span>
-												</div>
+									<div class="card shadow request-card dl-nakes-request-card" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
+										<div class="card-header d-flex align-items-start gap-3">
+											<div class="dl-nakes-avatar-icon">
+												<i class="fas fa-user"></i>
 											</div>
-											<span class="dl-request-puskesmas-badge"><?= html_escape($nakes_puskesmas_label); ?></span>
+											<div class="flex-grow-1">
+												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
+												<span>No. Antrian: <?= html_escape($queue_code); ?></span>
+											</div>
+											<span class="dl-badge animate__animated animate__flash animate__infinite animate__slower">Baru</span>
 										</div>
 										<div id="cekStatus"></div>
 										<div class="card-body">
-											<div class="dl-nakes-complaint-box dl-request-complaint-box">
+											<div class="dl-nakes-complaint-box">
 												<span>Keluhan</span>
 												<p><?= doclinc_history_safe_lines($keluhan); ?></p>
 											</div>
 											<div class="dl-nakes-meta-list">
-												<div><i class="fas fa-hospital fa-fw"></i><span>Puskesmas</span><strong><?= html_escape($nakes_puskesmas_label); ?></strong></div>
+												<div><i class="fas fa-user-md fa-fw"></i><span>PIC Nakes</span><strong><?= html_escape($handling_nakes_label); ?></strong></div>
 												<div><i class="fas fa-clipboard-check fa-fw"></i><span>Mode</span><strong><?= html_escape($mode_label); ?></strong></div>
-												<div><i class="far fa-clock fa-fw"></i><span>Diajukan</span><strong><?= html_escape($request_date_label); ?></strong></div>
 												<div><i class="fas fa-file fa-fw"></i><span>Riwayat</span><strong><?= doclinc_history_safe_text($riwayat); ?></strong></div>
 												<div><i class="fas fa-map-marker-alt fa-fw"></i><span>Alamat</span><strong><?= doclinc_history_safe_text($x->location); ?></strong></div>
 												<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong class="distance">Menghitung...</strong></div>
 												<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong class="duration">Menghitung...</strong></div>
-												<div><i class="fas fa-user-md fa-fw"></i><span>PIC</span><strong><?= html_escape($handling_nakes_label); ?></strong></div>
 											</div>
 											<!-- <a class="btn btn-info btn-sm">Lihat Foto</a> <a class="btn btn-info btn-sm">Lihat Video</a> -->
 											<?php if (!empty($x->photos)) : ?>
@@ -1071,20 +678,19 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 												<input class="form-check-input" type="checkbox" role="switch" id="kunjung" name="kunjung">
 											</div>
 										</div>
-										<div class="card-footer dl-request-actions-footer">
-											<p>Permintaan ini akan masuk ke daftar konsultasi aktif setelah diterima.</p>
-											<div class="dl-nakes-actions dl-request-actions">
-												<div>
+										<div class="card-footer">
+											<div class="row g-2 dl-nakes-actions">
+												<div class="col d-grid">
 													<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 														<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
 													</button>
 												</div>
-												<div>
+												<div class="col d-grid">
 													<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
 														<i class="fas fa-times-circle me-2"></i> Tolak
 													</button>
 												</div>
-												<div>
+												<div class="col d-grid">
 													<input type="hidden" id="id_request<?php echo $i; ?>" value="<?= html_escape((int) $x->request_id); ?>">
 													<button type="button" class="btn btn-success shadow-sm rounded-pill start-chat"
 														id="terimaKonsul<?php echo $i; ?>"
@@ -1094,7 +700,7 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 														data-namapasien="<?= html_escape($x->nama); ?>"
 														data-riwayat="<?= html_escape($riwayat); ?>"
 														data-keluhan="<?= html_escape($keluhan); ?>">
-														<i class="fa fa-check-circle me-2"></i> Terima
+														<i class="fa fa-comment-medical me-2"></i> Terima Konsultasi
 													</button>
 												</div>
 											</div>
@@ -1110,20 +716,10 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 						<input type="hidden" value="<?php echo $i - 1; ?>" id="jumlah_request">
 					</div>
 				</div>
-				<div id="riwayat_konsul" class="content animate__animated animate__fadeInUp animate__faster dl-mobile-history dl-nakes-history-screen">
-					<div class="dl-history-topbar">
-						<a href="#beranda" class="dl-history-back" onclick="showContent('beranda'); return false;" aria-label="Kembali ke dashboard">
-							<i class="fas fa-arrow-left"></i>
-						</a>
-						<div class="dl-history-title">
-							<span>Dashboard Nakes</span>
-							<strong>Riwayat Konsultasi</strong>
-						</div>
-						<span class="dl-history-count-chip"><?= html_escape((string) $nakes_completed_count); ?> selesai</span>
-					</div>
-					<div class="dl-history-summary-card dl-summary-history-card">
-						<span>Arsip hasil konsultasi</span>
-						<strong>Konsultasi yang selesai akan tampil di sini.</strong>
+				<div id="riwayat_konsul" class="content animate__animated animate__fadeInUp animate__faster">
+					<div class="dl-section-header dl-nakes-page-header">
+						<h2 class="dl-section-title">Riwayat Konsultasi</h2>
+						<span class="dl-nakes-link"><?= html_escape((string) $nakes_active_count); ?> aktif</span>
 					</div>
 					<ul class="nav nav-tabs nav-justified mb-3 dl-tabs" id="myTab" role="tablist">
 						<li class="nav-item" role="presentation">
@@ -1194,8 +790,6 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 								$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
 								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
-								$active_request_date = !empty($x->created_at) ? date('d M Y H:i', strtotime($x->created_at)) : 'Belum tersedia';
-								$active_puskesmas_label = doclinc_request_puskesmas_label($x);
 								$visit_next_status = array(
 									'not_started' => 'en_route',
 									'en_route' => 'arrived',
@@ -1203,74 +797,22 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 									'in_service' => 'completed',
 									'completed' => '',
 								);
-								$visit_steps = array(
-									'not_started' => 'Belum mulai',
-									'en_route' => 'Menuju lokasi',
-									'arrived' => 'Tiba di lokasi',
-									'in_service' => 'Sedang pelayanan',
-									'completed' => 'Kunjungan selesai',
-								);
-								$visit_step_descriptions = array(
-									'not_started' => 'Tugas diterima dan siap dimulai',
-									'en_route' => 'Nakes sedang menuju alamat pasien',
-									'arrived' => 'Konfirmasi saat sudah tiba di lokasi',
-									'in_service' => 'Pelayanan sedang dilakukan',
-									'completed' => 'Kunjungan telah selesai',
-								);
-								$visit_step_keys = array_keys($visit_steps);
-								$current_visit_index = array_search($visit_status, $visit_step_keys, true);
-								$current_visit_index = $current_visit_index === false ? 0 : $current_visit_index;
-								$visit_status_highlights = array(
-									'arrived' => array(
-										'title' => 'Tiba di lokasi',
-										'description' => 'Anda sudah berada di lokasi pasien. Mulai pelayanan saat pemeriksaan siap dilakukan.',
-										'class' => 'is-arrived',
-									),
-								);
-								$visit_highlight = isset($visit_status_highlights[$visit_status]) ? $visit_status_highlights[$visit_status] : null;
 							?>
-								<div class="card shadow mb-2 dl-nakes-request-card dl-detail-consultation-card" data-request-id="<?= (int) $x->request_id; ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
-									<div class="card-header dl-detail-header">
-										<a href="#beranda" class="dl-nakes-back-link" onclick="showContent('beranda'); return false;" aria-label="Kembali ke dashboard">
-											<i class="fas fa-arrow-left"></i>
-										</a>
-										<div class="dl-detail-title">
-											<span>Detail Konsultasi</span>
-											<strong>Sedang ditangani</strong>
+								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
+									<div class="card-header d-flex align-items-start gap-3">
+										<div class="dl-nakes-avatar-icon">
+											<i class="fas fa-user-check"></i>
 										</div>
-										<span class="dl-status-chip is-active">Sedang ditangani</span>
+										<div class="flex-grow-1">
+											<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
+											<span><?= html_escape(date('d-m-Y', strtotime($x->created_at))); ?> · No. Antrian: <?= html_escape($queue_code); ?></span>
+										</div>
+										<span class="dl-badge animate__animated animate__flash animate__infinite animate__slower" id="status-konsul">Accepted</span>
 									</div>
-									<div class="card-body dl-detail-body">
-										<section class="dl-patient-summary-card">
-											<div class="dl-patient-avatar">
-												<i class="fas fa-user-check"></i>
-											</div>
-											<div class="dl-patient-main">
-												<span>Pasien</span>
-												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
-												<p>No. Antrian: <?= html_escape($queue_code); ?></p>
-											</div>
-											<div class="dl-patient-status">
-												<span><?= html_escape($mode_label !== '' ? $mode_label : 'Mode layanan'); ?></span>
-											</div>
-										</section>
-										<div class="dl-summary-grid">
-											<div>
-												<span>Puskesmas tujuan</span>
-												<strong><?= doclinc_history_safe_text($active_puskesmas_label); ?></strong>
-											</div>
-											<div>
-												<span>Diajukan</span>
-												<strong><?= html_escape($active_request_date); ?></strong>
-											</div>
-										</div>
-										<div class="dl-nakes-complaint-box dl-detail-complaint-card">
-											<span>Keluhan pasien</span>
+									<div class="card-body">
+										<div class="dl-nakes-complaint-box">
+											<span>Keluhan</span>
 											<p><?= doclinc_history_safe_lines($keluhan); ?></p>
-										</div>
-										<div class="dl-nakes-complaint-box dl-detail-complaint-card">
-											<span>Riwayat singkat</span>
-											<p><?= doclinc_history_safe_lines($riwayat, 'Tidak ada catatan tambahan'); ?></p>
 										</div>
 										<input type="text" class="visit-patient-lat d-none" value="<?= html_escape($x->lattitude); ?>">
 										<input type="text" class="visit-patient-lng d-none" value="<?= html_escape($x->longitude); ?>">
@@ -1280,61 +822,26 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 											<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong class="visit-route-distance" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</strong></div>
 											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong class="visit-route-eta" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</strong></div>
 										</div>
-										<div class="mt-3 visit-workflow-control dl-visit-status-card dl-workflow-stepper-card" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
-											<div class="dl-visit-status-head">
-												<div>
-													<span>Alur Kunjungan</span>
-													<p>Perbarui status kunjungan sesuai kondisi di lapangan.</p>
-												</div>
-												<strong class="visit-workflow-label"><?= html_escape(doclinc_visit_status_label($visit_status)); ?></strong>
-											</div>
-											<?php if ($visit_highlight) : ?>
-												<div class="dl-workflow-status-highlight dl-arrived-status-highlight <?= html_escape($visit_highlight['class']); ?>">
-													<i class="fas fa-map-marker-alt"></i>
-													<div>
-														<strong><?= html_escape($visit_highlight['title']); ?></strong>
-														<p><?= html_escape($visit_highlight['description']); ?></p>
-													</div>
-												</div>
-											<?php endif; ?>
-											<div class="dl-visit-stepper" aria-label="Status kunjungan">
-												<?php foreach ($visit_steps as $step_key => $step_label) :
-													$step_index = array_search($step_key, $visit_step_keys, true);
-													$step_state = $step_index < $current_visit_index ? 'is-done' : ($step_index === $current_visit_index ? 'is-current' : 'is-next');
-												?>
-													<div class="dl-visit-step <?= html_escape($step_state); ?>" data-step-status="<?= html_escape($step_key); ?>">
-														<span><i class="fas fa-check"></i></span>
-														<div>
-															<strong><?= html_escape($step_label); ?></strong>
-															<small><?= html_escape($visit_step_descriptions[$step_key]); ?></small>
-														</div>
-													</div>
-												<?php endforeach; ?>
-											</div>
-											<?php if ($visit_status !== 'completed') : ?>
-												<div class="dl-workflow-next-copy">Tahap berikutnya</div>
-											<?php endif; ?>
-											<div class="dl-visit-action-grid">
+										<div class="mt-3 visit-workflow-control" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
+											<div class="small text-muted mb-2">Status kunjungan: <span class="fw-bold visit-workflow-label"><?= html_escape(doclinc_visit_status_label($visit_status)); ?></span></div>
+											<div class="d-flex flex-wrap gap-2">
 												<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="en_route" <?= $visit_next_status[$visit_status] === 'en_route' ? '' : 'disabled'; ?>>Mulai Perjalanan</button>
-												<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived" <?= $visit_next_status[$visit_status] === 'arrived' ? '' : 'disabled'; ?>>Saya Sudah Tiba</button>
-												<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="in_service" <?= $visit_next_status[$visit_status] === 'in_service' ? '' : 'disabled'; ?>>Mulai Pelayanan</button>
-												<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="completed" <?= $visit_next_status[$visit_status] === 'completed' ? '' : 'disabled'; ?>>Selesaikan Kunjungan</button>
+												<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived" <?= $visit_next_status[$visit_status] === 'arrived' ? '' : 'disabled'; ?>>Tiba di Lokasi</button>
+												<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="in_service" <?= $visit_next_status[$visit_status] === 'in_service' ? '' : 'disabled'; ?>>Mulai Penanganan</button>
+												<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="completed" <?= $visit_next_status[$visit_status] === 'completed' ? '' : 'disabled'; ?>>Kunjungan Selesai</button>
 											</div>
-											<?php if ($visit_status === 'completed') : ?>
-												<div class="dl-workflow-completed-note"><i class="fas fa-check-circle"></i> Kunjungan selesai</div>
-											<?php endif; ?>
 											<div class="small mt-2 visit-workflow-message" data-visit-workflow-message="<?= html_escape((int) $x->request_id); ?>"></div>
 										</div>
 									</div>
-									<div class="card-footer d-flex flex-wrap gap-2 dl-nakes-actions dl-detail-actions">
+									<div class="card-footer d-flex flex-wrap gap-2 dl-nakes-actions">
 										<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
-											<i class="fas fa-map-marker-alt me-2"></i> Rute ke Pasien
+											<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
 										</button>
 										<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id) . '?kriteria=1'); ?>" class="btn btn-success shadow-sm rounded-pill">
-											<i class="fas fa-notes-medical me-2"></i> Isi Hasil Konsultasi
+											<i class="fas fa-notes-medical me-2"></i> Lanjut Konsultasi
 										</a>
 										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
-											<i class="fas fa-comments me-2"></i> Chat Pasien
+											<i class="fas fa-comments me-2"></i> Chat Konsultasi
 										</a>
 										<button type="button" class="btn btn-outline-primary shadow-sm rounded-pill start-nakes-visit-tracking" data-request-id="<?= html_escape((int) $x->request_id); ?>">
 											<i class="fas fa-location-arrow me-2"></i> Aktifkan Lokasi Visit
@@ -1351,20 +858,18 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 							?>
 							<input type="hidden" id="jumlah_accepted" value="<?php echo $i - 1; ?>">
 						</div>
-						<div class="tab-pane fade dl-history-list" id="selesai-tab-pane" role="tabpanel" aria-labelledby="selesai-tab" tabindex="0">
+						<div class="tab-pane fade" id="selesai-tab-pane" role="tabpanel" aria-labelledby="selesai-tab" tabindex="0">
 							<?php
 							$CI = &get_instance();
 							$CI->load->library('encryption');
 							if ($data_request_completed->num_rows() < 1) {
 							?>
-								<div class="dl-history-empty-state">
-									<i class="fas fa-file-medical-alt"></i>
-									<strong>Belum ada riwayat konsultasi</strong>
-									<p>Konsultasi yang selesai akan tampil di sini.</p>
+								<div class="text-center py-4">
+									<img src="<?= html_escape(base_url('assets/images/not found.svg')); ?>" width="180" alt="Tidak ada data">
+									<p class="mb-0 mt-3 text-muted">Belum ada riwayat konsultasi selesai.</p>
 								</div>
 							<?php
 							}
-							$history_index = 1;
 							foreach ($data_request_completed->result() as $x) {
 								try {
 									$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
@@ -1376,8 +881,8 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 								} catch (Exception $e) {
 									$riwayat = '';
 								}
-								$diagnosa = !empty($x->diagnosa) ? $x->diagnosa : (!empty($x->diagnosis) ? $x->diagnosis : 'Belum tersedia');
-								$saran = !empty($x->saran) ? $x->saran : (!empty($x->recommendations) ? $x->recommendations : 'Belum tersedia');
+								$diagnosa = !empty($x->diagnosa) ? $x->diagnosa : (!empty($x->diagnosis) ? $x->diagnosis : '-');
+								$saran = !empty($x->saran) ? $x->saran : (!empty($x->recommendations) ? $x->recommendations : '-');
 								$treatment = !empty($x->treatment) ? $x->treatment : '';
 								$puskesmas = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : '';
 								$tanggal_selesai = !empty($x->created_at) ? date('d-m-Y', strtotime($x->created_at)) : '-';
@@ -1385,78 +890,55 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 								$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
 								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
-								$history_status_raw = isset($x->request_status) ? (string) $x->request_status : 'Completed';
-								$history_status_label = strtolower($history_status_raw) === 'cancelled' ? 'Dibatalkan' : 'Selesai';
-								$history_card_id = 'hasil-konsultasi-' . $history_index;
 							?>
-								<div class="card shadow mb-3 history-result-card dl-nakes-history-card dl-record-history-card" id="<?= html_escape($history_card_id); ?>" data-request-id="<?= (int) $x->request_id; ?>">
-									<div class="card-header dl-history-card-header">
-										<div class="dl-history-card-main">
-											<div class="dl-history-patient">
-												<span class="dl-history-avatar"><i class="fas fa-user-check"></i></span>
-												<div>
-													<span>Pasien</span>
-													<strong><?= doclinc_history_safe_text(strtoupper((string) $x->nama), 'Belum tersedia'); ?></strong>
-												</div>
-											</div>
-											<span class="history-status-badge dl-status-history-chip"><?= html_escape($history_status_label); ?></span>
-										</div>
-										<div class="dl-history-meta-grid">
-											<div class="dl-history-meta-item">
-												<span>No. Antrian</span>
-												<strong><?= html_escape($queue_code !== '' ? $queue_code : 'Belum tersedia'); ?></strong>
-											</div>
-											<div class="dl-history-meta-item">
-												<span>Tanggal</span>
-												<strong><?= doclinc_history_safe_text($tanggal_selesai, 'Belum tersedia'); ?></strong>
-											</div>
-											<div class="dl-history-meta-item">
-												<span>Mode layanan</span>
-												<strong><?= doclinc_history_safe_text($mode_label, 'Belum tersedia'); ?></strong>
-											</div>
-											<div class="dl-history-meta-item">
-												<span>Puskesmas tujuan</span>
-												<strong><?= doclinc_history_safe_text($puskesmas, 'Belum tersedia'); ?></strong>
+								<div class="card shadow mb-3 history-result-card" data-request-id="<?= (int) $x->request_id; ?>">
+									<div class="card-header d-flex align-items-start gap-3">
+										<div class="flex-grow-1">
+											<div class="history-request-id">No. Antrian: <?= html_escape($queue_code); ?></div>
+											<div class="history-meta">
+												<?= doclinc_history_safe_text($tanggal_selesai); ?><br>
+												Pasien: <?= doclinc_history_safe_text(strtoupper((string) $x->nama)); ?>
+												<br><?= html_escape($handling_nakes_label); ?>
+												<br>Mode: <?= html_escape($mode_label); ?>
+												<?php if ($puskesmas !== '') : ?>
+													<br><?= doclinc_history_safe_text($puskesmas); ?>
+												<?php endif; ?>
 											</div>
 										</div>
+										<span class="history-status-badge">Completed</span>
 									</div>
 									<div class="card-body">
 										<div class="history-section">
 											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan Awal</div>
 											<?= doclinc_history_format_complaint($keluhan); ?>
 										</div>
-										<div class="history-section dl-history-result-preview">
+										<div class="history-section">
 											<div class="history-section-title"><i class="fas fa-file-medical-alt me-1"></i> Hasil Konsultasi</div>
 											<div class="history-result-row">
-												<span class="history-result-label">Diagnosis</span>
+												<span class="history-result-label">Diagnosa</span>
 												<div class="history-result-value"><?= doclinc_history_safe_lines($diagnosa); ?></div>
 											</div>
 											<div class="history-result-row">
-												<span class="history-result-label">Terapi atau tindakan</span>
+												<span class="history-result-label">Terapi / Tindakan</span>
 												<?php if ($treatment !== '') : ?>
 													<div class="history-result-value"><?= doclinc_history_safe_lines($treatment); ?></div>
 												<?php else : ?>
-													<p class="history-empty-text mb-0">Belum tersedia</p>
+													<p class="history-empty-text mb-0">Belum ada terapi/tindakan yang tercatat.</p>
 												<?php endif; ?>
 											</div>
 											<div class="history-result-row">
-												<span class="history-result-label">Saran petugas</span>
+												<span class="history-result-label">Rekomendasi / Saran</span>
 												<div class="history-result-value"><?= doclinc_history_safe_lines($saran); ?></div>
 											</div>
 										</div>
 									</div>
-									<div class="card-footer dl-history-action-row">
-										<a href="#<?= html_escape($history_card_id); ?>" class="btn btn-success btn-sm">
-											<i class="fas fa-file-medical-alt"></i> Lihat Hasil
-										</a>
-										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-secondary btn-sm">
-											<i class="fas fa-comments"></i> Riwayat Chat
+									<div class="card-footer">
+										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-secondary btn-sm rounded-pill">
+											<i class="fas fa-comments me-1"></i> Riwayat Chat
 										</a>
 									</div>
 								</div>
-							<?php
-								$history_index++;
-							} ?>
+							<?php } ?>
 						</div>
 					</div>
 				</div>
@@ -2562,39 +2044,10 @@ if ($nakes_pending_preview || $nakes_active_preview) {
 				if (labelElement) {
 					labelElement.textContent = label || visitStatus;
 				}
-				const stepOrder = ['not_started', 'en_route', 'arrived', 'in_service', 'completed'];
-				const currentIndex = Math.max(0, stepOrder.indexOf(visitStatus));
-				container.querySelectorAll('[data-step-status]').forEach(function(step) {
-					const stepIndex = stepOrder.indexOf(step.getAttribute('data-step-status'));
-					step.classList.remove('is-done', 'is-current', 'is-next');
-					if (stepIndex < currentIndex) {
-						step.classList.add('is-done');
-					} else if (stepIndex === currentIndex) {
-						step.classList.add('is-current');
-					} else {
-						step.classList.add('is-next');
-					}
-				});
 				const nextStatus = nextVisitStatuses[visitStatus] || '';
 				container.querySelectorAll('.visit-status-update').forEach(function(button) {
 					button.disabled = button.getAttribute('data-visit-status') !== nextStatus;
 				});
-				const nextCopy = container.querySelector('.dl-workflow-next-copy');
-				if (nextCopy) {
-					nextCopy.style.display = visitStatus === 'completed' ? 'none' : '';
-				}
-				let completedNote = container.querySelector('.dl-workflow-completed-note');
-				if (visitStatus === 'completed' && !completedNote) {
-					completedNote = document.createElement('div');
-					completedNote.className = 'dl-workflow-completed-note';
-					completedNote.innerHTML = '<i class="fas fa-check-circle"></i> Kunjungan selesai';
-					const actions = container.querySelector('.dl-visit-action-grid');
-					if (actions) {
-						actions.insertAdjacentElement('afterend', completedNote);
-					}
-				} else if (visitStatus !== 'completed' && completedNote) {
-					completedNote.remove();
-				}
 			}
 
 			function stopTracking(requestId) {
