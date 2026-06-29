@@ -1503,7 +1503,8 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				leaflet: null,
 				leafletMarkers: {},
 				google: null,
-				googleMarkers: {}
+				googleMarkers: {},
+				loadedRequests: {}
 			};
 			const nextVisitStatuses = {
 				not_started: 'en_route',
@@ -1567,6 +1568,10 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				element.textContent = message || '';
 				element.classList.toggle('text-danger', !!isError);
 				element.classList.toggle('text-muted', !isError);
+			}
+
+			function hasLoadedVisitMap(requestId) {
+				return !!(requestId && mapState.loadedRequests && mapState.loadedRequests[requestId]);
 			}
 
 			function visitLatLng(location) {
@@ -1687,7 +1692,12 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				const rendered = renderGoogleMap(patientLocation, nakesLocation) || renderLeafletMap(patientLocation, nakesLocation);
 				if (!rendered) {
 					setMapStatus('Peta belum tersedia', true);
+					return false;
 				}
+				if (requestId) {
+					mapState.loadedRequests[requestId] = true;
+				}
+				return true;
 			}
 
 			function fetchNakesVisitLocation(requestId) {
@@ -1698,6 +1708,10 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 					url: nakesVisitLocationUrl,
 					type: 'GET',
 					dataType: 'json',
+					headers: {
+						'Accept': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest'
+					},
 					data: {
 						request_id: requestId
 					},
@@ -1709,6 +1723,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						}
 						if (response && response.status) {
 							renderVisitMap(requestId, response, fallbackPatientLocation);
+							refreshDeviceLocation(requestId);
 							return;
 						}
 						renderVisitMap(requestId, response || {}, fallbackPatientLocation);
@@ -1717,13 +1732,40 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						}
 					},
 					error: function(xhr) {
-						renderVisitMap(requestId, {}, fallbackPatientLocation);
-						if (!fallbackPatientLocation) {
-							const response = xhr.responseJSON || {};
-							setMapStatus(response.message || 'Lokasi pasien belum tersedia', true);
+						const response = xhr.responseJSON || {};
+						if (xhr.status === 403) {
+							setMapStatus('Akses tidak diizinkan', true);
+							return;
+						}
+						if (fallbackPatientLocation) {
+							renderVisitMap(requestId, {}, fallbackPatientLocation);
+						} else {
+							setMapStatus(response.message || 'Data lokasi tidak dapat dimuat', true);
 						}
 					}
 				});
+			}
+
+			function refreshDeviceLocation(requestId) {
+				if (!navigator.geolocation || !requestId) {
+					return;
+				}
+				navigator.geolocation.getCurrentPosition(
+					function(position) {
+						postVisitLocation(requestId, position, true);
+					},
+					function() {
+						if (hasLoadedVisitMap(requestId)) {
+							setTrackingStatus(requestId, 'Aktifkan lokasi perangkat untuk memperbarui posisi Anda');
+						} else {
+							setMapStatus('Lokasi perangkat belum aktif');
+						}
+					}, {
+						enableHighAccuracy: true,
+						maximumAge: 30000,
+						timeout: 8000
+					}
+				);
 			}
 
 			function refreshVisitWorkflowControl(requestId, visitStatus, label) {
@@ -1748,18 +1790,24 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				delete watches[requestId];
 			}
 
-			function postVisitLocation(requestId, position) {
+			function postVisitLocation(requestId, position, forceSend) {
 				const state = watches[requestId];
-				if (!state) return;
+				if (!state && !forceSend) return;
 
 				const now = Date.now();
-				if (now - state.lastSentAt < minPostIntervalMs) return;
-				state.lastSentAt = now;
+				if (state) {
+					if (now - state.lastSentAt < minPostIntervalMs) return;
+					state.lastSentAt = now;
+				}
 
 				$.ajax({
 					url: updateVisitLocationUrl,
 					type: 'POST',
 					dataType: 'json',
+					headers: {
+						'Accept': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest'
+					},
 					data: {
 						request_id: requestId,
 						latitude: position.coords.latitude,
@@ -1784,7 +1832,11 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 					},
 					error: function(xhr) {
 						const response = xhr.responseJSON || {};
-						setTrackingStatus(requestId, response.message || 'Gagal mengirim lokasi', true);
+						if (hasLoadedVisitMap(requestId)) {
+							setTrackingStatus(requestId, xhr.status === 403 ? 'Aktifkan lokasi perangkat untuk memperbarui posisi Anda' : (response.message || 'Gagal memperbarui lokasi perangkat'), true);
+						} else {
+							setTrackingStatus(requestId, response.message || 'Gagal mengirim lokasi', true);
+						}
 						if (xhr.status === 400 || xhr.status === 403 || xhr.status === 404 || xhr.status === 405) {
 							stopTracking(requestId);
 						}
@@ -1794,7 +1846,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 
 			ns.startNakesVisitTracking = function(requestId) {
 				if (!navigator.geolocation) {
-					setTrackingStatus(requestId, 'Izin lokasi ditolak', true);
+					setTrackingStatus(requestId, 'Lokasi perangkat belum aktif', true);
 					return;
 				}
 
@@ -1809,7 +1861,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						postVisitLocation(requestId, position);
 					},
 					function(error) {
-						const message = error && error.code === 1 ? 'Izin lokasi ditolak' : 'Gagal mengirim lokasi';
+						const message = error && error.code === 1 ? 'Aktifkan lokasi perangkat untuk memperbarui posisi Anda' : 'Lokasi perangkat belum aktif';
 						setTrackingStatus(requestId, message, true);
 						stopTracking(requestId);
 					}, {
