@@ -183,10 +183,11 @@ class Home extends MX_Controller
 	public function visit_location()
 	{
 		$this->output->set_content_type('application/json');
+		$default_route = function_exists('doclinc_visit_route_pending_payload') ? doclinc_visit_route_pending_payload() : array();
 		if ($this->input->method(TRUE) !== 'GET') {
 			$this->output
 				->set_status_header(405)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan', 'route' => $default_route]));
 			return;
 		}
 
@@ -196,13 +197,13 @@ class Home extends MX_Controller
 		if ($request_id < 1) {
 			$this->output
 				->set_status_header(400)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Data request tidak valid']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Data request tidak valid', 'route' => $default_route]));
 			return;
 		}
 		if ($role !== 'warga') {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route]));
 			return;
 		}
 
@@ -210,13 +211,13 @@ class Home extends MX_Controller
 		if (!$request) {
 			$this->output
 				->set_status_header(404)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan', 'route' => $default_route]));
 			return;
 		}
 		if (!doclinc_can_view_visit_location($request_id, $user_id, $role)) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route]));
 			return;
 		}
 
@@ -224,7 +225,7 @@ class Home extends MX_Controller
 		if (!$row) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route]));
 			return;
 		}
 
@@ -243,7 +244,7 @@ class Home extends MX_Controller
 			'visit_arrived_at' => isset($row->visit_arrived_at) ? $row->visit_arrived_at : null,
 			'visit_in_service_at' => isset($row->visit_in_service_at) ? $row->visit_in_service_at : null,
 			'visit_completed_at' => isset($row->visit_completed_at) ? $row->visit_completed_at : null,
-			'route' => function_exists('doclinc_visit_route_pending_payload') ? doclinc_visit_route_pending_payload() : array(),
+			'route' => $default_route,
 		];
 
 		$patient_latitude = null;

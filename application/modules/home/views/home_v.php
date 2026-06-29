@@ -1286,9 +1286,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				const label = response && response.visit_status_label ? response.visit_status_label : '';
 				const mode = response && response.consultation_mode_label ? response.consultation_mode_label : '';
 				const route = response && response.route ? response.route : {};
-				const distance = route && route.distance_text ? route.distance_text : '';
-				const eta = route && route.eta_text ? route.eta_text : '';
-				const routeText = distance || eta ? 'Jarak: ' + (distance || 'Menghitung...') + ' · ETA: ' + (eta || 'Menghitung...') : '';
+				const distance = route && route.distance_text ? route.distance_text : 'Menghitung...';
+				const eta = route && route.eta_text ? route.eta_text : 'Menghitung...';
+				const routeText = 'Jarak: ' + distance + ' · ETA: ' + eta;
 				const parts = [];
 				if (label) parts.push(label);
 				if (mode) parts.push(mode);

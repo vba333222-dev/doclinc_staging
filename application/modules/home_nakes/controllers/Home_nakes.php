@@ -7,6 +7,7 @@ class Home_nakes extends MX_Controller
 		parent::__construct();
 		$this->load->model('Home_nakes_m');
 		$this->load->helper('request_authz');
+		$this->load->helper('visit_routing');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			if (in_array($this->router->fetch_method(), array('update_visit_location', 'update_visit_status'), true)) {
@@ -276,9 +277,29 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
+		$route = doclinc_visit_route_pending_payload();
+		$patient_latitude = null;
+		$patient_longitude = null;
+		if (isset($request->patient_latitude) && $this->is_valid_latitude($request->patient_latitude) && isset($request->patient_longitude) && $this->is_valid_longitude($request->patient_longitude)) {
+			$patient_latitude = (float) $request->patient_latitude;
+			$patient_longitude = (float) $request->patient_longitude;
+		} elseif (isset($request->lattitude) && $this->is_valid_latitude($request->lattitude) && isset($request->longitude) && $this->is_valid_longitude($request->longitude)) {
+			$patient_latitude = (float) $request->lattitude;
+			$patient_longitude = (float) $request->longitude;
+		}
+		if ($patient_latitude !== null && $patient_longitude !== null) {
+			$route = doclinc_visit_route_payload(
+				(float) $latitude,
+				(float) $longitude,
+				$patient_latitude,
+				$patient_longitude
+			);
+		}
+
 		$this->output->set_output(json_encode([
 			'status' => 'success',
-			'message' => 'Lokasi nakes diperbarui'
+			'message' => 'Lokasi nakes diperbarui',
+			'route' => $route
 		]));
 	}
 	public function update_visit_status()

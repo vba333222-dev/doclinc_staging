@@ -558,8 +558,22 @@ $config['firebase_enabled'] = filter_var(getenv('FIREBASE_ENABLED') ?: false, FI
 $config['legacy_superapp_url'] = getenv('LEGACY_SUPERAPP_URL') ?: '';
 $config['map_provider'] = getenv('MAP_PROVIDER') ?: 'none';
 $config['mapbox_public_token'] = getenv('MAPBOX_PUBLIC_TOKEN') ?: '';
-$config['routing_provider'] = getenv('ROUTING_PROVIDER') ?: 'none';
-$config['valhalla_base_url'] = getenv('VALHALLA_BASE_URL') ?: '';
-$config['routing_timeout_seconds'] = getenv('ROUTING_TIMEOUT_SECONDS') ?: 3;
+$routing_provider_env = getenv('ROUTING_PROVIDER');
+if ($routing_provider_env === false || $routing_provider_env === '') {
+	$routing_provider_env = isset($_SERVER['ROUTING_PROVIDER']) ? $_SERVER['ROUTING_PROVIDER'] : '';
+}
+$config['routing_provider'] = $routing_provider_env !== '' ? $routing_provider_env : 'none';
+
+$valhalla_base_url_env = getenv('VALHALLA_BASE_URL');
+if ($valhalla_base_url_env === false || $valhalla_base_url_env === '') {
+	$valhalla_base_url_env = isset($_SERVER['VALHALLA_BASE_URL']) ? $_SERVER['VALHALLA_BASE_URL'] : '';
+}
+$config['valhalla_base_url'] = $valhalla_base_url_env !== '' ? $valhalla_base_url_env : '';
+
+$routing_timeout_env = getenv('ROUTING_TIMEOUT_SECONDS');
+if ($routing_timeout_env === false || $routing_timeout_env === '') {
+	$routing_timeout_env = isset($_SERVER['ROUTING_TIMEOUT_SECONDS']) ? $_SERVER['ROUTING_TIMEOUT_SECONDS'] : '';
+}
+$config['routing_timeout_seconds'] = $routing_timeout_env !== '' ? $routing_timeout_env : 3;
 
 $config['api_access_token'] = getenv('API_ACCESS_TOKEN') ?: '';

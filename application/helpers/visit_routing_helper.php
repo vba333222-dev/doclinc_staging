@@ -8,18 +8,17 @@ if (!function_exists('doclinc_visit_route_payload')) {
 			return doclinc_visit_route_pending_payload();
 		}
 
-		$CI = &get_instance();
-		$provider = strtolower(trim((string) (getenv('ROUTING_PROVIDER') ?: $CI->config->item('routing_provider'))));
+		$provider = strtolower(trim((string) doclinc_visit_route_config_value('ROUTING_PROVIDER', 'routing_provider', 'none')));
 		if ($provider !== 'valhalla') {
 			return doclinc_visit_route_pending_payload();
 		}
 
-		$base_url = trim((string) (getenv('VALHALLA_BASE_URL') ?: $CI->config->item('valhalla_base_url')));
+		$base_url = trim((string) doclinc_visit_route_config_value('VALHALLA_BASE_URL', 'valhalla_base_url', ''));
 		if ($base_url === '') {
 			return doclinc_visit_route_pending_payload();
 		}
 
-		$timeout = getenv('ROUTING_TIMEOUT_SECONDS') ?: $CI->config->item('routing_timeout_seconds');
+		$timeout = doclinc_visit_route_config_value('ROUTING_TIMEOUT_SECONDS', 'routing_timeout_seconds', 3);
 		$timeout = is_numeric($timeout) ? max(1, min(10, (int) $timeout)) : 3;
 		$response = doclinc_visit_route_valhalla_request($base_url, array(
 			'locations' => array(
@@ -55,6 +54,24 @@ if (!function_exists('doclinc_visit_route_payload')) {
 			'provider' => 'valhalla',
 			'calculated_at' => date('Y-m-d H:i:s'),
 		);
+	}
+}
+
+if (!function_exists('doclinc_visit_route_config_value')) {
+	function doclinc_visit_route_config_value($env_key, $config_key, $default)
+	{
+		$value = getenv($env_key);
+		if ($value !== false && $value !== '') {
+			return $value;
+		}
+
+		if (isset($_SERVER[$env_key]) && $_SERVER[$env_key] !== '') {
+			return $_SERVER[$env_key];
+		}
+
+		$CI = &get_instance();
+		$config_value = $CI->config->item($config_key);
+		return $config_value !== null && $config_value !== '' ? $config_value : $default;
 	}
 }
 
