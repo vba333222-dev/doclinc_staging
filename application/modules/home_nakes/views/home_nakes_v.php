@@ -141,34 +141,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	</div>
 	<div class="content-wrapper dl-shell" id="content-wrapper">
 		<div class="contents">
-			<div class="hero bg-success p-3 overflow-hidden dl-appbar dl-nakes-appbar">
-				<div class="dl-nakes-appbar-top">
-					<a href="<?= html_escape($legacy_superapp_url); ?>" class="dl-nakes-icon-btn" aria-label="Kembali">
-						<i class="fas fa-chevron-left"></i>
-					</a>
-					<div class="dl-nakes-header-profile">
-						<img src="<?= html_escape(doclinc_safe_profile_image_src($profile['foto'] ?? '')); ?>" alt="Foto Profil">
-						<div class="min-w-0">
-							<span>Selamat bertugas</span>
-							<strong><?= html_escape($nakes_name); ?></strong>
-							<small><?= html_escape($nakes_age); ?> · Nakes aktif</small>
-						</div>
-					</div>
-					<a class="dl-nakes-icon-btn position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif" aria-label="Notifikasi">
-						<i class="bi bi-bell-fill"></i>
-						<span class="notify-number" id="badgeNotif">9+</span>
-					</a>
-				</div>
-				<div class="dl-nakes-location-pill">
-					<i class="fas fa-map-marker-alt"></i>
-					<span id="address_label"></span>
-				</div>
-				<input type="hidden" id="id_user" value="<?= html_escape($this->session->userdata('id')); ?>">
-				<input type="hidden" id="address" placeholder="Latitude">
-				<input type="hidden" id="latitude" placeholder="Latitude">
-				<input type="hidden" id="longitude" placeholder="Longitude">
-				<div id="map"></div>
-			</div>
+			<?php $this->load->view('partials/nakes_appbar_v', get_defined_vars()); ?>
 			<div class="position-relative">
 				<?php $this->load->view('partials/nakes_dashboard_v', get_defined_vars()); ?>
 				<?php $this->load->view('partials/nakes_requests_v', get_defined_vars()); ?>
