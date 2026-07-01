@@ -1,0 +1,918 @@
+		.content {
+			display: none;
+			padding: 15px;
+		}
+
+		.content.active {
+			display: block;
+		}
+
+		.card-header {
+			background-color: #09AD74;
+			color: white;
+		}
+
+		.history-result-card {
+			border: 0;
+			border-radius: 20px;
+			overflow: hidden;
+			background: #fff;
+		}
+
+		.history-result-card .card-header {
+			background: #fff;
+			color: #333;
+			border-bottom: 1px solid #e8f3ee;
+			padding: 14px 16px;
+		}
+
+		.history-request-id {
+			color: #379A69;
+			font-weight: 700;
+			font-size: 13px;
+		}
+
+		.history-meta {
+			color: #6c757d;
+			font-size: 12px;
+			line-height: 1.5;
+		}
+
+		.history-status-badge {
+			background: #dff4ec;
+			color: #379A69;
+			border: 1px solid rgba(55, 154, 105, 0.24);
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+			padding: 6px 10px;
+		}
+
+		.history-section {
+			border: 1px solid #e8f3ee;
+			border-radius: 16px;
+			padding: 13px;
+			margin-bottom: 12px;
+			background: #fff;
+		}
+
+		.history-section-title {
+			color: #379A69;
+			font-weight: 700;
+			font-size: 13px;
+			margin-bottom: 8px;
+		}
+
+		.history-result-label,
+		.history-complaint-label {
+			display: block;
+			color: #6c757d;
+			font-size: 12px;
+			font-weight: 700;
+			margin-bottom: 2px;
+		}
+
+		.history-result-value,
+		.history-complaint-value,
+		.history-free-text {
+			color: #333;
+			font-size: 14px;
+			line-height: 1.5;
+			word-break: break-word;
+		}
+
+		.history-complaint-heading {
+			color: #379A69;
+			font-weight: 700;
+			font-size: 14px;
+			margin: 10px 0 6px;
+		}
+
+		.history-complaint-heading:first-child {
+			margin-top: 0;
+		}
+
+		.history-complaint-row,
+		.history-result-row {
+			padding: 8px 0;
+			border-bottom: 1px solid #f0f0f0;
+		}
+
+		.history-complaint-row:last-child,
+		.history-result-row:last-child {
+			border-bottom: 0;
+			padding-bottom: 0;
+		}
+
+		.history-empty-text {
+			color: #6c757d;
+			font-size: 13px;
+		}
+
+		#offcanvasMapTujuan .offcanvas-body {
+			background: #eef5f2;
+		}
+
+		#maps {
+			min-height: 55vh;
+			background: #eef5f2;
+		}
+
+		#nakesVisitMapCanvas {
+			min-height: inherit;
+		}
+
+		.visit-map-toolbar {
+			position: absolute;
+			top: 16px;
+			right: 14px;
+			z-index: 1000;
+			display: flex;
+			gap: 8px;
+		}
+
+		.visit-map-toolbar .btn {
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 800;
+			padding: 8px 12px;
+			box-shadow: 0 8px 24px rgba(15, 66, 42, 0.16);
+		}
+
+		.visit-route-card {
+			position: absolute;
+			left: 14px;
+			right: 14px;
+			bottom: 16px;
+			z-index: 1000;
+			border: 1px solid #d8eee5;
+			border-radius: 16px;
+			background: rgba(255, 255, 255, 0.96);
+			box-shadow: 0 16px 32px rgba(15, 66, 42, 0.18);
+			padding: 14px;
+		}
+
+		.visit-route-card-title {
+			color: #1f513c;
+			font-size: 15px;
+			font-weight: 800;
+			margin-bottom: 8px;
+		}
+
+		.visit-route-card-row {
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+			color: #5d6b66;
+			font-size: 12px;
+			line-height: 1.5;
+			padding: 2px 0;
+		}
+
+		.visit-route-card-row strong {
+			color: #1f513c;
+			text-align: right;
+		}
+
+		.visit-route-status {
+			display: inline-flex;
+			align-items: center;
+			border-radius: 999px;
+			background: #e5f7ef;
+			color: #087a52;
+			font-size: 12px;
+			font-weight: 800;
+			padding: 5px 10px;
+			white-space: nowrap;
+		}
+
+		.visit-route-provider-note {
+			color: #6c757d;
+			font-size: 11px;
+			line-height: 1.35;
+		}
+
+		@media (max-width: 575.98px) {
+			#maps {
+				min-height: 70vh;
+			}
+
+			.visit-map-toolbar {
+				left: 14px;
+				right: 14px;
+				justify-content: flex-end;
+			}
+		}
+
+		.header {
+			background-color: #09AD74;
+			color: white;
+			padding: 15px;
+			text-align: center;
+			font-size: 1.5rem;
+			font-weight: bold;
+		}
+
+		/* Style untuk preloader */
+		#preloader {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: #09AD74;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 9999;
+			font-family: Arial, sans-serif;
+			color: white;
+		}
+
+		/* Style untuk konten utama */
+		#content-wrapper,
+		#nav-bottom-wrapper {
+			display: none;
+		}
+
+		.article-list {
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
+		}
+
+		.article {
+			display: flex;
+			flex-direction: column;
+			background-color: white;
+			border-radius: 10px;
+			overflow: hidden;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		.article img {
+			width: 100%;
+			height: auto;
+		}
+
+		.article-content {
+			padding: 15px;
+		}
+
+		.article-title {
+			font-size: 18px;
+			font-weight: bold;
+			margin: 0 0 10px;
+		}
+
+		.article-author {
+			font-size: 14px;
+			color: gray;
+			margin-bottom: 10px;
+		}
+
+		.article-link {
+			text-decoration: none;
+			color: #3498db;
+		}
+
+		/* Mobile responsive */
+		@media(min-width: 768px) {
+			.article {
+				flex-direction: row;
+				max-width: 600px;
+				margin: auto;
+			}
+
+			.article img {
+				width: 150px;
+				height: 150px;
+				object-fit: cover;
+			}
+
+			.article-content {
+				padding: 15px;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+			}
+
+			.article-title {
+				font-size: 20px;
+			}
+
+			.article-author {
+				font-size: 16px;
+			}
+		}
+
+		.chat-box {
+			flex: 1;
+			overflow-y: auto;
+			padding: 15px;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			background-color: #f9f9f9;
+		}
+
+		#chat-box {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+			height: 750px;
+			overflow-y: auto;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			padding: 10px;
+			background: #f9f9f9;
+		}
+
+		/* Base message styles */
+		.message {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			position: relative;
+			padding: 8px 12px;
+			margin: 5px 0;
+			border-radius: 8px;
+			font-size: 14px;
+			line-height: 1.5;
+			max-width: 65%;
+			word-wrap: break-word;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+		}
+
+		/* Right (current user) message styling */
+		.message-right {
+			background: #dcf8c6;
+			/* WhatsApp green bubble */
+			align-self: flex-end;
+			text-align: left;
+			border-top-right-radius: 0px;
+		}
+
+		/* Left (other user) message styling */
+		.message-left {
+			background: #ffffff;
+			/* White bubble */
+			align-self: flex-start;
+			text-align: left;
+			border-top-left-radius: 0px;
+		}
+
+		/* Text and timestamp container */
+		.message-content {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-end;
+		}
+
+		/* Message text */
+		.message-text {
+			flex-grow: 1;
+			font-size: 14px;
+			color: #000000;
+			word-break: break-word;
+		}
+
+		/* Timestamp styling */
+		.timestamp {
+			margin-left: 10px;
+			font-size: 10px;
+			color: #808080;
+			white-space: nowrap;
+		}
+
+		.message-input {
+			display: flex;
+			align-items: center;
+			border-top: 1px solid #ddd;
+			padding: 10px;
+			background-color: #fff;
+		}
+
+		.message-input input {
+			flex: 1;
+			border: none;
+			border-radius: 5px;
+			padding: 10px;
+		}
+
+		.message-input button {
+			background-color: #09ad74;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			padding: 10px;
+			cursor: pointer;
+		}
+
+
+		.dl-nakes-dashboard {
+			background: #f4f8f6 !important;
+			font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			color: #183c2f;
+		}
+
+		.dl-nakes-dashboard *,
+		.dl-nakes-dashboard *::before,
+		.dl-nakes-dashboard *::after {
+			box-sizing: border-box;
+		}
+
+		.dl-nakes-dashboard .dl-shell {
+			max-width: 480px;
+			margin: 0 auto;
+			background: #f4f8f6;
+			overflow-x: hidden;
+		}
+
+		.dl-nakes-dashboard .dl-shell>.contents {
+			padding-top: 0;
+			margin-bottom: 84px;
+		}
+
+		.dl-nakes-dashboard .content {
+			padding: 14px 14px 96px;
+		}
+
+		.dl-nakes-dashboard .min-w-0,
+		.dl-nakes-dashboard .flex-grow-1 {
+			min-width: 0;
+		}
+
+		.dl-nakes-appbar {
+			position: relative !important;
+			top: auto !important;
+			left: auto !important;
+			transform: none !important;
+			display: block !important;
+			width: 100%;
+			max-width: none;
+			min-height: 0;
+			padding: 12px 14px !important;
+			border-radius: 0;
+			background: #f7fffb !important;
+			color: #183c2f !important;
+			border-bottom: 1px solid #dcece5;
+			box-shadow: none;
+			overflow: visible !important;
+		}
+
+		.dl-nakes-appbar-top {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.dl-nakes-icon-btn {
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: #ffffff;
+			color: #087b55 !important;
+			text-decoration: none;
+			border: 1px solid #dcece5;
+			flex: 0 0 auto;
+		}
+
+		.dl-nakes-header-profile {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			min-width: 0;
+			flex: 1 1 auto;
+		}
+
+		.dl-nakes-header-profile img {
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
+			object-fit: cover;
+			flex: 0 0 auto;
+		}
+
+		.dl-nakes-header-profile span,
+		.dl-nakes-header-profile small {
+			display: block;
+			color: #6b7f76;
+			font-size: 11px;
+			line-height: 1.25;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.dl-nakes-header-profile strong {
+			display: block;
+			color: #183c2f;
+			font-size: 15px;
+			font-weight: 800;
+			line-height: 1.25;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.dl-nakes-icon-btn .notify-number {
+			position: absolute;
+			right: -2px;
+			top: -2px;
+			min-width: 17px;
+			height: 17px;
+			padding: 0 4px;
+			border-radius: 999px;
+			background: #ef4444;
+			color: #fff;
+			font-size: 9px;
+			font-weight: 800;
+			line-height: 17px;
+			text-align: center;
+		}
+
+		.dl-nakes-location-pill {
+			display: inline-flex;
+			align-items: center;
+			gap: 7px;
+			width: 100%;
+			margin-top: 10px;
+			padding: 8px 10px;
+			border-radius: 12px;
+			background: #ecf8f2;
+			color: #087b55;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.dl-nakes-location-pill span {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		#wave {
+			display: none;
+		}
+
+		.dl-dashboard-stack {
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+
+		.dl-nakes-card,
+		.dl-nakes-request-card {
+			width: 100%;
+			max-width: 100%;
+			border: 1px solid #dcece5 !important;
+			border-radius: 14px !important;
+			background: #fff;
+			box-shadow: 0 2px 8px rgba(24, 60, 47, .05) !important;
+			overflow: hidden;
+		}
+
+		.dl-device-card,
+		.dl-dashboard-section,
+		.dl-info-card {
+			padding: 12px;
+		}
+
+		.dl-device-row,
+		.dl-task-row,
+		.dl-latest-row {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			min-width: 0;
+		}
+
+		.dl-status-dot {
+			width: 9px;
+			height: 9px;
+			border-radius: 50%;
+			background: #09ad74;
+			box-shadow: 0 0 0 4px rgba(9, 173, 116, .14);
+			flex: 0 0 auto;
+		}
+
+		.dl-card-kicker {
+			font-size: 11px;
+			font-weight: 800;
+			letter-spacing: 0;
+			color: #087b55;
+		}
+
+		.dl-muted-copy,
+		.dl-task-meta,
+		.dl-latest-meta {
+			color: #6b7f76;
+			font-size: 12px;
+			line-height: 1.45;
+			overflow-wrap: break-word;
+		}
+
+		.dl-dashboard-stats {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 8px;
+		}
+
+		.dl-dashboard-stat {
+			padding: 12px 10px;
+			text-decoration: none;
+			color: #183c2f;
+		}
+
+		.dl-dashboard-stat span {
+			display: block;
+			color: #6b7f76;
+			font-size: 11px;
+			font-weight: 700;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.dl-dashboard-stat strong {
+			display: block;
+			font-size: 22px;
+			line-height: 1;
+			margin-top: 6px;
+			color: #087b55;
+		}
+
+		.dl-section-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			margin-bottom: 10px;
+		}
+
+		.dl-section-title {
+			font-size: 17px;
+			font-weight: 800;
+			color: #183c2f;
+			margin: 0;
+		}
+
+		.dl-nakes-link {
+			color: #087b55;
+			font-size: 12px;
+			font-weight: 700;
+			text-decoration: none;
+			white-space: nowrap;
+		}
+
+		.dl-task-avatar,
+		.dl-latest-badge {
+			width: 40px;
+			height: 40px;
+			border-radius: 12px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: #ecf8f2;
+			color: #087b55;
+			font-weight: 800;
+			flex: 0 0 auto;
+		}
+
+		.dl-task-title,
+		.dl-latest-name {
+			font-size: 14px;
+			font-weight: 800;
+			color: #183c2f;
+			line-height: 1.35;
+			margin: 0;
+			overflow-wrap: break-word;
+		}
+
+		.dl-soft-empty {
+			padding: 12px;
+			border-radius: 12px;
+			background: #f7fbf9;
+			border: 1px dashed #cfe4da;
+		}
+
+		.dl-info-card {
+			background: #f1fbf6;
+		}
+
+		.dl-nakes-page-header {
+			position: static;
+			margin: 0 0 12px;
+			padding: 0;
+			background: transparent;
+		}
+
+		.dl-header-count {
+			border-radius: 999px;
+			padding: 6px 10px;
+			background: #ecf8f2;
+			color: #087b55;
+			font-size: 12px;
+			font-weight: 800;
+			white-space: nowrap;
+		}
+
+		.dl-nakes-request-card {
+			margin-bottom: 12px;
+		}
+
+		.dl-nakes-request-card .card-header {
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+			padding: 12px;
+			background: #fff;
+			color: #183c2f;
+			border-bottom: 1px solid #eef4f1;
+		}
+
+		.dl-queue-badge {
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
+			display: inline-flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			background: #ecf8f2;
+			color: #087b55;
+			font-weight: 800;
+			flex: 0 0 auto;
+		}
+
+		.dl-queue-badge small {
+			font-size: 9px;
+			line-height: 1;
+			color: #6b7f76;
+		}
+
+		.dl-queue-badge span {
+			font-size: 17px;
+			line-height: 1;
+			margin-top: 2px;
+		}
+
+		.dl-request-title {
+			font-size: 15px;
+			font-weight: 800;
+			line-height: 1.35;
+			color: #183c2f;
+			overflow-wrap: break-word;
+		}
+
+		.dl-request-tags {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 5px;
+			margin-top: 6px;
+		}
+
+		.dl-request-tag {
+			border-radius: 999px;
+			background: #f1f7f4;
+			color: #5f756b;
+			font-size: 11px;
+			font-weight: 700;
+			line-height: 1.25;
+			padding: 4px 7px;
+			overflow-wrap: break-word;
+		}
+
+		.dl-badge {
+			border-radius: 999px;
+			background: #ecf8f2;
+			color: #087b55;
+			border: 1px solid #cfe4da;
+			font-size: 11px;
+			font-weight: 800;
+			padding: 5px 8px;
+			white-space: nowrap;
+			flex: 0 0 auto;
+		}
+
+		.dl-nakes-complaint-box {
+			padding: 12px;
+			margin-bottom: 12px;
+			border: 1px solid #e6efeb;
+			background: #f8fbfa;
+			border-radius: 12px;
+		}
+
+		.dl-nakes-complaint-box span {
+			display: block;
+			color: #6b7f76;
+			font-size: 12px;
+			font-weight: 800;
+			margin-bottom: 5px;
+		}
+
+		.dl-nakes-complaint-box p {
+			margin: 0;
+			color: #183c2f;
+			font-size: 13px;
+			line-height: 1.45;
+			overflow-wrap: break-word;
+		}
+
+		.dl-nakes-meta-list {
+			display: grid;
+			grid-template-columns: 1fr;
+			gap: 8px;
+		}
+
+		.dl-nakes-meta-list>div {
+			display: grid;
+			grid-template-columns: 88px minmax(0, 1fr);
+			gap: 8px;
+			padding: 0;
+			border: 0;
+			background: transparent;
+		}
+
+		.dl-nakes-meta-list i {
+			display: none;
+		}
+
+		.dl-nakes-meta-list span {
+			color: #6b7f76;
+			font-size: 12px;
+			font-weight: 800;
+			line-height: 1.4;
+		}
+
+		.dl-nakes-meta-list strong {
+			color: #183c2f;
+			font-size: 12px;
+			font-weight: 700;
+			line-height: 1.4;
+			overflow-wrap: break-word;
+		}
+
+		.dl-nakes-request-card .card-body,
+		.dl-nakes-request-card .card-footer {
+			padding: 12px;
+		}
+
+		.dl-nakes-request-card .card-footer {
+			background: #fff;
+			border-top: 1px solid #eef4f1;
+		}
+
+		.dl-nakes-actions {
+			display: grid !important;
+			grid-template-columns: 1fr;
+			gap: 8px !important;
+		}
+
+		.dl-nakes-actions .col {
+			width: 100%;
+			flex: 0 0 auto;
+		}
+
+		.dl-nakes-actions .btn,
+		.dl-nakes-request-card .card-footer .btn {
+			width: 100%;
+			min-height: 42px;
+			font-size: 13px;
+			font-weight: 800;
+			line-height: 1.25;
+			white-space: normal;
+		}
+
+		.dl-bottom-nav {
+			border: 1px solid #dcece5;
+			background: rgba(255, 255, 255, .96);
+		}
+
+		.dl-bottom-nav .menu-item {
+			color: #6b7f76;
+			text-decoration: none;
+			border-radius: 12px;
+			padding: 8px 4px;
+			font-weight: 700;
+		}
+
+		.dl-bottom-nav .menu-item.active {
+			background: #ecf8f2;
+			color: #087b55;
+		}
+
+		@media (min-width: 400px) {
+			.dl-nakes-actions {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
+			.dl-nakes-actions .col:first-child,
+			.dl-nakes-actions .col:last-child:nth-child(3) {
+				grid-column: 1 / -1;
+			}
+		}
