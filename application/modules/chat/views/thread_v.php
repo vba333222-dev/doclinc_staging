@@ -2,7 +2,14 @@
 $request_id = isset($request_id) ? (int) $request_id : 0;
 $can_send = !empty($can_send);
 $current_user_id = isset($current_user_id) ? (int) $current_user_id : 0;
+$current_role = isset($current_role) ? (string) $current_role : '';
 $request_status = isset($request->request_status) ? (string) $request->request_status : '';
+$is_nakes_role = in_array($current_role, array('dokter', 'nakes'), true);
+$can_start_call = $is_nakes_role
+	&& $request_status === 'Accepted'
+	&& function_exists('doclinc_request_is_handled_by_nakes')
+	&& doclinc_request_is_handled_by_nakes($request, $current_user_id);
+$call_token_url = base_url('home_nakes/livekit_token');
 $queue_code = doclinc_request_queue_code($request);
 $queue_display = 'No. Antrian: ' . $queue_code;
 if ($current_role !== 'dokter') {
@@ -346,6 +353,224 @@ if ($current_role === 'dokter') {
 			border: 1px solid #e5e5e5;
 		}
 
+		.chat-call-actions {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			flex: 0 0 auto;
+		}
+
+		.chat-call-button {
+			border: 1px solid rgba(67, 122, 19, 0.22);
+			background: #ffffff;
+			color: #315d0d;
+			min-height: 38px;
+			border-radius: 999px;
+			padding: 8px 12px;
+			font-size: 12px;
+			font-weight: 800;
+			cursor: pointer;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 7px;
+			box-shadow: 0 8px 18px rgba(49, 93, 13, 0.08);
+			white-space: nowrap;
+		}
+
+		.chat-call-button:hover,
+		.chat-call-button:focus-visible {
+			background: #eef8e8;
+			outline: 0;
+		}
+
+		.chat-call-icon {
+			font-size: 15px;
+			line-height: 1;
+		}
+
+		.doclinc-call-modal {
+			position: fixed;
+			inset: 0;
+			z-index: 40;
+			display: none;
+			align-items: flex-end;
+			justify-content: center;
+			background: rgba(17, 24, 39, 0.58);
+			padding: 16px;
+		}
+
+		.doclinc-call-modal.is-open {
+			display: flex;
+		}
+
+		.doclinc-call-panel {
+			width: min(100%, 414px);
+			max-height: min(92vh, 760px);
+			overflow: hidden;
+			border-radius: 28px 28px 18px 18px;
+			background: #101820;
+			color: #ffffff;
+			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+			display: flex;
+			flex-direction: column;
+		}
+
+		.doclinc-call-head {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 14px;
+			padding: 18px 18px 12px;
+		}
+
+		.doclinc-call-title {
+			margin: 0;
+			font-size: 18px;
+			font-weight: 800;
+		}
+
+		.doclinc-call-status {
+			margin-top: 4px;
+			color: rgba(255, 255, 255, 0.72);
+			font-size: 12px;
+			line-height: 16px;
+		}
+
+		.doclinc-call-status.is-error {
+			color: #fecaca;
+		}
+
+		.doclinc-call-close {
+			width: 38px;
+			height: 38px;
+			border-radius: 999px;
+			border: 1px solid rgba(255, 255, 255, 0.16);
+			background: rgba(255, 255, 255, 0.08);
+			color: #ffffff;
+			font-size: 22px;
+			line-height: 1;
+			cursor: pointer;
+		}
+
+		.doclinc-call-stage {
+			position: relative;
+			min-height: 330px;
+			background: radial-gradient(circle at top, #263445 0, #111827 54%, #0b1117 100%);
+			margin: 0 14px;
+			border-radius: 22px;
+			overflow: hidden;
+		}
+
+		.doclinc-call-remote {
+			position: absolute;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: rgba(255, 255, 255, 0.03);
+		}
+
+		.doclinc-call-remote video,
+		.doclinc-call-remote audio {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		.doclinc-call-empty {
+			max-width: 230px;
+			text-align: center;
+			color: rgba(255, 255, 255, 0.78);
+			font-size: 14px;
+			font-weight: 700;
+			line-height: 20px;
+			padding: 16px;
+		}
+
+		.doclinc-call-local {
+			position: absolute;
+			right: 14px;
+			bottom: 14px;
+			width: 96px;
+			height: 132px;
+			border-radius: 18px;
+			overflow: hidden;
+			background: #1f2937;
+			border: 2px solid rgba(255, 255, 255, 0.88);
+			box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+		}
+
+		.doclinc-call-local video {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		.doclinc-call-prejoin {
+			padding: 18px;
+			background: #ffffff;
+			color: #1f2937;
+		}
+
+		.doclinc-call-prejoin-title {
+			margin: 0 0 4px;
+			font-size: 15px;
+			font-weight: 800;
+		}
+
+		.doclinc-call-prejoin-text {
+			margin: 0 0 14px;
+			color: #6b7280;
+			font-size: 13px;
+			line-height: 18px;
+		}
+
+		.doclinc-call-join {
+			width: 100%;
+			min-height: 50px;
+			border: 0;
+			border-radius: 999px;
+			background: #437a13;
+			color: #ffffff;
+			font-weight: 800;
+			cursor: pointer;
+		}
+
+		.doclinc-call-controls {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 12px;
+			padding: 16px;
+			background: #101820;
+		}
+
+		.doclinc-call-control {
+			width: 52px;
+			height: 52px;
+			border-radius: 999px;
+			border: 1px solid rgba(255, 255, 255, 0.15);
+			background: rgba(255, 255, 255, 0.11);
+			color: #ffffff;
+			font-size: 18px;
+			cursor: pointer;
+		}
+
+		.doclinc-call-control.is-off {
+			background: rgba(255, 255, 255, 0.9);
+			color: #111827;
+		}
+
+		.doclinc-call-control.end-call {
+			background: #dc2626;
+			border-color: #dc2626;
+		}
+
+		.is-hidden {
+			display: none !important;
+		}
+
 		@media (max-width: 520px) {
 			.chat-shell {
 				max-width: none;
@@ -355,6 +580,24 @@ if ($current_role === 'dokter') {
 
 			.chat-bubble {
 				max-width: min(300px, calc(100vw - 114px));
+			}
+
+			.chat-profile {
+				height: auto;
+				min-height: 80px;
+				align-items: flex-start;
+			}
+
+			.chat-call-actions {
+				flex-direction: column;
+				align-items: stretch;
+				gap: 6px;
+			}
+
+			.chat-call-button {
+				min-height: 36px;
+				padding: 7px 10px;
+				font-size: 11px;
 			}
 		}
 	</style>
@@ -376,6 +619,16 @@ if ($current_role === 'dokter') {
 				<p class="chat-subtitle"><?= html_escape($partner_subtitle); ?></p>
 				<div class="chat-status"><?= html_escape($status_label); ?> · <?= html_escape($queue_display); ?></div>
 			</div>
+			<?php if ($can_start_call) : ?>
+				<div class="chat-call-actions" aria-label="Aksi panggilan">
+					<button type="button" class="chat-call-button doclinc-call-start" data-call-mode="audio" data-request-id="<?= html_escape($request_id); ?>">
+						<span>Panggilan Suara</span>
+					</button>
+					<button type="button" class="chat-call-button doclinc-call-start" data-call-mode="video" data-request-id="<?= html_escape($request_id); ?>">
+						<span>Panggilan Video</span>
+					</button>
+				</div>
+			<?php endif; ?>
 		</section>
 
 		<main class="chat-list" id="chatMessages">
@@ -402,6 +655,441 @@ if ($current_role === 'dokter') {
 			<?php endif; ?>
 		</form>
 	</div>
+
+	<?php if ($can_start_call) : ?>
+		<div class="doclinc-call-modal" id="doclincCallModal" role="dialog" aria-modal="true" aria-labelledby="doclincCallTitle" aria-hidden="true">
+			<div class="doclinc-call-panel">
+				<div class="doclinc-call-head">
+					<div>
+						<h2 class="doclinc-call-title" id="doclincCallTitle">Panggilan Konsultasi</h2>
+						<div class="doclinc-call-status" id="doclincCallStatus">Siap bergabung</div>
+					</div>
+					<button type="button" class="doclinc-call-close" id="doclincCallClose" aria-label="Tutup">&times;</button>
+				</div>
+				<div class="doclinc-call-stage">
+					<div class="doclinc-call-remote" id="doclincCallRemote">
+						<div class="doclinc-call-empty" id="doclincCallEmpty">Menunggu lawan bicara bergabung</div>
+					</div>
+					<div class="doclinc-call-local is-hidden" id="doclincCallLocal"></div>
+				</div>
+				<div class="doclinc-call-prejoin" id="doclincCallPrejoin">
+					<p class="doclinc-call-prejoin-title">Panggilan untuk konsultasi aktif</p>
+					<p class="doclinc-call-prejoin-text">Pastikan kamera dan mikrofon perangkat dapat digunakan.</p>
+					<button type="button" class="doclinc-call-join" id="doclincCallJoin">Gabung Sekarang</button>
+				</div>
+				<div class="doclinc-call-controls is-hidden" id="doclincCallControls">
+					<button type="button" class="doclinc-call-control" id="doclincCallMic" title="Mikrofon" aria-label="Mikrofon">Mic</button>
+					<button type="button" class="doclinc-call-control" id="doclincCallCamera" title="Kamera" aria-label="Kamera">Cam</button>
+					<button type="button" class="doclinc-call-control" id="doclincCallSwitch" title="Ganti kamera" aria-label="Ganti kamera">Flip</button>
+					<button type="button" class="doclinc-call-control end-call" id="doclincCallEnd" title="Akhiri" aria-label="Akhiri">End</button>
+				</div>
+			</div>
+		</div>
+		<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+	<?php else : ?>
+		<?php /* TODO #16D: render incoming call invitation here after reliable call invite signaling exists. */ ?>
+	<?php endif; ?>
+
+	<?php if ($can_start_call) : ?>
+		<script>
+			(function() {
+				const tokenUrl = <?= json_encode($call_token_url); ?>;
+				const requestId = <?= json_encode($request_id); ?>;
+				const state = {
+					room: null,
+					mode: 'video',
+					micEnabled: true,
+					cameraEnabled: true,
+					facingMode: 'user',
+					localTracks: []
+				};
+				const elements = {};
+
+				function byId(id) {
+					return document.getElementById(id);
+				}
+
+				function sdk() {
+					return window.LivekitClient || window.LiveKitClient || window.livekitClient || null;
+				}
+
+				function cacheElements() {
+					elements.modal = byId('doclincCallModal');
+					elements.status = byId('doclincCallStatus');
+					elements.remote = byId('doclincCallRemote');
+					elements.empty = byId('doclincCallEmpty');
+					elements.local = byId('doclincCallLocal');
+					elements.prejoin = byId('doclincCallPrejoin');
+					elements.controls = byId('doclincCallControls');
+					elements.join = byId('doclincCallJoin');
+					elements.mic = byId('doclincCallMic');
+					elements.camera = byId('doclincCallCamera');
+					elements.switchCamera = byId('doclincCallSwitch');
+					elements.end = byId('doclincCallEnd');
+					elements.close = byId('doclincCallClose');
+				}
+
+				function setStatus(message, isError) {
+					if (!elements.status) {
+						return;
+					}
+					elements.status.textContent = message || '';
+					elements.status.classList.toggle('is-error', !!isError);
+				}
+
+				function setCallActive(active) {
+					if (elements.prejoin) {
+						elements.prejoin.classList.toggle('is-hidden', !!active);
+					}
+					if (elements.controls) {
+						elements.controls.classList.toggle('is-hidden', !active);
+					}
+				}
+
+				function clearNode(node) {
+					if (!node) {
+						return;
+					}
+					while (node.firstChild) {
+						node.removeChild(node.firstChild);
+					}
+				}
+
+				function updateEmptyState() {
+					if (!elements.empty || !elements.remote) {
+						return;
+					}
+					elements.empty.classList.toggle('is-hidden', !!elements.remote.querySelector('video,audio'));
+				}
+
+				function stopLocalTracks() {
+					state.localTracks.forEach(function(track) {
+						try {
+							track.stop();
+						} catch (error) {}
+					});
+					state.localTracks = [];
+					if (elements.local) {
+						clearNode(elements.local);
+						elements.local.classList.add('is-hidden');
+					}
+				}
+
+				function cleanupCall(message) {
+					if (state.room) {
+						try {
+							state.room.disconnect();
+						} catch (error) {}
+					}
+					state.room = null;
+					stopLocalTracks();
+					if (elements.remote) {
+						Array.prototype.slice.call(elements.remote.querySelectorAll('video,audio')).forEach(function(node) {
+							node.remove();
+						});
+					}
+					updateEmptyState();
+					setCallActive(false);
+					setStatus(message || 'Panggilan berakhir');
+				}
+
+				function openModal(mode) {
+					cacheElements();
+					if (!elements.modal) {
+						return;
+					}
+					cleanupCall('Siap bergabung');
+					state.mode = mode === 'audio' ? 'audio' : 'video';
+					state.micEnabled = true;
+					state.cameraEnabled = state.mode === 'video';
+					if (elements.camera) {
+						elements.camera.classList.toggle('is-off', state.mode !== 'video');
+					}
+					elements.modal.classList.add('is-open');
+					elements.modal.setAttribute('aria-hidden', 'false');
+				}
+
+				function closeModal() {
+					cleanupCall('Panggilan berakhir');
+					if (elements.modal) {
+						elements.modal.classList.remove('is-open');
+						elements.modal.setAttribute('aria-hidden', 'true');
+					}
+				}
+
+				function attachTrack(track, container) {
+					if (!track || !container || typeof track.attach !== 'function') {
+						return;
+					}
+					const element = track.attach();
+					if (!element) {
+						return;
+					}
+					element.autoplay = true;
+					element.playsInline = true;
+					container.appendChild(element);
+					updateEmptyState();
+				}
+
+				function detachTrack(track) {
+					if (!track || typeof track.detach !== 'function') {
+						return;
+					}
+					track.detach().forEach(function(element) {
+						if (element && element.parentNode) {
+							element.parentNode.removeChild(element);
+						}
+					});
+					updateEmptyState();
+				}
+
+				function wireRoom(room) {
+					const LiveKit = sdk();
+					const events = LiveKit && LiveKit.RoomEvent ? LiveKit.RoomEvent : {};
+					room.on(events.TrackSubscribed || 'trackSubscribed', function(track) {
+						attachTrack(track, elements.remote);
+					});
+					room.on(events.TrackUnsubscribed || 'trackUnsubscribed', detachTrack);
+					room.on(events.ParticipantConnected || 'participantConnected', function() {
+						setStatus('Terhubung');
+					});
+					room.on(events.ParticipantDisconnected || 'participantDisconnected', function() {
+						setStatus('Menunggu lawan bicara bergabung');
+						updateEmptyState();
+					});
+					room.on(events.Disconnected || 'disconnected', function() {
+						setStatus('Panggilan terputus');
+						setCallActive(false);
+					});
+					room.on(events.Reconnecting || 'reconnecting', function() {
+						setStatus('Menyambungkan ulang...');
+					});
+					room.on(events.Reconnected || 'reconnected', function() {
+						setStatus('Terhubung kembali');
+					});
+				}
+
+				function publishExistingParticipants(room) {
+					if (!room || !room.remoteParticipants) {
+						return;
+					}
+					room.remoteParticipants.forEach(function(participant) {
+						if (!participant || !participant.trackPublications) {
+							return;
+						}
+						participant.trackPublications.forEach(function(publication) {
+							if (publication && publication.track) {
+								attachTrack(publication.track, elements.remote);
+							}
+						});
+					});
+				}
+
+				function fetchToken() {
+					const formData = new FormData();
+					formData.append('request_id', requestId);
+					return fetch(tokenUrl, {
+						method: 'POST',
+						body: formData,
+						credentials: 'same-origin',
+						headers: {
+							'X-Requested-With': 'XMLHttpRequest'
+						}
+					}).then(function(response) {
+						return response.json().catch(function() {
+							return {};
+						});
+					});
+				}
+
+				function createLocalTrack(kind) {
+					const LiveKit = sdk();
+					if (!LiveKit) {
+						return Promise.reject(new Error('SDK panggilan belum tersedia'));
+					}
+					if (kind === 'audio') {
+						return LiveKit.createLocalAudioTrack();
+					}
+					return LiveKit.createLocalVideoTrack({
+						facingMode: state.facingMode
+					});
+				}
+
+				function publishTrack(track) {
+					if (!track || !state.room || !state.room.localParticipant) {
+						return Promise.resolve();
+					}
+					state.localTracks.push(track);
+					return Promise.resolve(state.room.localParticipant.publishTrack(track));
+				}
+
+				function showLocalPreview(track) {
+					if (!track || !elements.local || track.kind !== 'video') {
+						return;
+					}
+					clearNode(elements.local);
+					attachTrack(track, elements.local);
+					elements.local.classList.remove('is-hidden');
+				}
+
+				function joinCall() {
+					if (state.room) {
+						return;
+					}
+					const LiveKit = sdk();
+					if (!LiveKit || !LiveKit.Room) {
+						setStatus('SDK panggilan belum tersedia', true);
+						return;
+					}
+					if (!requestId) {
+						setStatus('Data konsultasi tidak valid', true);
+						return;
+					}
+					setStatus('Menyiapkan panggilan...');
+					fetchToken().then(function(response) {
+						if (!response || !response.success || !response.token || !response.ws_url) {
+							setStatus(response && response.message ? response.message : 'Panggilan belum dapat dimulai', true);
+							return null;
+						}
+						const room = new LiveKit.Room({
+							adaptiveStream: true,
+							dynacast: true
+						});
+						state.room = room;
+						wireRoom(room);
+						return room.connect(response.ws_url, response.token).then(function() {
+							setCallActive(true);
+							setStatus('Menunggu lawan bicara bergabung');
+							publishExistingParticipants(room);
+							return createLocalTrack('audio').then(publishTrack).catch(function() {
+								state.micEnabled = false;
+								if (elements.mic) {
+									elements.mic.classList.add('is-off');
+								}
+								setStatus('Mikrofon tidak tersedia');
+							});
+						}).then(function() {
+							if (state.mode !== 'video') {
+								return null;
+							}
+							return createLocalTrack('video').then(function(track) {
+								showLocalPreview(track);
+								return publishTrack(track);
+							}).catch(function() {
+								state.cameraEnabled = false;
+								if (elements.camera) {
+									elements.camera.classList.add('is-off');
+								}
+								setStatus('Kamera tidak tersedia, panggilan suara aktif');
+							});
+						});
+					}).catch(function(error) {
+						cleanupCall(error && error.message ? error.message : 'Gagal tersambung');
+					});
+				}
+
+				function findLocalTrack(kind) {
+					for (let index = 0; index < state.localTracks.length; index++) {
+						if (state.localTracks[index] && state.localTracks[index].kind === kind) {
+							return state.localTracks[index];
+						}
+					}
+					return null;
+				}
+
+				function toggleTrack(kind, button) {
+					const track = findLocalTrack(kind);
+					const enabledKey = kind === 'audio' ? 'micEnabled' : 'cameraEnabled';
+					if (track) {
+						state[enabledKey] = !state[enabledKey];
+						if (state[enabledKey] && typeof track.unmute === 'function') {
+							track.unmute();
+						} else if (!state[enabledKey] && typeof track.mute === 'function') {
+							track.mute();
+						}
+						if (button) {
+							button.classList.toggle('is-off', !state[enabledKey]);
+						}
+						return;
+					}
+					createLocalTrack(kind).then(function(newTrack) {
+						if (kind === 'video') {
+							showLocalPreview(newTrack);
+						}
+						state[enabledKey] = true;
+						if (button) {
+							button.classList.remove('is-off');
+						}
+						return publishTrack(newTrack);
+					}).catch(function() {
+						setStatus(kind === 'audio' ? 'Mikrofon tidak tersedia' : 'Kamera tidak tersedia', true);
+					});
+				}
+
+				function switchCamera() {
+					const oldTrack = findLocalTrack('video');
+					if (!oldTrack || !state.room || !state.room.localParticipant) {
+						return;
+					}
+					state.facingMode = state.facingMode === 'user' ? 'environment' : 'user';
+					try {
+						state.room.localParticipant.unpublishTrack(oldTrack);
+					} catch (error) {}
+					state.localTracks = state.localTracks.filter(function(track) {
+						return track !== oldTrack;
+					});
+					try {
+						oldTrack.stop();
+					} catch (error) {}
+					createLocalTrack('video').then(function(track) {
+						showLocalPreview(track);
+						return publishTrack(track);
+					}).catch(function() {
+						setStatus('Tidak dapat mengganti kamera', true);
+					});
+				}
+
+				document.addEventListener('DOMContentLoaded', function() {
+					cacheElements();
+					document.querySelectorAll('.doclinc-call-start').forEach(function(button) {
+						button.addEventListener('click', function(event) {
+							event.preventDefault();
+							openModal(button.getAttribute('data-call-mode'));
+						});
+					});
+					if (elements.join) {
+						elements.join.addEventListener('click', joinCall);
+					}
+					if (elements.mic) {
+						elements.mic.addEventListener('click', function() {
+							toggleTrack('audio', elements.mic);
+						});
+					}
+					if (elements.camera) {
+						elements.camera.addEventListener('click', function() {
+							toggleTrack('video', elements.camera);
+						});
+					}
+					if (elements.switchCamera) {
+						elements.switchCamera.addEventListener('click', switchCamera);
+					}
+					if (elements.end) {
+						elements.end.addEventListener('click', closeModal);
+					}
+					if (elements.close) {
+						elements.close.addEventListener('click', closeModal);
+					}
+					if (elements.modal) {
+						elements.modal.addEventListener('click', function(event) {
+							if (event.target === elements.modal) {
+								closeModal();
+							}
+						});
+					}
+				});
+			})();
+		</script>
+	<?php endif; ?>
 
 	<script>
 		const requestId = <?= json_encode($request_id); ?>;
