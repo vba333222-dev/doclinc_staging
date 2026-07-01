@@ -96,7 +96,7 @@ if (!function_exists('doclinc_visit_route_valhalla_geometry')) {
 
 		$coordinates = array();
 		foreach ($response['trip']['legs'] as $leg) {
-			if (empty($leg['shape']) || !is_string($leg['shape'])) {
+			if (!isset($leg['shape']) || !is_string($leg['shape']) || trim($leg['shape']) === '') {
 				continue;
 			}
 
@@ -106,6 +106,9 @@ if (!function_exists('doclinc_visit_route_valhalla_geometry')) {
 			}
 
 			foreach ($leg_coordinates as $coordinate) {
+				if (count($coordinates) >= 1000) {
+					break 2;
+				}
 				$count = count($coordinates);
 				if ($count > 0 && $coordinates[$count - 1][0] === $coordinate[0] && $coordinates[$count - 1][1] === $coordinate[1]) {
 					continue;
@@ -115,7 +118,7 @@ if (!function_exists('doclinc_visit_route_valhalla_geometry')) {
 		}
 
 		return count($coordinates) > 1 ? array(
-			'type' => 'LineString',
+			'type' => 'polyline6',
 			'coordinates' => $coordinates,
 		) : null;
 	}
@@ -124,8 +127,12 @@ if (!function_exists('doclinc_visit_route_valhalla_geometry')) {
 if (!function_exists('doclinc_decode_valhalla_polyline6')) {
 	function doclinc_decode_valhalla_polyline6($encoded)
 	{
-		$encoded = (string) $encoded;
-		if ($encoded === '') {
+		if (!is_string($encoded)) {
+			return array();
+		}
+
+		$encoded = trim($encoded);
+		if ($encoded === '' || strlen($encoded) > 20000) {
 			return array();
 		}
 
@@ -137,6 +144,10 @@ if (!function_exists('doclinc_decode_valhalla_polyline6')) {
 		$precision = 1000000;
 
 		while ($index < $length) {
+			if (count($coordinates) >= 1000) {
+				return $coordinates;
+			}
+
 			$lat_change = doclinc_decode_valhalla_polyline_value($encoded, $index, $length);
 			if ($lat_change === null) {
 				return array();
@@ -154,7 +165,7 @@ if (!function_exists('doclinc_decode_valhalla_polyline6')) {
 				return array();
 			}
 
-			$coordinates[] = array($decoded_lng, $decoded_lat);
+			$coordinates[] = array($decoded_lat, $decoded_lng);
 		}
 
 		return $coordinates;
