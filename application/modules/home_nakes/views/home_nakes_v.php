@@ -537,480 +537,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			cursor: pointer;
 		}
 
+
 		.dl-nakes-dashboard {
-			background: #f3f8f5 !important;
+			background: #f4f8f6 !important;
 			font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-			color: #173b2d;
-		}
-
-		.dl-nakes-dashboard .content {
-			padding: 14px 14px 96px;
-		}
-
-		.dl-nakes-appbar {
-			position: relative;
-			border-radius: 0 0 30px 30px;
-			background: radial-gradient(circle at top left, rgba(159, 255, 219, .38), transparent 36%), linear-gradient(150deg, #087b55 0%, #0bae76 52%, #0a7357 100%) !important;
-			min-height: 246px;
-			box-shadow: 0 20px 45px rgba(8, 106, 75, .24);
-		}
-
-		.dl-nakes-appbar-top {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 12px;
-			margin-bottom: 18px;
-		}
-
-		.dl-nakes-icon-btn {
-			width: 42px;
-			height: 42px;
-			border-radius: 16px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: rgba(255, 255, 255, .16);
-			color: #fff;
-			text-decoration: none;
-			border: 1px solid rgba(255, 255, 255, .2);
-			backdrop-filter: blur(10px);
-		}
-
-		.dl-nakes-header-title {
-			min-width: 0;
-			flex: 1;
-		}
-
-		.dl-nakes-header-title span {
-			display: block;
-			font-size: 12px;
-			font-weight: 800;
-			letter-spacing: .08em;
-			text-transform: uppercase;
-			color: rgba(255, 255, 255, .76);
-		}
-
-		.dl-nakes-header-title strong {
-			display: block;
-			font-size: 17px;
-			line-height: 1.2;
-			color: #fff;
-		}
-
-		.dl-nakes-profile-card {
-			display: flex;
-			align-items: center;
-			gap: 14px;
-			padding: 15px;
-			border-radius: 24px;
-			background: rgba(255, 255, 255, .14);
-			border: 1px solid rgba(255, 255, 255, .2);
-			color: #fff;
-			backdrop-filter: blur(14px);
-		}
-
-		.dl-nakes-profile-card img {
-			width: 66px;
-			height: 66px;
-			border-radius: 22px;
-			object-fit: cover;
-			border: 3px solid rgba(255, 255, 255, .42);
-		}
-
-		.dl-nakes-profile-card small,
-		.dl-nakes-profile-card p {
-			color: rgba(255, 255, 255, .82);
-		}
-
-		.dl-nakes-profile-card h3 {
-			font-size: 20px;
-			font-weight: 800;
-			line-height: 1.15;
-			margin: 2px 0 4px;
-			word-break: break-word;
-		}
-
-		.dl-nakes-location-pill {
-			display: inline-flex;
-			align-items: center;
-			gap: 7px;
-			max-width: 100%;
-			margin-top: 12px;
-			padding: 8px 11px;
-			border-radius: 999px;
-			background: rgba(255, 255, 255, .14);
-			color: rgba(255, 255, 255, .88);
-			font-size: 12px;
-			font-weight: 700;
-		}
-
-		.dl-nakes-location-pill span {
-			min-width: 0;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-
-		#wave {
-			display: none;
-		}
-
-		.dl-nakes-card {
-			background: #fff;
-			border: 1px solid #dfeee8;
-			border-radius: 18px;
-			box-shadow: 0 16px 34px rgba(23, 59, 45, .08);
-		}
-
-		.dl-dashboard-stack {
-			display: flex;
-			flex-direction: column;
-			gap: 14px;
-			margin-top: -28px;
-		}
-
-		.dl-device-card {
-			position: relative;
-			padding: 16px;
-			overflow: hidden;
-		}
-
-		.dl-device-card:after {
-			content: "";
-			position: absolute;
-			right: -26px;
-			top: -30px;
-			width: 108px;
-			height: 108px;
-			border-radius: 50%;
-			background: rgba(9, 173, 116, .1);
-		}
-
-		.dl-card-kicker {
-			font-size: 11px;
-			font-weight: 800;
-			letter-spacing: .08em;
-			text-transform: uppercase;
-			color: #0a8b60;
-		}
-
-		.dl-device-row,
-		.dl-task-row,
-		.dl-latest-row {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-		}
-
-		.dl-status-dot {
-			width: 10px;
-			height: 10px;
-			border-radius: 50%;
-			background: #13c783;
-			box-shadow: 0 0 0 6px rgba(19, 199, 131, .13);
-			flex: 0 0 auto;
-		}
-
-		.dl-dashboard-stats {
-			display: grid;
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-			gap: 10px;
-		}
-
-		.dl-dashboard-stat {
-			padding: 14px 12px;
-			text-decoration: none;
-			color: #173b2d;
-		}
-
-		.dl-dashboard-stat span {
-			display: block;
-			color: #6f857b;
-			font-size: 12px;
-			font-weight: 800;
-		}
-
-		.dl-dashboard-stat strong {
-			display: block;
-			font-size: 24px;
-			line-height: 1;
-			margin-top: 8px;
-			color: #087b55;
-		}
-
-		.dl-section-header {
-			align-items: center;
-		}
-
-		.dl-section-title {
-			font-size: 18px;
-			font-weight: 800;
-			color: #173b2d;
-			margin: 0;
-		}
-
-		.dl-dashboard-section {
-			padding: 16px;
-		}
-
-		.dl-task-avatar,
-		.dl-latest-badge {
-			width: 46px;
-			height: 46px;
-			border-radius: 16px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: #e8f8f1;
-			color: #087b55;
-			font-weight: 900;
-			flex: 0 0 auto;
-		}
-
-		.dl-task-title,
-		.dl-latest-name {
-			font-size: 15px;
-			font-weight: 800;
-			color: #173b2d;
-			margin: 0;
-		}
-
-		.dl-task-meta,
-		.dl-latest-meta,
-		.dl-muted-copy {
-			color: #6f857b;
-			font-size: 12px;
-			line-height: 1.45;
-		}
-
-		.dl-soft-empty {
-			padding: 18px;
-			border-radius: 16px;
-			background: #f7fbf9;
-			border: 1px dashed #cfe4da;
-		}
-
-		.dl-info-card {
-			padding: 16px;
-			background: linear-gradient(135deg, #e9fbf2, #f7fffb);
-			border-color: #ccecdf;
-		}
-
-		.dl-nakes-page-header {
-			position: sticky;
-			top: 0;
-			z-index: 9;
-			margin: -14px -14px 14px;
-			padding: 16px 14px 14px;
-			background: rgba(243, 248, 245, .96);
-			backdrop-filter: blur(12px);
-		}
-
-		.dl-header-count {
-			border-radius: 999px;
-			padding: 7px 11px;
-			background: #e6f6ef;
-			color: #087b55;
-			font-size: 12px;
-			font-weight: 900;
-		}
-
-		.dl-request-filter-row {
-			display: flex;
-			gap: 8px;
-			margin: 0 0 12px;
-			overflow-x: auto;
-			padding-bottom: 2px;
-		}
-
-		.dl-filter-chip {
-			border: 0;
-			border-radius: 999px;
-			padding: 8px 13px;
-			background: #fff;
-			color: #5f756b;
-			font-size: 12px;
-			font-weight: 800;
-			box-shadow: inset 0 0 0 1px #dfeee8;
-			white-space: nowrap;
-		}
-
-		.dl-filter-chip.is-active {
-			background: #087b55;
-			color: #fff;
-			box-shadow: none;
-		}
-
-		.dl-filter-chip:disabled {
-			opacity: .55;
-			cursor: default;
-		}
-
-		.dl-nakes-request-card {
-			border: 1px solid #dfeee8 !important;
-			border-radius: 18px !important;
-			overflow: hidden;
-			box-shadow: 0 16px 34px rgba(23, 59, 45, .08) !important;
-			margin-bottom: 14px;
-		}
-
-		.dl-nakes-request-card .card-header {
-			background: #fff;
-			color: #173b2d;
-			border-bottom: 1px solid #edf5f1;
-			padding: 14px;
-		}
-
-		.dl-queue-badge {
-			width: 50px;
-			height: 50px;
-			border-radius: 17px;
-			display: inline-flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			background: #e6f6ef;
-			color: #087b55;
-			font-weight: 900;
-			flex: 0 0 auto;
-		}
-
-		.dl-queue-badge small {
-			font-size: 9px;
-			letter-spacing: .08em;
-			text-transform: uppercase;
-			color: #57947a;
-			line-height: 1;
-		}
-
-		.dl-queue-badge span {
-			font-size: 20px;
-			line-height: 1;
-			margin-top: 3px;
-		}
-
-		.dl-request-title {
-			font-size: 16px;
-			font-weight: 900;
-			color: #173b2d;
-			line-height: 1.2;
-		}
-
-		.dl-request-tags {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 6px;
-			margin-top: 7px;
-		}
-
-		.dl-request-tag {
-			border-radius: 999px;
-			background: #f2f8f5;
-			color: #547064;
-			font-size: 11px;
-			font-weight: 800;
-			padding: 5px 8px;
-		}
-
-		.dl-badge {
-			border-radius: 999px;
-			background: #e9f8f2;
-			color: #087b55;
-			border: 1px solid #c9eadb;
-			font-size: 11px;
-			font-weight: 900;
-			padding: 6px 9px;
-			white-space: nowrap;
-		}
-
-		.dl-nakes-complaint-box {
-			border: 1px solid #e5f0ea;
-			background: #f8fbfa;
-			border-radius: 16px;
-		}
-
-		.dl-nakes-meta-list {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 10px;
-		}
-
-		.dl-nakes-meta-list>div {
-			min-width: 0;
-			border-radius: 14px;
-			background: #fff;
-			border: 1px solid #edf5f1;
-			padding: 10px;
-		}
-
-		.dl-nakes-meta-list i {
-			color: #0a8b60;
-		}
-
-		.dl-nakes-meta-list span {
-			display: block;
-			color: #6f857b;
-			font-size: 11px;
-			font-weight: 800;
-			margin: 5px 0 2px;
-		}
-
-		.dl-nakes-meta-list strong {
-			display: block;
-			color: #173b2d;
-			font-size: 12px;
-			line-height: 1.35;
-			word-break: break-word;
-		}
-
-		.dl-nakes-actions .btn,
-		.dl-nakes-request-card .card-footer .btn {
-			min-height: 42px;
-			font-weight: 800;
-			font-size: 12px;
-		}
-
-		.dl-bottom-nav {
-			border: 1px solid #dfeee8;
-			background: rgba(255, 255, 255, .96);
-			backdrop-filter: blur(14px);
-		}
-
-		.dl-bottom-nav .menu-item {
-			color: #789087;
-			text-decoration: none;
-			border-radius: 16px;
-			padding: 8px 4px;
-			font-weight: 800;
-		}
-
-		.dl-bottom-nav .menu-item.active {
-			background: #e6f6ef;
-			color: #087b55;
-		}
-
-		@media (max-width: 430px) {
-			.dl-dashboard-stats {
-				gap: 8px;
-			}
-
-			.dl-dashboard-stat {
-				padding: 12px 9px;
-			}
-
-			.dl-dashboard-stat strong {
-				font-size: 22px;
-			}
-
-			.dl-nakes-meta-list {
-				grid-template-columns: 1fr;
-			}
-
-			.dl-nakes-actions {
-				display: grid !important;
-				grid-template-columns: 1fr;
-			}
+			color: #183c2f;
 		}
 
 		.dl-nakes-dashboard *,
@@ -1019,21 +550,20 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			box-sizing: border-box;
 		}
 
-		.dl-nakes-dashboard .contents {
-			width: 100%;
-			max-width: 480px;
-			margin: 0 auto;
-			overflow-x: hidden;
-		}
-
 		.dl-nakes-dashboard .dl-shell {
 			max-width: 480px;
-			background: #f3f8f5;
+			margin: 0 auto;
+			background: #f4f8f6;
+			overflow-x: hidden;
 		}
 
 		.dl-nakes-dashboard .dl-shell>.contents {
 			padding-top: 0;
 			margin-bottom: 84px;
+		}
+
+		.dl-nakes-dashboard .content {
+			padding: 14px 14px 96px;
 		}
 
 		.dl-nakes-dashboard .min-w-0,
@@ -1050,16 +580,33 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			width: 100%;
 			max-width: none;
 			min-height: 0;
-			padding: 14px !important;
-			border-radius: 0 0 22px 22px;
-			box-shadow: 0 12px 28px rgba(8, 106, 75, .18);
+			padding: 12px 14px !important;
+			border-radius: 0;
+			background: #f7fffb !important;
+			color: #183c2f !important;
+			border-bottom: 1px solid #dcece5;
+			box-shadow: none;
 			overflow: visible !important;
-			z-index: 1;
 		}
 
 		.dl-nakes-appbar-top {
-			margin-bottom: 12px;
+			display: flex;
 			align-items: center;
+			gap: 10px;
+		}
+
+		.dl-nakes-icon-btn {
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: #ffffff;
+			color: #087b55 !important;
+			text-decoration: none;
+			border: 1px solid #dcece5;
+			flex: 0 0 auto;
 		}
 
 		.dl-nakes-header-profile {
@@ -1071,18 +618,17 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		}
 
 		.dl-nakes-header-profile img {
-			width: 46px;
-			height: 46px;
-			border-radius: 15px;
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
 			object-fit: cover;
-			border: 2px solid rgba(255, 255, 255, .42);
 			flex: 0 0 auto;
 		}
 
 		.dl-nakes-header-profile span,
 		.dl-nakes-header-profile small {
 			display: block;
-			color: rgba(255, 255, 255, .82);
+			color: #6b7f76;
 			font-size: 11px;
 			line-height: 1.25;
 			white-space: nowrap;
@@ -1092,9 +638,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 		.dl-nakes-header-profile strong {
 			display: block;
-			color: #fff;
+			color: #183c2f;
 			font-size: 15px;
-			font-weight: 900;
+			font-weight: 800;
 			line-height: 1.25;
 			white-space: nowrap;
 			overflow: hidden;
@@ -1112,62 +658,39 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			background: #ef4444;
 			color: #fff;
 			font-size: 9px;
-			font-weight: 900;
+			font-weight: 800;
 			line-height: 17px;
 			text-align: center;
 		}
 
-		.dl-nakes-header-title span,
-		.dl-nakes-header-title strong,
-		.dl-nakes-profile-card small,
-		.dl-nakes-profile-card h3,
-		.dl-nakes-profile-card p,
-		.dl-task-title,
-		.dl-task-meta,
-		.dl-latest-name,
-		.dl-latest-meta,
-		.dl-muted-copy,
-		.dl-request-title,
-		.dl-request-tag,
-		.dl-nakes-meta-list span,
-		.dl-nakes-meta-list strong {
-			word-break: normal;
-			overflow-wrap: break-word;
-			letter-spacing: 0;
-		}
-
-		.dl-nakes-header-title span,
-		.dl-nakes-header-title strong {
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-		}
-
-		.dl-nakes-profile-card {
-			padding: 12px;
-			border-radius: 18px;
-			align-items: center;
-		}
-
-		.dl-nakes-profile-card img {
-			width: 54px;
-			height: 54px;
-			border-radius: 16px;
-			flex: 0 0 auto;
-		}
-
-		.dl-nakes-profile-card h3 {
-			font-size: 17px;
-			white-space: normal;
-		}
-
 		.dl-nakes-location-pill {
+			display: inline-flex;
+			align-items: center;
+			gap: 7px;
 			width: 100%;
 			margin-top: 10px;
+			padding: 8px 10px;
+			border-radius: 12px;
+			background: #ecf8f2;
+			color: #087b55;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.dl-nakes-location-pill span {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		#wave {
+			display: none;
 		}
 
 		.dl-dashboard-stack {
-			margin-top: 0;
+			display: flex;
+			flex-direction: column;
 			gap: 12px;
 		}
 
@@ -1175,30 +698,139 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		.dl-nakes-request-card {
 			width: 100%;
 			max-width: 100%;
+			border: 1px solid #dcece5 !important;
+			border-radius: 14px !important;
+			background: #fff;
+			box-shadow: 0 2px 8px rgba(24, 60, 47, .05) !important;
+			overflow: hidden;
 		}
 
-		.dl-device-card:after {
-			display: none;
+		.dl-device-card,
+		.dl-dashboard-section,
+		.dl-info-card {
+			padding: 12px;
+		}
+
+		.dl-device-row,
+		.dl-task-row,
+		.dl-latest-row {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			min-width: 0;
+		}
+
+		.dl-status-dot {
+			width: 9px;
+			height: 9px;
+			border-radius: 50%;
+			background: #09ad74;
+			box-shadow: 0 0 0 4px rgba(9, 173, 116, .14);
+			flex: 0 0 auto;
+		}
+
+		.dl-card-kicker {
+			font-size: 11px;
+			font-weight: 800;
+			letter-spacing: 0;
+			color: #087b55;
+		}
+
+		.dl-muted-copy,
+		.dl-task-meta,
+		.dl-latest-meta {
+			color: #6b7f76;
+			font-size: 12px;
+			line-height: 1.45;
+			overflow-wrap: break-word;
 		}
 
 		.dl-dashboard-stats {
+			display: grid;
 			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 8px;
 		}
 
 		.dl-dashboard-stat {
-			min-width: 0;
 			padding: 12px 10px;
+			text-decoration: none;
+			color: #183c2f;
 		}
 
 		.dl-dashboard-stat span {
+			display: block;
+			color: #6b7f76;
 			font-size: 11px;
+			font-weight: 700;
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
 		}
 
 		.dl-dashboard-stat strong {
+			display: block;
 			font-size: 22px;
+			line-height: 1;
+			margin-top: 6px;
+			color: #087b55;
+		}
+
+		.dl-section-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			margin-bottom: 10px;
+		}
+
+		.dl-section-title {
+			font-size: 17px;
+			font-weight: 800;
+			color: #183c2f;
+			margin: 0;
+		}
+
+		.dl-nakes-link {
+			color: #087b55;
+			font-size: 12px;
+			font-weight: 700;
+			text-decoration: none;
+			white-space: nowrap;
+		}
+
+		.dl-task-avatar,
+		.dl-latest-badge {
+			width: 40px;
+			height: 40px;
+			border-radius: 12px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: #ecf8f2;
+			color: #087b55;
+			font-weight: 800;
+			flex: 0 0 auto;
+		}
+
+		.dl-task-title,
+		.dl-latest-name {
+			font-size: 14px;
+			font-weight: 800;
+			color: #183c2f;
+			line-height: 1.35;
+			margin: 0;
+			overflow-wrap: break-word;
+		}
+
+		.dl-soft-empty {
+			padding: 12px;
+			border-radius: 12px;
+			background: #f7fbf9;
+			border: 1px dashed #cfe4da;
+		}
+
+		.dl-info-card {
+			background: #f1fbf6;
 		}
 
 		.dl-nakes-page-header {
@@ -1206,74 +838,107 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			margin: 0 0 12px;
 			padding: 0;
 			background: transparent;
-			backdrop-filter: none;
-			gap: 10px;
-		}
-
-		.dl-nakes-page-header>div {
-			min-width: 0;
 		}
 
 		.dl-header-count {
-			flex: 0 0 auto;
+			border-radius: 999px;
+			padding: 6px 10px;
+			background: #ecf8f2;
+			color: #087b55;
+			font-size: 12px;
+			font-weight: 800;
 			white-space: nowrap;
 		}
 
-		.dl-request-filter-row {
-			flex-wrap: nowrap;
-			overflow-x: auto;
-			-webkit-overflow-scrolling: touch;
-		}
-
-		.dl-filter-chip {
-			flex: 0 0 auto;
+		.dl-nakes-request-card {
+			margin-bottom: 12px;
 		}
 
 		.dl-nakes-request-card .card-header {
-			gap: 10px !important;
-			align-items: flex-start !important;
-		}
-
-		.dl-nakes-request-card .card-header .flex-grow-1 {
-			min-width: 0;
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+			padding: 12px;
+			background: #fff;
+			color: #183c2f;
+			border-bottom: 1px solid #eef4f1;
 		}
 
 		.dl-queue-badge {
-			width: 44px;
-			height: 44px;
-			border-radius: 14px;
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
+			display: inline-flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			background: #ecf8f2;
+			color: #087b55;
+			font-weight: 800;
+			flex: 0 0 auto;
+		}
+
+		.dl-queue-badge small {
+			font-size: 9px;
+			line-height: 1;
+			color: #6b7f76;
 		}
 
 		.dl-queue-badge span {
-			font-size: 18px;
+			font-size: 17px;
+			line-height: 1;
+			margin-top: 2px;
 		}
 
 		.dl-request-title {
 			font-size: 15px;
-			line-height: 1.3;
+			font-weight: 800;
+			line-height: 1.35;
+			color: #183c2f;
+			overflow-wrap: break-word;
 		}
 
 		.dl-request-tags {
+			display: flex;
+			flex-wrap: wrap;
 			gap: 5px;
+			margin-top: 6px;
 		}
 
 		.dl-request-tag {
-			max-width: 100%;
+			border-radius: 999px;
+			background: #f1f7f4;
+			color: #5f756b;
+			font-size: 11px;
+			font-weight: 700;
 			line-height: 1.25;
+			padding: 4px 7px;
+			overflow-wrap: break-word;
 		}
 
 		.dl-badge {
+			border-radius: 999px;
+			background: #ecf8f2;
+			color: #087b55;
+			border: 1px solid #cfe4da;
+			font-size: 11px;
+			font-weight: 800;
+			padding: 5px 8px;
+			white-space: nowrap;
 			flex: 0 0 auto;
 		}
 
 		.dl-nakes-complaint-box {
 			padding: 12px;
 			margin-bottom: 12px;
+			border: 1px solid #e6efeb;
+			background: #f8fbfa;
+			border-radius: 12px;
 		}
 
 		.dl-nakes-complaint-box span {
 			display: block;
-			color: #6f857b;
+			color: #6b7f76;
 			font-size: 12px;
 			font-weight: 800;
 			margin-bottom: 5px;
@@ -1281,10 +946,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 		.dl-nakes-complaint-box p {
 			margin: 0;
-			color: #173b2d;
+			color: #183c2f;
 			font-size: 13px;
 			line-height: 1.45;
-			word-break: normal;
 			overflow-wrap: break-word;
 		}
 
@@ -1296,27 +960,40 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 		.dl-nakes-meta-list>div {
 			display: grid;
-			grid-template-columns: 24px 92px minmax(0, 1fr);
-			align-items: start;
+			grid-template-columns: 88px minmax(0, 1fr);
 			gap: 8px;
-			padding: 10px;
+			padding: 0;
+			border: 0;
+			background: transparent;
+		}
+
+		.dl-nakes-meta-list i {
+			display: none;
 		}
 
 		.dl-nakes-meta-list span {
-			margin: 0;
-			font-size: 11px;
-			line-height: 1.35;
+			color: #6b7f76;
+			font-size: 12px;
+			font-weight: 800;
+			line-height: 1.4;
 		}
 
 		.dl-nakes-meta-list strong {
+			color: #183c2f;
 			font-size: 12px;
+			font-weight: 700;
 			line-height: 1.4;
+			overflow-wrap: break-word;
+		}
+
+		.dl-nakes-request-card .card-body,
+		.dl-nakes-request-card .card-footer {
+			padding: 12px;
 		}
 
 		.dl-nakes-request-card .card-footer {
 			background: #fff;
-			border-top: 1px solid #edf5f1;
-			padding: 12px;
+			border-top: 1px solid #eef4f1;
 		}
 
 		.dl-nakes-actions {
@@ -1333,8 +1010,29 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		.dl-nakes-actions .btn,
 		.dl-nakes-request-card .card-footer .btn {
 			width: 100%;
-			white-space: normal;
+			min-height: 42px;
+			font-size: 13px;
+			font-weight: 800;
 			line-height: 1.25;
+			white-space: normal;
+		}
+
+		.dl-bottom-nav {
+			border: 1px solid #dcece5;
+			background: rgba(255, 255, 255, .96);
+		}
+
+		.dl-bottom-nav .menu-item {
+			color: #6b7f76;
+			text-decoration: none;
+			border-radius: 12px;
+			padding: 8px 4px;
+			font-weight: 700;
+		}
+
+		.dl-bottom-nav .menu-item.active {
+			background: #ecf8f2;
+			color: #087b55;
 		}
 
 		@media (min-width: 400px) {
@@ -1342,22 +1040,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
 
+			.dl-nakes-actions .col:first-child,
 			.dl-nakes-actions .col:last-child:nth-child(3) {
 				grid-column: 1 / -1;
-			}
-		}
-
-		@media (max-width: 390px) {
-			.dl-nakes-meta-list>div {
-				grid-template-columns: 22px minmax(0, 1fr);
-			}
-
-			.dl-nakes-meta-list span {
-				grid-column: 2;
-			}
-
-			.dl-nakes-meta-list strong {
-				grid-column: 2;
 			}
 		}
 	</style>
@@ -1403,22 +1088,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				<input type="hidden" id="longitude" placeholder="Longitude">
 				<div id="map"></div>
 			</div>
-			<svg id="wave" style="transform:rotate(180deg); transition: 0.3s" viewBox="0 0 1440 120" version="1.1" xmlns="http://www.w3.org/2000/svg">
-				<defs>
-					<linearGradient id="sw-gradient-0" x1="0" x2="0" y1="1" y2="0">
-						<stop stop-color="rgba(9, 173, 116, 1)" offset="0%"></stop>
-						<stop stop-color="rgba(140.457, 255, 215.189, 1)" offset="100%"></stop>
-					</linearGradient>
-				</defs>
-				<path style="transform:translate(0, 0px); opacity:1" fill="url(#sw-gradient-0)" d="M0,48L48,48C96,48,192,48,288,56C384,64,480,80,576,88C672,96,768,96,864,86C960,76,1056,56,1152,48C1248,40,1344,44,1440,42C1536,40,1632,32,1728,42C1824,52,1920,80,2016,78C2112,76,2208,44,2304,40C2400,36,2496,60,2592,76C2688,92,2784,100,2880,98C2976,96,3072,84,3168,74C3264,64,3360,56,3456,54C3552,52,3648,56,3744,54C3840,52,3936,44,4032,48C4128,52,4224,68,4320,64C4416,60,4512,36,4608,30C4704,24,4800,36,4896,44C4992,52,5088,56,5184,52C5280,48,5376,36,5472,44C5568,52,5664,80,5760,94C5856,108,5952,108,6048,98C6144,88,6240,68,6336,50C6432,32,6528,16,6624,18C6720,20,6816,40,6864,50L6912,60L6912,120L6864,120C6816,120,6720,120,6624,120C6528,120,6432,120,6336,120C6240,120,6144,120,6048,120C5952,120,5856,120,5760,120C5664,120,5568,120,5472,120C5376,120,5280,120,5184,120C5088,120,4992,120,4896,120C4800,120,4704,120,4608,120C4512,120,4416,120,4320,120C4224,120,4128,120,4032,120C3936,120,3840,120,3744,120C3648,120,3552,120,3456,120C3360,120,3264,120,3168,120C3072,120,2976,120,2880,120C2784,120,2688,120,2592,120C2496,120,2400,120,2304,120C2208,120,2112,120,2016,120C1920,120,1824,120,1728,120C1632,120,1536,120,1440,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
-				<defs>
-					<linearGradient id="sw-gradient-1" x1="0" x2="0" y1="1" y2="0">
-						<stop stop-color="rgba(9, 173, 116, 1)" offset="0%"></stop>
-						<stop stop-color="rgba(9, 173, 116, 1)" offset="100%"></stop>
-					</linearGradient>
-				</defs>
-				<path style="transform:translate(0, 50px); opacity:0.9" fill="url(#sw-gradient-1)" d="M0,60L48,54C96,48,192,36,288,28C384,20,480,16,576,24C672,32,768,52,864,62C960,72,1056,72,1152,64C1248,56,1344,40,1440,30C1536,20,1632,16,1728,30C1824,44,1920,76,2016,86C2112,96,2208,84,2304,68C2400,52,2496,32,2592,34C2688,36,2784,60,2880,68C2976,76,3072,68,3168,58C3264,48,3360,36,3456,26C3552,16,3648,8,3744,18C3840,28,3936,56,4032,68C4128,80,4224,76,4320,74C4416,72,4512,72,4608,72C4704,72,4800,72,4896,66C4992,60,5088,48,5184,44C5280,40,5376,44,5472,46C5568,48,5664,48,5760,46C5856,44,5952,40,6048,46C6144,52,6240,68,6336,72C6432,76,6528,68,6624,60C6720,52,6816,44,6864,40L6912,36L6912,120L6864,120C6816,120,6720,120,6624,120C6528,120,6432,120,6336,120C6240,120,6144,120,6048,120C5952,120,5856,120,5760,120C5664,120,5568,120,5472,120C5376,120,5280,120,5184,120C5088,120,4992,120,4896,120C4800,120,4704,120,4608,120C4512,120,4416,120,4320,120C4224,120,4128,120,4032,120C3936,120,3840,120,3744,120C3648,120,3552,120,3456,120C3360,120,3264,120,3168,120C3072,120,2976,120,2880,120C2784,120,2688,120,2592,120C2496,120,2400,120,2304,120C2208,120,2112,120,2016,120C1920,120,1824,120,1728,120C1632,120,1536,120,1440,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
-			</svg>
 			<div class="position-relative">
 				<div id="beranda" class="content active animate__animated animate__fadeInUp animate__faster">
 					<div class="dl-dashboard-stack">
@@ -1498,6 +1167,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 											<div class="dl-latest-meta">No. Antrian: <?= html_escape($latest_queue_code); ?></div>
 											<div class="dl-muted-copy mt-1"><?= html_escape(doclinc_nakes_short_text($latest_keluhan)); ?></div>
 										</div>
+										<a href="#req_konsul" class="btn btn-outline-success btn-sm rounded-pill fw-bold" onclick="showContent('req_konsul')">Lihat</a>
 									</div>
 							<?php endforeach;
 							endif; ?>
@@ -1521,11 +1191,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 							<h2 class="dl-section-title">Permintaan Masuk</h2>
 						</div>
 						<span class="dl-header-count"><?= html_escape((string) $nakes_pending_count); ?> menunggu</span>
-					</div>
-					<div class="dl-request-filter-row" aria-label="Filter permintaan">
-						<button type="button" class="dl-filter-chip is-active">Semua</button>
-						<button type="button" class="dl-filter-chip" disabled>Terdekat</button>
-						<button type="button" class="dl-filter-chip" disabled>Baru</button>
 					</div>
 					<div class="dl-nakes-request-list">
 						<?php
@@ -1603,16 +1268,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 										<div class="card-footer">
 											<div class="row g-2 dl-nakes-actions">
 												<div class="col d-grid">
-													<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
-														<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
-													</button>
-												</div>
-												<div class="col d-grid">
-													<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
-														<i class="fas fa-times-circle me-2"></i> Tolak
-													</button>
-												</div>
-												<div class="col d-grid">
 													<input type="hidden" id="id_request<?php echo $i; ?>" value="<?= html_escape((int) $x->request_id); ?>">
 													<button type="button" class="btn btn-success shadow-sm rounded-pill start-chat"
 														id="terimaKonsul<?php echo $i; ?>"
@@ -1623,6 +1278,16 @@ if (!function_exists('doclinc_nakes_short_text')) {
 														data-riwayat="<?= html_escape($riwayat); ?>"
 														data-keluhan="<?= html_escape($keluhan); ?>">
 														<i class="fa fa-comment-medical me-2"></i> Terima
+													</button>
+												</div>
+												<div class="col d-grid">
+													<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
+														<i class="fas fa-map-marker-alt me-2"></i> Lihat Lokasi
+													</button>
+												</div>
+												<div class="col d-grid">
+													<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
+														<i class="fas fa-times-circle me-2"></i> Tolak
 													</button>
 												</div>
 											</div>
