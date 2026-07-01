@@ -215,6 +215,31 @@ class Home extends MX_Controller
 				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
+		if ((string) $request->user_id !== (string) $user_id) {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route, 'arrival' => $default_arrival]));
+			return;
+		}
+		if ($request->request_status !== 'Accepted') {
+			$terminal_visit_status = isset($request->visit_status) && $request->visit_status !== null
+				? doclinc_normalize_visit_status($request->visit_status)
+				: '';
+			$terminal_visit_status = $terminal_visit_status !== '' ? $terminal_visit_status : 'not_started';
+			$this->output->set_output(json_encode(array(
+				'status' => 'inactive',
+				'success' => false,
+				'tracking_active' => false,
+				'message' => 'Tracking kunjungan sudah selesai.',
+				'request_id' => $request_id,
+				'request_status' => $request->request_status,
+				'visit_status' => $terminal_visit_status,
+				'visit_status_label' => doclinc_visit_status_label($terminal_visit_status),
+				'route' => $default_route,
+				'arrival' => $default_arrival,
+			)));
+			return;
+		}
 		if (!doclinc_can_view_visit_location($request_id, $user_id, $role)) {
 			$this->output
 				->set_status_header(403)
@@ -247,6 +272,7 @@ class Home extends MX_Controller
 			'visit_completed_at' => isset($row->visit_completed_at) ? $row->visit_completed_at : null,
 			'route' => $default_route,
 			'arrival' => $default_arrival,
+			'tracking_active' => true,
 		];
 
 		$patient_latitude = null;
@@ -306,6 +332,8 @@ class Home extends MX_Controller
 		if ($nakes_latitude === null || $nakes_longitude === null) {
 			$this->output->set_output(json_encode(array_merge([
 				'status' => 'pending',
+				'success' => true,
+				'tracking_active' => true,
 				'message' => 'Lokasi nakes belum tersedia',
 			], $visit_workflow, $location_payload)));
 			return;
@@ -313,6 +341,8 @@ class Home extends MX_Controller
 
 		$this->output->set_output(json_encode(array_merge([
 			'status' => 'success',
+			'success' => true,
+			'tracking_active' => true,
 			'message' => 'Lokasi nakes tersedia',
 		], $visit_workflow, $location_payload)));
 	}

@@ -1826,6 +1826,25 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				};
 			}
 
+			function clearNakesRouteLayers() {
+				if (mapState.leaflet && mapState.leafletRouteOutlineLine) {
+					mapState.leaflet.removeLayer(mapState.leafletRouteOutlineLine);
+					mapState.leafletRouteOutlineLine = null;
+				}
+				if (mapState.leaflet && mapState.leafletRouteLine) {
+					mapState.leaflet.removeLayer(mapState.leafletRouteLine);
+					mapState.leafletRouteLine = null;
+				}
+				if (mapState.googleRouteOutlineLine) {
+					mapState.googleRouteOutlineLine.setMap(null);
+					mapState.googleRouteOutlineLine = null;
+				}
+				if (mapState.googleRouteLine) {
+					mapState.googleRouteLine.setMap(null);
+					mapState.googleRouteLine = null;
+				}
+			}
+
 			function renderLeafletMap(patientLocation, nakesLocation, route, shouldFitBounds) {
 				const container = document.getElementById('nakesVisitMapCanvas') || document.getElementById('maps');
 				if (!container || !window.L) return false;
@@ -2042,6 +2061,15 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 							} catch (error) {}
 						}
 						if (response && response.status) {
+							if (response.tracking_active === false) {
+								stopTracking(requestId);
+								clearNakesRouteLayers();
+								setNakesArrivalNotice(requestId, null);
+								setRouteText(requestId, null);
+								setMapStatus(response.message || 'Tracking kunjungan sudah selesai.');
+								setTrackingStatus(requestId, response.message || 'Tracking kunjungan sudah selesai.');
+								return;
+							}
 							renderVisitMap(requestId, response, fallbackPatientLocation);
 							if (updateDeviceLocation) {
 								refreshDeviceLocation(requestId);
@@ -2156,6 +2184,14 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 							try {
 								response = JSON.parse(response);
 							} catch (error) {}
+						}
+
+						if (response && response.tracking_active === false) {
+							stopTracking(requestId);
+							clearNakesRouteLayers();
+							setNakesArrivalNotice(requestId, null);
+							setTrackingStatus(requestId, response.message || 'Tracking kunjungan sudah selesai.');
+							return;
 						}
 
 						if (response && response.status === 'success') {

@@ -1634,8 +1634,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								} catch (error) {}
 							}
 
-							if (response && response.request_status && response.request_status !== 'Accepted') {
-								setVisitStatus(requestId, 'Tracking lokasi dihentikan');
+							if (response && (response.tracking_active === false || (response.request_status && response.request_status !== 'Accepted'))) {
+								setVisitRouteSummary(requestId, response);
+								setVisitStatus(requestId, response.message || 'Tracking lokasi dihentikan');
 								clearVisitRoute(mapContainerId);
 								stopPolling(requestId);
 								return;
