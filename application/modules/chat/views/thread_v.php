@@ -360,42 +360,59 @@ if ($current_role === 'dokter') {
 		.doclinc-call-modal {
 			position: fixed;
 			inset: 0;
-			z-index: 40;
+			z-index: 80;
 			display: none;
-			align-items: flex-end;
-			justify-content: center;
-			background: rgba(17, 24, 39, 0.58);
-			padding: 16px;
+			background: #071016;
+			color: #ffffff;
+			padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 		}
 
 		.doclinc-call-modal.is-open {
-			display: flex;
+			display: block;
 		}
 
 		.doclinc-call-panel {
-			width: min(100%, 414px);
-			max-height: min(92vh, 760px);
+			width: 100%;
+			height: 100vh;
+			height: 100dvh;
 			overflow: hidden;
-			border-radius: 28px 28px 18px 18px;
-			background: #101820;
-			color: #ffffff;
-			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+			background: radial-gradient(circle at top, #244052 0, #101820 46%, #070d12 100%);
 			display: flex;
 			flex-direction: column;
 		}
 
 		.doclinc-call-head {
 			display: flex;
-			align-items: flex-start;
+			align-items: center;
 			justify-content: space-between;
-			gap: 14px;
+			gap: 12px;
 			padding: 18px 18px 12px;
+			flex: 0 0 auto;
+		}
+
+		.doclinc-call-context {
+			min-width: 0;
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+
+		.doclinc-call-avatar {
+			width: 46px;
+			height: 46px;
+			border-radius: 999px;
+			object-fit: cover;
+			background: rgba(255, 255, 255, 0.16);
+			flex: 0 0 46px;
 		}
 
 		.doclinc-call-title {
 			margin: 0;
 			font-size: 18px;
 			font-weight: 800;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 
 		.doclinc-call-status {
@@ -410,23 +427,23 @@ if ($current_role === 'dokter') {
 		}
 
 		.doclinc-call-close {
-			width: 38px;
-			height: 38px;
+			width: 40px;
+			height: 40px;
 			border-radius: 999px;
 			border: 1px solid rgba(255, 255, 255, 0.16);
 			background: rgba(255, 255, 255, 0.08);
 			color: #ffffff;
-			font-size: 22px;
+			font-size: 20px;
 			line-height: 1;
 			cursor: pointer;
+			flex: 0 0 40px;
 		}
 
 		.doclinc-call-stage {
 			position: relative;
-			min-height: 330px;
-			background: radial-gradient(circle at top, #263445 0, #111827 54%, #0b1117 100%);
-			margin: 0 14px;
-			border-radius: 22px;
+			flex: 1 1 auto;
+			min-height: 0;
+			background: rgba(255, 255, 255, 0.04);
 			overflow: hidden;
 		}
 
@@ -447,21 +464,21 @@ if ($current_role === 'dokter') {
 		}
 
 		.doclinc-call-empty {
-			max-width: 230px;
+			max-width: 260px;
 			text-align: center;
 			color: rgba(255, 255, 255, 0.78);
-			font-size: 14px;
+			font-size: 15px;
 			font-weight: 700;
-			line-height: 20px;
-			padding: 16px;
+			line-height: 22px;
+			padding: 20px;
 		}
 
 		.doclinc-call-local {
 			position: absolute;
-			right: 14px;
-			bottom: 14px;
-			width: 96px;
-			height: 132px;
+			right: 18px;
+			bottom: 18px;
+			width: 104px;
+			height: 148px;
 			border-radius: 18px;
 			overflow: hidden;
 			background: #1f2937;
@@ -476,9 +493,10 @@ if ($current_role === 'dokter') {
 		}
 
 		.doclinc-call-prejoin {
-			padding: 18px;
-			background: #ffffff;
-			color: #1f2937;
+			padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+			background: rgba(255, 255, 255, 0.96);
+			color: #111827;
+			flex: 0 0 auto;
 		}
 
 		.doclinc-call-prejoin-title {
@@ -510,18 +528,20 @@ if ($current_role === 'dokter') {
 			align-items: center;
 			justify-content: center;
 			gap: 12px;
-			padding: 16px;
-			background: #101820;
+			padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
+			background: rgba(7, 16, 22, 0.96);
+			flex: 0 0 auto;
 		}
 
 		.doclinc-call-control {
-			width: 52px;
-			height: 52px;
+			width: 54px;
+			height: 54px;
 			border-radius: 999px;
 			border: 1px solid rgba(255, 255, 255, 0.15);
 			background: rgba(255, 255, 255, 0.11);
 			color: #ffffff;
-			font-size: 18px;
+			font-size: 11px;
+			font-weight: 800;
 			cursor: pointer;
 		}
 
@@ -533,6 +553,65 @@ if ($current_role === 'dokter') {
 		.doclinc-call-control.end-call {
 			background: #dc2626;
 			border-color: #dc2626;
+			width: 62px;
+			height: 62px;
+		}
+
+		.doclinc-active-call {
+			position: fixed;
+			left: 50%;
+			bottom: calc(88px + env(safe-area-inset-bottom));
+			z-index: 30;
+			transform: translateX(-50%);
+			width: min(360px, calc(100vw - 28px));
+			border: 0;
+			border-radius: 18px;
+			background: #101820;
+			color: #ffffff;
+			padding: 12px 14px;
+			box-shadow: 0 16px 42px rgba(0, 0, 0, 0.24);
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			cursor: pointer;
+		}
+
+		.doclinc-active-call-icon {
+			width: 38px;
+			height: 38px;
+			border-radius: 999px;
+			background: #437a13;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			flex: 0 0 38px;
+		}
+
+		.doclinc-active-call-main {
+			min-width: 0;
+			flex: 1;
+			text-align: left;
+		}
+
+		.doclinc-active-call-title {
+			display: block;
+			font-size: 13px;
+			font-weight: 800;
+			line-height: 17px;
+		}
+
+		.doclinc-active-call-meta {
+			display: block;
+			color: rgba(255, 255, 255, 0.72);
+			font-size: 12px;
+			line-height: 16px;
+		}
+
+		.doclinc-active-call-restore {
+			color: rgba(255, 255, 255, 0.74);
+			font-size: 12px;
+			font-weight: 800;
+			flex: 0 0 auto;
 		}
 
 		.is-hidden {
@@ -621,11 +700,14 @@ if ($current_role === 'dokter') {
 		<div class="doclinc-call-modal" id="doclincCallModal" role="dialog" aria-modal="true" aria-labelledby="doclincCallTitle" aria-hidden="true">
 			<div class="doclinc-call-panel">
 				<div class="doclinc-call-head">
-					<div>
-						<h2 class="doclinc-call-title" id="doclincCallTitle">Panggilan Konsultasi</h2>
-						<div class="doclinc-call-status" id="doclincCallStatus">Siap bergabung</div>
+					<div class="doclinc-call-context">
+						<img class="doclinc-call-avatar" src="<?= html_escape($asset_base . 'doctor-placeholder.jpg'); ?>" alt="Profil layanan">
+						<div>
+							<h2 class="doclinc-call-title" id="doclincCallTitle"><?= html_escape($partner_name); ?></h2>
+							<div class="doclinc-call-status" id="doclincCallStatus">Siap bergabung</div>
+						</div>
 					</div>
-					<button type="button" class="doclinc-call-close" id="doclincCallClose" aria-label="Tutup">&times;</button>
+					<button type="button" class="doclinc-call-close" id="doclincCallClose" aria-label="Minimalkan panggilan">&times;</button>
 				</div>
 				<div class="doclinc-call-stage">
 					<div class="doclinc-call-remote" id="doclincCallRemote">
@@ -642,10 +724,19 @@ if ($current_role === 'dokter') {
 					<button type="button" class="doclinc-call-control" id="doclincCallMic" title="Mikrofon" aria-label="Mikrofon">Mic</button>
 					<button type="button" class="doclinc-call-control" id="doclincCallCamera" title="Kamera" aria-label="Kamera">Cam</button>
 					<button type="button" class="doclinc-call-control" id="doclincCallSwitch" title="Ganti kamera" aria-label="Ganti kamera">Flip</button>
+					<button type="button" class="doclinc-call-control" id="doclincCallMinimize" title="Minimalkan" aria-label="Minimalkan panggilan">Min</button>
 					<button type="button" class="doclinc-call-control end-call" id="doclincCallEnd" title="Akhiri" aria-label="Akhiri">End</button>
 				</div>
 			</div>
 		</div>
+		<button type="button" class="doclinc-active-call is-hidden" id="doclincActiveCall" aria-label="Buka panggilan aktif">
+			<span class="doclinc-active-call-icon" aria-hidden="true">Tel</span>
+			<span class="doclinc-active-call-main">
+				<span class="doclinc-active-call-title">Panggilan aktif</span>
+				<span class="doclinc-active-call-meta" id="doclincCallElapsed">00:00</span>
+			</span>
+			<span class="doclinc-active-call-restore">Buka</span>
+		</button>
 		<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 	<?php else : ?>
 		<?php /* TODO #16D: render incoming call invitation here after reliable call invite signaling exists. */ ?>
@@ -662,7 +753,11 @@ if ($current_role === 'dokter') {
 					micEnabled: true,
 					cameraEnabled: true,
 					facingMode: 'user',
-					localTracks: []
+					localTracks: [],
+					connecting: false,
+					minimized: false,
+					callStartedAt: null,
+					elapsedTimer: null
 				};
 				const elements = {};
 
@@ -688,6 +783,9 @@ if ($current_role === 'dokter') {
 					elements.switchCamera = byId('doclincCallSwitch');
 					elements.end = byId('doclincCallEnd');
 					elements.close = byId('doclincCallClose');
+					elements.minimize = byId('doclincCallMinimize');
+					elements.activeCall = byId('doclincActiveCall');
+					elements.elapsed = byId('doclincCallElapsed');
 				}
 
 				function setStatus(message, isError) {
@@ -705,6 +803,71 @@ if ($current_role === 'dokter') {
 					if (elements.controls) {
 						elements.controls.classList.toggle('is-hidden', !active);
 					}
+				}
+
+				function formatElapsed(milliseconds) {
+					const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+					const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+					const seconds = String(totalSeconds % 60).padStart(2, '0');
+					return minutes + ':' + seconds;
+				}
+
+				function updateElapsed() {
+					if (!elements.elapsed || !state.callStartedAt) {
+						return;
+					}
+					elements.elapsed.textContent = formatElapsed(Date.now() - state.callStartedAt);
+				}
+
+				function startElapsedTimer() {
+					if (!state.callStartedAt) {
+						state.callStartedAt = Date.now();
+					}
+					updateElapsed();
+					if (!state.elapsedTimer) {
+						state.elapsedTimer = window.setInterval(updateElapsed, 1000);
+					}
+				}
+
+				function stopElapsedTimer() {
+					if (state.elapsedTimer) {
+						window.clearInterval(state.elapsedTimer);
+					}
+					state.elapsedTimer = null;
+					state.callStartedAt = null;
+					if (elements.elapsed) {
+						elements.elapsed.textContent = '00:00';
+					}
+				}
+
+				function hasLiveCall() {
+					return !!state.room || state.connecting;
+				}
+
+				function updateFloatingCall() {
+					if (!elements.activeCall) {
+						return;
+					}
+					elements.activeCall.classList.toggle('is-hidden', !(state.minimized && hasLiveCall()));
+				}
+
+				function showCallScreen() {
+					if (!elements.modal) {
+						return;
+					}
+					state.minimized = false;
+					elements.modal.classList.add('is-open');
+					elements.modal.setAttribute('aria-hidden', 'false');
+					updateFloatingCall();
+				}
+
+				function minimizeCallScreen() {
+					if (elements.modal) {
+						elements.modal.classList.remove('is-open');
+						elements.modal.setAttribute('aria-hidden', 'true');
+					}
+					state.minimized = hasLiveCall();
+					updateFloatingCall();
 				}
 
 				function clearNode(node) {
@@ -743,7 +906,10 @@ if ($current_role === 'dokter') {
 						} catch (error) {}
 					}
 					state.room = null;
+					state.connecting = false;
+					state.minimized = false;
 					stopLocalTracks();
+					stopElapsedTimer();
 					if (elements.remote) {
 						Array.prototype.slice.call(elements.remote.querySelectorAll('video,audio')).forEach(function(node) {
 							node.remove();
@@ -752,25 +918,30 @@ if ($current_role === 'dokter') {
 					updateEmptyState();
 					setCallActive(false);
 					setStatus(message || 'Panggilan berakhir');
+					updateFloatingCall();
 				}
 
-				function openModal(mode) {
+				function openCall(mode) {
 					cacheElements();
 					if (!elements.modal) {
 						return;
 					}
-					cleanupCall('Siap bergabung');
+					if (hasLiveCall()) {
+						showCallScreen();
+						return;
+					}
 					state.mode = mode === 'audio' ? 'audio' : 'video';
 					state.micEnabled = true;
 					state.cameraEnabled = state.mode === 'video';
 					if (elements.camera) {
 						elements.camera.classList.toggle('is-off', state.mode !== 'video');
 					}
-					elements.modal.classList.add('is-open');
-					elements.modal.setAttribute('aria-hidden', 'false');
+					setCallActive(false);
+					setStatus('Siap bergabung');
+					showCallScreen();
 				}
 
-				function closeModal() {
+				function endCall() {
 					cleanupCall('Panggilan berakhir');
 					if (elements.modal) {
 						elements.modal.classList.remove('is-open');
@@ -819,8 +990,20 @@ if ($current_role === 'dokter') {
 						updateEmptyState();
 					});
 					room.on(events.Disconnected || 'disconnected', function() {
+						state.room = null;
+						state.connecting = false;
+						state.minimized = false;
+						stopLocalTracks();
+						if (elements.remote) {
+							Array.prototype.slice.call(elements.remote.querySelectorAll('video,audio')).forEach(function(node) {
+								node.remove();
+							});
+						}
+						updateEmptyState();
 						setStatus('Panggilan terputus');
 						setCallActive(false);
+						stopElapsedTimer();
+						updateFloatingCall();
 					});
 					room.on(events.Reconnecting || 'reconnecting', function() {
 						setStatus('Menyambungkan ulang...');
@@ -894,7 +1077,8 @@ if ($current_role === 'dokter') {
 				}
 
 				function joinCall() {
-					if (state.room) {
+					if (state.room || state.connecting) {
+						showCallScreen();
 						return;
 					}
 					const LiveKit = sdk();
@@ -906,9 +1090,13 @@ if ($current_role === 'dokter') {
 						setStatus('Data konsultasi tidak valid', true);
 						return;
 					}
+					state.connecting = true;
 					setStatus('Menyiapkan panggilan...');
+					updateFloatingCall();
 					fetchToken().then(function(response) {
 						if (!response || !response.success || !response.token || !response.ws_url) {
+							state.connecting = false;
+							updateFloatingCall();
 							setStatus(response && response.message ? response.message : 'Panggilan belum dapat dimulai', true);
 							return null;
 						}
@@ -919,8 +1107,11 @@ if ($current_role === 'dokter') {
 						state.room = room;
 						wireRoom(room);
 						return room.connect(response.ws_url, response.token).then(function() {
+							state.connecting = false;
 							setCallActive(true);
 							setStatus('Menunggu lawan bicara bergabung');
+							startElapsedTimer();
+							updateFloatingCall();
 							publishExistingParticipants(room);
 							return createLocalTrack('audio').then(publishTrack).catch(function() {
 								state.micEnabled = false;
@@ -1015,7 +1206,7 @@ if ($current_role === 'dokter') {
 					document.querySelectorAll('.doclinc-call-start').forEach(function(button) {
 						button.addEventListener('click', function(event) {
 							event.preventDefault();
-							openModal(button.getAttribute('data-call-mode'));
+							openCall(button.getAttribute('data-call-mode'));
 						});
 					});
 					if (elements.join) {
@@ -1035,18 +1226,27 @@ if ($current_role === 'dokter') {
 						elements.switchCamera.addEventListener('click', switchCamera);
 					}
 					if (elements.end) {
-						elements.end.addEventListener('click', closeModal);
+						elements.end.addEventListener('click', endCall);
 					}
 					if (elements.close) {
-						elements.close.addEventListener('click', closeModal);
+						elements.close.addEventListener('click', minimizeCallScreen);
+					}
+					if (elements.minimize) {
+						elements.minimize.addEventListener('click', minimizeCallScreen);
+					}
+					if (elements.activeCall) {
+						elements.activeCall.addEventListener('click', showCallScreen);
 					}
 					if (elements.modal) {
 						elements.modal.addEventListener('click', function(event) {
 							if (event.target === elements.modal) {
-								closeModal();
+								minimizeCallScreen();
 							}
 						});
 					}
+					window.addEventListener('beforeunload', function() {
+						cleanupCall('Panggilan berakhir');
+					});
 				});
 			})();
 		</script>
