@@ -287,6 +287,128 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			line-height: 1.35;
 		}
 
+		.doclinc-call-modal .modal-dialog {
+			margin: 0;
+			max-width: none;
+			min-height: 100%;
+		}
+
+		.doclinc-call-modal .modal-content {
+			min-height: 100vh;
+			border: 0;
+			border-radius: 0;
+			background: #08140f;
+			color: #fff;
+		}
+
+		.doclinc-call-stage {
+			position: relative;
+			min-height: calc(100vh - 156px);
+			background: radial-gradient(circle at top left, rgba(9, 173, 116, 0.22), transparent 32%), #0c1713;
+			overflow: hidden;
+		}
+
+		.doclinc-call-remote {
+			display: grid;
+			min-height: calc(100vh - 156px);
+			place-items: center;
+			padding: 24px;
+		}
+
+		.doclinc-call-remote video,
+		.doclinc-call-remote audio {
+			max-width: 100%;
+		}
+
+		.doclinc-call-remote video {
+			width: 100%;
+			height: calc(100vh - 180px);
+			object-fit: cover;
+		}
+
+		.doclinc-call-empty {
+			color: rgba(255, 255, 255, 0.78);
+			font-size: 15px;
+			text-align: center;
+		}
+
+		.doclinc-call-local {
+			position: absolute;
+			right: 16px;
+			top: 16px;
+			width: 116px;
+			aspect-ratio: 9 / 14;
+			border: 2px solid rgba(255, 255, 255, 0.72);
+			border-radius: 16px;
+			background: #17231f;
+			box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34);
+			overflow: hidden;
+			z-index: 2;
+		}
+
+		.doclinc-call-local video {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		.doclinc-call-controls {
+			display: flex;
+			gap: 10px;
+			justify-content: center;
+			padding: 14px;
+			background: rgba(6, 16, 12, 0.96);
+		}
+
+		.doclinc-call-control {
+			width: 52px;
+			height: 52px;
+			border: 0;
+			border-radius: 50%;
+			color: #0c1713;
+			background: #fff;
+			font-size: 18px;
+		}
+
+		.doclinc-call-control.is-off {
+			background: #25352f;
+			color: #fff;
+		}
+
+		.doclinc-call-control.end-call {
+			background: #dc3545;
+			color: #fff;
+		}
+
+		.doclinc-call-prejoin {
+			padding: 22px;
+			background: #fff;
+			color: #10251b;
+		}
+
+		@media (min-width: 768px) {
+			.doclinc-call-modal .modal-dialog {
+				margin: 24px auto;
+				max-width: 960px;
+				min-height: auto;
+			}
+
+			.doclinc-call-modal .modal-content {
+				min-height: min(760px, calc(100vh - 48px));
+				border-radius: 24px;
+				overflow: hidden;
+			}
+
+			.doclinc-call-stage,
+			.doclinc-call-remote {
+				min-height: 560px;
+			}
+
+			.doclinc-call-remote video {
+				height: 560px;
+			}
+		}
+
 		@media (max-width: 575.98px) {
 			#maps {
 				min-height: 70vh;
@@ -804,7 +926,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 									'completed' => '',
 								);
 							?>
-								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
+								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
 									<div class="card-header d-flex align-items-start gap-3">
 										<div class="dl-nakes-avatar-icon">
 											<i class="fas fa-user-check"></i>
@@ -856,6 +978,12 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
 											<i class="fas fa-comments me-2"></i> Chat Konsultasi
 										</a>
+										<button type="button" class="btn btn-outline-primary shadow-sm rounded-pill doclinc-call-start" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-call-mode="video">
+											<i class="fas fa-video me-2"></i> Panggilan Video
+										</button>
+										<button type="button" class="btn btn-outline-primary shadow-sm rounded-pill doclinc-call-start" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-call-mode="audio">
+											<i class="fas fa-phone-alt me-2"></i> Panggilan Suara
+										</button>
 										<button type="button" class="btn btn-outline-primary shadow-sm rounded-pill start-nakes-visit-tracking" data-request-id="<?= html_escape((int) $x->request_id); ?>">
 											<i class="fas fa-location-arrow me-2"></i> Aktifkan Lokasi Visit
 										</button>
@@ -1199,10 +1327,45 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 	<?php } ?>
 
 
+	<div class="modal fade doclinc-call-modal" id="doclincCallModal" tabindex="-1" aria-labelledby="doclincCallTitle" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header border-0">
+					<div>
+						<h5 class="modal-title" id="doclincCallTitle">Panggilan Konsultasi</h5>
+						<div class="small text-white-50" id="doclincCallStatus">Siap bergabung</div>
+					</div>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="doclinc-call-stage">
+					<div class="doclinc-call-remote" id="doclincCallRemote">
+						<div class="doclinc-call-empty" id="doclincCallEmpty">Menunggu lawan bicara bergabung</div>
+					</div>
+					<div class="doclinc-call-local d-none" id="doclincCallLocal"></div>
+				</div>
+				<div class="doclinc-call-prejoin" id="doclincCallPrejoin">
+					<div class="fw-bold mb-1">Panggilan aman untuk konsultasi aktif</div>
+					<div class="text-muted small mb-3">Pastikan kamera dan mikrofon perangkat dapat digunakan.</div>
+					<button type="button" class="btn btn-success w-100 rounded-pill py-3" id="doclincCallJoin">
+						<i class="fas fa-phone-alt me-2"></i> Gabung Sekarang
+					</button>
+				</div>
+				<div class="doclinc-call-controls d-none" id="doclincCallControls">
+					<button type="button" class="doclinc-call-control" id="doclincCallMic" title="Mikrofon"><i class="fas fa-microphone"></i></button>
+					<button type="button" class="doclinc-call-control" id="doclincCallCamera" title="Kamera"><i class="fas fa-video"></i></button>
+					<button type="button" class="doclinc-call-control" id="doclincCallSwitch" title="Ganti kamera"><i class="fas fa-sync-alt"></i></button>
+					<button type="button" class="doclinc-call-control end-call" id="doclincCallEnd" title="Akhiri"><i class="fas fa-phone-slash"></i></button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
 		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
@@ -1218,6 +1381,315 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			<script src="<?= html_escape(rtrim($legacy_superapp_url, '/') . '/firebase/get-notif.js'); ?>"></script>
 		<?php endif; ?>
 	<?php endif; ?>
+
+	<script>
+		(function(window, $) {
+			const tokenUrl = <?= json_encode(base_url('home_nakes/livekit_token')); ?>;
+			const sdk = function() {
+				return window.LivekitClient || window.LiveKitClient || window.livekitClient || null;
+			};
+			const state = {
+				room: null,
+				requestId: null,
+				mode: 'video',
+				micEnabled: true,
+				cameraEnabled: true,
+				facingMode: 'user',
+				localTracks: []
+			};
+			const elements = {};
+
+			function byId(id) {
+				return document.getElementById(id);
+			}
+
+			function cacheElements() {
+				elements.modal = byId('doclincCallModal');
+				elements.status = byId('doclincCallStatus');
+				elements.remote = byId('doclincCallRemote');
+				elements.empty = byId('doclincCallEmpty');
+				elements.local = byId('doclincCallLocal');
+				elements.prejoin = byId('doclincCallPrejoin');
+				elements.controls = byId('doclincCallControls');
+				elements.join = byId('doclincCallJoin');
+				elements.mic = byId('doclincCallMic');
+				elements.camera = byId('doclincCallCamera');
+				elements.switchCamera = byId('doclincCallSwitch');
+				elements.end = byId('doclincCallEnd');
+			}
+
+			function setStatus(message, isError) {
+				if (!elements.status) return;
+				elements.status.textContent = message || '';
+				elements.status.classList.toggle('text-danger', !!isError);
+				elements.status.classList.toggle('text-white-50', !isError);
+			}
+
+			function setCallActive(active) {
+				if (elements.prejoin) elements.prejoin.classList.toggle('d-none', !!active);
+				if (elements.controls) elements.controls.classList.toggle('d-none', !active);
+			}
+
+			function clearNode(node) {
+				if (!node) return;
+				while (node.firstChild) node.removeChild(node.firstChild);
+			}
+
+			function updateEmptyState() {
+				if (!elements.empty || !elements.remote) return;
+				const hasMedia = elements.remote.querySelector('video,audio');
+				elements.empty.classList.toggle('d-none', !!hasMedia);
+			}
+
+			function stopLocalTracks() {
+				state.localTracks.forEach(function(track) {
+					try {
+						track.stop();
+					} catch (error) {}
+				});
+				state.localTracks = [];
+				if (elements.local) {
+					clearNode(elements.local);
+					elements.local.classList.add('d-none');
+				}
+			}
+
+			function cleanupCall(message) {
+				if (state.room) {
+					try {
+						state.room.disconnect();
+					} catch (error) {}
+				}
+				state.room = null;
+				stopLocalTracks();
+				if (elements.remote) {
+					Array.prototype.slice.call(elements.remote.querySelectorAll('video,audio')).forEach(function(node) {
+						node.remove();
+					});
+				}
+				updateEmptyState();
+				setCallActive(false);
+				setStatus(message || 'Panggilan berakhir');
+			}
+
+			function attachTrack(track, container) {
+				if (!track || !container || typeof track.attach !== 'function') return;
+				const element = track.attach();
+				if (!element) return;
+				element.autoplay = true;
+				element.playsInline = true;
+				container.appendChild(element);
+				updateEmptyState();
+			}
+
+			function detachTrack(track) {
+				if (!track || typeof track.detach !== 'function') return;
+				track.detach().forEach(function(element) {
+					if (element && element.parentNode) element.parentNode.removeChild(element);
+				});
+				updateEmptyState();
+			}
+
+			function wireRoom(room) {
+				const LiveKit = sdk();
+				const events = LiveKit && LiveKit.RoomEvent ? LiveKit.RoomEvent : {};
+				room.on(events.TrackSubscribed || 'trackSubscribed', function(track) {
+					attachTrack(track, elements.remote);
+				});
+				room.on(events.TrackUnsubscribed || 'trackUnsubscribed', detachTrack);
+				room.on(events.ParticipantConnected || 'participantConnected', function() {
+					setStatus('Terhubung');
+				});
+				room.on(events.ParticipantDisconnected || 'participantDisconnected', function() {
+					setStatus('Menunggu lawan bicara bergabung');
+					updateEmptyState();
+				});
+				room.on(events.Disconnected || 'disconnected', function() {
+					setStatus('Panggilan terputus');
+					setCallActive(false);
+				});
+				room.on(events.Reconnecting || 'reconnecting', function() {
+					setStatus('Menyambungkan ulang...');
+				});
+				room.on(events.Reconnected || 'reconnected', function() {
+					setStatus('Terhubung kembali');
+				});
+			}
+
+			function publishExistingParticipants(room) {
+				if (!room || !room.remoteParticipants) return;
+				room.remoteParticipants.forEach(function(participant) {
+					if (!participant || !participant.trackPublications) return;
+					participant.trackPublications.forEach(function(publication) {
+						if (publication && publication.track) attachTrack(publication.track, elements.remote);
+					});
+				});
+			}
+
+			function fetchToken(requestId) {
+				return $.ajax({
+					url: tokenUrl,
+					type: 'POST',
+					dataType: 'json',
+					data: {
+						request_id: requestId
+					}
+				});
+			}
+
+			function createLocalTrack(kind) {
+				const LiveKit = sdk();
+				if (!LiveKit) return Promise.reject(new Error('SDK panggilan belum tersedia'));
+				if (kind === 'audio') {
+					return LiveKit.createLocalAudioTrack();
+				}
+				return LiveKit.createLocalVideoTrack({
+					facingMode: state.facingMode
+				});
+			}
+
+			function publishTrack(track) {
+				if (!track || !state.room || !state.room.localParticipant) return Promise.resolve();
+				state.localTracks.push(track);
+				return Promise.resolve(state.room.localParticipant.publishTrack(track));
+			}
+
+			function showLocalPreview(track) {
+				if (!track || !elements.local || track.kind !== 'video') return;
+				clearNode(elements.local);
+				attachTrack(track, elements.local);
+				elements.local.classList.remove('d-none');
+			}
+
+			function joinCall() {
+				if (state.room) return;
+				const LiveKit = sdk();
+				if (!LiveKit || !LiveKit.Room) {
+					setStatus('SDK panggilan belum tersedia', true);
+					return;
+				}
+				if (!state.requestId) {
+					setStatus('Data konsultasi tidak valid', true);
+					return;
+				}
+				setStatus('Menyiapkan panggilan...');
+				fetchToken(state.requestId).done(function(response) {
+					if (!response || !response.success || !response.token || !response.ws_url) {
+						setStatus(response && response.message ? response.message : 'Panggilan belum dapat dimulai', true);
+						return;
+					}
+					const room = new LiveKit.Room({
+						adaptiveStream: true,
+						dynacast: true
+					});
+					state.room = room;
+					wireRoom(room);
+					room.connect(response.ws_url, response.token).then(function() {
+						setCallActive(true);
+						setStatus('Menunggu lawan bicara bergabung');
+						publishExistingParticipants(room);
+						return createLocalTrack('audio').then(publishTrack).catch(function() {
+							state.micEnabled = false;
+							if (elements.mic) elements.mic.classList.add('is-off');
+							setStatus('Mikrofon tidak tersedia');
+						});
+					}).then(function() {
+						if (state.mode !== 'video') return null;
+						return createLocalTrack('video').then(function(track) {
+							showLocalPreview(track);
+							return publishTrack(track);
+						}).catch(function() {
+							state.cameraEnabled = false;
+							if (elements.camera) elements.camera.classList.add('is-off');
+							setStatus('Kamera tidak tersedia, panggilan suara aktif');
+						});
+					}).catch(function(error) {
+						cleanupCall(error && error.message ? error.message : 'Gagal tersambung');
+					});
+				}).fail(function(xhr) {
+					const response = xhr.responseJSON || {};
+					setStatus(response.message || 'Token panggilan tidak tersedia', true);
+				});
+			}
+
+			function findLocalTrack(kind) {
+				return state.localTracks.find(function(track) {
+					return track && track.kind === kind;
+				});
+			}
+
+			function toggleTrack(kind, button) {
+				const track = findLocalTrack(kind);
+				const enabledKey = kind === 'audio' ? 'micEnabled' : 'cameraEnabled';
+				if (track) {
+					state[enabledKey] = !state[enabledKey];
+					Promise.resolve(state[enabledKey] && track.unmute ? track.unmute() : (track.mute ? track.mute() : null));
+					if (button) button.classList.toggle('is-off', !state[enabledKey]);
+					return;
+				}
+				createLocalTrack(kind).then(function(newTrack) {
+					if (kind === 'video') showLocalPreview(newTrack);
+					state[enabledKey] = true;
+					if (button) button.classList.remove('is-off');
+					return publishTrack(newTrack);
+				}).catch(function() {
+					setStatus(kind === 'audio' ? 'Mikrofon tidak tersedia' : 'Kamera tidak tersedia', true);
+				});
+			}
+
+			function switchCamera() {
+				const oldTrack = findLocalTrack('video');
+				if (!oldTrack || !state.room || !state.room.localParticipant) return;
+				state.facingMode = state.facingMode === 'user' ? 'environment' : 'user';
+				try {
+					state.room.localParticipant.unpublishTrack(oldTrack);
+				} catch (error) {}
+				state.localTracks = state.localTracks.filter(function(track) {
+					return track !== oldTrack;
+				});
+				try {
+					oldTrack.stop();
+				} catch (error) {}
+				createLocalTrack('video').then(function(track) {
+					showLocalPreview(track);
+					return publishTrack(track);
+				}).catch(function() {
+					setStatus('Tidak dapat mengganti kamera', true);
+				});
+			}
+
+			$(document).on('click', '.doclinc-call-start', function(event) {
+				event.preventDefault();
+				cacheElements();
+				cleanupCall('Siap bergabung');
+				state.requestId = $(this).data('request-id');
+				state.mode = $(this).data('call-mode') === 'audio' ? 'audio' : 'video';
+				state.micEnabled = true;
+				state.cameraEnabled = state.mode === 'video';
+				if (elements.camera) elements.camera.classList.toggle('is-off', state.mode !== 'video');
+				const modal = bootstrap.Modal.getOrCreateInstance(elements.modal);
+				modal.show();
+			});
+
+			$(document).on('click', '#doclincCallJoin', joinCall);
+			$(document).on('click', '#doclincCallMic', function() {
+				toggleTrack('audio', this);
+			});
+			$(document).on('click', '#doclincCallCamera', function() {
+				toggleTrack('video', this);
+			});
+			$(document).on('click', '#doclincCallSwitch', switchCamera);
+			$(document).on('click', '#doclincCallEnd', function() {
+				cleanupCall('Panggilan berakhir');
+				if (elements.modal) bootstrap.Modal.getOrCreateInstance(elements.modal).hide();
+			});
+			document.addEventListener('hidden.bs.modal', function(event) {
+				if (event.target && event.target.id === 'doclincCallModal') {
+					cleanupCall('Panggilan berakhir');
+				}
+			});
+		})(window, jQuery);
+	</script>
 
 	<!-- Javascript unutk webtoapk dan lain-lain -->
 	<script>
