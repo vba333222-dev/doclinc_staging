@@ -66,6 +66,7 @@ class Home extends MX_Controller
 
 			$user_id = (int) $this->session->userdata('id');
 			$request_id = (int) $this->livekit_request_value('request_id');
+			$expired_count = $this->Call_session_m->expire_stale_ringing_calls($this->Call_session_m->stale_cleanup_limit());
 			if ($request_id > 0) {
 				$request = doclinc_request_row($request_id);
 				if (!$request || (string) $request->user_id !== (string) $user_id || $request->request_status !== 'Accepted') {
@@ -76,7 +77,8 @@ class Home extends MX_Controller
 
 			$call = $this->Call_session_m->get_latest_incoming_for_warga($user_id, $request_id);
 			if (!$call) {
-				$this->output->set_output(json_encode(array('success' => true, 'has_incoming' => false, 'message' => 'Belum ada panggilan masuk')));
+				$message = $expired_count > 0 ? 'Panggilan tidak terjawab.' : 'Belum ada panggilan masuk';
+				$this->output->set_output(json_encode(array('success' => true, 'has_incoming' => false, 'message' => $message, 'expired' => $expired_count > 0)));
 				return;
 			}
 
@@ -103,15 +105,29 @@ class Home extends MX_Controller
 		}
 
 		$call_id = (int) $this->livekit_request_value('call_id');
+		$this->Call_session_m->expire_stale_ringing_calls($this->Call_session_m->stale_cleanup_limit());
 		$call = $this->Call_session_m->get_by_id($call_id);
 		$user_id = (int) $this->session->userdata('id');
-		if (!$call || (string) $call->callee_user_id !== (string) $user_id || !in_array($call->status, array('ringing', 'answered'), true)) {
+		if (!$call || (string) $call->callee_user_id !== (string) $user_id) {
 			$this->output->set_status_header(404)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak tersedia')));
+			return;
+		}
+		if (in_array($call->status, $this->Call_session_m->terminal_statuses(), true)) {
+			$message = $call->status === 'missed' ? 'Panggilan tidak terjawab.' : 'Panggilan sudah berakhir';
+			$payload = $this->Call_session_m->status_payload($call, $message, $call->status === 'missed');
+			$payload['success'] = false;
+			$this->output->set_status_header(409)->set_output(json_encode($payload));
+			return;
+		}
+		if ($this->Call_session_m->is_call_expired($call)) {
+			$this->Call_session_m->mark_missed($call_id);
+			$this->output->set_status_header(409)->set_output(json_encode(array('success' => false, 'call_id' => $call_id, 'status' => 'missed', 'message' => 'Panggilan tidak terjawab.', 'ended' => true, 'expired' => true)));
 			return;
 		}
 
 		$request = doclinc_request_row((int) $call->request_id);
 		if (!$request || $request->request_status !== 'Accepted' || (string) $request->user_id !== (string) $user_id) {
+			$this->Call_session_m->end_call((int) $call->call_id, 0);
 			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak dapat dijawab')));
 			return;
 		}
@@ -127,6 +143,7 @@ class Home extends MX_Controller
 		$body['call_id'] = (int) $call->call_id;
 		$body['status'] = $call->status;
 		$body['call_type'] = $call->call_type;
+		$body['status_poll_seconds'] = $this->Call_session_m->status_poll_seconds();
 		$this->output->set_status_header((int) $result['http_status'])->set_output(json_encode($body));
 	}
 
@@ -139,6 +156,7 @@ class Home extends MX_Controller
 		}
 
 		$call_id = (int) $this->livekit_request_value('call_id');
+		$this->Call_session_m->expire_stale_ringing_calls($this->Call_session_m->stale_cleanup_limit());
 		$call = $this->Call_session_m->get_by_id($call_id);
 		$user_id = (int) $this->session->userdata('id');
 		if (!$call || (string) $call->callee_user_id !== (string) $user_id) {
@@ -150,8 +168,16 @@ class Home extends MX_Controller
 			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak dapat ditolak')));
 			return;
 		}
+		if ($this->Call_session_m->is_call_expired($call)) {
+			$this->Call_session_m->mark_missed($call_id);
+			$this->output->set_status_header(409)->set_output(json_encode(array('success' => false, 'call_id' => $call_id, 'status' => 'missed', 'message' => 'Panggilan tidak terjawab.', 'ended' => true, 'expired' => true)));
+			return;
+		}
 		if ($call->status !== 'ringing') {
-			$this->output->set_status_header(409)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan sudah tidak berdering', 'status' => $call->status)));
+			$message = $call->status === 'missed' ? 'Panggilan tidak terjawab.' : 'Panggilan sudah tidak berdering';
+			$payload = $this->Call_session_m->status_payload($call, $message, $call->status === 'missed');
+			$payload['success'] = false;
+			$this->output->set_status_header(409)->set_output(json_encode($payload));
 			return;
 		}
 
@@ -163,20 +189,28 @@ class Home extends MX_Controller
 	{
 		$this->output->set_content_type('application/json');
 		$call_id = (int) $this->livekit_request_value('call_id');
+		$this->Call_session_m->expire_stale_ringing_calls($this->Call_session_m->stale_cleanup_limit());
 		$call = $this->Call_session_m->get_by_id($call_id);
 		$user_id = (int) $this->session->userdata('id');
 		if (!$call || (string) $call->callee_user_id !== (string) $user_id) {
 			$this->output->set_status_header(404)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak tersedia')));
 			return;
 		}
+		$expired = false;
+		if ($this->Call_session_m->is_call_expired($call)) {
+			$this->Call_session_m->mark_missed($call_id);
+			$call = $this->Call_session_m->get_by_id($call_id);
+			$expired = true;
+		}
 
-		$this->output->set_output(json_encode(array(
-			'success' => true,
-			'call_id' => (int) $call->call_id,
-			'status' => $call->status,
-			'call_type' => $call->call_type,
-			'message' => 'Status panggilan',
-		)));
+		$request = doclinc_request_row((int) $call->request_id);
+		if ($request && $request->request_status !== 'Accepted' && in_array($call->status, $this->Call_session_m->active_statuses(), true)) {
+			$this->Call_session_m->end_call((int) $call->call_id, 0);
+			$call = $this->Call_session_m->get_by_id($call_id);
+		}
+
+		$message = $call->status === 'missed' ? 'Panggilan tidak terjawab.' : 'Status panggilan';
+		$this->output->set_output(json_encode($this->Call_session_m->status_payload($call, $message, $expired)));
 	}
 
 	private function livekit_request_value($key)

@@ -22,6 +22,26 @@ class Call_session_m extends CI_Model
 		return array('ringing', 'answered');
 	}
 
+	public function terminal_statuses()
+	{
+		return array('ended', 'rejected', 'missed', 'failed');
+	}
+
+	public function ring_timeout_seconds()
+	{
+		return $this->config_int('CALL_RING_TIMEOUT_SECONDS', 'call_ring_timeout_seconds', 60, 5, 3600);
+	}
+
+	public function status_poll_seconds()
+	{
+		return $this->config_int('CALL_STATUS_POLL_SECONDS', 'call_status_poll_seconds', 3, 1, 60);
+	}
+
+	public function stale_cleanup_limit()
+	{
+		return $this->config_int('CALL_STALE_CLEANUP_LIMIT', 'call_stale_cleanup_limit', 20, 1, 200);
+	}
+
 	public function get_by_id($call_id)
 	{
 		$call_id = (int) $call_id;
@@ -37,6 +57,34 @@ class Call_session_m extends CI_Model
 
 	public function get_active_by_request($request_id)
 	{
+		return $this->get_active_call_for_request($request_id);
+	}
+
+	public function get_active_call_for_request($request_id)
+	{
+		$request_id = (int) $request_id;
+		if ($request_id < 1 || !$this->table_ready()) {
+			return null;
+		}
+
+		$call = $this->db
+			->where('request_id', $request_id)
+			->where_in('status', $this->active_statuses())
+			->order_by('call_id', 'DESC')
+			->limit(1)
+			->get(self::TABLE)
+			->row();
+
+		if ($call && $this->is_call_expired($call)) {
+			$this->mark_missed((int) $call->call_id);
+			return null;
+		}
+
+		return $call;
+	}
+
+	public function get_latest_by_request($request_id)
+	{
 		$request_id = (int) $request_id;
 		if ($request_id < 1 || !$this->table_ready()) {
 			return null;
@@ -44,14 +92,13 @@ class Call_session_m extends CI_Model
 
 		return $this->db
 			->where('request_id', $request_id)
-			->where_in('status', $this->active_statuses())
 			->order_by('call_id', 'DESC')
 			->limit(1)
 			->get(self::TABLE)
 			->row();
 	}
 
-	public function get_latest_incoming_for_warga($user_id, $request_id = 0)
+	public function get_latest_visible_call_for_callee($user_id, $request_id = 0)
 	{
 		$user_id = (int) $user_id;
 		$request_id = (int) $request_id;
@@ -74,17 +121,29 @@ class Call_session_m extends CI_Model
 			->where('call_sessions.callee_user_id', $user_id)
 			->where('requests.user_id', $user_id)
 			->where('requests.request_status', 'Accepted')
-			->where_in('call_sessions.status', $this->active_statuses());
+			->where('call_sessions.status', 'ringing');
 
 		if ($request_id > 0) {
 			$this->db->where('call_sessions.request_id', $request_id);
 		}
 
-		return $this->db
+		$call = $this->db
 			->order_by('call_sessions.call_id', 'DESC')
 			->limit(1)
 			->get()
 			->row();
+
+		if ($call && $this->is_call_expired($call)) {
+			$this->mark_missed((int) $call->call_id);
+			return null;
+		}
+
+		return $call;
+	}
+
+	public function get_latest_incoming_for_warga($user_id, $request_id = 0)
+	{
+		return $this->get_latest_visible_call_for_callee($user_id, $request_id);
 	}
 
 	public function start_or_reuse($request, $caller_user_id, $call_type)
@@ -94,7 +153,8 @@ class Call_session_m extends CI_Model
 		}
 
 		$request_id = (int) $request->request_id;
-		$existing = $this->get_active_by_request($request_id);
+		$this->expire_stale_ringing_calls($this->stale_cleanup_limit());
+		$existing = $this->get_active_call_for_request($request_id);
 		if ($existing) {
 			return $existing;
 		}
@@ -115,6 +175,94 @@ class Call_session_m extends CI_Model
 		$this->db->insert(self::TABLE, $data);
 		$call_id = (int) $this->db->insert_id();
 		return $call_id > 0 ? $this->get_by_id($call_id) : null;
+	}
+
+	public function expire_stale_ringing_calls($limit = 20)
+	{
+		if (!$this->table_ready()) {
+			return 0;
+		}
+
+		$limit = (int) $limit;
+		if ($limit < 1) {
+			$limit = $this->stale_cleanup_limit();
+		}
+
+		$threshold = date('Y-m-d H:i:s', time() - $this->ring_timeout_seconds());
+		$calls = $this->db
+			->select('call_id')
+			->where('status', 'ringing')
+			->group_start()
+				->group_start()
+					->where('started_at IS NOT NULL', null, false)
+					->where('started_at <', $threshold)
+				->group_end()
+				->or_group_start()
+					->where('started_at IS NULL', null, false)
+					->where('created_at <', $threshold)
+				->group_end()
+			->group_end()
+			->order_by('call_id', 'ASC')
+			->limit($limit)
+			->get(self::TABLE)
+			->result();
+
+		if (empty($calls)) {
+			return 0;
+		}
+
+		$ids = array();
+		foreach ($calls as $call) {
+			$ids[] = (int) $call->call_id;
+		}
+
+		$now = date('Y-m-d H:i:s');
+		$this->db
+			->where_in('call_id', $ids)
+			->where('status', 'ringing')
+			->update(self::TABLE, array(
+				'status' => 'missed',
+				'ended_at' => $now,
+				'updated_at' => $now,
+			));
+
+		return $this->db->affected_rows();
+	}
+
+	public function is_call_expired($call)
+	{
+		if (!$call || !isset($call->status) || $call->status !== 'ringing') {
+			return false;
+		}
+
+		$started_at = isset($call->started_at) ? strtotime((string) $call->started_at) : false;
+		if (!$started_at) {
+			$started_at = isset($call->created_at) ? strtotime((string) $call->created_at) : false;
+		}
+		if (!$started_at) {
+			return false;
+		}
+
+		return (time() - $started_at) > $this->ring_timeout_seconds();
+	}
+
+	public function mark_missed($call_id)
+	{
+		if (!$this->table_ready()) {
+			return false;
+		}
+
+		$now = date('Y-m-d H:i:s');
+		$this->db
+			->where('call_id', (int) $call_id)
+			->where('status', 'ringing')
+			->update(self::TABLE, array(
+				'status' => 'missed',
+				'ended_at' => $now,
+				'updated_at' => $now,
+			));
+
+		return $this->db->affected_rows() > 0;
 	}
 
 	public function answer($call_id)
@@ -190,6 +338,30 @@ class Call_session_m extends CI_Model
 		return $this->db->affected_rows() > 0;
 	}
 
+	public function status_payload($call, $message = 'Status panggilan', $expired = false)
+	{
+		if (!$call) {
+			return array(
+				'success' => false,
+				'message' => 'Panggilan tidak tersedia',
+				'ended' => true,
+				'expired' => false,
+			);
+		}
+
+		$status = isset($call->status) ? (string) $call->status : '';
+		return array(
+			'success' => true,
+			'call_id' => (int) $call->call_id,
+			'request_id' => (int) $call->request_id,
+			'status' => $status,
+			'call_type' => isset($call->call_type) ? (string) $call->call_type : 'video',
+			'message' => $message,
+			'ended' => in_array($status, $this->terminal_statuses(), true),
+			'expired' => (bool) $expired,
+		);
+	}
+
 	public function format_call($call)
 	{
 		if (!$call) {
@@ -209,5 +381,26 @@ class Call_session_m extends CI_Model
 			'status' => $call->status,
 			'caller_name' => $caller_name !== '' ? $caller_name : 'Nakes Doclinc',
 		);
+	}
+
+	private function config_int($env_key, $config_key, $default, $min, $max)
+	{
+		$value = getenv($env_key);
+		if ($value === false || $value === '') {
+			$value = $this->config->item($config_key);
+		}
+		if (!is_numeric($value)) {
+			return (int) $default;
+		}
+
+		$value = (int) $value;
+		if ($value < $min) {
+			return (int) $min;
+		}
+		if ($value > $max) {
+			return (int) $max;
+		}
+
+		return $value;
 	}
 }
