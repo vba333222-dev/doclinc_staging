@@ -254,6 +254,37 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
+		$request = doclinc_request_row($request_id);
+		if (!$request) {
+			$this->output
+				->set_status_header(404)
+				->set_output(json_encode(array('status' => false, 'message' => 'Request tidak ditemukan')));
+			return;
+		}
+		if (!function_exists('doclinc_request_is_handled_by_nakes') || !doclinc_request_is_handled_by_nakes($request, $user_id)) {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(array('status' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+		$current_visit_status = isset($request->visit_status) && $request->visit_status !== null
+			? doclinc_normalize_visit_status($request->visit_status)
+			: '';
+		$current_visit_status = $current_visit_status !== '' ? $current_visit_status : 'not_started';
+		if ($request->request_status !== 'Accepted' || $current_visit_status === 'completed') {
+			$this->output->set_output(json_encode(array(
+				'status' => 'inactive',
+				'success' => false,
+				'tracking_active' => false,
+				'message' => 'Tracking kunjungan sudah selesai.',
+				'request_id' => $request_id,
+				'request_status' => isset($request->request_status) ? $request->request_status : null,
+				'visit_status' => $current_visit_status,
+				'visit_status_label' => function_exists('doclinc_visit_status_label') ? doclinc_visit_status_label($current_visit_status) : $current_visit_status,
+			)));
+			return;
+		}
+
 		if (!doclinc_can_update_visit_location($request_id, $user_id, 'dokter')) {
 			$this->output
 				->set_status_header(403)
@@ -316,6 +347,29 @@ class Home_nakes extends MX_Controller
 				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Request tidak ditemukan']));
 			return;
 		}
+		if (!function_exists('doclinc_request_is_handled_by_nakes') || !doclinc_request_is_handled_by_nakes($request, $user_id)) {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+		$current_visit_status = isset($request->visit_status) && $request->visit_status !== null
+			? doclinc_normalize_visit_status($request->visit_status)
+			: '';
+		$current_visit_status = $current_visit_status !== '' ? $current_visit_status : 'not_started';
+		if ($request->request_status !== 'Accepted' || $current_visit_status === 'completed') {
+			$this->output->set_output(json_encode(array(
+				'status' => 'inactive',
+				'success' => false,
+				'tracking_active' => false,
+				'message' => 'Tracking kunjungan sudah selesai.',
+				'request_id' => $request_id,
+				'request_status' => isset($request->request_status) ? $request->request_status : null,
+				'visit_status' => $current_visit_status,
+				'visit_status_label' => function_exists('doclinc_visit_status_label') ? doclinc_visit_status_label($current_visit_status) : $current_visit_status,
+			)));
+			return;
+		}
 		if (!doclinc_can_update_visit_location($request_id, $user_id, 'dokter')) {
 			$this->output
 				->set_status_header(403)
@@ -367,6 +421,7 @@ class Home_nakes extends MX_Controller
 		$this->output->set_output(json_encode(array_merge($payload, [
 			'status' => 'success',
 			'success' => true,
+			'tracking_active' => true,
 			'message' => 'Lokasi nakes diperbarui',
 			'location_meta' => array(
 				'accuracy_m' => $accuracy_m,
@@ -635,6 +690,8 @@ class Home_nakes extends MX_Controller
 
 		return array(
 			'status' => $status,
+			'success' => $status === true || $status === 'success',
+			'tracking_active' => isset($row->request_status) && $row->request_status === 'Accepted' && (!isset($row->visit_status) || doclinc_normalize_visit_status($row->visit_status) !== 'completed'),
 			'message' => $message,
 			'request_id' => isset($row->request_id) ? (int) $row->request_id : null,
 			'request_status' => isset($row->request_status) ? $row->request_status : null,
