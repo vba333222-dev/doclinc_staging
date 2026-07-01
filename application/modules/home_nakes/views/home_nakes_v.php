@@ -829,6 +829,12 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong class="visit-route-eta" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</strong></div>
 										</div>
 										<div class="visit-route-provider-note mt-2 d-none" data-route-provider-note="<?= html_escape((int) $x->request_id); ?>"></div>
+										<div class="alert alert-success py-2 px-3 mt-2 mb-0 d-none" data-arrival-notice="<?= html_escape((int) $x->request_id); ?>">
+											<div class="small fw-bold" data-arrival-message="<?= html_escape((int) $x->request_id); ?>"></div>
+											<button type="button" class="btn btn-success btn-sm rounded-pill mt-2 visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived">
+												Konfirmasi tiba di lokasi
+											</button>
+										</div>
 										<div class="mt-3 visit-workflow-control" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
 											<div class="small text-muted mb-2">Status kunjungan: <span class="fw-bold visit-workflow-label"><?= html_escape(doclinc_visit_status_label($visit_status)); ?></span></div>
 											<div class="d-flex flex-wrap gap-2">
@@ -1109,6 +1115,12 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						<strong id="nakesVisitRouteUpdated">-</strong>
 					</div>
 					<div class="visit-route-provider-note mt-1 d-none" id="nakesVisitRouteProviderNote"></div>
+					<div class="alert alert-success py-2 px-3 mt-2 mb-0 d-none" id="nakesVisitArrivalNotice">
+						<div class="small fw-bold" id="nakesVisitArrivalMessage"></div>
+						<button type="button" class="btn btn-success btn-sm rounded-pill mt-2 visit-status-update" id="nakesVisitArrivalButton" data-request-id="" data-visit-status="arrived">
+							Konfirmasi tiba di lokasi
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -1684,6 +1696,22 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				if (element) element.textContent = text;
 			}
 
+			function setNakesArrivalNotice(requestId, arrival) {
+				const shouldPrompt = !!(arrival && arrival.should_prompt_arrival);
+				const message = shouldPrompt ? (arrival.message || 'Anda sudah dekat dengan lokasi pasien. Konfirmasi tiba di lokasi.') : '';
+				const inlineNotice = document.querySelector('[data-arrival-notice="' + requestId + '"]');
+				const inlineMessage = document.querySelector('[data-arrival-message="' + requestId + '"]');
+				if (inlineNotice) inlineNotice.classList.toggle('d-none', !shouldPrompt);
+				if (inlineMessage) inlineMessage.textContent = message;
+
+				const panelNotice = document.getElementById('nakesVisitArrivalNotice');
+				const panelMessage = document.getElementById('nakesVisitArrivalMessage');
+				const panelButton = document.getElementById('nakesVisitArrivalButton');
+				if (panelNotice) panelNotice.classList.toggle('d-none', !shouldPrompt);
+				if (panelMessage) panelMessage.textContent = message;
+				if (panelButton && requestId) panelButton.setAttribute('data-request-id', requestId);
+			}
+
 			function setNakesRouteSummary(response, patientLocation, nakesLocation) {
 				const route = response && response.route ? response.route : {};
 				const hasDistance = !!(route && (route.distance_text || route.eta_text));
@@ -1959,6 +1987,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				const nakesLocation = parseLocation(response && response.nakes);
 				setNakesRouteSummary(response || {}, patientLocation, nakesLocation);
 				setRouteText(requestId, response && response.route ? response.route : null);
+				setNakesArrivalNotice(requestId, response && response.arrival ? response.arrival : null);
 
 				if (!patientLocation) {
 					setMapStatus('Lokasi pasien belum tersedia', true);
@@ -2257,6 +2286,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 
 						if (response && response.status === 'success') {
 							refreshVisitWorkflowControl(requestId, response.visit_status, response.visit_status_label);
+							setNakesArrivalNotice(requestId, null);
 							setVisitWorkflowMessage(requestId, response.message || 'Status kunjungan diperbarui');
 							return;
 						}

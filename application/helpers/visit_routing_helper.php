@@ -77,6 +77,39 @@ if (!function_exists('doclinc_visit_route_config_value')) {
 	}
 }
 
+if (!function_exists('doclinc_visit_route_numeric_config')) {
+	function doclinc_visit_route_numeric_config($env_key, $config_key, $default, $min, $max)
+	{
+		$value = doclinc_visit_route_config_value($env_key, $config_key, $default);
+		if (!is_numeric($value)) {
+			return $default;
+		}
+
+		return max($min, min($max, (float) $value));
+	}
+}
+
+if (!function_exists('doclinc_visit_arrival_radius_m')) {
+	function doclinc_visit_arrival_radius_m()
+	{
+		return doclinc_visit_route_numeric_config('VISIT_ARRIVAL_RADIUS_METERS', 'visit_arrival_radius_meters', 75, 10, 1000);
+	}
+}
+
+if (!function_exists('doclinc_route_cache_ttl_seconds')) {
+	function doclinc_route_cache_ttl_seconds()
+	{
+		return (int) doclinc_visit_route_numeric_config('ROUTE_CACHE_TTL_SECONDS', 'route_cache_ttl_seconds', 20, 0, 3600);
+	}
+}
+
+if (!function_exists('doclinc_reroute_min_move_meters')) {
+	function doclinc_reroute_min_move_meters()
+	{
+		return doclinc_visit_route_numeric_config('REROUTE_MIN_MOVE_METERS', 'reroute_min_move_meters', 50, 0, 1000);
+	}
+}
+
 if (!function_exists('doclinc_visit_route_coordinates_valid')) {
 	function doclinc_visit_route_coordinates_valid($origin_lat, $origin_lng, $dest_lat, $dest_lng)
 	{
@@ -84,6 +117,64 @@ if (!function_exists('doclinc_visit_route_coordinates_valid')) {
 			&& is_numeric($dest_lat) && (float) $dest_lat >= -90 && (float) $dest_lat <= 90
 			&& is_numeric($origin_lng) && (float) $origin_lng >= -180 && (float) $origin_lng <= 180
 			&& is_numeric($dest_lng) && (float) $dest_lng >= -180 && (float) $dest_lng <= 180;
+	}
+}
+
+if (!function_exists('doclinc_haversine_distance_m')) {
+	function doclinc_haversine_distance_m($lat1, $lng1, $lat2, $lng2)
+	{
+		if (!doclinc_visit_route_coordinates_valid($lat1, $lng1, $lat2, $lng2)) {
+			return null;
+		}
+
+		$earth_radius_m = 6371000;
+		$lat1_rad = deg2rad((float) $lat1);
+		$lat2_rad = deg2rad((float) $lat2);
+		$delta_lat = deg2rad((float) $lat2 - (float) $lat1);
+		$delta_lng = deg2rad((float) $lng2 - (float) $lng1);
+		$a = sin($delta_lat / 2) * sin($delta_lat / 2)
+			+ cos($lat1_rad) * cos($lat2_rad) * sin($delta_lng / 2) * sin($delta_lng / 2);
+		$c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+		return $earth_radius_m * $c;
+	}
+}
+
+if (!function_exists('doclinc_visit_arrival_payload')) {
+	function doclinc_visit_arrival_payload($nakes_lat, $nakes_lng, $patient_lat, $patient_lng, $visit_status)
+	{
+		$radius_m = doclinc_visit_arrival_radius_m();
+		$distance_m = doclinc_haversine_distance_m($nakes_lat, $nakes_lng, $patient_lat, $patient_lng);
+		if ($distance_m === null) {
+			return array(
+				'distance_to_patient_m' => null,
+				'distance_to_patient_text' => null,
+				'radius_m' => $radius_m,
+				'is_near_patient' => false,
+				'should_prompt_arrival' => false,
+				'message' => null,
+			);
+		}
+
+		$visit_status = function_exists('doclinc_normalize_visit_status')
+			? doclinc_normalize_visit_status($visit_status)
+			: strtolower(trim((string) $visit_status));
+		$is_near_patient = $distance_m <= $radius_m;
+		$distance_text = function_exists('doclinc_format_distance_text')
+			? doclinc_format_distance_text($distance_m)
+			: number_format($distance_m, 0, ',', '.') . ' m';
+		$should_prompt_arrival = $visit_status === 'en_route' && $is_near_patient;
+
+		return array(
+			'distance_to_patient_m' => $distance_m,
+			'distance_to_patient_text' => $distance_text,
+			'radius_m' => $radius_m,
+			'is_near_patient' => $is_near_patient,
+			'should_prompt_arrival' => $should_prompt_arrival,
+			'message' => $should_prompt_arrival
+				? 'Anda sudah dekat dengan lokasi pasien. Konfirmasi tiba di lokasi.'
+				: 'Jarak ke lokasi pasien: ' . $distance_text,
+		);
 	}
 }
 

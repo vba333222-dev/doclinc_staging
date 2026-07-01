@@ -1010,6 +1010,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 														<strong data-visit-route-updated="<?= html_escape((int) $id_request); ?>">-</strong>
 													</div>
 													<div class="visit-route-provider-note mt-1 d-none" data-visit-route-provider-note="<?= html_escape((int) $id_request); ?>"></div>
+													<div class="visit-route-provider-note mt-1 d-none" data-visit-arrival-message="<?= html_escape((int) $id_request); ?>"></div>
 												</div>
 											</div>
 										<?php elseif ($request_status === 'Pending') : ?>
@@ -1392,11 +1393,13 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				const updatedElement = document.querySelector('[data-visit-route-updated="' + requestId + '"]');
 				const statusElement = document.querySelector('[data-visit-route-status="' + requestId + '"]');
 				const providerNoteElement = document.querySelector('[data-visit-route-provider-note="' + requestId + '"]');
+				const arrivalElement = document.querySelector('[data-visit-arrival-message="' + requestId + '"]');
 				const hasDistance = !!(route && (route.distance_text || route.eta_text));
 				const hasGeometry = !!(route && route.geometry && (route.geometry.type === 'polyline6' || route.geometry.type === 'LineString'));
 				const patientAvailable = !patient || patient.available !== false;
 				const nakesAvailable = !!(nakes && nakes.available !== false && nakes.latitude && nakes.longitude);
 				const isValhallaRoute = !!(route && route.provider === 'valhalla');
+				const arrival = response && response.arrival ? response.arrival : null;
 				let statusText = 'Menghitung...';
 
 				if (!patientAvailable) {
@@ -1418,6 +1421,11 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				if (providerNoteElement) {
 					providerNoteElement.textContent = isValhallaRoute ? 'Estimasi berdasarkan rute jalan' : '';
 					providerNoteElement.classList.toggle('d-none', !isValhallaRoute);
+				}
+				if (arrivalElement) {
+					const arrivalMessage = arrival && (arrival.should_prompt_arrival || arrival.distance_to_patient_text) ? (arrival.message || '') : '';
+					arrivalElement.textContent = arrivalMessage;
+					arrivalElement.classList.toggle('d-none', arrivalMessage === '');
 				}
 			}
 

@@ -184,10 +184,11 @@ class Home extends MX_Controller
 	{
 		$this->output->set_content_type('application/json');
 		$default_route = function_exists('doclinc_visit_route_pending_payload') ? doclinc_visit_route_pending_payload() : array();
+		$default_arrival = function_exists('doclinc_visit_arrival_payload') ? doclinc_visit_arrival_payload(null, null, null, null, null) : array();
 		if ($this->input->method(TRUE) !== 'GET') {
 			$this->output
 				->set_status_header(405)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan', 'route' => $default_route]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 
@@ -197,13 +198,13 @@ class Home extends MX_Controller
 		if ($request_id < 1) {
 			$this->output
 				->set_status_header(400)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Data request tidak valid', 'route' => $default_route]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Data request tidak valid', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 		if ($role !== 'warga') {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 
@@ -211,13 +212,13 @@ class Home extends MX_Controller
 		if (!$request) {
 			$this->output
 				->set_status_header(404)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan', 'route' => $default_route]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 		if (!doclinc_can_view_visit_location($request_id, $user_id, $role)) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 
@@ -225,7 +226,7 @@ class Home extends MX_Controller
 		if (!$row) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 
@@ -245,6 +246,7 @@ class Home extends MX_Controller
 			'visit_in_service_at' => isset($row->visit_in_service_at) ? $row->visit_in_service_at : null,
 			'visit_completed_at' => isset($row->visit_completed_at) ? $row->visit_completed_at : null,
 			'route' => $default_route,
+			'arrival' => $default_arrival,
 		];
 
 		$patient_latitude = null;
@@ -270,6 +272,16 @@ class Home extends MX_Controller
 				$patient_latitude,
 				$patient_longitude
 			);
+			$visit_workflow['arrival'] = doclinc_visit_arrival_payload(
+				$nakes_latitude,
+				$nakes_longitude,
+				$patient_latitude,
+				$patient_longitude,
+				$visit_status
+			);
+			if ($row->request_status !== 'Accepted') {
+				$visit_workflow['arrival']['should_prompt_arrival'] = false;
+			}
 		}
 
 		$location_payload = [

@@ -528,6 +528,7 @@ class Home_nakes extends MX_Controller
 	private function build_nakes_visit_location_payload($row, $status, $override_nakes_latitude = null, $override_nakes_longitude = null)
 	{
 		$route = function_exists('doclinc_visit_route_pending_payload') ? doclinc_visit_route_pending_payload() : array();
+		$arrival = function_exists('doclinc_visit_arrival_payload') ? doclinc_visit_arrival_payload(null, null, null, null, null) : array();
 		$patient_latitude = null;
 		$patient_longitude = null;
 		if (isset($row->patient_latitude) && $this->is_valid_latitude($row->patient_latitude) && isset($row->patient_longitude) && $this->is_valid_longitude($row->patient_longitude)) {
@@ -555,6 +556,16 @@ class Home_nakes extends MX_Controller
 			$message = 'Aktifkan lokasi untuk menghitung jarak';
 		} else {
 			$route = doclinc_visit_route_payload($nakes_latitude, $nakes_longitude, $patient_latitude, $patient_longitude);
+			$arrival = doclinc_visit_arrival_payload(
+				$nakes_latitude,
+				$nakes_longitude,
+				$patient_latitude,
+				$patient_longitude,
+				isset($row->visit_status) ? $row->visit_status : null
+			);
+			if (!isset($row->request_status) || $row->request_status !== 'Accepted') {
+				$arrival['should_prompt_arrival'] = false;
+			}
 		}
 
 		return array(
@@ -575,6 +586,7 @@ class Home_nakes extends MX_Controller
 				'available' => $nakes_latitude !== null && $nakes_longitude !== null,
 			),
 			'route' => $route,
+			'arrival' => $arrival,
 		);
 	}
 }
