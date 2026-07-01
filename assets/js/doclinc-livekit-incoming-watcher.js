@@ -20,6 +20,7 @@
 	let typeEl = null;
 	let contextEl = null;
 	let messageEl = null;
+	let actionsEl = null;
 
 	function safeText(value, fallback) {
 		value = typeof value === 'string' ? value.trim() : '';
@@ -83,6 +84,7 @@
 		typeEl = overlay.querySelector('.doclinc-global-call-type');
 		contextEl = overlay.querySelector('.doclinc-global-call-context');
 		messageEl = overlay.querySelector('.doclinc-global-call-message');
+		actionsEl = overlay.querySelector('.doclinc-global-call-actions');
 		overlay.querySelector('.answer').addEventListener('click', answerCall);
 		overlay.querySelector('.reject').addEventListener('click', rejectCall);
 		return overlay;
@@ -98,7 +100,24 @@
 		typeEl.textContent = callTypeLabel(call.call_type);
 		contextEl.textContent = safeText(call.queue_label || call.queue_code, 'Konsultasi aktif');
 		messageEl.textContent = '';
+		if (actionsEl) {
+			actionsEl.style.display = '';
+		}
 		overlay.classList.add('is-visible');
+	}
+
+	function showNotice(message) {
+		createOverlay();
+		currentCall = null;
+		callerEl.textContent = 'Panggilan tidak terjawab';
+		typeEl.textContent = safeText(message, 'Panggilan tidak terjawab.');
+		contextEl.textContent = '';
+		messageEl.textContent = '';
+		if (actionsEl) {
+			actionsEl.style.display = 'none';
+		}
+		overlay.classList.add('is-visible');
+		window.setTimeout(hideIncoming, 3500);
 	}
 
 	function hideIncoming() {
@@ -145,6 +164,10 @@
 		}
 		postForm(rejectUrl, {
 			call_id: callId
+		}).then(function(response) {
+			if (response && response.expired) {
+				showNotice(response.message);
+			}
 		}).catch(function() {});
 	}
 
@@ -172,7 +195,11 @@
 			if (response && response.success && response.has_incoming) {
 				showIncoming(response);
 			} else {
-				hideIncoming();
+				if (response && response.expired) {
+					showNotice(response.message);
+				} else {
+					hideIncoming();
+				}
 			}
 		}).catch(function() {
 			failures += 1;

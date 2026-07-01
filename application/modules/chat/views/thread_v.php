@@ -970,6 +970,7 @@ if ($current_role === 'dokter') {
 					incomingCall: null,
 					incomingPollTimer: null,
 					statusPollTimer: null,
+					statusPollMs: 3000,
 					incomingFailures: 0
 				};
 				const elements = {};
@@ -1316,11 +1317,28 @@ if ($current_role === 'dokter') {
 							if (!response || !response.success) {
 								return;
 							}
-							if (['ended', 'rejected', 'missed', 'failed'].indexOf(response.status) !== -1) {
-								endLocalCall(response.status === 'rejected' ? 'Panggilan ditolak' : 'Panggilan berakhir');
+							if (response.status === 'answered') {
+								setStatus('Terhubung');
+							}
+							if (response.ended || ['ended', 'rejected', 'missed', 'failed'].indexOf(response.status) !== -1) {
+								const message = response.message && response.message !== 'Status panggilan' ? response.message : terminalCallMessage(response.status);
+								endLocalCall(message);
 							}
 						}).catch(function() {});
-					}, 3000);
+					}, state.statusPollMs);
+				}
+
+				function terminalCallMessage(status) {
+					if (status === 'rejected') {
+						return 'Panggilan ditolak';
+					}
+					if (status === 'missed') {
+						return 'Panggilan tidak dijawab.';
+					}
+					if (status === 'failed') {
+						return 'Panggilan gagal';
+					}
+					return 'Panggilan berakhir';
 				}
 
 				function createLocalTrack(kind) {
@@ -1381,6 +1399,9 @@ if ($current_role === 'dokter') {
 						dynacast: true
 					});
 					state.callId = response.call_id || state.callId;
+					if (response.status_poll_seconds) {
+						state.statusPollMs = Math.max(1000, Number(response.status_poll_seconds) * 1000);
+					}
 					if (response.call_type === 'audio' || response.call_type === 'video') {
 						state.mode = response.call_type;
 					}
@@ -1448,6 +1469,12 @@ if ($current_role === 'dokter') {
 						call_id: state.callId
 					});
 					request.then(function(response) {
+						if (response && !response.success && response.ended) {
+							setStatus(response.message || terminalCallMessage(response.status), true);
+							state.connecting = false;
+							updateFloatingCall();
+							return null;
+						}
 						return connectWithPayload(response, canStartCall ? 'Memanggil pasien...' : 'Menunggu lawan bicara bergabung');
 					}).catch(function(error) {
 						cleanupCall(error && error.message ? error.message : 'Gagal tersambung');
@@ -1572,6 +1599,9 @@ if ($current_role === 'dokter') {
 							showIncomingCall(response);
 						} else {
 							hideIncomingCall();
+							if (response && response.expired) {
+								setStatus(response.message || 'Panggilan tidak terjawab.');
+							}
 						}
 					}).catch(function() {
 						state.incomingFailures += 1;
@@ -1631,6 +1661,10 @@ if ($current_role === 'dokter') {
 					}
 					postForm(rejectCallUrl, {
 						call_id: callId
+					}).then(function(response) {
+						if (response && response.message) {
+							setStatus(response.message, !!response.expired);
+						}
 					}).catch(function() {});
 				}
 
