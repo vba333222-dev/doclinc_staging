@@ -277,24 +277,35 @@ class Home_nakes extends MX_Controller
 		if ($this->input->method(TRUE) !== 'POST') {
 			$this->output
 				->set_status_header(405)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Metode tidak diizinkan']));
 			return;
 		}
 		if ($this->session->userdata('role') !== 'dokter') {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Akses tidak diizinkan']));
 			return;
 		}
 
 		$request_id = (int) $this->input->post('request_id');
 		$latitude = $this->input->post('latitude');
 		$longitude = $this->input->post('longitude');
+		$accuracy_m = $this->visit_location_optional_float('accuracy_m', 'accuracy');
+		$heading = $this->visit_location_optional_float('heading');
+		$speed_mps = $this->visit_location_optional_float('speed_mps', 'speed');
 		$user_id = (int) $this->session->userdata('id');
 		if ($request_id < 1 || !$this->is_valid_latitude($latitude) || !$this->is_valid_longitude($longitude)) {
+			if (function_exists('doclinc_log_request_event') && $request_id > 0) {
+				doclinc_log_request_event('visit_location_rejected_invalid_coordinate', $request_id);
+			}
 			$this->output
 				->set_status_header(400)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Data lokasi tidak valid']));
+				->set_output(json_encode([
+					'status' => 'error',
+					'success' => false,
+					'reason' => 'invalid_coordinate',
+					'message' => 'Data lokasi tidak valid'
+				]));
 			return;
 		}
 
@@ -302,20 +313,52 @@ class Home_nakes extends MX_Controller
 		if (!$request) {
 			$this->output
 				->set_status_header(404)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan']));
+				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Request tidak ditemukan']));
 			return;
 		}
 		if (!doclinc_can_update_visit_location($request_id, $user_id, 'dokter')) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Akses tidak diizinkan']));
+			return;
+		}
+
+		$max_accuracy_m = function_exists('doclinc_visit_location_max_accuracy_meters') ? doclinc_visit_location_max_accuracy_meters() : 100;
+		if ($accuracy_m !== null && $accuracy_m > $max_accuracy_m) {
+			if (function_exists('doclinc_log_request_event')) {
+				doclinc_log_request_event('visit_location_rejected_low_accuracy', $request_id, array('accuracy_m' => $accuracy_m, 'max_accuracy_m' => $max_accuracy_m));
+			}
+			$this->output->set_output(json_encode(array(
+				'status' => 'error',
+				'success' => false,
+				'reason' => 'low_accuracy',
+				'message' => 'Akurasi lokasi belum cukup baik. Coba beberapa saat lagi.',
+				'accuracy_m' => $accuracy_m,
+				'max_accuracy_m' => $max_accuracy_m,
+			)));
+			return;
+		}
+
+		$max_speed_mps = function_exists('doclinc_visit_location_max_speed_mps') ? doclinc_visit_location_max_speed_mps() : 45;
+		if ($speed_mps !== null && $speed_mps > $max_speed_mps) {
+			if (function_exists('doclinc_log_request_event')) {
+				doclinc_log_request_event('visit_location_rejected_suspicious_speed', $request_id, array('speed_mps' => $speed_mps, 'max_speed_mps' => $max_speed_mps));
+			}
+			$this->output->set_output(json_encode(array(
+				'status' => 'error',
+				'success' => false,
+				'reason' => 'suspicious_speed',
+				'message' => 'Data lokasi tidak valid. Coba beberapa saat lagi.',
+				'speed_mps' => $speed_mps,
+				'max_speed_mps' => $max_speed_mps,
+			)));
 			return;
 		}
 
 		if (!$this->Home_nakes_m->update_visit_location($request_id, $user_id, (float) $latitude, (float) $longitude)) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Lokasi nakes tidak dapat diperbarui']));
+				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Lokasi nakes tidak dapat diperbarui']));
 			return;
 		}
 
@@ -323,7 +366,13 @@ class Home_nakes extends MX_Controller
 		$payload = $row ? $this->build_nakes_visit_location_payload($row, 'success', (float) $latitude, (float) $longitude) : array();
 		$this->output->set_output(json_encode(array_merge($payload, [
 			'status' => 'success',
-			'message' => 'Lokasi nakes diperbarui'
+			'success' => true,
+			'message' => 'Lokasi nakes diperbarui',
+			'location_meta' => array(
+				'accuracy_m' => $accuracy_m,
+				'heading' => $heading,
+				'speed_mps' => $speed_mps,
+			),
 		])));
 	}
 	public function update_visit_status()
@@ -523,6 +572,22 @@ class Home_nakes extends MX_Controller
 	private function is_valid_longitude($value)
 	{
 		return is_numeric($value) && (float) $value >= -180 && (float) $value <= 180;
+	}
+
+	private function visit_location_optional_float($primary_key, $fallback_key = null)
+	{
+		$value = $this->input->post($primary_key);
+		if (($value === null || $value === '') && $fallback_key !== null) {
+			$value = $this->input->post($fallback_key);
+		}
+		if ($value === null || $value === '') {
+			return null;
+		}
+		if (!is_numeric($value)) {
+			return null;
+		}
+
+		return (float) $value;
 	}
 
 	private function build_nakes_visit_location_payload($row, $status, $override_nakes_latitude = null, $override_nakes_longitude = null)
