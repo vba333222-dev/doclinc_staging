@@ -9,7 +9,18 @@ $can_start_call = $is_nakes_role
 	&& $request_status === 'Accepted'
 	&& function_exists('doclinc_request_is_handled_by_nakes')
 	&& doclinc_request_is_handled_by_nakes($request, $current_user_id);
-$call_token_url = base_url('home_nakes/livekit_token');
+$can_receive_call = $current_role === 'warga'
+	&& $request_status === 'Accepted'
+	&& isset($request->user_id)
+	&& (string) $request->user_id === (string) $current_user_id;
+$call_ui_enabled = $can_start_call || $can_receive_call;
+$call_start_url = base_url('home_nakes/start_livekit_call');
+$call_end_url = base_url('home_nakes/end_livekit_call');
+$call_nakes_status_url = base_url('home_nakes/livekit_call_status');
+$call_incoming_url = base_url('home/livekit_incoming_call');
+$call_answer_url = base_url('home/answer_livekit_call');
+$call_reject_url = base_url('home/reject_livekit_call');
+$call_warga_status_url = base_url('home/livekit_call_status');
 $queue_code = doclinc_request_queue_code($request);
 $queue_display = 'No. Antrian: ' . $queue_code;
 if ($current_role !== 'dokter') {
@@ -614,6 +625,67 @@ if ($current_role === 'dokter') {
 			flex: 0 0 auto;
 		}
 
+		.doclinc-incoming-call {
+			position: fixed;
+			left: 50%;
+			top: calc(84px + env(safe-area-inset-top));
+			z-index: 35;
+			transform: translateX(-50%);
+			width: min(370px, calc(100vw - 28px));
+			border-radius: 24px;
+			background: #101820;
+			color: #ffffff;
+			padding: 18px;
+			box-shadow: 0 20px 52px rgba(0, 0, 0, 0.28);
+		}
+
+		.doclinc-incoming-kicker {
+			margin: 0 0 8px;
+			color: rgba(255, 255, 255, 0.68);
+			font-size: 12px;
+			font-weight: 800;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+		}
+
+		.doclinc-incoming-name {
+			margin: 0;
+			font-size: 18px;
+			font-weight: 850;
+			line-height: 24px;
+		}
+
+		.doclinc-incoming-type {
+			margin: 3px 0 16px;
+			color: rgba(255, 255, 255, 0.74);
+			font-size: 13px;
+			line-height: 18px;
+		}
+
+		.doclinc-incoming-actions {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.doclinc-incoming-action {
+			flex: 1;
+			min-height: 44px;
+			border: 0;
+			border-radius: 999px;
+			color: #ffffff;
+			font-weight: 850;
+			cursor: pointer;
+		}
+
+		.doclinc-incoming-action.answer {
+			background: #437a13;
+		}
+
+		.doclinc-incoming-action.reject {
+			background: #dc2626;
+		}
+
 		.is-hidden {
 			display: none !important;
 		}
@@ -696,7 +768,7 @@ if ($current_role === 'dokter') {
 		</form>
 	</div>
 
-	<?php if ($can_start_call) : ?>
+	<?php if ($call_ui_enabled) : ?>
 		<div class="doclinc-call-modal" id="doclincCallModal" role="dialog" aria-modal="true" aria-labelledby="doclincCallTitle" aria-hidden="true">
 			<div class="doclinc-call-panel">
 				<div class="doclinc-call-head">
@@ -742,12 +814,33 @@ if ($current_role === 'dokter') {
 		<?php /* TODO #16D: render incoming call invitation here after reliable call invite signaling exists. */ ?>
 	<?php endif; ?>
 
-	<?php if ($can_start_call) : ?>
+	<?php if ($can_receive_call) : ?>
+		<div class="doclinc-incoming-call is-hidden" id="doclincIncomingCall" aria-live="polite">
+			<p class="doclinc-incoming-kicker">Panggilan masuk</p>
+			<p class="doclinc-incoming-name" id="doclincIncomingCaller">Nakes Doclinc</p>
+			<p class="doclinc-incoming-type" id="doclincIncomingType">Panggilan video</p>
+			<div class="doclinc-incoming-actions">
+				<button type="button" class="doclinc-incoming-action reject" id="doclincIncomingReject">Tolak</button>
+				<button type="button" class="doclinc-incoming-action answer" id="doclincIncomingAnswer">Jawab</button>
+			</div>
+		</div>
+	<?php endif; ?>
+
+	<?php if ($call_ui_enabled) : ?>
 		<script>
 			(function() {
-				const tokenUrl = <?= json_encode($call_token_url); ?>;
 				const requestId = <?= json_encode($request_id); ?>;
+				const canStartCall = <?= json_encode($can_start_call); ?>;
+				const canReceiveCall = <?= json_encode($can_receive_call); ?>;
+				const startCallUrl = <?= json_encode($call_start_url); ?>;
+				const endCallUrl = <?= json_encode($call_end_url); ?>;
+				const nakesStatusUrl = <?= json_encode($call_nakes_status_url); ?>;
+				const incomingCallUrl = <?= json_encode($call_incoming_url); ?>;
+				const answerCallUrl = <?= json_encode($call_answer_url); ?>;
+				const rejectCallUrl = <?= json_encode($call_reject_url); ?>;
+				const wargaStatusUrl = <?= json_encode($call_warga_status_url); ?>;
 				const state = {
+					callId: null,
 					room: null,
 					mode: 'video',
 					micEnabled: true,
@@ -757,7 +850,10 @@ if ($current_role === 'dokter') {
 					connecting: false,
 					minimized: false,
 					callStartedAt: null,
-					elapsedTimer: null
+					elapsedTimer: null,
+					incomingCall: null,
+					incomingPollTimer: null,
+					statusPollTimer: null
 				};
 				const elements = {};
 
@@ -786,6 +882,11 @@ if ($current_role === 'dokter') {
 					elements.minimize = byId('doclincCallMinimize');
 					elements.activeCall = byId('doclincActiveCall');
 					elements.elapsed = byId('doclincCallElapsed');
+					elements.incoming = byId('doclincIncomingCall');
+					elements.incomingCaller = byId('doclincIncomingCaller');
+					elements.incomingType = byId('doclincIncomingType');
+					elements.incomingAnswer = byId('doclincIncomingAnswer');
+					elements.incomingReject = byId('doclincIncomingReject');
 				}
 
 				function setStatus(message, isError) {
@@ -906,10 +1007,12 @@ if ($current_role === 'dokter') {
 						} catch (error) {}
 					}
 					state.room = null;
+					state.callId = null;
 					state.connecting = false;
 					state.minimized = false;
 					stopLocalTracks();
 					stopElapsedTimer();
+					stopStatusPolling();
 					if (elements.remote) {
 						Array.prototype.slice.call(elements.remote.querySelectorAll('video,audio')).forEach(function(node) {
 							node.remove();
@@ -919,6 +1022,14 @@ if ($current_role === 'dokter') {
 					setCallActive(false);
 					setStatus(message || 'Panggilan berakhir');
 					updateFloatingCall();
+				}
+
+				function endLocalCall(message) {
+					cleanupCall(message || 'Panggilan berakhir');
+					if (elements.modal) {
+						elements.modal.classList.remove('is-open');
+						elements.modal.setAttribute('aria-hidden', 'true');
+					}
 				}
 
 				function openCall(mode) {
@@ -939,14 +1050,22 @@ if ($current_role === 'dokter') {
 					setCallActive(false);
 					setStatus('Siap bergabung');
 					showCallScreen();
+					if (canStartCall) {
+						window.setTimeout(joinCall, 0);
+					}
 				}
 
 				function endCall() {
-					cleanupCall('Panggilan berakhir');
-					if (elements.modal) {
-						elements.modal.classList.remove('is-open');
-						elements.modal.setAttribute('aria-hidden', 'true');
+					const callId = state.callId;
+					if (canStartCall && callId) {
+						postForm(endCallUrl, {
+							call_id: callId
+						}).finally(function() {
+							endLocalCall('Panggilan berakhir');
+						});
+						return;
 					}
+					endLocalCall('Panggilan berakhir');
 				}
 
 				function attachTrack(track, container) {
@@ -1029,10 +1148,12 @@ if ($current_role === 'dokter') {
 					});
 				}
 
-				function fetchToken() {
+				function postForm(url, data) {
 					const formData = new FormData();
-					formData.append('request_id', requestId);
-					return fetch(tokenUrl, {
+					Object.keys(data || {}).forEach(function(key) {
+						formData.append(key, data[key]);
+					});
+					return fetch(url, {
 						method: 'POST',
 						body: formData,
 						credentials: 'same-origin',
@@ -1044,6 +1165,40 @@ if ($current_role === 'dokter') {
 							return {};
 						});
 					});
+				}
+
+				function fetchCallStatus() {
+					if (!state.callId) {
+						return Promise.resolve(null);
+					}
+					const url = canStartCall ? nakesStatusUrl : wargaStatusUrl;
+					return postForm(url, {
+						call_id: state.callId
+					});
+				}
+
+				function stopStatusPolling() {
+					if (state.statusPollTimer) {
+						window.clearInterval(state.statusPollTimer);
+					}
+					state.statusPollTimer = null;
+				}
+
+				function startStatusPolling() {
+					stopStatusPolling();
+					if (!state.callId) {
+						return;
+					}
+					state.statusPollTimer = window.setInterval(function() {
+						fetchCallStatus().then(function(response) {
+							if (!response || !response.success) {
+								return;
+							}
+							if (['ended', 'rejected', 'missed', 'failed'].indexOf(response.status) !== -1) {
+								endLocalCall(response.status === 'rejected' ? 'Panggilan ditolak' : 'Panggilan berakhir');
+							}
+						}).catch(function() {});
+					}, 3000);
 				}
 
 				function createLocalTrack(kind) {
@@ -1076,6 +1231,54 @@ if ($current_role === 'dokter') {
 					elements.local.classList.remove('is-hidden');
 				}
 
+				function connectWithPayload(response, waitingText) {
+					if (!response || !response.success || !response.token || !response.ws_url) {
+						state.connecting = false;
+						updateFloatingCall();
+						setStatus(response && response.message ? response.message : 'Panggilan belum dapat dimulai', true);
+						return Promise.resolve(null);
+					}
+					const LiveKit = sdk();
+					const room = new LiveKit.Room({
+						adaptiveStream: true,
+						dynacast: true
+					});
+					state.callId = response.call_id || state.callId;
+					state.mode = response.call_type === 'audio' ? 'audio' : state.mode;
+					state.room = room;
+					wireRoom(room);
+					return room.connect(response.ws_url, response.token).then(function() {
+						state.connecting = false;
+						setCallActive(true);
+						setStatus(waitingText || 'Menunggu lawan bicara bergabung');
+						startElapsedTimer();
+						startStatusPolling();
+						updateFloatingCall();
+						publishExistingParticipants(room);
+						return createLocalTrack('audio').then(publishTrack).catch(function() {
+							state.micEnabled = false;
+							if (elements.mic) {
+								elements.mic.classList.add('is-off');
+							}
+							setStatus('Mikrofon tidak tersedia');
+						});
+					}).then(function() {
+						if (state.mode !== 'video') {
+							return null;
+						}
+						return createLocalTrack('video').then(function(track) {
+							showLocalPreview(track);
+							return publishTrack(track);
+						}).catch(function() {
+							state.cameraEnabled = false;
+							if (elements.camera) {
+								elements.camera.classList.add('is-off');
+							}
+							setStatus('Kamera tidak tersedia, panggilan suara aktif');
+						});
+					});
+				}
+
 				function joinCall() {
 					if (state.room || state.connecting) {
 						showCallScreen();
@@ -1093,48 +1296,14 @@ if ($current_role === 'dokter') {
 					state.connecting = true;
 					setStatus('Menyiapkan panggilan...');
 					updateFloatingCall();
-					fetchToken().then(function(response) {
-						if (!response || !response.success || !response.token || !response.ws_url) {
-							state.connecting = false;
-							updateFloatingCall();
-							setStatus(response && response.message ? response.message : 'Panggilan belum dapat dimulai', true);
-							return null;
-						}
-						const room = new LiveKit.Room({
-							adaptiveStream: true,
-							dynacast: true
-						});
-						state.room = room;
-						wireRoom(room);
-						return room.connect(response.ws_url, response.token).then(function() {
-							state.connecting = false;
-							setCallActive(true);
-							setStatus('Menunggu lawan bicara bergabung');
-							startElapsedTimer();
-							updateFloatingCall();
-							publishExistingParticipants(room);
-							return createLocalTrack('audio').then(publishTrack).catch(function() {
-								state.micEnabled = false;
-								if (elements.mic) {
-									elements.mic.classList.add('is-off');
-								}
-								setStatus('Mikrofon tidak tersedia');
-							});
-						}).then(function() {
-							if (state.mode !== 'video') {
-								return null;
-							}
-							return createLocalTrack('video').then(function(track) {
-								showLocalPreview(track);
-								return publishTrack(track);
-							}).catch(function() {
-								state.cameraEnabled = false;
-								if (elements.camera) {
-									elements.camera.classList.add('is-off');
-								}
-								setStatus('Kamera tidak tersedia, panggilan suara aktif');
-							});
-						});
+					const request = canStartCall ? postForm(startCallUrl, {
+						request_id: requestId,
+						call_type: state.mode
+					}) : postForm(answerCallUrl, {
+						call_id: state.callId
+					});
+					request.then(function(response) {
+						return connectWithPayload(response, canStartCall ? 'Memanggil pasien...' : 'Menunggu lawan bicara bergabung');
 					}).catch(function(error) {
 						cleanupCall(error && error.message ? error.message : 'Gagal tersambung');
 					});
@@ -1201,6 +1370,97 @@ if ($current_role === 'dokter') {
 					});
 				}
 
+				function callTypeLabel(callType) {
+					return callType === 'audio' ? 'Panggilan suara' : 'Panggilan video';
+				}
+
+				function hideIncomingCall() {
+					state.incomingCall = null;
+					if (elements.incoming) {
+						elements.incoming.classList.add('is-hidden');
+					}
+				}
+
+				function showIncomingCall(call) {
+					if (!elements.incoming || !call || !call.call_id) {
+						return;
+					}
+					if (state.room || state.connecting) {
+						return;
+					}
+					state.incomingCall = call;
+					state.callId = call.call_id;
+					state.mode = call.call_type === 'audio' ? 'audio' : 'video';
+					if (elements.incomingCaller) {
+						elements.incomingCaller.textContent = call.caller_name || 'Nakes Doclinc';
+					}
+					if (elements.incomingType) {
+						elements.incomingType.textContent = callTypeLabel(call.call_type);
+					}
+					elements.incoming.classList.remove('is-hidden');
+				}
+
+				function pollIncomingCall() {
+					if (!canReceiveCall || state.room || state.connecting) {
+						return;
+					}
+					const url = incomingCallUrl + '?request_id=' + encodeURIComponent(requestId);
+					fetch(url, {
+						credentials: 'same-origin',
+						headers: {
+							'X-Requested-With': 'XMLHttpRequest'
+						}
+					}).then(function(response) {
+						return response.json().catch(function() {
+							return {};
+						});
+					}).then(function(response) {
+						if (response && response.success && response.has_incoming) {
+							showIncomingCall(response);
+						} else {
+							hideIncomingCall();
+						}
+					}).catch(function() {});
+				}
+
+				function startIncomingPolling() {
+					if (!canReceiveCall || state.incomingPollTimer) {
+						return;
+					}
+					pollIncomingCall();
+					state.incomingPollTimer = window.setInterval(pollIncomingCall, 3000);
+				}
+
+				function stopIncomingPolling() {
+					if (state.incomingPollTimer) {
+						window.clearInterval(state.incomingPollTimer);
+					}
+					state.incomingPollTimer = null;
+				}
+
+				function answerIncomingCall() {
+					const call = state.incomingCall;
+					if (!call || !call.call_id) {
+						return;
+					}
+					hideIncomingCall();
+					state.callId = call.call_id;
+					state.mode = call.call_type === 'audio' ? 'audio' : 'video';
+					showCallScreen();
+					joinCall();
+				}
+
+				function rejectIncomingCall() {
+					const callId = state.incomingCall && state.incomingCall.call_id ? state.incomingCall.call_id : state.callId;
+					hideIncomingCall();
+					if (!callId) {
+						return;
+					}
+					postForm(rejectCallUrl, {
+						call_id: callId
+					}).catch(function() {});
+				}
+
 				document.addEventListener('DOMContentLoaded', function() {
 					cacheElements();
 					document.querySelectorAll('.doclinc-call-start').forEach(function(button) {
@@ -1237,6 +1497,12 @@ if ($current_role === 'dokter') {
 					if (elements.activeCall) {
 						elements.activeCall.addEventListener('click', showCallScreen);
 					}
+					if (elements.incomingAnswer) {
+						elements.incomingAnswer.addEventListener('click', answerIncomingCall);
+					}
+					if (elements.incomingReject) {
+						elements.incomingReject.addEventListener('click', rejectIncomingCall);
+					}
 					if (elements.modal) {
 						elements.modal.addEventListener('click', function(event) {
 							if (event.target === elements.modal) {
@@ -1245,8 +1511,10 @@ if ($current_role === 'dokter') {
 						});
 					}
 					window.addEventListener('beforeunload', function() {
+						stopIncomingPolling();
 						cleanupCall('Panggilan berakhir');
 					});
+					startIncomingPolling();
 				});
 			})();
 		</script>

@@ -6,12 +6,13 @@ class Home_nakes extends MX_Controller
 	{
 		parent::__construct();
 		$this->load->model('Home_nakes_m');
+		$this->load->model('chat/Call_session_m', 'Call_session_m');
 		$this->load->helper('request_authz');
 		$this->load->helper('visit_routing');
 		$this->load->helper('livekit');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'livekit_token'), true)) {
+			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -38,6 +39,103 @@ class Home_nakes extends MX_Controller
 		$this->output
 			->set_status_header((int) $result['http_status'])
 			->set_output(json_encode($result['body']));
+	}
+
+	public function start_livekit_call()
+	{
+		$this->output->set_content_type('application/json');
+		if (!in_array($this->session->userdata('role'), array('dokter', 'nakes'), true)) {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+		if (!$this->Call_session_m->table_ready()) {
+			$this->output->set_status_header(503)->set_output(json_encode(array('success' => false, 'message' => 'Sesi panggilan belum siap')));
+			return;
+		}
+
+		$request_id = (int) ($this->input->post('request_id') ?: $this->input->get('request_id', TRUE));
+		$call_type = $this->input->post('call_type', TRUE) ?: $this->input->get('call_type', TRUE);
+		$call_type = $call_type === 'audio' ? 'audio' : 'video';
+		$user_id = (int) $this->session->userdata('id');
+		$request = doclinc_request_row($request_id);
+		if (!$request || $request->request_status !== 'Accepted' || !doclinc_request_is_handled_by_nakes($request, $user_id)) {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak diizinkan')));
+			return;
+		}
+
+		$call = $this->Call_session_m->start_or_reuse($request, $user_id, $call_type);
+		if (!$call) {
+			$this->output->set_status_header(500)->set_output(json_encode(array('success' => false, 'message' => 'Sesi panggilan tidak dapat dibuat')));
+			return;
+		}
+
+		$result = doclinc_livekit_token_payload($request_id, $user_id, $this->session->userdata('role'));
+		if (empty($result['body']['success'])) {
+			$this->output->set_status_header((int) $result['http_status'])->set_output(json_encode($result['body']));
+			return;
+		}
+
+		$body = $result['body'];
+		$body['call_id'] = (int) $call->call_id;
+		$body['status'] = $call->status;
+		$body['call_type'] = $call->call_type;
+		$this->output->set_status_header((int) $result['http_status'])->set_output(json_encode($body));
+	}
+
+	public function end_livekit_call()
+	{
+		$this->output->set_content_type('application/json');
+		if (!in_array($this->session->userdata('role'), array('dokter', 'nakes'), true)) {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+
+		$call_id = (int) ($this->input->post('call_id') ?: $this->input->get('call_id', TRUE));
+		$request_id = (int) ($this->input->post('request_id') ?: $this->input->get('request_id', TRUE));
+		$call = $call_id > 0 ? $this->Call_session_m->get_by_id($call_id) : $this->Call_session_m->get_active_by_request($request_id);
+		if (!$call) {
+			$this->output->set_status_header(404)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak tersedia')));
+			return;
+		}
+
+		$request = doclinc_request_row((int) $call->request_id);
+		if (!$request || !doclinc_request_is_handled_by_nakes($request, (int) $this->session->userdata('id'))) {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+
+		$this->Call_session_m->end_call((int) $call->call_id, 0);
+		$this->output->set_output(json_encode(array('success' => true, 'call_id' => (int) $call->call_id, 'status' => 'ended', 'message' => 'Panggilan diakhiri')));
+	}
+
+	public function livekit_call_status()
+	{
+		$this->output->set_content_type('application/json');
+		if (!in_array($this->session->userdata('role'), array('dokter', 'nakes'), true)) {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+
+		$call_id = (int) ($this->input->post('call_id') ?: $this->input->get('call_id', TRUE));
+		$call = $this->Call_session_m->get_by_id($call_id);
+		if (!$call) {
+			$this->output->set_status_header(404)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak tersedia')));
+			return;
+		}
+
+		$request = doclinc_request_row((int) $call->request_id);
+		if (!$request || !doclinc_request_is_handled_by_nakes($request, (int) $this->session->userdata('id'))) {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+
+		$this->output->set_output(json_encode(array(
+			'success' => true,
+			'call_id' => (int) $call->call_id,
+			'status' => $call->status,
+			'call_type' => $call->call_type,
+			'message' => 'Status panggilan',
+		)));
 	}
 
 	public function index()
