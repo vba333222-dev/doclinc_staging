@@ -6,12 +6,13 @@ class Home extends MX_Controller
 	{
 		parent::__construct();
 		$this->load->model('Home_m');
+		$this->load->model('chat/Call_session_m', 'Call_session_m');
 		$this->load->helper('request_authz');
 		$this->load->helper('visit_routing');
 		$this->load->helper('livekit');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if (in_array($this->router->fetch_method(), array('visit_location', 'livekit_token'), true)) {
+			if (in_array($this->router->fetch_method(), array('visit_location', 'livekit_token', 'livekit_incoming_call', 'answer_livekit_call', 'reject_livekit_call', 'livekit_call_status'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -35,10 +36,130 @@ class Home extends MX_Controller
 		}
 
 		$request_id = (int) ($this->input->post('request_id') ?: $this->input->get('request_id', TRUE));
+		$active_call = $this->Call_session_m->get_active_by_request($request_id);
+		if (!$active_call || (string) $active_call->callee_user_id !== (string) $this->session->userdata('id')) {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(array('success' => false, 'message' => 'Panggilan masuk tidak tersedia')));
+			return;
+		}
+
 		$result = doclinc_livekit_token_payload($request_id, (int) $this->session->userdata('id'), 'warga');
 		$this->output
 			->set_status_header((int) $result['http_status'])
 			->set_output(json_encode($result['body']));
+	}
+
+	public function livekit_incoming_call()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->session->userdata('role') !== 'warga') {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+
+		if (!$this->Call_session_m->table_ready()) {
+			$this->output->set_output(json_encode(array('success' => true, 'has_incoming' => false, 'message' => 'Belum ada panggilan masuk')));
+			return;
+		}
+
+		$request_id = (int) ($this->input->get('request_id', TRUE) ?: $this->input->post('request_id'));
+		$call = $this->Call_session_m->get_latest_incoming_for_warga((int) $this->session->userdata('id'), $request_id);
+		if (!$call) {
+			$this->output->set_output(json_encode(array('success' => true, 'has_incoming' => false, 'message' => 'Belum ada panggilan masuk')));
+			return;
+		}
+
+		$payload = $this->Call_session_m->format_call($call);
+		$payload['success'] = true;
+		$payload['has_incoming'] = true;
+		$payload['message'] = 'Panggilan masuk';
+		$this->output->set_output(json_encode($payload));
+	}
+
+	public function answer_livekit_call()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->session->userdata('role') !== 'warga') {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+
+		$call_id = (int) ($this->input->post('call_id') ?: $this->input->get('call_id', TRUE));
+		$call = $this->Call_session_m->get_by_id($call_id);
+		$user_id = (int) $this->session->userdata('id');
+		if (!$call || (string) $call->callee_user_id !== (string) $user_id || !in_array($call->status, array('ringing', 'answered'), true)) {
+			$this->output->set_status_header(404)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak tersedia')));
+			return;
+		}
+
+		$request = doclinc_request_row((int) $call->request_id);
+		if (!$request || $request->request_status !== 'Accepted' || (string) $request->user_id !== (string) $user_id) {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak dapat dijawab')));
+			return;
+		}
+
+		$call = $this->Call_session_m->answer($call_id);
+		$result = doclinc_livekit_token_payload((int) $call->request_id, $user_id, 'warga');
+		if (empty($result['body']['success'])) {
+			$this->output->set_status_header((int) $result['http_status'])->set_output(json_encode($result['body']));
+			return;
+		}
+
+		$body = $result['body'];
+		$body['call_id'] = (int) $call->call_id;
+		$body['status'] = $call->status;
+		$body['call_type'] = $call->call_type;
+		$this->output->set_status_header((int) $result['http_status'])->set_output(json_encode($body));
+	}
+
+	public function reject_livekit_call()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->session->userdata('role') !== 'warga') {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+
+		$call_id = (int) ($this->input->post('call_id') ?: $this->input->get('call_id', TRUE));
+		$call = $this->Call_session_m->get_by_id($call_id);
+		$user_id = (int) $this->session->userdata('id');
+		if (!$call || (string) $call->callee_user_id !== (string) $user_id) {
+			$this->output->set_status_header(404)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak tersedia')));
+			return;
+		}
+		$request = doclinc_request_row((int) $call->request_id);
+		if (!$request || $request->request_status !== 'Accepted' || (string) $request->user_id !== (string) $user_id) {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak dapat ditolak')));
+			return;
+		}
+		if ($call->status !== 'ringing') {
+			$this->output->set_status_header(409)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan sudah tidak berdering', 'status' => $call->status)));
+			return;
+		}
+
+		$this->Call_session_m->reject($call_id);
+		$this->output->set_output(json_encode(array('success' => true, 'call_id' => $call_id, 'status' => 'rejected', 'message' => 'Panggilan ditolak')));
+	}
+
+	public function livekit_call_status()
+	{
+		$this->output->set_content_type('application/json');
+		$call_id = (int) ($this->input->post('call_id') ?: $this->input->get('call_id', TRUE));
+		$call = $this->Call_session_m->get_by_id($call_id);
+		$user_id = (int) $this->session->userdata('id');
+		if (!$call || (string) $call->callee_user_id !== (string) $user_id) {
+			$this->output->set_status_header(404)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak tersedia')));
+			return;
+		}
+
+		$this->output->set_output(json_encode(array(
+			'success' => true,
+			'call_id' => (int) $call->call_id,
+			'status' => $call->status,
+			'call_type' => $call->call_type,
+			'message' => 'Status panggilan',
+		)));
 	}
 
 	public function index()
