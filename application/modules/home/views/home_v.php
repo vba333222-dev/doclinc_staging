@@ -281,6 +281,12 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			padding: 5px 10px;
 		}
 
+		.visit-route-provider-note {
+			color: #6c757d;
+			font-size: 11px;
+			line-height: 1.35;
+		}
+
 		@media (max-width: 575.98px) {
 			.doclinc-visit-map {
 				height: 58vh;
@@ -944,7 +950,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									✅ Nakes telah menerima permintaan konsultasi Anda.
 								</div>
 
-								<div class="card shadow mb-2 dl-card" data-request-id="<?= (int) $id_request; ?>">
+								<div class="card shadow mb-2 dl-card" data-request-id="<?= html_escape((int) $id_request); ?>">
 									<div class="card-header d-flex align-items-center">
 										<div>
 											<p class="mb-0 fw-bold"><?= html_escape($puskesmas_label); ?></p>
@@ -1003,6 +1009,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 														<span>Terakhir diperbarui</span>
 														<strong data-visit-route-updated="<?= html_escape((int) $id_request); ?>">-</strong>
 													</div>
+													<div class="visit-route-provider-note mt-1 d-none" data-visit-route-provider-note="<?= html_escape((int) $id_request); ?>"></div>
 												</div>
 											</div>
 										<?php elseif ($request_status === 'Pending') : ?>
@@ -1384,18 +1391,20 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				const etaElement = document.querySelector('[data-visit-route-eta="' + requestId + '"]');
 				const updatedElement = document.querySelector('[data-visit-route-updated="' + requestId + '"]');
 				const statusElement = document.querySelector('[data-visit-route-status="' + requestId + '"]');
+				const providerNoteElement = document.querySelector('[data-visit-route-provider-note="' + requestId + '"]');
 				const hasDistance = !!(route && (route.distance_text || route.eta_text));
 				const hasGeometry = !!(route && route.geometry && route.geometry.type === 'LineString');
 				const patientAvailable = !patient || patient.available !== false;
 				const nakesAvailable = !!(nakes && nakes.available !== false && nakes.latitude && nakes.longitude);
+				const isValhallaRoute = !!(route && route.provider === 'valhalla');
 				let statusText = 'Menghitung...';
 
 				if (!patientAvailable) {
 					statusText = 'Lokasi pasien belum tersedia';
 				} else if (!nakesAvailable) {
 					statusText = 'Menunggu lokasi nakes';
-				} else if (route && route.provider === 'valhalla') {
-					statusText = 'Rute aktif';
+				} else if (isValhallaRoute) {
+					statusText = 'Estimasi berdasarkan rute jalan';
 				} else if (!hasGeometry && hasDistance) {
 					statusText = 'Rute dihitung';
 				}
@@ -1406,6 +1415,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				if (etaElement) etaElement.textContent = route && route.eta_text ? route.eta_text : 'Menghitung...';
 				if (updatedElement) updatedElement.textContent = route && route.calculated_at ? route.calculated_at : (response && response.status === 'success' ? new Date().toLocaleString('id-ID') : '-');
 				if (statusElement) statusElement.textContent = statusText;
+				if (providerNoteElement) {
+					providerNoteElement.textContent = isValhallaRoute ? 'Estimasi berdasarkan rute jalan' : '';
+					providerNoteElement.classList.toggle('d-none', !isValhallaRoute);
+				}
 			}
 
 			function getVisitStatusMessage(response, fallback) {
