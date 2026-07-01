@@ -1637,7 +1637,8 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				lastLeafletBounds: null,
 				lastGoogleBounds: null,
 				currentRequestId: null,
-				loadedRequests: {}
+				loadedRequests: {},
+				fitModes: {}
 			};
 			const nextVisitStatuses = {
 				not_started: 'en_route',
@@ -1686,7 +1687,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			function setNakesRouteSummary(response, patientLocation, nakesLocation) {
 				const route = response && response.route ? response.route : {};
 				const hasDistance = !!(route && (route.distance_text || route.eta_text));
-				const hasGeometry = !!(route && route.geometry && route.geometry.type === 'LineString');
+				const hasGeometry = !!(route && route.geometry && (route.geometry.type === 'polyline6' || route.geometry.type === 'LineString'));
 				const patientAvailable = !!patientLocation;
 				const nakesAvailable = !!nakesLocation;
 				const isValhallaRoute = !!(route && route.provider === 'valhalla');
@@ -1753,15 +1754,18 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			}
 
 			function routeLatLngs(route) {
-				if (!route || !route.geometry || route.geometry.type !== 'LineString' || !Array.isArray(route.geometry.coordinates)) {
+				if (!route || !route.geometry || !Array.isArray(route.geometry.coordinates)) {
 					return [];
 				}
+				const isPolyline6 = route.geometry.type === 'polyline6';
+				const isLineString = route.geometry.type === 'LineString';
+				if (!isPolyline6 && !isLineString) return [];
 				return route.geometry.coordinates
 					.map(function(coordinate) {
 						if (!Array.isArray(coordinate) || coordinate.length < 2) return null;
-						const lng = parseFloat(coordinate[0]);
-						const lat = parseFloat(coordinate[1]);
-						if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+						const lat = parseFloat(isPolyline6 ? coordinate[0] : coordinate[1]);
+						const lng = parseFloat(isPolyline6 ? coordinate[1] : coordinate[0]);
+						if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
 						return [lat, lng];
 					})
 					.filter(Boolean);
@@ -1794,7 +1798,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				};
 			}
 
-			function renderLeafletMap(patientLocation, nakesLocation, route) {
+			function renderLeafletMap(patientLocation, nakesLocation, route, shouldFitBounds) {
 				const container = document.getElementById('nakesVisitMapCanvas') || document.getElementById('maps');
 				if (!container || !window.L) return false;
 				const center = nakesLocation || patientLocation || {
@@ -1860,12 +1864,12 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 					});
 				}
 				mapState.lastLeafletBounds = bounds.slice();
-				if (bounds.length > 1) {
+				if (shouldFitBounds && bounds.length > 1) {
 					mapState.leaflet.fitBounds(bounds, {
 						padding: [58, 58],
 						maxZoom: 17
 					});
-				} else if (bounds.length === 1) {
+				} else if (shouldFitBounds && bounds.length === 1) {
 					mapState.leaflet.setView(bounds[0], Math.max(mapState.leaflet.getZoom(), 14));
 				}
 				setTimeout(function() {
@@ -1874,7 +1878,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				return true;
 			}
 
-			function renderGoogleMap(patientLocation, nakesLocation, route) {
+			function renderGoogleMap(patientLocation, nakesLocation, route, shouldFitBounds) {
 				if (!hasGoogleMaps()) return false;
 				const container = document.getElementById('nakesVisitMapCanvas') || document.getElementById('maps');
 				if (!container) return false;
@@ -1941,9 +1945,9 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 					});
 				}
 				mapState.lastGoogleBounds = bounds;
-				if (patientLocation && nakesLocation) {
+				if (shouldFitBounds && patientLocation && nakesLocation) {
 					mapState.google.fitBounds(bounds);
-				} else if (patientLocation || nakesLocation) {
+				} else if (shouldFitBounds && (patientLocation || nakesLocation)) {
 					mapState.google.setCenter(bounds.getCenter());
 					mapState.google.setZoom(14);
 				}
@@ -1967,13 +1971,17 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				}
 
 				const route = response && response.route ? response.route : null;
-				const rendered = renderGoogleMap(patientLocation, nakesLocation, route) || renderLeafletMap(patientLocation, nakesLocation, route);
+				const routeHasGeometry = routeLatLngs(route).length > 1;
+				const currentFitMode = requestId && mapState.fitModes ? (mapState.fitModes[requestId] || '') : '';
+				const shouldFitBounds = !requestId || !mapState.loadedRequests[requestId] || (routeHasGeometry && currentFitMode !== 'route');
+				const rendered = renderGoogleMap(patientLocation, nakesLocation, route, shouldFitBounds) || renderLeafletMap(patientLocation, nakesLocation, route, shouldFitBounds);
 				if (!rendered) {
 					setMapStatus('Peta belum tersedia', true);
 					return false;
 				}
 				if (requestId) {
 					mapState.loadedRequests[requestId] = true;
+					mapState.fitModes[requestId] = routeHasGeometry ? 'route' : (currentFitMode || 'markers');
 					mapState.currentRequestId = requestId;
 				}
 				return true;

@@ -1393,7 +1393,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				const statusElement = document.querySelector('[data-visit-route-status="' + requestId + '"]');
 				const providerNoteElement = document.querySelector('[data-visit-route-provider-note="' + requestId + '"]');
 				const hasDistance = !!(route && (route.distance_text || route.eta_text));
-				const hasGeometry = !!(route && route.geometry && route.geometry.type === 'LineString');
+				const hasGeometry = !!(route && route.geometry && (route.geometry.type === 'polyline6' || route.geometry.type === 'LineString'));
 				const patientAvailable = !patient || patient.available !== false;
 				const nakesAvailable = !!(nakes && nakes.available !== false && nakes.latitude && nakes.longitude);
 				const isValhallaRoute = !!(route && route.provider === 'valhalla');
@@ -1453,15 +1453,18 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}
 
 			function routeLatLngs(route) {
-				if (!route || !route.geometry || route.geometry.type !== 'LineString' || !Array.isArray(route.geometry.coordinates)) {
+				if (!route || !route.geometry || !Array.isArray(route.geometry.coordinates)) {
 					return [];
 				}
+				const isPolyline6 = route.geometry.type === 'polyline6';
+				const isLineString = route.geometry.type === 'LineString';
+				if (!isPolyline6 && !isLineString) return [];
 				return route.geometry.coordinates
 					.map(function(coordinate) {
 						if (!Array.isArray(coordinate) || coordinate.length < 2) return null;
-						const lng = parseFloat(coordinate[0]);
-						const lat = parseFloat(coordinate[1]);
-						if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+						const lat = parseFloat(isPolyline6 ? coordinate[0] : coordinate[1]);
+						const lng = parseFloat(isPolyline6 ? coordinate[1] : coordinate[0]);
+						if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
 						return [lat, lng];
 					})
 					.filter(Boolean);
@@ -1494,7 +1497,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						markers: {},
 						routeOutlineLine: null,
 						routeLine: null,
-						lastBounds: null
+						lastBounds: null,
+						hasAutoFit: false,
+						autoFitMode: ''
 					};
 					setTimeout(function() {
 						map.invalidateSize();
@@ -1508,9 +1513,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				return state;
 			};
 
-			function fitVisitBounds(state, bounds) {
+			function fitVisitBounds(state, bounds, forceFit, mode) {
 				if (!state || !state.map || !bounds || !bounds.length) return;
 				state.lastBounds = bounds.slice();
+				if (!forceFit && state.hasAutoFit && !(mode === 'route' && state.autoFitMode !== 'route')) return;
 				if (bounds.length > 1) {
 					state.map.fitBounds(bounds, {
 						padding: [54, 54],
@@ -1518,6 +1524,21 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					});
 				} else {
 					state.map.setView(bounds[0], Math.max(state.map.getZoom(), 14));
+				}
+				state.hasAutoFit = true;
+				state.autoFitMode = mode || state.autoFitMode || 'markers';
+			}
+
+			function clearVisitRoute(mapContainerId) {
+				const state = maps[mapContainerId];
+				if (!state || !state.map) return;
+				if (state.routeOutlineLine) {
+					state.map.removeLayer(state.routeOutlineLine);
+					state.routeOutlineLine = null;
+				}
+				if (state.routeLine) {
+					state.map.removeLayer(state.routeLine);
+					state.routeLine = null;
 				}
 			}
 
@@ -1573,7 +1594,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					});
 				}
 
-				fitVisitBounds(state, bounds);
+				fitVisitBounds(state, bounds, false, routePoints.length > 1 ? 'route' : 'markers');
 
 				setTimeout(function() {
 					state.map.invalidateSize();
@@ -1584,7 +1605,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				const state = maps[mapContainerId];
 				if (!state || !state.map) return;
 				state.map.invalidateSize();
-				fitVisitBounds(state, state.lastBounds || []);
+				fitVisitBounds(state, state.lastBounds || [], true, state.autoFitMode || 'markers');
 			};
 
 			ns.pollVisitLocation = function(requestId, mapContainerId) {
@@ -1607,6 +1628,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 							if (response && response.request_status && response.request_status !== 'Accepted') {
 								setVisitStatus(requestId, 'Tracking lokasi dihentikan');
+								clearVisitRoute(mapContainerId);
 								stopPolling(requestId);
 								return;
 							}
