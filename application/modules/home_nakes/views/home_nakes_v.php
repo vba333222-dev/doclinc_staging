@@ -74,6 +74,40 @@ $nakes_pending_count = isset($data_request_new) ? (int) $data_request_new->num_r
 $nakes_active_count = isset($data_request_accept) ? (int) $data_request_accept->num_rows() : 0;
 $nakes_completed_count = isset($data_request_completed) ? (int) $data_request_completed->num_rows() : 0;
 $nakes_today_total = $nakes_pending_count + $nakes_active_count;
+$nakes_pending_rows = isset($data_request_new) ? $data_request_new->result() : array();
+$nakes_active_rows = isset($data_request_accept) ? $data_request_accept->result() : array();
+$nakes_latest_pending_rows = array_slice($nakes_pending_rows, 0, 2);
+$nakes_primary_active = !empty($nakes_active_rows) ? $nakes_active_rows[0] : null;
+
+if (!function_exists('doclinc_nakes_queue_badge')) {
+	function doclinc_nakes_queue_badge($request)
+	{
+		$label = doclinc_request_queue_number_label($request);
+		if (preg_match('/(\d+)/', (string) $label, $match)) {
+			return str_pad(substr($match[1], -2), 2, '0', STR_PAD_LEFT);
+		}
+
+		return '00';
+	}
+}
+
+if (!function_exists('doclinc_nakes_short_text')) {
+	function doclinc_nakes_short_text($value, $limit = 92)
+	{
+		$text = trim(preg_replace('/\s+/', ' ', (string) $value));
+		if ($text === '') {
+			return 'Keluhan tersimpan';
+		}
+		if (function_exists('mb_strlen') && mb_strlen($text) > $limit) {
+			return mb_substr($text, 0, $limit - 1) . '...';
+		}
+		if (strlen($text) > $limit) {
+			return substr($text, 0, $limit - 1) . '...';
+		}
+
+		return $text;
+	}
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -502,6 +536,482 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			padding: 10px;
 			cursor: pointer;
 		}
+
+		.dl-nakes-dashboard {
+			background: #f3f8f5 !important;
+			font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			color: #173b2d;
+		}
+
+		.dl-nakes-dashboard .content {
+			padding: 14px 14px 96px;
+		}
+
+		.dl-nakes-appbar {
+			position: relative;
+			border-radius: 0 0 30px 30px;
+			background: radial-gradient(circle at top left, rgba(159, 255, 219, .38), transparent 36%), linear-gradient(150deg, #087b55 0%, #0bae76 52%, #0a7357 100%) !important;
+			min-height: 246px;
+			box-shadow: 0 20px 45px rgba(8, 106, 75, .24);
+		}
+
+		.dl-nakes-appbar-top {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			margin-bottom: 18px;
+		}
+
+		.dl-nakes-icon-btn {
+			width: 42px;
+			height: 42px;
+			border-radius: 16px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: rgba(255, 255, 255, .16);
+			color: #fff;
+			text-decoration: none;
+			border: 1px solid rgba(255, 255, 255, .2);
+			backdrop-filter: blur(10px);
+		}
+
+		.dl-nakes-header-title {
+			min-width: 0;
+			flex: 1;
+		}
+
+		.dl-nakes-header-title span {
+			display: block;
+			font-size: 12px;
+			font-weight: 800;
+			letter-spacing: .08em;
+			text-transform: uppercase;
+			color: rgba(255, 255, 255, .76);
+		}
+
+		.dl-nakes-header-title strong {
+			display: block;
+			font-size: 17px;
+			line-height: 1.2;
+			color: #fff;
+		}
+
+		.dl-nakes-profile-card {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			padding: 15px;
+			border-radius: 24px;
+			background: rgba(255, 255, 255, .14);
+			border: 1px solid rgba(255, 255, 255, .2);
+			color: #fff;
+			backdrop-filter: blur(14px);
+		}
+
+		.dl-nakes-profile-card img {
+			width: 66px;
+			height: 66px;
+			border-radius: 22px;
+			object-fit: cover;
+			border: 3px solid rgba(255, 255, 255, .42);
+		}
+
+		.dl-nakes-profile-card small,
+		.dl-nakes-profile-card p {
+			color: rgba(255, 255, 255, .82);
+		}
+
+		.dl-nakes-profile-card h3 {
+			font-size: 20px;
+			font-weight: 800;
+			line-height: 1.15;
+			margin: 2px 0 4px;
+			word-break: break-word;
+		}
+
+		.dl-nakes-location-pill {
+			display: inline-flex;
+			align-items: center;
+			gap: 7px;
+			max-width: 100%;
+			margin-top: 12px;
+			padding: 8px 11px;
+			border-radius: 999px;
+			background: rgba(255, 255, 255, .14);
+			color: rgba(255, 255, 255, .88);
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.dl-nakes-location-pill span {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		#wave {
+			display: none;
+		}
+
+		.dl-nakes-card {
+			background: #fff;
+			border: 1px solid #dfeee8;
+			border-radius: 18px;
+			box-shadow: 0 16px 34px rgba(23, 59, 45, .08);
+		}
+
+		.dl-dashboard-stack {
+			display: flex;
+			flex-direction: column;
+			gap: 14px;
+			margin-top: -28px;
+		}
+
+		.dl-device-card {
+			position: relative;
+			padding: 16px;
+			overflow: hidden;
+		}
+
+		.dl-device-card:after {
+			content: "";
+			position: absolute;
+			right: -26px;
+			top: -30px;
+			width: 108px;
+			height: 108px;
+			border-radius: 50%;
+			background: rgba(9, 173, 116, .1);
+		}
+
+		.dl-card-kicker {
+			font-size: 11px;
+			font-weight: 800;
+			letter-spacing: .08em;
+			text-transform: uppercase;
+			color: #0a8b60;
+		}
+
+		.dl-device-row,
+		.dl-task-row,
+		.dl-latest-row {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+
+		.dl-status-dot {
+			width: 10px;
+			height: 10px;
+			border-radius: 50%;
+			background: #13c783;
+			box-shadow: 0 0 0 6px rgba(19, 199, 131, .13);
+			flex: 0 0 auto;
+		}
+
+		.dl-dashboard-stats {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 10px;
+		}
+
+		.dl-dashboard-stat {
+			padding: 14px 12px;
+			text-decoration: none;
+			color: #173b2d;
+		}
+
+		.dl-dashboard-stat span {
+			display: block;
+			color: #6f857b;
+			font-size: 12px;
+			font-weight: 800;
+		}
+
+		.dl-dashboard-stat strong {
+			display: block;
+			font-size: 24px;
+			line-height: 1;
+			margin-top: 8px;
+			color: #087b55;
+		}
+
+		.dl-section-header {
+			align-items: center;
+		}
+
+		.dl-section-title {
+			font-size: 18px;
+			font-weight: 800;
+			color: #173b2d;
+			margin: 0;
+		}
+
+		.dl-dashboard-section {
+			padding: 16px;
+		}
+
+		.dl-task-avatar,
+		.dl-latest-badge {
+			width: 46px;
+			height: 46px;
+			border-radius: 16px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: #e8f8f1;
+			color: #087b55;
+			font-weight: 900;
+			flex: 0 0 auto;
+		}
+
+		.dl-task-title,
+		.dl-latest-name {
+			font-size: 15px;
+			font-weight: 800;
+			color: #173b2d;
+			margin: 0;
+		}
+
+		.dl-task-meta,
+		.dl-latest-meta,
+		.dl-muted-copy {
+			color: #6f857b;
+			font-size: 12px;
+			line-height: 1.45;
+		}
+
+		.dl-soft-empty {
+			padding: 18px;
+			border-radius: 16px;
+			background: #f7fbf9;
+			border: 1px dashed #cfe4da;
+		}
+
+		.dl-info-card {
+			padding: 16px;
+			background: linear-gradient(135deg, #e9fbf2, #f7fffb);
+			border-color: #ccecdf;
+		}
+
+		.dl-nakes-page-header {
+			position: sticky;
+			top: 0;
+			z-index: 9;
+			margin: -14px -14px 14px;
+			padding: 16px 14px 14px;
+			background: rgba(243, 248, 245, .96);
+			backdrop-filter: blur(12px);
+		}
+
+		.dl-header-count {
+			border-radius: 999px;
+			padding: 7px 11px;
+			background: #e6f6ef;
+			color: #087b55;
+			font-size: 12px;
+			font-weight: 900;
+		}
+
+		.dl-request-filter-row {
+			display: flex;
+			gap: 8px;
+			margin: 0 0 12px;
+			overflow-x: auto;
+			padding-bottom: 2px;
+		}
+
+		.dl-filter-chip {
+			border: 0;
+			border-radius: 999px;
+			padding: 8px 13px;
+			background: #fff;
+			color: #5f756b;
+			font-size: 12px;
+			font-weight: 800;
+			box-shadow: inset 0 0 0 1px #dfeee8;
+			white-space: nowrap;
+		}
+
+		.dl-filter-chip.is-active {
+			background: #087b55;
+			color: #fff;
+			box-shadow: none;
+		}
+
+		.dl-filter-chip:disabled {
+			opacity: .55;
+			cursor: default;
+		}
+
+		.dl-nakes-request-card {
+			border: 1px solid #dfeee8 !important;
+			border-radius: 18px !important;
+			overflow: hidden;
+			box-shadow: 0 16px 34px rgba(23, 59, 45, .08) !important;
+			margin-bottom: 14px;
+		}
+
+		.dl-nakes-request-card .card-header {
+			background: #fff;
+			color: #173b2d;
+			border-bottom: 1px solid #edf5f1;
+			padding: 14px;
+		}
+
+		.dl-queue-badge {
+			width: 50px;
+			height: 50px;
+			border-radius: 17px;
+			display: inline-flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			background: #e6f6ef;
+			color: #087b55;
+			font-weight: 900;
+			flex: 0 0 auto;
+		}
+
+		.dl-queue-badge small {
+			font-size: 9px;
+			letter-spacing: .08em;
+			text-transform: uppercase;
+			color: #57947a;
+			line-height: 1;
+		}
+
+		.dl-queue-badge span {
+			font-size: 20px;
+			line-height: 1;
+			margin-top: 3px;
+		}
+
+		.dl-request-title {
+			font-size: 16px;
+			font-weight: 900;
+			color: #173b2d;
+			line-height: 1.2;
+		}
+
+		.dl-request-tags {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			margin-top: 7px;
+		}
+
+		.dl-request-tag {
+			border-radius: 999px;
+			background: #f2f8f5;
+			color: #547064;
+			font-size: 11px;
+			font-weight: 800;
+			padding: 5px 8px;
+		}
+
+		.dl-badge {
+			border-radius: 999px;
+			background: #e9f8f2;
+			color: #087b55;
+			border: 1px solid #c9eadb;
+			font-size: 11px;
+			font-weight: 900;
+			padding: 6px 9px;
+			white-space: nowrap;
+		}
+
+		.dl-nakes-complaint-box {
+			border: 1px solid #e5f0ea;
+			background: #f8fbfa;
+			border-radius: 16px;
+		}
+
+		.dl-nakes-meta-list {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px;
+		}
+
+		.dl-nakes-meta-list>div {
+			min-width: 0;
+			border-radius: 14px;
+			background: #fff;
+			border: 1px solid #edf5f1;
+			padding: 10px;
+		}
+
+		.dl-nakes-meta-list i {
+			color: #0a8b60;
+		}
+
+		.dl-nakes-meta-list span {
+			display: block;
+			color: #6f857b;
+			font-size: 11px;
+			font-weight: 800;
+			margin: 5px 0 2px;
+		}
+
+		.dl-nakes-meta-list strong {
+			display: block;
+			color: #173b2d;
+			font-size: 12px;
+			line-height: 1.35;
+			word-break: break-word;
+		}
+
+		.dl-nakes-actions .btn,
+		.dl-nakes-request-card .card-footer .btn {
+			min-height: 42px;
+			font-weight: 800;
+			font-size: 12px;
+		}
+
+		.dl-bottom-nav {
+			border: 1px solid #dfeee8;
+			background: rgba(255, 255, 255, .96);
+			backdrop-filter: blur(14px);
+		}
+
+		.dl-bottom-nav .menu-item {
+			color: #789087;
+			text-decoration: none;
+			border-radius: 16px;
+			padding: 8px 4px;
+			font-weight: 800;
+		}
+
+		.dl-bottom-nav .menu-item.active {
+			background: #e6f6ef;
+			color: #087b55;
+		}
+
+		@media (max-width: 430px) {
+			.dl-dashboard-stats {
+				gap: 8px;
+			}
+
+			.dl-dashboard-stat {
+				padding: 12px 9px;
+			}
+
+			.dl-dashboard-stat strong {
+				font-size: 22px;
+			}
+
+			.dl-nakes-meta-list {
+				grid-template-columns: 1fr;
+			}
+
+			.dl-nakes-actions {
+				display: grid !important;
+				grid-template-columns: 1fr;
+			}
+		}
 	</style>
 </head>
 
@@ -518,35 +1028,36 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 	<div class="content-wrapper dl-shell" id="content-wrapper">
 		<div class="contents">
 			<div class="hero bg-success p-3 overflow-hidden dl-appbar dl-nakes-appbar">
-				<a href="<?= html_escape($legacy_superapp_url); ?>" class="dl-back-link" aria-label="Kembali">
-					<i class="fas fa-chevron-left icon"></i>
-				</a>
-				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
-					<i class="bi bi-bell-fill fs-4"></i>
-					<!-- kalo ada notif fetch datanya dari sini ya, bukan dari dalem elemen span nya -->
-					<span class="notify-number" id="badgeNotif">9+</span>
-					<!-- sampe sini -->
-				</a>
-				<div class="text-white me-4 dl-location-row">
-					<p class="mb-2" style="line-height:1;">
-						<i class="fas fa-map-marker-alt me-2"></i><span class="small" id="address_label"></span>
-					</p>
-					<input type="hidden" id="id_user" value="<?= $this->session->userdata('id'); ?>">
-					<input type="hidden" id="address" placeholder="Latitude">
-					<input type="hidden" id="latitude" placeholder="Latitude">
-					<input type="hidden" id="longitude" placeholder="Longitude">
-					<div id="map"></div>
-				</div>
-				<div class="d-flex animate__animated animate__fadeInUp animate__faster dl-profile-row">
-					<div class="flex-shrink-0">
-						<img class="rounded-4 shadow dl-profile-photo" src="<?= doclinc_safe_profile_image_src($profile['foto'] ?? ''); ?>" width="100px" height="100px" alt="Foto Profil">
+				<div class="dl-nakes-appbar-top">
+					<a href="<?= html_escape($legacy_superapp_url); ?>" class="dl-nakes-icon-btn" aria-label="Kembali">
+						<i class="fas fa-chevron-left"></i>
+					</a>
+					<div class="dl-nakes-header-title">
+						<span>Doclinc Nakes</span>
+						<strong>Dashboard Tugas</strong>
 					</div>
-					<div class="flex-grow-1 ms-3 text-white dl-profile-copy">
-						<small>Selamat Pagi,</small>
-						<h3 class="mb-0"><?= html_escape($nakes_name); ?></h3>
-						<p class="mb-0"><?= html_escape($nakes_age); ?></p>
+					<a class="dl-nakes-icon-btn position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif" aria-label="Notifikasi">
+						<i class="bi bi-bell-fill"></i>
+						<span class="notify-number" id="badgeNotif">9+</span>
+					</a>
+				</div>
+				<div class="dl-nakes-profile-card animate__animated animate__fadeInUp animate__faster">
+					<img src="<?= html_escape(doclinc_safe_profile_image_src($profile['foto'] ?? '')); ?>" alt="Foto Profil">
+					<div class="min-w-0">
+						<small>Selamat bertugas,</small>
+						<h3><?= html_escape($nakes_name); ?></h3>
+						<p class="mb-0"><?= html_escape($nakes_age); ?> · Nakes aktif</p>
 					</div>
 				</div>
+				<div class="dl-nakes-location-pill">
+					<i class="fas fa-map-marker-alt"></i>
+					<span id="address_label"></span>
+				</div>
+				<input type="hidden" id="id_user" value="<?= html_escape($this->session->userdata('id')); ?>">
+				<input type="hidden" id="address" placeholder="Latitude">
+				<input type="hidden" id="latitude" placeholder="Latitude">
+				<input type="hidden" id="longitude" placeholder="Longitude">
+				<div id="map"></div>
 			</div>
 			<svg id="wave" style="transform:rotate(180deg); transition: 0.3s" viewBox="0 0 1440 120" version="1.1" xmlns="http://www.w3.org/2000/svg">
 				<defs>
@@ -566,59 +1077,111 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			</svg>
 			<div class="position-relative">
 				<div id="beranda" class="content active animate__animated animate__fadeInUp animate__faster">
-					<div class="dl-nakes-segment">
-						<a href="#req_konsul" class="active" onclick="showContent('req_konsul')">Permintaan</a>
-						<a href="#riwayat_konsul" onclick="showContent('riwayat_konsul')">Aktif</a>
-					</div>
-					<div class="dl-nakes-stats">
-						<div class="dl-nakes-stat-card">
-							<span>Total Hari Ini</span>
-							<strong><?= html_escape(str_pad((string) $nakes_today_total, 2, '0', STR_PAD_LEFT)); ?></strong>
+					<div class="dl-dashboard-stack">
+						<div class="dl-nakes-card dl-device-card">
+							<div class="dl-device-row">
+								<span class="dl-status-dot"></span>
+								<div class="min-w-0">
+									<div class="dl-card-kicker">Lokasi perangkat aktif</div>
+									<p class="dl-muted-copy mb-0">Lokasi Anda digunakan untuk menentukan penugasan terdekat.</p>
+								</div>
+							</div>
 						</div>
-						<div class="dl-nakes-stat-card">
-							<span>Menunggu</span>
-							<strong><?= html_escape(str_pad((string) $nakes_pending_count, 2, '0', STR_PAD_LEFT)); ?></strong>
+
+						<div class="dl-dashboard-stats">
+							<a href="#req_konsul" class="dl-nakes-card dl-dashboard-stat" onclick="showContent('req_konsul')">
+								<span>Menunggu</span>
+								<strong><?= html_escape(str_pad((string) $nakes_pending_count, 2, '0', STR_PAD_LEFT)); ?></strong>
+							</a>
+							<a href="#riwayat_konsul" class="dl-nakes-card dl-dashboard-stat" onclick="showContent('riwayat_konsul')">
+								<span>Aktif</span>
+								<strong><?= html_escape(str_pad((string) $nakes_active_count, 2, '0', STR_PAD_LEFT)); ?></strong>
+							</a>
+							<a href="#riwayat_konsul" class="dl-nakes-card dl-dashboard-stat" onclick="showContent('riwayat_konsul')">
+								<span>Selesai</span>
+								<strong><?= html_escape(str_pad((string) $nakes_completed_count, 2, '0', STR_PAD_LEFT)); ?></strong>
+							</a>
 						</div>
-					</div>
-					<div class="dl-section-header">
-						<h2 class="dl-section-title">Ringkasan Layanan</h2>
-						<a href="#riwayat_konsul" class="dl-nakes-link" onclick="showContent('riwayat_konsul')">Lihat Riwayat</a>
-					</div>
-					<div class="dl-feature-grid">
-						<a href="#req_konsul" class="dl-feature-card" onclick="showContent('req_konsul')">
-							<div class="icon-wrapper">
-								<i class="fas fa-user-md"></i>
-								<span class="filler"></span>
+
+						<div class="dl-section-header d-flex justify-content-between">
+							<h2 class="dl-section-title">Tugas Sedang Berjalan</h2>
+							<a href="#riwayat_konsul" class="dl-nakes-link" onclick="showContent('riwayat_konsul')">Lihat</a>
+						</div>
+						<div class="dl-nakes-card dl-dashboard-section">
+							<?php if ($nakes_primary_active) :
+								$active_queue_code = doclinc_request_queue_code($nakes_primary_active);
+								$active_mode_label = doclinc_consultation_mode_label(isset($nakes_primary_active->consultation_mode) ? $nakes_primary_active->consultation_mode : '');
+							?>
+								<div class="dl-task-row">
+									<div class="dl-task-avatar"><i class="fas fa-user-check"></i></div>
+									<div class="flex-grow-1 min-w-0">
+										<p class="dl-task-title"><?= html_escape(strtoupper((string) $nakes_primary_active->nama)); ?></p>
+										<div class="dl-task-meta">No. Antrian: <?= html_escape($active_queue_code); ?> · <?= html_escape($active_mode_label); ?></div>
+									</div>
+								</div>
+								<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $nakes_primary_active->request_id) . '?kriteria=1'); ?>" class="btn btn-success rounded-pill w-100 mt-3 fw-bold">
+									Lanjutkan Tugas
+								</a>
+							<?php else : ?>
+								<div class="dl-soft-empty">
+									<p class="dl-task-title mb-1">Tidak ada tugas aktif</p>
+									<p class="dl-muted-copy mb-0">Permintaan baru akan muncul di sini atau di menu Permintaan.</p>
+								</div>
+							<?php endif; ?>
+						</div>
+
+						<div class="dl-section-header d-flex justify-content-between">
+							<h2 class="dl-section-title">Permintaan Terbaru</h2>
+							<a href="#req_konsul" class="dl-nakes-link" onclick="showContent('req_konsul')">Semua</a>
+						</div>
+						<div class="dl-nakes-card dl-dashboard-section">
+							<?php if (empty($nakes_latest_pending_rows)) : ?>
+								<div class="dl-soft-empty">
+									<p class="dl-task-title mb-1">Belum ada permintaan baru</p>
+									<p class="dl-muted-copy mb-0">Daftar permintaan akan diperbarui saat ada pasien masuk.</p>
+								</div>
+							<?php else :
+								$CI = &get_instance();
+								$CI->load->library('encryption');
+								foreach ($nakes_latest_pending_rows as $latest_request) :
+									$latest_keluhan = $CI->encryption->decrypt(base64_decode($latest_request->request_description));
+									$latest_queue_code = doclinc_request_queue_code($latest_request);
+							?>
+									<div class="dl-latest-row <?= $latest_request !== end($nakes_latest_pending_rows) ? 'mb-3 pb-3 border-bottom' : ''; ?>">
+										<div class="dl-latest-badge"><?= html_escape(doclinc_nakes_queue_badge($latest_request)); ?></div>
+										<div class="flex-grow-1 min-w-0">
+											<p class="dl-latest-name"><?= html_escape(strtoupper((string) $latest_request->nama)); ?></p>
+											<div class="dl-latest-meta">No. Antrian: <?= html_escape($latest_queue_code); ?></div>
+											<div class="dl-muted-copy mt-1"><?= html_escape(doclinc_nakes_short_text($latest_keluhan)); ?></div>
+										</div>
+									</div>
+							<?php endforeach;
+							endif; ?>
+						</div>
+
+						<div class="dl-nakes-card dl-info-card">
+							<div class="dl-device-row">
+								<div class="dl-task-avatar"><i class="fas fa-location-arrow"></i></div>
+								<div>
+									<div class="dl-card-kicker">Informasi Lapangan</div>
+									<p class="dl-muted-copy mb-0">Pastikan lokasi perangkat tetap aktif agar estimasi jarak, rute, dan penugasan kunjungan tetap akurat.</p>
+								</div>
 							</div>
-							<span class="small">Permintaan Konsultasi</span>
-						</a>
-						<a href="#riwayat_konsul" class="dl-feature-card" onclick="showContent('riwayat_konsul')">
-							<div class="icon-wrapper">
-								<i class="fas fa-history"></i>
-								<span class="filler"></span>
-							</div>
-							<span class="small">Riwayat Konsultasi</span>
-						</a>
-						<a href="#" class="dl-feature-card" onclick="showContent('profile')">
-							<div class="icon-wrapper">
-								<i class="fas fa-user"></i>
-								<span class="filler"></span>
-							</div>
-							<span class="small">Profil Nakes</span>
-						</a>
-						<div class="dl-feature-card dl-nakes-summary-card">
-							<div class="icon-wrapper">
-								<i class="fas fa-check-circle"></i>
-								<span class="filler"></span>
-							</div>
-							<span class="small"><?= html_escape((string) $nakes_completed_count); ?> selesai</span>
 						</div>
 					</div>
 				</div>
 				<div id="req_konsul" class="content animate__animated animate__fadeInUp animate__faster">
-					<div class="dl-section-header dl-nakes-page-header">
-						<h2 class="dl-section-title">Permintaan Masuk</h2>
-						<span class="dl-nakes-link"><?= html_escape((string) $nakes_pending_count); ?> menunggu</span>
+					<div class="dl-section-header dl-nakes-page-header d-flex justify-content-between">
+						<div>
+							<div class="dl-card-kicker">Antrian konsultasi</div>
+							<h2 class="dl-section-title">Permintaan Masuk</h2>
+						</div>
+						<span class="dl-header-count"><?= html_escape((string) $nakes_pending_count); ?> menunggu</span>
+					</div>
+					<div class="dl-request-filter-row" aria-label="Filter permintaan">
+						<button type="button" class="dl-filter-chip is-active">Semua</button>
+						<button type="button" class="dl-filter-chip" disabled>Terdekat</button>
+						<button type="button" class="dl-filter-chip" disabled>Baru</button>
 					</div>
 					<div class="dl-nakes-request-list">
 						<?php
@@ -640,16 +1203,25 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 								$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
 								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
+								$area_label = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : 'Area pasien';
+								$distance_label = !empty($x->distance) ? $x->distance : 'Menghitung...';
+								$received_label = !empty($x->created_at) ? date('d M H:i', strtotime($x->created_at)) : 'Baru masuk';
 							?>
 								<div class="dl-nakes-request-item">
 									<div class="card shadow request-card dl-nakes-request-card" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 										<div class="card-header d-flex align-items-start gap-3">
-											<div class="dl-nakes-avatar-icon">
-												<i class="fas fa-user"></i>
+											<div class="dl-queue-badge">
+												<small>No</small>
+												<span><?= html_escape(doclinc_nakes_queue_badge($x)); ?></span>
 											</div>
 											<div class="flex-grow-1">
-												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
-												<span>No. Antrian: <?= html_escape($queue_code); ?></span>
+												<div class="dl-request-title"><?= html_escape(strtoupper((string) $x->nama)); ?></div>
+												<div class="dl-request-tags">
+													<span class="dl-request-tag"><?= html_escape($area_label); ?></span>
+													<span class="dl-request-tag"><?= html_escape($mode_label); ?></span>
+													<span class="dl-request-tag"><?= html_escape($distance_label); ?></span>
+													<span class="dl-request-tag"><?= html_escape($received_label); ?></span>
+												</div>
 											</div>
 											<span class="dl-badge animate__animated animate__flash animate__infinite animate__slower">Baru</span>
 										</div>
@@ -669,12 +1241,12 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 											</div>
 											<!-- <a class="btn btn-info btn-sm">Lihat Foto</a> <a class="btn btn-info btn-sm">Lihat Video</a> -->
 											<?php if (!empty($x->photos)) : ?>
-												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#fotoModal_<?php echo $x->user_id; ?>">Lihat Foto</button>
+												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#fotoModal_<?= html_escape((int) $x->user_id); ?>">Lihat Foto</button>
 
 											<?php endif; ?>
 
 											<?php if (!empty($x->video)) : ?>
-												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#videoModal_<?php echo $x->user_id; ?>">Lihat Video</button>
+												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#videoModal_<?= html_escape((int) $x->user_id); ?>">Lihat Video</button>
 											<?php endif; ?>
 											<div class="dl-nakes-visit-toggle">
 												<i class="far fa-question-circle fa-fw"></i> Konfirmasikan kunjungan Anda:
@@ -706,7 +1278,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 														data-namapasien="<?= html_escape($x->nama); ?>"
 														data-riwayat="<?= html_escape($riwayat); ?>"
 														data-keluhan="<?= html_escape($keluhan); ?>">
-														<i class="fa fa-comment-medical me-2"></i> Terima Konsultasi
+														<i class="fa fa-comment-medical me-2"></i> Terima
 													</button>
 												</div>
 											</div>
