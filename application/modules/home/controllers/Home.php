@@ -53,28 +53,42 @@ class Home extends MX_Controller
 	public function livekit_incoming_call()
 	{
 		$this->output->set_content_type('application/json');
-		if ($this->session->userdata('role') !== 'warga') {
-			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
-			return;
-		}
+		try {
+			if ($this->session->userdata('role') !== 'warga') {
+				$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'has_incoming' => false, 'message' => 'Akses tidak diizinkan')));
+				return;
+			}
 
-		if (!$this->Call_session_m->table_ready()) {
-			$this->output->set_output(json_encode(array('success' => true, 'has_incoming' => false, 'message' => 'Belum ada panggilan masuk')));
-			return;
-		}
+			if (!$this->Call_session_m->table_ready()) {
+				$this->output->set_status_header(503)->set_output(json_encode(array('success' => false, 'has_incoming' => false, 'message' => 'Fitur panggilan belum siap.')));
+				return;
+			}
 
-		$request_id = (int) ($this->input->get('request_id', TRUE) ?: $this->input->post('request_id'));
-		$call = $this->Call_session_m->get_latest_incoming_for_warga((int) $this->session->userdata('id'), $request_id);
-		if (!$call) {
-			$this->output->set_output(json_encode(array('success' => true, 'has_incoming' => false, 'message' => 'Belum ada panggilan masuk')));
-			return;
-		}
+			$user_id = (int) $this->session->userdata('id');
+			$request_id = (int) $this->livekit_request_value('request_id');
+			if ($request_id > 0) {
+				$request = doclinc_request_row($request_id);
+				if (!$request || (string) $request->user_id !== (string) $user_id || $request->request_status !== 'Accepted') {
+					$this->output->set_output(json_encode(array('success' => true, 'has_incoming' => false, 'message' => 'Tidak ada panggilan aktif')));
+					return;
+				}
+			}
 
-		$payload = $this->Call_session_m->format_call($call);
-		$payload['success'] = true;
-		$payload['has_incoming'] = true;
-		$payload['message'] = 'Panggilan masuk';
-		$this->output->set_output(json_encode($payload));
+			$call = $this->Call_session_m->get_latest_incoming_for_warga($user_id, $request_id);
+			if (!$call) {
+				$this->output->set_output(json_encode(array('success' => true, 'has_incoming' => false, 'message' => 'Belum ada panggilan masuk')));
+				return;
+			}
+
+			$payload = $this->Call_session_m->format_call($call);
+			$payload['success'] = true;
+			$payload['has_incoming'] = true;
+			$payload['message'] = 'Panggilan masuk';
+			$this->output->set_output(json_encode($payload));
+		} catch (Exception $e) {
+			log_message('error', 'livekit_incoming_call failed: ' . $e->getMessage());
+			$this->output->set_status_header(500)->set_output(json_encode(array('success' => false, 'has_incoming' => false, 'message' => 'Panggilan belum dapat diperiksa')));
+		}
 	}
 
 	public function answer_livekit_call()
@@ -85,7 +99,7 @@ class Home extends MX_Controller
 			return;
 		}
 
-		$call_id = (int) ($this->input->post('call_id') ?: $this->input->get('call_id', TRUE));
+		$call_id = (int) $this->livekit_request_value('call_id');
 		$call = $this->Call_session_m->get_by_id($call_id);
 		$user_id = (int) $this->session->userdata('id');
 		if (!$call || (string) $call->callee_user_id !== (string) $user_id || !in_array($call->status, array('ringing', 'answered'), true)) {
@@ -121,7 +135,7 @@ class Home extends MX_Controller
 			return;
 		}
 
-		$call_id = (int) ($this->input->post('call_id') ?: $this->input->get('call_id', TRUE));
+		$call_id = (int) $this->livekit_request_value('call_id');
 		$call = $this->Call_session_m->get_by_id($call_id);
 		$user_id = (int) $this->session->userdata('id');
 		if (!$call || (string) $call->callee_user_id !== (string) $user_id) {
@@ -145,7 +159,7 @@ class Home extends MX_Controller
 	public function livekit_call_status()
 	{
 		$this->output->set_content_type('application/json');
-		$call_id = (int) ($this->input->post('call_id') ?: $this->input->get('call_id', TRUE));
+		$call_id = (int) $this->livekit_request_value('call_id');
 		$call = $this->Call_session_m->get_by_id($call_id);
 		$user_id = (int) $this->session->userdata('id');
 		if (!$call || (string) $call->callee_user_id !== (string) $user_id) {
@@ -160,6 +174,22 @@ class Home extends MX_Controller
 			'call_type' => $call->call_type,
 			'message' => 'Status panggilan',
 		)));
+	}
+
+	private function livekit_request_value($key)
+	{
+		$value = $this->input->post($key, TRUE);
+		if ($value === null || $value === '') {
+			$value = $this->input->get($key, TRUE);
+		}
+		if (($value === null || $value === '') && stripos((string) $this->input->server('CONTENT_TYPE'), 'application/json') !== false) {
+			$json = json_decode((string) $this->input->raw_input_stream, true);
+			if (is_array($json) && array_key_exists($key, $json)) {
+				$value = $json[$key];
+			}
+		}
+
+		return $value;
 	}
 
 	public function index()

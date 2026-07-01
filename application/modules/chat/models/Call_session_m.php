@@ -59,8 +59,15 @@ class Call_session_m extends CI_Model
 			return null;
 		}
 
+		$caller_name_select = "'' AS caller_name";
+		if ($this->db->field_exists('nama', 'users')) {
+			$caller_name_select = 'users.nama AS caller_name';
+		} elseif ($this->db->field_exists('name', 'users')) {
+			$caller_name_select = 'users.name AS caller_name';
+		}
+
 		$this->db
-			->select('call_sessions.*, requests.request_status, requests.user_id, users.nama AS caller_nama, users.name AS caller_name')
+			->select('call_sessions.*, requests.request_status, requests.user_id, ' . $caller_name_select, false)
 			->from(self::TABLE)
 			->join('requests', 'requests.request_id = call_sessions.request_id', 'inner')
 			->join('users', 'users.userId = call_sessions.caller_user_id', 'left')
@@ -190,11 +197,8 @@ class Call_session_m extends CI_Model
 		}
 
 		$caller_name = '';
-		foreach (array('caller_nama', 'caller_name') as $field) {
-			if (isset($call->{$field}) && trim((string) $call->{$field}) !== '') {
-				$caller_name = trim((string) $call->{$field});
-				break;
-			}
+		if (isset($call->caller_name) && trim((string) $call->caller_name) !== '') {
+			$caller_name = trim((string) $call->caller_name);
 		}
 
 		return array(

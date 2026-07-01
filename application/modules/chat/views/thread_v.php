@@ -373,7 +373,7 @@ if ($current_role === 'dokter') {
 			inset: 0;
 			z-index: 80;
 			display: none;
-			background: #071016;
+			background: rgba(2, 8, 12, 0.96);
 			color: #ffffff;
 			padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 		}
@@ -384,12 +384,17 @@ if ($current_role === 'dokter') {
 
 		.doclinc-call-panel {
 			width: 100%;
+			max-width: 480px;
 			height: 100vh;
 			height: 100dvh;
+			margin: 0 auto;
 			overflow: hidden;
-			background: radial-gradient(circle at top, #244052 0, #101820 46%, #070d12 100%);
+			background:
+				radial-gradient(circle at 50% 12%, rgba(69, 128, 92, 0.45) 0, rgba(69, 128, 92, 0) 33%),
+				linear-gradient(180deg, #17313b 0%, #101820 46%, #070d12 100%);
 			display: flex;
 			flex-direction: column;
+			box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 24px 80px rgba(0, 0, 0, 0.42);
 		}
 
 		.doclinc-call-head {
@@ -397,7 +402,7 @@ if ($current_role === 'dokter') {
 			align-items: center;
 			justify-content: space-between;
 			gap: 12px;
-			padding: 18px 18px 12px;
+			padding: 20px 18px 14px;
 			flex: 0 0 auto;
 		}
 
@@ -409,12 +414,13 @@ if ($current_role === 'dokter') {
 		}
 
 		.doclinc-call-avatar {
-			width: 46px;
-			height: 46px;
+			width: 48px;
+			height: 48px;
 			border-radius: 999px;
 			object-fit: cover;
 			background: rgba(255, 255, 255, 0.16);
-			flex: 0 0 46px;
+			border: 1px solid rgba(255, 255, 255, 0.24);
+			flex: 0 0 48px;
 		}
 
 		.doclinc-call-title {
@@ -429,8 +435,8 @@ if ($current_role === 'dokter') {
 		.doclinc-call-status {
 			margin-top: 4px;
 			color: rgba(255, 255, 255, 0.72);
-			font-size: 12px;
-			line-height: 16px;
+			font-size: 13px;
+			line-height: 18px;
 		}
 
 		.doclinc-call-status.is-error {
@@ -444,7 +450,7 @@ if ($current_role === 'dokter') {
 			border: 1px solid rgba(255, 255, 255, 0.16);
 			background: rgba(255, 255, 255, 0.08);
 			color: #ffffff;
-			font-size: 20px;
+			font-size: 22px;
 			line-height: 1;
 			cursor: pointer;
 			flex: 0 0 40px;
@@ -454,8 +460,11 @@ if ($current_role === 'dokter') {
 			position: relative;
 			flex: 1 1 auto;
 			min-height: 0;
-			background: rgba(255, 255, 255, 0.04);
+			margin: 0 16px;
+			border-radius: 28px;
+			background: rgba(255, 255, 255, 0.055);
 			overflow: hidden;
+			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 		}
 
 		.doclinc-call-remote {
@@ -464,7 +473,9 @@ if ($current_role === 'dokter') {
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			background: rgba(255, 255, 255, 0.03);
+			background:
+				radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0) 52%),
+				rgba(255, 255, 255, 0.02);
 		}
 
 		.doclinc-call-remote video,
@@ -475,21 +486,40 @@ if ($current_role === 'dokter') {
 		}
 
 		.doclinc-call-empty {
-			max-width: 260px;
+			max-width: 300px;
 			text-align: center;
-			color: rgba(255, 255, 255, 0.78);
-			font-size: 15px;
+			color: rgba(255, 255, 255, 0.82);
+			font-size: 14px;
 			font-weight: 700;
-			line-height: 22px;
+			line-height: 21px;
 			padding: 20px;
+		}
+
+		.doclinc-call-empty-avatar {
+			width: 108px;
+			height: 108px;
+			margin: 0 auto 18px;
+			border-radius: 999px;
+			object-fit: cover;
+			border: 3px solid rgba(255, 255, 255, 0.2);
+			box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+		}
+
+		.doclinc-call-empty-name {
+			display: block;
+			color: #ffffff;
+			font-size: 20px;
+			font-weight: 850;
+			line-height: 26px;
+			margin-bottom: 6px;
 		}
 
 		.doclinc-call-local {
 			position: absolute;
 			right: 18px;
 			bottom: 18px;
-			width: 104px;
-			height: 148px;
+			width: 108px;
+			height: 154px;
 			border-radius: 18px;
 			overflow: hidden;
 			background: #1f2937;
@@ -503,10 +533,22 @@ if ($current_role === 'dokter') {
 			object-fit: cover;
 		}
 
+		.doclinc-call-local.is-placeholder {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 10px;
+			text-align: center;
+			color: rgba(255, 255, 255, 0.78);
+			font-size: 11px;
+			font-weight: 800;
+			line-height: 15px;
+		}
+
 		.doclinc-call-prejoin {
-			padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
-			background: rgba(255, 255, 255, 0.96);
-			color: #111827;
+			padding: 18px 18px calc(20px + env(safe-area-inset-bottom));
+			background: transparent;
+			color: #ffffff;
 			flex: 0 0 auto;
 		}
 
@@ -518,7 +560,7 @@ if ($current_role === 'dokter') {
 
 		.doclinc-call-prejoin-text {
 			margin: 0 0 14px;
-			color: #6b7280;
+			color: rgba(255, 255, 255, 0.66);
 			font-size: 13px;
 			line-height: 18px;
 		}
@@ -538,22 +580,35 @@ if ($current_role === 'dokter') {
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			gap: 12px;
-			padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
-			background: rgba(7, 16, 22, 0.96);
+			gap: 14px;
+			padding: 18px 14px calc(20px + env(safe-area-inset-bottom));
+			background: transparent;
 			flex: 0 0 auto;
 		}
 
 		.doclinc-call-control {
-			width: 54px;
-			height: 54px;
+			width: 56px;
+			height: 56px;
 			border-radius: 999px;
 			border: 1px solid rgba(255, 255, 255, 0.15);
-			background: rgba(255, 255, 255, 0.11);
+			background: rgba(255, 255, 255, 0.14);
 			color: #ffffff;
-			font-size: 11px;
-			font-weight: 800;
 			cursor: pointer;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+			transition: transform 0.12s ease, background 0.12s ease;
+		}
+
+		.doclinc-call-control:active {
+			transform: scale(0.96);
+		}
+
+		.doclinc-call-control svg {
+			width: 23px;
+			height: 23px;
+			stroke: currentColor;
 		}
 
 		.doclinc-call-control.is-off {
@@ -564,8 +619,8 @@ if ($current_role === 'dokter') {
 		.doclinc-call-control.end-call {
 			background: #dc2626;
 			border-color: #dc2626;
-			width: 62px;
-			height: 62px;
+			width: 64px;
+			height: 64px;
 		}
 
 		.doclinc-active-call {
@@ -576,11 +631,11 @@ if ($current_role === 'dokter') {
 			transform: translateX(-50%);
 			width: min(360px, calc(100vw - 28px));
 			border: 0;
-			border-radius: 18px;
-			background: #101820;
+			border-radius: 20px;
+			background: linear-gradient(135deg, #14232d, #0d151c);
 			color: #ffffff;
 			padding: 12px 14px;
-			box-shadow: 0 16px 42px rgba(0, 0, 0, 0.24);
+			box-shadow: 0 16px 42px rgba(0, 0, 0, 0.28);
 			display: flex;
 			align-items: center;
 			gap: 12px;
@@ -633,7 +688,7 @@ if ($current_role === 'dokter') {
 			transform: translateX(-50%);
 			width: min(370px, calc(100vw - 28px));
 			border-radius: 24px;
-			background: #101820;
+			background: linear-gradient(145deg, #132730, #0c151b);
 			color: #ffffff;
 			padding: 18px;
 			box-shadow: 0 20px 52px rgba(0, 0, 0, 0.28);
@@ -711,6 +766,35 @@ if ($current_role === 'dokter') {
 				flex-basis: 36px;
 				padding: 8px;
 			}
+
+			.doclinc-call-stage {
+				margin: 0 12px;
+				border-radius: 24px;
+			}
+
+			.doclinc-call-controls {
+				gap: 10px;
+			}
+
+			.doclinc-call-control {
+				width: 52px;
+				height: 52px;
+			}
+
+			.doclinc-call-control.end-call {
+				width: 60px;
+				height: 60px;
+			}
+		}
+
+		@media (min-width: 560px) {
+			.doclinc-call-modal {
+				background: rgba(2, 8, 12, 0.92);
+			}
+
+			.doclinc-call-panel {
+				border-radius: 28px;
+			}
 		}
 	</style>
 </head>
@@ -783,7 +867,11 @@ if ($current_role === 'dokter') {
 				</div>
 				<div class="doclinc-call-stage">
 					<div class="doclinc-call-remote" id="doclincCallRemote">
-						<div class="doclinc-call-empty" id="doclincCallEmpty">Menunggu lawan bicara bergabung</div>
+						<div class="doclinc-call-empty" id="doclincCallEmpty">
+							<img class="doclinc-call-empty-avatar" src="<?= html_escape($asset_base . 'doctor-placeholder.jpg'); ?>" alt="">
+							<span class="doclinc-call-empty-name"><?= html_escape($partner_name); ?></span>
+							<span id="doclincCallEmptyText">Menunggu lawan bicara bergabung</span>
+						</div>
 					</div>
 					<div class="doclinc-call-local is-hidden" id="doclincCallLocal"></div>
 				</div>
@@ -793,16 +881,43 @@ if ($current_role === 'dokter') {
 					<button type="button" class="doclinc-call-join" id="doclincCallJoin">Gabung Sekarang</button>
 				</div>
 				<div class="doclinc-call-controls is-hidden" id="doclincCallControls">
-					<button type="button" class="doclinc-call-control" id="doclincCallMic" title="Mikrofon" aria-label="Mikrofon">Mic</button>
-					<button type="button" class="doclinc-call-control" id="doclincCallCamera" title="Kamera" aria-label="Kamera">Cam</button>
-					<button type="button" class="doclinc-call-control" id="doclincCallSwitch" title="Ganti kamera" aria-label="Ganti kamera">Flip</button>
-					<button type="button" class="doclinc-call-control" id="doclincCallMinimize" title="Minimalkan" aria-label="Minimalkan panggilan">Min</button>
-					<button type="button" class="doclinc-call-control end-call" id="doclincCallEnd" title="Akhiri" aria-label="Akhiri">End</button>
+					<button type="button" class="doclinc-call-control" id="doclincCallMic" title="Mikrofon" aria-label="Mikrofon">
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+							<path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+							<path d="M19 11a7 7 0 0 1-14 0M12 18v4M8 22h8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</button>
+					<button type="button" class="doclinc-call-control" id="doclincCallCamera" title="Kamera" aria-label="Kamera">
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+							<path d="M4.5 6.5h9.2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4.5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+							<path d="m15.7 10 4.8-2.8v9.6L15.7 14" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</button>
+					<button type="button" class="doclinc-call-control" id="doclincCallSwitch" title="Ganti kamera" aria-label="Ganti kamera">
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+							<path d="M16 3h5v5M20.5 3.5 15 9M8 21H3v-5M3.5 20.5 9 15" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+							<path d="M21 12a9 9 0 0 1-9 9M3 12a9 9 0 0 1 9-9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</button>
+					<button type="button" class="doclinc-call-control" id="doclincCallMinimize" title="Minimalkan" aria-label="Minimalkan panggilan">
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+							<path d="M6 12h12" stroke-width="2.2" stroke-linecap="round" />
+						</svg>
+					</button>
+					<button type="button" class="doclinc-call-control end-call" id="doclincCallEnd" title="Akhiri" aria-label="Akhiri">
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+							<path d="M5.2 15.1c4.5-2.7 9.1-2.7 13.6 0 .7.4 1.6.2 2-.5l.8-1.5c.4-.7.2-1.6-.5-2-5.9-3.5-12.3-3.5-18.2 0-.7.4-.9 1.3-.5 2l.8 1.5c.4.7 1.3.9 2 .5Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</button>
 				</div>
 			</div>
 		</div>
 		<button type="button" class="doclinc-active-call is-hidden" id="doclincActiveCall" aria-label="Buka panggilan aktif">
-			<span class="doclinc-active-call-icon" aria-hidden="true">Tel</span>
+			<span class="doclinc-active-call-icon" aria-hidden="true">
+				<svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+					<path d="M22 16.92v2.2a2 2 0 0 1-2.18 2 19.74 19.74 0 0 1-8.59-3.05 19.35 19.35 0 0 1-5.96-5.96 19.74 19.74 0 0 1-3.05-8.59A2 2 0 0 1 4.21 1.34h2.2a2 2 0 0 1 2 1.72c.13.96.35 1.9.65 2.8a2 2 0 0 1-.45 2.11L7.68 8.9a15.78 15.78 0 0 0 6.42 6.42l.93-.93a2 2 0 0 1 2.11-.45c.9.3 1.84.52 2.8.65A2 2 0 0 1 22 16.92Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
+			</span>
 			<span class="doclinc-active-call-main">
 				<span class="doclinc-active-call-title">Panggilan aktif</span>
 				<span class="doclinc-active-call-meta" id="doclincCallElapsed">00:00</span>
@@ -853,7 +968,8 @@ if ($current_role === 'dokter') {
 					elapsedTimer: null,
 					incomingCall: null,
 					incomingPollTimer: null,
-					statusPollTimer: null
+					statusPollTimer: null,
+					incomingFailures: 0
 				};
 				const elements = {};
 
@@ -870,6 +986,7 @@ if ($current_role === 'dokter') {
 					elements.status = byId('doclincCallStatus');
 					elements.remote = byId('doclincCallRemote');
 					elements.empty = byId('doclincCallEmpty');
+					elements.emptyText = byId('doclincCallEmptyText');
 					elements.local = byId('doclincCallLocal');
 					elements.prejoin = byId('doclincCallPrejoin');
 					elements.controls = byId('doclincCallControls');
@@ -895,6 +1012,9 @@ if ($current_role === 'dokter') {
 					}
 					elements.status.textContent = message || '';
 					elements.status.classList.toggle('is-error', !!isError);
+					if (elements.emptyText && message) {
+						elements.emptyText.textContent = message;
+					}
 				}
 
 				function setCallActive(active) {
@@ -996,6 +1116,7 @@ if ($current_role === 'dokter') {
 					state.localTracks = [];
 					if (elements.local) {
 						clearNode(elements.local);
+						elements.local.classList.remove('is-placeholder');
 						elements.local.classList.add('is-hidden');
 					}
 				}
@@ -1227,7 +1348,18 @@ if ($current_role === 'dokter') {
 						return;
 					}
 					clearNode(elements.local);
+					elements.local.classList.remove('is-placeholder');
 					attachTrack(track, elements.local);
+					elements.local.classList.remove('is-hidden');
+				}
+
+				function showLocalPlaceholder(message) {
+					if (!elements.local) {
+						return;
+					}
+					clearNode(elements.local);
+					elements.local.textContent = message || 'Kamera nonaktif';
+					elements.local.classList.add('is-placeholder');
 					elements.local.classList.remove('is-hidden');
 				}
 
@@ -1264,6 +1396,7 @@ if ($current_role === 'dokter') {
 						});
 					}).then(function() {
 						if (state.mode !== 'video') {
+							showLocalPlaceholder('Panggilan suara');
 							return null;
 						}
 						return createLocalTrack('video').then(function(track) {
@@ -1271,11 +1404,12 @@ if ($current_role === 'dokter') {
 							return publishTrack(track);
 						}).catch(function() {
 							state.cameraEnabled = false;
-							if (elements.camera) {
-								elements.camera.classList.add('is-off');
-							}
-							setStatus('Kamera tidak tersedia, panggilan suara aktif');
-						});
+								if (elements.camera) {
+									elements.camera.classList.add('is-off');
+								}
+								showLocalPlaceholder('Kamera nonaktif');
+								setStatus('Kamera tidak tersedia, panggilan suara aktif');
+							});
 					});
 				}
 
@@ -1330,6 +1464,13 @@ if ($current_role === 'dokter') {
 						}
 						if (button) {
 							button.classList.toggle('is-off', !state[enabledKey]);
+						}
+						if (kind === 'video') {
+							if (state[enabledKey]) {
+								showLocalPreview(track);
+							} else {
+								showLocalPlaceholder('Kamera nonaktif');
+							}
 						}
 						return;
 					}
@@ -1415,12 +1556,22 @@ if ($current_role === 'dokter') {
 							return {};
 						});
 					}).then(function(response) {
+						state.incomingFailures = 0;
 						if (response && response.success && response.has_incoming) {
 							showIncomingCall(response);
 						} else {
 							hideIncomingCall();
 						}
-					}).catch(function() {});
+					}).catch(function() {
+						state.incomingFailures += 1;
+						if (state.incomingFailures >= 5) {
+							stopIncomingPolling();
+							window.setTimeout(function() {
+								state.incomingFailures = 0;
+								startIncomingPolling();
+							}, 30000);
+						}
+					});
 				}
 
 				function startIncomingPolling() {
