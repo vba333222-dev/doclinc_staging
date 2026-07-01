@@ -53,8 +53,8 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		$request_id = (int) ($this->input->post('request_id') ?: $this->input->get('request_id', TRUE));
-		$call_type = $this->input->post('call_type', TRUE) ?: $this->input->get('call_type', TRUE);
+		$request_id = (int) $this->livekit_request_value('request_id');
+		$call_type = $this->livekit_request_value('call_type');
 		$call_type = $call_type === 'audio' ? 'audio' : 'video';
 		$user_id = (int) $this->session->userdata('id');
 		$request = doclinc_request_row($request_id);
@@ -90,8 +90,8 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		$call_id = (int) ($this->input->post('call_id') ?: $this->input->get('call_id', TRUE));
-		$request_id = (int) ($this->input->post('request_id') ?: $this->input->get('request_id', TRUE));
+		$call_id = (int) $this->livekit_request_value('call_id');
+		$request_id = (int) $this->livekit_request_value('request_id');
 		$call = $call_id > 0 ? $this->Call_session_m->get_by_id($call_id) : $this->Call_session_m->get_active_by_request($request_id);
 		if (!$call) {
 			$this->output->set_status_header(404)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak tersedia')));
@@ -116,7 +116,7 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		$call_id = (int) ($this->input->post('call_id') ?: $this->input->get('call_id', TRUE));
+		$call_id = (int) $this->livekit_request_value('call_id');
 		$call = $this->Call_session_m->get_by_id($call_id);
 		if (!$call) {
 			$this->output->set_status_header(404)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak tersedia')));
@@ -136,6 +136,22 @@ class Home_nakes extends MX_Controller
 			'call_type' => $call->call_type,
 			'message' => 'Status panggilan',
 		)));
+	}
+
+	private function livekit_request_value($key)
+	{
+		$value = $this->input->post($key, TRUE);
+		if ($value === null || $value === '') {
+			$value = $this->input->get($key, TRUE);
+		}
+		if (($value === null || $value === '') && stripos((string) $this->input->server('CONTENT_TYPE'), 'application/json') !== false) {
+			$json = json_decode((string) $this->input->raw_input_stream, true);
+			if (is_array($json) && array_key_exists($key, $json)) {
+				$value = $json[$key];
+			}
+		}
+
+		return $value;
 	}
 
 	public function index()
