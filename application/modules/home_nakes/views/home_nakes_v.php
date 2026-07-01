@@ -281,6 +281,12 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			white-space: nowrap;
 		}
 
+		.visit-route-provider-note {
+			color: #6c757d;
+			font-size: 11px;
+			line-height: 1.35;
+		}
+
 		@media (max-width: 575.98px) {
 			#maps {
 				min-height: 70vh;
@@ -742,7 +748,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
 							?>
-								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= (int) $x->request_id; ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
+								<div class="card shadow mb-2 dl-nakes-request-card" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
 									<div class="card-header d-flex align-items-start gap-3">
 										<div class="dl-nakes-avatar-icon">
 											<i class="fas fa-user"></i>
@@ -822,6 +828,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 											<div><i class="fas fa-motorcycle fa-fw"></i><span>Jarak</span><strong class="visit-route-distance" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</strong></div>
 											<div><i class="far fa-clock fa-fw"></i><span>Estimasi</span><strong class="visit-route-eta" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</strong></div>
 										</div>
+										<div class="visit-route-provider-note mt-2 d-none" data-route-provider-note="<?= html_escape((int) $x->request_id); ?>"></div>
 										<div class="mt-3 visit-workflow-control" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
 											<div class="small text-muted mb-2">Status kunjungan: <span class="fw-bold visit-workflow-label"><?= html_escape(doclinc_visit_status_label($visit_status)); ?></span></div>
 											<div class="d-flex flex-wrap gap-2">
@@ -1101,6 +1108,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						<span>Terakhir diperbarui</span>
 						<strong id="nakesVisitRouteUpdated">-</strong>
 					</div>
+					<div class="visit-route-provider-note mt-1 d-none" id="nakesVisitRouteProviderNote"></div>
 				</div>
 			</div>
 		</div>
@@ -1658,10 +1666,16 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			function setRouteText(requestId, route) {
 				const distanceElement = document.querySelector('[data-route-distance="' + requestId + '"]');
 				const etaElement = document.querySelector('[data-route-eta="' + requestId + '"]');
+				const providerNoteElement = document.querySelector('[data-route-provider-note="' + requestId + '"]');
 				const distance = route && route.distance_text ? route.distance_text : 'Menghitung...';
 				const eta = route && route.eta_text ? route.eta_text : 'Menghitung...';
+				const isValhallaRoute = !!(route && route.provider === 'valhalla');
 				if (distanceElement) distanceElement.textContent = distance;
 				if (etaElement) etaElement.textContent = eta;
+				if (providerNoteElement) {
+					providerNoteElement.textContent = isValhallaRoute ? 'Estimasi berdasarkan rute jalan' : '';
+					providerNoteElement.classList.toggle('d-none', !isValhallaRoute);
+				}
 			}
 
 			function setTextById(id, text) {
@@ -1675,14 +1689,15 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				const hasGeometry = !!(route && route.geometry && route.geometry.type === 'LineString');
 				const patientAvailable = !!patientLocation;
 				const nakesAvailable = !!nakesLocation;
+				const isValhallaRoute = !!(route && route.provider === 'valhalla');
 				let statusText = 'Menghitung...';
 
 				if (!patientAvailable) {
 					statusText = 'Lokasi pasien belum tersedia';
 				} else if (!nakesAvailable) {
 					statusText = 'Menunggu lokasi nakes';
-				} else if (route && route.provider === 'valhalla') {
-					statusText = 'Rute aktif';
+				} else if (isValhallaRoute) {
+					statusText = 'Estimasi berdasarkan rute jalan';
 				} else if (!hasGeometry && hasDistance) {
 					statusText = 'Rute dihitung';
 				}
@@ -1691,6 +1706,11 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				setTextById('nakesVisitRouteEta', route && route.eta_text ? route.eta_text : 'Menghitung...');
 				setTextById('nakesVisitRouteUpdated', route && route.calculated_at ? route.calculated_at : (response && response.status ? new Date().toLocaleString('id-ID') : '-'));
 				setTextById('nakesVisitRouteStatus', statusText);
+				const providerNoteElement = document.getElementById('nakesVisitRouteProviderNote');
+				if (providerNoteElement) {
+					providerNoteElement.textContent = isValhallaRoute ? 'Estimasi berdasarkan rute jalan' : '';
+					providerNoteElement.classList.toggle('d-none', !isValhallaRoute);
+				}
 			}
 
 			function parseLocation(location) {
@@ -1934,9 +1954,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				const patientLocation = parseLocation(response && response.patient) || fallbackPatientLocation || null;
 				const nakesLocation = parseLocation(response && response.nakes);
 				setNakesRouteSummary(response || {}, patientLocation, nakesLocation);
-				if (response && response.route) {
-					setRouteText(requestId, response.route);
-				}
+				setRouteText(requestId, response && response.route ? response.route : null);
 
 				if (!patientLocation) {
 					setMapStatus('Lokasi pasien belum tersedia', true);
