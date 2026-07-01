@@ -1635,7 +1635,7 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 			const nakesVisitLocationUrl = <?= json_encode(base_url('home_nakes/visit_location')); ?>;
 			const updateVisitStatusUrl = <?= json_encode(base_url('home_nakes/update_visit_status')); ?>;
 			const visitMapboxToken = <?= json_encode($mapbox_public_token); ?>;
-			const minPostIntervalMs = 10000;
+			const minPostIntervalMs = <?= json_encode((function_exists('doclinc_visit_location_min_interval_seconds') ? doclinc_visit_location_min_interval_seconds() : 5) * 1000); ?>;
 			const watches = ns.watches = ns.watches || {};
 			const mapState = ns.nakesMapState = ns.nakesMapState || {
 				leaflet: null,
@@ -2076,12 +2076,15 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 					function(position) {
 						postVisitLocation(requestId, position, true);
 					},
-					function() {
+					function(error) {
+						const message = error && error.code === error.PERMISSION_DENIED ?
+							'Izin lokasi ditolak. Aktifkan izin lokasi untuk memperbarui posisi Anda.' :
+							'Lokasi perangkat belum aktif. Coba beberapa saat lagi.';
 						setTextById('nakesVisitRouteStatus', 'Lokasi perangkat belum aktif');
 						if (hasLoadedVisitMap(requestId)) {
-							setTrackingStatus(requestId, 'Aktifkan lokasi perangkat untuk memperbarui posisi Anda');
+							setTrackingStatus(requestId, message, true);
 						} else {
-							setMapStatus('Lokasi perangkat belum aktif');
+							setMapStatus(message, true);
 						}
 					}, {
 						enableHighAccuracy: true,
@@ -2113,9 +2116,18 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 				delete watches[requestId];
 			}
 
+			function locationMetaValue(value) {
+				const number = parseFloat(value);
+				return Number.isFinite(number) ? number : '';
+			}
+
 			function postVisitLocation(requestId, position, forceSend) {
 				const state = watches[requestId];
 				if (!state && !forceSend) return;
+				if (!position || !position.coords) {
+					setTrackingStatus(requestId, 'Data lokasi perangkat tidak tersedia', true);
+					return;
+				}
 
 				const now = Date.now();
 				if (state) {
@@ -2135,7 +2147,9 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						request_id: requestId,
 						latitude: position.coords.latitude,
 						longitude: position.coords.longitude,
-						accuracy: position.coords.accuracy || ''
+						accuracy_m: locationMetaValue(position.coords.accuracy),
+						heading: locationMetaValue(position.coords.heading),
+						speed_mps: locationMetaValue(position.coords.speed)
 					},
 					success: function(response) {
 						if (typeof response === 'string') {
@@ -2148,6 +2162,12 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 							setRouteText(requestId, response.route);
 							renderVisitMap(requestId, response, inlinePatientLocation(requestId));
 							setTrackingStatus(requestId, 'Lokasi berhasil diperbarui');
+							if (response.request_status && response.request_status !== 'Accepted') {
+								stopTracking(requestId);
+							}
+							if (response.visit_status === 'completed') {
+								stopTracking(requestId);
+							}
 							return;
 						}
 
@@ -2287,6 +2307,9 @@ $nakes_today_total = $nakes_pending_count + $nakes_active_count;
 						if (response && response.status === 'success') {
 							refreshVisitWorkflowControl(requestId, response.visit_status, response.visit_status_label);
 							setNakesArrivalNotice(requestId, null);
+							if (response.visit_status === 'completed') {
+								stopTracking(requestId);
+							}
 							setVisitWorkflowMessage(requestId, response.message || 'Status kunjungan diperbarui');
 							return;
 						}

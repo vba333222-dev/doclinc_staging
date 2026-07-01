@@ -110,6 +110,27 @@ if (!function_exists('doclinc_reroute_min_move_meters')) {
 	}
 }
 
+if (!function_exists('doclinc_visit_location_min_interval_seconds')) {
+	function doclinc_visit_location_min_interval_seconds()
+	{
+		return (int) doclinc_visit_route_numeric_config('VISIT_LOCATION_MIN_INTERVAL_SECONDS', 'visit_location_min_interval_seconds', 5, 1, 300);
+	}
+}
+
+if (!function_exists('doclinc_visit_location_max_accuracy_meters')) {
+	function doclinc_visit_location_max_accuracy_meters()
+	{
+		return doclinc_visit_route_numeric_config('VISIT_LOCATION_MAX_ACCURACY_METERS', 'visit_location_max_accuracy_meters', 100, 1, 10000);
+	}
+}
+
+if (!function_exists('doclinc_visit_location_max_speed_mps')) {
+	function doclinc_visit_location_max_speed_mps()
+	{
+		return doclinc_visit_route_numeric_config('VISIT_LOCATION_MAX_SPEED_MPS', 'visit_location_max_speed_mps', 45, 1, 200);
+	}
+}
+
 if (!function_exists('doclinc_visit_route_coordinates_valid')) {
 	function doclinc_visit_route_coordinates_valid($origin_lat, $origin_lng, $dest_lat, $dest_lng)
 	{
