@@ -8,9 +8,10 @@ class Home extends MX_Controller
 		$this->load->model('Home_m');
 		$this->load->helper('request_authz');
 		$this->load->helper('visit_routing');
+		$this->load->helper('livekit');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if ($this->router->fetch_method() === 'visit_location') {
+			if (in_array($this->router->fetch_method(), array('visit_location', 'livekit_token'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -21,6 +22,23 @@ class Home extends MX_Controller
 			redirect('login');
 		}
 		$this->load->helper('maps');
+	}
+
+	public function livekit_token()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->session->userdata('role') !== 'warga') {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			return;
+		}
+
+		$request_id = (int) ($this->input->post('request_id') ?: $this->input->get('request_id', TRUE));
+		$result = doclinc_livekit_token_payload($request_id, (int) $this->session->userdata('id'), 'warga');
+		$this->output
+			->set_status_header((int) $result['http_status'])
+			->set_output(json_encode($result['body']));
 	}
 
 	public function index()

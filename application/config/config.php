@@ -576,4 +576,34 @@ if ($routing_timeout_env === false || $routing_timeout_env === '') {
 }
 $config['routing_timeout_seconds'] = $routing_timeout_env !== '' ? $routing_timeout_env : 3;
 
+$livekit_enabled_env = getenv('LIVEKIT_ENABLED');
+if ($livekit_enabled_env === false || $livekit_enabled_env === '') {
+	$livekit_enabled_env = isset($_SERVER['LIVEKIT_ENABLED']) ? $_SERVER['LIVEKIT_ENABLED'] : false;
+}
+$config['livekit_enabled'] = filter_var($livekit_enabled_env, FILTER_VALIDATE_BOOLEAN);
+
+$livekit_ws_url_env = getenv('LIVEKIT_WS_URL');
+if ($livekit_ws_url_env === false || $livekit_ws_url_env === '') {
+	$livekit_ws_url_env = isset($_SERVER['LIVEKIT_WS_URL']) ? $_SERVER['LIVEKIT_WS_URL'] : '';
+}
+$config['livekit_ws_url'] = $livekit_ws_url_env !== '' ? $livekit_ws_url_env : '';
+
+$livekit_api_key_env = getenv('LIVEKIT_API_KEY');
+if ($livekit_api_key_env === false || $livekit_api_key_env === '') {
+	$livekit_api_key_env = isset($_SERVER['LIVEKIT_API_KEY']) ? $_SERVER['LIVEKIT_API_KEY'] : '';
+}
+$config['livekit_api_key'] = $livekit_api_key_env !== '' ? $livekit_api_key_env : '';
+
+$livekit_api_secret_env = getenv('LIVEKIT_API_SECRET');
+if ($livekit_api_secret_env === false || $livekit_api_secret_env === '') {
+	$livekit_api_secret_env = isset($_SERVER['LIVEKIT_API_SECRET']) ? $_SERVER['LIVEKIT_API_SECRET'] : '';
+}
+$config['livekit_api_secret'] = $livekit_api_secret_env !== '' ? $livekit_api_secret_env : '';
+
+$livekit_token_ttl_env = getenv('LIVEKIT_TOKEN_TTL_SECONDS');
+if ($livekit_token_ttl_env === false || $livekit_token_ttl_env === '') {
+	$livekit_token_ttl_env = isset($_SERVER['LIVEKIT_TOKEN_TTL_SECONDS']) ? $_SERVER['LIVEKIT_TOKEN_TTL_SECONDS'] : '';
+}
+$config['livekit_token_ttl_seconds'] = is_numeric($livekit_token_ttl_env) ? (int) $livekit_token_ttl_env : 3600;
+
 $config['api_access_token'] = getenv('API_ACCESS_TOKEN') ?: '';
