@@ -72,33 +72,30 @@ if ($current_role === 'dokter') {
 		}
 
 		.chat-header {
-			height: 75px;
+			min-height: 72px;
 			background: #ffffff;
 			color: #333333;
-			padding: 0 20px;
+			padding: 10px 12px;
 			display: flex;
 			align-items: center;
-			justify-content: center;
-			position: relative;
+			gap: 10px;
 			top: 0;
 			z-index: 4;
 			box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 		}
 
 		.chat-back {
-			position: absolute;
-			left: 20px;
-			top: 38px;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			width: 22px;
-			height: 22px;
+			width: 34px;
+			height: 34px;
 			border: 0;
 			background: transparent;
 			color: #333333;
 			line-height: 1;
 			text-decoration: none;
+			flex: 0 0 34px;
 		}
 
 		.chat-back img {
@@ -117,68 +114,39 @@ if ($current_role === 'dokter') {
 		}
 
 		.chat-title {
-			color: #333333;
-			font-weight: 700;
-			font-size: 20px;
-			line-height: 24px;
-		}
-
-		.chat-profile {
-			height: 80px;
-			background: #d5f0e3;
-			display: flex;
-			align-items: center;
-			gap: 13px;
-			padding: 10px 20px;
-			flex: 0 0 auto;
-		}
-
-		.chat-avatar {
-			width: 61px;
-			height: 60px;
-			border-radius: 15px;
-			object-fit: cover;
-			background: #ffffff;
-			flex: 0 0 auto;
-		}
-
-		.chat-profile-text {
 			min-width: 0;
-			flex: 1;
+			flex: 1 1 auto;
 		}
 
-		.chat-name {
-			margin: 0 0 3px;
+		.chat-title-text {
+			margin: 0;
 			color: #333333;
-			font-size: 15px;
 			font-weight: 700;
+			font-size: 15px;
 			line-height: 19px;
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
 		}
 
-		.chat-subtitle {
-			margin: 0;
-			color: #8c8c8c;
-			font-size: 13px;
-			line-height: 17px;
+		.chat-title-subtext {
+			margin: 2px 0 0;
+			color: #6b7280;
+			font-size: 11px;
+			font-weight: 650;
+			line-height: 15px;
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
 		}
 
-		.chat-status {
-			display: inline-flex;
-			align-items: center;
-			width: fit-content;
-			margin-top: 5px;
-			padding: 3px 8px;
-			border-radius: 999px;
-			background: rgba(67, 122, 19, 0.12);
-			color: #437a13;
-			font-size: 11px;
-			font-weight: 700;
+		.chat-avatar {
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
+			object-fit: cover;
+			background: #ffffff;
+			flex: 0 0 42px;
 		}
 
 		.chat-list {
@@ -356,26 +324,24 @@ if ($current_role === 'dokter') {
 		.chat-call-actions {
 			display: flex;
 			align-items: center;
-			gap: 8px;
+			justify-content: flex-end;
+			gap: 4px;
 			flex: 0 0 auto;
 		}
 
 		.chat-call-button {
-			border: 1px solid rgba(67, 122, 19, 0.22);
-			background: #ffffff;
+			border: 0;
+			background: transparent;
 			color: #315d0d;
-			min-height: 38px;
+			width: 38px;
+			height: 38px;
 			border-radius: 999px;
-			padding: 8px 12px;
-			font-size: 12px;
-			font-weight: 800;
+			padding: 8px;
 			cursor: pointer;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			gap: 7px;
-			box-shadow: 0 8px 18px rgba(49, 93, 13, 0.08);
-			white-space: nowrap;
+			flex: 0 0 38px;
 		}
 
 		.chat-call-button:hover,
@@ -384,9 +350,11 @@ if ($current_role === 'dokter') {
 			outline: 0;
 		}
 
-		.chat-call-icon {
-			font-size: 15px;
-			line-height: 1;
+		.chat-call-button svg {
+			width: 20px;
+			height: 20px;
+			display: block;
+			stroke: currentColor;
 		}
 
 		.doclinc-call-modal {
@@ -582,22 +550,15 @@ if ($current_role === 'dokter') {
 				max-width: min(300px, calc(100vw - 114px));
 			}
 
-			.chat-profile {
-				height: auto;
-				min-height: 80px;
-				align-items: flex-start;
-			}
-
 			.chat-call-actions {
-				flex-direction: column;
-				align-items: stretch;
-				gap: 6px;
+				gap: 2px;
 			}
 
 			.chat-call-button {
-				min-height: 36px;
-				padding: 7px 10px;
-				font-size: 11px;
+				width: 36px;
+				height: 36px;
+				flex-basis: 36px;
+				padding: 8px;
 			}
 		}
 	</style>
@@ -609,27 +570,27 @@ if ($current_role === 'dokter') {
 			<a href="<?= html_escape($back_url); ?>" class="chat-back" aria-label="Kembali">
 				<img src="<?= html_escape($asset_base . 'icon-chat-back.svg'); ?>" alt="">
 			</a>
-			<div class="chat-title">Konsultasi</div>
-		</header>
-
-		<section class="chat-profile" aria-label="Informasi konsultasi">
 			<img class="chat-avatar" src="<?= html_escape($asset_base . 'doctor-placeholder.jpg'); ?>" alt="Profil layanan">
-			<div class="chat-profile-text">
-				<p class="chat-name"><?= html_escape($partner_name); ?></p>
-				<p class="chat-subtitle"><?= html_escape($partner_subtitle); ?></p>
-				<div class="chat-status"><?= html_escape($status_label); ?> · <?= html_escape($queue_display); ?></div>
+			<div class="chat-title">
+				<p class="chat-title-text"><?= html_escape($partner_name); ?></p>
+				<p class="chat-title-subtext"><?= html_escape($status_label); ?> · <?= html_escape($queue_display); ?></p>
 			</div>
 			<?php if ($can_start_call) : ?>
 				<div class="chat-call-actions" aria-label="Aksi panggilan">
-					<button type="button" class="chat-call-button doclinc-call-start" data-call-mode="audio" data-request-id="<?= html_escape($request_id); ?>">
-						<span>Panggilan Suara</span>
+					<button type="button" class="chat-call-button doclinc-call-start" data-call-mode="audio" data-request-id="<?= html_escape($request_id); ?>" aria-label="Mulai panggilan suara">
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+							<path d="M22 16.92v2.2a2 2 0 0 1-2.18 2 19.74 19.74 0 0 1-8.59-3.05 19.35 19.35 0 0 1-5.96-5.96 19.74 19.74 0 0 1-3.05-8.59A2 2 0 0 1 4.21 1.34h2.2a2 2 0 0 1 2 1.72c.13.96.35 1.9.65 2.8a2 2 0 0 1-.45 2.11L7.68 8.9a15.78 15.78 0 0 0 6.42 6.42l.93-.93a2 2 0 0 1 2.11-.45c.9.3 1.84.52 2.8.65A2 2 0 0 1 22 16.92Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
 					</button>
-					<button type="button" class="chat-call-button doclinc-call-start" data-call-mode="video" data-request-id="<?= html_escape($request_id); ?>">
-						<span>Panggilan Video</span>
+					<button type="button" class="chat-call-button doclinc-call-start" data-call-mode="video" data-request-id="<?= html_escape($request_id); ?>" aria-label="Mulai panggilan video">
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+							<path d="M4.5 6.5h9.2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4.5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+							<path d="m15.7 10 4.8-2.8v9.6L15.7 14" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
 					</button>
 				</div>
 			<?php endif; ?>
-		</section>
+		</header>
 
 		<main class="chat-list" id="chatMessages">
 			<div class="chat-muted">Memuat pesan...</div>
