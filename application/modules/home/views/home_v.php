@@ -3096,6 +3096,19 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		});
 	</script>
 
+	<?php if ($this->session->userdata('role') === 'warga') : ?>
+		<script>
+			window.DoclincIncomingCallWatcher = {
+				enabled: true,
+				incomingUrl: <?= json_encode(base_url('home/livekit_incoming_call')); ?>,
+				rejectUrl: <?= json_encode(base_url('home/reject_livekit_call')); ?>,
+				chatUrl: <?= json_encode(base_url('chat')); ?>,
+				pollMs: 3000
+			};
+		</script>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-incoming-watcher.js')); ?>"></script>
+	<?php endif; ?>
+
 </body>
 
 </html>

@@ -21,6 +21,7 @@ $call_incoming_url = base_url('home/livekit_incoming_call');
 $call_answer_url = base_url('home/answer_livekit_call');
 $call_reject_url = base_url('home/reject_livekit_call');
 $call_warga_status_url = base_url('home/livekit_call_status');
+$auto_answer_call_id = isset($_GET['answer_call']) ? (int) $_GET['answer_call'] : 0;
 $queue_code = doclinc_request_queue_code($request);
 $queue_display = 'No. Antrian: ' . $queue_code;
 if ($current_role !== 'dokter') {
@@ -1104,7 +1105,7 @@ if ($current_role === 'dokter') {
 					if (!elements.empty || !elements.remote) {
 						return;
 					}
-					elements.empty.classList.toggle('is-hidden', !!elements.remote.querySelector('video,audio'));
+					elements.empty.classList.toggle('is-hidden', !!elements.remote.querySelector('video'));
 				}
 
 				function stopLocalTracks() {
@@ -1331,7 +1332,11 @@ if ($current_role === 'dokter') {
 						return LiveKit.createLocalAudioTrack();
 					}
 					return LiveKit.createLocalVideoTrack({
-						facingMode: state.facingMode
+						facingMode: {
+							ideal: state.facingMode
+						}
+					}).catch(function() {
+						return LiveKit.createLocalVideoTrack();
 					});
 				}
 
@@ -1376,7 +1381,9 @@ if ($current_role === 'dokter') {
 						dynacast: true
 					});
 					state.callId = response.call_id || state.callId;
-					state.mode = response.call_type === 'audio' ? 'audio' : state.mode;
+					if (response.call_type === 'audio' || response.call_type === 'video') {
+						state.mode = response.call_type;
+					}
 					state.room = room;
 					wireRoom(room);
 					return room.connect(response.ws_url, response.token).then(function() {
@@ -1400,16 +1407,20 @@ if ($current_role === 'dokter') {
 							return null;
 						}
 						return createLocalTrack('video').then(function(track) {
+							state.cameraEnabled = true;
+							if (elements.camera) {
+								elements.camera.classList.remove('is-off');
+							}
 							showLocalPreview(track);
 							return publishTrack(track);
 						}).catch(function() {
 							state.cameraEnabled = false;
-								if (elements.camera) {
-									elements.camera.classList.add('is-off');
-								}
-								showLocalPlaceholder('Kamera nonaktif');
-								setStatus('Kamera tidak tersedia, panggilan suara aktif');
-							});
+							if (elements.camera) {
+								elements.camera.classList.add('is-off');
+							}
+							showLocalPlaceholder('Kamera nonaktif');
+							setStatus('Kamera tidak tersedia, panggilan suara aktif');
+						});
 					});
 				}
 
@@ -1601,6 +1612,17 @@ if ($current_role === 'dokter') {
 					joinCall();
 				}
 
+				function answerCallById(callId) {
+					if (!canReceiveCall || !callId || state.room || state.connecting) {
+						return;
+					}
+					hideIncomingCall();
+					state.callId = callId;
+					state.mode = 'video';
+					showCallScreen();
+					joinCall();
+				}
+
 				function rejectIncomingCall() {
 					const callId = state.incomingCall && state.incomingCall.call_id ? state.incomingCall.call_id : state.callId;
 					hideIncomingCall();
@@ -1665,7 +1687,12 @@ if ($current_role === 'dokter') {
 						stopIncomingPolling();
 						cleanupCall('Panggilan berakhir');
 					});
-					startIncomingPolling();
+					const autoAnswerCallId = <?= json_encode($auto_answer_call_id); ?>;
+					if (autoAnswerCallId > 0) {
+						answerCallById(autoAnswerCallId);
+					} else {
+						startIncomingPolling();
+					}
 				});
 			})();
 		</script>
