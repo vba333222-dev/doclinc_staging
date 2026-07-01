@@ -81,6 +81,9 @@ class Home extends MX_Controller
 			}
 
 			$payload = $this->Call_session_m->format_call($call);
+			$request = doclinc_request_row((int) $payload['request_id']);
+			$payload['queue_code'] = $request ? doclinc_request_queue_code($request) : '';
+			$payload['queue_label'] = $request ? doclinc_request_queue_number_label($request) : '';
 			$payload['success'] = true;
 			$payload['has_incoming'] = true;
 			$payload['message'] = 'Panggilan masuk';
