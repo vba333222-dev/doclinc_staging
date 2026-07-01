@@ -1012,6 +1012,354 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				grid-template-columns: 1fr;
 			}
 		}
+
+		.dl-nakes-dashboard *,
+		.dl-nakes-dashboard *::before,
+		.dl-nakes-dashboard *::after {
+			box-sizing: border-box;
+		}
+
+		.dl-nakes-dashboard .contents {
+			width: 100%;
+			max-width: 480px;
+			margin: 0 auto;
+			overflow-x: hidden;
+		}
+
+		.dl-nakes-dashboard .dl-shell {
+			max-width: 480px;
+			background: #f3f8f5;
+		}
+
+		.dl-nakes-dashboard .dl-shell>.contents {
+			padding-top: 0;
+			margin-bottom: 84px;
+		}
+
+		.dl-nakes-dashboard .min-w-0,
+		.dl-nakes-dashboard .flex-grow-1 {
+			min-width: 0;
+		}
+
+		.dl-nakes-appbar {
+			position: relative !important;
+			top: auto !important;
+			left: auto !important;
+			transform: none !important;
+			display: block !important;
+			width: 100%;
+			max-width: none;
+			min-height: 0;
+			padding: 14px !important;
+			border-radius: 0 0 22px 22px;
+			box-shadow: 0 12px 28px rgba(8, 106, 75, .18);
+			overflow: visible !important;
+			z-index: 1;
+		}
+
+		.dl-nakes-appbar-top {
+			margin-bottom: 12px;
+			align-items: center;
+		}
+
+		.dl-nakes-header-profile {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			min-width: 0;
+			flex: 1 1 auto;
+		}
+
+		.dl-nakes-header-profile img {
+			width: 46px;
+			height: 46px;
+			border-radius: 15px;
+			object-fit: cover;
+			border: 2px solid rgba(255, 255, 255, .42);
+			flex: 0 0 auto;
+		}
+
+		.dl-nakes-header-profile span,
+		.dl-nakes-header-profile small {
+			display: block;
+			color: rgba(255, 255, 255, .82);
+			font-size: 11px;
+			line-height: 1.25;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.dl-nakes-header-profile strong {
+			display: block;
+			color: #fff;
+			font-size: 15px;
+			font-weight: 900;
+			line-height: 1.25;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.dl-nakes-icon-btn .notify-number {
+			position: absolute;
+			right: -2px;
+			top: -2px;
+			min-width: 17px;
+			height: 17px;
+			padding: 0 4px;
+			border-radius: 999px;
+			background: #ef4444;
+			color: #fff;
+			font-size: 9px;
+			font-weight: 900;
+			line-height: 17px;
+			text-align: center;
+		}
+
+		.dl-nakes-header-title span,
+		.dl-nakes-header-title strong,
+		.dl-nakes-profile-card small,
+		.dl-nakes-profile-card h3,
+		.dl-nakes-profile-card p,
+		.dl-task-title,
+		.dl-task-meta,
+		.dl-latest-name,
+		.dl-latest-meta,
+		.dl-muted-copy,
+		.dl-request-title,
+		.dl-request-tag,
+		.dl-nakes-meta-list span,
+		.dl-nakes-meta-list strong {
+			word-break: normal;
+			overflow-wrap: break-word;
+			letter-spacing: 0;
+		}
+
+		.dl-nakes-header-title span,
+		.dl-nakes-header-title strong {
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.dl-nakes-profile-card {
+			padding: 12px;
+			border-radius: 18px;
+			align-items: center;
+		}
+
+		.dl-nakes-profile-card img {
+			width: 54px;
+			height: 54px;
+			border-radius: 16px;
+			flex: 0 0 auto;
+		}
+
+		.dl-nakes-profile-card h3 {
+			font-size: 17px;
+			white-space: normal;
+		}
+
+		.dl-nakes-location-pill {
+			width: 100%;
+			margin-top: 10px;
+		}
+
+		.dl-dashboard-stack {
+			margin-top: 0;
+			gap: 12px;
+		}
+
+		.dl-nakes-card,
+		.dl-nakes-request-card {
+			width: 100%;
+			max-width: 100%;
+		}
+
+		.dl-device-card:after {
+			display: none;
+		}
+
+		.dl-dashboard-stats {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+
+		.dl-dashboard-stat {
+			min-width: 0;
+			padding: 12px 10px;
+		}
+
+		.dl-dashboard-stat span {
+			font-size: 11px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.dl-dashboard-stat strong {
+			font-size: 22px;
+		}
+
+		.dl-nakes-page-header {
+			position: static;
+			margin: 0 0 12px;
+			padding: 0;
+			background: transparent;
+			backdrop-filter: none;
+			gap: 10px;
+		}
+
+		.dl-nakes-page-header>div {
+			min-width: 0;
+		}
+
+		.dl-header-count {
+			flex: 0 0 auto;
+			white-space: nowrap;
+		}
+
+		.dl-request-filter-row {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		.dl-filter-chip {
+			flex: 0 0 auto;
+		}
+
+		.dl-nakes-request-card .card-header {
+			gap: 10px !important;
+			align-items: flex-start !important;
+		}
+
+		.dl-nakes-request-card .card-header .flex-grow-1 {
+			min-width: 0;
+		}
+
+		.dl-queue-badge {
+			width: 44px;
+			height: 44px;
+			border-radius: 14px;
+		}
+
+		.dl-queue-badge span {
+			font-size: 18px;
+		}
+
+		.dl-request-title {
+			font-size: 15px;
+			line-height: 1.3;
+		}
+
+		.dl-request-tags {
+			gap: 5px;
+		}
+
+		.dl-request-tag {
+			max-width: 100%;
+			line-height: 1.25;
+		}
+
+		.dl-badge {
+			flex: 0 0 auto;
+		}
+
+		.dl-nakes-complaint-box {
+			padding: 12px;
+			margin-bottom: 12px;
+		}
+
+		.dl-nakes-complaint-box span {
+			display: block;
+			color: #6f857b;
+			font-size: 12px;
+			font-weight: 800;
+			margin-bottom: 5px;
+		}
+
+		.dl-nakes-complaint-box p {
+			margin: 0;
+			color: #173b2d;
+			font-size: 13px;
+			line-height: 1.45;
+			word-break: normal;
+			overflow-wrap: break-word;
+		}
+
+		.dl-nakes-meta-list {
+			display: grid;
+			grid-template-columns: 1fr;
+			gap: 8px;
+		}
+
+		.dl-nakes-meta-list>div {
+			display: grid;
+			grid-template-columns: 24px 92px minmax(0, 1fr);
+			align-items: start;
+			gap: 8px;
+			padding: 10px;
+		}
+
+		.dl-nakes-meta-list span {
+			margin: 0;
+			font-size: 11px;
+			line-height: 1.35;
+		}
+
+		.dl-nakes-meta-list strong {
+			font-size: 12px;
+			line-height: 1.4;
+		}
+
+		.dl-nakes-request-card .card-footer {
+			background: #fff;
+			border-top: 1px solid #edf5f1;
+			padding: 12px;
+		}
+
+		.dl-nakes-actions {
+			display: grid !important;
+			grid-template-columns: 1fr;
+			gap: 8px !important;
+		}
+
+		.dl-nakes-actions .col {
+			width: 100%;
+			flex: 0 0 auto;
+		}
+
+		.dl-nakes-actions .btn,
+		.dl-nakes-request-card .card-footer .btn {
+			width: 100%;
+			white-space: normal;
+			line-height: 1.25;
+		}
+
+		@media (min-width: 400px) {
+			.dl-nakes-actions {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
+			.dl-nakes-actions .col:last-child:nth-child(3) {
+				grid-column: 1 / -1;
+			}
+		}
+
+		@media (max-width: 390px) {
+			.dl-nakes-meta-list>div {
+				grid-template-columns: 22px minmax(0, 1fr);
+			}
+
+			.dl-nakes-meta-list span {
+				grid-column: 2;
+			}
+
+			.dl-nakes-meta-list strong {
+				grid-column: 2;
+			}
+		}
 	</style>
 </head>
 
@@ -1032,22 +1380,18 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					<a href="<?= html_escape($legacy_superapp_url); ?>" class="dl-nakes-icon-btn" aria-label="Kembali">
 						<i class="fas fa-chevron-left"></i>
 					</a>
-					<div class="dl-nakes-header-title">
-						<span>Doclinc Nakes</span>
-						<strong>Dashboard Tugas</strong>
+					<div class="dl-nakes-header-profile">
+						<img src="<?= html_escape(doclinc_safe_profile_image_src($profile['foto'] ?? '')); ?>" alt="Foto Profil">
+						<div class="min-w-0">
+							<span>Selamat bertugas</span>
+							<strong><?= html_escape($nakes_name); ?></strong>
+							<small><?= html_escape($nakes_age); ?> · Nakes aktif</small>
+						</div>
 					</div>
 					<a class="dl-nakes-icon-btn position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif" aria-label="Notifikasi">
 						<i class="bi bi-bell-fill"></i>
 						<span class="notify-number" id="badgeNotif">9+</span>
 					</a>
-				</div>
-				<div class="dl-nakes-profile-card animate__animated animate__fadeInUp animate__faster">
-					<img src="<?= html_escape(doclinc_safe_profile_image_src($profile['foto'] ?? '')); ?>" alt="Foto Profil">
-					<div class="min-w-0">
-						<small>Selamat bertugas,</small>
-						<h3><?= html_escape($nakes_name); ?></h3>
-						<p class="mb-0"><?= html_escape($nakes_age); ?> · Nakes aktif</p>
-					</div>
 				</div>
 				<div class="dl-nakes-location-pill">
 					<i class="fas fa-map-marker-alt"></i>
