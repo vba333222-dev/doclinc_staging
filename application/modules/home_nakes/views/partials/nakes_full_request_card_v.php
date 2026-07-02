@@ -37,17 +37,27 @@
 												<?php endif; ?>
 											</div>
 											<?php if ($show_address || $show_mode_label || $show_distance_label) : ?>
-												<div class="dl-nakes-meta-list nk-info-list nk-card-section">
-													<?php if ($show_address) : ?>
-														<div class="nk-info-row"><i class="fas fa-map-marker-alt fa-fw"></i><span class="nk-info-label">Alamat</span><strong class="nk-info-value"><?= doclinc_history_safe_text($x->location); ?></strong></div>
-													<?php endif; ?>
-													<?php if ($show_mode_label) : ?>
-														<div class="nk-info-row"><i class="fas fa-clipboard-check fa-fw"></i><span class="nk-info-label">Mode</span><strong class="nk-info-value"><?= html_escape($mode_label); ?></strong></div>
-													<?php endif; ?>
-													<?php if ($show_distance_label) : ?>
-														<div class="nk-info-row"><i class="fas fa-motorcycle fa-fw"></i><span class="nk-info-label">Rute</span><strong class="nk-info-value"><span class="distance"><?= html_escape($distance_label); ?></span><span class="duration dl-route-duration"></span></strong></div>
-													<?php endif; ?>
-												</div>
+												<?php if ($show_address) : ?>
+													<div class="nk-info-card nk-info-card--address nk-card-section">
+														<div class="nk-info-card__title">Alamat</div>
+														<div class="nk-info-card__body nk-info-list">
+															<div class="nk-info-row"><i class="fas fa-map-marker-alt fa-fw"></i><span class="nk-info-label">Alamat</span><strong class="nk-info-value"><?= doclinc_history_safe_text($x->location); ?></strong></div>
+														</div>
+													</div>
+												<?php endif; ?>
+												<?php if ($show_mode_label || $show_distance_label) : ?>
+													<div class="nk-info-card nk-card-section">
+														<div class="nk-info-card__title">Info konsultasi</div>
+														<div class="nk-info-card__body dl-nakes-meta-list nk-info-list">
+															<?php if ($show_mode_label) : ?>
+																<div class="nk-info-row"><i class="fas fa-clipboard-check fa-fw"></i><span class="nk-info-label">Mode</span><strong class="nk-info-value"><?= html_escape($mode_label); ?></strong></div>
+															<?php endif; ?>
+															<?php if ($show_distance_label) : ?>
+																<div class="nk-info-row"><i class="fas fa-motorcycle fa-fw"></i><span class="nk-info-label">Rute</span><strong class="nk-info-value"><span class="distance"><?= html_escape($distance_label); ?></span><span class="duration dl-route-duration"></span></strong></div>
+															<?php endif; ?>
+														</div>
+													</div>
+												<?php endif; ?>
 												<?php if (!$show_distance_label) : ?>
 													<span class="distance dl-js-route-probe"><?= html_escape($distance_label); ?></span>
 													<span class="duration dl-js-route-probe"></span>
@@ -65,12 +75,17 @@
 											<?php if (!empty($x->video)) : ?>
 												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#videoModal_<?= html_escape((int) $x->user_id); ?>">Lihat Video</button>
 											<?php endif; ?>
-											<div class="dl-nakes-visit-toggle nk-visit-confirm-block">
-												<i class="far fa-question-circle fa-fw"></i> Konfirmasikan kunjungan Anda:
-											</div>
-											<div class="form-check form-switch mb-0">
-												<label class="form-check-label" for="kunjung" id="labelKunjung">Tidak</label>
-												<input class="form-check-input" type="checkbox" role="switch" id="kunjung" name="kunjung">
+											<div class="nk-info-card nk-info-card--visit-confirm nk-visit-confirm-block nk-card-section">
+												<div class="nk-info-card__title">Konfirmasi kunjungan</div>
+												<div class="nk-info-card__body">
+													<div class="dl-nakes-visit-toggle">
+														<i class="far fa-question-circle fa-fw"></i> Konfirmasikan kunjungan Anda:
+													</div>
+													<div class="form-check form-switch mb-0">
+														<label class="form-check-label" for="kunjung" id="labelKunjung">Tidak</label>
+														<input class="form-check-input" type="checkbox" role="switch" id="kunjung" name="kunjung">
+													</div>
+												</div>
 											</div>
 										</div>
 										<div class="card-footer">
