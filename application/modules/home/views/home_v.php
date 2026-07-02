@@ -67,6 +67,75 @@ if (!function_exists('doclinc_history_format_complaint')) {
 	}
 }
 
+if (!function_exists('doclinc_warga_clean_complaint_text')) {
+	function doclinc_warga_clean_complaint_text($value)
+	{
+		$text = trim((string) $value);
+		$text = preg_replace('/\*\*(.*?)\*\*/u', '$1', $text);
+		$text = preg_replace('/\s+/u', ' ', $text);
+		return trim((string) $text);
+	}
+}
+
+if (!function_exists('doclinc_warga_complaint_summary')) {
+	function doclinc_warga_complaint_summary($value)
+	{
+		$text = trim((string) $value);
+		if ($text === '') {
+			return '<p class="dl-complaint-preview mb-0">Keluhan tersimpan</p>';
+		}
+
+		$fields = array();
+		$lines = preg_split('/\R/u', $text);
+		foreach ($lines as $line) {
+			$line = trim(preg_replace('/\*\*(.*?)\*\*/u', '$1', (string) $line));
+			if ($line === '' || strtolower($line) === 'anamnesa') {
+				continue;
+			}
+			if (strpos($line, ':') === false) {
+				continue;
+			}
+			list($label, $content) = explode(':', $line, 2);
+			$key = strtolower(trim($label));
+			$value = doclinc_warga_clean_complaint_text($content);
+			if ($value !== '') {
+				$fields[$key] = $value;
+			}
+		}
+
+		$rows = array(
+			'keluhan utama' => 'Keluhan utama',
+			'lama keluhan' => 'Lama keluhan',
+			'gejala tambahan' => 'Gejala',
+			'catatan' => 'Catatan',
+			'deskripsi keluhan' => 'Catatan',
+		);
+
+		$html = '<div class="dl-complaint-summary">';
+		$has_rows = false;
+		foreach ($rows as $key => $label) {
+			if (!isset($fields[$key]) || $fields[$key] === '') {
+				continue;
+			}
+			$html .= '<div class="dl-complaint-row"><span>' . html_escape($label) . '</span><strong>' . html_escape($fields[$key]) . '</strong></div>';
+			$has_rows = true;
+		}
+
+		if (!$has_rows) {
+			$preview = doclinc_warga_clean_complaint_text($text);
+			if (function_exists('mb_strlen') && mb_strlen($preview, 'UTF-8') > 160) {
+				$preview = mb_substr($preview, 0, 157, 'UTF-8') . '...';
+			} elseif (strlen($preview) > 160) {
+				$preview = substr($preview, 0, 157) . '...';
+			}
+			$html .= '<p class="dl-complaint-preview mb-0">' . html_escape($preview !== '' ? $preview : 'Keluhan tersimpan') . '</p>';
+		}
+
+		$html .= '</div>';
+		return $html;
+	}
+}
+
 $doclinc_active_request = isset($active_consultation_request) ? $active_consultation_request : null;
 $doclinc_has_active_request = !empty($doclinc_active_request);
 $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_active_request->request_id) ? (int) $doclinc_active_request->request_id : 0;
@@ -213,6 +282,64 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		.history-empty-text {
 			color: #6c757d;
 			font-size: 13px;
+		}
+
+		.dl-user-coordinate {
+			display: inline-block;
+			max-width: 100%;
+			color: rgba(255, 255, 255, .86);
+			font-size: 12px;
+			font-weight: 700;
+			line-height: 1.35;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.dl-complaint-summary {
+			display: grid;
+			gap: 0;
+		}
+
+		.dl-complaint-row {
+			display: grid;
+			grid-template-columns: 112px minmax(0, 1fr);
+			gap: 10px;
+			padding: 7px 0;
+			border-bottom: 1px solid #eef4f1;
+			align-items: start;
+		}
+
+		.dl-complaint-row:first-child {
+			padding-top: 0;
+		}
+
+		.dl-complaint-row:last-child {
+			padding-bottom: 0;
+			border-bottom: 0;
+		}
+
+		.dl-complaint-row span {
+			color: #6c757d;
+			font-size: 12px;
+			font-weight: 800;
+			line-height: 1.4;
+		}
+
+		.dl-complaint-row strong,
+		.dl-complaint-preview {
+			color: #263a32;
+			font-size: 13px;
+			font-weight: 700;
+			line-height: 1.45;
+			overflow-wrap: anywhere;
+		}
+
+		.dl-complaint-preview {
+			display: -webkit-box;
+			-webkit-line-clamp: 3;
+			-webkit-box-orient: vertical;
+			overflow: hidden;
 		}
 
 		.doclinc-visit-map {
@@ -595,11 +722,11 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
 					<i class="bi bi-bell-fill fs-4"></i>
 					<!-- kalo ada notif fetch datanya dari sini ya, bukan dari dalem elemen span nya -->
-					<span class="notify-number" id="badgeNotif">9+</span>
+					<span class="notify-number" id="badgeNotif"></span>
 					<!-- sampe sini -->
 				</a>
 				<div class="text-white mb-2 dl-location-row">
-					<i class="fas fa-map-marker-alt me-2"></i><small><label for="" id="address"></label></small>
+					<i class="fas fa-map-marker-alt me-2"></i><small><label for="" id="userLocationAddress">Menunggu lokasi...</label></small>
 
 					<input type="hidden" id="id_user" value="<?= $this->session->userdata('id'); ?>">
 					<input type="hidden" id="id_kabupaten" value="<?= $this->session->userdata('remark'); ?>">
@@ -607,7 +734,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					<input type="hidden" id="latitude" placeholder="Latitude">
 					<input type="hidden" id="longitude" placeholder="Longitude">
 				</div>
-				<div class="d-flex animate__animated animate__fadeInUp animate__faster dl-profile-row">
+				<div class="d-flex dl-profile-row">
 					<?php
 					foreach ($data_profile->result() as $x) {
 						$foto = $x->foto;
@@ -620,7 +747,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						<small>Selamat Datang</small>
 						<h3 class="mb-0"><?= html_escape($this->session->userdata('nama')); ?></h3>
 						<p class="mb-0"><?= html_escape($usia); ?></p>
-						<p>Kota: <span id="kota">Memuat...</span></p>
+						<p class="mb-0 dl-user-coordinate" id="userCoordinateLabel">Menunggu lokasi...</p>
+						<span id="kota" class="d-none">Memuat...</span>
 					</div>
 				</div>
 			</div>
@@ -641,7 +769,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				<path style="transform:translate(0, 50px); opacity:0.9" fill="url(#sw-gradient-1)" d="M0,60L48,54C96,48,192,36,288,28C384,20,480,16,576,24C672,32,768,52,864,62C960,72,1056,72,1152,64C1248,56,1344,40,1440,30C1536,20,1632,16,1728,30C1824,44,1920,76,2016,86C2112,96,2208,84,2304,68C2400,52,2496,32,2592,34C2688,36,2784,60,2880,68C2976,76,3072,68,3168,58C3264,48,3360,36,3456,26C3552,16,3648,8,3744,18C3840,28,3936,56,4032,68C4128,80,4224,76,4320,74C4416,72,4512,72,4608,72C4704,72,4800,72,4896,66C4992,60,5088,48,5184,44C5280,40,5376,44,5472,46C5568,48,5664,48,5760,46C5856,44,5952,40,6048,46C6144,52,6240,68,6336,72C6432,76,6528,68,6624,60C6720,52,6816,44,6864,40L6912,36L6912,120L6864,120C6816,120,6720,120,6624,120C6528,120,6432,120,6336,120C6240,120,6144,120,6048,120C5952,120,5856,120,5760,120C5664,120,5568,120,5472,120C5376,120,5280,120,5184,120C5088,120,4992,120,4896,120C4800,120,4704,120,4608,120C4512,120,4416,120,4320,120C4224,120,4128,120,4032,120C3936,120,3840,120,3744,120C3648,120,3552,120,3456,120C3360,120,3264,120,3168,120C3072,120,2976,120,2880,120C2784,120,2688,120,2592,120C2496,120,2400,120,2304,120C2208,120,2112,120,2016,120C1920,120,1824,120,1728,120C1632,120,1536,120,1440,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
 			</svg>
 			<div class="position-relative">
-				<div id="beranda" class="content active animate__animated animate__fadeInUp animate__faster">
+				<div id="beranda" class="content active">
 					<section class="dl-hero">
 						<div class="dl-hero-content">
 							<h2 class="dl-hero-title">Mulai Konsultasi</h2>
@@ -712,7 +840,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									</div>
 									<div class="history-section mb-3">
 										<span class="history-result-label">Keluhan</span>
-										<div class="history-result-value"><?= doclinc_history_safe_lines($dl_current_keluhan); ?></div>
+										<div class="history-result-value"><?= doclinc_warga_complaint_summary($dl_current_keluhan); ?></div>
 									</div>
 									<div class="d-grid gap-2">
 										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary w-100" onclick="openActiveConsultation(<?= html_escape((int) $dlCurrentRequest->request_id); ?>); return false;">Lihat Detail</a>
@@ -754,7 +882,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						</div>
 					</div>
 				</div>
-				<div id="konsultasi_kesehatan" class="content animate__animated animate__fadeInUp animate__faster">
+				<div id="konsultasi_kesehatan" class="content">
 					<h2 class="dl-section-title mb-3">Konsultasi Kesehatan</h2>
 					<?php if ($doclinc_has_active_request) : ?>
 						<div class="dl-empty-state text-center">
@@ -895,7 +1023,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						</div>
 					</div>
 				</div>
-				<div id="riwayat" class="content animate__animated animate__fadeInUp animate__faster">
+				<div id="riwayat" class="content">
 					<h2 class="dl-section-title mb-3">Konsultasi Saya</h2>
 					<ul class="nav nav-tabs nav-justified mb-3 dl-tabs" id="myTab" role="tablist">
 						<li class="nav-item" role="presentation">
@@ -956,7 +1084,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											<p class="mb-0 fw-bold"><?= html_escape($puskesmas_label); ?></p>
 											<p class="mb-0 history-meta"><?= html_escape($queue_number_label); ?> · <?= html_escape($tanggal); ?></p>
 										</div>
-										<span class="badge text-bg-warning ms-auto animate__animated animate__flash animate__infinite animate__slower"><?= html_escape($status); ?></span>
+										<span class="badge text-bg-warning ms-auto"><?= html_escape($status); ?></span>
 									</div>
 									<div class="card-body">
 										<div class="mb-2">
@@ -1121,7 +1249,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					</div>
 				</div>
 
-				<div id="profile" class="content animate__animated animate__fadeInUp animate__faster">
+				<div id="profile" class="content">
 					<?php
 					$nama = '';
 					$tgl = '';
@@ -1174,10 +1302,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					</div>
 				</div>
 
-				<div id="notifikasi" class="content animate__animated animate__fadeInUp animate__faster">
+				<div id="notifikasi" class="content">
 
 				</div>
-				<div id="pahlawan_1" class="content animate__animated animate__fadeInUp animate__faster">
+				<div id="pahlawan_1" class="content">
 
 					<form action="" method="post">
 						<div class="form-floating mb-2">
@@ -1215,7 +1343,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 	<!-- menubar bottom -->
 	<div class="nav-bottom-wrapper shadow-lg rounded-top-4 dl-bottom-nav" id="nav-bottom-wrapper">
 		<div class="container-fluid px-0">
-			<div class="row g-0 text-center p-2 menu animate__animated animate__slideInUp animate__faster">
+			<div class="row g-0 text-center p-2 menu">
 				<a href="#" id="beranda-tab" class="col menu-item active" onclick="showContent('beranda')">
 					<i class="fas fa-home fs-4"></i>
 					<span class="d-block small mt-1">Beranda</span>
@@ -1280,7 +1408,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		<div class="offcanvas-header">
 			<i class="bi bi-bell-fill text-success"></i>
 			<p class="offcanvas-title mx-2" id="offcanvasNotifLabel">Pusat Notifikasi</p>
-			<span class="badge text-bg-danger" id="badgeNotif">9+</span>
+			<span class="badge text-bg-danger" id="badgeNotifs" style="display: none;"></span>
 			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 		</div>
 		<div class="offcanvas-body">
@@ -1734,71 +1862,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		console.log('<?= base_url("assets/js/popup-jamops.js") ?>');
 	</script>
 
-	<!-- mencari kota cilegon -->
-	<!-- <script>
-		// Ambil posisi pengguna secara realtime
-		let lokasi = {
-			lat: -6.0176,
-			lng: 106.0530
-		}; // Default: Cilegon
-
-		if (navigator.geolocation) {
-			navigator.geolocation.getCurrentPosition(function(position) {
-				lokasi = {
-					lat: position.coords.latitude,
-					lng: position.coords.longitude
-				};
-				// Jalankan geocoder setelah dapat lokasi
-				const geocoders = new google.maps.Geocoder();
-				geocoders.geocode({
-					location: lokasi
-				}, function(results, status) {
-					if (status === 'OK') {
-						console.log(results, status);
-
-						if (results[0]) {
-							const components = results[0].address_components;
-							const city = components.find(c => c.types.includes("locality")) ||
-								components.find(c => c.types.includes("administrative_area_level_2"));
-							console.log(city);
-							document.getElementById('kota').textContent = city ? city.long_name : "Tidak ditemukan";
-						} else {
-							document.getElementById('kota').textContent = "Tidak ada hasil geocoding";
-						}
-					} else {
-						document.getElementById('kota').textContent = "Geocoder gagal: " + status;
-					}
-				});
-			}, function(error) {
-				alert(error);
-
-				document.getElementById('kota').textContent = "Lokasi tidak tersedia";
-			});
-		} else {
-			document.getElementById('kota').textContent = "Geolocation tidak didukung";
-		}
-		// return; // Agar kode di bawah tidak dijalankan dua kali
-
-		// const geocoders = new google.maps.Geocoder();
-		// geocoders.geocode({
-		// 	location: lokasi
-		// }, function(results, status) {
-		// 	if (status === 'OK') {
-		// 		if (results[0]) {
-		// 			const components = results[0].address_components;
-		// 			const city = components.find(c => c.types.includes("locality")) ||
-		// 				components.find(c => c.types.includes("administrative_area_level_2"));
-		// 			console.log(city);
-		// 			document.getElementById('kota').textContent = city.long_name;
-		// 		} else {
-		// 			document.getElementById('kota').textContent = "Tidak ada hasil geocoding";
-		// 		}
-		// 	} else {
-		// 		document.getElementById('kota').textContent = "Geocoder gagal: " + status;
-		// 	}
-		// });
-	</script> -->
-
 	<script>
 		let doktIdEl = document.getElementById('doktId');
 		let dokId = document.getElementById('dokId');
@@ -1829,10 +1892,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				document.getElementById('nav-bottom-wrapper').style.display = 'block';
 			}, 1500);
 		});
-		if ($('#notify-number').text() !== '') {
-			$('a.notify > i').addClass('animate__animated animate__tada animate__infinite');
-		}
-
 		document.addEventListener('DOMContentLoaded', function() {
 			var hash = window.location.hash;
 			if (hash) {
@@ -2106,6 +2165,21 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		let marker;
 		let geocoder;
 
+		function formatCoordinate(value) {
+			const number = Number(value);
+			return Number.isFinite(number) ? number.toFixed(6) : '';
+		}
+
+		function setHeaderCoordinate(location) {
+			const coordinateEl = document.getElementById('userCoordinateLabel');
+			if (!coordinateEl) {
+				return;
+			}
+			const lat = location && formatCoordinate(location.lat);
+			const lng = location && formatCoordinate(location.lng);
+			coordinateEl.textContent = lat && lng ? 'Lat ' + lat + ' · Lng ' + lng : 'Lokasi belum aktif';
+		}
+
 		function setLocationFields(location) {
 			const latitudeEl = document.getElementById("latitude");
 			const longitudeEl = document.getElementById("longitude");
@@ -2116,10 +2190,11 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			if (longitudeEl) longitudeEl.value = location.lng;
 			if (latitudexEl) latitudexEl.value = location.lat;
 			if (longitudexEl) longitudexEl.value = location.lng;
+			setHeaderCoordinate(location);
 		}
 
 		function setLocationText(address, kota) {
-			const addressEl = document.getElementById("address");
+			const addressEl = document.getElementById("userLocationAddress");
 			const kotaEl = document.getElementById('kota');
 
 			if (addressEl) addressEl.innerHTML = address || "Lokasi belum tersedia";
@@ -2342,7 +2417,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}, (results, status) => {
 				if (status === "OK") {
 					if (results[0]) {
-						document.getElementById("address").innerHTML = results[0].formatted_address;
+						setLocationText(results[0].formatted_address, '');
 
 						const components = results[0].address_components;
 						const city = components.find(c => c.types.includes("locality")) ||
@@ -2350,10 +2425,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						console.log('Kotanya: ', city);
 						document.getElementById('kota').textContent = city ? city.long_name : "Tidak ditemukan";
 					} else {
-						document.getElementById("address").value = "No results found";
+						setLocationText('', '');
 					}
 				} else {
-					document.getElementById("address").value = "Geocoder failed due to: " + status;
+					setLocationText('', '');
 				}
 			});
 		}
@@ -2365,12 +2440,15 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				// 	break;
 				case error.POSITION_UNAVAILABLE:
 					setLocationText('', '');
+					setHeaderCoordinate(null);
 					break;
 				case error.TIMEOUT:
 					setLocationText('', '');
+					setHeaderCoordinate(null);
 					break;
 				case error.UNKNOWN_ERROR:
 					setLocationText('', '');
+					setHeaderCoordinate(null);
 					break;
 			}
 		}
@@ -2589,21 +2667,31 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		const notificationPollIntervalMs = 30000;
 
 		function getNotificationBadge() {
-			return document.getElementById('badgeNotif') || document.getElementById('badgeNotifs');
+			return Array.prototype.slice.call(document.querySelectorAll('#badgeNotif, #badgeNotifs'));
 		}
 
 		function setNotificationCount(count) {
-			const badge = getNotificationBadge();
-			if (!badge) {
+			const badges = getNotificationBadge();
+			const safeCount = Math.max(0, parseInt(count || 0, 10));
+			if (!badges.length) {
 				return;
 			}
-			if (count > 0) {
-				badge.style.display = 'inline';
-				badge.textContent = count > 9 ? '9+' : count;
-			} else {
-				badge.style.display = 'none';
-				badge.textContent = '';
+			badges.forEach(function(badge) {
+				if (safeCount > 0) {
+					badge.style.display = 'inline-flex';
+					badge.textContent = safeCount > 99 ? '99' + '+' : safeCount;
+				} else {
+					badge.style.display = 'none';
+					badge.textContent = '';
+				}
+			});
+		}
+
+		function syncNotificationCountFromList(notificationList) {
+			if (!notificationList) {
+				return;
 			}
+			setNotificationCount(notificationList.querySelectorAll('.notification-item').length);
 		}
 
 		function renderNotificationItem(item) {
@@ -2646,15 +2734,16 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			if (!notificationList) {
 				return;
 			}
-			setNotificationCount(count);
 			notificationList.innerHTML = '';
 			if (!items || !items.length) {
 				notificationList.innerHTML = '<p class="text-muted mb-0">Tidak ada notifikasi</p>';
+				setNotificationCount(0);
 				return;
 			}
 			items.forEach(function(item) {
 				notificationList.appendChild(renderNotificationItem(item));
 			});
+			syncNotificationCountFromList(notificationList);
 		}
 
 		function loadDatabaseNotifications() {
