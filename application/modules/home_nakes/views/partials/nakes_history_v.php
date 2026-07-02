@@ -181,9 +181,9 @@ $history_initials = static function ($name) {
 													Konfirmasi tiba di lokasi
 												</button>
 											</div>
-											<div class="visit-workflow-control dl-visit-workflow" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
-												<div class="dl-visit-workflow-label">Status kunjungan: <span class="visit-workflow-label"><?= html_escape($visit_status_label); ?></span></div>
-												<div class="dl-visit-workflow-actions">
+											<div class="visit-workflow-control dl-visit-workflow nk-visit-status" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
+												<div class="nk-info-row dl-visit-workflow-label"><span class="nk-info-label">Status kunjungan</span><strong class="nk-info-value visit-workflow-label"><?= html_escape($visit_status_label); ?></strong></div>
+												<div class="dl-visit-workflow-actions nk-visit-actions">
 													<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="en_route" <?= $visit_next_status[$visit_status] === 'en_route' ? '' : 'disabled'; ?>>Mulai Perjalanan</button>
 													<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived" <?= $visit_next_status[$visit_status] === 'arrived' ? '' : 'disabled'; ?>>Tiba di Lokasi</button>
 													<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="in_service" <?= $visit_next_status[$visit_status] === 'in_service' ? '' : 'disabled'; ?>>Mulai Penanganan</button>
