@@ -19,33 +19,33 @@
 										</div>
 										<div id="cekStatus"></div>
 										<div class="card-body">
-											<div class="dl-nakes-complaint-box">
-												<span>Keluhan utama</span>
-												<p><?= html_escape($complaint_primary); ?></p>
+											<div class="dl-nakes-complaint-box nk-complaint">
+												<span class="nk-complaint__title">Keluhan utama</span>
+												<p class="nk-complaint__main"><?= html_escape($complaint_primary); ?></p>
 												<?php if ($show_complaint_duration || $show_complaint_symptoms || $show_complaint_description) : ?>
-													<div class="dl-complaint-facts">
+													<div class="dl-complaint-facts nk-fact-list">
 														<?php if ($show_complaint_duration) : ?>
-															<div><span>Lama</span><strong><?= html_escape($complaint_duration); ?></strong></div>
+															<div class="nk-fact-row"><span class="nk-fact-label">Lama</span><strong class="nk-fact-value"><?= html_escape($complaint_duration); ?></strong></div>
 														<?php endif; ?>
 														<?php if ($show_complaint_symptoms) : ?>
-															<div><span>Gejala</span><strong><?= html_escape($complaint_symptoms); ?></strong></div>
+															<div class="nk-fact-row"><span class="nk-fact-label">Gejala</span><strong class="nk-fact-value"><?= html_escape($complaint_symptoms); ?></strong></div>
 														<?php endif; ?>
 														<?php if ($show_complaint_description) : ?>
-															<div><span>Catatan</span><strong><?= html_escape($complaint_description); ?></strong></div>
+															<div class="nk-fact-row"><span class="nk-fact-label">Catatan</span><strong class="nk-fact-value"><?= html_escape($complaint_description); ?></strong></div>
 														<?php endif; ?>
 													</div>
 												<?php endif; ?>
 											</div>
 											<?php if ($show_address || $show_mode_label || $show_distance_label) : ?>
-												<div class="dl-nakes-meta-list">
+												<div class="dl-nakes-meta-list nk-info-list">
 													<?php if ($show_address) : ?>
-														<div><i class="fas fa-map-marker-alt fa-fw"></i><span>Alamat</span><strong><?= doclinc_history_safe_text($x->location); ?></strong></div>
+														<div class="nk-info-row"><i class="fas fa-map-marker-alt fa-fw"></i><span class="nk-info-label">Alamat</span><strong class="nk-info-value"><?= doclinc_history_safe_text($x->location); ?></strong></div>
 													<?php endif; ?>
 													<?php if ($show_mode_label) : ?>
-														<div><i class="fas fa-clipboard-check fa-fw"></i><span>Mode</span><strong><?= html_escape($mode_label); ?></strong></div>
+														<div class="nk-info-row"><i class="fas fa-clipboard-check fa-fw"></i><span class="nk-info-label">Mode</span><strong class="nk-info-value"><?= html_escape($mode_label); ?></strong></div>
 													<?php endif; ?>
 													<?php if ($show_distance_label) : ?>
-														<div><i class="fas fa-motorcycle fa-fw"></i><span>Rute</span><strong><span class="distance"><?= html_escape($distance_label); ?></span><span class="duration dl-route-duration"></span></strong></div>
+														<div class="nk-info-row"><i class="fas fa-motorcycle fa-fw"></i><span class="nk-info-label">Rute</span><strong class="nk-info-value"><span class="distance"><?= html_escape($distance_label); ?></span><span class="duration dl-route-duration"></span></strong></div>
 													<?php endif; ?>
 												</div>
 												<?php if (!$show_distance_label) : ?>
