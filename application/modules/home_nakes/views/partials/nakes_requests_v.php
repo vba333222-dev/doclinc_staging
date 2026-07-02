@@ -34,6 +34,14 @@
 								$area_label = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : 'Area pasien';
 								$distance_label = !empty($x->distance) ? $x->distance : 'Menghitung...';
 								$received_label = !empty($x->created_at) ? date('d M H:i', strtotime($x->created_at)) : 'Baru masuk';
+								$complaint_summary = trim(preg_replace('/\s+/', ' ', strip_tags((string) $keluhan)));
+								if ($complaint_summary === '') {
+									$complaint_summary = 'Keluhan belum diisi.';
+								} elseif (function_exists('mb_strlen') && mb_strlen($complaint_summary, 'UTF-8') > 150) {
+									$complaint_summary = mb_substr($complaint_summary, 0, 147, 'UTF-8') . '...';
+								} elseif (!function_exists('mb_strlen') && strlen($complaint_summary) > 150) {
+									$complaint_summary = substr($complaint_summary, 0, 147) . '...';
+								}
 							?>
 								<?php $this->load->view('partials/nakes_full_request_card_v', get_defined_vars()); ?>
 

@@ -696,30 +696,40 @@
 
 		.dl-nakes-request-card {
 			margin-bottom: 10px;
+			border-color: #d6e8df !important;
 		}
 
 		.dl-nakes-request-card .card-header {
 			display: flex;
-			align-items: flex-start;
-			gap: 10px;
-			padding: 10px;
-			background: #fff;
+			flex-direction: column;
+			gap: 9px;
+			padding: 11px 11px 10px;
+			background: #fbfefd;
 			color: #183c2f;
 			border-bottom: 1px solid #eef4f1;
 		}
 
+		.dl-request-heading {
+			display: flex;
+			align-items: center;
+			gap: 9px;
+			width: 100%;
+			min-width: 0;
+		}
+
 		.dl-queue-badge {
-			width: 42px;
-			height: 42px;
-			border-radius: 12px;
+			width: 48px;
+			height: 48px;
+			border-radius: 13px;
 			display: inline-flex;
 			flex-direction: column;
 			align-items: center;
 			justify-content: center;
-			background: #ecf8f2;
+			background: #e5f7ef;
 			color: #087b55;
 			font-weight: 800;
 			flex: 0 0 auto;
+			border: 1px solid #c9eadb;
 		}
 
 		.dl-queue-badge small {
@@ -729,42 +739,82 @@
 		}
 
 		.dl-queue-badge span {
-			font-size: 17px;
+			font-size: 18px;
 			line-height: 1;
 			margin-top: 2px;
+		}
+
+		.dl-request-identity {
+			flex: 1 1 auto;
+			min-width: 0;
 		}
 
 		.dl-request-title {
 			font-size: 15px;
 			font-weight: 800;
-			line-height: 1.35;
+			line-height: 1.25;
 			color: #183c2f;
 			overflow-wrap: break-word;
 		}
 
+		.dl-request-subtitle {
+			color: #587266;
+			font-size: 12px;
+			font-weight: 700;
+			line-height: 1.3;
+			margin-top: 3px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
 		.dl-request-tags {
-			display: flex;
-			flex-wrap: wrap;
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: 5px;
-			margin-top: 6px;
+			width: 100%;
+			margin-top: 0;
 		}
 
 		.dl-request-tag {
-			border-radius: 999px;
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			min-width: 0;
+			border-radius: 9px;
 			background: #f1f7f4;
 			color: #5f756b;
 			font-size: 11px;
 			font-weight: 700;
 			line-height: 1.25;
-			padding: 4px 7px;
+			padding: 6px 7px;
 			overflow-wrap: break-word;
+		}
+
+		.dl-request-tag i {
+			color: #087b55;
+			font-size: 10px;
+			flex: 0 0 auto;
+		}
+
+		.dl-request-tag span {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.dl-request-tag-strong {
+			background: #e8f8f0;
+			color: #087b55;
+			border: 1px solid #cdeade;
 		}
 
 		.dl-badge {
 			border-radius: 999px;
-			background: #ecf8f2;
+			background: #fff7ed;
 			color: #087b55;
-			border: 1px solid #cfe4da;
+			border: 1px solid #fed7aa;
 			font-size: 11px;
 			font-weight: 800;
 			padding: 5px 8px;
@@ -773,38 +823,42 @@
 		}
 
 		.dl-nakes-complaint-box {
-			padding: 10px;
-			margin-bottom: 10px;
+			padding: 9px 10px;
+			margin-bottom: 9px;
 			border: 1px solid #e6efeb;
 			background: #f8fbfa;
-			border-radius: 12px;
+			border-radius: 10px;
 		}
 
 		.dl-nakes-complaint-box span {
 			display: block;
 			color: #6b7f76;
-			font-size: 12px;
+			font-size: 11px;
 			font-weight: 800;
-			margin-bottom: 5px;
+			margin-bottom: 4px;
 		}
 
 		.dl-nakes-complaint-box p {
 			margin: 0;
 			color: #183c2f;
 			font-size: 13px;
-			line-height: 1.45;
+			line-height: 1.42;
 			overflow-wrap: break-word;
+			display: -webkit-box;
+			-webkit-line-clamp: 3;
+			-webkit-box-orient: vertical;
+			overflow: hidden;
 		}
 
 		.dl-nakes-meta-list {
 			display: grid;
 			grid-template-columns: 1fr;
-			gap: 8px;
+			gap: 6px;
 		}
 
 		.dl-nakes-meta-list>div {
 			display: grid;
-			grid-template-columns: 88px minmax(0, 1fr);
+			grid-template-columns: 62px minmax(0, 1fr);
 			gap: 8px;
 			padding: 0;
 			border: 0;
@@ -817,7 +871,7 @@
 
 		.dl-nakes-meta-list span {
 			color: #6b7f76;
-			font-size: 12px;
+			font-size: 11px;
 			font-weight: 800;
 			line-height: 1.4;
 		}
@@ -830,35 +884,63 @@
 			overflow-wrap: break-word;
 		}
 
+		.dl-nakes-visit-toggle {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			margin-top: 9px;
+			padding-top: 9px;
+			border-top: 1px solid #edf4f1;
+			color: #6b7f76;
+			font-size: 11px;
+			font-weight: 800;
+		}
+
+		.dl-nakes-request-card .form-switch {
+			margin-top: 5px;
+			padding: 6px 0 0 2.5em;
+			color: #183c2f;
+			font-size: 12px;
+			font-weight: 800;
+		}
+
 		.dl-nakes-request-card .card-body,
 		.dl-nakes-request-card .card-footer {
-			padding: 10px;
+			padding: 10px 11px;
 		}
 
 		.dl-nakes-request-card .card-footer {
-			background: #fff;
+			background: #fbfefd;
 			border-top: 1px solid #eef4f1;
 		}
 
 		.dl-nakes-actions {
 			display: grid !important;
 			grid-template-columns: 1fr;
-			gap: 7px !important;
+			gap: 8px !important;
 		}
 
-		.dl-nakes-actions .col {
-			width: 100%;
-			flex: 0 0 auto;
+		.dl-nakes-secondary-actions {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 7px;
 		}
 
 		.dl-nakes-actions .btn,
 		.dl-nakes-request-card .card-footer .btn {
 			width: 100%;
-			min-height: 42px;
+			min-height: 40px;
 			font-size: 13px;
 			font-weight: 800;
 			line-height: 1.25;
 			white-space: normal;
+			border-radius: 11px !important;
+			padding-left: 9px;
+			padding-right: 9px;
+		}
+
+		.dl-nakes-action-primary {
+			min-height: 44px !important;
 		}
 
 		.dl-bottom-nav {
@@ -879,13 +961,9 @@
 			color: #087b55;
 		}
 
-		@media (min-width: 400px) {
-			.dl-nakes-actions {
-				grid-template-columns: repeat(2, minmax(0, 1fr));
-			}
-
-			.dl-nakes-actions .col:first-child,
-			.dl-nakes-actions .col:last-child:nth-child(3) {
-				grid-column: 1 / -1;
+		@media (max-width: 359.98px) {
+			.dl-request-tags,
+			.dl-nakes-secondary-actions {
+				grid-template-columns: 1fr;
 			}
 		}
