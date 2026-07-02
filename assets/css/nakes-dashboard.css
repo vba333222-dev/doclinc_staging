@@ -971,6 +971,34 @@
 			width: 100%;
 		}
 
+		.nk-info-card {
+			width: 100%;
+			padding: 9px 10px;
+			margin-bottom: 7px;
+			border: 1px solid #e4ece8;
+			border-radius: 10px;
+			background: #fafcfb;
+		}
+
+		.nk-info-card__title {
+			display: block;
+			color: #6b7f76;
+			font-size: 11px;
+			font-weight: 800;
+			line-height: 1.35;
+			margin-bottom: 5px;
+		}
+
+		.nk-info-card__body {
+			min-width: 0;
+		}
+
+		.nk-info-card--address,
+		.nk-info-card--visit-confirm,
+		.nk-info-card--visit-status {
+			background: #fbfdfc;
+		}
+
 		.nk-complaint__title,
 		.dl-nakes-complaint-box span {
 			display: block;
@@ -1094,9 +1122,9 @@
 			display: flex;
 			align-items: center;
 			gap: 6px;
-			margin-top: 9px;
-			padding-top: 10px;
-			border-top: 1px solid #edf4f1;
+			margin-top: 0;
+			padding-top: 0;
+			border-top: 0;
 			color: #6b7f76;
 			font-size: 11px;
 			font-weight: 800;
@@ -1396,19 +1424,25 @@
 
 		.dl-visit-workflow {
 			margin-top: 8px;
-			padding-top: 8px;
-			border-top: 1px solid #edf4f1;
+			padding-top: 9px;
+			border-top: 0;
 		}
 
 		.nk-visit-status-block {
 			margin-left: 0;
 			margin-right: 0;
+			padding-top: 9px;
 		}
 
 		.dl-visit-workflow-label {
 			margin-bottom: 8px;
 			border-bottom: 0;
 			padding: 0;
+		}
+
+		.nk-info-card .nk-info-row {
+			padding: 0;
+			border-bottom: 0;
 		}
 
 		.dl-visit-workflow-label .nk-info-value {
