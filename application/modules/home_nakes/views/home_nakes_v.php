@@ -200,15 +200,17 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		</div>
 	</div>
 
-	<div class="offcanvas offcanvas-top" tabindex="-1" id="offcanvasNotif" aria-labelledby="offcanvasNotifLabel">
-		<div class="offcanvas-header">
-			<i class="bi bi-bell-fill text-success"></i>
-			<p class="offcanvas-title mx-2" id="offcanvasNotifLabel">Pusat Notifikasi</p>
-			<span class="badge text-bg-danger" id="badgeNotifs"></span>
-			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	<div class="offcanvas offcanvas-top nk-notification-panel" tabindex="-1" id="offcanvasNotif" aria-labelledby="offcanvasNotifLabel">
+		<div class="offcanvas-header nk-notification-header">
+			<div class="nk-notification-title">
+				<span class="nk-notification-title-icon"><i class="bi bi-bell-fill"></i></span>
+				<span class="offcanvas-title" id="offcanvasNotifLabel">Pusat Notifikasi</span>
+				<span class="badge text-bg-danger" id="badgeNotifs"></span>
+			</div>
+			<button type="button" class="btn-close nk-notification-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 		</div>
-		<div class="offcanvas-body">
-			<div id="notificationList" class="notification-list"></div>
+		<div class="offcanvas-body nk-notification-body">
+			<div id="notificationList" class="notification-list nk-notification-list"></div>
 		</div>
 	</div>
 	<div class="offcanvas offcanvas-top" style="height: 100vh;" tabindex="-1" id="offcanvasMapTujuan" aria-labelledby="offcanvasMapTujuanLabel">
@@ -448,6 +450,12 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		}
 
 		document.addEventListener('DOMContentLoaded', function() {
+			document.querySelectorAll('.content').forEach(function(section) {
+				section.classList.add('nk-page-section');
+				if (section.classList.contains('active')) {
+					section.classList.add('nk-page-section--active');
+				}
+			});
 			var hash = window.location.hash;
 			if (hash) {
 				showContent(hash.replace('#', ''));
@@ -471,11 +479,16 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			let currentActiveContent = document.querySelector('.content.active');
 			if (currentActiveContent) {
 				currentActiveContent.classList.remove('active');
+				currentActiveContent.classList.remove('nk-page-section--active');
 			}
 
 			let targetContent = document.getElementById(tab);
 			if (targetContent) {
+				targetContent.classList.add('nk-page-section');
 				targetContent.classList.add('active');
+				window.requestAnimationFrame(function() {
+					targetContent.classList.add('nk-page-section--active');
+				});
 			}
 
 			let currentActiveMenu = document.querySelector('.nav-bottom-wrapper .menu a.active');
@@ -1934,29 +1947,27 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 		function renderNotificationItem(item) {
 			const notificationItem = document.createElement('div');
-			notificationItem.className = 'notification-item d-flex align-items-center p-2 border-bottom';
-			notificationItem.style.cursor = 'pointer';
+			notificationItem.className = 'notification-item nk-notification-item';
 
 			const icon = document.createElement('i');
-			icon.className = 'bi bi-bell-fill text-success me-2';
-			icon.style.fontSize = '1.5rem';
+			icon.className = 'bi bi-bell-fill nk-notification-icon';
 			notificationItem.appendChild(icon);
 
 			const textContainer = document.createElement('div');
-			textContainer.className = 'flex-grow-1';
+			textContainer.className = 'nk-notification-content';
 
 			const title = document.createElement('p');
-			title.className = 'mb-0 fw-bold';
+			title.className = 'nk-notification-item-title';
 			title.textContent = item.title || 'Notifikasi';
 			textContainer.appendChild(title);
 
 			const message = document.createElement('small');
-			message.className = 'd-block';
+			message.className = 'nk-notification-message';
 			message.textContent = item.message || 'Tidak ada detail';
 			textContainer.appendChild(message);
 
 			const timestamp = document.createElement('small');
-			timestamp.className = 'text-muted';
+			timestamp.className = 'nk-notification-time';
 			timestamp.textContent = item.created_at ? new Date(item.created_at.replace(' ', 'T')).toLocaleString('id-ID') : '';
 			textContainer.appendChild(timestamp);
 
@@ -1976,7 +1987,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			setNotificationCount(count);
 			notificationList.innerHTML = '';
 			if (!items || !items.length) {
-				notificationList.innerHTML = '<p class="text-muted mb-0">Tidak ada notifikasi</p>';
+				notificationList.innerHTML = '<div class="nk-notification-empty"><i class="bi bi-bell"></i><span>Tidak ada notifikasi</span></div>';
 				return;
 			}
 			items.forEach(function(item) {
