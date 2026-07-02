@@ -83,19 +83,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" integrity="sha512-tS3S5qG0BlhnQROyJXvNjeEM4UpMXHrQfTGmbQ1gKmelCxlSEBUaxhRBj/EFTzpbP4RVSrpEikbmdJobCvhE3g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css" integrity="sha512-sMXtMNL1zRzolHYKEujM2AqCLUR9F2C4/05cdbxjjLSRvMQIciEPCQZo++nk7go3BtSuK9kfa/s+a4f4i5pLkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<style>
 		:root {
-			--dk-bg: #f4f8f6;
-			--dk-text: #183c2f;
-			--dk-muted: #6b7f76;
-			--dk-line: #dcece5;
-			--dk-green: #09ad74;
-			--dk-accent: #8ed9ba;
-			--dk-surface: #ffffff;
-			--dk-soft: #f8fbfa;
+			--dk-bg: var(--dl-color-surface-soft, #f4f8f6);
+			--dk-text: var(--dl-color-text, #1f2a24);
+			--dk-muted: var(--dl-color-muted, #66756d);
+			--dk-line: var(--dl-color-border, #e7ece9);
+			--dk-green: var(--dl-color-primary, #379a69);
+			--dk-accent: var(--dl-color-primary-soft, #e8f7f0);
+			--dk-surface: var(--dl-color-surface, #ffffff);
+			--dk-soft: var(--dl-color-surface-soft, #f4f8f6);
 		}
 
 		* {
@@ -107,18 +106,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			min-height: 100vh;
 			background: var(--dk-bg);
 			color: var(--dk-text);
-			font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			font-family: var(--dl-font-family, 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+			font-size: var(--dl-font-size-md, 13px);
+			line-height: var(--dl-line-height-normal, 1.45);
 		}
 
 		.consult-shell {
 			width: 100%;
-			max-width: 480px;
+			max-width: 430px;
 			min-height: 100vh;
 			margin: 0 auto;
 			background: var(--dk-bg);
 			overflow-x: hidden;
 			position: relative;
-			padding-bottom: 92px;
+			padding-bottom: 88px;
 		}
 
 		.consult-header {
@@ -137,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-title {
 			margin: 0;
-			font-size: 18px;
+			font-size: var(--dl-font-size-xl, 17px);
 			font-weight: 800;
 			line-height: 1.25;
 			color: var(--dk-text);
@@ -150,10 +151,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		.consult-card {
 			background: var(--dk-surface);
 			border: 1px solid var(--dk-line);
-			border-radius: 16px;
-			padding: 14px;
-			margin-bottom: 10px;
-			box-shadow: 0 2px 8px rgba(24, 60, 47, .05);
+			border-radius: var(--dl-radius-xl, 16px);
+			padding: var(--dl-space-3, 12px);
+			margin-bottom: var(--dl-space-3, 12px);
+			box-shadow: var(--dl-shadow-card, 0 2px 8px rgba(24, 60, 47, .05));
 		}
 
 		.consult-card-header {
@@ -166,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-card-title {
 			margin: 0;
-			font-size: 15px;
+			font-size: var(--dl-font-size-lg, 15px);
 			line-height: 1.3;
 			font-weight: 800;
 			color: var(--dk-text);
@@ -181,13 +182,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-field {
 			width: 100%;
-			min-height: 44px;
+			min-height: 40px;
 			border: 1px solid var(--dk-line);
 			border-radius: 12px;
 			padding: 10px 12px;
 			background: var(--dk-surface);
 			color: var(--dk-text);
-			font-size: 13px;
+			font-size: var(--dl-font-size-md, 13px);
 			font-weight: 700;
 			line-height: 1.4;
 			box-shadow: none !important;
@@ -370,7 +371,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			bottom: 0;
 			transform: translateX(-50%);
 			width: 100%;
-			max-width: 480px;
+			max-width: 430px;
 			background: #ffffff;
 			display: grid;
 			grid-template-columns: repeat(4, minmax(0, 1fr));

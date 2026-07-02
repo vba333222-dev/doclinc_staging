@@ -410,9 +410,43 @@
 
 
 		.dl-nakes-dashboard {
-			background: #f4f8f6 !important;
-			font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-			color: #183c2f;
+			--dl-color-primary: #379A69;
+			--dl-color-primary-dark: #1f6f4b;
+			--dl-color-primary-soft: #E8F7F0;
+			--dl-color-text: #1F2A24;
+			--dl-color-muted: #66756D;
+			--dl-color-border: #E7ECE9;
+			--dl-color-surface: #FFFFFF;
+			--dl-color-surface-soft: #F4F8F6;
+			--dl-color-danger: #D94B4B;
+			--dl-color-warning: #B7791F;
+			--dl-color-success: #379A69;
+			--dl-font-family: "Manrope", "Inter", "Segoe UI", Arial, sans-serif;
+			--dl-font-size-xs: 11px;
+			--dl-font-size-sm: 12px;
+			--dl-font-size-md: 13px;
+			--dl-font-size-lg: 15px;
+			--dl-font-size-xl: 17px;
+			--dl-line-height-tight: 1.25;
+			--dl-line-height-normal: 1.45;
+			--dl-space-1: 4px;
+			--dl-space-2: 8px;
+			--dl-space-3: 12px;
+			--dl-space-4: 16px;
+			--dl-space-5: 20px;
+			--dl-space-6: 24px;
+			--dl-radius-sm: 8px;
+			--dl-radius-md: 12px;
+			--dl-radius-lg: 14px;
+			--dl-radius-xl: 16px;
+			--dl-radius-pill: 999px;
+			--dl-shadow-card: 0 4px 12px rgba(31, 42, 36, 0.04);
+			--dl-shadow-sheet: 0 20px 48px rgba(24, 60, 47, .18);
+			background: var(--dl-color-surface-soft) !important;
+			font-family: var(--dl-font-family);
+			font-size: var(--dl-font-size-md);
+			line-height: var(--dl-line-height-normal);
+			color: var(--dl-color-text);
 		}
 
 		.dl-nakes-dashboard *,
@@ -422,9 +456,9 @@
 		}
 
 		.dl-nakes-dashboard .dl-shell {
-			max-width: 480px;
+			max-width: 430px;
 			margin: 0 auto;
-			background: #f4f8f6;
+			background: var(--dl-color-surface-soft);
 			overflow-x: hidden;
 		}
 
@@ -439,10 +473,6 @@
 
 		.dl-nakes-dashboard .content.active {
 			display: block;
-		}
-
-		.dl-nakes-dashboard .content.animate__animated {
-			animation: none !important;
 		}
 
 		.dl-nakes-dashboard .min-w-0,
@@ -462,9 +492,9 @@
 			padding: 9px 12px !important;
 			border-radius: 0;
 			background: rgba(247, 255, 251, .98) !important;
-			color: #183c2f !important;
-			border-bottom: 1px solid #dcece5;
-			box-shadow: 0 4px 16px rgba(24, 60, 47, .06);
+			color: var(--dl-color-text) !important;
+			border-bottom: 1px solid var(--dl-color-border);
+			box-shadow: var(--dl-shadow-card);
 			overflow: visible !important;
 			z-index: 1010;
 		}
@@ -482,10 +512,10 @@
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			background: #ffffff;
-			color: #087b55 !important;
+			background: var(--dl-color-surface);
+			color: var(--dl-color-primary-dark) !important;
 			text-decoration: none;
-			border: 1px solid #dcece5;
+			border: 1px solid var(--dl-color-border);
 			flex: 0 0 auto;
 		}
 
@@ -794,7 +824,7 @@
 			left: 50%;
 			right: auto;
 			width: calc(100% - 24px);
-			max-width: 480px;
+			max-width: 430px;
 			height: min(82vh, 680px);
 			max-height: calc(100vh - 20px);
 			transform: translate(-50%, -110%);
@@ -2041,7 +2071,7 @@
 			bottom: 0;
 			transform: translateX(-50%);
 			width: 100%;
-			max-width: 480px;
+			max-width: 430px;
 			padding: 7px 10px calc(7px + env(safe-area-inset-bottom, 0px));
 			border: 1px solid #dcece5;
 			border-bottom: 0;
@@ -2091,6 +2121,56 @@
 		.dl-bottom-nav .menu-item.active {
 			background: #ecf8f2;
 			color: #087b55;
+		}
+
+		.dl-nakes-dashboard .btn,
+		.dl-nakes-dashboard .dl-btn-primary,
+		.dl-nakes-dashboard .dl-btn-secondary,
+		.dl-nakes-dashboard .dl-nakes-primary-action,
+		.dl-nakes-dashboard .dl-nakes-secondary-action {
+			min-height: 38px;
+			border-radius: var(--dl-radius-lg) !important;
+			font-size: var(--dl-font-size-md);
+			font-weight: 800;
+			line-height: var(--dl-line-height-tight);
+		}
+
+		.dl-nakes-dashboard .btn-sm {
+			min-height: 34px;
+			border-radius: var(--dl-radius-pill) !important;
+			font-size: var(--dl-font-size-sm);
+			padding: 7px 11px;
+		}
+
+		.dl-nakes-dashboard .form-control,
+		.dl-nakes-dashboard .form-select {
+			min-height: 40px;
+			border-color: var(--dl-color-border);
+			border-radius: var(--dl-radius-md);
+			color: var(--dl-color-text);
+			font-size: var(--dl-font-size-md);
+			line-height: var(--dl-line-height-normal);
+			box-shadow: none;
+		}
+
+		.dl-nakes-dashboard textarea.form-control {
+			min-height: 76px;
+		}
+
+		.dl-nakes-dashboard .form-control:focus,
+		.dl-nakes-dashboard .form-select:focus {
+			border-color: var(--dl-color-primary);
+			box-shadow: 0 0 0 3px rgba(55, 154, 105, 0.12);
+		}
+
+		.dl-nakes-dashboard .badge,
+		.dl-nakes-dashboard .dl-badge,
+		.dl-nakes-dashboard .nk-status-chip {
+			border-radius: var(--dl-radius-pill);
+			font-size: 10px;
+			font-weight: 800;
+			line-height: 1.1;
+			letter-spacing: .03em;
 		}
 
 		@media (max-width: 359.98px) {

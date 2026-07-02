@@ -77,7 +77,7 @@ $history_initials = static function ($name) {
 	return strtoupper($initials);
 };
 ?>
-				<div id="riwayat_konsul" class="content animate__animated animate__fadeInUp animate__faster">
+				<div id="riwayat_konsul" class="content">
 					<div class="dl-history-page-head">
 						<div>
 							<span>Operasional konsultasi</span>

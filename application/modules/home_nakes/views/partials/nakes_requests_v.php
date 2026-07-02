@@ -1,5 +1,5 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
-				<div id="req_konsul" class="content animate__animated animate__fadeInUp animate__faster">
+				<div id="req_konsul" class="content">
 					<?php
 					$this->load->view('partials/nakes_section_header_v', array(
 						'section_kicker' => 'Antrian konsultasi',
