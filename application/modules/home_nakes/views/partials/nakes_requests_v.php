@@ -24,6 +24,13 @@
 						} else {
 							$CI = &get_instance();
 							$CI->load->library('encryption');
+							$is_weak_request_value = static function ($value) {
+								$value = trim(strip_tags((string) $value));
+								if ($value === '') {
+									return true;
+								}
+								return in_array(strtolower($value), array('n/a', 'na', '-', 'belum ditentukan', 'menghitung...', 'menghitung'), true);
+							};
 							foreach ($data_request_new->result() as $y => $x) {
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
@@ -34,14 +41,35 @@
 								$area_label = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : 'Area pasien';
 								$distance_label = !empty($x->distance) ? $x->distance : 'Menghitung...';
 								$received_label = !empty($x->created_at) ? date('d M H:i', strtotime($x->created_at)) : 'Baru masuk';
-								$complaint_summary = trim(preg_replace('/\s+/', ' ', strip_tags((string) $keluhan)));
-								if ($complaint_summary === '') {
-									$complaint_summary = 'Keluhan belum diisi.';
-								} elseif (function_exists('mb_strlen') && mb_strlen($complaint_summary, 'UTF-8') > 150) {
-									$complaint_summary = mb_substr($complaint_summary, 0, 147, 'UTF-8') . '...';
-								} elseif (!function_exists('mb_strlen') && strlen($complaint_summary) > 150) {
-									$complaint_summary = substr($complaint_summary, 0, 147) . '...';
+								$complaint_text = trim(str_replace(array("\r\n", "\r"), "\n", strip_tags((string) $keluhan)));
+								$complaint_lines = preg_split('/\n+/', $complaint_text);
+								$complaint_fields = array();
+								foreach ($complaint_lines as $complaint_line) {
+									$complaint_line = trim(str_replace(array('**', '__'), '', $complaint_line));
+									if (preg_match('/^([^:]+):\s*(.+)$/', $complaint_line, $matches)) {
+										$complaint_key = strtolower(trim($matches[1]));
+										$complaint_fields[$complaint_key] = trim($matches[2]);
+									}
 								}
+								$complaint_primary = isset($complaint_fields['keluhan utama']) ? $complaint_fields['keluhan utama'] : '';
+								$complaint_duration = isset($complaint_fields['lama keluhan']) ? $complaint_fields['lama keluhan'] : '';
+								$complaint_symptoms = isset($complaint_fields['gejala tambahan']) ? $complaint_fields['gejala tambahan'] : '';
+								$complaint_description = isset($complaint_fields['deskripsi keluhan']) ? $complaint_fields['deskripsi keluhan'] : '';
+								$complaint_preview = trim(preg_replace('/\s+/', ' ', str_replace(array('**', '__'), '', $complaint_text)));
+								if ($complaint_primary === '') {
+									$complaint_primary = $complaint_preview !== '' ? $complaint_preview : 'Keluhan belum diisi.';
+								}
+								if (function_exists('mb_strlen') && mb_strlen($complaint_primary, 'UTF-8') > 120) {
+									$complaint_primary = mb_substr($complaint_primary, 0, 117, 'UTF-8') . '...';
+								} elseif (!function_exists('mb_strlen') && strlen($complaint_primary) > 120) {
+									$complaint_primary = substr($complaint_primary, 0, 117) . '...';
+								}
+								$show_complaint_duration = !$is_weak_request_value($complaint_duration);
+								$show_complaint_symptoms = !$is_weak_request_value($complaint_symptoms);
+								$show_complaint_description = !$is_weak_request_value($complaint_description) && ((function_exists('mb_strlen') && mb_strlen($complaint_description, 'UTF-8') <= 80) || (!function_exists('mb_strlen') && strlen($complaint_description) <= 80));
+								$show_mode_label = !$is_weak_request_value($mode_label);
+								$show_distance_label = !$is_weak_request_value($distance_label);
+								$show_address = !$is_weak_request_value($x->location);
 							?>
 								<?php $this->load->view('partials/nakes_full_request_card_v', get_defined_vars()); ?>
 
