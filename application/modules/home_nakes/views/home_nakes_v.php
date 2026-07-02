@@ -151,49 +151,49 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		</div>
 	</div>
 	<?php $this->load->view('partials/nakes_bottom_nav_v', get_defined_vars()); ?>
-	<div class="modal fade" id="modalProfil" tabindex="-1" aria-labelledby="modalProfilLabel" aria-hidden="true">
+	<div class="modal fade nk-profile-modal" id="modalProfil" tabindex="-1" aria-labelledby="modalProfilLabel" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content border-0 shadow-lg rounded-4">
-				<div class="modal-header bg-success text-white">
-					<h5 class="modal-title" id="modalProfilLabel"><i class="bi bi-pencil-fill me-2"></i>Edit Profil</h5>
-					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+			<div class="modal-content">
+				<div class="modal-header nk-profile-modal__header">
+					<h5 class="modal-title" id="modalProfilLabel"><span><i class="bi bi-pencil-fill"></i></span>Edit Profil</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<form id="formEditProfile" enctype="multipart/form-data">
-					<div class="modal-body bg-light">
-						<div class="text-center mb-3">
-							<label for="uploadFoto" class="d-inline-block position-relative" style="cursor: pointer;">
-								<img id="previewFoto" src="<?= doclinc_safe_profile_image_src($profile['foto'] ?? ''); ?>" alt="Foto Profil" class="rounded-circle border border-success shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+					<div class="modal-body nk-profile-modal__body">
+						<div class="nk-profile-modal__photo">
+							<label for="uploadFoto" class="nk-profile-modal__photo-picker">
+								<img id="previewFoto" src="<?= doclinc_safe_profile_image_src($profile['foto'] ?? ''); ?>" alt="Foto Profil">
 								<input type="file" id="uploadFoto" name="foto" accept="image/*" class="d-none" onchange="previewImage(event)">
 							</label>
-							<small class="text-muted d-block mt-2">Klik untuk mengubah foto</small>
+							<small>Klik untuk mengubah foto</small>
 						</div>
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control shadow-sm border-success" id="nama_lengkap_edit" name="nama_lengkap" value="<?= $this->session->userdata('nama'); ?>" placeholder="Nama Lengkap">
+						<div class="form-floating nk-profile-modal__field">
+							<input type="text" class="form-control" id="nama_lengkap_edit" name="nama_lengkap" value="<?= $this->session->userdata('nama'); ?>" placeholder="Nama Lengkap">
 							<label for="nama_lengkap_edit"><i class="bi bi-person-fill me-2"></i>Nama Lengkap</label>
 						</div>
-						<div class="form-floating mb-3">
-							<input type="date" class="form-control shadow-sm border-success" id="tgl_edit" name="tgl_lahir" value="<?= $profile['tgl'] ?>" placeholder="Tanggal Lahir">
+						<div class="form-floating nk-profile-modal__field">
+							<input type="date" class="form-control" id="tgl_edit" name="tgl_lahir" value="<?= $profile['tgl'] ?>" placeholder="Tanggal Lahir">
 							<label for="tgl_edit"><i class="bi bi-calendar-event-fill me-2"></i>Tanggal Lahir</label>
 						</div>
-						<div class="form-floating mb-3">
-							<select class="form-select shadow-sm border-success" name="jk" id="jk_edit">
+						<div class="form-floating nk-profile-modal__field">
+							<select class="form-select" name="jk" id="jk_edit">
 								<option value="Laki-laki" <?= $this->session->userdata('jk') == 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
 								<option value="Perempuan" <?= $this->session->userdata('jk') == 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
 							</select>
 							<label for="jk_edit"><i class="bi bi-gender-ambiguous me-2"></i>Jenis Kelamin</label>
 						</div>
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control shadow-sm border-success" id="no_hp_edit" name="no_hp" value="<?= $profile['no_hp'] ?>" placeholder="Nomor HP">
+						<div class="form-floating nk-profile-modal__field">
+							<input type="text" class="form-control" id="no_hp_edit" name="no_hp" value="<?= $profile['no_hp'] ?>" placeholder="Nomor HP">
 							<label for="no_hp_edit"><i class="bi bi-telephone-fill me-2"></i>Nomor HP</label>
 						</div>
-						<div class="form-floating mb-3">
-							<textarea class="form-control shadow-sm border-success" placeholder="Alamat" name="alamat" id="alamat_edit" style="height: 100px"><?= $profile['alamat'] ?></textarea>
+						<div class="form-floating nk-profile-modal__field">
+							<textarea class="form-control" placeholder="Alamat" name="alamat" id="alamat_edit"><?= $profile['alamat'] ?></textarea>
 							<label for="alamat_edit"><i class="bi bi-geo-alt-fill me-2"></i>Alamat</label>
 						</div>
 					</div>
-					<div class="modal-footer bg-light border-0">
-						<button type="button" class="btn btn-secondary shadow-sm" data-bs-dismiss="modal"><i class="bi bi-x-circle me-2"></i>Close</button>
-						<button type="submit" class="btn btn-success shadow-sm"><i class="bi bi-check-circle me-2"></i>Save Changes</button>
+					<div class="modal-footer nk-profile-modal__footer">
+						<button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle me-2"></i>Tutup</button>
+						<button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-2"></i>Simpan</button>
 					</div>
 				</form>
 			</div>
@@ -205,7 +205,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			<div class="nk-notification-title">
 				<span class="nk-notification-title-icon"><i class="bi bi-bell-fill"></i></span>
 				<span class="offcanvas-title" id="offcanvasNotifLabel">Pusat Notifikasi</span>
-				<span class="badge text-bg-danger" id="badgeNotifs"></span>
+				<span class="badge text-bg-danger nk-notification-badge" id="badgeNotifs" style="display: none;"></span>
 			</div>
 			<button type="button" class="btn-close nk-notification-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 		</div>
@@ -445,17 +445,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				document.getElementById('nav-bottom-wrapper').style.display = 'block';
 			}, 1500);
 		});
-		if ($('#notify-number').text() !== '') {
-			$('a.notify > i').addClass('animate__animated animate__tada animate__infinite');
-		}
-
 		document.addEventListener('DOMContentLoaded', function() {
-			document.querySelectorAll('.content').forEach(function(section) {
-				section.classList.add('nk-page-section');
-				if (section.classList.contains('active')) {
-					section.classList.add('nk-page-section--active');
-				}
-			});
 			var hash = window.location.hash;
 			if (hash) {
 				showContent(hash.replace('#', ''));
@@ -479,16 +469,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			let currentActiveContent = document.querySelector('.content.active');
 			if (currentActiveContent) {
 				currentActiveContent.classList.remove('active');
-				currentActiveContent.classList.remove('nk-page-section--active');
 			}
 
 			let targetContent = document.getElementById(tab);
 			if (targetContent) {
-				targetContent.classList.add('nk-page-section');
 				targetContent.classList.add('active');
-				window.requestAnimationFrame(function() {
-					targetContent.classList.add('nk-page-section--active');
-				});
 			}
 
 			let currentActiveMenu = document.querySelector('.nav-bottom-wrapper .menu a.active');
@@ -1928,21 +1913,31 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		const notificationPollIntervalMs = 30000;
 
 		function getNotificationBadge() {
-			return document.getElementById('badgeNotifs') || document.getElementById('badgeNotif');
+			return Array.prototype.slice.call(document.querySelectorAll('#badgeNotif, #badgeNotifs'));
 		}
 
 		function setNotificationCount(count) {
-			const badge = getNotificationBadge();
-			if (!badge) {
+			const badges = getNotificationBadge();
+			const safeCount = Math.max(0, parseInt(count || 0, 10));
+			if (!badges.length) {
 				return;
 			}
-			if (count > 0) {
-				badge.style.display = 'inline';
-				badge.textContent = count > 9 ? '9+' : count;
-			} else {
-				badge.style.display = 'none';
-				badge.textContent = '';
+			badges.forEach(function(badge) {
+				if (safeCount > 0) {
+					badge.style.display = 'inline-flex';
+					badge.textContent = safeCount > 99 ? '99' + '+' : safeCount;
+				} else {
+					badge.style.display = 'none';
+					badge.textContent = '';
+				}
+			});
+		}
+
+		function syncNotificationCountFromList(notificationList) {
+			if (!notificationList) {
+				return;
 			}
+			setNotificationCount(notificationList.querySelectorAll('.notification-item').length);
 		}
 
 		function renderNotificationItem(item) {
@@ -1984,15 +1979,16 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			if (!notificationList) {
 				return;
 			}
-			setNotificationCount(count);
 			notificationList.innerHTML = '';
 			if (!items || !items.length) {
 				notificationList.innerHTML = '<div class="nk-notification-empty"><i class="bi bi-bell"></i><span>Tidak ada notifikasi</span></div>';
+				setNotificationCount(0);
 				return;
 			}
 			items.forEach(function(item) {
 				notificationList.appendChild(renderNotificationItem(item));
 			});
+			syncNotificationCountFromList(notificationList);
 		}
 
 		function loadDatabaseNotifications() {
