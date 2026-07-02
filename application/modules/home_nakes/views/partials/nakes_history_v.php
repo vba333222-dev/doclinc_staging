@@ -148,8 +148,8 @@ $history_initials = static function ($name) {
 											</div>
 											<span class="dl-status-pill dl-status-pill-active">Aktif</span>
 										</div>
-										<div class="card-body">
-											<div class="dl-history-summary nk-complaint">
+										<div class="card-body nk-card-body nk-history-card__body">
+											<div class="dl-history-summary nk-complaint nk-card-section">
 												<span class="nk-complaint__title">Keluhan utama</span>
 												<p class="nk-complaint__main"><?= html_escape($complaint['primary']); ?></p>
 												<?php if ($complaint['duration'] !== '' || $complaint['symptoms'] !== '') : ?>
@@ -165,7 +165,7 @@ $history_initials = static function ($name) {
 											</div>
 											<input type="text" class="visit-patient-lat d-none" value="<?= html_escape($x->lattitude); ?>">
 											<input type="text" class="visit-patient-lng d-none" value="<?= html_escape($x->longitude); ?>">
-											<div class="dl-history-meta-rows nk-info-list">
+											<div class="dl-history-meta-rows nk-info-list nk-card-section">
 												<?php if ($show_mode || $show_visit_status) : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Status</span><strong class="nk-info-value"><?= html_escape(trim(($show_mode ? $mode_label : '') . ($show_mode && $show_visit_status ? ' · ' : '') . ($show_visit_status ? $visit_status_label : ''))); ?></strong></div>
 												<?php endif; ?>
@@ -181,7 +181,7 @@ $history_initials = static function ($name) {
 													Konfirmasi tiba di lokasi
 												</button>
 											</div>
-											<div class="visit-workflow-control dl-visit-workflow nk-visit-status" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
+											<div class="visit-workflow-control dl-visit-workflow nk-visit-status nk-visit-status-block nk-card-section" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
 												<div class="nk-info-row dl-visit-workflow-label"><span class="nk-info-label">Status kunjungan</span><strong class="nk-info-value visit-workflow-label"><?= html_escape($visit_status_label); ?></strong></div>
 												<div class="dl-visit-workflow-actions nk-visit-actions">
 													<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="en_route" <?= $visit_next_status[$visit_status] === 'en_route' ? '' : 'disabled'; ?>>Mulai Perjalanan</button>

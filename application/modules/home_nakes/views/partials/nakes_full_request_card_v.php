@@ -18,8 +18,8 @@
 											</div>
 										</div>
 										<div id="cekStatus"></div>
-										<div class="card-body">
-											<div class="dl-nakes-complaint-box nk-complaint">
+										<div class="card-body nk-card-body nk-request-card__body">
+											<div class="dl-nakes-complaint-box nk-complaint nk-card-section">
 												<span class="nk-complaint__title">Keluhan utama</span>
 												<p class="nk-complaint__main"><?= html_escape($complaint_primary); ?></p>
 												<?php if ($show_complaint_duration || $show_complaint_symptoms || $show_complaint_description) : ?>
@@ -37,7 +37,7 @@
 												<?php endif; ?>
 											</div>
 											<?php if ($show_address || $show_mode_label || $show_distance_label) : ?>
-												<div class="dl-nakes-meta-list nk-info-list">
+												<div class="dl-nakes-meta-list nk-info-list nk-card-section">
 													<?php if ($show_address) : ?>
 														<div class="nk-info-row"><i class="fas fa-map-marker-alt fa-fw"></i><span class="nk-info-label">Alamat</span><strong class="nk-info-value"><?= doclinc_history_safe_text($x->location); ?></strong></div>
 													<?php endif; ?>
@@ -65,7 +65,7 @@
 											<?php if (!empty($x->video)) : ?>
 												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#videoModal_<?= html_escape((int) $x->user_id); ?>">Lihat Video</button>
 											<?php endif; ?>
-											<div class="dl-nakes-visit-toggle">
+											<div class="dl-nakes-visit-toggle nk-visit-confirm-block">
 												<i class="far fa-question-circle fa-fw"></i> Konfirmasikan kunjungan Anda:
 											</div>
 											<div class="form-check form-switch mb-0">
