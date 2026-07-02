@@ -435,19 +435,14 @@
 
 		.dl-nakes-dashboard .content {
 			padding: 12px 12px calc(86px + env(safe-area-inset-bottom, 0px));
-			opacity: 0;
-			transform: translateY(6px);
-			transition: opacity .18s ease, transform .18s ease;
-			will-change: opacity, transform;
 		}
 
 		.dl-nakes-dashboard .content.active {
 			display: block;
 		}
 
-		.dl-nakes-dashboard .content.nk-page-section--active {
-			opacity: 1;
-			transform: translateY(0);
+		.dl-nakes-dashboard .content.animate__animated {
+			animation: none !important;
 		}
 
 		.dl-nakes-dashboard .min-w-0,
@@ -603,6 +598,9 @@
 			position: absolute;
 			right: -2px;
 			top: -2px;
+			display: none;
+			align-items: center;
+			justify-content: center;
 			min-width: 17px;
 			height: 17px;
 			padding: 0 4px;
@@ -611,8 +609,184 @@
 			color: #fff;
 			font-size: 9px;
 			font-weight: 800;
-			line-height: 17px;
+			line-height: 1;
 			text-align: center;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal .modal-dialog {
+			width: calc(100% - 24px);
+			max-width: 430px;
+			margin-left: auto;
+			margin-right: auto;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal .modal-content {
+			max-height: min(90vh, 720px);
+			overflow: hidden;
+			border: 1px solid #dcece5;
+			border-radius: 18px;
+			background: #f8fbfa;
+			box-shadow: 0 20px 48px rgba(24, 60, 47, .22);
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			padding: 12px 14px;
+			border-bottom: 1px solid #e4eee9;
+			background: #fff;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__header .modal-title {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			color: #183c2f;
+			font-size: 15px;
+			font-weight: 800;
+			line-height: 1.2;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__header .modal-title span {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 30px;
+			height: 30px;
+			border-radius: 10px;
+			background: #e8f7f0;
+			color: #087b55;
+			font-size: 14px;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__header .btn-close {
+			width: 34px;
+			height: 34px;
+			border-radius: 12px;
+			background-color: #edf5f1;
+			opacity: 1;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__body {
+			display: grid;
+			gap: 10px;
+			max-height: calc(90vh - 132px);
+			padding: 12px 14px;
+			overflow-y: auto;
+			background: #f8fbfa;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__photo {
+			display: grid;
+			justify-items: center;
+			gap: 6px;
+			padding: 4px 0 2px;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__photo-picker {
+			position: relative;
+			display: inline-flex;
+			width: 78px;
+			height: 78px;
+			cursor: pointer;
+			border: 2px solid #d5e9df;
+			border-radius: 22px;
+			overflow: hidden;
+			background: #eef7f3;
+			box-shadow: 0 4px 14px rgba(24, 60, 47, .08);
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__photo-picker::after {
+			content: "\F4CA";
+			font-family: "bootstrap-icons";
+			position: absolute;
+			right: 5px;
+			bottom: 5px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 23px;
+			height: 23px;
+			border-radius: 9px;
+			background: #09ad74;
+			color: #fff;
+			font-size: 12px;
+			box-shadow: 0 3px 8px rgba(9, 173, 116, .25);
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__photo-picker img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			display: block;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__photo small {
+			color: #6b7f76;
+			font-size: 11px;
+			font-weight: 700;
+			line-height: 1.25;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__field {
+			margin: 0;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__field>.form-control,
+		.dl-nakes-dashboard .nk-profile-modal__field>.form-select {
+			min-height: 48px;
+			border: 1px solid #dcece5;
+			border-radius: 12px;
+			background-color: #fff;
+			color: #183c2f;
+			font-size: 13px;
+			font-weight: 700;
+			box-shadow: none;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__field>textarea.form-control {
+			min-height: 82px;
+			height: 82px;
+			resize: vertical;
+			line-height: 1.4;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__field>label {
+			color: #6b7f76;
+			font-size: 12px;
+			font-weight: 800;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__field>.form-control:focus,
+		.dl-nakes-dashboard .nk-profile-modal__field>.form-select:focus {
+			border-color: #8ed9ba;
+			box-shadow: 0 0 0 3px rgba(9, 173, 116, .12);
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__footer {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			gap: 8px;
+			padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+			border-top: 1px solid #e4eee9;
+			background: #fff;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__footer .btn {
+			width: 100%;
+			min-height: 40px;
+			border-radius: 12px;
+			font-size: 13px;
+			font-weight: 800;
+			line-height: 1.2;
+		}
+
+		.dl-nakes-dashboard .nk-profile-modal__footer .btn-light {
+			border: 1px solid #dce6e1;
+			background: #f2f6f4;
+			color: #3f564c;
 		}
 
 		.dl-nakes-dashboard #offcanvasNotif.nk-notification-panel {
@@ -800,17 +974,6 @@
 				border-right: 0;
 				border-top: 0;
 				border-radius: 0 0 18px 18px;
-			}
-		}
-
-		@media (prefers-reduced-motion: reduce) {
-			.dl-nakes-dashboard .content,
-			.dl-nakes-dashboard #offcanvasNotif.nk-notification-panel {
-				transition: none;
-			}
-
-			.dl-nakes-dashboard .content {
-				transform: none;
 			}
 		}
 
