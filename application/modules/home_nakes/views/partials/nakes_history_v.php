@@ -52,7 +52,7 @@ $history_patient_photo = static function ($row) {
 	$photo_keys = array('foto', 'photo', 'profile_photo', 'profile_image', 'patient_photo', 'avatar');
 	foreach ($photo_keys as $key) {
 		if (isset($row->{$key}) && trim((string) $row->{$key}) !== '') {
-			return doclinc_safe_profile_image_src($row->{$key});
+			return trim((string) $row->{$key});
 		}
 	}
 	return '';
@@ -120,7 +120,6 @@ $history_initials = static function ($name) {
 									$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
 									$complaint = $history_complaint_summary($keluhan);
 									$patient_photo = $history_patient_photo($x);
-									$patient_initials = $history_initials($x->nama);
 									$area_label = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : '';
 									$address_label = !$history_is_weak_value(isset($x->location) ? $x->location : '') ? $x->location : '';
 									$show_mode = !$history_is_weak_value($mode_label);
@@ -135,15 +134,14 @@ $history_initials = static function ($name) {
 								?>
 									<div class="card shadow dl-history-card dl-history-card-active" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
 										<div class="dl-history-card-head">
-											<div class="dl-user-avatar dl-user-avatar-patient">
-												<?php if ($patient_photo !== '') : ?>
-													<img src="<?= html_escape($patient_photo); ?>" alt="Foto pasien">
-												<?php elseif ($patient_initials !== '') : ?>
-													<span><?= html_escape($patient_initials); ?></span>
-												<?php else : ?>
-													<i class="fas fa-user"></i>
-												<?php endif; ?>
-											</div>
+											<?php
+											$this->load->view('partials/nakes_avatar_v', array(
+												'avatar_name' => $x->nama,
+												'avatar_photo' => $patient_photo,
+												'avatar_alt' => 'Foto pasien',
+												'avatar_class' => 'nk-avatar--md nk-avatar--patient',
+											));
+											?>
 											<div class="dl-history-title-wrap">
 												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
 												<span>No. Antrian <?= html_escape($queue_code); ?><?= $area_label !== '' ? ' · ' . html_escape($area_label) : ''; ?></span>
@@ -259,20 +257,18 @@ $history_initials = static function ($name) {
 									$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
 									$handling_nakes_name = doclinc_request_handling_nakes_name($x);
 									$patient_photo = $history_patient_photo($x);
-									$patient_initials = $history_initials($x->nama);
 									$complaint = $history_complaint_summary($keluhan);
 								?>
 									<div class="card shadow dl-history-card dl-history-card-completed" data-request-id="<?= (int) $x->request_id; ?>">
 										<div class="dl-history-card-head">
-											<div class="dl-user-avatar dl-user-avatar-patient dl-user-avatar-muted">
-												<?php if ($patient_photo !== '') : ?>
-													<img src="<?= html_escape($patient_photo); ?>" alt="Foto pasien">
-												<?php elseif ($patient_initials !== '') : ?>
-													<span><?= html_escape($patient_initials); ?></span>
-												<?php else : ?>
-													<i class="fas fa-user"></i>
-												<?php endif; ?>
-											</div>
+											<?php
+											$this->load->view('partials/nakes_avatar_v', array(
+												'avatar_name' => $x->nama,
+												'avatar_photo' => $patient_photo,
+												'avatar_alt' => 'Foto pasien',
+												'avatar_class' => 'nk-avatar--md nk-avatar--patient nk-avatar--muted',
+											));
+											?>
 											<div class="dl-history-title-wrap">
 												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
 												<span>No. Antrian <?= html_escape($queue_code); ?><?= $tanggal_selesai !== '' ? ' · ' . html_escape($tanggal_selesai) : ''; ?></span>
