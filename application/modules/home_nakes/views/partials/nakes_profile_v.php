@@ -20,7 +20,7 @@ $profile_rows = array(
 	array('id' => 'no_hp', 'label' => 'Nomor HP', 'icon' => 'bi bi-telephone-fill', 'value' => $profile_phone, 'type' => 'text'),
 );
 ?>
-				<div id="profile" class="content animate__animated animate__fadeInUp animate__faster">
+				<div id="profile" class="content">
 					<div class="dl-profile-stack">
 						<div class="dl-profile-summary-card">
 							<?php

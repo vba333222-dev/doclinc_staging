@@ -123,7 +123,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/css/bootstrap-select.min.css" integrity="sha512-g2SduJKxa4Lbn3GW+Q7rNz+pKP9AWMR++Ta8fgwsZRCUsawjPvF/BxSMkGS61VsR9yinGoEgrHPGPn2mrj8+4w==" crossorigin="anonymous" referrerpolicy="no-referrer">
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/nakes-dashboard.css">
@@ -132,7 +131,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 <body class="bg-light dl-dashboard-body dl-nakes-dashboard">
 	<div id="preloader">
 		<div class="text-center">
-			<img class="animate__animated animate__bounceIn mb-3" src="<?= base_url(); ?>assets/images/doklincwhite.png" alt="" height="50px">
+			<img class="mb-3" src="<?= base_url(); ?>assets/images/doklincwhite.png" alt="" height="50px">
 			<p class="mb-0">
 			<div class="spinner-border spinner-border-sm text-light" role="status">
 				<span class="visually-hidden">Loading...</span>
@@ -440,7 +439,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		}
 		window.addEventListener('load', function() {
 			setTimeout(function() {
-				$('#preloader').fadeOut('fast');
+				$('#preloader').hide();
 				document.getElementById('content-wrapper').style.display = 'block';
 				document.getElementById('nav-bottom-wrapper').style.display = 'block';
 			}, 1500);

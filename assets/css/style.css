@@ -223,17 +223,51 @@ a.feature-menu {
     --dl-muted: #66756D;
     --dl-line: #E7ECE9;
     --dl-input-line: #CECECE;
+    --dl-color-primary: #379A69;
+    --dl-color-primary-dark: #1f6f4b;
+    --dl-color-primary-soft: #E8F7F0;
+    --dl-color-text: #1F2A24;
+    --dl-color-muted: #66756D;
+    --dl-color-border: #E7ECE9;
+    --dl-color-surface: #FFFFFF;
+    --dl-color-surface-soft: #F4F8F6;
+    --dl-color-danger: #D94B4B;
+    --dl-color-warning: #B7791F;
+    --dl-color-success: #379A69;
+    --dl-font-family: "Manrope", "Inter", "Segoe UI", Arial, sans-serif;
+    --dl-font-size-xs: 11px;
+    --dl-font-size-sm: 12px;
+    --dl-font-size-md: 13px;
+    --dl-font-size-lg: 15px;
+    --dl-font-size-xl: 17px;
+    --dl-line-height-tight: 1.25;
+    --dl-line-height-normal: 1.45;
+    --dl-space-1: 4px;
+    --dl-space-2: 8px;
+    --dl-space-3: 12px;
+    --dl-space-4: 16px;
+    --dl-space-5: 20px;
+    --dl-space-6: 24px;
+    --dl-radius-sm: 8px;
+    --dl-radius-md: 12px;
+    --dl-radius-lg: 14px;
+    --dl-radius-xl: 16px;
+    --dl-radius-pill: 999px;
+    --dl-shadow-card: 0 4px 12px rgba(31, 42, 36, 0.04);
+    --dl-shadow-sheet: 0 20px 48px rgba(24, 60, 47, .18);
 }
 
 .dl-dashboard-body {
     background: var(--dl-bg) !important;
     color: var(--dl-text);
-    font-family: "Manrope", "Inter", "Segoe UI", Arial, sans-serif;
+    font-family: var(--dl-font-family);
+    font-size: var(--dl-font-size-md);
+    line-height: var(--dl-line-height-normal);
     min-height: 100vh;
 }
 
 .dl-shell {
-    max-width: 414px;
+    max-width: 430px;
     min-height: 100vh;
     margin: 0 auto;
     background: var(--dl-bg);
@@ -260,7 +294,7 @@ a.feature-menu {
     top: 0;
     left: 50%;
     width: 100%;
-    max-width: 414px;
+    max-width: 430px;
     min-height: 64px;
     transform: translateX(-50%);
     z-index: 1030;
@@ -340,14 +374,14 @@ a.feature-menu {
 .dl-profile-row small {
     display: block;
     color: var(--dl-muted);
-    font-size: 12px;
+    font-size: var(--dl-font-size-sm);
     font-weight: 500;
     line-height: 16px;
 }
 
 .dl-profile-row h3 {
     color: var(--dl-primary);
-    font-size: 15px;
+    font-size: var(--dl-font-size-lg);
     font-weight: 800;
     line-height: 20px;
     margin: 0;
@@ -359,7 +393,7 @@ a.feature-menu {
 
 .dl-profile-row p {
     color: var(--dl-muted);
-    font-size: 12px;
+    font-size: var(--dl-font-size-sm);
     line-height: 16px;
     margin: 0;
 }
@@ -368,10 +402,10 @@ a.feature-menu {
     position: relative;
     overflow: hidden;
     background: #1a8556;
-    border-radius: 20px;
+    border-radius: var(--dl-radius-xl);
     padding: 20px;
     color: #f6fff5;
-    box-shadow: 0 4px 12px rgba(31, 42, 36, 0.04);
+    box-shadow: var(--dl-shadow-card);
 }
 
 .dl-hero::after {
@@ -394,29 +428,29 @@ a.feature-menu {
 }
 
 .dl-hero-title {
-    font-size: 20px;
-    line-height: 28px;
+    font-size: var(--dl-font-size-xl);
+    line-height: 24px;
     font-weight: 800;
     margin: 0 0 4px;
 }
 
 .dl-hero-text {
-    font-size: 14px;
-    line-height: 20px;
+    font-size: var(--dl-font-size-md);
+    line-height: var(--dl-line-height-normal);
     margin: 0 0 16px;
     opacity: 0.92;
 }
 
 .dl-btn-primary,
 .dl-btn-secondary {
-    min-height: 44px;
-    border-radius: 14px;
+    min-height: 40px;
+    border-radius: var(--dl-radius-lg);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     padding: 10px 16px;
-    font-size: 14px;
+    font-size: var(--dl-font-size-md);
     font-weight: 700;
     text-decoration: none;
     border: 1px solid transparent;
@@ -443,7 +477,7 @@ a.feature-menu {
 
 .dl-section-title {
     color: var(--dl-text);
-    font-size: 15px;
+    font-size: var(--dl-font-size-lg);
     font-weight: 800;
     line-height: 20px;
     margin: 0;
@@ -456,8 +490,8 @@ a.feature-menu {
 .dl-dashboard-body #profile > .card {
     background: var(--dl-surface) !important;
     border: 1px solid var(--dl-line) !important;
-    border-radius: 18px !important;
-    box-shadow: 0 4px 12px rgba(31, 42, 36, 0.04) !important;
+    border-radius: var(--dl-radius-xl) !important;
+    box-shadow: var(--dl-shadow-card) !important;
     overflow: hidden;
 }
 
@@ -495,11 +529,56 @@ a.feature-menu {
     background: var(--dl-surface-soft) !important;
     color: var(--dl-mint) !important;
     border: 1px solid rgba(80, 191, 165, 0.28);
-    border-radius: 999px;
+    border-radius: var(--dl-radius-pill);
     font-size: 10px;
     font-weight: 800;
     letter-spacing: .04em;
     text-transform: uppercase;
+}
+
+.dl-dashboard-body .btn,
+.dl-dashboard-body .dl-btn-primary,
+.dl-dashboard-body .dl-btn-secondary {
+    min-height: 38px;
+    border-radius: var(--dl-radius-lg) !important;
+    font-size: var(--dl-font-size-md);
+    font-weight: 800;
+    line-height: var(--dl-line-height-tight);
+}
+
+.dl-dashboard-body .btn-sm {
+    min-height: 34px;
+    border-radius: var(--dl-radius-pill) !important;
+    font-size: var(--dl-font-size-sm);
+    padding: 7px 11px;
+}
+
+.dl-dashboard-body .form-control,
+.dl-dashboard-body .form-select {
+    min-height: 40px;
+    border-color: var(--dl-color-border);
+    border-radius: var(--dl-radius-md);
+    color: var(--dl-color-text);
+    font-size: var(--dl-font-size-md);
+    line-height: var(--dl-line-height-normal);
+    box-shadow: none;
+}
+
+.dl-dashboard-body textarea.form-control {
+    min-height: 76px;
+}
+
+.dl-dashboard-body .form-control:focus,
+.dl-dashboard-body .form-select:focus {
+    border-color: var(--dl-color-primary);
+    box-shadow: 0 0 0 3px rgba(55, 154, 105, 0.12);
+}
+
+.dl-dashboard-body .form-floating > label,
+.dl-dashboard-body label {
+    color: var(--dl-color-muted);
+    font-size: var(--dl-font-size-sm);
+    font-weight: 700;
 }
 
 .dl-feature-grid {

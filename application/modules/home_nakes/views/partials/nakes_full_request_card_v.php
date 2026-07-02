@@ -14,7 +14,7 @@
 														<span><?= html_escape($received_label); ?></span>
 													</div>
 												</div>
-												<span class="dl-badge animate__animated animate__flash animate__infinite animate__slower">BARU</span>
+												<span class="dl-badge">BARU</span>
 											</div>
 										</div>
 										<div id="cekStatus"></div>

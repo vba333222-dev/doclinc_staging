@@ -1,5 +1,5 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
-				<div id="beranda" class="content active animate__animated animate__fadeInUp animate__faster">
+				<div id="beranda" class="content active">
 					<div class="dl-dashboard-stack">
 						<?php $this->load->view('partials/nakes_stat_cards_v', get_defined_vars()); ?>
 						<?php
