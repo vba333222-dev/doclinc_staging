@@ -1046,7 +1046,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 <body class="bg-light dl-dashboard-body">
 	<div id="preloader">
 		<div class="text-center">
-			<img class="animate__animated animate__bounceIn mb-3" src="<?= base_url(); ?>assets/images/doklincwhite.png" alt="" height="50px">
+			<img class="mb-3" src="<?= base_url(); ?>assets/images/doklincwhite.png" alt="" height="50px">
 			<p class="mb-0">
 			<div class="spinner-border spinner-border-sm text-light" role="status">
 				<span class="visually-hidden">Loading...</span>
@@ -1059,9 +1059,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 	<div class="content-wrapper dl-shell" id="content-wrapper">
 		<div class="contents">
 			<div class="hero bg-success p-3 overflow-hidden dl-appbar">
-				<a class="dl-back-link" href="<?= html_escape($legacy_superapp_url); ?>" style="text-decoration: none; color: white; font-size: 1.5rem;" aria-label="Kembali">
-					<i class="fas fa-chevron-left icon"></i>
-				</a>
 				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
 					<i class="bi bi-bell-fill fs-4"></i>
 					<!-- kalo ada notif fetch datanya dari sini ya, bukan dari dalem elemen span nya -->
@@ -1261,7 +1258,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					</div>
 					<?php endif; ?>
 					<?php
-					if (!$doclinc_has_active_request) :
+					if (false && !$doclinc_has_active_request) :
 					foreach ($getAllDataDoctor->result() as $row) {
 						$userIdPasien = $row->user_id;
 						$userId = $row->userId;
@@ -2267,7 +2264,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		}
 		window.addEventListener('load', function() {
 			setTimeout(function() {
-				$('#preloader').fadeOut('fast');
+				$('#preloader').hide();
 				document.getElementById('content-wrapper').style.display = 'block';
 				document.getElementById('nav-bottom-wrapper').style.display = 'block';
 			}, 1500);

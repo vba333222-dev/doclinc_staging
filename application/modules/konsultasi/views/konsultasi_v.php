@@ -88,12 +88,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css" integrity="sha512-sMXtMNL1zRzolHYKEujM2AqCLUR9F2C4/05cdbxjjLSRvMQIciEPCQZo++nk7go3BtSuK9kfa/s+a4f4i5pLkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<style>
 		:root {
-			--dk-bg: #f7f7f7;
-			--dk-text: #333333;
-			--dk-muted: #8c8c8c;
-			--dk-line: #cecece;
-			--dk-green: #379a69;
-			--dk-accent: #50bfa5;
+			--dk-bg: #f4f8f6;
+			--dk-text: #183c2f;
+			--dk-muted: #6b7f76;
+			--dk-line: #dcece5;
+			--dk-green: #09ad74;
+			--dk-accent: #8ed9ba;
+			--dk-surface: #ffffff;
+			--dk-soft: #f8fbfa;
 		}
 
 		* {
@@ -103,14 +105,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		body.consultation-form-page {
 			margin: 0;
 			min-height: 100vh;
-			background: #e9e9e9;
+			background: var(--dk-bg);
 			color: var(--dk-text);
-			font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 		}
 
 		.consult-shell {
 			width: 100%;
-			max-width: 414px;
+			max-width: 480px;
 			min-height: 100vh;
 			margin: 0 auto;
 			background: var(--dk-bg);
@@ -120,54 +122,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		.consult-header {
-			height: 75px;
-			background: #ffffff;
-			box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+			min-height: 58px;
+			background: rgba(248, 251, 250, .98);
+			border-bottom: 1px solid var(--dk-line);
+			box-shadow: 0 4px 16px rgba(24, 60, 47, .06);
 			display: flex;
 			align-items: center;
-			justify-content: center;
+			justify-content: flex-start;
 			position: sticky;
 			top: 0;
 			z-index: 5;
-		}
-
-		.consult-back {
-			position: absolute;
-			left: 20px;
-			top: 50%;
-			transform: translateY(-50%);
-			width: 32px;
-			height: 32px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			border: 0;
-			background: transparent;
-		}
-
-		.consult-back img {
-			width: 22px;
-			height: 22px;
+			padding: 10px 14px;
 		}
 
 		.consult-title {
 			margin: 0;
-			font-size: 20px;
-			font-weight: 700;
-			line-height: 24px;
+			font-size: 18px;
+			font-weight: 800;
+			line-height: 1.25;
 			color: var(--dk-text);
 		}
 
 		.consult-main {
-			padding: 38px 20px 24px;
+			padding: 12px 12px 24px;
 		}
 
 		.consult-card {
-			background: #ffffff;
-			border: 1px solid var(--dk-accent);
-			border-radius: 20px;
-			padding: 24px 20px 25px;
-			margin-bottom: 30px;
+			background: var(--dk-surface);
+			border: 1px solid var(--dk-line);
+			border-radius: 16px;
+			padding: 14px;
+			margin-bottom: 10px;
+			box-shadow: 0 2px 8px rgba(24, 60, 47, .05);
 		}
 
 		.consult-card-header {
@@ -175,34 +161,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			align-items: center;
 			justify-content: space-between;
 			gap: 16px;
-			margin-bottom: 26px;
+			margin-bottom: 12px;
 		}
 
 		.consult-card-title {
 			margin: 0;
-			font-size: 20px;
-			line-height: 24px;
-			font-weight: 700;
-			color: var(--dk-green);
+			font-size: 15px;
+			line-height: 1.3;
+			font-weight: 800;
+			color: var(--dk-text);
 		}
 
 		.consult-card-icon {
-			width: 22px;
-			height: 22px;
+			width: 18px;
+			height: 18px;
 			object-fit: contain;
 			flex: 0 0 auto;
 		}
 
 		.consult-field {
 			width: 100%;
-			min-height: 48px;
+			min-height: 44px;
 			border: 1px solid var(--dk-line);
-			border-radius: 10px;
-			padding: 12px 20px;
-			background: #ffffff;
+			border-radius: 12px;
+			padding: 10px 12px;
+			background: var(--dk-surface);
 			color: var(--dk-text);
-			font-size: 15px;
-			line-height: 22px;
+			font-size: 13px;
+			font-weight: 700;
+			line-height: 1.4;
 			box-shadow: none !important;
 		}
 
@@ -218,26 +205,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-input-stack {
 			display: grid;
-			gap: 17px;
+			gap: 10px;
 		}
 
 		.consult-field-group {
 			display: grid;
-			gap: 8px;
+			gap: 5px;
 		}
 
 		.consult-field-label {
 			margin: 0;
-			color: var(--dk-text);
-			font-size: 14px;
-			font-weight: 600;
-			line-height: 18px;
+			color: var(--dk-muted);
+			font-size: 11px;
+			font-weight: 800;
+			line-height: 1.3;
 		}
 
 		.consult-grid-two {
 			display: grid;
 			grid-template-columns: 1fr 1fr;
-			gap: 20px;
+			gap: 8px;
 		}
 
 		.consult-field-large {
@@ -246,15 +233,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		.consult-field-keluhan {
-			height: 154px;
+			min-height: 88px;
+			height: 88px;
 			resize: none;
 		}
 
 		.consult-field-address {
-			height: 154px;
+			min-height: 74px;
+			height: 74px;
 			resize: none;
-			font-size: 16px;
-			line-height: 24px;
+			font-size: 13px;
+			line-height: 1.4;
 		}
 
 		.consult-backend-payload {
@@ -268,7 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-helper {
 			display: block;
-			margin: 8px 0 0;
+			margin: 0;
 			color: var(--dk-muted);
 			font-size: 12px;
 			line-height: 18px;
@@ -276,15 +265,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-upload-stack {
 			display: grid;
-			gap: 20px;
+			gap: 10px;
 		}
 
 		.consult-upload-box {
 			position: relative;
 			min-height: 65px;
 			border: 1px dashed #d0d0d0;
-			border-radius: 10px;
-			background: #eaeaea;
+			border-radius: 12px;
+			background: var(--dk-soft);
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -334,15 +323,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			display: flex;
 			align-items: center;
 			gap: 15px;
-			margin: 2px 0 30px;
+			margin: 4px 0 12px;
 			color: var(--dk-text);
-			font-size: 16px;
-			line-height: 22px;
+			font-size: 13px;
+			font-weight: 800;
+			line-height: 1.35;
 		}
 
 		.consult-consent .form-check-input {
-			width: 30px;
-			height: 30px;
+			width: 22px;
+			height: 22px;
 			margin: 0;
 			border: 2px solid var(--dk-line);
 			border-radius: 5px;
@@ -359,14 +349,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-submit {
 			width: 100%;
-			height: 51px;
+			min-height: 44px;
 			border: 0;
-			border-radius: 10px;
+			border-radius: 12px;
 			background: var(--dk-green);
 			color: #ffffff;
-			font-size: 17px;
-			font-weight: 700;
-			line-height: 20px;
+			font-size: 14px;
+			font-weight: 800;
+			line-height: 1.2;
 			box-shadow: none;
 		}
 
@@ -380,49 +370,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			bottom: 0;
 			transform: translateX(-50%);
 			width: 100%;
-			max-width: 414px;
-			height: 69px;
+			max-width: 480px;
 			background: #ffffff;
 			display: grid;
-			grid-template-columns: 1fr 1fr auto 1fr;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
 			align-items: center;
-			gap: 14px;
-			padding: 8px 20px 11px;
-			box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.05);
+			gap: 6px;
+			padding: 7px 10px calc(7px + env(safe-area-inset-bottom, 0px));
+			border-top: 1px solid #eef4f1;
+			box-shadow: 0 -8px 20px rgba(24, 60, 47, .08);
 			z-index: 10;
 		}
 
 		.consult-nav-link {
-			min-width: 45px;
-			min-height: 45px;
-			display: inline-flex;
+			min-width: 0;
+			min-height: 42px;
+			display: flex;
+			flex-direction: column;
 			align-items: center;
 			justify-content: center;
+			gap: 3px;
+			border-radius: 12px;
 			text-decoration: none;
-			color: #606060;
+			color: #6b7f76;
+			font-size: 10px;
+			font-weight: 800;
+			line-height: 1.1;
 		}
 
-		.consult-nav-link img {
-			width: 31px;
-			height: 31px;
-			object-fit: contain;
+		.consult-nav-link i {
+			font-size: 18px;
+			line-height: 1;
 		}
 
 		.consult-nav-link.active {
-			min-width: 135px;
-			height: 48px;
-			padding: 0 17px;
-			border-radius: 50px;
-			background: #606060;
-			color: #ffffff;
-			gap: 8px;
-			font-size: 15px;
-			font-weight: 400;
-		}
-
-		.consult-nav-link.active img {
-			width: 34px;
-			height: 34px;
+			background: #ecf8f2;
+			color: #087b55;
 		}
 
 		#map {
@@ -446,14 +429,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				gap: 8px;
 			}
 
-			.consult-nav-link.active {
-				min-width: 118px;
-				padding: 0 12px;
-			}
-
 			.consult-grid-two {
 				grid-template-columns: 1fr;
-				gap: 17px;
+				gap: 10px;
 			}
 		}
 	</style>
@@ -474,14 +452,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	?>
 	<div class="consult-shell">
 		<header class="consult-header">
-			<a class="consult-back" href="<?= html_escape(base_url('home#konsultasi_kesehatan')); ?>" aria-label="Kembali">
-				<img src="<?= html_escape($ui_asset_base . 'icon-back.svg'); ?>" alt="">
-			</a>
 			<h1 class="consult-title">Konsultasi</h1>
 		</header>
 		<span id="result" class="d-none"></span>
 
-		<main id="pahlawan_1" class="consult-main content animate__animated animate__fadeInUp animate__faster">
+		<main id="pahlawan_1" class="consult-main content">
 			<form id="form_konsul" action="<?= html_escape(base_url('konsultasi/save_konsultasi')); ?>" method="post" enctype="multipart/form-data">
 				<input type="hidden" id="nama" value="<?= html_escape($_SESSION['username'] ?? ''); ?>" placeholder="Nama Lengkap" readonly>
 				<input type="hidden" name="dokter_id" id="dokter_id" value="<?= html_escape($dokter_id); ?>" placeholder="Dokter ID" readonly>
@@ -623,18 +598,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		</main>
 
 		<nav class="consult-bottom-nav" aria-label="Navigasi utama">
-			<a class="consult-nav-link" href="<?= html_escape(base_url('home')); ?>" aria-label="Home">
-				<img src="<?= html_escape($ui_asset_base . 'bottom-home.svg'); ?>" alt="">
-			</a>
-			<a class="consult-nav-link" href="<?= html_escape(base_url('home#riwayat')); ?>" aria-label="Medical Record">
-				<img src="<?= html_escape($ui_asset_base . 'bottom-medical-record.svg'); ?>" alt="">
+			<a class="consult-nav-link" href="<?= html_escape(base_url('home')); ?>" aria-label="Beranda">
+				<i class="fas fa-home"></i>
+				<span>Beranda</span>
 			</a>
 			<a class="consult-nav-link active" href="<?= html_escape(base_url('home#konsultasi_kesehatan')); ?>" aria-label="Konsultasi">
-				<img src="<?= html_escape($ui_asset_base . 'bottom-consultation.svg'); ?>" alt="">
+				<i class="fas fa-user-md"></i>
 				<span>Konsultasi</span>
 			</a>
-			<a class="consult-nav-link" href="<?= html_escape(base_url('home')); ?>" aria-label="Pasien">
-				<img src="<?= html_escape($ui_asset_base . 'bottom-patient.svg'); ?>" alt="">
+			<a class="consult-nav-link" href="<?= html_escape(base_url('home#riwayat')); ?>" aria-label="Riwayat">
+				<i class="fas fa-file-medical"></i>
+				<span>Riwayat</span>
+			</a>
+			<a class="consult-nav-link" href="<?= html_escape(base_url('home#profile')); ?>" aria-label="Profile">
+				<i class="fas fa-user"></i>
+				<span>Profile</span>
 			</a>
 		</nav>
 	</div>
@@ -650,7 +628,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				<div class="modal-body">
 					<label for="popupTextarea" class="form-label">Data Penunjang:</label>
 					<textarea id="popupTextarea" class="form-control" style="height: 180px;">
-**Riwayat Kesehatan**
+Riwayat Kesehatan
 Penyakit yang pernah diderita:
 Alergi:
 Obat yang sedang dikonsumsi:
@@ -676,7 +654,7 @@ Berat Badan:
 				<div class="modal-body">
 					<label for="popupKeluhan" class="form-label">Keluhan:</label>
 					<textarea id="popupKeluhan" class="form-control" style="height: 180px;">
-**Anamnesa**
+Anamnesa
 Keluhan utama:
 Riwayat penyakit keluarga:
 Lama keluhan:
@@ -883,7 +861,7 @@ Lama keluhan:
 			}
 
 			const keluhanPayload = [
-				'**Anamnesa**',
+				'Anamnesa',
 				'Keluhan utama: ' + keluhanUtama,
 				'Lama keluhan: ' + lamaKeluhan,
 				'Gejala tambahan: ' + optionalStructuredValue('ui_gejala_tambahan'),
@@ -891,7 +869,7 @@ Lama keluhan:
 			].join("\n");
 
 			const dataPenunjangPayload = [
-				'**Riwayat Kesehatan**',
+				'Riwayat Kesehatan',
 				'Penyakit yang pernah diderita: ' + optionalStructuredValue('ui_penyakit_pernah'),
 				'Riwayat penyakit keluarga: ' + optionalStructuredValue('ui_riwayat_keluarga'),
 				'Alergi: ' + optionalStructuredValue('ui_alergi'),
