@@ -136,6 +136,68 @@ if (!function_exists('doclinc_warga_complaint_summary')) {
 	}
 }
 
+if (!function_exists('doclinc_warga_parse_detail_rows')) {
+	function doclinc_warga_parse_detail_rows($value)
+	{
+		$rows = array();
+		$current = '';
+		$lines = preg_split('/\R/u', (string) $value);
+		foreach ($lines as $line) {
+			$line = doclinc_warga_clean_complaint_text($line);
+			$line = trim(preg_replace('/^-+\s*(.*?)\s*-+$/u', '$1', $line));
+			if ($line === '' || strtolower($line) === 'dokumentasi tindakan') {
+				continue;
+			}
+			if (strpos($line, ':') !== false) {
+				list($label, $content) = explode(':', $line, 2);
+				$current = strtolower(trim($label));
+				$content = doclinc_warga_clean_complaint_text($content);
+				if ($content !== '') {
+					$rows[$current] = isset($rows[$current]) && $rows[$current] !== '' ? $rows[$current] . "\n" . $content : $content;
+				} elseif (!isset($rows[$current])) {
+					$rows[$current] = '';
+				}
+				continue;
+			}
+			if ($current !== '') {
+				$rows[$current] = trim((isset($rows[$current]) ? $rows[$current] . "\n" : '') . $line);
+			}
+		}
+
+		return $rows;
+	}
+}
+
+if (!function_exists('doclinc_warga_clean_result_text')) {
+	function doclinc_warga_clean_result_text($value)
+	{
+		$text = doclinc_warga_clean_complaint_text($value);
+		$text = preg_replace('/-+\s*Dokumentasi\s+Tindakan\s*-+/iu', '', $text);
+		return trim((string) $text);
+	}
+}
+
+if (!function_exists('doclinc_warga_render_result_rows')) {
+	function doclinc_warga_render_result_rows($rows, $labels)
+	{
+		$html = '<div class="dl-result-summary">';
+		$has_rows = false;
+		foreach ($labels as $key => $label) {
+			if (!isset($rows[$key]) || trim((string) $rows[$key]) === '') {
+				continue;
+			}
+			$html .= '<div class="dl-result-row"><span>' . html_escape($label) . '</span><strong>' . nl2br(html_escape(doclinc_warga_clean_result_text($rows[$key])), false) . '</strong></div>';
+			$has_rows = true;
+		}
+		if (!$has_rows) {
+			$html .= '<p class="history-empty-text mb-0">Belum ada catatan.</p>';
+		}
+		$html .= '</div>';
+
+		return $html;
+	}
+}
+
 $doclinc_active_request = isset($active_consultation_request) ? $active_consultation_request : null;
 $doclinc_has_active_request = !empty($doclinc_active_request);
 $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_active_request->request_id) ? (int) $doclinc_active_request->request_id : 0;
@@ -340,6 +402,126 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			-webkit-line-clamp: 3;
 			-webkit-box-orient: vertical;
 			overflow: hidden;
+		}
+
+		.dl-result-summary {
+			display: grid;
+			gap: 0;
+		}
+
+		.dl-result-row {
+			display: grid;
+			grid-template-columns: 132px minmax(0, 1fr);
+			gap: 10px;
+			padding: 8px 0;
+			border-bottom: 1px solid #eef4f1;
+			align-items: start;
+		}
+
+		.dl-result-row:first-child {
+			padding-top: 0;
+		}
+
+		.dl-result-row:last-child {
+			padding-bottom: 0;
+			border-bottom: 0;
+		}
+
+		.dl-result-row span {
+			color: #6c757d;
+			font-size: 12px;
+			font-weight: 800;
+			line-height: 1.4;
+		}
+
+		.dl-result-row strong {
+			color: #263a32;
+			font-size: 13px;
+			font-weight: 700;
+			line-height: 1.45;
+			overflow-wrap: anywhere;
+		}
+
+		.dl-profile-card {
+			border: 1px solid #e1eee8;
+			border-radius: 20px;
+			background: #fff;
+			box-shadow: 0 8px 24px rgba(15, 66, 42, .08);
+			overflow: hidden;
+		}
+
+		.dl-profile-card__head {
+			padding: 16px;
+			border-bottom: 1px solid #eef4f1;
+			background: #f8fbfa;
+		}
+
+		.dl-profile-card__head h4 {
+			margin: 0;
+			color: #183c2f;
+			font-size: 18px;
+			font-weight: 800;
+			line-height: 1.25;
+		}
+
+		.dl-profile-card__head span {
+			display: block;
+			margin-top: 3px;
+			color: #6c757d;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.dl-profile-fields {
+			display: grid;
+			gap: 9px;
+			padding: 14px;
+		}
+
+		.dl-profile-field {
+			display: grid;
+			gap: 4px;
+			padding: 10px 11px;
+			border: 1px solid #e5eee9;
+			border-radius: 13px;
+			background: #fff;
+		}
+
+		.dl-profile-field label {
+			margin: 0;
+			color: #6c757d;
+			font-size: 11px;
+			font-weight: 800;
+			line-height: 1.25;
+		}
+
+		.dl-profile-field input,
+		.dl-profile-field textarea {
+			width: 100%;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			color: #183c2f;
+			font-size: 13px;
+			font-weight: 750;
+			line-height: 1.4;
+			box-shadow: none;
+			resize: none;
+		}
+
+		.dl-profile-field textarea {
+			min-height: 54px;
+		}
+
+		.dl-profile-actions {
+			padding: 0 14px 14px;
+		}
+
+		.dl-profile-actions .btn {
+			min-height: 42px;
+			border-radius: 12px;
+			font-size: 13px;
+			font-weight: 800;
 		}
 
 		.doclinc-visit-map {
@@ -596,6 +778,167 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 		.notification-item:hover {
 			background: #f9f9f9;
+		}
+
+		.dl-dashboard-body #offcanvasNotif {
+			top: 10px;
+			left: 50%;
+			right: auto;
+			width: calc(100% - 24px);
+			max-width: 430px;
+			height: min(82vh, 680px);
+			max-height: calc(100vh - 20px);
+			transform: translate(-50%, -110%);
+			border: 1px solid #dcece5;
+			border-radius: 18px;
+			background: #f8fbfa;
+			box-shadow: 0 22px 48px rgba(24, 60, 47, .22);
+			overflow: hidden;
+		}
+
+		.dl-dashboard-body #offcanvasNotif.show,
+		.dl-dashboard-body #offcanvasNotif.showing {
+			transform: translate(-50%, 0);
+		}
+
+		.dl-dashboard-body #offcanvasNotif.hiding {
+			transform: translate(-50%, -110%);
+		}
+
+		.dl-notification-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			padding: 12px;
+			border-bottom: 1px solid #e4eee9;
+			background: #fff;
+		}
+
+		.dl-notification-title {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			min-width: 0;
+			color: #183c2f;
+			font-size: 14px;
+			font-weight: 800;
+		}
+
+		.dl-notification-title i {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 30px;
+			height: 30px;
+			border-radius: 10px;
+			background: #e8f7f0;
+			color: #087b55;
+		}
+
+		.dl-notification-close {
+			width: 34px;
+			height: 34px;
+			border-radius: 12px;
+			background-color: #edf5f1;
+			opacity: 1;
+		}
+
+		.dl-notification-body {
+			height: calc(100% - 59px);
+			padding: 10px 12px 14px;
+			overflow: hidden;
+		}
+
+		.dl-notification-list {
+			height: 100%;
+			display: grid;
+			align-content: start;
+			gap: 8px;
+			overflow-y: auto;
+			padding-right: 2px;
+		}
+
+		.dl-notification-item {
+			display: grid;
+			grid-template-columns: 34px minmax(0, 1fr);
+			gap: 9px;
+			align-items: start;
+			padding: 10px;
+			border: 1px solid #e3eee8;
+			border-radius: 12px;
+			background: #fff;
+			cursor: pointer;
+		}
+
+		.dl-notification-icon {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 34px;
+			height: 34px;
+			border-radius: 11px;
+			background: #e8f7f0;
+			color: #087b55;
+			font-size: 15px;
+		}
+
+		.dl-notification-content {
+			min-width: 0;
+			display: grid;
+			gap: 2px;
+		}
+
+		.dl-notification-content strong {
+			color: #183c2f;
+			font-size: 13px;
+			line-height: 1.35;
+			overflow-wrap: anywhere;
+		}
+
+		.dl-notification-content small {
+			color: #4c6258;
+			font-size: 12px;
+			font-weight: 600;
+			line-height: 1.4;
+			overflow-wrap: anywhere;
+		}
+
+		.dl-notification-content .dl-notification-time {
+			color: #7d8d86;
+			font-size: 11px;
+			font-weight: 700;
+		}
+
+		.dl-notification-empty {
+			display: grid;
+			place-items: center;
+			gap: 7px;
+			min-height: 190px;
+			color: #71837b;
+			font-size: 13px;
+			font-weight: 800;
+			text-align: center;
+		}
+
+		@media (max-width: 480px) {
+			.dl-dashboard-body #offcanvasNotif {
+				top: 0;
+				width: 100%;
+				max-width: none;
+				height: 82vh;
+				max-height: 92vh;
+				border-left: 0;
+				border-right: 0;
+				border-top: 0;
+				border-radius: 0 0 18px 18px;
+			}
+
+			.dl-complaint-row,
+			.dl-result-row {
+				grid-template-columns: 98px minmax(0, 1fr);
+				gap: 8px;
+			}
 		}
 
 		.hero-card.disabled {
@@ -1094,8 +1437,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											<?php endif; ?>
 										</div>
 										<div class="history-meta mb-2"><?= html_escape($handling_nakes_label); ?></div>
-										<p class="mb-0 small fw-bold"><i class="fas fa-notes-medical fa-fw"></i> Keluhan :</p>
-										<textarea rows="4" class="form-control" readonly><?= html_escape($keluhan); ?></textarea>
+										<div class="history-section mb-3">
+											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan</div>
+											<?= doclinc_warga_complaint_summary($keluhan); ?>
+										</div>
 										<p class="mb-0 small fw-bold"><i class="fas fa-stethoscope fa-fw"></i> Nakes :</p>
 										<p class="mb-0"><?= html_escape($handling_nakes_name !== '' ? $handling_nakes_name : 'Menunggu nakes menerima konsultasi'); ?></p>
 										<p class="mb-0 small fw-bold"><i class="far fa-clock fa-fw"></i> Estimasi :</p>
@@ -1184,6 +1529,30 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$tanggal_riwayat = !empty($tanggal) ? date('d F Y', strtotime($tanggal)) : '-';
 								$puskesmas_label = doclinc_request_puskesmas_label($data);
 								$queue_number_label = doclinc_request_queue_number_label($data);
+								$hasil_rows = doclinc_warga_parse_detail_rows($treatment . "\n" . $saran_dokter);
+								$dokumentasi_labels = array(
+									'tindakan non-obat' => 'Tindakan Non-Obat',
+									'pemeriksaan / monitoring' => 'Pemeriksaan / Monitoring',
+									'follow-up / edukasi' => 'Follow-up / Edukasi',
+									'catatan tindakan lain' => 'Catatan Tindakan Lain',
+								);
+								$has_dokumentasi = false;
+								foreach (array_keys($dokumentasi_labels) as $dok_key) {
+									if (isset($hasil_rows[$dok_key]) && trim((string) $hasil_rows[$dok_key]) !== '') {
+										$has_dokumentasi = true;
+										break;
+									}
+								}
+								$treatment_clean = doclinc_warga_clean_result_text($treatment);
+								if (stripos($treatment, 'Dokumentasi Tindakan') !== false) {
+									foreach (array_keys($dokumentasi_labels) as $dok_key) {
+										if (isset($hasil_rows[$dok_key])) {
+											unset($hasil_rows[$dok_key]);
+										}
+									}
+									$treatment_clean = '';
+								}
+								$saran_clean = stripos($saran_dokter, 'Dokumentasi Tindakan') !== false ? '' : doclinc_warga_clean_result_text($saran_dokter);
 							?>
 								<div class="card shadow mb-3 history-result-card dl-card" id="card-<?= html_escape($card_id); ?>" data-request-id="<?= $id_request; ?>">
 									<div class="card-header d-flex align-items-start gap-3">
@@ -1202,7 +1571,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									<div class="card-body">
 										<div class="history-section">
 											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan Awal</div>
-											<?= doclinc_history_format_complaint($keluhan); ?>
+											<?= doclinc_warga_complaint_summary($keluhan); ?>
 										</div>
 										<div class="history-section">
 											<div class="history-section-title"><i class="fas fa-file-medical-alt me-1"></i> Hasil Konsultasi</div>
@@ -1224,17 +1593,25 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 															</div>
 														<?php endforeach; ?>
 													</div>
-												<?php elseif ($treatment !== '') : ?>
-													<div class="history-result-value"><?= doclinc_history_safe_lines($treatment); ?></div>
+												<?php elseif ($treatment_clean !== '') : ?>
+													<div class="history-result-value"><?= nl2br(html_escape($treatment_clean), false); ?></div>
+												<?php elseif (!empty($hasil_rows)) : ?>
+													<?= doclinc_warga_render_result_rows($hasil_rows, array_combine(array_keys($hasil_rows), array_map('ucwords', array_keys($hasil_rows)))); ?>
 												<?php else : ?>
 													<p class="history-empty-text mb-0">Belum ada terapi/tindakan yang tercatat.</p>
 												<?php endif; ?>
 											</div>
 											<div class="history-result-row">
 												<span class="history-result-label">Rekomendasi / Saran</span>
-												<div class="history-result-value"><?= doclinc_history_safe_lines($saran_dokter); ?></div>
+												<div class="history-result-value"><?= $saran_clean !== '' ? nl2br(html_escape($saran_clean), false) : '<span class="history-empty-text">Belum ada rekomendasi tambahan.</span>'; ?></div>
 											</div>
 										</div>
+										<?php if ($has_dokumentasi) : ?>
+											<div class="history-section">
+												<div class="history-section-title"><i class="fas fa-clipboard-check me-1"></i> Dokumentasi Tindakan</div>
+												<?= doclinc_warga_render_result_rows(doclinc_warga_parse_detail_rows($treatment . "\n" . $saran_dokter), $dokumentasi_labels); ?>
+											</div>
+										<?php endif; ?>
 										<input type="hidden" id="doktId" value="<?= html_escape($dokter_id); ?>">
 										<button class="btn btn-sm btn-outline-success mt-2 dl-btn-secondary" onclick="downloadCard('card-<?= html_escape($card_id); ?>')">
 											<i class="fas fa-file-download"></i> Download Resep
@@ -1265,39 +1642,40 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						$role = $x->role;
 					}
 					?>
-					<div class="card shadow-sm border-0 rounded-4 dl-card">
-						<div class="card-body">
-							<h4 class="dl-section-title text-center mb-4">Profil Pengguna</h4>
-							<div class="form-floating mb-3">
-								<input type="text" class="form-control shadow-sm border-success" id="nama_lengkap" value="<?= $nama; ?>" placeholder="Nama Lengkap" readonly>
-								<label for="nama_lengkap"><i class="fas fa-user"></i> Nama Lengkap</label>
+					<div class="dl-profile-card dl-card">
+						<div class="dl-profile-card__head">
+							<h4>Profil Pengguna</h4>
+							<span><?= html_escape($nama !== '' ? $nama : 'Pengguna Doclinc'); ?></span>
+						</div>
+						<div class="dl-profile-fields">
+							<div class="dl-profile-field">
+								<label for="nama_lengkap"><i class="fas fa-user me-1"></i> Nama Lengkap</label>
+								<input type="text" id="nama_lengkap" value="<?= html_escape($nama); ?>" placeholder="Nama Lengkap" readonly>
 							</div>
-							<div class="form-floating mb-3">
-								<input type="date" class="form-control shadow-sm border-success" id="tgl" placeholder="Tanggal Lahir" value="<?= $tgl; ?>" readonly>
-								<label for="tgl"><i class="fas fa-calendar-alt"></i> Tanggal Lahir</label>
+							<div class="dl-profile-field">
+								<label for="tgl"><i class="fas fa-calendar-alt me-1"></i> Tanggal Lahir</label>
+								<input type="date" id="tgl" placeholder="Tanggal Lahir" value="<?= html_escape($tgl); ?>" readonly>
 							</div>
-							<div class="form-floating mb-3">
-								<input type="text" class="form-control shadow-sm border-success" id="jk" placeholder="Jenis Kelamin" value="<?= $jk; ?>" readonly>
-								<label for="tgl"><i class="fas fa-calendar-alt"></i> Jenis Kelamin</label>
+							<div class="dl-profile-field">
+								<label for="jk"><i class="fas fa-venus-mars me-1"></i> Jenis Kelamin</label>
+								<input type="text" id="jk" placeholder="Jenis Kelamin" value="<?= html_escape($jk); ?>" readonly>
 							</div>
-							<div class="form-floating mb-3">
-								<input type="text" class="form-control shadow-sm border-success" id="no_hp" value="<?= $no_hp; ?>" placeholder="Nomor HP" readonly>
-								<label for="no_hp"><i class="fas fa-phone-alt"></i> Nomor HP</label>
+							<div class="dl-profile-field">
+								<label for="no_hp"><i class="fas fa-phone-alt me-1"></i> Nomor HP</label>
+								<input type="text" id="no_hp" value="<?= html_escape($no_hp); ?>" placeholder="Nomor HP" readonly>
 							</div>
-							<div class="form-floating mb-3">
-								<textarea class="form-control shadow-sm border-success" placeholder="Alamat" id="alamat" readonly style="height: 100px"><?= $alamat; ?></textarea>
-								<label for="alamat"><i class="fas fa-map-marker-alt"></i> Alamat</label>
+							<div class="dl-profile-field">
+								<label for="alamat"><i class="fas fa-map-marker-alt me-1"></i> Alamat</label>
+								<textarea id="alamat" readonly><?= html_escape($alamat); ?></textarea>
 							</div>
-							<div class="d-grid mb-3">
-								<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalProfil" hidden>
-									<i class="fas fa-edit"></i> Edit Profil
-								</button>
-							</div>
-							<div class="d-grid">
-								<button type="button" class="btn btn-outline-danger" id="btn-logout">
-									<i class="fas fa-sign-out-alt"></i> Logout
-								</button>
-							</div>
+						</div>
+						<div class="dl-profile-actions">
+							<button type="button" class="btn btn-outline-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#modalProfil" hidden>
+								<i class="fas fa-edit me-1"></i> Edit Profil
+							</button>
+							<button type="button" class="btn btn-outline-danger w-100" id="btn-logout">
+								<i class="fas fa-sign-out-alt me-1"></i> Logout
+							</button>
 						</div>
 					</div>
 				</div>
@@ -1405,14 +1783,16 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 	</div>
 
 	<div class="offcanvas offcanvas-top" tabindex="-1" id="offcanvasNotif" aria-labelledby="offcanvasNotifLabel">
-		<div class="offcanvas-header">
-			<i class="bi bi-bell-fill text-success"></i>
-			<p class="offcanvas-title mx-2" id="offcanvasNotifLabel">Pusat Notifikasi</p>
-			<span class="badge text-bg-danger" id="badgeNotifs" style="display: none;"></span>
-			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+		<div class="offcanvas-header dl-notification-header">
+			<div class="dl-notification-title">
+				<i class="bi bi-bell-fill"></i>
+				<span class="offcanvas-title" id="offcanvasNotifLabel">Pusat Notifikasi</span>
+				<span class="badge text-bg-danger" id="badgeNotifs" style="display: none;"></span>
+			</div>
+			<button type="button" class="btn-close dl-notification-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 		</div>
-		<div class="offcanvas-body">
-			<div id="notificationList" class="notification-list"></div>
+		<div class="offcanvas-body dl-notification-body">
+			<div id="notificationList" class="notification-list dl-notification-list"></div>
 		</div>
 	</div>
 
@@ -2696,28 +3076,25 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 		function renderNotificationItem(item) {
 			const notificationItem = document.createElement('div');
-			notificationItem.className = 'notification-item d-flex align-items-center p-2 border-bottom';
-			notificationItem.style.cursor = 'pointer';
+			notificationItem.className = 'notification-item dl-notification-item';
 
 			const icon = document.createElement('i');
-			icon.className = 'bi bi-bell-fill text-success me-3 fs-4';
+			icon.className = 'bi bi-bell-fill dl-notification-icon';
 			notificationItem.appendChild(icon);
 
 			const content = document.createElement('div');
-			content.className = 'flex-grow-1';
+			content.className = 'dl-notification-content';
 
 			const title = document.createElement('strong');
 			title.textContent = item.title || 'Notifikasi';
 			content.appendChild(title);
-			content.appendChild(document.createElement('br'));
 
 			const message = document.createElement('small');
 			message.textContent = item.message || 'Tidak ada detail';
 			content.appendChild(message);
-			content.appendChild(document.createElement('br'));
 
 			const timestamp = document.createElement('small');
-			timestamp.className = 'text-muted';
+			timestamp.className = 'dl-notification-time';
 			timestamp.textContent = item.created_at ? new Date(item.created_at.replace(' ', 'T')).toLocaleString('id-ID') : '';
 			content.appendChild(timestamp);
 
@@ -2736,7 +3113,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}
 			notificationList.innerHTML = '';
 			if (!items || !items.length) {
-				notificationList.innerHTML = '<p class="text-muted mb-0">Tidak ada notifikasi</p>';
+				notificationList.innerHTML = '<div class="dl-notification-empty"><i class="bi bi-bell"></i><span>Tidak ada notifikasi</span></div>';
 				setNotificationCount(0);
 				return;
 			}
