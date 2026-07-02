@@ -9,28 +9,53 @@
 												</div>
 												<div class="dl-request-identity">
 													<div class="dl-request-title"><?= html_escape(strtoupper((string) $x->nama)); ?></div>
-													<div class="dl-request-subtitle"><?= html_escape($area_label); ?></div>
+													<div class="dl-request-subtitle">
+														<span><?= html_escape($area_label); ?></span>
+														<span><?= html_escape($received_label); ?></span>
+													</div>
 												</div>
 												<span class="dl-badge animate__animated animate__flash animate__infinite animate__slower">BARU</span>
-											</div>
-											<div class="dl-request-tags" aria-label="Ringkasan permintaan">
-												<span class="dl-request-tag dl-request-tag-strong"><i class="fas fa-clipboard-check"></i><?= html_escape($mode_label); ?></span>
-												<span class="dl-request-tag"><i class="fas fa-motorcycle"></i><span class="distance"><?= html_escape($distance_label); ?></span></span>
-												<span class="dl-request-tag"><i class="far fa-clock"></i><span class="duration">Menghitung...</span></span>
-												<span class="dl-request-tag"><i class="far fa-calendar-alt"></i><?= html_escape($received_label); ?></span>
 											</div>
 										</div>
 										<div id="cekStatus"></div>
 										<div class="card-body">
 											<div class="dl-nakes-complaint-box">
-												<span>Ringkasan keluhan</span>
-												<p><?= html_escape($complaint_summary); ?></p>
+												<span>Keluhan utama</span>
+												<p><?= html_escape($complaint_primary); ?></p>
+												<?php if ($show_complaint_duration || $show_complaint_symptoms || $show_complaint_description) : ?>
+													<div class="dl-complaint-facts">
+														<?php if ($show_complaint_duration) : ?>
+															<div><span>Lama</span><strong><?= html_escape($complaint_duration); ?></strong></div>
+														<?php endif; ?>
+														<?php if ($show_complaint_symptoms) : ?>
+															<div><span>Gejala</span><strong><?= html_escape($complaint_symptoms); ?></strong></div>
+														<?php endif; ?>
+														<?php if ($show_complaint_description) : ?>
+															<div><span>Catatan</span><strong><?= html_escape($complaint_description); ?></strong></div>
+														<?php endif; ?>
+													</div>
+												<?php endif; ?>
 											</div>
-											<div class="dl-nakes-meta-list">
-												<div><i class="fas fa-file fa-fw"></i><span>Riwayat</span><strong><?= doclinc_history_safe_text($riwayat); ?></strong></div>
-												<div><i class="fas fa-map-marker-alt fa-fw"></i><span>Alamat</span><strong><?= doclinc_history_safe_text($x->location); ?></strong></div>
-												<div><i class="fas fa-user-md fa-fw"></i><span>Status</span><strong><?= html_escape($handling_nakes_label); ?></strong></div>
-											</div>
+											<?php if ($show_address || $show_mode_label || $show_distance_label) : ?>
+												<div class="dl-nakes-meta-list">
+													<?php if ($show_address) : ?>
+														<div><i class="fas fa-map-marker-alt fa-fw"></i><span>Alamat</span><strong><?= doclinc_history_safe_text($x->location); ?></strong></div>
+													<?php endif; ?>
+													<?php if ($show_mode_label) : ?>
+														<div><i class="fas fa-clipboard-check fa-fw"></i><span>Mode</span><strong><?= html_escape($mode_label); ?></strong></div>
+													<?php endif; ?>
+													<?php if ($show_distance_label) : ?>
+														<div><i class="fas fa-motorcycle fa-fw"></i><span>Rute</span><strong><span class="distance"><?= html_escape($distance_label); ?></span><span class="duration dl-route-duration"></span></strong></div>
+													<?php endif; ?>
+												</div>
+												<?php if (!$show_distance_label) : ?>
+													<span class="distance dl-js-route-probe"><?= html_escape($distance_label); ?></span>
+													<span class="duration dl-js-route-probe"></span>
+												<?php endif; ?>
+											<?php else : ?>
+												<span class="distance dl-js-route-probe"><?= html_escape($distance_label); ?></span>
+												<span class="duration dl-js-route-probe"></span>
+											<?php endif; ?>
 											<!-- <a class="btn btn-info btn-sm">Lihat Foto</a> <a class="btn btn-info btn-sm">Lihat Video</a> -->
 											<?php if (!empty($x->photos)) : ?>
 												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#fotoModal_<?= html_escape((int) $x->user_id); ?>">Lihat Foto</button>
