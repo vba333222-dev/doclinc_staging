@@ -165,26 +165,16 @@ $history_initials = static function ($name) {
 											</div>
 											<input type="text" class="visit-patient-lat d-none" value="<?= html_escape($x->lattitude); ?>">
 											<input type="text" class="visit-patient-lng d-none" value="<?= html_escape($x->longitude); ?>">
-											<?php if ($show_mode || $show_visit_status) : ?>
-												<div class="nk-info-card nk-card-section">
-													<div class="nk-info-card__title">Status</div>
-													<div class="nk-info-card__body dl-history-meta-rows nk-info-list">
-														<div class="nk-info-row"><span class="nk-info-label">Status</span><strong class="nk-info-value"><?= html_escape(trim(($show_mode ? $mode_label : '') . ($show_mode && $show_visit_status ? ' · ' : '') . ($show_visit_status ? $visit_status_label : ''))); ?></strong></div>
-													</div>
-												</div>
-											<?php endif; ?>
-											<?php if ($address_label !== '') : ?>
-												<div class="nk-info-card nk-info-card--address nk-card-section">
-													<div class="nk-info-card__title">Alamat</div>
-													<div class="nk-info-card__body dl-history-meta-rows nk-info-list">
-														<div class="nk-info-row"><span class="nk-info-label">Alamat</span><strong class="nk-info-value"><?= doclinc_history_safe_text($address_label); ?></strong></div>
-													</div>
-												</div>
-											<?php endif; ?>
-											<div class="nk-info-card nk-card-section">
-												<div class="nk-info-card__title">Rute</div>
-												<div class="nk-info-card__body dl-history-meta-rows nk-info-list">
-													<div class="nk-info-row"><span class="nk-info-label">Rute</span><strong class="nk-info-value"><span class="visit-route-distance dl-route-soft" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span><span class="visit-route-eta dl-route-soft dl-route-duration" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span></strong></div>
+											<div class="nk-detail-panel nk-card-section">
+												<div class="nk-detail-panel__title">Detail kunjungan</div>
+												<div class="nk-detail-panel__body">
+													<?php if ($show_mode || $show_visit_status) : ?>
+														<div class="nk-detail-row"><span class="nk-detail-label">Status</span><strong class="nk-detail-value"><?= html_escape(trim(($show_mode ? $mode_label : '') . ($show_mode && $show_visit_status ? ' · ' : '') . ($show_visit_status ? $visit_status_label : ''))); ?></strong></div>
+													<?php endif; ?>
+													<?php if ($address_label !== '') : ?>
+														<div class="nk-detail-row"><span class="nk-detail-label">Alamat</span><strong class="nk-detail-value"><?= doclinc_history_safe_text($address_label); ?></strong></div>
+													<?php endif; ?>
+													<div class="nk-detail-row"><span class="nk-detail-label">Rute</span><strong class="nk-detail-value"><span class="visit-route-distance dl-route-soft" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span><span class="visit-route-eta dl-route-soft dl-route-duration" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span></strong></div>
 												</div>
 											</div>
 											<div class="visit-route-provider-note mt-2 d-none" data-route-provider-note="<?= html_escape((int) $x->request_id); ?>"></div>
@@ -194,10 +184,10 @@ $history_initials = static function ($name) {
 													Konfirmasi tiba di lokasi
 												</button>
 											</div>
-											<div class="visit-workflow-control dl-visit-workflow nk-visit-status nk-visit-status-block nk-info-card nk-info-card--visit-status nk-card-section" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
-												<div class="nk-info-card__title">Status Kunjungan</div>
-												<div class="nk-info-card__body">
-													<div class="nk-info-row dl-visit-workflow-label"><span class="nk-info-label">Status kunjungan</span><strong class="nk-info-value visit-workflow-label"><?= html_escape($visit_status_label); ?></strong></div>
+											<div class="visit-workflow-control dl-visit-workflow nk-visit-status nk-visit-status-block nk-action-panel nk-action-panel--visit-status nk-card-section" data-visit-workflow="<?= html_escape((int) $x->request_id); ?>" data-current-status="<?= html_escape($visit_status); ?>">
+												<div class="nk-action-panel__title">Status kunjungan</div>
+												<div class="nk-action-panel__body">
+													<div class="nk-detail-row dl-visit-workflow-label"><span class="nk-detail-label">Status</span><strong class="nk-detail-value visit-workflow-label"><?= html_escape($visit_status_label); ?></strong></div>
 													<div class="dl-visit-workflow-actions nk-visit-actions">
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="en_route" <?= $visit_next_status[$visit_status] === 'en_route' ? '' : 'disabled'; ?>>Mulai Perjalanan</button>
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived" <?= $visit_next_status[$visit_status] === 'arrived' ? '' : 'disabled'; ?>>Tiba di Lokasi</button>
