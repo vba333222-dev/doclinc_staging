@@ -971,32 +971,29 @@
 			width: 100%;
 		}
 
-		.nk-info-card {
+		.nk-detail-panel,
+		.nk-action-panel {
 			width: 100%;
-			padding: 9px 10px;
+			padding: 8px 10px;
 			margin-bottom: 7px;
 			border: 1px solid #e4ece8;
 			border-radius: 10px;
 			background: #fafcfb;
 		}
 
-		.nk-info-card__title {
+		.nk-detail-panel__title,
+		.nk-action-panel__title {
 			display: block;
 			color: #6b7f76;
 			font-size: 11px;
 			font-weight: 800;
 			line-height: 1.35;
-			margin-bottom: 5px;
+			margin-bottom: 4px;
 		}
 
-		.nk-info-card__body {
+		.nk-detail-panel__body,
+		.nk-action-panel__body {
 			min-width: 0;
-		}
-
-		.nk-info-card--address,
-		.nk-info-card--visit-confirm,
-		.nk-info-card--visit-status {
-			background: #fbfdfc;
 		}
 
 		.nk-complaint__title,
@@ -1058,18 +1055,20 @@
 		}
 
 		.nk-info-list,
-		.dl-nakes-meta-list {
+		.dl-nakes-meta-list,
+		.nk-detail-panel__body {
 			display: grid;
 			grid-template-columns: 1fr;
 			gap: 0;
 		}
 
 		.nk-info-row,
-		.dl-nakes-meta-list>div {
+		.dl-nakes-meta-list>div,
+		.nk-detail-row {
 			display: grid;
 			grid-template-columns: 104px minmax(0, 1fr);
 			gap: 8px;
-			padding: 7px 0;
+			padding: 6px 0;
 			border: 0;
 			border-bottom: 1px solid #f0f4f2;
 			background: transparent;
@@ -1077,9 +1076,14 @@
 		}
 
 		.nk-info-row:last-child,
-		.dl-nakes-meta-list>div:last-child {
+		.dl-nakes-meta-list>div:last-child,
+		.nk-detail-row:last-child {
 			padding-bottom: 0;
 			border-bottom: 0;
+		}
+
+		.nk-detail-row:first-child {
+			padding-top: 0;
 		}
 
 		.dl-nakes-meta-list i {
@@ -1087,7 +1091,8 @@
 		}
 
 		.nk-info-label,
-		.dl-nakes-meta-list span {
+		.dl-nakes-meta-list span,
+		.nk-detail-label {
 			color: #6b7f76;
 			font-size: 11px;
 			font-weight: 800;
@@ -1095,12 +1100,14 @@
 		}
 
 		.nk-info-value,
-		.dl-nakes-meta-list strong {
+		.dl-nakes-meta-list strong,
+		.nk-detail-value {
 			color: #183c2f;
 			font-size: 12px;
 			font-weight: 700;
 			line-height: 1.4;
-			overflow-wrap: break-word;
+			min-width: 0;
+			overflow-wrap: anywhere;
 		}
 
 		.dl-js-route-probe {
@@ -1424,14 +1431,13 @@
 
 		.dl-visit-workflow {
 			margin-top: 8px;
-			padding-top: 9px;
+			padding-top: 0;
 			border-top: 0;
 		}
 
 		.nk-visit-status-block {
 			margin-left: 0;
 			margin-right: 0;
-			padding-top: 9px;
 		}
 
 		.dl-visit-workflow-label {
@@ -1440,14 +1446,26 @@
 			padding: 0;
 		}
 
-		.nk-info-card .nk-info-row {
-			padding: 0;
-			border-bottom: 0;
-		}
-
-		.dl-visit-workflow-label .nk-info-value {
+		.dl-visit-workflow-label .nk-detail-value {
 			color: #087b55;
 			font-weight: 800;
+		}
+
+		.nk-action-panel--visit-confirm .nk-action-panel__body {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			flex-wrap: wrap;
+			gap: 10px;
+		}
+
+		.nk-action-panel--visit-confirm .dl-nakes-visit-toggle {
+			min-width: 0;
+			margin: 0;
+			color: #36584b;
+			font-size: 12px;
+			font-weight: 800;
+			line-height: 1.35;
 		}
 
 		.nk-visit-actions,
@@ -1709,6 +1727,7 @@
 			.nk-fact-row,
 			.dl-complaint-facts>div,
 			.nk-info-row,
+			.nk-detail-row,
 			.dl-nakes-meta-list>div,
 			.dl-history-meta-rows>div {
 				grid-template-columns: 86px minmax(0, 1fr);
