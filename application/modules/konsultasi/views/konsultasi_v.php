@@ -82,19 +82,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" integrity="sha512-tS3S5qG0BlhnQROyJXvNjeEM4UpMXHrQfTGmbQ1gKmelCxlSEBUaxhRBj/EFTzpbP4RVSrpEikbmdJobCvhE3g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css" integrity="sha512-sMXtMNL1zRzolHYKEujM2AqCLUR9F2C4/05cdbxjjLSRvMQIciEPCQZo++nk7go3BtSuK9kfa/s+a4f4i5pLkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<style>
 		:root {
-			--dk-bg: var(--dl-color-surface-soft, #f4f8f6);
-			--dk-text: var(--dl-color-text, #1f2a24);
-			--dk-muted: var(--dl-color-muted, #66756d);
-			--dk-line: var(--dl-color-border, #e7ece9);
-			--dk-green: var(--dl-color-primary, #379a69);
+			--dk-bg: var(--dl-bg, var(--dl-color-surface-soft, #f4f8f6));
+			--dk-text: var(--dl-text, var(--dl-color-text, #1f2a24));
+			--dk-muted: var(--dl-muted, var(--dl-color-muted, #66756d));
+			--dk-line: var(--dl-line, var(--dl-color-border, #e7ece9));
+			--dk-green: var(--dl-mint, var(--dl-color-primary, #379a69));
 			--dk-accent: var(--dl-color-primary-soft, #e8f7f0);
-			--dk-surface: var(--dl-color-surface, #ffffff);
-			--dk-soft: var(--dl-color-surface-soft, #f4f8f6);
+			--dk-surface: var(--dl-surface, var(--dl-color-surface, #ffffff));
+			--dk-soft: var(--dl-soft, var(--dl-color-surface-soft, #f4f8f6));
 		}
 
 		* {
@@ -113,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-shell {
 			width: 100%;
-			max-width: 430px;
+			max-width: 414px;
 			min-height: 100vh;
 			margin: 0 auto;
 			background: var(--dk-bg);
@@ -123,8 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		.consult-header {
-			min-height: 58px;
-			background: rgba(248, 251, 250, .98);
+			min-height: 64px;
+			background: #edfdf3;
 			border-bottom: 1px solid var(--dk-line);
 			box-shadow: 0 4px 16px rgba(24, 60, 47, .06);
 			display: flex;
@@ -133,26 +136,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			position: sticky;
 			top: 0;
 			z-index: 5;
-			padding: 10px 14px;
+			padding: 10px 20px;
+		}
+
+		.consult-title-block {
+			min-width: 0;
+			display: grid;
+			gap: 2px;
+		}
+
+		.consult-eyebrow {
+			color: var(--dk-muted);
+			font-size: var(--dl-font-size-sm, 12px);
+			font-weight: 600;
+			line-height: 1.25;
 		}
 
 		.consult-title {
 			margin: 0;
-			font-size: var(--dl-font-size-xl, 17px);
+			font-size: var(--dl-font-size-lg, 15px);
 			font-weight: 800;
 			line-height: 1.25;
 			color: var(--dk-text);
 		}
 
 		.consult-main {
-			padding: 12px 12px 24px;
+			padding: 16px 20px 24px;
 		}
 
 		.consult-card {
 			background: var(--dk-surface);
 			border: 1px solid var(--dk-line);
 			border-radius: var(--dl-radius-xl, 16px);
-			padding: var(--dl-space-3, 12px);
+			padding: 15px;
 			margin-bottom: var(--dl-space-3, 12px);
 			box-shadow: var(--dl-shadow-card, 0 2px 8px rgba(24, 60, 47, .05));
 		}
@@ -174,29 +190,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		.consult-card-icon {
-			width: 18px;
-			height: 18px;
+			width: 24px;
+			height: 24px;
 			object-fit: contain;
 			flex: 0 0 auto;
+			border-radius: 999px;
+			padding: 4px;
+			background: var(--dk-soft);
 		}
 
 		.consult-field {
 			width: 100%;
-			min-height: 40px;
+			min-height: 42px;
 			border: 1px solid var(--dk-line);
-			border-radius: 12px;
+			border-radius: var(--dl-radius-md, 12px);
 			padding: 10px 12px;
 			background: var(--dk-surface);
 			color: var(--dk-text);
 			font-size: var(--dl-font-size-md, 13px);
-			font-weight: 700;
-			line-height: 1.4;
+			font-weight: 500;
+			line-height: var(--dl-line-height-normal, 1.45);
 			box-shadow: none !important;
 		}
 
 		.consult-field::placeholder {
 			color: var(--dk-muted);
 			opacity: 1;
+			font-weight: 500;
 		}
 
 		.consult-field:focus {
@@ -206,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-input-stack {
 			display: grid;
-			gap: 10px;
+			gap: 11px;
 		}
 
 		.consult-field-group {
@@ -217,8 +237,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		.consult-field-label {
 			margin: 0;
 			color: var(--dk-muted);
-			font-size: 11px;
-			font-weight: 800;
+			font-size: var(--dl-font-size-sm, 12px);
+			font-weight: 700;
 			line-height: 1.3;
 		}
 
@@ -260,8 +280,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			display: block;
 			margin: 0;
 			color: var(--dk-muted);
-			font-size: 12px;
-			line-height: 18px;
+			font-size: var(--dl-font-size-sm, 12px);
+			font-weight: 500;
+			line-height: 1.45;
 		}
 
 		.consult-upload-stack {
@@ -300,8 +321,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-upload-text {
 			color: var(--dk-text);
-			font-size: 15px;
-			line-height: 20px;
+			font-size: var(--dl-font-size-md, 13px);
+			font-weight: 500;
+			line-height: 1.4;
 		}
 
 		.consult-upload-text strong {
@@ -327,7 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			margin: 4px 0 12px;
 			color: var(--dk-text);
 			font-size: 13px;
-			font-weight: 800;
+			font-weight: 600;
 			line-height: 1.35;
 		}
 
@@ -350,12 +372,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-submit {
 			width: 100%;
-			min-height: 44px;
+			min-height: 42px;
 			border: 0;
-			border-radius: 12px;
+			border-radius: var(--dl-radius-lg, 14px);
 			background: var(--dk-green);
 			color: #ffffff;
-			font-size: 14px;
+			font-size: var(--dl-font-size-md, 13px);
 			font-weight: 800;
 			line-height: 1.2;
 			box-shadow: none;
@@ -371,13 +393,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			bottom: 0;
 			transform: translateX(-50%);
 			width: 100%;
-			max-width: 430px;
+			max-width: 414px;
 			background: #ffffff;
 			display: grid;
 			grid-template-columns: repeat(4, minmax(0, 1fr));
 			align-items: center;
 			gap: 6px;
-			padding: 7px 10px calc(7px + env(safe-area-inset-bottom, 0px));
+			padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
 			border-top: 1px solid #eef4f1;
 			box-shadow: 0 -8px 20px rgba(24, 60, 47, .08);
 			z-index: 10;
@@ -385,49 +407,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-nav-link {
 			min-width: 0;
-			min-height: 42px;
+			min-height: 54px;
 			display: flex;
 			flex-direction: column;
 			align-items: center;
 			justify-content: center;
 			gap: 3px;
-			border-radius: 12px;
+			border-radius: 14px;
 			text-decoration: none;
 			color: #6b7f76;
-			font-size: 10px;
-			font-weight: 800;
+			font-size: 11px;
+			font-weight: 700;
 			line-height: 1.1;
 		}
 
 		.consult-nav-link i {
-			font-size: 18px;
+			font-size: 20px;
 			line-height: 1;
 		}
 
 		.consult-nav-link.active {
-			background: #ecf8f2;
-			color: #087b55;
+			background: #89f6da;
+			color: #00725e;
 		}
 
 		#map {
 			display: none;
 		}
 
-		@media (max-width: 360px) {
+		@media (max-width: 380px) {
 			.consult-main {
+				padding-left: 12px;
+				padding-right: 12px;
+			}
+
+			.consult-card {
 				padding-left: 14px;
 				padding-right: 14px;
 			}
 
-			.consult-card {
-				padding-left: 16px;
-				padding-right: 16px;
-			}
-
 			.consult-bottom-nav {
-				padding-left: 12px;
-				padding-right: 12px;
-				gap: 8px;
+				padding-left: 8px;
+				padding-right: 8px;
+				gap: 4px;
 			}
 
 			.consult-grid-two {
@@ -438,7 +460,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	</style>
 </head>
 
-<body class="consultation-form-page">
+<body class="consultation-form-page dl-dashboard-body">
 	<?php
 	$this->load->model('Konsultasi_m');
 	$hasil = $this->Konsultasi_m->getLocation($dokter);
@@ -453,7 +475,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	?>
 	<div class="consult-shell">
 		<header class="consult-header">
-			<h1 class="consult-title">Konsultasi</h1>
+			<div class="consult-title-block">
+				<span class="consult-eyebrow">Form konsultasi</span>
+				<h1 class="consult-title">Konsultasi</h1>
+			</div>
 		</header>
 		<span id="result" class="d-none"></span>
 
