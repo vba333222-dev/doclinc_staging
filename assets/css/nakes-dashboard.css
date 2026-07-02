@@ -953,6 +953,7 @@
 			flex: 0 0 auto;
 		}
 
+		.nk-complaint,
 		.dl-nakes-complaint-box {
 			padding: 8px 9px;
 			margin-bottom: 8px;
@@ -961,6 +962,7 @@
 			border-radius: 10px;
 		}
 
+		.nk-complaint__title,
 		.dl-nakes-complaint-box span {
 			display: block;
 			color: #6b7f76;
@@ -969,6 +971,7 @@
 			margin-bottom: 4px;
 		}
 
+		.nk-complaint__main,
 		.dl-nakes-complaint-box p {
 			margin: 0;
 			color: #183c2f;
@@ -982,6 +985,7 @@
 			overflow: hidden;
 		}
 
+		.nk-fact-list,
 		.dl-complaint-facts {
 			display: grid;
 			gap: 4px;
@@ -990,13 +994,15 @@
 			border-top: 1px solid #edf3f0;
 		}
 
+		.nk-fact-row,
 		.dl-complaint-facts>div {
 			display: grid;
-			grid-template-columns: minmax(52px, 28%) minmax(0, 1fr);
+			grid-template-columns: minmax(62px, 30%) minmax(0, 1fr);
 			gap: 7px;
 			align-items: start;
 		}
 
+		.nk-fact-label,
 		.dl-complaint-facts span {
 			margin: 0;
 			color: #7a8983;
@@ -1005,6 +1011,7 @@
 			line-height: 1.35;
 		}
 
+		.nk-fact-value,
 		.dl-complaint-facts strong {
 			color: #2b473c;
 			font-size: 12px;
@@ -1013,15 +1020,17 @@
 			overflow-wrap: break-word;
 		}
 
+		.nk-info-list,
 		.dl-nakes-meta-list {
 			display: grid;
 			grid-template-columns: 1fr;
 			gap: 5px;
 		}
 
+		.nk-info-row,
 		.dl-nakes-meta-list>div {
 			display: grid;
-			grid-template-columns: minmax(58px, 28%) minmax(0, 1fr);
+			grid-template-columns: minmax(78px, 32%) minmax(0, 1fr);
 			gap: 7px;
 			padding: 5px 0 0;
 			border: 0;
@@ -1029,6 +1038,7 @@
 			background: transparent;
 		}
 
+		.nk-info-row:first-child,
 		.dl-nakes-meta-list>div:first-child {
 			padding-top: 0;
 			border-top: 0;
@@ -1038,13 +1048,15 @@
 			display: none;
 		}
 
+		.nk-info-label,
 		.dl-nakes-meta-list span {
 			color: #6b7f76;
 			font-size: 11px;
 			font-weight: 800;
-			line-height: 1.4;
+			line-height: 1.35;
 		}
 
+		.nk-info-value,
 		.dl-nakes-meta-list strong {
 			color: #183c2f;
 			font-size: 12px;
@@ -1330,7 +1342,7 @@
 
 		.dl-history-meta-rows>div {
 			display: grid;
-			grid-template-columns: minmax(58px, 28%) minmax(0, 1fr);
+			grid-template-columns: minmax(78px, 32%) minmax(0, 1fr);
 			gap: 7px;
 			padding-top: 5px;
 			border-top: 1px solid #f0f4f2;
@@ -1439,6 +1451,7 @@
 
 		.dl-profile-summary-card,
 		.dl-profile-info-card,
+		.nk-assignment-card,
 		.dl-profile-actions {
 			border: 1px solid #dcece5;
 			border-radius: 14px;
@@ -1479,6 +1492,14 @@
 
 		.dl-profile-info-card {
 			padding: 10px;
+		}
+
+		.nk-assignment-card {
+			padding: 10px;
+		}
+
+		.nk-assignment-card .nk-info-list {
+			margin-top: 2px;
 		}
 
 		.dl-profile-section-title {

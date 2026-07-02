@@ -1,9 +1,15 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 <?php
 $nakes_photo = isset($profile['foto']) ? trim((string) $profile['foto']) : '';
-$nakes_area = isset($profile['remark']) ? trim((string) $profile['remark']) : '';
-if ($nakes_area === '' || in_array(strtolower($nakes_area), array('n/a', 'na', '-', 'belum ditentukan'), true)) {
-	$nakes_area = '';
+$nakes_puskesmas_name = isset($profile['assigned_puskesmas_name']) ? trim((string) $profile['assigned_puskesmas_name']) : '';
+$nakes_puskesmas_code = isset($profile['remark']) ? trim((string) $profile['remark']) : trim((string) $this->session->userdata('remark'));
+$nakes_weak_value = static function ($value) {
+	$value = trim(strip_tags((string) $value));
+	return $value === '' || in_array(strtolower($value), array('n/a', 'na', '-', 'belum ditentukan'), true);
+};
+$nakes_puskesmas_display = !$nakes_weak_value($nakes_puskesmas_name) ? $nakes_puskesmas_name : (!$nakes_weak_value($nakes_puskesmas_code) ? $nakes_puskesmas_code : '');
+if ($nakes_puskesmas_display !== '' && stripos($nakes_puskesmas_display, 'puskesmas') !== 0) {
+	$nakes_puskesmas_display = 'Puskesmas ' . $nakes_puskesmas_display;
 }
 ?>
 			<div class="hero bg-success p-3 overflow-hidden dl-appbar dl-nakes-appbar">
@@ -20,7 +26,7 @@ if ($nakes_area === '' || in_array(strtolower($nakes_area), array('n/a', 'na', '
 						?>
 						<div class="min-w-0">
 							<strong><?= html_escape($nakes_name); ?></strong>
-							<small>Nakes aktif<?= $nakes_area !== '' ? ' · ' . html_escape($nakes_area) : ''; ?></small>
+							<small>Nakes aktif<?= $nakes_puskesmas_display !== '' ? ' · ' . html_escape($nakes_puskesmas_display) : ''; ?></small>
 						</div>
 					</div>
 					<a class="dl-nakes-icon-btn position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif" aria-label="Notifikasi">

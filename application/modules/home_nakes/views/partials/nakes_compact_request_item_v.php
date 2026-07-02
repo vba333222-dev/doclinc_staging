@@ -38,11 +38,13 @@ foreach (array('foto', 'photo', 'profile_photo', 'profile_image', 'patient_photo
 	<div class="flex-grow-1 min-w-0">
 		<p class="dl-latest-name"><?= html_escape(strtoupper((string) $latest_request->nama)); ?></p>
 		<div class="dl-latest-meta">No. Antrian: <?= html_escape($latest_queue_code); ?></div>
-		<div class="dl-latest-complaint">
-			<span>Keluhan utama</span>
-			<strong><?= html_escape($latest_primary); ?></strong>
+		<div class="dl-latest-complaint nk-complaint">
+			<span class="nk-complaint__title">Keluhan utama</span>
+			<strong class="nk-complaint__main"><?= html_escape($latest_primary); ?></strong>
 			<?php if (!$latest_weak_value($latest_duration)) : ?>
-				<small>Lama: <?= html_escape($latest_duration); ?></small>
+				<div class="nk-fact-list">
+					<div class="nk-fact-row"><span class="nk-fact-label">Lama</span><strong class="nk-fact-value"><?= html_escape($latest_duration); ?></strong></div>
+				</div>
 			<?php endif; ?>
 		</div>
 	</div>

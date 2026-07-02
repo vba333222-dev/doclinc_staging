@@ -149,30 +149,30 @@ $history_initials = static function ($name) {
 											<span class="dl-status-pill dl-status-pill-active">Aktif</span>
 										</div>
 										<div class="card-body">
-											<div class="dl-history-summary">
-												<span>Keluhan utama</span>
-												<p><?= html_escape($complaint['primary']); ?></p>
+											<div class="dl-history-summary nk-complaint">
+												<span class="nk-complaint__title">Keluhan utama</span>
+												<p class="nk-complaint__main"><?= html_escape($complaint['primary']); ?></p>
 												<?php if ($complaint['duration'] !== '' || $complaint['symptoms'] !== '') : ?>
-													<div class="dl-complaint-facts">
+													<div class="dl-complaint-facts nk-fact-list">
 														<?php if ($complaint['duration'] !== '') : ?>
-															<div><span>Lama</span><strong><?= html_escape($complaint['duration']); ?></strong></div>
+															<div class="nk-fact-row"><span class="nk-fact-label">Lama</span><strong class="nk-fact-value"><?= html_escape($complaint['duration']); ?></strong></div>
 														<?php endif; ?>
 														<?php if ($complaint['symptoms'] !== '') : ?>
-															<div><span>Gejala</span><strong><?= html_escape($complaint['symptoms']); ?></strong></div>
+															<div class="nk-fact-row"><span class="nk-fact-label">Gejala</span><strong class="nk-fact-value"><?= html_escape($complaint['symptoms']); ?></strong></div>
 														<?php endif; ?>
 													</div>
 												<?php endif; ?>
 											</div>
 											<input type="text" class="visit-patient-lat d-none" value="<?= html_escape($x->lattitude); ?>">
 											<input type="text" class="visit-patient-lng d-none" value="<?= html_escape($x->longitude); ?>">
-											<div class="dl-history-meta-rows">
+											<div class="dl-history-meta-rows nk-info-list">
 												<?php if ($show_mode || $show_visit_status) : ?>
-													<div><span>Status</span><strong><?= html_escape(trim(($show_mode ? $mode_label : '') . ($show_mode && $show_visit_status ? ' · ' : '') . ($show_visit_status ? $visit_status_label : ''))); ?></strong></div>
+													<div class="nk-info-row"><span class="nk-info-label">Status</span><strong class="nk-info-value"><?= html_escape(trim(($show_mode ? $mode_label : '') . ($show_mode && $show_visit_status ? ' · ' : '') . ($show_visit_status ? $visit_status_label : ''))); ?></strong></div>
 												<?php endif; ?>
 												<?php if ($address_label !== '') : ?>
-													<div><span>Alamat</span><strong><?= doclinc_history_safe_text($address_label); ?></strong></div>
+													<div class="nk-info-row"><span class="nk-info-label">Alamat</span><strong class="nk-info-value"><?= doclinc_history_safe_text($address_label); ?></strong></div>
 												<?php endif; ?>
-												<div><span>Rute</span><strong><span class="visit-route-distance dl-route-soft" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span><span class="visit-route-eta dl-route-soft dl-route-duration" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span></strong></div>
+												<div class="nk-info-row"><span class="nk-info-label">Rute</span><strong class="nk-info-value"><span class="visit-route-distance dl-route-soft" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span><span class="visit-route-eta dl-route-soft dl-route-duration" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span></strong></div>
 											</div>
 											<div class="visit-route-provider-note mt-2 d-none" data-route-provider-note="<?= html_escape((int) $x->request_id); ?>"></div>
 											<div class="alert alert-success py-2 px-3 mt-2 mb-0 d-none" data-arrival-notice="<?= html_escape((int) $x->request_id); ?>">
@@ -276,19 +276,19 @@ $history_initials = static function ($name) {
 											<span class="dl-status-pill dl-status-pill-done">Selesai</span>
 										</div>
 										<div class="card-body">
-											<div class="dl-history-summary dl-history-summary-muted">
-												<span>Keluhan utama</span>
-												<p><?= html_escape($complaint['primary']); ?></p>
+											<div class="dl-history-summary dl-history-summary-muted nk-complaint">
+												<span class="nk-complaint__title">Keluhan utama</span>
+												<p class="nk-complaint__main"><?= html_escape($complaint['primary']); ?></p>
 											</div>
-											<div class="dl-history-meta-rows">
+											<div class="dl-history-meta-rows nk-info-list">
 												<?php if (!$history_is_weak_value($mode_label) || $handling_nakes_name !== '') : ?>
-													<div><span>Info</span><strong><?= html_escape(trim((!$history_is_weak_value($mode_label) ? $mode_label : '') . (!$history_is_weak_value($mode_label) && $handling_nakes_name !== '' ? ' · ' : '') . ($handling_nakes_name !== '' ? $handling_nakes_name : ''))); ?></strong></div>
+													<div class="nk-info-row"><span class="nk-info-label">Info</span><strong class="nk-info-value"><?= html_escape(trim((!$history_is_weak_value($mode_label) ? $mode_label : '') . (!$history_is_weak_value($mode_label) && $handling_nakes_name !== '' ? ' · ' : '') . ($handling_nakes_name !== '' ? $handling_nakes_name : ''))); ?></strong></div>
 												<?php endif; ?>
 												<?php if ($puskesmas !== '') : ?>
-													<div><span>Area</span><strong><?= doclinc_history_safe_text($puskesmas); ?></strong></div>
+													<div class="nk-info-row"><span class="nk-info-label">Puskesmas</span><strong class="nk-info-value"><?= doclinc_history_safe_text($puskesmas); ?></strong></div>
 												<?php endif; ?>
 												<?php if ($completed_preview !== '') : ?>
-													<div><span>Hasil</span><strong><?= html_escape($completed_preview); ?></strong></div>
+													<div class="nk-info-row"><span class="nk-info-label">Hasil</span><strong class="nk-info-value"><?= html_escape($completed_preview); ?></strong></div>
 												<?php endif; ?>
 											</div>
 										</div>

@@ -6,6 +6,13 @@ $profile_birthdate = isset($profile['tgl']) ? (string) $profile['tgl'] : '';
 $profile_gender = isset($profile['gender']) ? (string) $profile['gender'] : '';
 $profile_phone = isset($profile['no_hp']) ? (string) $profile['no_hp'] : '';
 $profile_address = isset($profile['alamat']) ? (string) $profile['alamat'] : '';
+$profile_puskesmas_name = isset($profile['assigned_puskesmas_name']) ? trim((string) $profile['assigned_puskesmas_name']) : '';
+$profile_puskesmas_code = isset($profile['remark']) ? trim((string) $profile['remark']) : trim((string) $this->session->userdata('remark'));
+$profile_weak_value = static function ($value) {
+	$value = trim(strip_tags((string) $value));
+	return $value === '' || in_array(strtolower($value), array('n/a', 'na', '-', 'belum ditentukan'), true);
+};
+$profile_puskesmas_display = !$profile_weak_value($profile_puskesmas_name) ? $profile_puskesmas_name : (!$profile_weak_value($profile_puskesmas_code) ? $profile_puskesmas_code : 'Belum dikonfigurasi');
 $profile_rows = array(
 	array('id' => 'nama_lengkap', 'label' => 'Nama lengkap', 'icon' => 'bi bi-person-fill', 'value' => $profile_name, 'type' => 'text'),
 	array('id' => 'tgl', 'label' => 'Tanggal lahir', 'icon' => 'bi bi-calendar-event-fill', 'value' => $profile_birthdate, 'type' => 'date'),
@@ -29,6 +36,24 @@ $profile_rows = array(
 								<span>Profil nakes</span>
 								<strong><?= html_escape($profile_name); ?></strong>
 								<small>Nakes aktif</small>
+							</div>
+						</div>
+
+						<div class="nk-assignment-card">
+							<div class="dl-profile-section-title">Konteks Penugasan</div>
+							<div class="nk-info-list">
+								<div class="nk-info-row">
+									<span class="nk-info-label">Puskesmas Penugasan</span>
+									<strong class="nk-info-value"><?= html_escape($profile_puskesmas_display); ?></strong>
+								</div>
+								<div class="nk-info-row">
+									<span class="nk-info-label">Status Nakes</span>
+									<strong class="nk-info-value">Aktif</strong>
+								</div>
+								<div class="nk-info-row">
+									<span class="nk-info-label">Shift</span>
+									<strong class="nk-info-value">Belum dikonfigurasi</strong>
+								</div>
 							</div>
 						</div>
 
