@@ -31,6 +31,18 @@ class Konsultasi_m extends MX_Controller
 		if (empty($dokter_id)) {
 			return false;
 		}
+		$assigned_puskesmas_code = isset($routing['assigned_puskesmas_code']) ? trim((string) $routing['assigned_puskesmas_code']) : '';
+		if (
+			!$this->db->field_exists('assigned_puskesmas_code', 'requests')
+			|| $assigned_puskesmas_code === ''
+			|| strtoupper($assigned_puskesmas_code) === 'DEFAULT'
+		) {
+			return false;
+		}
+		$routing['assigned_puskesmas_code'] = $assigned_puskesmas_code;
+		if (isset($routing['assigned_puskesmas_name'])) {
+			$routing['assigned_puskesmas_name'] = trim((string) $routing['assigned_puskesmas_name']);
+		}
 
 		$now = date('Y-m-d H:i:s');
 		$has_patient_location = $this->is_valid_latitude($lattitude) && $this->is_valid_longitude($longitude);
