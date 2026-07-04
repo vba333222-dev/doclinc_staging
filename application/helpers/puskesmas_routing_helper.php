@@ -28,7 +28,7 @@ if (!function_exists('doclinc_get_puskesmas_by_code')) {
 	function doclinc_get_puskesmas_by_code($code)
 	{
 		$code = trim((string) $code);
-		if ($code === '') {
+		if ($code === '' || strtoupper($code) === 'DEFAULT') {
 			return null;
 		}
 
@@ -37,18 +37,16 @@ if (!function_exists('doclinc_get_puskesmas_by_code')) {
 			return null;
 		}
 
-		$field = $CI->db->field_exists('kode_pkm', 'm_puskesmas') ? 'kode_pkm' : 'kode_puskesmas';
-		if (!$CI->db->field_exists($field, 'm_puskesmas')) {
+		if (!$CI->db->field_exists('kode_pkm', 'm_puskesmas')) {
+			return null;
+		}
+		if (!$CI->db->field_exists('status', 'm_puskesmas')) {
 			return null;
 		}
 
-		$CI->db->where($field, $code);
-		if ($field === 'kode_pkm') {
-			$CI->db->where('kode_pkm !=', 'DEFAULT');
-		}
-		if ($CI->db->field_exists('status', 'm_puskesmas')) {
-			$CI->db->where('status', 'aktif');
-		}
+		$CI->db
+			->where('TRIM(kode_pkm) = ' . $CI->db->escape($code), null, false)
+			->where('status', 'aktif');
 
 		return $CI->db->get('m_puskesmas')->row();
 	}
@@ -287,31 +285,68 @@ if (!function_exists('doclinc_get_puskesmas_nakes_users')) {
 	function doclinc_get_puskesmas_nakes_users($puskesmas_code)
 	{
 		$puskesmas_code = trim((string) $puskesmas_code);
-		if ($puskesmas_code === '' || $puskesmas_code === 'DEFAULT') {
+		if ($puskesmas_code === '' || strtoupper($puskesmas_code) === 'DEFAULT') {
+			return array();
+		}
+		if (!doclinc_get_puskesmas_by_code($puskesmas_code)) {
 			return array();
 		}
 
 		$CI = &get_instance();
-		if (!$CI->db->table_exists('users') || !$CI->db->field_exists('remark', 'users')) {
+		if (
+			!$CI->db->table_exists('users')
+			|| !$CI->db->field_exists('remark', 'users')
+			|| !$CI->db->field_exists('status', 'users')
+		) {
 			return array();
 		}
 
 		$CI->db
 			->where('role', 'dokter')
-			->where('remark', $puskesmas_code);
-		if ($CI->db->field_exists('status', 'users')) {
-			$CI->db->where('status', 'aktif');
-		}
+			->where('status', 'aktif')
+			->where('TRIM(remark) = ' . $CI->db->escape($puskesmas_code), null, false)
+			->order_by('userId', 'ASC');
 
 		return $CI->db->get('users')->result();
+	}
+}
+
+if (!function_exists('doclinc_get_puskesmas_account_by_code')) {
+	function doclinc_get_puskesmas_account_by_code($puskesmas_code)
+	{
+		$puskesmas_code = trim((string) $puskesmas_code);
+		if ($puskesmas_code === '' || strtoupper($puskesmas_code) === 'DEFAULT') {
+			return null;
+		}
+		if (!doclinc_get_puskesmas_by_code($puskesmas_code)) {
+			return null;
+		}
+
+		$CI = &get_instance();
+		if (
+			!$CI->db->table_exists('users')
+			|| !$CI->db->field_exists('remark', 'users')
+			|| !$CI->db->field_exists('status', 'users')
+		) {
+			return null;
+		}
+
+		return $CI->db
+			->where('role', 'dokter')
+			->where('status', 'aktif')
+			->where('TRIM(remark) = ' . $CI->db->escape($puskesmas_code), null, false)
+			->order_by('userId', 'ASC')
+			->limit(1)
+			->get('users')
+			->row();
 	}
 }
 
 if (!function_exists('doclinc_get_queue_handler_user_id')) {
 	function doclinc_get_queue_handler_user_id($puskesmas_code)
 	{
-		$users = doclinc_get_puskesmas_nakes_users($puskesmas_code);
-		return empty($users) ? null : $users[0]->userId;
+		$account = doclinc_get_puskesmas_account_by_code($puskesmas_code);
+		return $account ? $account->userId : null;
 	}
 }
 

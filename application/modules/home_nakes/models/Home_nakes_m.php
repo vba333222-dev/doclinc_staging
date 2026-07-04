@@ -65,7 +65,8 @@ class Home_nakes_m extends MX_Controller
 
 	private function normalize_puskesmas_code($puskesmas_code)
 	{
-		return trim((string) $puskesmas_code);
+		$puskesmas_code = trim((string) $puskesmas_code);
+		return strtoupper($puskesmas_code) === 'DEFAULT' ? '' : $puskesmas_code;
 	}
 
 	private function where_pending_queue_owner($id, $puskesmas_code)
