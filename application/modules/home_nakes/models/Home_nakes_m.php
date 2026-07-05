@@ -516,6 +516,12 @@ class Home_nakes_m extends MX_Controller
 	public function get_profile_by_id($id)
 	{
 		$this->db->select('users.*');
+		if ($this->db->table_exists('m_puskesmas') && $this->db->field_exists('remark', 'users')) {
+			$this->db->select('m_puskesmas.nama_puskesmas AS assigned_puskesmas_name');
+			$this->db->join('m_puskesmas', 'm_puskesmas.kode_pkm = users.remark', 'left');
+		} else {
+			$this->db->select('NULL AS assigned_puskesmas_name', FALSE);
+		}
 		foreach (['foto', 'tgl', 'gender', 'no_hp', 'alamat'] as $field) {
 			if (!$this->db->field_exists($field, 'users')) {
 				$this->db->select("NULL AS {$field}", FALSE);

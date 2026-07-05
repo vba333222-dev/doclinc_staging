@@ -2,8 +2,8 @@
 				<div id="req_konsul" class="content">
 					<?php
 					$this->load->view('partials/nakes_section_header_v', array(
-						'section_kicker' => 'Antrian konsultasi',
-						'section_title' => 'Permintaan Masuk',
+						'section_kicker' => 'Antrian Puskesmas',
+						'section_title' => 'Permintaan Masuk Puskesmas',
 						'section_meta' => (string) $nakes_pending_count . ' menunggu',
 						'section_class' => 'dl-nakes-page-header',
 					));
@@ -15,7 +15,7 @@
 						?>
 							<?php
 							$this->load->view('partials/nakes_empty_state_v', array(
-								'empty_message' => 'Belum ada permintaan konsultasi baru.',
+								'empty_message' => 'Belum ada permintaan konsultasi baru untuk Puskesmas ini.',
 								'empty_image' => base_url('assets/images/not found.svg'),
 								'empty_class' => 'dl-empty-state text-center',
 							));
@@ -37,8 +37,8 @@
 								$queue_code = doclinc_request_queue_code($x);
 								$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
 								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
-								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
-								$area_label = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : 'Area pasien';
+								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh akun: ' . $handling_nakes_name : 'Menunggu akun koordinasi menerima konsultasi';
+								$area_label = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : 'Puskesmas Penugasan';
 								$distance_label = !empty($x->distance) ? $x->distance : 'Menghitung...';
 								$received_label = !empty($x->created_at) ? date('d M H:i', strtotime($x->created_at)) : 'Baru masuk';
 								$complaint_text = trim(str_replace(array("\r\n", "\r"), "\n", strip_tags((string) $keluhan)));

@@ -1,6 +1,6 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 								<div class="dl-nakes-request-item">
-									<div class="card shadow request-card dl-nakes-request-card" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
+									<div class="card shadow request-card dl-nakes-request-card" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 										<div class="card-header">
 											<div class="dl-request-heading">
 												<div class="dl-queue-badge">
@@ -72,7 +72,7 @@
 												<div class="nk-action-panel__title">Konfirmasi kunjungan?</div>
 												<div class="nk-action-panel__body">
 													<div class="dl-nakes-visit-toggle">
-														<i class="far fa-question-circle fa-fw"></i> Konfirmasikan kunjungan Anda:
+														<i class="far fa-question-circle fa-fw"></i> Konfirmasikan kunjungan unit:
 													</div>
 													<div class="form-check form-switch mb-0">
 														<label class="form-check-label" for="kunjung" id="labelKunjung">Tidak</label>

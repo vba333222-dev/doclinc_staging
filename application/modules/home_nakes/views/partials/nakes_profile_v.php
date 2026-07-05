@@ -10,7 +10,7 @@ $profile_puskesmas_name = isset($profile['assigned_puskesmas_name']) ? trim((str
 $profile_puskesmas_code = isset($profile['remark']) ? trim((string) $profile['remark']) : trim((string) $this->session->userdata('remark'));
 $profile_weak_value = static function ($value) {
 	$value = trim(strip_tags((string) $value));
-	return $value === '' || in_array(strtolower($value), array('n/a', 'na', '-', 'belum ditentukan'), true);
+	return $value === '' || in_array(strtolower($value), array('n/a', 'na', '-', 'belum ditentukan', 'default'), true);
 };
 $profile_puskesmas_display = !$profile_weak_value($profile_puskesmas_name) ? $profile_puskesmas_name : (!$profile_weak_value($profile_puskesmas_code) ? $profile_puskesmas_code : 'Belum dikonfigurasi');
 $profile_rows = array(
@@ -27,15 +27,15 @@ $profile_rows = array(
 							$this->load->view('partials/nakes_avatar_v', array(
 								'avatar_name' => $profile_name,
 								'avatar_photo' => $profile_photo,
-								'avatar_alt' => 'Foto nakes',
+								'avatar_alt' => 'Foto akun Puskesmas',
 								'avatar_class' => 'nk-avatar--lg nk-avatar--nakes',
 								'avatar_icon' => 'fas fa-user-md',
 							));
 							?>
 							<div class="min-w-0">
-								<span>Profil nakes</span>
+								<span>Akun Koordinasi Puskesmas</span>
 								<strong><?= html_escape($profile_name); ?></strong>
-								<small>Nakes aktif</small>
+								<small>Unit Koordinasi</small>
 							</div>
 						</div>
 
@@ -47,11 +47,11 @@ $profile_rows = array(
 									<strong class="nk-info-value"><?= html_escape($profile_puskesmas_display); ?></strong>
 								</div>
 								<div class="nk-info-row">
-									<span class="nk-info-label">Status Nakes</span>
+									<span class="nk-info-label">Status Akun</span>
 									<strong class="nk-info-value">Aktif</strong>
 								</div>
 								<div class="nk-info-row">
-									<span class="nk-info-label">Shift</span>
+									<span class="nk-info-label">Jadwal Unit</span>
 									<strong class="nk-info-value">Belum dikonfigurasi</strong>
 								</div>
 							</div>
