@@ -198,14 +198,18 @@ class Home_nakes extends MX_Controller
 		$d['staff_assignment_ready'] = $this->Home_nakes_m->staff_assignment_table_ready();
 		$d['puskesmas_staff_options'] = $this->Home_nakes_m->get_active_staff_options_by_code($puskesmas_code);
 		$assignment_request_ids = array();
+		$completed_assignment_request_ids = array();
 		foreach ($d['data_request_accept']->result() as $request_row) {
 			$assignment_request_ids[] = (int) $request_row->request_id;
 		}
 		foreach ($d['data_request_completed']->result() as $request_row) {
-			$assignment_request_ids[] = (int) $request_row->request_id;
+			$completed_assignment_request_ids[] = (int) $request_row->request_id;
 		}
 		$d['request_staff_assignment_map'] = $d['staff_assignment_ready']
 			? $this->Home_nakes_m->get_active_staff_assignments_by_request_ids($assignment_request_ids)
+			: array();
+		$d['request_staff_latest_assignment_map'] = $d['staff_assignment_ready']
+			? $this->Home_nakes_m->get_latest_staff_assignments_by_request_ids($completed_assignment_request_ids)
 			: array();
 		$d['data_user'] = $this->Home_nakes_m->get_location_user($uid);
 

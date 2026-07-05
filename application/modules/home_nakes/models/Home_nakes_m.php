@@ -666,6 +666,44 @@ class Home_nakes_m extends MX_Controller
 		return isset($map[$request_id]) ? $map[$request_id] : null;
 	}
 
+	public function get_latest_staff_assignments_by_request_ids($request_ids)
+	{
+		if (!$this->staff_assignment_table_ready() || !is_array($request_ids)) {
+			return array();
+		}
+
+		$ids = array();
+		foreach ($request_ids as $request_id) {
+			$request_id = (int) $request_id;
+			if ($request_id > 0) {
+				$ids[$request_id] = $request_id;
+			}
+		}
+		if (empty($ids)) {
+			return array();
+		}
+
+		$rows = $this->db
+			->select('rsa.assignment_id, rsa.request_id, rsa.staff_id, rsa.kode_pkm, rsa.assigned_by_user_id, rsa.status, rsa.note, rsa.assigned_at, rsa.ended_at, ps.nama AS staff_nama, ps.no_hp AS staff_no_hp, ps.profesi AS staff_profesi, ps.nomor_sip AS staff_nomor_sip')
+			->from('request_staff_assignments AS rsa')
+			->join('puskesmas_staff AS ps', 'ps.staff_id = rsa.staff_id', 'left')
+			->where_in('rsa.request_id', array_values($ids))
+			->order_by('rsa.assigned_at', 'DESC')
+			->order_by('rsa.assignment_id', 'DESC')
+			->get()
+			->result();
+
+		$map = array();
+		foreach ($rows as $row) {
+			$request_id = (int) $row->request_id;
+			if ($request_id > 0 && !isset($map[$request_id])) {
+				$map[$request_id] = $row;
+			}
+		}
+
+		return $map;
+	}
+
 	public function assign_staff_to_request($request_id, $staff_id, $kode_pkm, $assigned_by_user_id, $note = '')
 	{
 		$request_id = (int) $request_id;

@@ -2314,6 +2314,11 @@
 			padding: 8px 10px;
 		}
 
+		.nk-pic-dashboard-panel {
+			margin-top: 8px;
+			margin-bottom: 0;
+		}
+
 		.dl-nakes-dashboard .form-control:focus,
 		.dl-nakes-dashboard .form-select:focus {
 			border-color: var(--dl-color-primary);
