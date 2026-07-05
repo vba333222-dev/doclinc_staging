@@ -80,6 +80,7 @@ $history_initials = static function ($name) {
 $staff_assignment_ready = isset($staff_assignment_ready) ? (bool) $staff_assignment_ready : false;
 $puskesmas_staff_options = isset($puskesmas_staff_options) && is_array($puskesmas_staff_options) ? $puskesmas_staff_options : array();
 $request_staff_assignment_map = isset($request_staff_assignment_map) && is_array($request_staff_assignment_map) ? $request_staff_assignment_map : array();
+$request_staff_latest_assignment_map = isset($request_staff_latest_assignment_map) && is_array($request_staff_latest_assignment_map) ? $request_staff_latest_assignment_map : array();
 $staff_assignment_success = $this->session->flashdata('staff_assignment_success');
 $staff_assignment_error = $this->session->flashdata('staff_assignment_error');
 ?>
@@ -321,7 +322,7 @@ $staff_assignment_error = $this->session->flashdata('staff_assignment_error');
 									$handling_nakes_name = doclinc_request_handling_nakes_name($x);
 									$patient_photo = $history_patient_photo($x);
 									$complaint = $history_complaint_summary($keluhan);
-									$pic_assignment = isset($request_staff_assignment_map[(int) $x->request_id]) ? $request_staff_assignment_map[(int) $x->request_id] : null;
+									$pic_assignment = isset($request_staff_assignment_map[(int) $x->request_id]) ? $request_staff_assignment_map[(int) $x->request_id] : (isset($request_staff_latest_assignment_map[(int) $x->request_id]) ? $request_staff_latest_assignment_map[(int) $x->request_id] : null);
 								?>
 									<div class="card shadow dl-history-card dl-history-card-completed" data-request-id="<?= (int) $x->request_id; ?>" data-visit-id="<?= (int) $x->request_id; ?>">
 										<div class="dl-history-card-head">
