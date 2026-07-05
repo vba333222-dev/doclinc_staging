@@ -76,6 +76,12 @@ $history_initials = static function ($name) {
 	}
 	return strtoupper($initials);
 };
+
+$staff_assignment_ready = isset($staff_assignment_ready) ? (bool) $staff_assignment_ready : false;
+$puskesmas_staff_options = isset($puskesmas_staff_options) && is_array($puskesmas_staff_options) ? $puskesmas_staff_options : array();
+$request_staff_assignment_map = isset($request_staff_assignment_map) && is_array($request_staff_assignment_map) ? $request_staff_assignment_map : array();
+$staff_assignment_success = $this->session->flashdata('staff_assignment_success');
+$staff_assignment_error = $this->session->flashdata('staff_assignment_error');
 ?>
 				<div id="riwayat_konsul" class="content">
 					<div class="dl-history-page-head">
@@ -88,6 +94,11 @@ $history_initials = static function ($name) {
 							<span>aktif</span>
 						</div>
 					</div>
+					<?php if ($staff_assignment_success) : ?>
+						<div class="alert alert-success nk-pic-alert" role="alert"><?= html_escape($staff_assignment_success); ?></div>
+					<?php elseif ($staff_assignment_error) : ?>
+						<div class="alert alert-warning nk-pic-alert" role="alert"><?= html_escape($staff_assignment_error); ?></div>
+					<?php endif; ?>
 					<ul class="nav nav-tabs nav-justified mb-3 dl-tabs dl-history-tabs" id="myTab" role="tablist">
 						<li class="nav-item" role="presentation">
 							<button class="nav-link active" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="true">Saat ini</button>
@@ -124,6 +135,7 @@ $history_initials = static function ($name) {
 									$address_label = !$history_is_weak_value(isset($x->location) ? $x->location : '') ? $x->location : '';
 									$show_mode = !$history_is_weak_value($mode_label);
 									$show_visit_status = !$history_is_weak_value($visit_status_label);
+									$pic_assignment = isset($request_staff_assignment_map[(int) $x->request_id]) ? $request_staff_assignment_map[(int) $x->request_id] : null;
 									$visit_next_status = array(
 										'not_started' => 'en_route',
 										'en_route' => 'arrived',
@@ -175,6 +187,51 @@ $history_initials = static function ($name) {
 														<div class="nk-detail-row"><span class="nk-detail-label">Alamat</span><strong class="nk-detail-value"><?= doclinc_history_safe_text($address_label); ?></strong></div>
 													<?php endif; ?>
 													<div class="nk-detail-row"><span class="nk-detail-label">Rute</span><strong class="nk-detail-value"><span class="visit-route-distance dl-route-soft" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span><span class="visit-route-eta dl-route-soft dl-route-duration" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span></strong></div>
+												</div>
+											</div>
+											<div class="nk-action-panel nk-action-panel--pic nk-card-section">
+												<div class="nk-action-panel__title">PIC Personel</div>
+												<div class="nk-action-panel__body">
+													<div class="nk-pic-current">
+														<span>Status PIC</span>
+														<strong>
+															<?php if ($pic_assignment) : ?>
+																<?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_profesi) ? ' · ' . html_escape($pic_assignment->staff_profesi) : ''; ?>
+															<?php else : ?>
+																Belum ditentukan
+															<?php endif; ?>
+														</strong>
+														<?php if ($pic_assignment && !empty($pic_assignment->staff_no_hp)) : ?>
+															<small><?= html_escape($pic_assignment->staff_no_hp); ?></small>
+														<?php endif; ?>
+													</div>
+													<?php if (!$staff_assignment_ready) : ?>
+														<p class="nk-pic-muted">Fitur PIC personel belum tersedia.</p>
+													<?php elseif (empty($puskesmas_staff_options)) : ?>
+														<p class="nk-pic-muted">Belum ada personel aktif untuk ditetapkan.</p>
+													<?php else : ?>
+														<form method="post" action="<?= html_escape(base_url('home_nakes/assign_staff')); ?>" class="nk-pic-form">
+															<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
+															<select name="staff_id" class="form-select form-select-sm" required>
+																<option value="">Pilih personel</option>
+																<?php foreach ($puskesmas_staff_options as $staff_option) : ?>
+																	<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= $pic_assignment && (int) $pic_assignment->staff_id === (int) $staff_option->staff_id ? 'selected' : ''; ?>>
+																		<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?>
+																	</option>
+																<?php endforeach; ?>
+															</select>
+															<input type="text" name="note" class="form-control form-control-sm" maxlength="255" placeholder="Catatan opsional">
+															<div class="nk-pic-actions">
+																<button type="submit" class="btn btn-outline-success btn-sm rounded-pill"><?= $pic_assignment ? 'Ganti PIC' : 'Tetapkan PIC'; ?></button>
+															</div>
+														</form>
+														<?php if ($pic_assignment) : ?>
+															<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form">
+																<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
+																<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Batalkan PIC</button>
+															</form>
+														<?php endif; ?>
+													<?php endif; ?>
 												</div>
 											</div>
 											<div class="visit-route-provider-note mt-2 d-none" data-route-provider-note="<?= html_escape((int) $x->request_id); ?>"></div>
@@ -264,6 +321,7 @@ $history_initials = static function ($name) {
 									$handling_nakes_name = doclinc_request_handling_nakes_name($x);
 									$patient_photo = $history_patient_photo($x);
 									$complaint = $history_complaint_summary($keluhan);
+									$pic_assignment = isset($request_staff_assignment_map[(int) $x->request_id]) ? $request_staff_assignment_map[(int) $x->request_id] : null;
 								?>
 									<div class="card shadow dl-history-card dl-history-card-completed" data-request-id="<?= (int) $x->request_id; ?>" data-visit-id="<?= (int) $x->request_id; ?>">
 										<div class="dl-history-card-head">
@@ -292,6 +350,9 @@ $history_initials = static function ($name) {
 												<?php endif; ?>
 												<?php if ($puskesmas !== '') : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Puskesmas</span><strong class="nk-info-value"><?= doclinc_history_safe_text($puskesmas); ?></strong></div>
+												<?php endif; ?>
+												<?php if ($pic_assignment) : ?>
+													<div class="nk-info-row"><span class="nk-info-label">PIC Personel</span><strong class="nk-info-value"><?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_profesi) ? ' · ' . html_escape($pic_assignment->staff_profesi) : ''; ?><?= !empty($pic_assignment->staff_no_hp) ? ' · ' . html_escape($pic_assignment->staff_no_hp) : ''; ?></strong></div>
 												<?php endif; ?>
 												<?php if ($completed_preview !== '') : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Hasil</span><strong class="nk-info-value"><?= html_escape($completed_preview); ?></strong></div>

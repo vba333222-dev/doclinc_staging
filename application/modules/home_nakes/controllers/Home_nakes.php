@@ -195,6 +195,18 @@ class Home_nakes extends MX_Controller
 		$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed($uid);
 		$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept($uid);
 		$d['data_request_new'] = $this->Home_nakes_m->request_keluhan($uid, $puskesmas_code);
+		$d['staff_assignment_ready'] = $this->Home_nakes_m->staff_assignment_table_ready();
+		$d['puskesmas_staff_options'] = $this->Home_nakes_m->get_active_staff_options_by_code($puskesmas_code);
+		$assignment_request_ids = array();
+		foreach ($d['data_request_accept']->result() as $request_row) {
+			$assignment_request_ids[] = (int) $request_row->request_id;
+		}
+		foreach ($d['data_request_completed']->result() as $request_row) {
+			$assignment_request_ids[] = (int) $request_row->request_id;
+		}
+		$d['request_staff_assignment_map'] = $d['staff_assignment_ready']
+			? $this->Home_nakes_m->get_active_staff_assignments_by_request_ids($assignment_request_ids)
+			: array();
 		$d['data_user'] = $this->Home_nakes_m->get_location_user($uid);
 
 		$latitude_dokter = '';
@@ -216,6 +228,69 @@ class Home_nakes extends MX_Controller
 		}
 		$this->load->view('home_nakes_v', $d);
 	}
+
+	public function assign_staff()
+	{
+		if (!$this->require_dokter_session()) {
+			return;
+		}
+		if ($this->input->method(TRUE) !== 'POST') {
+			show_404();
+			return;
+		}
+
+		$user_id = (int) $this->session->userdata('id');
+		$profile = $this->Home_nakes_m->get_profile_by_id($user_id);
+		$puskesmas_code = trim((string) (isset($profile['remark']) ? $profile['remark'] : $this->session->userdata('remark')));
+		$request_id = (int) $this->input->post('request_id');
+		$staff_id = (int) $this->input->post('staff_id');
+		$note = trim((string) $this->input->post('note', TRUE));
+
+		if ($puskesmas_code === '' || strtoupper($puskesmas_code) === 'DEFAULT' || $request_id < 1 || $staff_id < 1) {
+			$this->session->set_flashdata('staff_assignment_error', 'Data PIC personel tidak valid');
+			redirect('home_nakes#riwayat_konsul');
+			return;
+		}
+
+		$result = $this->Home_nakes_m->assign_staff_to_request($request_id, $staff_id, $puskesmas_code, $user_id, $note);
+		$message = !empty($result['message']) ? $result['message'] : 'Gagal menetapkan PIC personel';
+		$this->session->set_flashdata(
+			isset($result['status']) && $result['status'] === 'success' ? 'staff_assignment_success' : 'staff_assignment_error',
+			$message
+		);
+		redirect('home_nakes#riwayat_konsul');
+	}
+
+	public function clear_staff_assignment()
+	{
+		if (!$this->require_dokter_session()) {
+			return;
+		}
+		if ($this->input->method(TRUE) !== 'POST') {
+			show_404();
+			return;
+		}
+
+		$user_id = (int) $this->session->userdata('id');
+		$profile = $this->Home_nakes_m->get_profile_by_id($user_id);
+		$puskesmas_code = trim((string) (isset($profile['remark']) ? $profile['remark'] : $this->session->userdata('remark')));
+		$request_id = (int) $this->input->post('request_id');
+
+		if ($puskesmas_code === '' || strtoupper($puskesmas_code) === 'DEFAULT' || $request_id < 1) {
+			$this->session->set_flashdata('staff_assignment_error', 'Data PIC personel tidak valid');
+			redirect('home_nakes#riwayat_konsul');
+			return;
+		}
+
+		$result = $this->Home_nakes_m->clear_staff_assignment($request_id, $puskesmas_code, $user_id);
+		$message = !empty($result['message']) ? $result['message'] : 'Gagal membatalkan PIC personel';
+		$this->session->set_flashdata(
+			isset($result['status']) && $result['status'] === 'success' ? 'staff_assignment_success' : 'staff_assignment_error',
+			$message
+		);
+		redirect('home_nakes#riwayat_konsul');
+	}
+
 	public function tes_save_lokasi()
 	{
 		$this->load->view('tes_save_lokasi');
