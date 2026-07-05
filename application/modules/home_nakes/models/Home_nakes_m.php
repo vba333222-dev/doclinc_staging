@@ -343,6 +343,29 @@ class Home_nakes_m extends MX_Controller
 
 		$this->db->update('requests', $data);
 		if ($this->db->affected_rows() > 0) {
+			$updated_request = $this->db
+				->where('request_id', $id)
+				->get('requests')
+				->row();
+			$event_puskesmas_code = $puskesmas_code;
+			if ($updated_request && isset($updated_request->assigned_puskesmas_code) && trim((string) $updated_request->assigned_puskesmas_code) !== '') {
+				$event_puskesmas_code = $updated_request->assigned_puskesmas_code;
+			}
+			$event_metadata = array(
+				'request_status' => 'Accepted',
+				'accepted_by_user_id' => $this->db->field_exists('accepted_by_user_id', 'requests') ? $id_user : null,
+				'assigned_nakes_user_id' => $updated_request && isset($updated_request->assigned_nakes_user_id) ? (int) $updated_request->assigned_nakes_user_id : null,
+			);
+			if ($updated_request && function_exists('doclinc_request_queue_code')) {
+				$event_metadata['queue_code'] = doclinc_request_queue_code($updated_request);
+			}
+			$this->append_request_event($id, 'request_accepted', array(
+				'puskesmas_code' => $event_puskesmas_code,
+				'actor_user_id' => $id_user,
+				'actor_role' => 'dokter',
+				'message' => 'Permintaan diterima oleh Puskesmas.',
+				'metadata' => $event_metadata,
+			));
 			return array('status' => 'success', 'message' => 'Request konsultasi diterima', 'already_accepted' => false);
 		}
 
@@ -388,6 +411,23 @@ class Home_nakes_m extends MX_Controller
 
 		$this->db->update('requests', $data);
 		if ($this->db->affected_rows() > 0) {
+			$event_puskesmas_code = $puskesmas_code;
+			if (isset($request->assigned_puskesmas_code) && trim((string) $request->assigned_puskesmas_code) !== '') {
+				$event_puskesmas_code = $request->assigned_puskesmas_code;
+			}
+			$event_metadata = array(
+				'request_status' => 'Cancelled',
+			);
+			if (isset($request->cancel_reason) && trim((string) $request->cancel_reason) !== '') {
+				$event_metadata['reason'] = trim((string) $request->cancel_reason);
+			}
+			$this->append_request_event($request_id, 'request_cancelled', array(
+				'puskesmas_code' => $event_puskesmas_code,
+				'actor_user_id' => $user_id,
+				'actor_role' => 'dokter',
+				'message' => 'Permintaan dibatalkan/ditolak oleh Puskesmas.',
+				'metadata' => $event_metadata,
+			));
 			return array('status' => 'success', 'message' => 'Request berhasil dibatalkan');
 		}
 
@@ -463,6 +503,28 @@ class Home_nakes_m extends MX_Controller
 			->get('requests')
 			->row();
 		$visit_status = $row && isset($row->visit_status) ? $row->visit_status : $next_status;
+		if ($current_status !== $next_status) {
+			$visit_event_map = array(
+				'en_route' => array('visit_started', 'Perjalanan kunjungan dimulai.', 'visit_started_at'),
+				'arrived' => array('visit_arrived', 'Petugas tiba di lokasi warga.', 'visit_arrived_at'),
+				'in_service' => array('visit_in_service', 'Pelayanan di lokasi dimulai.', 'visit_in_service_at'),
+				'completed' => array('visit_completed', 'Kunjungan di lokasi selesai.', 'visit_completed_at'),
+			);
+			if (isset($visit_event_map[$next_status])) {
+				$event = $visit_event_map[$next_status];
+				$event_metadata = array('visit_status' => $visit_status);
+				if ($row && isset($row->{$event[2]}) && !empty($row->{$event[2]})) {
+					$event_metadata[$event[2]] = $row->{$event[2]};
+				}
+				$this->append_request_event($request_id, $event[0], array(
+					'puskesmas_code' => $row && isset($row->assigned_puskesmas_code) ? $row->assigned_puskesmas_code : null,
+					'actor_user_id' => $user_id,
+					'actor_role' => 'dokter',
+					'message' => $event[1],
+					'metadata' => $event_metadata,
+				));
+			}
+		}
 
 		return array(
 			'status' => 'success',
@@ -798,7 +860,18 @@ class Home_nakes_m extends MX_Controller
 			->select(implode(', ', $select))
 			->from('request_events')
 			->where_in('request_id', array_values($ids))
-			->where_in('event_type', array('pic_assigned', 'pic_changed', 'pic_cleared'))
+			->where_in('event_type', array(
+				'pic_assigned',
+				'pic_changed',
+				'pic_cleared',
+				'request_accepted',
+				'request_cancelled',
+				'visit_started',
+				'visit_arrived',
+				'visit_in_service',
+				'visit_completed',
+				'request_completed',
+			))
 			->order_by('request_id', 'ASC')
 			->order_by('created_at', 'DESC')
 			->order_by('event_id', 'DESC')
