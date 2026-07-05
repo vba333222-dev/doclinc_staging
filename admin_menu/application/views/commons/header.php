@@ -160,6 +160,13 @@
 				</a>
 			</li>
 
+			<li class="nav-item <?= $this->session->flashdata('active_tab_kelola_staff_puskesmas'); ?>">
+				<a class="nav-link" href="<?php echo site_url('kelola_staff_puskesmas'); ?>">
+					<i class="fas fa-users-cog"></i>
+					<span>Staff Puskesmas</span>
+				</a>
+			</li>
+
 			<li class="nav-item <?= $this->session->flashdata('active_tab_master_puskesmas'); ?>">
 				<a class="nav-link" href="<?php echo site_url('master_puskesmas'); ?>">
 					<i class="fas fa-hospital"></i>
