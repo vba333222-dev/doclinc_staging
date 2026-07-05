@@ -190,6 +190,8 @@ class Home_nakes extends MX_Controller
 		if (empty($puskesmas_code)) {
 			log_message('error', 'Akun Puskesmas/Nakes belum memiliki kode puskesmas: ' . $uid);
 		}
+		$d['puskesmas_staff_list'] = $this->Home_nakes_m->get_puskesmas_staff_by_code($puskesmas_code);
+		$d['puskesmas_staff_count'] = $this->Home_nakes_m->count_puskesmas_staff_by_code($puskesmas_code);
 		$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed($uid);
 		$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept($uid);
 		$d['data_request_new'] = $this->Home_nakes_m->request_keluhan($uid, $puskesmas_code);

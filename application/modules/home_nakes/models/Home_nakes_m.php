@@ -531,6 +531,58 @@ class Home_nakes_m extends MX_Controller
 		return $this->db->get_where('users', ['userId' => $id])->row_array();
 	}
 
+	private function normalize_staff_puskesmas_code($kode_pkm)
+	{
+		$kode_pkm = trim((string) $kode_pkm);
+		return strtoupper($kode_pkm) === 'DEFAULT' ? '' : $kode_pkm;
+	}
+
+	private function can_query_puskesmas_staff()
+	{
+		if (!$this->db->table_exists('puskesmas_staff')) {
+			return false;
+		}
+
+		foreach (array('staff_id', 'kode_pkm', 'nama', 'no_hp', 'profesi', 'nomor_sip', 'user_id', 'status') as $field) {
+			if (!$this->db->field_exists($field, 'puskesmas_staff')) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	public function get_puskesmas_staff_by_code($kode_pkm)
+	{
+		$kode_pkm = $this->normalize_staff_puskesmas_code($kode_pkm);
+		if ($kode_pkm === '' || !$this->can_query_puskesmas_staff()) {
+			return array();
+		}
+
+		return $this->db
+			->select('staff_id, nama, no_hp, profesi, nomor_sip, user_id, status')
+			->from('puskesmas_staff')
+			->where('kode_pkm', $kode_pkm)
+			->where('status', 'aktif')
+			->order_by('nama', 'ASC')
+			->order_by('staff_id', 'ASC')
+			->get()
+			->result();
+	}
+
+	public function count_puskesmas_staff_by_code($kode_pkm)
+	{
+		$kode_pkm = $this->normalize_staff_puskesmas_code($kode_pkm);
+		if ($kode_pkm === '' || !$this->can_query_puskesmas_staff()) {
+			return 0;
+		}
+
+		return (int) $this->db
+			->where('kode_pkm', $kode_pkm)
+			->where('status', 'aktif')
+			->count_all_results('puskesmas_staff');
+	}
+
 
 	public function update_profile($id, $data)
 	{
