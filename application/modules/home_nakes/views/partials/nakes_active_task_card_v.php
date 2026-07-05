@@ -21,6 +21,7 @@
 				return 'PIC personel dibatalkan';
 			}
 			$event_labels = array(
+				'request_created' => 'Permintaan dibuat',
 				'request_accepted' => 'Permintaan diterima',
 				'request_cancelled' => 'Permintaan dibatalkan/ditolak',
 				'visit_started' => 'Perjalanan dimulai',

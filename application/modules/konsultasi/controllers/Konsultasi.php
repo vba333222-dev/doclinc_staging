@@ -13,6 +13,7 @@ class Konsultasi extends MX_Controller
 		$this->load->helper('request_authz');
 		$this->load->helper('puskesmas_routing');
 		$this->load->helper('notification');
+		$this->load->helper('request_event');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login', 'refresh');
 		}
@@ -175,6 +176,30 @@ class Konsultasi extends MX_Controller
 			)
 		);
 		if ($data) {
+			$created_request = doclinc_request_row($data);
+			$event_metadata = array(
+				'assigned_puskesmas_code' => $assigned_puskesmas_code,
+				'assigned_puskesmas_name' => $assigned_puskesmas_name,
+				'request_status' => $created_request && isset($created_request->request_status) ? $created_request->request_status : 'Pending',
+				'patient_latitude' => $patient_latitude,
+				'patient_longitude' => $patient_longitude,
+				'has_location' => $has_patient_location,
+				'has_attachment' => ($foto !== '' || $video !== ''),
+				'created_from' => 'warga',
+			);
+			foreach (array('queue_code', 'queue_number', 'consultation_mode') as $event_field) {
+				if ($created_request && isset($created_request->{$event_field}) && $created_request->{$event_field} !== null && $created_request->{$event_field} !== '') {
+					$event_metadata[$event_field] = $created_request->{$event_field};
+				}
+			}
+			doclinc_append_request_event($data, 'request_created', array(
+				'puskesmas_code' => $assigned_puskesmas_code,
+				'actor_user_id' => $id_user,
+				'actor_role' => 'warga',
+				'message' => 'Permintaan konsultasi dibuat oleh warga.',
+				'metadata' => $event_metadata,
+				'deduplicate' => true,
+			), $this);
 			doclinc_log_request_event('request_created', $data, array('puskesmas_code' => $assigned_puskesmas_code));
 			doclinc_log_request_event('puskesmas_assigned', $data, array('puskesmas_code' => $assigned_puskesmas_code));
 			doclinc_notify_puskesmas(
