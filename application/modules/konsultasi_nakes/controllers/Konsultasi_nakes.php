@@ -6,6 +6,7 @@ class Konsultasi_nakes extends MX_Controller
 	{
 		parent::__construct();
 		$this->load->model('Konsultasi_nakes_m');
+		$this->load->model('home_nakes/Home_nakes_m');
 		$this->load->helper('request_authz');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
@@ -193,6 +194,36 @@ class Konsultasi_nakes extends MX_Controller
 		if ($result) {
 			doclinc_log_request_event('consultation_completed', $request_id);
 			$request = doclinc_request_row($request_id);
+			$event_metadata = array(
+				'request_status' => $request && isset($request->request_status) ? $request->request_status : 'Completed',
+			);
+			if ($request && isset($request->updated_at) && !empty($request->updated_at)) {
+				$event_metadata['completed_at'] = $request->updated_at;
+			}
+			if ($this->db->table_exists('medicalrecords')) {
+				foreach (array('medicalrecord_id', 'record_id', 'id') as $record_field) {
+					if ($this->db->field_exists($record_field, 'medicalrecords')) {
+						$medical_record = $this->db
+							->select($record_field)
+							->from('medicalrecords')
+							->where('request_id', $request_id)
+							->get()
+							->row();
+						if ($medical_record && isset($medical_record->{$record_field})) {
+							$event_metadata[$record_field] = $medical_record->{$record_field};
+						}
+						break;
+					}
+				}
+			}
+			$event_puskesmas_code = $request && isset($request->assigned_puskesmas_code) ? $request->assigned_puskesmas_code : $this->session->userdata('remark');
+			$this->Home_nakes_m->append_request_event($request_id, 'request_completed', array(
+				'puskesmas_code' => $event_puskesmas_code,
+				'actor_user_id' => $doctor_id,
+				'actor_role' => 'dokter',
+				'message' => 'Permintaan diselesaikan.',
+				'metadata' => $event_metadata,
+			));
 			if ($request) {
 				doclinc_notify_user(
 					$request->user_id,

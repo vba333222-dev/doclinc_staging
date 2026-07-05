@@ -96,6 +96,18 @@ $history_event_label = static function ($event) {
 	if ($event_type === 'pic_cleared') {
 		return 'PIC personel dibatalkan';
 	}
+	$event_labels = array(
+		'request_accepted' => 'Permintaan diterima',
+		'request_cancelled' => 'Permintaan dibatalkan/ditolak',
+		'visit_started' => 'Perjalanan dimulai',
+		'visit_arrived' => 'Tiba di lokasi',
+		'visit_in_service' => 'Pelayanan dimulai',
+		'visit_completed' => 'Kunjungan selesai',
+		'request_completed' => 'Permintaan selesai',
+	);
+	if (isset($event_labels[$event_type])) {
+		return $event_labels[$event_type];
+	}
 	return '';
 };
 
