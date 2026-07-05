@@ -864,6 +864,7 @@ class Home_nakes_m extends MX_Controller
 				'pic_assigned',
 				'pic_changed',
 				'pic_cleared',
+				'request_created',
 				'request_accepted',
 				'request_cancelled',
 				'visit_started',
