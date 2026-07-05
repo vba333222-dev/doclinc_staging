@@ -5,7 +5,7 @@ $nakes_puskesmas_name = isset($profile['assigned_puskesmas_name']) ? trim((strin
 $nakes_puskesmas_code = isset($profile['remark']) ? trim((string) $profile['remark']) : trim((string) $this->session->userdata('remark'));
 $nakes_weak_value = static function ($value) {
 	$value = trim(strip_tags((string) $value));
-	return $value === '' || in_array(strtolower($value), array('n/a', 'na', '-', 'belum ditentukan'), true);
+	return $value === '' || in_array(strtolower($value), array('n/a', 'na', '-', 'belum ditentukan', 'default'), true);
 };
 $nakes_puskesmas_display = !$nakes_weak_value($nakes_puskesmas_name) ? $nakes_puskesmas_name : (!$nakes_weak_value($nakes_puskesmas_code) ? $nakes_puskesmas_code : '');
 if ($nakes_puskesmas_display !== '' && stripos($nakes_puskesmas_display, 'puskesmas') !== 0) {
@@ -19,14 +19,14 @@ if ($nakes_puskesmas_display !== '' && stripos($nakes_puskesmas_display, 'puskes
 						$this->load->view('partials/nakes_avatar_v', array(
 							'avatar_name' => $nakes_name,
 							'avatar_photo' => $nakes_photo,
-							'avatar_alt' => 'Foto nakes',
+							'avatar_alt' => 'Foto akun Puskesmas',
 							'avatar_class' => 'nk-avatar--md nk-avatar--nakes',
 							'avatar_icon' => 'fas fa-user-md',
 						));
 						?>
 						<div class="min-w-0">
 							<strong><?= html_escape($nakes_name); ?></strong>
-							<small>Nakes aktif<?= $nakes_puskesmas_display !== '' ? ' · ' . html_escape($nakes_puskesmas_display) : ''; ?></small>
+							<small>Akun Koordinasi Puskesmas<?= $nakes_puskesmas_display !== '' ? ' · ' . html_escape($nakes_puskesmas_display) : ' · Belum dikonfigurasi'; ?></small>
 						</div>
 					</div>
 					<a class="dl-nakes-icon-btn position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif" aria-label="Notifikasi">

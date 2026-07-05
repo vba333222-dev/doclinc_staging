@@ -60,12 +60,21 @@ class Laporan_m extends MX_Controller
 	private function apply_consultation_report_base($aggregate_select = '')
 	{
 		$has_konsultasi = $this->db->table_exists('konsultasi');
-		$has_puskesmas = $this->db->table_exists('m_puskesmas') && $this->db->field_exists('remark', 'users');
+		$has_user_remark = $this->db->field_exists('remark', 'users');
+		$has_puskesmas = $this->db->table_exists('m_puskesmas') && $has_user_remark;
 		$has_dokter = $this->db->table_exists('m_dokter');
+		$has_assigned_puskesmas_code = $this->db->field_exists('assigned_puskesmas_code', 'requests');
+		$has_assigned_puskesmas_name = $this->db->field_exists('assigned_puskesmas_name', 'requests');
 
 		$date_expr = $has_konsultasi ? 'konsultasi.create_date' : 'medicalrecords.created_at';
 		$diagnosa_expr = $has_konsultasi ? 'konsultasi.diagnosa' : 'medicalrecords.diagnosis';
-		$puskesmas_expr = $has_puskesmas ? "COALESCE(m_puskesmas.nama_puskesmas, users.remark, '-')" : "'-'";
+		$assigned_puskesmas_name_expr = $has_assigned_puskesmas_name ? "NULLIF(TRIM(requests.assigned_puskesmas_name), '')" : 'NULL';
+		$assigned_puskesmas_code_expr = $has_assigned_puskesmas_code ? "NULLIF(TRIM(requests.assigned_puskesmas_code), '')" : 'NULL';
+		$routed_puskesmas_code_expr = "CASE WHEN UPPER($assigned_puskesmas_code_expr) = 'DEFAULT' THEN NULL ELSE $assigned_puskesmas_code_expr END";
+		$legacy_provider_code_expr = $has_user_remark ? "CASE WHEN UPPER(TRIM(provider_user.remark)) = 'DEFAULT' THEN NULL ELSE NULLIF(TRIM(provider_user.remark), '') END" : 'NULL';
+		$puskesmas_expr = $has_puskesmas
+			? "COALESCE($assigned_puskesmas_name_expr, assigned_puskesmas.nama_puskesmas, provider_puskesmas.nama_puskesmas, 'Legacy / Belum terklasifikasi')"
+			: "COALESCE($assigned_puskesmas_name_expr, $routed_puskesmas_code_expr, $legacy_provider_code_expr, 'Legacy / Belum terklasifikasi')";
 		$dokter_expr = $has_dokter ? "COALESCE(m_dokter.name, dokter_user.nama, '-')" : "COALESCE(dokter_user.nama, '-')";
 
 		$select = "DATE($date_expr) as tanggal, $date_expr as waktu, $dokter_expr AS name, $diagnosa_expr AS diagnosa, $puskesmas_expr AS nama_puskesmas, users.nama as nama_user";
@@ -77,8 +86,10 @@ class Laporan_m extends MX_Controller
 		$this->db->from('requests');
 		$this->db->join('users', 'users.userId = requests.user_id', 'left');
 		$this->db->join('users dokter_user', 'dokter_user.userId = requests.dokter_id', 'left');
+		$this->db->join('users provider_user', 'provider_user.userId = requests.dokter_id', 'left');
 		if ($has_puskesmas) {
-			$this->db->join('m_puskesmas', 'm_puskesmas.kode_pkm = users.remark', 'left');
+			$this->db->join('m_puskesmas assigned_puskesmas', "assigned_puskesmas.kode_pkm = $routed_puskesmas_code_expr", 'left', FALSE);
+			$this->db->join('m_puskesmas provider_puskesmas', "provider_puskesmas.kode_pkm = provider_user.remark AND UPPER(TRIM(provider_user.remark)) <> 'DEFAULT'", 'left', FALSE);
 		}
 		if ($has_dokter) {
 			$this->db->join('m_dokter', 'm_dokter.professional_id = requests.dokter_id', 'left');

@@ -4,13 +4,13 @@
 						<?php $this->load->view('partials/nakes_stat_cards_v', get_defined_vars()); ?>
 						<?php
 						$this->load->view('partials/nakes_section_header_v', array(
-							'section_title' => 'Tugas Sedang Berjalan',
+							'section_title' => 'Penanganan Unit Berjalan',
 							'section_link_label' => 'Lihat',
 							'section_link_target' => '#riwayat_konsul',
 						));
 						$this->load->view('partials/nakes_active_task_card_v', get_defined_vars());
 						$this->load->view('partials/nakes_section_header_v', array(
-							'section_title' => 'Permintaan Terbaru',
+							'section_title' => 'Permintaan Masuk Puskesmas',
 							'section_link_label' => 'Semua',
 							'section_link_target' => '#req_konsul',
 						));
@@ -20,7 +20,7 @@
 								<?php
 								$this->load->view('partials/nakes_empty_state_v', array(
 									'empty_title' => 'Belum ada permintaan baru',
-									'empty_message' => 'Daftar permintaan akan diperbarui saat ada pasien masuk.',
+									'empty_message' => 'Antrian Puskesmas akan diperbarui saat ada pasien masuk.',
 								));
 								?>
 							<?php else :

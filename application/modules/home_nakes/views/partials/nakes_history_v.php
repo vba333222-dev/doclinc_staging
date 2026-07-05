@@ -132,7 +132,7 @@ $history_initials = static function ($name) {
 										'completed' => '',
 									);
 								?>
-									<div class="card shadow dl-history-card dl-history-card-active" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
+									<div class="card shadow dl-history-card dl-history-card-active" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
 										<div class="dl-history-card-head">
 											<?php
 											$this->load->view('partials/nakes_avatar_v', array(
@@ -265,7 +265,7 @@ $history_initials = static function ($name) {
 									$patient_photo = $history_patient_photo($x);
 									$complaint = $history_complaint_summary($keluhan);
 								?>
-									<div class="card shadow dl-history-card dl-history-card-completed" data-request-id="<?= (int) $x->request_id; ?>">
+									<div class="card shadow dl-history-card dl-history-card-completed" data-request-id="<?= (int) $x->request_id; ?>" data-visit-id="<?= (int) $x->request_id; ?>">
 										<div class="dl-history-card-head">
 											<?php
 											$this->load->view('partials/nakes_avatar_v', array(
