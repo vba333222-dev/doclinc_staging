@@ -57,6 +57,27 @@ class Laporan_m extends MX_Controller
 			&& ($this->db->table_exists('konsultasi') || $this->db->table_exists('medicalrecords'));
 	}
 
+	private function can_query_pic_assignment()
+	{
+		if (!$this->db->table_exists('request_staff_assignments') || !$this->db->table_exists('puskesmas_staff')) {
+			return false;
+		}
+
+		foreach (array('assignment_id', 'request_id', 'staff_id', 'assigned_by_user_id', 'status', 'assigned_at') as $field) {
+			if (!$this->db->field_exists($field, 'request_staff_assignments')) {
+				return false;
+			}
+		}
+
+		foreach (array('staff_id', 'nama', 'no_hp', 'profesi', 'nomor_sip') as $field) {
+			if (!$this->db->field_exists($field, 'puskesmas_staff')) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	private function apply_consultation_report_base($aggregate_select = '')
 	{
 		$has_konsultasi = $this->db->table_exists('konsultasi');
@@ -76,8 +97,14 @@ class Laporan_m extends MX_Controller
 			? "COALESCE($assigned_puskesmas_name_expr, assigned_puskesmas.nama_puskesmas, provider_puskesmas.nama_puskesmas, 'Legacy / Belum terklasifikasi')"
 			: "COALESCE($assigned_puskesmas_name_expr, $routed_puskesmas_code_expr, $legacy_provider_code_expr, 'Legacy / Belum terklasifikasi')";
 		$dokter_expr = $has_dokter ? "COALESCE(m_dokter.name, dokter_user.nama, '-')" : "COALESCE(dokter_user.nama, '-')";
+		$include_pic = $aggregate_select === '' && $this->can_query_pic_assignment();
 
 		$select = "DATE($date_expr) as tanggal, $date_expr as waktu, $dokter_expr AS name, $diagnosa_expr AS diagnosa, $puskesmas_expr AS nama_puskesmas, users.nama as nama_user";
+		if ($include_pic) {
+			$select .= ", pic_staff.staff_id AS pic_staff_id, pic_staff.nama AS pic_staff_name, pic_staff.profesi AS pic_staff_profesi, pic_staff.no_hp AS pic_staff_no_hp, pic_staff.nomor_sip AS pic_staff_nomor_sip, pic_assignment.assigned_at AS pic_assigned_at, pic_assignment.assigned_by_user_id AS pic_assigned_by_user_id, pic_assigned_by.nama AS pic_assigned_by_name";
+		} elseif ($aggregate_select === '') {
+			$select .= ", NULL AS pic_staff_id, NULL AS pic_staff_name, NULL AS pic_staff_profesi, NULL AS pic_staff_no_hp, NULL AS pic_staff_nomor_sip, NULL AS pic_assigned_at, NULL AS pic_assigned_by_user_id, NULL AS pic_assigned_by_name";
+		}
 		if ($aggregate_select !== '') {
 			$select .= ', ' . $aggregate_select;
 		}
@@ -93,6 +120,18 @@ class Laporan_m extends MX_Controller
 		}
 		if ($has_dokter) {
 			$this->db->join('m_dokter', 'm_dokter.professional_id = requests.dokter_id', 'left');
+		}
+		if ($include_pic) {
+			$this->db->join('request_staff_assignments pic_assignment', "pic_assignment.assignment_id = (
+				SELECT rsa_active.assignment_id
+				FROM request_staff_assignments rsa_active
+				WHERE rsa_active.request_id = requests.request_id
+					AND rsa_active.status = 'aktif'
+				ORDER BY rsa_active.assigned_at DESC, rsa_active.assignment_id DESC
+				LIMIT 1
+			)", 'left', FALSE);
+			$this->db->join('puskesmas_staff pic_staff', 'pic_staff.staff_id = pic_assignment.staff_id', 'left');
+			$this->db->join('users pic_assigned_by', 'pic_assigned_by.userId = pic_assignment.assigned_by_user_id', 'left');
 		}
 		if ($has_konsultasi) {
 			$this->db->join('konsultasi', 'konsultasi.request_id = requests.request_id', 'left');

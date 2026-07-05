@@ -71,6 +71,27 @@ class Konsultasi_kesehatan_m extends MX_Controller
 		return is_string($decoded) && strlen($decoded) > 32 && preg_match('/^[A-Fa-f0-9]{32,}/', $decoded);
 	}
 
+	private function can_query_pic_assignment()
+	{
+		if (!$this->db->table_exists('request_staff_assignments') || !$this->db->table_exists('puskesmas_staff')) {
+			return false;
+		}
+
+		foreach (array('assignment_id', 'request_id', 'staff_id', 'assigned_by_user_id', 'status', 'assigned_at') as $field) {
+			if (!$this->db->field_exists($field, 'request_staff_assignments')) {
+				return false;
+			}
+		}
+
+		foreach (array('staff_id', 'nama', 'no_hp', 'profesi', 'nomor_sip') as $field) {
+			if (!$this->db->field_exists($field, 'puskesmas_staff')) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public function get_data_konsul()
 	{
 		if (!$this->db->table_exists('requests') || !$this->db->table_exists('users')) {
@@ -102,6 +123,37 @@ class Konsultasi_kesehatan_m extends MX_Controller
 			? "LEFT JOIN m_puskesmas assigned_puskesmas ON assigned_puskesmas.kode_pkm = $routed_puskesmas_code_expr
 									LEFT JOIN m_puskesmas provider_puskesmas ON provider_puskesmas.kode_pkm = provider_user.remark AND UPPER(TRIM(provider_user.remark)) <> 'DEFAULT'"
 			: '';
+		$has_pic_assignment = $this->can_query_pic_assignment();
+		$pic_select = $has_pic_assignment
+			? "pic_staff.staff_id AS pic_staff_id,
+										pic_staff.nama AS pic_staff_name,
+										pic_staff.profesi AS pic_staff_profesi,
+										pic_staff.no_hp AS pic_staff_no_hp,
+										pic_staff.nomor_sip AS pic_staff_nomor_sip,
+										pic_assignment.assigned_at AS pic_assigned_at,
+										pic_assignment.assigned_by_user_id AS pic_assigned_by_user_id,
+										pic_assigned_by.nama AS pic_assigned_by_name,"
+			: "NULL AS pic_staff_id,
+										NULL AS pic_staff_name,
+										NULL AS pic_staff_profesi,
+										NULL AS pic_staff_no_hp,
+										NULL AS pic_staff_nomor_sip,
+										NULL AS pic_assigned_at,
+										NULL AS pic_assigned_by_user_id,
+										NULL AS pic_assigned_by_name,";
+		$pic_join = $has_pic_assignment
+			? "LEFT JOIN request_staff_assignments pic_assignment
+										ON pic_assignment.assignment_id = (
+											SELECT rsa_active.assignment_id
+											FROM request_staff_assignments rsa_active
+											WHERE rsa_active.request_id = requests.request_id
+												AND rsa_active.status = 'aktif'
+											ORDER BY rsa_active.assigned_at DESC, rsa_active.assignment_id DESC
+											LIMIT 1
+										)
+									LEFT JOIN puskesmas_staff pic_staff ON pic_staff.staff_id = pic_assignment.staff_id
+									LEFT JOIN users pic_assigned_by ON pic_assigned_by.userId = pic_assignment.assigned_by_user_id"
+			: '';
 		$query = $this->db->query("SELECT
 										requests.request_id,
 										requests.user_id,
@@ -109,6 +161,7 @@ class Konsultasi_kesehatan_m extends MX_Controller
 										requests.dokter_id,
 										(SELECT users.nama FROM users WHERE users.userId=requests.dokter_id) AS nama_dokter,
 										$puskesmas_select,
+										$pic_select
 										$date_select,
 										requests.request_description,
 										requests.request_status,
@@ -126,6 +179,7 @@ class Konsultasi_kesehatan_m extends MX_Controller
 									LEFT JOIN users ON users.userId = requests.user_id
 									LEFT JOIN users provider_user ON provider_user.userId = requests.dokter_id
 									$puskesmas_join
+									$pic_join
 									ORDER BY date DESC");
 		$hasil = $query->result();
 
