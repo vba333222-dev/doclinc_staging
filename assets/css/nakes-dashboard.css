@@ -2319,6 +2319,51 @@
 			margin-bottom: 0;
 		}
 
+		.nk-action-panel--timeline {
+			background: #fbfcfd;
+			border: 1px solid var(--dl-color-border);
+		}
+
+		.nk-timeline-list {
+			display: grid;
+			gap: 7px;
+		}
+
+		.nk-timeline-item {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 10px;
+			border-bottom: 1px solid #edf3f0;
+			padding-bottom: 7px;
+		}
+
+		.nk-timeline-item:last-child {
+			border-bottom: 0;
+			padding-bottom: 0;
+		}
+
+		.nk-timeline-item strong {
+			color: #183c2f;
+			font-size: 12px;
+			font-weight: 800;
+			line-height: 1.35;
+		}
+
+		.nk-timeline-item span {
+			color: #6b7f76;
+			flex: 0 0 auto;
+			font-size: 11px;
+			font-weight: 700;
+			line-height: 1.35;
+			white-space: nowrap;
+		}
+
+		.nk-timeline-dashboard-panel {
+			margin-top: 8px;
+			margin-bottom: 0;
+		}
+
 		.dl-nakes-dashboard .form-control:focus,
 		.dl-nakes-dashboard .form-select:focus {
 			border-color: var(--dl-color-primary);

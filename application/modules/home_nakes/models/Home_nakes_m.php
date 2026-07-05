@@ -704,6 +704,121 @@ class Home_nakes_m extends MX_Controller
 		return $map;
 	}
 
+	public function request_event_table_ready()
+	{
+		if (!$this->db->table_exists('request_events')) {
+			return false;
+		}
+
+		foreach (array('event_id', 'request_id', 'event_type', 'created_at') as $field) {
+			if (!$this->db->field_exists($field, 'request_events')) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	public function append_request_event($request_id, $event_type, $payload = array())
+	{
+		$request_id = (int) $request_id;
+		$event_type = substr(trim((string) $event_type), 0, 80);
+		if ($request_id < 1 || $event_type === '' || !$this->request_event_table_ready()) {
+			return false;
+		}
+
+		$payload = is_array($payload) ? $payload : array();
+		$data = array(
+			'request_id' => $request_id,
+			'event_type' => $event_type,
+		);
+
+		if ($this->db->field_exists('puskesmas_code', 'request_events')) {
+			$puskesmas_code = isset($payload['puskesmas_code']) ? $this->normalize_staff_puskesmas_code($payload['puskesmas_code']) : '';
+			$data['puskesmas_code'] = $puskesmas_code !== '' ? $puskesmas_code : null;
+		}
+		if ($this->db->field_exists('actor_user_id', 'request_events')) {
+			$actor_user_id = isset($payload['actor_user_id']) ? (int) $payload['actor_user_id'] : 0;
+			$data['actor_user_id'] = $actor_user_id > 0 ? $actor_user_id : null;
+		}
+		if ($this->db->field_exists('actor_staff_id', 'request_events')) {
+			$actor_staff_id = isset($payload['actor_staff_id']) ? (int) $payload['actor_staff_id'] : 0;
+			$data['actor_staff_id'] = $actor_staff_id > 0 ? $actor_staff_id : null;
+		}
+		if ($this->db->field_exists('actor_role', 'request_events')) {
+			$actor_role = isset($payload['actor_role']) ? substr(trim((string) $payload['actor_role']), 0, 50) : '';
+			$data['actor_role'] = $actor_role !== '' ? $actor_role : null;
+		}
+		if ($this->db->field_exists('message', 'request_events')) {
+			$message = isset($payload['message']) ? trim((string) $payload['message']) : '';
+			$data['message'] = $message !== '' ? $message : null;
+		}
+		if ($this->db->field_exists('metadata_json', 'request_events')) {
+			$metadata = isset($payload['metadata']) && is_array($payload['metadata']) ? $payload['metadata'] : array();
+			$encoded = !empty($metadata) ? json_encode($metadata) : null;
+			$data['metadata_json'] = $encoded !== false ? $encoded : null;
+		}
+
+		return (bool) $this->db->insert('request_events', $data);
+	}
+
+	public function get_request_events_by_request_ids($request_ids, $limit_per_request = 5)
+	{
+		if (!$this->request_event_table_ready() || !is_array($request_ids)) {
+			return array();
+		}
+
+		$ids = array();
+		foreach ($request_ids as $request_id) {
+			$request_id = (int) $request_id;
+			if ($request_id > 0) {
+				$ids[$request_id] = $request_id;
+			}
+		}
+		if (empty($ids)) {
+			return array();
+		}
+
+		$limit_per_request = (int) $limit_per_request;
+		if ($limit_per_request < 1) {
+			$limit_per_request = 5;
+		}
+		if ($limit_per_request > 10) {
+			$limit_per_request = 10;
+		}
+
+		$select = array('event_id', 'request_id', 'event_type', 'created_at');
+		foreach (array('puskesmas_code', 'actor_user_id', 'actor_staff_id', 'actor_role', 'message', 'metadata_json') as $field) {
+			if ($this->db->field_exists($field, 'request_events')) {
+				$select[] = $field;
+			}
+		}
+
+		$rows = $this->db
+			->select(implode(', ', $select))
+			->from('request_events')
+			->where_in('request_id', array_values($ids))
+			->where_in('event_type', array('pic_assigned', 'pic_changed', 'pic_cleared'))
+			->order_by('request_id', 'ASC')
+			->order_by('created_at', 'DESC')
+			->order_by('event_id', 'DESC')
+			->get()
+			->result();
+
+		$map = array();
+		foreach ($rows as $row) {
+			$request_id = (int) $row->request_id;
+			if (!isset($map[$request_id])) {
+				$map[$request_id] = array();
+			}
+			if (count($map[$request_id]) < $limit_per_request) {
+				$map[$request_id][] = $row;
+			}
+		}
+
+		return $map;
+	}
+
 	public function assign_staff_to_request($request_id, $staff_id, $kode_pkm, $assigned_by_user_id, $note = '')
 	{
 		$request_id = (int) $request_id;
@@ -734,7 +849,7 @@ class Home_nakes_m extends MX_Controller
 		}
 
 		$staff = $this->db
-			->select('staff_id')
+			->select('staff_id, nama, profesi')
 			->from('puskesmas_staff')
 			->where('staff_id', $staff_id)
 			->where('kode_pkm', $kode_pkm)
@@ -745,6 +860,7 @@ class Home_nakes_m extends MX_Controller
 			return array('status' => 'error', 'message' => 'Personel tidak ditemukan atau bukan milik Puskesmas login');
 		}
 
+		$previous_assignment = $this->get_active_staff_assignment($request_id);
 		$now = date('Y-m-d H:i:s');
 		$this->db->trans_begin();
 		$this->db
@@ -773,6 +889,36 @@ class Home_nakes_m extends MX_Controller
 		}
 
 		$this->db->trans_commit();
+		if ($previous_assignment) {
+			$this->append_request_event($request_id, 'pic_changed', array(
+				'puskesmas_code' => $kode_pkm,
+				'actor_user_id' => $assigned_by_user_id,
+				'actor_staff_id' => $staff_id,
+				'actor_role' => 'dokter',
+				'message' => 'PIC personel diganti.',
+				'metadata' => array(
+					'previous_staff_id' => (int) $previous_assignment->staff_id,
+					'previous_staff_name' => (string) $previous_assignment->staff_nama,
+					'new_staff_id' => $staff_id,
+					'new_staff_name' => (string) $staff->nama,
+					'new_staff_profesi' => (string) $staff->profesi,
+				),
+			));
+		} else {
+			$this->append_request_event($request_id, 'pic_assigned', array(
+				'puskesmas_code' => $kode_pkm,
+				'actor_user_id' => $assigned_by_user_id,
+				'actor_staff_id' => $staff_id,
+				'actor_role' => 'dokter',
+				'message' => 'PIC personel ditetapkan.',
+				'metadata' => array(
+					'staff_id' => $staff_id,
+					'staff_name' => (string) $staff->nama,
+					'staff_profesi' => (string) $staff->profesi,
+					'previous_assignment_id' => null,
+				),
+			));
+		}
 		return array('status' => 'success', 'message' => 'PIC personel berhasil ditetapkan');
 	}
 
@@ -803,6 +949,7 @@ class Home_nakes_m extends MX_Controller
 			return array('status' => 'error', 'message' => 'PIC hanya dapat dibatalkan pada request aktif');
 		}
 
+		$previous_assignment = $this->get_active_staff_assignment($request_id);
 		$now = date('Y-m-d H:i:s');
 		$this->db->trans_begin();
 		$this->db
@@ -822,6 +969,20 @@ class Home_nakes_m extends MX_Controller
 		}
 
 		$this->db->trans_commit();
+		if ($changed && $previous_assignment) {
+			$this->append_request_event($request_id, 'pic_cleared', array(
+				'puskesmas_code' => $kode_pkm,
+				'actor_user_id' => $assigned_by_user_id,
+				'actor_staff_id' => (int) $previous_assignment->staff_id,
+				'actor_role' => 'dokter',
+				'message' => 'PIC personel dibatalkan.',
+				'metadata' => array(
+					'previous_staff_id' => (int) $previous_assignment->staff_id,
+					'previous_staff_name' => (string) $previous_assignment->staff_nama,
+					'previous_staff_profesi' => (string) $previous_assignment->staff_profesi,
+				),
+			));
+		}
 		return $changed
 			? array('status' => 'success', 'message' => 'PIC personel berhasil dibatalkan')
 			: array('status' => 'error', 'message' => 'PIC aktif tidak ditemukan');

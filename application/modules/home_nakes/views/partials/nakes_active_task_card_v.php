@@ -7,6 +7,21 @@
 		$primary_pic_assignment = isset($primary_assignment_map[(int) $nakes_primary_active->request_id]) ? $primary_assignment_map[(int) $nakes_primary_active->request_id] : null;
 		$primary_staff_assignment_ready = isset($staff_assignment_ready) ? (bool) $staff_assignment_ready : false;
 		$primary_staff_options = isset($puskesmas_staff_options) && is_array($puskesmas_staff_options) ? $puskesmas_staff_options : array();
+		$primary_event_map = isset($request_event_map) && is_array($request_event_map) ? $request_event_map : array();
+		$primary_events = isset($primary_event_map[(int) $nakes_primary_active->request_id]) ? array_slice($primary_event_map[(int) $nakes_primary_active->request_id], 0, 3) : array();
+		$primary_event_label = static function ($event) {
+			$event_type = isset($event->event_type) ? (string) $event->event_type : '';
+			if ($event_type === 'pic_assigned') {
+				return 'PIC personel ditetapkan';
+			}
+			if ($event_type === 'pic_changed') {
+				return 'PIC personel diganti';
+			}
+			if ($event_type === 'pic_cleared') {
+				return 'PIC personel dibatalkan';
+			}
+			return '';
+		};
 	?>
 		<div class="dl-task-row">
 			<div class="dl-task-avatar"><i class="fas fa-user-check"></i></div>
@@ -57,6 +72,25 @@
 				<?php endif; ?>
 			</div>
 		</div>
+		<?php if (!empty($primary_events)) : ?>
+			<div class="nk-action-panel nk-action-panel--timeline nk-card-section nk-timeline-dashboard-panel">
+				<div class="nk-action-panel__title">Timeline Operasional</div>
+				<div class="nk-timeline-list">
+					<?php foreach ($primary_events as $event) :
+						$event_label = $primary_event_label($event);
+						$event_time = !empty($event->created_at) && strtotime($event->created_at) ? date('d M H:i', strtotime($event->created_at)) : '';
+						if ($event_label === '') {
+							continue;
+						}
+					?>
+						<div class="nk-timeline-item">
+							<strong><?= html_escape($event_label); ?></strong>
+							<?php if ($event_time !== '') : ?><span><?= html_escape($event_time); ?></span><?php endif; ?>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		<?php endif; ?>
 		<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $nakes_primary_active->request_id) . '?kriteria=1'); ?>" class="btn btn-success rounded-pill w-100 mt-3 fw-bold">
 			Lanjutkan Penanganan
 		</a>

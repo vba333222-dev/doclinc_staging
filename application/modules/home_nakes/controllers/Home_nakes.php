@@ -211,6 +211,11 @@ class Home_nakes extends MX_Controller
 		$d['request_staff_latest_assignment_map'] = $d['staff_assignment_ready']
 			? $this->Home_nakes_m->get_latest_staff_assignments_by_request_ids($completed_assignment_request_ids)
 			: array();
+		$event_request_ids = array_merge($assignment_request_ids, $completed_assignment_request_ids);
+		$d['request_event_ready'] = $this->Home_nakes_m->request_event_table_ready();
+		$d['request_event_map'] = $d['request_event_ready']
+			? $this->Home_nakes_m->get_request_events_by_request_ids($event_request_ids, 5)
+			: array();
 		$d['data_user'] = $this->Home_nakes_m->get_location_user($uid);
 
 		$latitude_dokter = '';
