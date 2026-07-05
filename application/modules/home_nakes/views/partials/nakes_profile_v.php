@@ -13,6 +13,8 @@ $profile_weak_value = static function ($value) {
 	return $value === '' || in_array(strtolower($value), array('n/a', 'na', '-', 'belum ditentukan', 'default'), true);
 };
 $profile_puskesmas_display = !$profile_weak_value($profile_puskesmas_name) ? $profile_puskesmas_name : (!$profile_weak_value($profile_puskesmas_code) ? $profile_puskesmas_code : 'Belum dikonfigurasi');
+$profile_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_list) ? $puskesmas_staff_list : array();
+$profile_staff_count = isset($puskesmas_staff_count) ? (int) $puskesmas_staff_count : count($profile_staff_rows);
 $profile_rows = array(
 	array('id' => 'nama_lengkap', 'label' => 'Nama lengkap', 'icon' => 'bi bi-person-fill', 'value' => $profile_name, 'type' => 'text'),
 	array('id' => 'tgl', 'label' => 'Tanggal lahir', 'icon' => 'bi bi-calendar-event-fill', 'value' => $profile_birthdate, 'type' => 'date'),
@@ -55,6 +57,37 @@ $profile_rows = array(
 									<strong class="nk-info-value">Belum dikonfigurasi</strong>
 								</div>
 							</div>
+						</div>
+
+						<div class="nk-staff-card nk-staff-card--profile">
+							<div class="dl-profile-section-title">Personel Unit</div>
+							<p class="nk-staff-copy">Data personel yang terdaftar pada unit Puskesmas.</p>
+							<?php if (empty($profile_staff_rows)) : ?>
+								<div class="nk-staff-empty">Belum ada personel terdaftar.</div>
+							<?php else : ?>
+								<div class="nk-staff-list">
+									<?php foreach ($profile_staff_rows as $staff) :
+										$staff_name = trim((string) (isset($staff->nama) ? $staff->nama : ''));
+										$staff_profesi = trim((string) (isset($staff->profesi) ? $staff->profesi : ''));
+										$staff_phone = trim((string) (isset($staff->no_hp) ? $staff->no_hp : ''));
+										$staff_sip = trim((string) (isset($staff->nomor_sip) ? $staff->nomor_sip : ''));
+									?>
+										<div class="nk-staff-item">
+											<div class="nk-staff-main">
+												<strong><?= html_escape($staff_name !== '' ? $staff_name : 'Nama belum diisi'); ?></strong>
+												<?php if ($staff_profesi !== '') : ?><span><?= html_escape($staff_profesi); ?></span><?php endif; ?>
+											</div>
+											<?php if ($staff_phone !== '' || $staff_sip !== '') : ?>
+												<div class="nk-staff-meta">
+													<?php if ($staff_phone !== '') : ?><span><?= html_escape($staff_phone); ?></span><?php endif; ?>
+													<?php if ($staff_sip !== '') : ?><span>SIP <?= html_escape($staff_sip); ?></span><?php endif; ?>
+												</div>
+											<?php endif; ?>
+										</div>
+									<?php endforeach; ?>
+								</div>
+								<div class="nk-staff-more"><?= html_escape((string) $profile_staff_count); ?> personel terdaftar.</div>
+							<?php endif; ?>
 						</div>
 
 						<div class="dl-profile-info-card">
