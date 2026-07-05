@@ -583,6 +583,212 @@ class Home_nakes_m extends MX_Controller
 			->count_all_results('puskesmas_staff');
 	}
 
+	public function staff_assignment_table_ready()
+	{
+		if (!$this->db->table_exists('request_staff_assignments') || !$this->can_query_puskesmas_staff()) {
+			return false;
+		}
+
+		foreach (array('assignment_id', 'request_id', 'staff_id', 'kode_pkm', 'assigned_by_user_id', 'status', 'note', 'assigned_at', 'ended_at', 'created_at', 'updated_at') as $field) {
+			if (!$this->db->field_exists($field, 'request_staff_assignments')) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	public function get_active_staff_options_by_code($kode_pkm)
+	{
+		$kode_pkm = $this->normalize_staff_puskesmas_code($kode_pkm);
+		if ($kode_pkm === '' || !$this->can_query_puskesmas_staff()) {
+			return array();
+		}
+
+		return $this->db
+			->select('staff_id, nama, no_hp, profesi, nomor_sip, status')
+			->from('puskesmas_staff')
+			->where('kode_pkm', $kode_pkm)
+			->where('status', 'aktif')
+			->order_by('nama', 'ASC')
+			->order_by('staff_id', 'ASC')
+			->get()
+			->result();
+	}
+
+	public function get_active_staff_assignments_by_request_ids($request_ids)
+	{
+		if (!$this->staff_assignment_table_ready() || !is_array($request_ids)) {
+			return array();
+		}
+
+		$ids = array();
+		foreach ($request_ids as $request_id) {
+			$request_id = (int) $request_id;
+			if ($request_id > 0) {
+				$ids[$request_id] = $request_id;
+			}
+		}
+		if (empty($ids)) {
+			return array();
+		}
+
+		$rows = $this->db
+			->select('rsa.assignment_id, rsa.request_id, rsa.staff_id, rsa.kode_pkm, rsa.assigned_by_user_id, rsa.status, rsa.note, rsa.assigned_at, rsa.ended_at, ps.nama AS staff_nama, ps.no_hp AS staff_no_hp, ps.profesi AS staff_profesi, ps.nomor_sip AS staff_nomor_sip')
+			->from('request_staff_assignments AS rsa')
+			->join('puskesmas_staff AS ps', 'ps.staff_id = rsa.staff_id', 'left')
+			->where('rsa.status', 'aktif')
+			->where_in('rsa.request_id', array_values($ids))
+			->order_by('rsa.assigned_at', 'DESC')
+			->order_by('rsa.assignment_id', 'DESC')
+			->get()
+			->result();
+
+		$map = array();
+		foreach ($rows as $row) {
+			$request_id = (int) $row->request_id;
+			if ($request_id > 0 && !isset($map[$request_id])) {
+				$map[$request_id] = $row;
+			}
+		}
+
+		return $map;
+	}
+
+	public function get_active_staff_assignment($request_id)
+	{
+		$request_id = (int) $request_id;
+		if ($request_id < 1) {
+			return null;
+		}
+
+		$map = $this->get_active_staff_assignments_by_request_ids(array($request_id));
+		return isset($map[$request_id]) ? $map[$request_id] : null;
+	}
+
+	public function assign_staff_to_request($request_id, $staff_id, $kode_pkm, $assigned_by_user_id, $note = '')
+	{
+		$request_id = (int) $request_id;
+		$staff_id = (int) $staff_id;
+		$assigned_by_user_id = (int) $assigned_by_user_id;
+		$kode_pkm = $this->normalize_staff_puskesmas_code($kode_pkm);
+		$note = trim((string) $note);
+
+		if ($request_id < 1 || $staff_id < 1 || $assigned_by_user_id < 1 || $kode_pkm === '') {
+			return array('status' => 'error', 'message' => 'Data PIC personel tidak valid');
+		}
+		if (!$this->staff_assignment_table_ready()) {
+			return array('status' => 'error', 'message' => 'Tabel assignment PIC belum tersedia');
+		}
+
+		$request = $this->db
+			->select('request_id, request_status, assigned_puskesmas_code')
+			->from('requests')
+			->where('request_id', $request_id)
+			->where('assigned_puskesmas_code', $kode_pkm)
+			->get()
+			->row();
+		if (!$request) {
+			return array('status' => 'error', 'message' => 'Request tidak ditemukan atau bukan milik Puskesmas login');
+		}
+		if ((string) $request->request_status !== 'Accepted') {
+			return array('status' => 'error', 'message' => 'PIC hanya dapat ditetapkan pada request aktif');
+		}
+
+		$staff = $this->db
+			->select('staff_id')
+			->from('puskesmas_staff')
+			->where('staff_id', $staff_id)
+			->where('kode_pkm', $kode_pkm)
+			->where('status', 'aktif')
+			->get()
+			->row();
+		if (!$staff) {
+			return array('status' => 'error', 'message' => 'Personel tidak ditemukan atau bukan milik Puskesmas login');
+		}
+
+		$now = date('Y-m-d H:i:s');
+		$this->db->trans_begin();
+		$this->db
+			->where('request_id', $request_id)
+			->where('status', 'aktif')
+			->update('request_staff_assignments', array(
+				'status' => 'diganti',
+				'ended_at' => $now,
+				'updated_at' => $now,
+			));
+		$this->db->insert('request_staff_assignments', array(
+			'request_id' => $request_id,
+			'staff_id' => $staff_id,
+			'kode_pkm' => $kode_pkm,
+			'assigned_by_user_id' => $assigned_by_user_id,
+			'status' => 'aktif',
+			'note' => $note !== '' ? $note : null,
+			'assigned_at' => $now,
+			'created_at' => $now,
+			'updated_at' => $now,
+		));
+
+		if ($this->db->trans_status() === false) {
+			$this->db->trans_rollback();
+			return array('status' => 'error', 'message' => 'Gagal menetapkan PIC personel');
+		}
+
+		$this->db->trans_commit();
+		return array('status' => 'success', 'message' => 'PIC personel berhasil ditetapkan');
+	}
+
+	public function clear_staff_assignment($request_id, $kode_pkm, $assigned_by_user_id)
+	{
+		$request_id = (int) $request_id;
+		$assigned_by_user_id = (int) $assigned_by_user_id;
+		$kode_pkm = $this->normalize_staff_puskesmas_code($kode_pkm);
+
+		if ($request_id < 1 || $assigned_by_user_id < 1 || $kode_pkm === '') {
+			return array('status' => 'error', 'message' => 'Data PIC personel tidak valid');
+		}
+		if (!$this->staff_assignment_table_ready()) {
+			return array('status' => 'error', 'message' => 'Tabel assignment PIC belum tersedia');
+		}
+
+		$request = $this->db
+			->select('request_id, request_status, assigned_puskesmas_code')
+			->from('requests')
+			->where('request_id', $request_id)
+			->where('assigned_puskesmas_code', $kode_pkm)
+			->get()
+			->row();
+		if (!$request) {
+			return array('status' => 'error', 'message' => 'Request tidak ditemukan atau bukan milik Puskesmas login');
+		}
+		if ((string) $request->request_status !== 'Accepted') {
+			return array('status' => 'error', 'message' => 'PIC hanya dapat dibatalkan pada request aktif');
+		}
+
+		$now = date('Y-m-d H:i:s');
+		$this->db->trans_begin();
+		$this->db
+			->where('request_id', $request_id)
+			->where('kode_pkm', $kode_pkm)
+			->where('status', 'aktif')
+			->update('request_staff_assignments', array(
+				'status' => 'dibatalkan',
+				'ended_at' => $now,
+				'updated_at' => $now,
+			));
+		$changed = $this->db->affected_rows() > 0;
+
+		if ($this->db->trans_status() === false) {
+			$this->db->trans_rollback();
+			return array('status' => 'error', 'message' => 'Gagal membatalkan PIC personel');
+		}
+
+		$this->db->trans_commit();
+		return $changed
+			? array('status' => 'success', 'message' => 'PIC personel berhasil dibatalkan')
+			: array('status' => 'error', 'message' => 'PIC aktif tidak ditemukan');
+	}
+
 
 	public function update_profile($id, $data)
 	{
