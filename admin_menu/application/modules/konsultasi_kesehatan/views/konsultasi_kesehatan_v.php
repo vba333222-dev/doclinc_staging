@@ -14,6 +14,7 @@
 							<th><i class="fas fa-comment-medical"></i> Keluhan Warga</th>
 							<th><i class="fas fa-user"></i> Nama Warga</th>
 							<th><i class="fas fa-map-marked-alt"></i> Puskesmas</th>
+							<th><i class="fas fa-user-nurse"></i> PIC Personel</th>
 							<th><i class="fas fa-map-marker-alt"></i> Alamat</th>
 							<th><i class="fas fa-calendar-alt"></i> Tanggal</th>
 							<th><i class="fas fa-info-circle"></i> Status</th>
@@ -36,6 +37,16 @@
 								<td><?= html_escape($row->request_description ?? '-'); ?></td>
 								<td><?= html_escape($row->nama_warga ?? '-'); ?></td>
 								<td><?= html_escape($row->puskesmas ?? '-'); ?></td>
+								<td>
+									<?php if (!empty($row->pic_staff_name)): ?>
+										<strong><?= html_escape($row->pic_staff_name); ?></strong>
+										<?php if (!empty($row->pic_staff_profesi)): ?>
+											<br><small class="text-muted"><?= html_escape($row->pic_staff_profesi); ?></small>
+										<?php endif; ?>
+									<?php else: ?>
+										<span class="text-muted">Belum ditentukan</span>
+									<?php endif; ?>
+								</td>
 								<td><?= html_escape($row->location ?? '-'); ?></td>
 								<td><?= !empty($row->date) ? date('d-m-Y', strtotime($row->date)) : '-'; ?></td>
 								<td><?php
