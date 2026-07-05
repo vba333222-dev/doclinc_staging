@@ -81,8 +81,31 @@ $staff_assignment_ready = isset($staff_assignment_ready) ? (bool) $staff_assignm
 $puskesmas_staff_options = isset($puskesmas_staff_options) && is_array($puskesmas_staff_options) ? $puskesmas_staff_options : array();
 $request_staff_assignment_map = isset($request_staff_assignment_map) && is_array($request_staff_assignment_map) ? $request_staff_assignment_map : array();
 $request_staff_latest_assignment_map = isset($request_staff_latest_assignment_map) && is_array($request_staff_latest_assignment_map) ? $request_staff_latest_assignment_map : array();
+$request_event_map = isset($request_event_map) && is_array($request_event_map) ? $request_event_map : array();
 $staff_assignment_success = $this->session->flashdata('staff_assignment_success');
 $staff_assignment_error = $this->session->flashdata('staff_assignment_error');
+
+$history_event_label = static function ($event) {
+	$event_type = isset($event->event_type) ? (string) $event->event_type : '';
+	if ($event_type === 'pic_assigned') {
+		return 'PIC personel ditetapkan';
+	}
+	if ($event_type === 'pic_changed') {
+		return 'PIC personel diganti';
+	}
+	if ($event_type === 'pic_cleared') {
+		return 'PIC personel dibatalkan';
+	}
+	return '';
+};
+
+$history_event_time = static function ($event) {
+	if (empty($event->created_at)) {
+		return '';
+	}
+	$timestamp = strtotime($event->created_at);
+	return $timestamp ? date('d M H:i', $timestamp) : '';
+};
 ?>
 				<div id="riwayat_konsul" class="content">
 					<div class="dl-history-page-head">
@@ -137,6 +160,7 @@ $staff_assignment_error = $this->session->flashdata('staff_assignment_error');
 									$show_mode = !$history_is_weak_value($mode_label);
 									$show_visit_status = !$history_is_weak_value($visit_status_label);
 									$pic_assignment = isset($request_staff_assignment_map[(int) $x->request_id]) ? $request_staff_assignment_map[(int) $x->request_id] : null;
+									$request_events = isset($request_event_map[(int) $x->request_id]) ? array_slice($request_event_map[(int) $x->request_id], 0, 5) : array();
 									$visit_next_status = array(
 										'not_started' => 'en_route',
 										'en_route' => 'arrived',
@@ -235,6 +259,25 @@ $staff_assignment_error = $this->session->flashdata('staff_assignment_error');
 													<?php endif; ?>
 												</div>
 											</div>
+											<?php if (!empty($request_events)) : ?>
+												<div class="nk-action-panel nk-action-panel--timeline nk-card-section">
+													<div class="nk-action-panel__title">Timeline Operasional</div>
+													<div class="nk-timeline-list">
+														<?php foreach ($request_events as $event) :
+															$event_label = $history_event_label($event);
+															$event_time = $history_event_time($event);
+															if ($event_label === '') {
+																continue;
+															}
+														?>
+															<div class="nk-timeline-item">
+																<strong><?= html_escape($event_label); ?></strong>
+																<?php if ($event_time !== '') : ?><span><?= html_escape($event_time); ?></span><?php endif; ?>
+															</div>
+														<?php endforeach; ?>
+													</div>
+												</div>
+											<?php endif; ?>
 											<div class="visit-route-provider-note mt-2 d-none" data-route-provider-note="<?= html_escape((int) $x->request_id); ?>"></div>
 											<div class="alert alert-success py-2 px-3 mt-2 mb-0 d-none" data-arrival-notice="<?= html_escape((int) $x->request_id); ?>">
 												<div class="small fw-bold" data-arrival-message="<?= html_escape((int) $x->request_id); ?>"></div>
@@ -323,6 +366,7 @@ $staff_assignment_error = $this->session->flashdata('staff_assignment_error');
 									$patient_photo = $history_patient_photo($x);
 									$complaint = $history_complaint_summary($keluhan);
 									$pic_assignment = isset($request_staff_assignment_map[(int) $x->request_id]) ? $request_staff_assignment_map[(int) $x->request_id] : (isset($request_staff_latest_assignment_map[(int) $x->request_id]) ? $request_staff_latest_assignment_map[(int) $x->request_id] : null);
+									$request_events = isset($request_event_map[(int) $x->request_id]) ? array_slice($request_event_map[(int) $x->request_id], 0, 5) : array();
 								?>
 									<div class="card shadow dl-history-card dl-history-card-completed" data-request-id="<?= (int) $x->request_id; ?>" data-visit-id="<?= (int) $x->request_id; ?>">
 										<div class="dl-history-card-head">
@@ -359,6 +403,25 @@ $staff_assignment_error = $this->session->flashdata('staff_assignment_error');
 													<div class="nk-info-row"><span class="nk-info-label">Hasil</span><strong class="nk-info-value"><?= html_escape($completed_preview); ?></strong></div>
 												<?php endif; ?>
 											</div>
+											<?php if (!empty($request_events)) : ?>
+												<div class="nk-action-panel nk-action-panel--timeline nk-card-section">
+													<div class="nk-action-panel__title">Timeline Operasional</div>
+													<div class="nk-timeline-list">
+														<?php foreach ($request_events as $event) :
+															$event_label = $history_event_label($event);
+															$event_time = $history_event_time($event);
+															if ($event_label === '') {
+																continue;
+															}
+														?>
+															<div class="nk-timeline-item">
+																<strong><?= html_escape($event_label); ?></strong>
+																<?php if ($event_time !== '') : ?><span><?= html_escape($event_time); ?></span><?php endif; ?>
+															</div>
+														<?php endforeach; ?>
+													</div>
+												</div>
+											<?php endif; ?>
 										</div>
 										<div class="card-footer dl-history-actions dl-history-actions-inline">
 											<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-secondary btn-sm rounded-pill">
