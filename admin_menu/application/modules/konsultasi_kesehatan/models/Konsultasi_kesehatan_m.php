@@ -92,6 +92,90 @@ class Konsultasi_kesehatan_m extends MX_Controller
 		return true;
 	}
 
+	private function can_query_request_events()
+	{
+		if (!$this->db->table_exists('request_events')) {
+			return false;
+		}
+
+		foreach (array('event_id', 'request_id', 'event_type', 'message', 'created_at') as $field) {
+			if (!$this->db->field_exists($field, 'request_events')) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private function get_request_event_map($request_ids, $limit_per_request = 3)
+	{
+		if (!$this->can_query_request_events() || !is_array($request_ids)) {
+			return array();
+		}
+
+		$ids = array();
+		foreach ($request_ids as $request_id) {
+			$request_id = (int) $request_id;
+			if ($request_id > 0) {
+				$ids[$request_id] = $request_id;
+			}
+		}
+		if (empty($ids)) {
+			return array();
+		}
+
+		$limit_per_request = (int) $limit_per_request;
+		if ($limit_per_request < 1) {
+			$limit_per_request = 3;
+		}
+		if ($limit_per_request > 5) {
+			$limit_per_request = 5;
+		}
+
+		$select = array('event_id', 'request_id', 'event_type', 'message', 'created_at');
+		foreach (array('actor_role', 'actor_user_id', 'actor_staff_id') as $field) {
+			if ($this->db->field_exists($field, 'request_events')) {
+				$select[] = $field;
+			}
+		}
+
+		$rows = $this->db
+			->select(implode(', ', $select))
+			->from('request_events')
+			->where_in('request_id', array_values($ids))
+			->where_in('event_type', array(
+				'request_created',
+				'request_accepted',
+				'request_cancelled',
+				'pic_assigned',
+				'pic_changed',
+				'pic_cleared',
+				'visit_started',
+				'visit_arrived',
+				'visit_in_service',
+				'visit_completed',
+				'request_completed',
+			))
+			->order_by('request_id', 'ASC')
+			->order_by('created_at', 'DESC')
+			->order_by('event_id', 'DESC')
+			->get()
+			->result();
+
+		$map = array();
+		foreach ($rows as $row) {
+			$request_id = (int) $row->request_id;
+			if (!isset($map[$request_id])) {
+				$map[$request_id] = array();
+			}
+			if (count($map[$request_id]) < $limit_per_request) {
+				$map[$request_id][] = $row;
+			}
+		}
+
+		return $map;
+	}
+
 	public function get_data_konsul()
 	{
 		if (!$this->db->table_exists('requests') || !$this->db->table_exists('users')) {
@@ -186,6 +270,17 @@ class Konsultasi_kesehatan_m extends MX_Controller
 		foreach ($hasil as $row) {
 			$row->request_description = $this->safe_decrypt($row->request_description, '-');
 		}
+
+		$request_ids = array();
+		foreach ($hasil as $row) {
+			$request_ids[] = isset($row->request_id) ? (int) $row->request_id : 0;
+		}
+		$event_map = $this->get_request_event_map($request_ids, 3);
+		foreach ($hasil as $row) {
+			$request_id = isset($row->request_id) ? (int) $row->request_id : 0;
+			$row->request_events = isset($event_map[$request_id]) ? $event_map[$request_id] : array();
+		}
+
 		return $hasil;
 	}
 }

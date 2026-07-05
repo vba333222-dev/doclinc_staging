@@ -78,6 +78,79 @@ class Laporan_m extends MX_Controller
 		return true;
 	}
 
+	private function can_query_request_events()
+	{
+		if (!$this->db->table_exists('request_events')) {
+			return false;
+		}
+
+		foreach (array('event_id', 'request_id', 'event_type', 'message', 'created_at') as $field) {
+			if (!$this->db->field_exists($field, 'request_events')) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private function get_latest_request_event_map($request_ids)
+	{
+		if (!$this->can_query_request_events() || !is_array($request_ids)) {
+			return array();
+		}
+
+		$ids = array();
+		foreach ($request_ids as $request_id) {
+			$request_id = (int) $request_id;
+			if ($request_id > 0) {
+				$ids[$request_id] = $request_id;
+			}
+		}
+		if (empty($ids)) {
+			return array();
+		}
+
+		$select = array('event_id', 'request_id', 'event_type', 'message', 'created_at');
+		foreach (array('actor_role', 'actor_user_id', 'actor_staff_id') as $field) {
+			if ($this->db->field_exists($field, 'request_events')) {
+				$select[] = $field;
+			}
+		}
+
+		$rows = $this->db
+			->select(implode(', ', $select))
+			->from('request_events')
+			->where_in('request_id', array_values($ids))
+			->where_in('event_type', array(
+				'request_created',
+				'request_accepted',
+				'request_cancelled',
+				'pic_assigned',
+				'pic_changed',
+				'pic_cleared',
+				'visit_started',
+				'visit_arrived',
+				'visit_in_service',
+				'visit_completed',
+				'request_completed',
+			))
+			->order_by('request_id', 'ASC')
+			->order_by('created_at', 'DESC')
+			->order_by('event_id', 'DESC')
+			->get()
+			->result();
+
+		$map = array();
+		foreach ($rows as $row) {
+			$request_id = (int) $row->request_id;
+			if (!isset($map[$request_id])) {
+				$map[$request_id] = $row;
+			}
+		}
+
+		return $map;
+	}
+
 	private function apply_consultation_report_base($aggregate_select = '')
 	{
 		$has_konsultasi = $this->db->table_exists('konsultasi');
@@ -100,6 +173,9 @@ class Laporan_m extends MX_Controller
 		$include_pic = $aggregate_select === '' && $this->can_query_pic_assignment();
 
 		$select = "DATE($date_expr) as tanggal, $date_expr as waktu, $dokter_expr AS name, $diagnosa_expr AS diagnosa, $puskesmas_expr AS nama_puskesmas, users.nama as nama_user";
+		if ($aggregate_select === '') {
+			$select = 'requests.request_id, ' . $select;
+		}
 		if ($include_pic) {
 			$select .= ", pic_staff.staff_id AS pic_staff_id, pic_staff.nama AS pic_staff_name, pic_staff.profesi AS pic_staff_profesi, pic_staff.no_hp AS pic_staff_no_hp, pic_staff.nomor_sip AS pic_staff_nomor_sip, pic_assignment.assigned_at AS pic_assigned_at, pic_assignment.assigned_by_user_id AS pic_assigned_by_user_id, pic_assigned_by.nama AS pic_assigned_by_name";
 		} elseif ($aggregate_select === '') {
@@ -164,7 +240,18 @@ class Laporan_m extends MX_Controller
 
 		$this->db->order_by("nama_puskesmas", "ASC");
 		$query = $this->db->get();
-		return $query->result();
+		$rows = $query->result();
+		$request_ids = array();
+		foreach ($rows as $row) {
+			$request_ids[] = isset($row->request_id) ? (int) $row->request_id : 0;
+		}
+		$event_map = $this->get_latest_request_event_map($request_ids);
+		foreach ($rows as $row) {
+			$request_id = isset($row->request_id) ? (int) $row->request_id : 0;
+			$row->latest_request_event = isset($event_map[$request_id]) ? $event_map[$request_id] : null;
+		}
+
+		return $rows;
 	}
 
 	public function get_laporan_perhari_jumlah_pasien($tanggal = null, $puskesmas = null, $dokter = null)

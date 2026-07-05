@@ -15,6 +15,7 @@
 							<th><i class="fas fa-user"></i> Nama Warga</th>
 							<th><i class="fas fa-map-marked-alt"></i> Puskesmas</th>
 							<th><i class="fas fa-user-nurse"></i> PIC Personel</th>
+							<th><i class="fas fa-history"></i> Timeline</th>
 							<th><i class="fas fa-map-marker-alt"></i> Alamat</th>
 							<th><i class="fas fa-calendar-alt"></i> Tanggal</th>
 							<th><i class="fas fa-info-circle"></i> Status</th>
@@ -45,6 +46,46 @@
 										<?php endif; ?>
 									<?php else: ?>
 										<span class="text-muted">Belum ditentukan</span>
+									<?php endif; ?>
+								</td>
+								<td>
+									<?php
+									$event_labels = array(
+										'request_created' => 'Permintaan dibuat',
+										'request_accepted' => 'Permintaan diterima',
+										'request_cancelled' => 'Permintaan dibatalkan/ditolak',
+										'pic_assigned' => 'PIC ditetapkan',
+										'pic_changed' => 'PIC diganti',
+										'pic_cleared' => 'PIC dibatalkan',
+										'visit_started' => 'Perjalanan dimulai',
+										'visit_arrived' => 'Tiba di lokasi',
+										'visit_in_service' => 'Pelayanan dimulai',
+										'visit_completed' => 'Kunjungan selesai',
+										'request_completed' => 'Permintaan selesai',
+									);
+									$request_events = !empty($row->request_events) && is_array($row->request_events) ? $row->request_events : array();
+									?>
+									<?php if (!empty($request_events)): ?>
+										<div class="small">
+											<?php foreach ($request_events as $event): ?>
+												<?php
+												$event_type = isset($event->event_type) ? (string) $event->event_type : '';
+												$event_label = !empty($event->message) ? $event->message : (isset($event_labels[$event_type]) ? $event_labels[$event_type] : '');
+												$event_time = !empty($event->created_at) && strtotime($event->created_at) ? date('d-m H:i', strtotime($event->created_at)) : '';
+												if ($event_label === '') {
+													continue;
+												}
+												?>
+												<div class="mb-1">
+													<strong><?= html_escape($event_label); ?></strong>
+													<?php if ($event_time !== ''): ?>
+														<br><span class="text-muted"><?= html_escape($event_time); ?></span>
+													<?php endif; ?>
+												</div>
+											<?php endforeach; ?>
+										</div>
+									<?php else: ?>
+										<span class="text-muted">Belum ada timeline</span>
 									<?php endif; ?>
 								</td>
 								<td><?= html_escape($row->location ?? '-'); ?></td>

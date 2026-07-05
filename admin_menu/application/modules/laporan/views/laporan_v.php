@@ -171,18 +171,39 @@
 				dataType: 'json',
 				success: function(response) {
 					if (response.status === 'success' && response.data.length > 0) {
+						var eventLabels = {
+							request_created: 'Permintaan dibuat',
+							request_accepted: 'Permintaan diterima',
+							request_cancelled: 'Permintaan dibatalkan/ditolak',
+							pic_assigned: 'PIC ditetapkan',
+							pic_changed: 'PIC diganti',
+							pic_cleared: 'PIC dibatalkan',
+							visit_started: 'Perjalanan dimulai',
+							visit_arrived: 'Tiba di lokasi',
+							visit_in_service: 'Pelayanan dimulai',
+							visit_completed: 'Kunjungan selesai',
+							request_completed: 'Permintaan selesai'
+						};
 						var html = '<div id="print-area"><h5>Hasil Laporan Per Hari</h5>';
 						html += '<div class="table-responsive"><table class="table table-bordered table-sm"><thead><tr>';
-						html += '<th>No</th><th>Tanggal</th><th>Puskesmas</th><th>PIC Personel</th><th>Dokter</th><th>Nama Pasien</th><th>Diagnosa</th>';
+						html += '<th>No</th><th>Tanggal</th><th>Puskesmas</th><th>PIC Personel</th><th>Aktivitas Terakhir</th><th>Dokter</th><th>Nama Pasien</th><th>Diagnosa</th>';
 						html += '</tr></thead><tbody>';
 						$.each(response.data, function(i, row) {
 							var picName = row.pic_staff_name || 'Belum ditentukan';
 							var picProfesi = row.pic_staff_profesi ? '<br><small>' + $('<div>').text(row.pic_staff_profesi).html() + '</small>' : '';
+							var latestEvent = row.latest_request_event || null;
+							var latestLabel = 'Belum ada aktivitas';
+							var latestTime = '';
+							if (latestEvent) {
+								latestLabel = latestEvent.message || eventLabels[latestEvent.event_type] || 'Aktivitas tercatat';
+								latestTime = latestEvent.created_at || '';
+							}
 							html += '<tr>';
 							html += '<td>' + (i + 1) + '</td>';
 							html += '<td>' + $('<div>').text(row.waktu).html() + '</td>';
 							html += '<td>' + $('<div>').text(row.nama_puskesmas).html() + '</td>';
 							html += '<td>' + $('<div>').text(picName).html() + picProfesi + '</td>';
+							html += '<td>' + $('<div>').text(latestLabel).html() + (latestTime ? '<br><small>' + $('<div>').text(latestTime).html() + '</small>' : '') + '</td>';
 							html += '<td>' + $('<div>').text(row.name).html() + '</td>';
 							html += '<td>' + $('<div>').text(row.nama_user).html() + '</td>';
 							html += '<td>' + $('<div>').text(row.diagnosa).html() + '</td>';
