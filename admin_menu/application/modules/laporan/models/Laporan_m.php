@@ -151,11 +151,49 @@ class Laporan_m extends MX_Controller
 		return $map;
 	}
 
+	public function get_puskesmas_options()
+	{
+		if (!$this->db->table_exists('m_puskesmas')) {
+			return array();
+		}
+
+		$this->db->select('kode_pkm, nama_puskesmas');
+		$this->db->from('m_puskesmas');
+		$this->db->where("UPPER(TRIM(kode_pkm)) <>", 'DEFAULT');
+		if ($this->db->field_exists('status', 'm_puskesmas')) {
+			$this->db->where('status', 'aktif');
+		}
+		$this->db->order_by('nama_puskesmas', 'ASC');
+
+		return $this->db->get()->result();
+	}
+
+	private function apply_report_filters($date_expr, $diagnosa_expr, $puskesmas_code_expr, $dokter_expr, $tanggal = null, $puskesmas = null, $dokter = null, $status = null, $keyword = null)
+	{
+		if ($tanggal) {
+			$this->db->where("DATE($date_expr) = " . $this->db->escape($tanggal), NULL, FALSE);
+		}
+		if ($puskesmas === '__legacy__') {
+			$this->db->where("($puskesmas_code_expr IS NULL)", NULL, FALSE);
+		} elseif ($puskesmas) {
+			$this->db->where($puskesmas_code_expr . ' = ' . $this->db->escape($puskesmas), NULL, FALSE);
+		}
+		if ($dokter) {
+			$this->db->where($dokter_expr . ' LIKE ' . $this->db->escape('%' . $this->db->escape_like_str($dokter) . '%'), NULL, FALSE);
+		}
+		if (in_array($status, array('Pending', 'Accepted', 'Completed', 'Cancelled'), true)) {
+			$this->db->where('requests.request_status', $status);
+		}
+		if ($keyword) {
+			$like = '%' . $this->db->escape_like_str($keyword) . '%';
+			$this->db->where("(CAST(requests.request_id AS CHAR) LIKE " . $this->db->escape($like) . " OR users.nama LIKE " . $this->db->escape($like) . " OR $diagnosa_expr LIKE " . $this->db->escape($like) . ")", NULL, FALSE);
+		}
+	}
+
 	private function apply_consultation_report_base($aggregate_select = '')
 	{
 		$has_konsultasi = $this->db->table_exists('konsultasi');
-		$has_user_remark = $this->db->field_exists('remark', 'users');
-		$has_puskesmas = $this->db->table_exists('m_puskesmas') && $has_user_remark;
+		$has_puskesmas = $this->db->table_exists('m_puskesmas');
 		$has_dokter = $this->db->table_exists('m_dokter');
 		$has_assigned_puskesmas_code = $this->db->field_exists('assigned_puskesmas_code', 'requests');
 		$has_assigned_puskesmas_name = $this->db->field_exists('assigned_puskesmas_name', 'requests');
@@ -165,16 +203,20 @@ class Laporan_m extends MX_Controller
 		$assigned_puskesmas_name_expr = $has_assigned_puskesmas_name ? "NULLIF(TRIM(requests.assigned_puskesmas_name), '')" : 'NULL';
 		$assigned_puskesmas_code_expr = $has_assigned_puskesmas_code ? "NULLIF(TRIM(requests.assigned_puskesmas_code), '')" : 'NULL';
 		$routed_puskesmas_code_expr = "CASE WHEN UPPER($assigned_puskesmas_code_expr) = 'DEFAULT' THEN NULL ELSE $assigned_puskesmas_code_expr END";
-		$legacy_provider_code_expr = $has_user_remark ? "CASE WHEN UPPER(TRIM(provider_user.remark)) = 'DEFAULT' THEN NULL ELSE NULLIF(TRIM(provider_user.remark), '') END" : 'NULL';
+		$assigned_puskesmas_name_clean_expr = "CASE WHEN UPPER(COALESCE($assigned_puskesmas_name_expr, '')) IN ('DEFAULT', 'PUSKESMAS DEFAULT') THEN NULL ELSE $assigned_puskesmas_name_expr END";
 		$puskesmas_expr = $has_puskesmas
-			? "COALESCE($assigned_puskesmas_name_expr, assigned_puskesmas.nama_puskesmas, provider_puskesmas.nama_puskesmas, 'Legacy / Belum terklasifikasi')"
-			: "COALESCE($assigned_puskesmas_name_expr, $routed_puskesmas_code_expr, $legacy_provider_code_expr, 'Legacy / Belum terklasifikasi')";
+			? "COALESCE($assigned_puskesmas_name_clean_expr, assigned_puskesmas.nama_puskesmas, $routed_puskesmas_code_expr, 'Legacy / Belum terklasifikasi')"
+			: "COALESCE($assigned_puskesmas_name_clean_expr, $routed_puskesmas_code_expr, 'Legacy / Belum terklasifikasi')";
 		$dokter_expr = $has_dokter ? "COALESCE(m_dokter.name, dokter_user.nama, '-')" : "COALESCE(dokter_user.nama, '-')";
 		$include_pic = $aggregate_select === '' && $this->can_query_pic_assignment();
 
-		$select = "DATE($date_expr) as tanggal, $date_expr as waktu, $dokter_expr AS name, $diagnosa_expr AS diagnosa, $puskesmas_expr AS nama_puskesmas, users.nama as nama_user";
 		if ($aggregate_select === '') {
-			$select = 'requests.request_id, ' . $select;
+			$saran_expr = $has_konsultasi ? 'konsultasi.saran' : 'medicalrecords.recommendations';
+			$select = "requests.request_id, DATE($date_expr) as tanggal, $date_expr as waktu, requests.request_status, $dokter_expr AS name, $diagnosa_expr AS diagnosa, $saran_expr AS saran, $puskesmas_expr AS nama_puskesmas, users.nama as nama_user";
+		} elseif (strpos($aggregate_select, 'jumlah_diagnosa') !== false) {
+			$select = "$puskesmas_expr AS nama_puskesmas, $diagnosa_expr AS diagnosa";
+		} else {
+			$select = "$puskesmas_expr AS nama_puskesmas";
 		}
 		if ($include_pic) {
 			$select .= ", pic_staff.staff_id AS pic_staff_id, pic_staff.nama AS pic_staff_name, pic_staff.profesi AS pic_staff_profesi, pic_staff.no_hp AS pic_staff_no_hp, pic_staff.nomor_sip AS pic_staff_nomor_sip, pic_assignment.assigned_at AS pic_assigned_at, pic_assignment.assigned_by_user_id AS pic_assigned_by_user_id, pic_assigned_by.nama AS pic_assigned_by_name";
@@ -189,10 +231,8 @@ class Laporan_m extends MX_Controller
 		$this->db->from('requests');
 		$this->db->join('users', 'users.userId = requests.user_id', 'left');
 		$this->db->join('users dokter_user', 'dokter_user.userId = requests.dokter_id', 'left');
-		$this->db->join('users provider_user', 'provider_user.userId = requests.dokter_id', 'left');
 		if ($has_puskesmas) {
 			$this->db->join('m_puskesmas assigned_puskesmas', "assigned_puskesmas.kode_pkm = $routed_puskesmas_code_expr", 'left', FALSE);
-			$this->db->join('m_puskesmas provider_puskesmas', "provider_puskesmas.kode_pkm = provider_user.remark AND UPPER(TRIM(provider_user.remark)) <> 'DEFAULT'", 'left', FALSE);
 		}
 		if ($has_dokter) {
 			$this->db->join('m_dokter', 'm_dokter.professional_id = requests.dokter_id', 'left');
@@ -217,26 +257,17 @@ class Laporan_m extends MX_Controller
 			$this->db->where('medicalrecords.request_id IS NOT NULL', NULL, FALSE);
 		}
 
-		return array($date_expr, $diagnosa_expr, $puskesmas_expr, $dokter_expr);
+		return array($date_expr, $diagnosa_expr, $puskesmas_expr, $dokter_expr, $routed_puskesmas_code_expr);
 	}
 
-	public function get_laporan_perhari($tanggal = null, $puskesmas = null, $dokter = null)
+	public function get_laporan_perhari($tanggal = null, $puskesmas = null, $dokter = null, $status = null, $keyword = null)
 	{
 		if (!$this->can_query_consultation_reports()) {
 			return array();
 		}
 
-		list($date_expr, $diagnosa_expr, $puskesmas_expr, $dokter_expr) = $this->apply_consultation_report_base();
-
-		if ($tanggal) {
-			$this->db->where("DATE($date_expr) = " . $this->db->escape($tanggal), NULL, FALSE);
-		}
-		if ($puskesmas) {
-			$this->db->where($puskesmas_expr . ' = ' . $this->db->escape($puskesmas), NULL, FALSE);
-		}
-		if ($dokter) {
-			$this->db->where($dokter_expr . ' = ' . $this->db->escape($dokter), NULL, FALSE);
-		}
+		list($date_expr, $diagnosa_expr, $puskesmas_expr, $dokter_expr, $puskesmas_code_expr) = $this->apply_consultation_report_base();
+		$this->apply_report_filters($date_expr, $diagnosa_expr, $puskesmas_code_expr, $dokter_expr, $tanggal, $puskesmas, $dokter, $status, $keyword);
 
 		$this->db->order_by("nama_puskesmas", "ASC");
 		$query = $this->db->get();
@@ -254,23 +285,14 @@ class Laporan_m extends MX_Controller
 		return $rows;
 	}
 
-	public function get_laporan_perhari_jumlah_pasien($tanggal = null, $puskesmas = null, $dokter = null)
+	public function get_laporan_perhari_jumlah_pasien($tanggal = null, $puskesmas = null, $dokter = null, $status = null, $keyword = null)
 	{
 		if (!$this->can_query_consultation_reports()) {
 			return array();
 		}
 
-		list($date_expr, $diagnosa_expr, $puskesmas_expr, $dokter_expr) = $this->apply_consultation_report_base('COUNT(*) as jumlah_pasien');
-
-		if ($tanggal) {
-			$this->db->where("DATE($date_expr) = " . $this->db->escape($tanggal), NULL, FALSE);
-		}
-		if ($puskesmas) {
-			$this->db->where($puskesmas_expr . ' = ' . $this->db->escape($puskesmas), NULL, FALSE);
-		}
-		if ($dokter) {
-			$this->db->where($dokter_expr . ' = ' . $this->db->escape($dokter), NULL, FALSE);
-		}
+		list($date_expr, $diagnosa_expr, $puskesmas_expr, $dokter_expr, $puskesmas_code_expr) = $this->apply_consultation_report_base('COUNT(*) as jumlah_pasien');
+		$this->apply_report_filters($date_expr, $diagnosa_expr, $puskesmas_code_expr, $dokter_expr, $tanggal, $puskesmas, $dokter, $status, $keyword);
 
 		$this->db->order_by("nama_puskesmas", "ASC");
 		$this->db->group_by("nama_puskesmas");
@@ -278,23 +300,14 @@ class Laporan_m extends MX_Controller
 		return $query->result();
 	}
 
-	public function get_laporan_perhari_jumlah_diagnosa($tanggal = null, $puskesmas = null, $dokter = null)
+	public function get_laporan_perhari_jumlah_diagnosa($tanggal = null, $puskesmas = null, $dokter = null, $status = null, $keyword = null)
 	{
 		if (!$this->can_query_consultation_reports()) {
 			return array();
 		}
 
-		list($date_expr, $diagnosa_expr, $puskesmas_expr, $dokter_expr) = $this->apply_consultation_report_base('COUNT(*) as jumlah_diagnosa');
-
-		if ($tanggal) {
-			$this->db->where("DATE($date_expr) = " . $this->db->escape($tanggal), NULL, FALSE);
-		}
-		if ($puskesmas) {
-			$this->db->where($puskesmas_expr . ' = ' . $this->db->escape($puskesmas), NULL, FALSE);
-		}
-		if ($dokter) {
-			$this->db->where($dokter_expr . ' = ' . $this->db->escape($dokter), NULL, FALSE);
-		}
+		list($date_expr, $diagnosa_expr, $puskesmas_expr, $dokter_expr, $puskesmas_code_expr) = $this->apply_consultation_report_base('COUNT(*) as jumlah_diagnosa');
+		$this->apply_report_filters($date_expr, $diagnosa_expr, $puskesmas_code_expr, $dokter_expr, $tanggal, $puskesmas, $dokter, $status, $keyword);
 
 		$this->db->order_by("nama_puskesmas", "ASC");
 		$this->db->order_by("jumlah_diagnosa", "DESC");

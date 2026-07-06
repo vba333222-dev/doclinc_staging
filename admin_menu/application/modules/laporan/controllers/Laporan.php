@@ -24,15 +24,17 @@ class Laporan extends MX_Controller
 				$tanggal = $this->input->get('tanggal');
 				$puskesmas = $this->input->get('puskesmas');
 				$dokter = $this->input->get('dokter');
+				$status = $this->input->get('status');
+				$keyword = $this->input->get('keyword');
 
 				$tipeBtn = $this->input->get('tipeBtn');
 
 				if ($tipeBtn == 1) {
-					$data = $this->Laporan_m->get_laporan_perhari($tanggal, $puskesmas, $dokter);
+					$data = $this->Laporan_m->get_laporan_perhari($tanggal, $puskesmas, $dokter, $status, $keyword);
 				} elseif ($tipeBtn == 2) {
-					$data = $this->Laporan_m->get_laporan_perhari_jumlah_pasien($tanggal, $puskesmas, $dokter);
+					$data = $this->Laporan_m->get_laporan_perhari_jumlah_pasien($tanggal, $puskesmas, $dokter, $status, $keyword);
 				} elseif ($tipeBtn == 3) {
-					$data = $this->Laporan_m->get_laporan_perhari_jumlah_diagnosa($tanggal, $puskesmas, $dokter);
+					$data = $this->Laporan_m->get_laporan_perhari_jumlah_diagnosa($tanggal, $puskesmas, $dokter, $status, $keyword);
 				}
 			} elseif ($tipe === 'perminggu') {
 				$tanggal_awal = $this->input->get('tanggal_awal'); // optional filter mingguan
@@ -50,8 +52,9 @@ class Laporan extends MX_Controller
 			]));
 		} else {
 			// Akses biasa (non-AJAX)
+			$x['puskesmas_options'] = $this->Laporan_m->get_puskesmas_options();
 			$this->load->view('commons/header');
-			$this->load->view('laporan_v');
+			$this->load->view('laporan_v', $x);
 			$this->load->view('commons/footer');
 		}
 	}

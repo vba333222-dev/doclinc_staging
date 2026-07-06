@@ -1,5 +1,11 @@
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-file-alt"></i> Laporan</h1>
+<?php
+$puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ? $puskesmas_options : array();
+?>
+<div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here">
+	<div>
+		<h1 class="h3 mb-1 font-weight-bold"><i class="fas fa-fw fa-file-alt"></i> Laporan</h1>
+		<div class="text-white-50">Rekap konsultasi berdasarkan tanggal, status, Puskesmas, PIC, dan aktivitas terakhir.</div>
+	</div>
 	<!-- <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a> -->
 </div>
 <!-- Content Row -->
@@ -56,11 +62,31 @@
 			</div>
 			<div class="col-auto">
 				<label for="puskesmas_hari" class="col-form-label">Nama Puskesmas</label>
-				<input type="text" class="form-control" id="puskesmas_hari" name="puskesmas" placeholder="Nama Puskesmas">
+				<select class="form-control" id="puskesmas_hari" name="puskesmas">
+					<option value="">Semua Puskesmas</option>
+					<?php foreach ($puskesmas_options as $puskesmas): ?>
+						<option value="<?= html_escape($puskesmas->kode_pkm); ?>"><?= html_escape($puskesmas->nama_puskesmas); ?></option>
+					<?php endforeach; ?>
+					<option value="__legacy__">Legacy / Belum terklasifikasi</option>
+				</select>
 			</div>
 			<div class="col-auto">
-				<label for="dokter_hari" class="col-form-label">Nama Dokter</label>
-				<input type="text" class="form-control" id="dokter_hari" name="dokter" placeholder="Nama Dokter">
+				<label for="status_hari" class="col-form-label">Status</label>
+				<select class="form-control" id="status_hari" name="status">
+					<option value="">Semua</option>
+					<option value="Pending">Pending</option>
+					<option value="Accepted">Accepted</option>
+					<option value="Completed">Completed</option>
+					<option value="Cancelled">Cancelled</option>
+				</select>
+			</div>
+			<div class="col-auto">
+				<label for="dokter_hari" class="col-form-label">Akun Puskesmas</label>
+				<input type="text" class="form-control" id="dokter_hari" name="dokter" placeholder="Nama akun">
+			</div>
+			<div class="col-auto">
+				<label for="keyword_hari" class="col-form-label">Keyword</label>
+				<input type="text" class="form-control" id="keyword_hari" name="keyword" placeholder="ID, warga, diagnosa">
 			</div>
 			<input type="hidden" name="tipe" value="perhari">
 			<input type="hidden" name="tipeBtn" id="tipeBtn">
@@ -157,6 +183,29 @@
 
 <script>
 	$(document).ready(function() {
+		function escapeHtml(value) {
+			return $('<div>').text(value == null ? '-' : value).html();
+		}
+
+		function shortText(value, limit) {
+			value = value == null ? '-' : String(value);
+			if (value.length <= limit) {
+				return value;
+			}
+			return value.substring(0, limit - 3) + '...';
+		}
+
+		function statusBadge(status) {
+			var safeStatus = escapeHtml(status || 'Unknown');
+			var classes = {
+				Pending: 'badge-warning',
+				Accepted: 'badge-primary',
+				Completed: 'badge-success',
+				Cancelled: 'badge-danger'
+			};
+			return '<span class="badge ' + (classes[status] || 'badge-secondary') + '">' + safeStatus + '</span>';
+		}
+
 		// Handler untuk tombol Tampilkan
 		$('#btnTampilkan').on('click', function(e) {
 			e.preventDefault();
@@ -184,13 +233,13 @@
 							visit_completed: 'Kunjungan selesai',
 							request_completed: 'Permintaan selesai'
 						};
-						var html = '<div id="print-area"><h5>Hasil Laporan Per Hari</h5>';
+						var html = '<div id="print-area"><h5>Rincian Konsultasi Per Hari</h5>';
 						html += '<div class="table-responsive"><table class="table table-bordered table-sm"><thead><tr>';
-						html += '<th>No</th><th>Tanggal</th><th>Puskesmas</th><th>PIC Personel</th><th>Aktivitas Terakhir</th><th>Dokter</th><th>Nama Pasien</th><th>Diagnosa</th>';
+						html += '<th>No</th><th>Tanggal/Waktu</th><th>Request</th><th>Status</th><th>Puskesmas</th><th>PIC</th><th>Aktivitas Terakhir</th><th>Akun Puskesmas</th><th>Warga</th><th>Diagnosa</th><th>Saran</th>';
 						html += '</tr></thead><tbody>';
 						$.each(response.data, function(i, row) {
 							var picName = row.pic_staff_name || 'Belum ditentukan';
-							var picProfesi = row.pic_staff_profesi ? '<br><small>' + $('<div>').text(row.pic_staff_profesi).html() + '</small>' : '';
+							var picProfesi = row.pic_staff_profesi ? '<br><small>' + escapeHtml(row.pic_staff_profesi) + '</small>' : '';
 							var latestEvent = row.latest_request_event || null;
 							var latestLabel = 'Belum ada aktivitas';
 							var latestTime = '';
@@ -200,13 +249,16 @@
 							}
 							html += '<tr>';
 							html += '<td>' + (i + 1) + '</td>';
-							html += '<td>' + $('<div>').text(row.waktu).html() + '</td>';
-							html += '<td>' + $('<div>').text(row.nama_puskesmas).html() + '</td>';
-							html += '<td>' + $('<div>').text(picName).html() + picProfesi + '</td>';
-							html += '<td>' + $('<div>').text(latestLabel).html() + (latestTime ? '<br><small>' + $('<div>').text(latestTime).html() + '</small>' : '') + '</td>';
-							html += '<td>' + $('<div>').text(row.name).html() + '</td>';
-							html += '<td>' + $('<div>').text(row.nama_user).html() + '</td>';
-							html += '<td>' + $('<div>').text(row.diagnosa).html() + '</td>';
+							html += '<td>' + escapeHtml(row.waktu) + '</td>';
+							html += '<td>#' + escapeHtml(row.request_id) + '</td>';
+							html += '<td>' + statusBadge(row.request_status) + '</td>';
+							html += '<td>' + escapeHtml(row.nama_puskesmas) + '</td>';
+							html += '<td>' + escapeHtml(picName) + picProfesi + '</td>';
+							html += '<td>' + escapeHtml(latestLabel) + (latestTime ? '<br><small>' + escapeHtml(latestTime) + '</small>' : '') + '</td>';
+							html += '<td>' + escapeHtml(row.name) + '</td>';
+							html += '<td>' + escapeHtml(row.nama_user) + '</td>';
+							html += '<td title="' + escapeHtml(row.diagnosa) + '">' + escapeHtml(shortText(row.diagnosa, 80)) + '</td>';
+							html += '<td title="' + escapeHtml(row.saran) + '">' + escapeHtml(shortText(row.saran, 90)) + '</td>';
 							html += '</tr>';
 						});
 						html += '</tbody></table></div><br><br><div class="print-signature"><div style="width: 87%; text-align: right; margin-bottom: 40px;">Cilegon, <span id="tanggal-hari-ini"></span></div><div style="display: flex; justify-content: space-between;"><div style="text-align: center; width: 40%;">Petugas,<br><br><br><br>(________________)</div><div style="text-align: center; width: 40%;">Kepala Dinas Kesehatan,<br><br><br><br>(________________)</div></div></div></div>';
@@ -224,7 +276,7 @@
 							tanggalElemen.innerText = today.toLocaleDateString('id-ID', options);
 						}
 					} else {
-						$hasil.html('<div class="alert alert-info">Data tidak ditemukan.</div>');
+						$hasil.html('<div class="alert alert-info">Belum ada data laporan sesuai filter.</div>');
 					}
 				},
 				error: function() {
@@ -253,8 +305,8 @@
 						$.each(response.data, function(i, row) {
 							html += '<tr>';
 							html += '<td>' + (i + 1) + '</td>';
-							html += '<td>' + $('<div>').text(row.nama_puskesmas).html() + '</td>';
-							html += '<td>' + $('<div>').text(row.jumlah_pasien).html() + '</td>';
+							html += '<td>' + escapeHtml(row.nama_puskesmas) + '</td>';
+							html += '<td>' + escapeHtml(row.jumlah_pasien) + '</td>';
 							html += '</tr>';
 						});
 						html += '</tbody></table></div><br><br><div class="print-signature"><div style="width: 87%; text-align: right; margin-bottom: 40px;">Cilegon, <span id="tanggal-hari-ini"></span></div><div style="display: flex; justify-content: space-between;"><div style="text-align: center; width: 40%;">Petugas,<br><br><br><br>(________________)</div><div style="text-align: center; width: 40%;">Kepala Dinas Kesehatan,<br><br><br><br>(________________)</div></div></div></div>';
@@ -272,7 +324,7 @@
 							tanggalElemen.innerText = today.toLocaleDateString('id-ID', options);
 						}
 					} else {
-						$hasil.html('<div class="alert alert-info">Data tidak ditemukan.</div>');
+						$hasil.html('<div class="alert alert-info">Belum ada data laporan sesuai filter.</div>');
 					}
 				},
 				error: function() {
@@ -312,10 +364,10 @@
 								html += '<tr>';
 								if (idx === 0) {
 									html += '<td rowspan="' + rows.length + '" style="vertical-align: middle; text-align: center;">' + (no++) + '</td>';
-									html += '<td rowspan="' + rows.length + '" style="vertical-align: middle; text-align: center;">' + $('<div>').text(row.nama_puskesmas).html() + '</td>';
+									html += '<td rowspan="' + rows.length + '" style="vertical-align: middle; text-align: center;">' + escapeHtml(row.nama_puskesmas) + '</td>';
 								}
-								html += '<td>' + $('<div>').text(row.diagnosa).html() + '</td>';
-								html += '<td>' + $('<div>').text(row.jumlah_diagnosa).html() + '</td>';
+								html += '<td>' + escapeHtml(row.diagnosa) + '</td>';
+								html += '<td>' + escapeHtml(row.jumlah_diagnosa) + '</td>';
 								html += '</tr>';
 							});
 						});
@@ -334,7 +386,7 @@
 							tanggalElemen.innerText = today.toLocaleDateString('id-ID', options);
 						}
 					} else {
-						$hasil.html('<div class="alert alert-info">Data tidak ditemukan.</div>');
+						$hasil.html('<div class="alert alert-info">Belum ada data laporan sesuai filter.</div>');
 					}
 				},
 				error: function() {
@@ -358,7 +410,7 @@
 	});
 
 	// Export laporan per hari ke Excel
-	$('#btnExportExcelPerHari').on('click', function() {
+	$('#btnExport').on('click', function() {
 		var $form = $('#formLaporanPerHari');
 		var params = $form.serialize();
 		var url = $form.attr('action') + '/export_excel?' + params;
