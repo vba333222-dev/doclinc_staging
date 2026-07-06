@@ -90,6 +90,26 @@
         ?>
         <script type="text/javascript">
         	$(document).ready(function() {
+			var themeToggle = document.getElementById('doclincThemeToggle');
+			var themeIcon = themeToggle ? themeToggle.querySelector('i') : null;
+			var applyTheme = function(theme) {
+				var normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+				document.documentElement.setAttribute('data-theme', normalizedTheme);
+				if (themeIcon) {
+					themeIcon.className = normalizedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+				}
+			};
+			var currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+			applyTheme(currentTheme);
+			if (themeToggle) {
+				themeToggle.addEventListener('click', function() {
+					var nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+					try {
+						localStorage.setItem('doclinc_admin_theme', nextTheme);
+					} catch (error) {}
+					applyTheme(nextTheme);
+				});
+			}
         		if ($(window).width() < 481) {
         			$('body').addClass('sidebar-toggled');
         			$('#accordionSidebar').addClass('toggled');

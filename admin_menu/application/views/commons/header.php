@@ -2,6 +2,11 @@
 <html lang="en">
 
 <head>
+	<?php
+	$doclinc_admin_base_url = rtrim(base_url(), '/');
+	$doclinc_public_base_url = preg_replace('#/admin_menu$#', '', $doclinc_admin_base_url);
+	$doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
+	?>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -9,6 +14,15 @@
 	<meta name="author" content="">
 	<!-- <title><?php echo $this->session->flashdata('active_tab_dashboard'); ?></title> -->
 	<title><?php echo $this->session->flashdata('title'); ?></title>
+	<script>
+		(function() {
+			var storedTheme = null;
+			try {
+				storedTheme = localStorage.getItem('doclinc_admin_theme');
+			} catch (error) {}
+			document.documentElement.setAttribute('data-theme', storedTheme === 'dark' ? 'dark' : 'light');
+		})();
+	</script>
 	<!-- Custom fonts for this template-->
 	<link href="<?php echo base_url(); ?>assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
 	<link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
@@ -32,8 +46,7 @@
 
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-	<!-- buatkan untuk icon web -->
-	<link rel="icon" type="image/png" href="<?php echo base_url('assets/img/android-icon-192x192.png'); ?>">
+	<link rel="icon" type="image/png" href="<?php echo html_escape($doclinc_logo_url); ?>">
 
 </head>
 
@@ -57,7 +70,7 @@
 			<!-- Sidebar - Brand -->
 			<a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
 				<div class="sidebar-brand-icon">
-					<img src="<?php echo base_url('assets/img/asoka-logo-only.png'); ?>" alt="Logo">
+					<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="Doclinc">
 				</div>
 			</a>
 
@@ -153,38 +166,24 @@
 					</button>
 					<!-- Hospital Branding -->
 					<div class="d-none d-md-flex align-items-center mr-auto">
+						<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="Doclinc" class="doclinc-topbar-logo mr-2">
 						<span class="h5 mb-0 font-weight-bold doclinc-topbar-brand">Halaman Admin Doclinc</span>
 					</div>
 					<ul class="navbar-nav ml-auto align-items-center">
+						<li class="nav-item mx-2">
+							<button type="button" class="btn btn-light btn-sm doclinc-theme-toggle" id="doclincThemeToggle" aria-label="Ubah tema" title="Ubah tema">
+								<i class="fas fa-moon" aria-hidden="true"></i>
+								<span class="d-none d-lg-inline ml-1">Mode</span>
+							</button>
+						</li>
 						<!-- Notification Bell -->
 						<li class="nav-item dropdown no-arrow mx-2">
 							<a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 								<i class="fas fa-bell fa-lg text-gray-600"></i>
-								<span class="badge badge-danger badge-counter doclinc-badge-counter">3</span>
 							</a>
 							<div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="alertsDropdown">
-								<h6 class="dropdown-header">Notifications</h6>
-								<a class="dropdown-item d-flex align-items-center" href="#">
-									<div class="mr-3">
-										<div class="icon-circle bg-primary">
-											<i class="fas fa-file-alt text-white"></i>
-										</div>
-									</div>
-									<div>
-										<span class="small text-gray-500">New report available</span>
-									</div>
-								</a>
-								<a class="dropdown-item d-flex align-items-center" href="#">
-									<div class="mr-3">
-										<div class="icon-circle bg-success">
-											<i class="fas fa-user-md text-white"></i>
-										</div>
-									</div>
-									<div>
-										<span class="small text-gray-500">Doctor added</span>
-									</div>
-								</a>
-								<a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+								<h6 class="dropdown-header">Notifikasi</h6>
+								<div class="dropdown-item text-center small text-muted py-3">Belum ada notifikasi baru.</div>
 							</div>
 						</li>
 						<!-- User Profile Dropdown -->
