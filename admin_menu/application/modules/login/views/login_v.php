@@ -30,7 +30,7 @@ define('SECRET_KEY', '6Lf_m3AiAAAAACYyqHSHYMf9Bt5uMn8dnRDJyPhu');
 	<meta name="msapplication-TileColor" content="#ffffff">
 	<meta name="msapplication-TileImage" content="<?php echo base_url(); ?>assets/img/ms-icon-144x144.png">
 	<meta name="theme-color" content="#ffffff">
-	<title>Login Page</title>
+	<title>Admin Doclinc</title>
 	<!-- Custom fonts for this template-->
 	<link href="<?php echo base_url(); ?>assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
 	<link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
@@ -53,9 +53,9 @@ define('SECRET_KEY', '6Lf_m3AiAAAAACYyqHSHYMf9Bt5uMn8dnRDJyPhu');
 				<div class="card border-0 shadow-lg rounded-4 animate__animated animate__fadeInDown" style="background: #ffffffcc;">
 					<div class="card-body p-5">
 						<div class="text-center mb-4">
-							<img src="<?php echo base_url('assets/img/asoka-logo-only.png'); ?>" alt="Logo DokLinC" style="width:70px; margin-bottom:10px;">
-							<h1 class="h4 text-primary font-weight-bold mb-2">Selamat Datang di Admin DokLinC</h1>
-							<p class="text-muted mb-0">Silakan login untuk mengakses sistem administrasi DokLinC</p>
+							<img src="<?php echo base_url('assets/img/asoka-logo-only.png'); ?>" alt="Logo Doclinc" style="width:70px; margin-bottom:10px;">
+							<h1 class="h4 text-primary font-weight-bold mb-2">Selamat Datang di Admin Doclinc</h1>
+							<p class="text-muted mb-0">Silakan login untuk mengakses sistem administrasi Doclinc</p>
 						</div>
 						<div class="info text-center mb-3">
 							<?php echo $this->session->flashdata('info'); ?>
@@ -93,7 +93,7 @@ define('SECRET_KEY', '6Lf_m3AiAAAAACYyqHSHYMf9Bt5uMn8dnRDJyPhu');
 					</div>
 				</div>
 				<div class="text-center mt-4">
-					<small class="text-muted">Copyright © DokLinC 2024</small>
+					<small class="text-muted">Copyright © Doclinc <?php echo date('Y'); ?></small>
 				</div>
 			</div>
 		</div>

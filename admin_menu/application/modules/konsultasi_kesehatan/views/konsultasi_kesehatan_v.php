@@ -236,7 +236,17 @@ if (!function_exists('doclinc_admin_puskesmas_label')) {
 			pageLength: 25,
 			order: [],
 			language: {
-				emptyTable: 'Belum ada konsultasi sesuai filter.'
+				lengthMenu: 'Tampilkan _MENU_ data',
+				search: 'Cari:',
+				emptyTable: 'Belum ada konsultasi sesuai filter.',
+				zeroRecords: 'Tidak ada data sesuai filter',
+				info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+				infoEmpty: 'Menampilkan 0 data',
+				infoFiltered: '(difilter dari _MAX_ total data)',
+				paginate: {
+					previous: 'Sebelumnya',
+					next: 'Berikutnya'
+				}
 			}
 		});
 	});
