@@ -70,15 +70,12 @@ INI TES LOKASI
                     longitude: lng
                 },
                 success: function(response) {
-                    console.log("Location saved:", response);
                 },
                 error: function(error) {
-                    console.error("Error saving location:", error);
                 }
             });
         }
         function handleError(error) {
-            console.error("Geolocation error:", error);
         }
         // Initialize the map when the window loads
         if (hasGoogleMaps()) {

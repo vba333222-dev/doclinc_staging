@@ -1176,7 +1176,6 @@ if (!function_exists('formatComplaintText')) {
 				processData: false, // Wajib
 				contentType: false, // Wajib
 				success: function(response) {
-					console.log("Response:", response);
 					if (typeof response === 'string') {
 						try {
 							response = JSON.parse(response);
@@ -1224,7 +1223,6 @@ if (!function_exists('formatComplaintText')) {
 					}
 				},
 				error: function(xhr, status, error) {
-					console.error("Error:", xhr.responseText);
 					let message = "Terjadi kesalahan AJAX";
 					if (xhr.responseText) {
 						try {

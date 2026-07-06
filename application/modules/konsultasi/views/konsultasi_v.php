@@ -740,7 +740,6 @@ Lama keluhan:
 			hour: '2-digit',
 		})
 
-		console.log(currentHour);
 
 
 		// Validasi waktu
@@ -765,7 +764,6 @@ Lama keluhan:
 
 	<script>
 		const id = document.getElementById('nama').value;
-		console.log('id nya adalah: ', id);
 	</script>
 
 	<!-- buatkan javascript untuk preview file yang diupload diatas -->
@@ -835,7 +833,6 @@ Lama keluhan:
 
 	<script>
 		const namaDokter = document.getElementById('namadokter').value;
-		console.log(namaDokter);
 	</script>
 
 	<!-- simpan konsultasi dan maps -->
@@ -1167,9 +1164,8 @@ Lama keluhan:
 				.then(result => {
 					// Tampilkan respon dari PHP
 					document.getElementById('result').innerHTML = result;
-					console.log("Data telah dikirim.");
 				})
-				.catch(error => console.error("Error:", error));
+				.catch(error  => {});
 		}
 
 		function getAddress(location) {

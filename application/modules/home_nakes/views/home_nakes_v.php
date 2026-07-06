@@ -529,12 +529,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				const keluhan = this.dataset.keluhan;
 				const namaDokter = "<?= $this->session->userdata('nama') ?>";
 
-				console.log('request id ' + reqId);
-				console.log('user id ' + userId);
-				console.log('dokter id ' + dokterId);
-				console.log('nama pasien ' + namaPasien);
-				console.log('keluhan ' + keluhan);
-				console.log('nama dokter ' + namaDokter);
 
 				Swal.fire({
 					title: "Anda yakin ingin melanjutkan konsultasi?",
@@ -1502,7 +1496,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 	<script>
 		const userName = '<?= $_SESSION['username'] ?>';
-		console.log("Usernamenya: " + userName);
 	</script>
 
 	<!-- maps -->
@@ -1613,9 +1606,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 			locationRef.once('value').then((snapshot) => {
 				if (snapshot.exists()) {
-					console.log("Data sudah ada, melakukan update.");
 				} else {
-					console.log("Data belum ada, menyimpan baru.");
 				}
 				locationRef.set({
 					userId: userId,
@@ -1693,7 +1684,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			}
 			if (!Number.isFinite(destinations.lat) || !Number.isFinite(destinations.lng)) return;
 
-			console.log(destinations);
 
 
 			const requests = {
@@ -1702,7 +1692,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				travelMode: google.maps.TravelMode.DRIVING
 			};
 
-			console.log(requests);
 
 
 			const services = new google.maps.DistanceMatrixService();
@@ -1803,10 +1792,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 			db.ref("messages").on("child_added", (snapshot) => {
 				const message = snapshot.val();
-				console.log("New message detected:", message);
 
 				if (message.receiver === currentUser) {
-					console.log("Message is for current user:", message);
 					showNotification(`Message from ${message.sender}: ${message.text}`);
 				}
 			});
@@ -1862,27 +1849,21 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			});
 
 			function showNotification(message) {
-				console.log("Attempting to show notification with message:", message);
 
 				if (!("Notification" in window)) {
-					console.error("This browser does not support notifications.");
 				} else if (Notification.permission === "granted") {
 					const notification = new Notification("New Message", {
 						body: message
 					});
-					console.log("Notification displayed:", notification);
 				} else if (Notification.permission !== "denied") {
 					Notification.requestPermission().then((permission) => {
-						console.log("Permission request result:", permission);
 						if (permission === "granted") {
 							const notification = new Notification("New Message", {
 								body: message
 							});
-							console.log("Notification displayed after granting permission:", notification);
 						}
 					});
 				} else {
-					console.error("Notification permission denied.");
 				}
 			}
 
@@ -2145,7 +2126,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					}
 				})
 				.catch(error => {
-					console.error("Error:", error);
 					alert("Terjadi kesalahan saat menyimpan.");
 				});
 		});
