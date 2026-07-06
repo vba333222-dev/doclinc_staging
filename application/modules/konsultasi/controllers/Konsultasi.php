@@ -139,6 +139,14 @@ class Konsultasi extends MX_Controller
 			$this->upload->initialize($config);
 			if ($this->upload->do_upload('foto')) {
 				$foto = $this->upload->data('file_name');
+			} else {
+				$this->output
+					->set_status_header(400)
+					->set_output(json_encode(array(
+						'status' => 'error',
+						'message' => $this->consultation_upload_error_message('foto'),
+					)));
+				return;
 			}
 		}
 
@@ -147,6 +155,14 @@ class Konsultasi extends MX_Controller
 			$this->upload->initialize($config);
 			if ($this->upload->do_upload('video')) {
 				$video = $this->upload->data('file_name');
+			} else {
+				$this->output
+					->set_status_header(400)
+					->set_output(json_encode(array(
+						'status' => 'error',
+						'message' => $this->consultation_upload_error_message('video'),
+					)));
+				return;
 			}
 		}
 
@@ -296,5 +312,14 @@ class Konsultasi extends MX_Controller
 	private function is_valid_longitude($value)
 	{
 		return is_numeric($value) && (float) $value >= -180 && (float) $value <= 180;
+	}
+
+	private function consultation_upload_error_message($field)
+	{
+		if ($field === 'video') {
+			return 'File lampiran tidak valid. Gunakan MP4/MOV untuk video dengan ukuran maksimal 10 MB.';
+		}
+
+		return 'File lampiran tidak valid. Gunakan JPG/PNG untuk foto dengan ukuran maksimal 10 MB.';
 	}
 }
