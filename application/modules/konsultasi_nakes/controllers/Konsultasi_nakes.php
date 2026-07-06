@@ -172,7 +172,9 @@ class Konsultasi_nakes extends MX_Controller
 			$this->load->library('upload', $config);
 
 			if (!$this->upload->do_upload('file')) {
-				$this->output->set_output(json_encode(['status' => 'error', 'message' => strip_tags($this->upload->display_errors())]));
+				$this->output
+					->set_status_header(400)
+					->set_output(json_encode(['status' => 'error', 'message' => $this->result_upload_error_message()]));
 				return;
 			} else {
 				$uploaded = $this->upload->data();
@@ -248,5 +250,10 @@ class Konsultasi_nakes extends MX_Controller
 		$term = $this->input->get('term');
 		$data = $this->Konsultasi_nakes_m->getICD($term);
 		echo json_encode($data);
+	}
+
+	private function result_upload_error_message()
+	{
+		return 'File hasil konsultasi tidak valid. Gunakan JPG/PNG dengan ukuran maksimal 5 MB.';
 	}
 }

@@ -130,7 +130,7 @@ class Chat extends MX_Controller
 		if (!$this->upload->do_upload('foto')) {
 			$this->output
 				->set_status_header(400)
-				->set_output(json_encode(['status' => 'error', 'message' => strip_tags($this->upload->display_errors())]));
+				->set_output(json_encode(['status' => 'error', 'message' => $this->chat_image_upload_error_message()]));
 		} else {
 			$data = $this->upload->data();
 			$message = $this->Chat_m->send_uploaded_image_message($request_id, $user_id, $data);
@@ -177,5 +177,10 @@ class Chat extends MX_Controller
 		}
 
 		return true;
+	}
+
+	private function chat_image_upload_error_message()
+	{
+		return 'Gambar tidak valid. Gunakan JPG/PNG/WEBP dengan ukuran maksimal 4 MB.';
 	}
 }
