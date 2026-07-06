@@ -29,8 +29,9 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		}
 
 		$has_puskesmas = $this->db->table_exists('m_puskesmas');
+		$has_users = $this->db->table_exists('users');
 		$this->db
-			->select('puskesmas_staff.staff_id, puskesmas_staff.kode_pkm, puskesmas_staff.nama, puskesmas_staff.no_hp, puskesmas_staff.profesi, puskesmas_staff.nomor_sip, puskesmas_staff.status')
+			->select('puskesmas_staff.staff_id, puskesmas_staff.kode_pkm, puskesmas_staff.nama, puskesmas_staff.no_hp, puskesmas_staff.profesi, puskesmas_staff.nomor_sip, puskesmas_staff.user_id, puskesmas_staff.status')
 			->from('puskesmas_staff');
 
 		if ($has_puskesmas) {
@@ -38,6 +39,13 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			$this->db->join('m_puskesmas', 'm_puskesmas.kode_pkm = puskesmas_staff.kode_pkm', 'left');
 		} else {
 			$this->db->select('NULL AS nama_puskesmas', FALSE);
+		}
+
+		if ($has_users) {
+			$this->db->select('staff_user.nama AS akun_nama, staff_user.username AS akun_username, staff_user.email AS akun_email');
+			$this->db->join('users staff_user', 'staff_user.userId = puskesmas_staff.user_id', 'left');
+		} else {
+			$this->db->select('NULL AS akun_nama, NULL AS akun_username, NULL AS akun_email', FALSE);
 		}
 
 		$kode_pkm = isset($filters['kode_pkm']) ? trim((string) $filters['kode_pkm']) : '';

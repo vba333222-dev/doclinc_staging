@@ -106,7 +106,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 
 	private function render_page($form_mode = '', $staff_id = null)
 	{
-		$this->session->set_flashdata('title', 'Kelola Staff Puskesmas');
+		$this->session->set_flashdata('title', 'Staff Puskesmas');
 		$this->session->set_flashdata('active_tab_kelola_staff_puskesmas', 'active');
 
 		$filters = array(
