@@ -69,6 +69,46 @@ class Home_nakes_m extends MX_Controller
 		return strtoupper($puskesmas_code) === 'DEFAULT' ? '' : $puskesmas_code;
 	}
 
+	private function request_assigned_puskesmas_code($request)
+	{
+		return $request && isset($request->assigned_puskesmas_code)
+			? $this->normalize_puskesmas_code($request->assigned_puskesmas_code)
+			: '';
+	}
+
+	private function get_user_puskesmas_code($user_id)
+	{
+		$user_id = (int) $user_id;
+		if ($user_id < 1 || !$this->db->field_exists('remark', 'users')) {
+			return '';
+		}
+
+		$user = $this->db
+			->select('remark')
+			->where('userId', $user_id)
+			->where('role', 'dokter')
+			->get('users')
+			->row();
+
+		return $user ? $this->normalize_puskesmas_code($user->remark) : '';
+	}
+
+	private function request_matches_puskesmas_code($request, $puskesmas_code)
+	{
+		$request_code = $this->request_assigned_puskesmas_code($request);
+		return $request_code === '' || $request_code === $this->normalize_puskesmas_code($puskesmas_code);
+	}
+
+	private function where_legacy_assigned_puskesmas($prefix = '')
+	{
+		$field = $prefix . 'assigned_puskesmas_code';
+		$this->db->group_start();
+		$this->db->where($field . ' IS NULL', null, false);
+		$this->db->or_where("TRIM({$field}) = ''", null, false);
+		$this->db->or_where("UPPER(TRIM({$field})) = 'DEFAULT'", null, false);
+		$this->db->group_end();
+	}
+
 	private function where_pending_queue_owner($id, $puskesmas_code)
 	{
 		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
@@ -76,10 +116,38 @@ class Home_nakes_m extends MX_Controller
 		$this->db->group_start();
 		if ($puskesmas_code !== '' && $this->db->field_exists('assigned_puskesmas_code', 'requests')) {
 			$this->db->where('TRIM(assigned_puskesmas_code) = ' . $this->db->escape($puskesmas_code), null, false);
-			$this->db->or_where('dokter_id', $id);
+			$this->db->or_group_start();
+			$this->where_legacy_assigned_puskesmas();
+			$this->db->where('dokter_id', $id);
+			$this->db->group_end();
 		} else {
 			$this->db->where('dokter_id', $id);
 		}
+		$this->db->group_end();
+	}
+
+	private function where_puskesmas_flow_owner($user_id, $puskesmas_code = '', $prefix = '')
+	{
+		if (!$this->db->field_exists('assigned_puskesmas_code', 'requests')) {
+			return;
+		}
+
+		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
+		if ($puskesmas_code === '') {
+			$puskesmas_code = $this->get_user_puskesmas_code($user_id);
+		}
+
+		if ($puskesmas_code === '') {
+			$this->where_legacy_assigned_puskesmas($prefix);
+			return;
+		}
+
+		$field = $prefix . 'assigned_puskesmas_code';
+		$this->db->group_start();
+		$this->db->where('TRIM(' . $field . ') = ' . $this->db->escape($puskesmas_code), null, false);
+		$this->db->or_group_start();
+		$this->where_legacy_assigned_puskesmas($prefix);
+		$this->db->group_end();
 		$this->db->group_end();
 	}
 
@@ -287,6 +355,10 @@ class Home_nakes_m extends MX_Controller
 		if (!$request) {
 			return array('status' => 'error', 'message' => 'Request tidak ditemukan');
 		}
+		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
+		if (!$this->request_matches_puskesmas_code($request, $puskesmas_code)) {
+			return array('status' => 'error', 'message' => 'Request tidak ditemukan atau akses tidak diizinkan');
+		}
 
 		if ($request->request_status === 'Accepted') {
 			$accepted_by_user_id = isset($request->accepted_by_user_id) ? $request->accepted_by_user_id : null;
@@ -386,6 +458,10 @@ class Home_nakes_m extends MX_Controller
 		if (!$request) {
 			return array('status' => 'error', 'message' => 'Request tidak ditemukan');
 		}
+		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
+		if (!$this->request_matches_puskesmas_code($request, $puskesmas_code)) {
+			return array('status' => 'error', 'message' => 'Request tidak ditemukan atau akses tidak diizinkan');
+		}
 
 		if (in_array($request->request_status, array('Completed', 'Cancelled'), true)) {
 			return array('status' => 'error', 'message' => 'Request tidak dapat dibatalkan');
@@ -407,6 +483,7 @@ class Home_nakes_m extends MX_Controller
 			$this->where_pending_queue_owner($user_id, $puskesmas_code);
 		} else {
 			$this->where_handling_nakes_owner($user_id);
+			$this->where_puskesmas_flow_owner($user_id, $puskesmas_code);
 		}
 
 		$this->db->update('requests', $data);
@@ -459,6 +536,9 @@ class Home_nakes_m extends MX_Controller
 		if ($request->request_status !== 'Accepted') {
 			return array('status' => 'error', 'message' => 'Status kunjungan hanya dapat diperbarui untuk konsultasi aktif');
 		}
+		if (!$this->request_matches_puskesmas_code($request, $this->get_user_puskesmas_code($user_id))) {
+			return array('status' => 'error', 'message' => 'Status kunjungan tidak dapat diperbarui');
+		}
 
 		$current_status = function_exists('doclinc_normalize_visit_status')
 			? (doclinc_normalize_visit_status($request->visit_status) ?: 'not_started')
@@ -492,6 +572,7 @@ class Home_nakes_m extends MX_Controller
 			->where('request_id', $request_id)
 			->where('request_status', 'Accepted');
 		$this->where_handling_nakes_owner($user_id);
+		$this->where_puskesmas_flow_owner($user_id);
 		$this->db->update('requests', $data);
 
 		if ($this->db->affected_rows() < 1 && $current_status !== $next_status) {
@@ -556,6 +637,7 @@ class Home_nakes_m extends MX_Controller
 			->where('request_id', $request_id)
 			->where('request_status', 'Accepted');
 		$this->where_handling_nakes_owner($user_id);
+		$this->where_puskesmas_flow_owner($user_id);
 		$this->db->update('requests', $data);
 
 		return $this->db->affected_rows() > 0;

@@ -7,6 +7,73 @@ class Konsultasi_nakes_m extends MX_Controller
 		$this->db  = $this->load->database('default', TRUE);
 	}
 
+	private function normalize_puskesmas_code($code)
+	{
+		$code = trim((string) $code);
+		return $code !== '' && strtoupper($code) !== 'DEFAULT' ? $code : '';
+	}
+
+	private function request_assigned_puskesmas_code($request)
+	{
+		return $request && isset($request->assigned_puskesmas_code)
+			? $this->normalize_puskesmas_code($request->assigned_puskesmas_code)
+			: '';
+	}
+
+	private function get_user_puskesmas_code($user_id)
+	{
+		$user_id = (int) $user_id;
+		if ($user_id < 1 || !$this->db->field_exists('remark', 'users')) {
+			return '';
+		}
+
+		$user = $this->db
+			->select('remark')
+			->where('userId', $user_id)
+			->where('role', 'dokter')
+			->get('users')
+			->row();
+
+		return $user ? $this->normalize_puskesmas_code($user->remark) : '';
+	}
+
+	private function request_matches_user_puskesmas($request, $user_id)
+	{
+		$request_code = $this->request_assigned_puskesmas_code($request);
+		return $request_code === '' || $request_code === $this->get_user_puskesmas_code($user_id);
+	}
+
+	private function where_legacy_assigned_puskesmas($prefix = '')
+	{
+		$field = $prefix . 'assigned_puskesmas_code';
+		$this->db->group_start();
+		$this->db->where($field . ' IS NULL', null, false);
+		$this->db->or_where("TRIM({$field}) = ''", null, false);
+		$this->db->or_where("UPPER(TRIM({$field})) = 'DEFAULT'", null, false);
+		$this->db->group_end();
+	}
+
+	private function where_puskesmas_flow_owner($user_id, $prefix = '')
+	{
+		if (!$this->db->field_exists('assigned_puskesmas_code', 'requests')) {
+			return;
+		}
+
+		$puskesmas_code = $this->get_user_puskesmas_code($user_id);
+		if ($puskesmas_code === '') {
+			$this->where_legacy_assigned_puskesmas($prefix);
+			return;
+		}
+
+		$field = $prefix . 'assigned_puskesmas_code';
+		$this->db->group_start();
+		$this->db->where('TRIM(' . $field . ') = ' . $this->db->escape($puskesmas_code), null, false);
+		$this->db->or_group_start();
+		$this->where_legacy_assigned_puskesmas($prefix);
+		$this->db->group_end();
+		$this->db->group_end();
+	}
+
 	private function where_handling_nakes_owner($user_id, $prefix = '')
 	{
 		$this->db->group_start();
@@ -42,6 +109,7 @@ class Konsultasi_nakes_m extends MX_Controller
 			->where('requests.request_id', $request_id);
 		if ($doctor_id !== null) {
 			$this->where_handling_nakes_owner($doctor_id, 'requests.');
+			$this->where_puskesmas_flow_owner($doctor_id, 'requests.');
 		}
 
 		return $this->db
@@ -67,6 +135,14 @@ class Konsultasi_nakes_m extends MX_Controller
 		$user = $doctor_id ?: $this->session->userdata('id');
 		$terapi = is_array($terapi) ? $terapi : [];
 
+		$request = $this->db
+			->where('request_id', $request_id)
+			->get('requests')
+			->row();
+		if (!$request || !$this->request_matches_user_puskesmas($request, $user)) {
+			return false;
+		}
+
 		$this->db->trans_begin();
 
 		$request_data = ['request_status' => 'Completed'];
@@ -85,6 +161,7 @@ class Konsultasi_nakes_m extends MX_Controller
 
 		$this->db->where('request_id', $request_id);
 		$this->where_handling_nakes_owner($user);
+		$this->where_puskesmas_flow_owner($user);
 		$this->db->where('request_status', 'Accepted');
 		if ($this->db->field_exists('visit_completed_at', 'requests')) {
 			$this->db->set('visit_completed_at', 'COALESCE(visit_completed_at, ' . $this->db->escape($date) . ')', FALSE);

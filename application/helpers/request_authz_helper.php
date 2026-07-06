@@ -32,6 +32,67 @@ if (!function_exists('doclinc_request_row')) {
 	}
 }
 
+if (!function_exists('doclinc_normalize_puskesmas_code')) {
+	function doclinc_normalize_puskesmas_code($code)
+	{
+		$code = trim((string) $code);
+		return $code !== '' && strtoupper($code) !== 'DEFAULT' ? $code : '';
+	}
+}
+
+if (!function_exists('doclinc_request_assigned_puskesmas_code')) {
+	function doclinc_request_assigned_puskesmas_code($request)
+	{
+		return $request && isset($request->assigned_puskesmas_code)
+			? doclinc_normalize_puskesmas_code($request->assigned_puskesmas_code)
+			: '';
+	}
+}
+
+if (!function_exists('doclinc_user_puskesmas_code')) {
+	function doclinc_user_puskesmas_code($user_id)
+	{
+		$user_id = (int) $user_id;
+		if ($user_id < 1) {
+			return '';
+		}
+
+		$CI = &get_instance();
+		$remark = $CI->session->userdata('id') && (string) $CI->session->userdata('id') === (string) $user_id
+			? $CI->session->userdata('remark')
+			: '';
+		$code = doclinc_normalize_puskesmas_code($remark);
+		if ($code !== '') {
+			return $code;
+		}
+
+		if (!$CI->db->field_exists('remark', 'users')) {
+			return '';
+		}
+
+		$user = $CI->db
+			->select('remark')
+			->where('userId', $user_id)
+			->where('role', 'dokter')
+			->get('users')
+			->row();
+
+		return $user ? doclinc_normalize_puskesmas_code($user->remark) : '';
+	}
+}
+
+if (!function_exists('doclinc_request_matches_user_puskesmas')) {
+	function doclinc_request_matches_user_puskesmas($request, $user_id)
+	{
+		$request_code = doclinc_request_assigned_puskesmas_code($request);
+		if ($request_code === '') {
+			return true;
+		}
+
+		return $request_code === doclinc_user_puskesmas_code($user_id);
+	}
+}
+
 if (!function_exists('doclinc_active_consultation_request')) {
 	function doclinc_active_consultation_request($user_id)
 	{
@@ -247,7 +308,8 @@ if (!function_exists('doclinc_request_is_handled_by_nakes')) {
 	function doclinc_request_is_handled_by_nakes($request, $nakes_user_id)
 	{
 		$handling_nakes_id = doclinc_request_handling_nakes_id($request);
-		return $handling_nakes_id !== null
+		return doclinc_request_matches_user_puskesmas($request, $nakes_user_id)
+			&& $handling_nakes_id !== null
 			&& trim((string) $handling_nakes_id) !== ''
 			&& (string) $handling_nakes_id === (string) $nakes_user_id;
 	}
@@ -283,9 +345,9 @@ if (!function_exists('doclinc_can_view_request')) {
 
 			return $user
 				&& $request->request_status === 'Pending'
-				&& trim((string) $user->remark) !== ''
+				&& doclinc_normalize_puskesmas_code($user->remark) !== ''
 				&& isset($request->assigned_puskesmas_code)
-				&& trim((string) $request->assigned_puskesmas_code) === trim((string) $user->remark);
+				&& doclinc_request_assigned_puskesmas_code($request) === doclinc_normalize_puskesmas_code($user->remark);
 		}
 
 		return $role === 'admin';
@@ -341,7 +403,7 @@ if (!function_exists('doclinc_can_cancel_request')) {
 			return false;
 		}
 
-		if (!empty($request->dokter_id) && (string) $request->dokter_id === (string) $user_id) {
+		if (doclinc_request_assigned_puskesmas_code($request) === '' && !empty($request->dokter_id) && (string) $request->dokter_id === (string) $user_id) {
 			return true;
 		}
 
@@ -353,9 +415,9 @@ if (!function_exists('doclinc_can_cancel_request')) {
 			->row();
 
 		return $user
-			&& trim((string) $user->remark) !== ''
+			&& doclinc_normalize_puskesmas_code($user->remark) !== ''
 			&& isset($request->assigned_puskesmas_code)
-			&& trim((string) $request->assigned_puskesmas_code) === trim((string) $user->remark);
+			&& doclinc_request_assigned_puskesmas_code($request) === doclinc_normalize_puskesmas_code($user->remark);
 	}
 }
 
