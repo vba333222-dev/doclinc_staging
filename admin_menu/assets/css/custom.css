@@ -3,9 +3,19 @@
     --green-medium: #34b89a;
     --green-light: #48c9b0;
     --grey-light: #f5f5f5;
+    --light-grey: #f5f7fb;
     --grey-medium: #d9d9d9;
     --white: #ffffff;
     --shadow: rgba(0, 0, 0, 0.1);
+    --doclinc-primary: #09AD74;
+    --doclinc-primary-dark: #087f5b;
+    --doclinc-info: #38b6ff;
+    --doclinc-surface: #ffffff;
+    --doclinc-page: #f4f6fb;
+    --doclinc-border: #e5e9f2;
+    --doclinc-text: #263238;
+    --doclinc-muted: #718096;
+    --doclinc-radius: 8px;
 }
 .bg-success{
     background-color: #09AD74 !important;
@@ -168,4 +178,218 @@ body {
 
 .sidebar-dark .nav-item .nav-link {
     font-size: 16px;
+}
+
+/* Doclinc admin visual system */
+body {
+    background: var(--doclinc-page);
+    font-family: 'Nunito', sans-serif;
+}
+
+.doclinc-admin-page {
+    padding: 30px 20px;
+}
+
+.doclinc-sidebar {
+    top: 0;
+    left: 0;
+    z-index: 1030;
+    width: 220px;
+    overflow-y: auto;
+    background: linear-gradient(135deg, #2e8b57 0%, #38b6ff 100%);
+}
+
+.doclinc-sidebar .sidebar-brand-icon img {
+    max-width: 60px;
+}
+
+.doclinc-sidebar .nav-item {
+    margin-bottom: 8px;
+}
+
+.doclinc-sidebar .nav-link {
+    border-radius: var(--doclinc-radius);
+    color: #fff;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.doclinc-sidebar .nav-link.active,
+.doclinc-sidebar .nav-link:hover,
+.doclinc-sidebar .nav-item.active .nav-link {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.doclinc-sidebar .nav-link i {
+    margin-right: 8px;
+}
+
+.doclinc-sidebar-section {
+    margin-top: 0.35rem;
+}
+
+.doclinc-sidebar-heading {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06rem;
+    text-transform: uppercase;
+    padding: 0.65rem 1rem 0.2rem;
+}
+
+.doclinc-content-wrapper {
+    margin-left: 220px;
+}
+
+.doclinc-topbar {
+    background: #f8fafc;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    border-bottom: 1px solid var(--doclinc-border);
+    box-shadow: 0 2px 8px rgba(46, 139, 87, 0.05);
+}
+
+.doclinc-topbar .navbar-nav .nav-link {
+    color: #2e8b57;
+}
+
+.doclinc-topbar .navbar-nav .nav-link:hover {
+    color: var(--doclinc-info);
+}
+
+.doclinc-topbar .dropdown-menu {
+    border-radius: 10px;
+}
+
+.doclinc-topbar-brand {
+    color: #2e8b57;
+}
+
+.doclinc-profile-image {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+}
+
+.doclinc-badge-counter {
+    font-size: 0.7rem;
+}
+
+.doclinc-page-header,
+.you-are-here {
+    background: var(--light-grey);
+    color: var(--doclinc-primary-dark);
+    border-bottom: 1px solid var(--doclinc-border);
+}
+
+.doclinc-page-title {
+    color: var(--doclinc-primary-dark);
+    letter-spacing: 0;
+}
+
+.doclinc-page-subtitle {
+    color: rgba(8, 127, 91, 0.72) !important;
+    font-size: 0.92rem;
+}
+
+.doclinc-filter-card,
+.doclinc-table-card,
+.card {
+    border-radius: var(--doclinc-radius);
+}
+
+.doclinc-filter-card,
+.doclinc-table-card {
+    border: 1px solid var(--doclinc-border);
+}
+
+.doclinc-filter-card .form-control,
+.doclinc-filter-card .btn {
+    min-height: 38px;
+}
+
+.doclinc-table-card .card-header,
+.card .card-header {
+    border-bottom-color: var(--doclinc-border);
+}
+
+.doclinc-table-card .table,
+.table {
+    color: var(--doclinc-text);
+}
+
+.doclinc-table-card .table th,
+.table thead th {
+    font-size: 0.78rem;
+    letter-spacing: 0;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.doclinc-table-card .table td,
+.table td {
+    vertical-align: middle;
+}
+
+.doclinc-status-badge,
+.badge {
+    border-radius: 999px;
+    font-weight: 700;
+    letter-spacing: 0;
+    padding: 0.35rem 0.55rem;
+}
+
+.doclinc-empty-state {
+    color: var(--doclinc-muted);
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.doclinc-meta-text {
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+}
+
+.alert {
+    border-radius: var(--doclinc-radius);
+}
+
+.btn {
+    border-radius: 999px;
+    letter-spacing: 0;
+}
+
+.print-signature {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .doclinc-sidebar {
+        background: #2e8b57;
+    }
+
+    .doclinc-content-wrapper {
+        margin-left: 0;
+    }
+
+    .doclinc-admin-page {
+        padding: 22px 12px;
+    }
+
+    .admin-map {
+        height: 300px;
+    }
+
+    .admin-directions-panel {
+        max-height: 300px;
+    }
+}
+
+@media print {
+    .print-signature {
+        display: block;
+        margin-top: 60px;
+        text-align: center;
+    }
 }

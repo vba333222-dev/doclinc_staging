@@ -1,10 +1,10 @@
 <?php
 $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ? $puskesmas_options : array();
 ?>
-<div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here">
+<div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
-		<h1 class="h3 mb-1 font-weight-bold"><i class="fas fa-fw fa-file-alt"></i> Laporan</h1>
-		<div class="text-white-50">Rekap konsultasi berdasarkan tanggal, status, Puskesmas, PIC, dan aktivitas terakhir.</div>
+		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-file-alt"></i> Laporan</h1>
+		<div class="text-white-50 doclinc-page-subtitle">Rekap konsultasi berdasarkan tanggal, status, Puskesmas, PIC, dan aktivitas terakhir.</div>
 	</div>
 	<!-- <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a> -->
 </div>
@@ -53,7 +53,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 </div>
 
 <!-- Forms for each report type -->
-<div id="form-perhari" class="laporan-form" style="display:none;">
+<div id="form-perhari" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
 	<form id="formLaporanPerHari" action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
@@ -104,10 +104,10 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			</div>
 		</div>
 	</form>
-	<div id="hasil-laporan-perhari" class="mt-4"></div>
+	<div id="hasil-laporan-perhari" class="mt-4 doclinc-table-card"></div>
 </div>
 
-<div id="form-perminggu" class="laporan-form" style="display:none;">
+<div id="form-perminggu" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
 	<form action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
@@ -126,7 +126,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		</div>
 	</form>
 </div>
-<div id="form-perbulan" class="laporan-form" style="display:none;">
+<div id="form-perbulan" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
 	<form action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
@@ -150,7 +150,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		</div>
 	</form>
 </div>
-<div id="form-pertahun" class="laporan-form" style="display:none;">
+<div id="form-pertahun" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
 	<form action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">

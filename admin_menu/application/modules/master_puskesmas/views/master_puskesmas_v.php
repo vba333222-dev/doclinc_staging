@@ -1,7 +1,7 @@
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
+<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
-		<h1 class="h3 mb-1 font-weight-bold"><i class="fas fa-fw fa-hospital"></i> Master Puskesmas</h1>
-		<div class="text-white-50">Kelola data Puskesmas aktif sebagai unit koordinasi layanan Doclinc.</div>
+		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-hospital"></i> Master Puskesmas</h1>
+		<div class="text-white-50 doclinc-page-subtitle">Kelola data Puskesmas aktif sebagai unit koordinasi layanan Doclinc.</div>
 	</div>
 </div>
 
@@ -13,7 +13,7 @@
 		<div class="alert alert-danger shadow-sm"><?= html_escape($this->session->flashdata('error')); ?></div>
 	<?php endif; ?>
 
-	<div class="card shadow mb-4">
+	<div class="card shadow mb-4 doclinc-table-card">
 		<div class="card-header py-3 d-flex align-items-center justify-content-between">
 			<h6 class="m-0 font-weight-bold text-primary">Daftar Puskesmas</h6>
 			<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill" data-toggle="modal" data-target="#modalTambahPuskesmas">
