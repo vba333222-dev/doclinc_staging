@@ -70,6 +70,15 @@
 			margin-right: 8px;
 		}
 
+		.doclinc-sidebar-heading {
+			color: rgba(255, 255, 255, 0.62);
+			font-size: 0.68rem;
+			font-weight: 800;
+			letter-spacing: 0.06rem;
+			text-transform: uppercase;
+			padding: 0.65rem 1rem 0.2rem;
+		}
+
 		.topbar {
 			background: #fff;
 			border-bottom: 1px solid #e3e6f0;
@@ -123,8 +132,21 @@
 
 <body id="page-top">
 	<div id="wrapper">
+		<?php
+		$doclinc_admin_segment = $this->uri->segment(1) ?: 'home';
+		$doclinc_active_dashboard = ($doclinc_admin_segment === 'home' || $this->session->flashdata('active_tab_dashboard')) ? 'active' : '';
+		$doclinc_active_konsultasi = ($doclinc_admin_segment === 'konsultasi_kesehatan' || $this->session->flashdata('active_tab_konsultasi_kesehatan')) ? 'active' : '';
+		$doclinc_active_master_puskesmas = ($doclinc_admin_segment === 'master_puskesmas' || $this->session->flashdata('active_tab_master_puskesmas')) ? 'active' : '';
+		$doclinc_active_akun_puskesmas = ($doclinc_admin_segment === 'kelola_dokter_nakes' || $this->session->flashdata('active_tab_kelola_dokter_nakes')) ? 'active' : '';
+		$doclinc_active_staff_puskesmas = ($doclinc_admin_segment === 'kelola_staff_puskesmas' || $this->session->flashdata('active_tab_kelola_staff_puskesmas')) ? 'active' : '';
+		$doclinc_active_keluhan = ($doclinc_admin_segment === 'kelola_keluhan' || $this->session->flashdata('active_tab_keluhan')) ? 'active' : '';
+		$doclinc_active_layanan = ($doclinc_admin_segment === 'kelola_layanan_kesehatan' || $this->session->flashdata('active_tab_kelola_layanan_kesehatan')) ? 'active' : '';
+		$doclinc_active_tindakan = ($doclinc_admin_segment === 'kelola_tindakan' || $this->session->flashdata('active_tab_tindakan')) ? 'active' : '';
+		$doclinc_active_laporan = ($doclinc_admin_segment === 'laporan' || $this->session->flashdata('active_tab_laporan')) ? 'active' : '';
+		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed' || $this->session->flashdata('active_tab_news_feed')) ? 'active' : '';
+		?>
 		<!-- Sidebar -->
-		<ul class="navbar-nav sidebar sidebar-dark accordion position-fixed vh-100" id="accordionSidebar" style="top:0; left:0; z-index:1030; width: 220px;">
+		<ul class="navbar-nav sidebar sidebar-dark accordion position-fixed vh-100" id="accordionSidebar" style="top:0; left:0; z-index:1030; width: 220px; overflow-y:auto;">
 			<!-- Sidebar - Brand -->
 			<a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
 				<div class="sidebar-brand-icon">
@@ -132,73 +154,79 @@
 				</div>
 			</a>
 
-			<li class="nav-item <?= $this->session->flashdata('active_tab_dashboard'); ?>">
+			<div class="doclinc-sidebar-heading">Dashboard</div>
+			<li class="nav-item <?= $doclinc_active_dashboard; ?>">
 				<a class="nav-link" href="<?php echo site_url('home'); ?>">
 					<i class="fas fa-tachometer-alt"></i>
 					<span>Dashboard</span>
 				</a>
 			</li>
 
-			<li class="nav-item <?= $this->session->flashdata('active_tab_keluhan'); ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_keluhan'); ?>">
-					<i class="fas fa-comments"></i>
-					<span>Kelola Keluhan</span>
+			<div class="doclinc-sidebar-heading">Operasional</div>
+			<li class="nav-item <?= $doclinc_active_konsultasi; ?>">
+				<a class="nav-link" href="<?php echo site_url('konsultasi_kesehatan'); ?>">
+					<i class="fas fa-stethoscope"></i>
+					<span>Monitoring Konsultasi</span>
 				</a>
 			</li>
 
-			<li class="nav-item">
-				<a class="nav-link" href="<?php echo site_url('kelola_news_feed'); ?>">
-					<i class="fas fa-newspaper"></i>
-					<span>Kelola News & Feed</span>
-				</a>
-			</li>
-
-			<li class="nav-item">
-				<a class="nav-link" href="<?php echo site_url('kelola_dokter_nakes'); ?>">
-					<i class="fas fa-user-md"></i>
-					<span>Akun Puskesmas/Nakes</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $this->session->flashdata('active_tab_kelola_staff_puskesmas'); ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_staff_puskesmas'); ?>">
-					<i class="fas fa-users-cog"></i>
-					<span>Staff Puskesmas</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $this->session->flashdata('active_tab_master_puskesmas'); ?>">
+			<div class="doclinc-sidebar-heading">Puskesmas</div>
+			<li class="nav-item <?= $doclinc_active_master_puskesmas; ?>">
 				<a class="nav-link" href="<?php echo site_url('master_puskesmas'); ?>">
 					<i class="fas fa-hospital"></i>
 					<span>Master Puskesmas</span>
 				</a>
 			</li>
 
-			<li class="nav-item">
-				<a class="nav-link" href="<?php echo site_url('konsultasi_kesehatan'); ?>">
-					<i class="fas fa-stethoscope"></i>
-					<span>Laporan Detail</span>
+			<li class="nav-item <?= $doclinc_active_akun_puskesmas; ?>">
+				<a class="nav-link" href="<?php echo site_url('kelola_dokter_nakes'); ?>">
+					<i class="fas fa-user-md"></i>
+					<span>Akun Puskesmas</span>
 				</a>
 			</li>
 
-			<li class="nav-item">
+			<li class="nav-item <?= $doclinc_active_staff_puskesmas; ?>">
+				<a class="nav-link" href="<?php echo site_url('kelola_staff_puskesmas'); ?>">
+					<i class="fas fa-users-cog"></i>
+					<span>Staff Puskesmas</span>
+				</a>
+			</li>
+
+			<div class="doclinc-sidebar-heading">Layanan</div>
+			<li class="nav-item <?= $doclinc_active_keluhan; ?>">
+				<a class="nav-link" href="<?php echo site_url('kelola_keluhan'); ?>">
+					<i class="fas fa-comments"></i>
+					<span>Keluhan</span>
+				</a>
+			</li>
+
+			<li class="nav-item <?= $doclinc_active_layanan; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_layanan_kesehatan'); ?>">
 					<i class="fas fa-clinic-medical"></i>
-					<span>Kelola Layanan Kesehatan</span>
+					<span>Layanan Kesehatan</span>
 				</a>
 			</li>
 
-			<li class="nav-item">
+			<li class="nav-item <?= $doclinc_active_tindakan; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_tindakan'); ?>">
 					<i class="fas fa-procedures"></i>
-					<span>Kelola Tindakan</span>
+					<span>Tindakan</span>
 				</a>
 			</li>
 
-			<li class="nav-item">
+			<div class="doclinc-sidebar-heading">Laporan</div>
+			<li class="nav-item <?= $doclinc_active_laporan; ?>">
 				<a class="nav-link" href="<?php echo site_url('laporan'); ?>">
 					<i class="fas fa-file-alt"></i>
-					<span>Resume</span>
+					<span>Laporan</span>
+				</a>
+			</li>
+
+			<div class="doclinc-sidebar-heading">Konten</div>
+			<li class="nav-item <?= $doclinc_active_news; ?>">
+				<a class="nav-link" href="<?php echo site_url('kelola_news_feed'); ?>">
+					<i class="fas fa-newspaper"></i>
+					<span>News & Feed</span>
 				</a>
 			</li>
 
@@ -218,7 +246,7 @@
 					</button>
 					<!-- Hospital Branding -->
 					<div class="d-none d-md-flex align-items-center mr-auto">
-						<span class="h5 mb-0 font-weight-bold" style="color:#2e8b57;">Halaman Admin Doklinc</span>
+						<span class="h5 mb-0 font-weight-bold" style="color:#2e8b57;">Halaman Admin Doclinc</span>
 					</div>
 					<ul class="navbar-nav ml-auto align-items-center">
 						<!-- Notification Bell -->
