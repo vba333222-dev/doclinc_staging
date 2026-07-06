@@ -176,13 +176,32 @@ class Konsultasi_kesehatan_m extends MX_Controller
 		return $map;
 	}
 
-	public function get_data_konsul()
+	public function get_puskesmas_options()
+	{
+		if (!$this->db->table_exists('m_puskesmas')) {
+			return array();
+		}
+
+		$this->db->select('kode_pkm, nama_puskesmas');
+		$this->db->from('m_puskesmas');
+		$this->db->where("UPPER(TRIM(kode_pkm)) <>", 'DEFAULT');
+		if ($this->db->field_exists('status', 'm_puskesmas')) {
+			$this->db->where('status', 'aktif');
+		}
+		$this->db->order_by('nama_puskesmas', 'ASC');
+
+		return $this->db->get()->result();
+	}
+
+	public function get_data_konsul($filters = array())
 	{
 		if (!$this->db->table_exists('requests') || !$this->db->table_exists('users')) {
 			return array();
 		}
 
+		$filters = is_array($filters) ? $filters : array();
 		$date_select = $this->db->field_exists('date', 'requests') ? 'requests.date' : 'requests.created_at AS date';
+		$date_filter_expr = $this->db->field_exists('date', 'requests') ? 'requests.date' : 'requests.created_at';
 		$location_detail_select = $this->db->field_exists('location_detail', 'requests') ? 'requests.location_detail' : 'NULL AS location_detail';
 		$lattitude_dokter_select = $this->db->field_exists('lattitude_dokter', 'requests') ? 'requests.lattitude_dokter' : 'NULL AS lattitude_dokter';
 		$longitude_dokter_select = $this->db->field_exists('longitude_dokter', 'requests') ? 'requests.longitude_dokter' : 'NULL AS longitude_dokter';
@@ -191,12 +210,11 @@ class Konsultasi_kesehatan_m extends MX_Controller
 		$assigned_puskesmas_name_expr = $has_assigned_puskesmas_name ? "NULLIF(TRIM(requests.assigned_puskesmas_name), '')" : 'NULL';
 		$assigned_puskesmas_code_expr = $has_assigned_puskesmas_code ? "NULLIF(TRIM(requests.assigned_puskesmas_code), '')" : 'NULL';
 		$routed_puskesmas_code_expr = "CASE WHEN UPPER($assigned_puskesmas_code_expr) = 'DEFAULT' THEN NULL ELSE $assigned_puskesmas_code_expr END";
-		$has_user_remark = $this->db->field_exists('remark', 'users');
-		$legacy_provider_code_expr = $has_user_remark ? "CASE WHEN UPPER(TRIM(provider_user.remark)) = 'DEFAULT' THEN NULL ELSE NULLIF(TRIM(provider_user.remark), '') END" : 'NULL';
-		$has_puskesmas = $this->db->table_exists('m_puskesmas') && $has_user_remark;
+		$assigned_puskesmas_name_clean_expr = "CASE WHEN UPPER(COALESCE($assigned_puskesmas_name_expr, '')) IN ('DEFAULT', 'PUSKESMAS DEFAULT') THEN NULL ELSE $assigned_puskesmas_name_expr END";
+		$has_puskesmas = $this->db->table_exists('m_puskesmas');
 		$puskesmas_select = $has_puskesmas
-			? "COALESCE($assigned_puskesmas_name_expr, assigned_puskesmas.nama_puskesmas, provider_puskesmas.nama_puskesmas, 'Belum terklasifikasi') AS puskesmas"
-			: "COALESCE($assigned_puskesmas_name_expr, $routed_puskesmas_code_expr, $legacy_provider_code_expr, 'Belum terklasifikasi') AS puskesmas";
+			? "COALESCE($assigned_puskesmas_name_clean_expr, assigned_puskesmas.nama_puskesmas, $routed_puskesmas_code_expr, 'Legacy / Belum terklasifikasi') AS puskesmas"
+			: "COALESCE($assigned_puskesmas_name_clean_expr, $routed_puskesmas_code_expr, 'Legacy / Belum terklasifikasi') AS puskesmas";
 		$konsultasi_select = $this->db->table_exists('konsultasi')
 			? 'konsultasi.diagnosa, konsultasi.saran, konsultasi.kriteria, konsultasi.foto'
 			: 'medicalrecords.diagnosis AS diagnosa, medicalrecords.recommendations AS saran, NULL AS kriteria, NULL AS foto';
@@ -204,8 +222,7 @@ class Konsultasi_kesehatan_m extends MX_Controller
 			? 'LEFT JOIN konsultasi ON konsultasi.request_id=requests.request_id'
 			: 'LEFT JOIN medicalrecords ON medicalrecords.request_id=requests.request_id';
 		$puskesmas_join = $has_puskesmas
-			? "LEFT JOIN m_puskesmas assigned_puskesmas ON assigned_puskesmas.kode_pkm = $routed_puskesmas_code_expr
-									LEFT JOIN m_puskesmas provider_puskesmas ON provider_puskesmas.kode_pkm = provider_user.remark AND UPPER(TRIM(provider_user.remark)) <> 'DEFAULT'"
+			? "LEFT JOIN m_puskesmas assigned_puskesmas ON assigned_puskesmas.kode_pkm = $routed_puskesmas_code_expr"
 			: '';
 		$has_pic_assignment = $this->can_query_pic_assignment();
 		$pic_select = $has_pic_assignment
@@ -238,12 +255,38 @@ class Konsultasi_kesehatan_m extends MX_Controller
 									LEFT JOIN puskesmas_staff pic_staff ON pic_staff.staff_id = pic_assignment.staff_id
 									LEFT JOIN users pic_assigned_by ON pic_assigned_by.userId = pic_assignment.assigned_by_user_id"
 			: '';
+		$where_parts = array();
+		$status = isset($filters['status']) ? trim((string) $filters['status']) : '';
+		if (in_array($status, array('Pending', 'Accepted', 'Completed', 'Cancelled'), true)) {
+			$where_parts[] = 'requests.request_status = ' . $this->db->escape($status);
+		}
+		$puskesmas_filter = isset($filters['puskesmas']) ? trim((string) $filters['puskesmas']) : '';
+		if ($puskesmas_filter === '__legacy__') {
+			$where_parts[] = "($assigned_puskesmas_code_expr IS NULL OR UPPER(COALESCE($assigned_puskesmas_code_expr, '')) = 'DEFAULT')";
+		} elseif ($puskesmas_filter !== '') {
+			$where_parts[] = $routed_puskesmas_code_expr . ' = ' . $this->db->escape($puskesmas_filter);
+		}
+		$date_from = isset($filters['date_from']) ? trim((string) $filters['date_from']) : '';
+		if ($date_from !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_from)) {
+			$where_parts[] = 'DATE(' . $date_filter_expr . ') >= ' . $this->db->escape($date_from);
+		}
+		$date_to = isset($filters['date_to']) ? trim((string) $filters['date_to']) : '';
+		if ($date_to !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_to)) {
+			$where_parts[] = 'DATE(' . $date_filter_expr . ') <= ' . $this->db->escape($date_to);
+		}
+		$keyword = isset($filters['keyword']) ? trim((string) $filters['keyword']) : '';
+		if ($keyword !== '') {
+			$like = '%' . $this->db->escape_like_str($keyword) . '%';
+			$where_parts[] = "(CAST(requests.request_id AS CHAR) LIKE " . $this->db->escape($like) . " OR users.nama LIKE " . $this->db->escape($like) . " OR $assigned_puskesmas_name_clean_expr LIKE " . $this->db->escape($like) . ")";
+		}
+		$where_sql = empty($where_parts) ? '' : 'WHERE ' . implode(' AND ', $where_parts);
 		$query = $this->db->query("SELECT
 										requests.request_id,
 										requests.user_id,
 										(SELECT users.nama FROM users WHERE users.userId=requests.user_id) AS nama_warga,
 										requests.dokter_id,
-										(SELECT users.nama FROM users WHERE users.userId=requests.dokter_id) AS nama_dokter,
+										(SELECT users.nama FROM users WHERE users.userId=requests.dokter_id) AS nama_akun_puskesmas,
+										$routed_puskesmas_code_expr AS assigned_puskesmas_code,
 										$puskesmas_select,
 										$pic_select
 										$date_select,
@@ -261,9 +304,9 @@ class Konsultasi_kesehatan_m extends MX_Controller
 										requests
 									$konsultasi_join
 									LEFT JOIN users ON users.userId = requests.user_id
-									LEFT JOIN users provider_user ON provider_user.userId = requests.dokter_id
 									$puskesmas_join
 									$pic_join
+									$where_sql
 									ORDER BY date DESC");
 		$hasil = $query->result();
 
