@@ -214,7 +214,17 @@
 	$(document).ready(function() {
 		$('#tbl_puskesmas').DataTable({
 			language: {
-				emptyTable: 'Belum ada data Puskesmas.'
+				lengthMenu: 'Tampilkan _MENU_ data',
+				search: 'Cari:',
+				emptyTable: 'Belum ada data Puskesmas.',
+				zeroRecords: 'Tidak ada data sesuai filter',
+				info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+				infoEmpty: 'Menampilkan 0 data',
+				infoFiltered: '(difilter dari _MAX_ total data)',
+				paginate: {
+					previous: 'Sebelumnya',
+					next: 'Berikutnya'
+				}
 			}
 		});
 	});

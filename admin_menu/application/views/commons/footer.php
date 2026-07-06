@@ -8,7 +8,7 @@
         <footer class="sticky-footer bg-white">
         	<div class="container my-auto">
         		<div class="copyright text-center text-muted my-auto">
-        			<span>Copyright &copy; DokLinC 2024</span>
+				<span>Copyright &copy; Doclinc <?php echo date('Y'); ?></span>
         		</div>
         	</div>
         </footer>

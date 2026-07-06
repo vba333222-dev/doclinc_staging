@@ -301,6 +301,20 @@ foreach ($puskesmas_options as $puskesmas) {
 
 <script type="text/javascript">
 	$(document).ready(function() {
-		$('#tbl_dokter_nakes').DataTable();
+		$('#tbl_dokter_nakes').DataTable({
+			language: {
+				lengthMenu: 'Tampilkan _MENU_ data',
+				search: 'Cari:',
+				emptyTable: 'Tidak ada data',
+				zeroRecords: 'Tidak ada data sesuai filter',
+				info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+				infoEmpty: 'Menampilkan 0 data',
+				infoFiltered: '(difilter dari _MAX_ total data)',
+				paginate: {
+					previous: 'Sebelumnya',
+					next: 'Berikutnya'
+				}
+			}
+		});
 	});
 </script>

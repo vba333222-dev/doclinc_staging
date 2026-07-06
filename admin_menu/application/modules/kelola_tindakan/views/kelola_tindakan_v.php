@@ -107,7 +107,21 @@
 </div>
 <script type="text/javascript">
     $(document).ready( function () {
-        $('#tbl_tindakan').DataTable(); 
+        $('#tbl_tindakan').DataTable({
+            language: {
+                lengthMenu: 'Tampilkan _MENU_ data',
+                search: 'Cari:',
+                emptyTable: 'Tidak ada data',
+                zeroRecords: 'Tidak ada data sesuai filter',
+                info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+                infoEmpty: 'Menampilkan 0 data',
+                infoFiltered: '(difilter dari _MAX_ total data)',
+                paginate: {
+                    previous: 'Sebelumnya',
+                    next: 'Berikutnya'
+                }
+            }
+        });
     });
     $('#modalEdit').on('show.bs.modal', function (event) {
       var button = $(event.relatedTarget);
