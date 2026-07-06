@@ -4,6 +4,12 @@
 	class Pdfview extends CI_Controller { 
 		function __construct(){
 			parent::__construct();
+			if ($this->session->userdata('is_login') == FALSE) {
+				redirect('/', 'refresh');
+			}
+			if ($this->session->userdata('level') !== 'admin') {
+				redirect('home', 'refresh');
+			}
 			// $this->load->model('Pdf_view_m'); 
 		}
 	    public function index()
