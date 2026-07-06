@@ -5,7 +5,7 @@ $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 ?>
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-stethoscope"></i> Dashboard DokLinC</h1>
+	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-stethoscope"></i> Dashboard Doclinc</h1>
 
 	<button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#chartModal">
 		<i class="fas fa-chart-bar"></i> Lihat Chart
@@ -39,17 +39,23 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 							<div class="row">
 								<?php
 								$all_diagnosa_per_puskesmas = [];
-								if ($this->db->table_exists('konsultasi') && $this->db->table_exists('requests') && $this->db->table_exists('users') && $this->db->table_exists('m_puskesmas') && $this->db->field_exists('remark', 'users')) {
+								if ($this->db->table_exists('konsultasi') && $this->db->table_exists('requests')) {
+									$assigned_code_raw = $this->db->field_exists('assigned_puskesmas_code', 'requests') ? "NULLIF(TRIM(r.assigned_puskesmas_code), '')" : 'NULL';
+									$assigned_code = "CASE WHEN UPPER(COALESCE($assigned_code_raw, '')) = 'DEFAULT' THEN NULL ELSE $assigned_code_raw END";
+									$assigned_name_raw = $this->db->field_exists('assigned_puskesmas_name', 'requests') ? "NULLIF(TRIM(r.assigned_puskesmas_name), '')" : 'NULL';
+									$assigned_name = "CASE WHEN UPPER(COALESCE($assigned_name_raw, '')) IN ('DEFAULT', 'PUSKESMAS DEFAULT') THEN NULL ELSE $assigned_name_raw END";
+									$master_name = $this->db->table_exists('m_puskesmas') ? 'p.nama_puskesmas' : 'NULL';
+									$puskesmas_name_expr = "COALESCE($assigned_name, $master_name, $assigned_code, 'Legacy / Belum terklasifikasi')";
+									$puskesmas_join = $this->db->table_exists('m_puskesmas') ? "LEFT JOIN m_puskesmas p ON p.kode_pkm = $assigned_code" : '';
 									$all_diagnosa_per_puskesmas = $this->db->query("
 										SELECT
-											p.nama_puskesmas,
+											$puskesmas_name_expr AS nama_puskesmas,
 											COUNT(*) as total
 										FROM konsultasi k
 										JOIN requests r ON k.request_id = r.request_id
-										JOIN users u ON r.user_id = u.userId
-										JOIN m_puskesmas p ON u.remark = p.kode_pkm
-										GROUP BY p.nama_puskesmas
-										ORDER BY p.nama_puskesmas
+										$puskesmas_join
+										GROUP BY nama_puskesmas
+										ORDER BY nama_puskesmas
 									")->result_array();
 								}
 
@@ -88,18 +94,24 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 						<div class="col-md-6">
 							<?php
 							$diagnosa_per_puskesmas = [];
-							if ($this->db->table_exists('konsultasi') && $this->db->table_exists('requests') && $this->db->table_exists('users') && $this->db->table_exists('m_puskesmas') && $this->db->field_exists('remark', 'users')) {
+							if ($this->db->table_exists('konsultasi') && $this->db->table_exists('requests')) {
+								$assigned_code_raw = $this->db->field_exists('assigned_puskesmas_code', 'requests') ? "NULLIF(TRIM(r.assigned_puskesmas_code), '')" : 'NULL';
+								$assigned_code = "CASE WHEN UPPER(COALESCE($assigned_code_raw, '')) = 'DEFAULT' THEN NULL ELSE $assigned_code_raw END";
+								$assigned_name_raw = $this->db->field_exists('assigned_puskesmas_name', 'requests') ? "NULLIF(TRIM(r.assigned_puskesmas_name), '')" : 'NULL';
+								$assigned_name = "CASE WHEN UPPER(COALESCE($assigned_name_raw, '')) IN ('DEFAULT', 'PUSKESMAS DEFAULT') THEN NULL ELSE $assigned_name_raw END";
+								$master_name = $this->db->table_exists('m_puskesmas') ? 'p.nama_puskesmas' : 'NULL';
+								$puskesmas_name_expr = "COALESCE($assigned_name, $master_name, $assigned_code, 'Legacy / Belum terklasifikasi')";
+								$puskesmas_join = $this->db->table_exists('m_puskesmas') ? "LEFT JOIN m_puskesmas p ON p.kode_pkm = $assigned_code" : '';
 								$diagnosa_per_puskesmas = $this->db->query("
 									SELECT
-										p.nama_puskesmas,
+										$puskesmas_name_expr AS nama_puskesmas,
 										k.diagnosa,
 										COUNT(*) as total
 									FROM konsultasi k
 									JOIN requests r ON k.request_id = r.request_id
-									JOIN users u ON r.user_id = u.userId
-									JOIN m_puskesmas p ON u.remark = p.kode_pkm
-									GROUP BY p.nama_puskesmas, k.diagnosa
-									ORDER BY p.nama_puskesmas, total DESC
+									$puskesmas_join
+									GROUP BY nama_puskesmas, k.diagnosa
+									ORDER BY nama_puskesmas, total DESC
 								")->result_array();
 							}
 
@@ -231,7 +243,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 							<span class="text-muted ml-2">Total Konsultasi</span>
 						</div>
 						<div class="text-center text-muted small mt-1">
-							Data realtime konsultasi pasien di DokLinC
+							Data realtime konsultasi pasien di Doclinc
 						</div>
 						<div class="text-center">
 							<span class="text-muted small ml-2" id="current_date"><?= date('Y-m-d'); ?></span>
@@ -535,8 +547,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 
 	document.getElementById('reset-filterModal').addEventListener('click', function() {
 		document.getElementById('datepickerModal').value = ''; // kosongkan input tanggal
-		// loadRealtimeKonsultasi(); // panggil ulang tanpa filter
-		alert("Hello");
+		loadKonsultasiBaru();
 	});
 </script>
 
@@ -855,9 +866,9 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 			});
 	}
 
-	// Panggil pertama kali dan kemudian setiap 5 detik
+	// Panggil pertama kali dan kemudian refresh berkala.
 	loadRealtimeKonsultasi();
-	setInterval(loadRealtimeKonsultasi, 1000);
+	setInterval(loadRealtimeKonsultasi, 10000);
 
 	// Ulangi pemanggilan saat tanggal berubah
 	document.getElementById('datepicker').addEventListener('change', loadRealtimeKonsultasi);
@@ -916,7 +927,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 	// Load pertama
 	loadKonsultasiBaru();
 
-	setInterval(loadKonsultasiBaru, 1000);
+	setInterval(loadKonsultasiBaru, 10000);
 </script>
 
 <script>
@@ -977,8 +988,8 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 	// Panggil pertama kali
 	loadKonsultasiProses();
 
-	// Lakukan polling tiap 5 detik
-	setInterval(loadKonsultasiProses, 1000);
+	// Lakukan polling berkala.
+	setInterval(loadKonsultasiProses, 10000);
 </script>
 
 <script>
@@ -1024,7 +1035,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 
 	$(document).ready(function() {
 		loadKonsultasiSelesai();
-		setInterval(loadKonsultasiSelesai, 1000); // refresh tiap 10 detik
+		setInterval(loadKonsultasiSelesai, 10000); // refresh tiap 10 detik
 	});
 </script>
 
