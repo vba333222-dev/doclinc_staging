@@ -17,6 +17,40 @@ class Home_m extends MX_Controller
 		return $this->db->query('SELECT ' . implode(', ', $select) . ' WHERE 1=0');
 	}
 
+	private function assigned_puskesmas_code_expr($request_alias = 'requests')
+	{
+		$raw = $this->db->field_exists('assigned_puskesmas_code', 'requests')
+			? "NULLIF(TRIM($request_alias.assigned_puskesmas_code), '')"
+			: 'NULL';
+
+		return "CASE WHEN UPPER(COALESCE($raw, '')) = 'DEFAULT' THEN NULL ELSE $raw END";
+	}
+
+	private function assigned_puskesmas_name_expr($request_alias = 'requests')
+	{
+		$raw = $this->db->field_exists('assigned_puskesmas_name', 'requests')
+			? "NULLIF(TRIM($request_alias.assigned_puskesmas_name), '')"
+			: 'NULL';
+
+		return "CASE WHEN UPPER(COALESCE($raw, '')) IN ('DEFAULT', 'PUSKESMAS DEFAULT') THEN NULL ELSE $raw END";
+	}
+
+	private function puskesmas_display_expr($request_alias = 'requests', $puskesmas_alias = 'assigned_puskesmas')
+	{
+		$assigned_name = $this->assigned_puskesmas_name_expr($request_alias);
+		$assigned_code = $this->assigned_puskesmas_code_expr($request_alias);
+		$master_name = $this->db->table_exists('m_puskesmas') ? "$puskesmas_alias.nama_puskesmas" : 'NULL';
+
+		return "COALESCE($assigned_name, $master_name, $assigned_code, 'Legacy / Belum terklasifikasi')";
+	}
+
+	private function puskesmas_key_expr($request_alias = 'requests')
+	{
+		$assigned_code = $this->assigned_puskesmas_code_expr($request_alias);
+
+		return "COALESCE($assigned_code, 'LEGACY_UNCLASSIFIED')";
+	}
+
 	public function get_konsul_perbulan($ym)
 	{
 		if (!$this->db->table_exists('requests')) {
@@ -33,10 +67,9 @@ class Home_m extends MX_Controller
 			return $this->empty_result(array('request_id', 'created_at', 'nama', 'username', 'name', 'remark', 'nama_puskesmas'));
 		}
 
-		$has_user_remark = $this->db->field_exists('remark', 'users');
 		$doctor_name = $this->db->table_exists('m_dokter') ? "COALESCE(m_dokter.name, dokter_user.nama, '-')" : "COALESCE(dokter_user.nama, '-')";
-		$remark_select = $has_user_remark ? 'users.remark' : 'NULL';
-		$puskesmas_select = ($has_user_remark && $this->db->table_exists('m_puskesmas')) ? "COALESCE(m_puskesmas.nama_puskesmas, users.remark, '-')" : "'-'";
+		$remark_select = $this->puskesmas_key_expr('requests');
+		$puskesmas_select = $this->puskesmas_display_expr('requests', 'assigned_puskesmas');
 
 		$this->db->select("requests.*, requests.created_at, users.nama, users.username, $doctor_name AS name, $remark_select AS remark, $puskesmas_select AS nama_puskesmas", FALSE);
 		$this->db->from('requests');
@@ -45,8 +78,8 @@ class Home_m extends MX_Controller
 		if ($this->db->table_exists('m_dokter')) {
 			$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id', 'left');
 		}
-		if ($has_user_remark && $this->db->table_exists('m_puskesmas')) {
-			$this->db->join('m_puskesmas', 'users.remark = m_puskesmas.kode_pkm', 'left');
+		if ($this->db->table_exists('m_puskesmas')) {
+			$this->db->join('m_puskesmas assigned_puskesmas', 'assigned_puskesmas.kode_pkm = ' . $this->assigned_puskesmas_code_expr('requests'), 'left', FALSE);
 		}
 		$this->db->where('request_status', $status);
 
@@ -74,59 +107,50 @@ class Home_m extends MX_Controller
 			return $this->empty_result(array('nama_puskesmas', 'remark', 'total_selesai'));
 		}
 
-		$has_users = $this->db->table_exists('users');
-		$has_user_remark = $has_users && $this->db->field_exists('remark', 'users');
 		$has_puskesmas = $this->db->table_exists('m_puskesmas');
+		$remark_select = $this->puskesmas_key_expr('requests');
+		$puskesmas_select = $this->puskesmas_display_expr('requests', 'assigned_puskesmas');
 
-		if ($has_user_remark && $has_puskesmas) {
-			$this->db->select("COALESCE(m_puskesmas.nama_puskesmas, users.remark, '-') AS nama_puskesmas, users.remark, COUNT(requests.request_id) AS total_selesai", FALSE);
-		} elseif ($has_user_remark) {
-			$this->db->select("COALESCE(users.remark, '-') AS nama_puskesmas, users.remark, COUNT(requests.request_id) AS total_selesai", FALSE);
-		} else {
-			$this->db->select("'-' AS nama_puskesmas, NULL AS remark, COUNT(requests.request_id) AS total_selesai", FALSE);
-		}
-
+		$this->db->select("$puskesmas_select AS nama_puskesmas, $remark_select AS remark, COUNT(requests.request_id) AS total_selesai", FALSE);
 		$this->db->from('requests');
-		if ($has_users) {
-			$this->db->join('users', 'requests.user_id = users.userId', 'left');
-		}
-		if ($has_user_remark && $has_puskesmas) {
-			$this->db->join('m_puskesmas', 'users.remark = m_puskesmas.kode_pkm', 'left');
+		if ($has_puskesmas) {
+			$this->db->join('m_puskesmas assigned_puskesmas', 'assigned_puskesmas.kode_pkm = ' . $this->assigned_puskesmas_code_expr('requests'), 'left', FALSE);
 		}
 		$this->db->where('request_status', 'Completed');
-		if ($has_user_remark) {
-			$this->db->group_by('users.remark');
-		}
+		$this->db->group_by($remark_select, FALSE);
+		$this->db->group_by($puskesmas_select, FALSE);
 		return $this->db->get();
 	}
 
 	public function selesai_konsultasi_per_puskesmas()
 	{
-		if (!$this->db->table_exists('requests') || !$this->db->table_exists('users') || !$this->db->table_exists('konsultasi') || !$this->db->field_exists('remark', 'users')) {
+		if (!$this->db->table_exists('requests') || !$this->db->table_exists('konsultasi')) {
 			return array();
 		}
 
-		$this->db->select('users.remark, COUNT(konsultasi.kriteria) AS jumlah_selesai');
+		$remark_select = $this->puskesmas_key_expr('requests');
+
+		$this->db->select("$remark_select AS remark, COUNT(konsultasi.kriteria) AS jumlah_selesai", FALSE);
 		$this->db->from('requests');
-		$this->db->join('users', 'requests.user_id = users.userId');
 		$this->db->join('konsultasi', 'requests.request_id = konsultasi.request_id');
 		$this->db->where('konsultasi.kriteria', 'Selesai Konsultasi');
-		$this->db->group_by('users.remark');
+		$this->db->group_by($remark_select, FALSE);
 		return $this->db->get()->result();
 	}
 
 	public function kunjungan_nakes_per_puskesmas()
 	{
-		if (!$this->db->table_exists('requests') || !$this->db->table_exists('users') || !$this->db->table_exists('konsultasi') || !$this->db->field_exists('remark', 'users')) {
+		if (!$this->db->table_exists('requests') || !$this->db->table_exists('konsultasi')) {
 			return array();
 		}
 
-		$this->db->select('users.remark, COUNT(konsultasi.kriteria) AS jumlah_kunjungan');
+		$remark_select = $this->puskesmas_key_expr('requests');
+
+		$this->db->select("$remark_select AS remark, COUNT(konsultasi.kriteria) AS jumlah_kunjungan", FALSE);
 		$this->db->from('requests');
-		$this->db->join('users', 'requests.user_id = users.userId');
 		$this->db->join('konsultasi', 'requests.request_id = konsultasi.request_id');
 		$this->db->where('konsultasi.kriteria', 'Kunjungan Nakes');
-		$this->db->group_by('users.remark');
+		$this->db->group_by($remark_select, FALSE);
 		return $this->db->get()->result();
 	}
 
