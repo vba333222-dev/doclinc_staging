@@ -8,6 +8,9 @@
 	        {
 	        	redirect('/','refresh');
 	        }
+			if ($this->session->userdata('level') !== 'admin') {
+				redirect('home', 'refresh');
+			}
 		}
 		public function index(){
 			$this->session->set_flashdata('title', 'Kelola_warga');

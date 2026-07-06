@@ -4,6 +4,12 @@
 	class PrintPdf extends CI_Controller { 
 		function __construct(){
 			parent::__construct(); 
+			if ($this->session->userdata('is_login') == FALSE) {
+				redirect('/', 'refresh');
+			}
+			if ($this->session->userdata('level') !== 'admin') {
+				redirect('home', 'refresh');
+			}
 		}
 	    public function index()
 	    {

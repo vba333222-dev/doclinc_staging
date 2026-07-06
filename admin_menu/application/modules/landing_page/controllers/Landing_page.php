@@ -8,6 +8,9 @@
 	        {
 				redirect('/','refresh');
 	        }
+			if ($this->session->userdata('level') !== 'admin') {
+				redirect('home', 'refresh');
+			}
 		}
 		// rowcode for home
 		public function home(){
