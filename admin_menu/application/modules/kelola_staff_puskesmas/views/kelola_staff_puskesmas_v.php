@@ -6,7 +6,7 @@ $form_mode = isset($form_mode) ? (string) $form_mode : '';
 $form_staff = isset($form_staff) ? $form_staff : null;
 $is_form = in_array($form_mode, array('create', 'edit'), true);
 $form_action = $form_mode === 'edit' && $form_staff ? site_url('kelola_staff_puskesmas/update/' . (int) $form_staff->staff_id) : site_url('kelola_staff_puskesmas/store');
-$form_title = $form_mode === 'edit' ? 'Edit Staff Puskesmas' : 'Tambah Staff';
+$form_title = $form_mode === 'edit' ? 'Edit Staff Puskesmas' : 'Tambah Staff Puskesmas';
 $form_values = array(
 	'kode_pkm' => $form_staff ? (string) $form_staff->kode_pkm : '',
 	'nama' => $form_staff ? (string) $form_staff->nama : '',
@@ -18,8 +18,8 @@ $form_values = array(
 ?>
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
 	<div>
-		<h1 class="h3 mb-1 font-weight-bold"><i class="fas fa-fw fa-users-cog"></i> Kelola Staff Puskesmas</h1>
-		<div class="text-white-50">Data personel yang berada di bawah koordinasi Puskesmas.</div>
+		<h1 class="h3 mb-1 font-weight-bold"><i class="fas fa-fw fa-users-cog"></i> Staff Puskesmas</h1>
+		<div class="text-white-50">Kelola personel Puskesmas yang dapat ditetapkan sebagai PIC layanan.</div>
 	</div>
 </div>
 
@@ -32,8 +32,11 @@ $form_values = array(
 	<?php endif; ?>
 
 	<?php if (empty($table_ready)): ?>
-		<div class="alert alert-warning shadow-sm">Tabel personel Puskesmas belum tersedia.</div>
+		<div class="alert alert-warning shadow-sm">Tabel staff Puskesmas belum tersedia.</div>
 	<?php else: ?>
+		<div class="alert alert-info shadow-sm">
+			Staff adalah data personel/PIC, bukan otomatis akun login. Akun terkait hanya ditampilkan jika staff sudah terhubung dengan user.
+		</div>
 		<?php if ($is_form): ?>
 			<div class="card shadow mb-4">
 				<div class="card-header py-3 d-flex align-items-center justify-content-between">
@@ -54,12 +57,13 @@ $form_values = array(
 											</option>
 										<?php endforeach; ?>
 									</select>
+									<small class="form-text text-muted">Pilih Puskesmas aktif tempat staff berada.</small>
 								</div>
 							</div>
 							<div class="col-md-6">
 								<div class="form-group">
-									<label class="text-info">Nama</label>
-									<input type="text" class="form-control rounded-pill border-info" name="nama" value="<?= html_escape($form_values['nama']); ?>" required>
+									<label class="text-info">Nama Staff</label>
+									<input type="text" class="form-control rounded-pill border-info" name="nama" value="<?= html_escape($form_values['nama']); ?>" placeholder="Nama personel" required>
 								</div>
 							</div>
 						</div>
@@ -67,13 +71,13 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Profesi</label>
-									<input type="text" class="form-control rounded-pill border-info" name="profesi" value="<?= html_escape($form_values['profesi']); ?>">
+									<input type="text" class="form-control rounded-pill border-info" name="profesi" value="<?= html_escape($form_values['profesi']); ?>" placeholder="Dokter, perawat, bidan, atau profesi lain">
 								</div>
 							</div>
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">No HP</label>
-									<input type="text" class="form-control rounded-pill border-info" name="no_hp" value="<?= html_escape($form_values['no_hp']); ?>">
+									<input type="text" class="form-control rounded-pill border-info" name="no_hp" value="<?= html_escape($form_values['no_hp']); ?>" placeholder="Nomor kontak staff">
 								</div>
 							</div>
 						</div>
@@ -81,7 +85,7 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Nomor SIP</label>
-									<input type="text" class="form-control rounded-pill border-info" name="nomor_sip" value="<?= html_escape($form_values['nomor_sip']); ?>">
+									<input type="text" class="form-control rounded-pill border-info" name="nomor_sip" value="<?= html_escape($form_values['nomor_sip']); ?>" placeholder="Nomor SIP jika ada">
 								</div>
 							</div>
 							<div class="col-md-6">
@@ -91,6 +95,7 @@ $form_values = array(
 										<option value="aktif" <?= $form_values['status'] === 'aktif' ? 'selected' : ''; ?>>Aktif</option>
 										<option value="nonaktif" <?= $form_values['status'] === 'nonaktif' ? 'selected' : ''; ?>>Nonaktif</option>
 									</select>
+									<small class="form-text text-muted">Staff aktif dapat dipilih sebagai PIC sesuai Puskesmasnya.</small>
 								</div>
 							</div>
 						</div>
@@ -105,9 +110,9 @@ $form_values = array(
 
 		<div class="card shadow mb-4">
 			<div class="card-header py-3 d-flex align-items-center justify-content-between">
-				<h6 class="m-0 font-weight-bold text-primary">Daftar Personel Puskesmas</h6>
+				<h6 class="m-0 font-weight-bold text-primary">Daftar Staff Puskesmas</h6>
 				<a href="<?= site_url('kelola_staff_puskesmas/create'); ?>" class="btn btn-sm btn-success shadow-sm rounded-pill">
-					<i class="fas fa-plus-circle mr-1"></i> Tambah Staff
+					<i class="fas fa-plus-circle mr-1"></i> Tambah Staff Puskesmas
 				</a>
 			</div>
 			<div class="card-body">
@@ -118,7 +123,7 @@ $form_values = array(
 								<option value="">Semua Puskesmas</option>
 								<?php foreach ($puskesmas_options as $puskesmas): ?>
 									<option value="<?= html_escape($puskesmas->kode_pkm); ?>" <?= (isset($filters['kode_pkm']) && $filters['kode_pkm'] === (string) $puskesmas->kode_pkm) ? 'selected' : ''; ?>>
-										<?= html_escape($puskesmas->nama_puskesmas); ?>
+										<?= html_escape($puskesmas->nama_puskesmas); ?> (<?= html_escape($puskesmas->kode_pkm); ?>)
 									</option>
 								<?php endforeach; ?>
 							</select>
@@ -147,33 +152,43 @@ $form_values = array(
 								<th>Nama</th>
 								<th>Puskesmas</th>
 								<th>Profesi</th>
-								<th>No HP</th>
 								<th>Nomor SIP</th>
+								<th>No HP</th>
 								<th>Status</th>
+								<th>Akun Terkait</th>
 								<th class="text-center">Aksi</th>
 							</tr>
 						</thead>
 						<tbody>
-							<?php if (empty($staff_rows)): ?>
-								<tr>
-									<td colspan="8" class="text-center text-muted py-4">Belum ada data personel Puskesmas.</td>
-								</tr>
-							<?php else: ?>
-								<?php $no = 1; foreach ($staff_rows as $row): ?>
+							<?php if (!empty($staff_rows)): ?>
+								<?php $no = 1;
+								foreach ($staff_rows as $row): ?>
+									<?php
+									$akun_label = 'Tidak terhubung ke akun login';
+									if (!empty($row->akun_nama) || !empty($row->akun_username) || !empty($row->akun_email)) {
+										$akun_label = trim((string) ($row->akun_nama ?: $row->akun_username ?: $row->akun_email));
+									}
+									?>
 									<tr>
 										<td class="text-center"><?= $no++; ?></td>
-										<td><?= html_escape($row->nama ?? '-'); ?></td>
+										<td title="<?= html_escape($row->nama ?? '-'); ?>"><?= html_escape($row->nama ?? '-'); ?></td>
 										<td>
 											<span class="badge badge-info"><?= html_escape($row->kode_pkm ?? '-'); ?></span>
 											<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? 'Puskesmas tidak ditemukan'); ?></div>
 										</td>
-										<td><?= html_escape($row->profesi ?? '-'); ?></td>
-										<td><?= html_escape($row->no_hp ?? '-'); ?></td>
-										<td><?= html_escape($row->nomor_sip ?? '-'); ?></td>
+										<td title="<?= html_escape($row->profesi ?? '-'); ?>"><?= html_escape($row->profesi ?: '-'); ?></td>
+										<td title="<?= html_escape($row->nomor_sip ?? '-'); ?>"><?= html_escape($row->nomor_sip ?: '-'); ?></td>
+										<td><?= html_escape($row->no_hp ?: '-'); ?></td>
 										<td>
 											<span class="badge badge-<?= ($row->status ?? '') === 'aktif' ? 'success' : 'secondary'; ?>">
 												<?= html_escape(ucfirst($row->status ?? '-')); ?>
 											</span>
+										</td>
+										<td>
+											<?= html_escape($akun_label); ?>
+											<?php if (!empty($row->akun_username) && $akun_label !== $row->akun_username): ?>
+												<div class="small text-muted"><?= html_escape($row->akun_username); ?></div>
+											<?php endif; ?>
 										</td>
 										<td class="text-center">
 											<a href="<?= site_url('kelola_staff_puskesmas/edit/' . (int) $row->staff_id); ?>" class="btn btn-info btn-sm rounded-pill">
@@ -207,7 +222,10 @@ $form_values = array(
 <script type="text/javascript">
 	$(document).ready(function() {
 		$('#tbl_staff_puskesmas').DataTable({
-			searching: false
+			searching: false,
+			language: {
+				emptyTable: 'Belum ada staff Puskesmas sesuai filter.'
+			}
 		});
 	});
 </script>
