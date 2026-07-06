@@ -6,21 +6,21 @@ foreach ($puskesmas_options as $puskesmas) {
 }
 ?>
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-user-md"></i> Kelola Akun Puskesmas / Nakes</h1>
+	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-hospital"></i> Akun Puskesmas</h1>
 </div>
 
 <div class="container-fluid">
 	<div class="card shadow mb-4">
 		<div class="card-header py-3 d-flex align-items-center justify-content-between">
-			<h6 class="m-0 font-weight-bold text-primary">Daftar Akun Puskesmas / Nakes</h6>
+			<h6 class="m-0 font-weight-bold text-primary">Daftar Akun Puskesmas</h6>
 			<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill" data-toggle="modal" data-target="#modalTambahDokterNakes">
-				<i class="fas fa-plus-circle mr-1"></i> Tambah Akun Puskesmas/Nakes
+				<i class="fas fa-plus-circle mr-1"></i> Tambah Akun Puskesmas
 			</button>
 		</div>
 		<div class="card-body">
 			<!-- <div class="row mb-3">
 				<div class="col-md-4">
-					<input type="text" id="searchInput" class="form-control rounded-pill" placeholder="Cari Dokter / Nakes...">
+					<input type="text" id="searchInput" class="form-control rounded-pill" placeholder="Cari nama akun, username, atau Puskesmas...">
 				</div>
 			</div> -->
 			<div class="table-responsive">
@@ -96,7 +96,7 @@ foreach ($puskesmas_options as $puskesmas) {
 									<div class="modal-content border-0 shadow-sm">
 										<div class="modal-header bg-info text-white">
 											<h5 class="modal-title" id="editModalLabel<?= $data->userId ?>">
-												<i class="fas fa-stethoscope mr-2"></i>Perbarui Data Tenaga Kesehatan
+												<i class="fas fa-hospital-user mr-2"></i>Perbarui Akun Puskesmas
 											</h5>
 											<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
 												<span aria-hidden="true">&times;</span>
@@ -188,7 +188,7 @@ foreach ($puskesmas_options as $puskesmas) {
 		<div class="modal-content border-0 shadow-sm">
 			<div class="modal-header bg-success text-white">
 				<h5 class="modal-title" id="modalTambahDokterNakesLabel">
-					<i class="fas fa-user-plus mr-2"></i>Tambah Akun Puskesmas/Nakes
+					<i class="fas fa-user-plus mr-2"></i>Tambah Akun Puskesmas
 				</h5>
 				<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
@@ -241,7 +241,7 @@ foreach ($puskesmas_options as $puskesmas) {
 					<div class="row">
 						<div class="col-md-6">
 							<div class="form-group">
-								<label class="text-success"><i class="fas fa-clinic-medical mr-1"></i> Puskesmas/Remark</label>
+								<label class="text-success"><i class="fas fa-clinic-medical mr-1"></i> Puskesmas</label>
 								<?php if (!empty($puskesmas_options)): ?>
 									<select class="form-control rounded-pill border-success" name="remark">
 										<?php foreach ($puskesmas_options as $puskesmas): ?>

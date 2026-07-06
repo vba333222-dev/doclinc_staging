@@ -1,7 +1,7 @@
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-comments"></i> Kelola Keluhan</h1>
+	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-comments"></i> Keluhan</h1>
 	<button type="button" class="btn btn-sm btn-success shadow-sm" data-toggle="modal" data-target="#modalTambah">
-		<i class="fas fa-plus fa-sm text-white-50"></i> Tambah Data
+		<i class="fas fa-plus fa-sm text-white-50"></i> Tambah Keluhan
 	</button>
 </div>
 <!-- Content Row -->
@@ -105,8 +105,8 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-					<button type="submit" class="btn btn-primary">Submit</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+					<button type="submit" class="btn btn-primary">Simpan</button>
 				</div>
 			</form>
 		</div>
@@ -116,7 +116,7 @@
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="exampleModalLabel">Edit keluhan?</h5>
+				<h5 class="modal-title" id="exampleModalLabel">Edit Keluhan</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -141,8 +141,8 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-					<button type="submit" class="btn btn-primary">Submit</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+					<button type="submit" class="btn btn-primary">Simpan</button>
 				</div>
 			</form>
 		</div>
@@ -166,8 +166,8 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-					<button type="submit" class="btn btn-primary">Submit</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+					<button type="submit" class="btn btn-primary">Aktifkan</button>
 				</div>
 			</form>
 		</div>
@@ -191,8 +191,8 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-					<button type="submit" class="btn btn-primary">Submit</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+					<button type="submit" class="btn btn-primary">Nonaktifkan</button>
 				</div>
 			</form>
 		</div>
