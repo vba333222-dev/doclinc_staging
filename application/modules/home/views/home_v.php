@@ -2235,25 +2235,15 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 	</script>
 
 	<script>
-		console.log('<?= base_url("assets/js/popup-jamops.js") ?>');
-	</script>
-
-	<script>
 		let doktIdEl = document.getElementById('doktId');
 		let dokId = document.getElementById('dokId');
 		if (doktIdEl && dokId) {
 			dokId.value = doktIdEl.value;
-			console.log('Dokter Id: ' + dokId);
 		}
 	</script>
 
 	<script>
-		console.log('ini adalah base url: ' + '<?= base_url("assets/images/dokter_jaenul.jpeg") ?>');
-
 		const gambar = document.getElementById('gambar');
-		if (gambar) {
-			console.log(gambar['src']);
-		}
 	</script>
 
 	<!-- Webtoapk dan lain-lain -->
@@ -2469,7 +2459,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			const scrollContainer = document.getElementById('scrollContainer');
 
 			if (!scrollContainer) {
-				console.error("Elemen #scrollContainer tidak ditemukan.");
 				return;
 			}
 
@@ -2705,9 +2694,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				})
 				.then(response => response.json())
 				.then(result => {
-					console.log('hasilnya: ' + result);
-
-
 					// Tampilkan respon dari PHP
 					const results = document.querySelectorAll('.hasil');
 					const heroCards = document.querySelectorAll('.hero-card'); // Pastikan setiap pahlawan ada di elemen dengan class ini
@@ -2735,11 +2721,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						}
 					});
 
-					// document.getElementById('results').innerHTML = result + ' From You';
-					console.log("Data telah dikirim.");
-
 				})
-				.catch(error => console.error("Error:", error));
+				.catch(error => {});
 
 			// Fungsi untuk mengubah status menjadi "Not Available"
 			function setNotAvailable(heroCard, badge) {
@@ -2798,7 +2781,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						const components = results[0].address_components;
 						const city = components.find(c => c.types.includes("locality")) ||
 							components.find(c => c.types.includes("administrative_area_level_2"));
-						console.log('Kotanya: ', city);
 						document.getElementById('kota').textContent = city ? city.long_name : "Tidak ditemukan";
 					} else {
 						setLocationText('', '');
@@ -2872,23 +2854,16 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						month: '2-digit',
 						day: '2-digit'
 					}).split('/').reverse().join('-'); // format YYYY-MM-DD
-					console.log(today);
-					console.log(tanggal);
 
 					const uids = <?= json_encode(array_column($getAllRequestPendingAccept->result_array(), 'user_id')) ?>;
-					console.log("UIDs:", uids);
 					const tgl = <?= json_encode(array_column($getAllRequestPendingAccept->result_array(), 'date')) ?>;
-					console.log("tanggal:", tgl);
 					const stats = <?= json_encode(array_column($getAllRequestPendingAccept->result_array(), 'request_status')) ?>;
-					console.log("status:", stats);
 					const reqId = <?= json_encode(array_column($getAllRequestPendingAccept->result_array(), 'request_id')) ?>;
 					const reqIds = String(reqId);
-					console.log("requestId:", reqId);
 
 					const userIdToCheck = String(userIdWarga);
 
 					const kotaCilegon = document.getElementById('kota').textContent;
-					console.log(kotaCilegon);
 					if (!['Cilegon', 'Kota Cilegon'].includes(kotaCilegon)) {
 						// buatkan alert yang dengan swal
 						Swal.fire({
@@ -2898,7 +2873,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							confirmButtonText: 'Tutup'
 						}).then((result) => {
 							if (result.isConfirmed) {
-								// console.log('ok');
 							}
 						})
 						return;
@@ -2915,18 +2889,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						});
 						return;
 					}
-
-					console.log("userIdWarga:", userIdWarga);
-					console.log("userIdPasien:", userIdPasien);
-					console.log("status:", status);
-					console.log("tanggal:", tanggal);
-					console.log("today:", today);
-					console.log("tanggal_loc:", tanggal_loc);
-					console.log("jumlah:", jumlah);
-
-					// console.log("uid:", uid);
-					console.log("User Id Check:",
-						userIdToCheck);
 
 					if (uids.includes(userIdToCheck) === false) {
 						if (jumlah > 100) {
@@ -2984,7 +2946,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												requestId: reqIds
 											},
 											success: function(response) {
-												console.log(response);
 												Swal.fire({
 													title: 'Berhasil',
 													text: 'Tanggal konsultasi berhasil diperbarui.',
@@ -3005,12 +2966,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												requestId: reqIds
 											},
 											success: function(response) {
-												console.log("Data berhasil dihapus:", response);
 											}
 										});
-
-										console.log("Id Warga:", userIdWarga);
-										console.log("Internal request id:", reqIds);
 
 										window.location.href = link;
 									}
@@ -3027,8 +2984,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								icon: 'warning',
 								confirmButtonText: 'Tutup'
 							});
-						} else {
-							console.log("User ID tidak ditemukan.");
 						}
 					}
 				});
@@ -3227,8 +3182,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				lng: parseFloat(estimasiLng)
 			};
 
-			console.log(origin);
-
 			if (mapProvider !== 'google' || !window.google || !google.maps) {
 				return;
 			}
@@ -3359,8 +3312,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				if (notif.status === "Nakes Menuju Lokasi" && notif.id_req === request_id) {
 					if (statusNotif) {
 						statusNotif.innerHTML = notif.status;
-					} else {
-						console.error("Element with ID 'statusNotif' not found.");
 					}
 					// Tampilkan popup
 					showPopup();
@@ -3368,8 +3319,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				} else if (notif.id_req !== request_id) {
 					if (statusNotif) {
 						statusNotif.innerHTML = "Menunggu Antrian";
-					} else {
-						console.error("Element with ID 'statusNotif' not found.");
 					}
 				}
 			}
@@ -3413,9 +3362,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 			return profileUploadUrl + path.split('/').map(encodeURIComponent).join('/');
 		}
-		console.log("id user: " + idUsers);
-		console.log("id_request: " + request_id);
-
 		// Ambil data dari node 'notif'
 		const notifRate = getFirebaseDatabase().ref("rating");
 
@@ -3473,9 +3419,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				const idUser = this.iduser.value;
 				const idDokter = this.id_dokter.value;
 				const rating = this.rating.value;
-				console.log(idUser);
-				console.log(idDokter);
-				console.log(rating);
 
 				$.ajax({
 					url: '<?= base_url('home/submit_rating'); ?>',
@@ -3522,7 +3465,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						}
 					},
 					error: function(xhr, status, error) {
-						console.error('Error:', error);
 						Swal.fire({
 							title: 'Error',
 							text: 'Terjadi kesalahan.',

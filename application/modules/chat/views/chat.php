@@ -691,7 +691,6 @@ $session_id = $this->session->userdata('id') ?: '';
 						const receiver = document.getElementById('request_id').value;
 						const type = key === 'foto' ? 'image' : 'video';
 
-						console.log('filenya' + fileUrl);
 
 						// Kirim ke Firebase
 						setTimeout(() => {
@@ -920,27 +919,21 @@ $session_id = $this->session->userdata('id') ?: '';
 		});
 
 		function showNotification(message) {
-			console.log("Attempting to show notification with message:", message);
 
 			if (!("Notification" in window)) {
-				console.error("This browser does not support notifications.");
 			} else if (Notification.permission === "granted") {
 				const notification = new Notification("New Message", {
 					body: message
 				});
-				console.log("Notification displayed:", notification);
 			} else if (Notification.permission !== "denied") {
 				Notification.requestPermission().then((permission) => {
-					console.log("Permission request result:", permission);
 					if (permission === "granted") {
 						const notification = new Notification("New Message", {
 							body: message
 						});
-						console.log("Notification displayed after granting permission:", notification);
 					}
 				});
 			} else {
-				console.error("Notification permission denied.");
 			}
 		}
 
@@ -950,7 +943,6 @@ $session_id = $this->session->userdata('id') ?: '';
 			const message = messageInput.value;
 
 			const reqId = document.getElementById('request_id').value;
-			console.log(reqId);
 
 
 			if (message.trim() !== "") {
@@ -1033,24 +1025,17 @@ $session_id = $this->session->userdata('id') ?: '';
 
 		const uid = document.getElementById("uid").value;
 
-		console.log("Internal request id:", request_id);
-		console.log("User ID:", user_id);
-		console.log("Username:", username);
-		console.log("Uid:", uid);
 
 		// Tentukan role
 		const role = (username === user_id) ? "warga" : "dokter";
-		console.log("Role:", role);
 
 		// Firebase reference
 		const roomRef = getFirebaseDatabase().ref("calls/" + uid);
 
 		// firebase.database().ref("calls").on("value", snap => {
-		// 	console.log("Seluruh data calls:", snap.val());
 		// });
 
 		// roomRef.child("offer").on("value", snap => {
-		// 	console.log("Seluruh data calls:", snap.val());
 		// });
 
 		// Stream & peer connection
@@ -1087,12 +1072,10 @@ $session_id = $this->session->userdata('id') ?: '';
 		endCallBtn.style.display = "none";
 
 		if (role === "warga") {
-			console.log('hai');
 
 			setTimeout(() => {
 				roomRef.child("offer").on("value", snapshot => {
 					const val = snapshot.val();
-					console.log("Offer deteksi perubahan (setTimeout):", val);
 					if (val !== null) {
 						acceptCall.style.display = "inline-block";
 						Swal.fire({
@@ -1112,7 +1095,6 @@ $session_id = $this->session->userdata('id') ?: '';
 			}, 5000); // 500ms delay
 
 		} else {
-			console.log('Hello');
 			startCall.style.display = "inline-block";
 			endCallBtn.style.display = "inline-block";
 		}
@@ -1122,7 +1104,7 @@ $session_id = $this->session->userdata('id') ?: '';
 			await pc.setRemoteDescription(new RTCSessionDescription(sdp));
 			isRemoteDescriptionSet = true;
 			candidateQueue.forEach(c => {
-				pc.addIceCandidate(new RTCIceCandidate(c)).catch(e => console.error("ICE error:", e));
+				pc.addIceCandidate(new RTCIceCandidate(c)).catch(e  => {});
 			});
 			candidateQueue = [];
 		}
@@ -1153,7 +1135,6 @@ $session_id = $this->session->userdata('id') ?: '';
 				};
 
 				pc.ontrack = e => {
-					console.log("Track diterima:", e.track.kind);
 					if (!remoteStream) {
 						remoteStream = new MediaStream();
 						remoteVideo.srcObject = remoteStream;
@@ -1173,16 +1154,13 @@ $session_id = $this->session->userdata('id') ?: '';
 				await roomRef.set({
 					offer: JSON.stringify(offer)
 				}).then(() => {
-					console.log("Offer terkirim ke Firebase.");
 				}).catch((err) => {
-					console.error("Gagal mengirim offer:", err);
 				});
 
 				alert("Panggilan dimulai...");
 				startCall.disabled = true;
 				endCallBtn.disabled = false;
 			} catch (error) {
-				console.error("Gagal memulai panggilan:", error);
 				notify("Gagal memulai panggilan." + error.message);
 			}
 			showVideoPopup();
@@ -1234,7 +1212,6 @@ $session_id = $this->session->userdata('id') ?: '';
 				alert("Terhubung ke dokter");
 				acceptCall.disabled = true;
 			} catch (error) {
-				console.error("Gagal menerima panggilan:", error);
 				notify("Terjadi kesalahan saat menerima panggilan.");
 			}
 
@@ -1255,7 +1232,7 @@ $session_id = $this->session->userdata('id') ?: '';
 			if (!isRemoteDescriptionSet) {
 				candidateQueue.push(candidate);
 			} else if (pc && pc.signalingState !== 'closed') {
-				pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.error("ICE error:", e));
+				pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e  => {});
 			}
 		});
 
@@ -1266,7 +1243,6 @@ $session_id = $this->session->userdata('id') ?: '';
 				cleanup();
 				notify("Panggilan diakhiri");
 			} catch (error) {
-				console.error("Gagal mengakhiri panggilan:", error);
 				notify("Terjadi kesalahan saat mengakhiri panggilan.");
 			}
 			hideVideoPopup();

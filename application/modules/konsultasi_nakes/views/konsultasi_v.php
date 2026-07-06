@@ -307,9 +307,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				.then(result => {
 					// Tampilkan respon dari PHP
 					document.getElementById('result').innerHTML = result;
-					console.log("Data telah dikirim.");
 				})
-				.catch(error => console.error("Error:", error));
+				.catch(error  => {});
 		}
 
 		function getAddress(location) {

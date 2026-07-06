@@ -17,7 +17,6 @@ geocoders.geocode(
 					components.find((c) =>
 						c.types.includes("administrative_area_level_2")
 					);
-				console.log(city);
 				document.getElementById("kota").textContent = city.long_name;
 			} else {
 				document.getElementById("kota").textContent =

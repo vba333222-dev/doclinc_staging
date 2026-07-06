@@ -304,10 +304,8 @@ $chat_back_url = !empty($legacy_superapp_url) ? rtrim($legacy_superapp_url, '/')
 		if (firebaseDb) {
 			firebaseDb.ref("messages").on("child_added", (snapshot) => {
 				const message = snapshot.val();
-				console.log("New message detected:", message);
 
 				if (message.receiver === currentUser) {
-					console.log("Message is for current user:", message);
 					showNotification(`Message from ${message.sender}: ${message.text}`);
 				}
 			});
@@ -369,27 +367,21 @@ $chat_back_url = !empty($legacy_superapp_url) ? rtrim($legacy_superapp_url, '/')
 		}
 
 		function showNotification(message) {
-			console.log("Attempting to show notification with message:", message);
 
 			if (!("Notification" in window)) {
-				console.error("This browser does not support notifications.");
 			} else if (Notification.permission === "granted") {
 				const notification = new Notification("New Message", {
 					body: message
 				});
-				console.log("Notification displayed:", notification);
 			} else if (Notification.permission !== "denied") {
 				Notification.requestPermission().then((permission) => {
-					console.log("Permission request result:", permission);
 					if (permission === "granted") {
 						const notification = new Notification("New Message", {
 							body: message
 						});
-						console.log("Notification displayed after granting permission:", notification);
 					}
 				});
 			} else {
-				console.error("Notification permission denied.");
 			}
 		}
 

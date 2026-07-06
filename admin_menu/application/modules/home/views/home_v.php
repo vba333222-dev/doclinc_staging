@@ -675,7 +675,6 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 					const info = `Jarak: ${leg.distance.text}, Estimasi waktu: ${leg.duration.text}`;
 					document.getElementById(infoElementId).innerText = info;
 				} else {
-					console.error("Gagal mengambil rute:", status);
 				}
 			});
 		}
@@ -809,7 +808,6 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 					const info = `Jarak: ${leg.distance.text}, Estimasi waktu: ${leg.duration.text}`;
 					document.getElementById(infoElementId).innerText = info;
 				} else {
-					console.error("Gagal mengambil rute:", status);
 				}
 			});
 		}
@@ -1020,7 +1018,6 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 				container.html(html);
 			},
 			error: function() {
-				console.error('Gagal memuat data realtime konsultasi selesai');
 			}
 		});
 	}
@@ -1039,7 +1036,6 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 			type: "GET",
 			dataType: "json",
 			success: function(response) {
-				console.log(response); // Debugging: tampilkan data yang diterima
 				// return;
 				const labels = [];
 				const data = [];
