@@ -66,16 +66,20 @@ if (!function_exists('doclinc_user_puskesmas_code')) {
 			return $code;
 		}
 
-		if (!$CI->db->field_exists('remark', 'users')) {
+		$auth_db = $CI->load->database('default', true);
+		if (!$auth_db->field_exists('remark', 'users')) {
 			return '';
 		}
 
-		$user = $CI->db
+		$user = $auth_db
 			->select('remark')
 			->where('userId', $user_id)
 			->where('role', 'dokter')
 			->get('users')
 			->row();
+		if (method_exists($auth_db, 'reset_query')) {
+			$auth_db->reset_query();
+		}
 
 		return $user ? doclinc_normalize_puskesmas_code($user->remark) : '';
 	}

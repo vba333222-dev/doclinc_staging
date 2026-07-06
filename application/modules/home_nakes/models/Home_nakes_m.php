@@ -79,16 +79,24 @@ class Home_nakes_m extends MX_Controller
 	private function get_user_puskesmas_code($user_id)
 	{
 		$user_id = (int) $user_id;
-		if ($user_id < 1 || !$this->db->field_exists('remark', 'users')) {
+		if ($user_id < 1) {
 			return '';
 		}
 
-		$user = $this->db
+		$auth_db = $this->load->database('default', true);
+		if (!$auth_db->field_exists('remark', 'users')) {
+			return '';
+		}
+
+		$user = $auth_db
 			->select('remark')
 			->where('userId', $user_id)
 			->where('role', 'dokter')
 			->get('users')
 			->row();
+		if (method_exists($auth_db, 'reset_query')) {
+			$auth_db->reset_query();
+		}
 
 		return $user ? $this->normalize_puskesmas_code($user->remark) : '';
 	}
