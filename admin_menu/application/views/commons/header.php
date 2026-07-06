@@ -35,99 +35,6 @@
 	<!-- buatkan untuk icon web -->
 	<link rel="icon" type="image/png" href="<?php echo base_url('assets/img/android-icon-192x192.png'); ?>">
 
-	<!-- Custom Modern Hospital Dashboard Styles -->
-	<style>
-		body {
-			background: #f4f6fb;
-			font-family: 'Nunito', sans-serif;
-		}
-
-		.sidebar {
-			background: linear-gradient(135deg, #2e8b57 0%, #38b6ff 100%);
-		}
-
-		.sidebar .sidebar-brand-icon img {
-			max-width: 60px;
-		}
-
-		.sidebar .nav-item {
-			margin-bottom: 8px;
-		}
-
-		.sidebar .nav-link {
-			border-radius: 8px;
-			transition: background 0.2s, color 0.2s;
-			color: #fff;
-		}
-
-		.sidebar .nav-link.active,
-		.sidebar .nav-link:hover {
-			background: rgba(255, 255, 255, 0.15);
-			color: #fff;
-		}
-
-		.sidebar .nav-link i {
-			margin-right: 8px;
-		}
-
-		.doclinc-sidebar-heading {
-			color: rgba(255, 255, 255, 0.62);
-			font-size: 0.68rem;
-			font-weight: 800;
-			letter-spacing: 0.06rem;
-			text-transform: uppercase;
-			padding: 0.65rem 1rem 0.2rem;
-		}
-
-		.topbar {
-			background: #fff;
-			border-bottom: 1px solid #e3e6f0;
-			box-shadow: 0 2px 8px rgba(46, 139, 87, 0.05);
-		}
-
-		.topbar .navbar-nav .nav-link {
-			color: #2e8b57;
-		}
-
-		.topbar .navbar-nav .nav-link:hover {
-			color: #38b6ff;
-		}
-
-		.topbar .dropdown-menu {
-			border-radius: 10px;
-		}
-
-		.container-fluid {
-			padding: 30px 20px;
-		}
-
-		@media (max-width: 768px) {
-			.admin-map {
-				height: 300px;
-			}
-
-			.admin-directions-panel {
-				max-height: 300px;
-			}
-
-			.sidebar {
-				background: #2e8b57;
-			}
-		}
-
-		.print-signature {
-			display: none;
-		}
-
-		@media print {
-			.print-signature {
-				display: block;
-				margin-top: 60px;
-				text-align: center;
-			}
-		}
-	</style>
-
 </head>
 
 <body id="page-top">
@@ -146,7 +53,7 @@
 		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed' || $this->session->flashdata('active_tab_news_feed')) ? 'active' : '';
 		?>
 		<!-- Sidebar -->
-		<ul class="navbar-nav sidebar sidebar-dark accordion position-fixed vh-100" id="accordionSidebar" style="top:0; left:0; z-index:1030; width: 220px; overflow-y:auto;">
+		<ul class="navbar-nav sidebar sidebar-dark accordion position-fixed vh-100 doclinc-sidebar" id="accordionSidebar">
 			<!-- Sidebar - Brand -->
 			<a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
 				<div class="sidebar-brand-icon">
@@ -154,7 +61,7 @@
 				</div>
 			</a>
 
-			<div class="doclinc-sidebar-heading">Dashboard</div>
+			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Dashboard</div>
 			<li class="nav-item <?= $doclinc_active_dashboard; ?>">
 				<a class="nav-link" href="<?php echo site_url('home'); ?>">
 					<i class="fas fa-tachometer-alt"></i>
@@ -162,7 +69,7 @@
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-heading">Operasional</div>
+			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Operasional</div>
 			<li class="nav-item <?= $doclinc_active_konsultasi; ?>">
 				<a class="nav-link" href="<?php echo site_url('konsultasi_kesehatan'); ?>">
 					<i class="fas fa-stethoscope"></i>
@@ -170,7 +77,7 @@
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-heading">Puskesmas</div>
+			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Puskesmas</div>
 			<li class="nav-item <?= $doclinc_active_master_puskesmas; ?>">
 				<a class="nav-link" href="<?php echo site_url('master_puskesmas'); ?>">
 					<i class="fas fa-hospital"></i>
@@ -192,7 +99,7 @@
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-heading">Layanan</div>
+			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Layanan</div>
 			<li class="nav-item <?= $doclinc_active_keluhan; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_keluhan'); ?>">
 					<i class="fas fa-comments"></i>
@@ -214,7 +121,7 @@
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-heading">Laporan</div>
+			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Laporan</div>
 			<li class="nav-item <?= $doclinc_active_laporan; ?>">
 				<a class="nav-link" href="<?php echo site_url('laporan'); ?>">
 					<i class="fas fa-file-alt"></i>
@@ -222,7 +129,7 @@
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-heading">Konten</div>
+			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Konten</div>
 			<li class="nav-item <?= $doclinc_active_news; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_news_feed'); ?>">
 					<i class="fas fa-newspaper"></i>
@@ -237,23 +144,23 @@
 		<!-- End of Sidebar -->
 
 		<!-- Content Wrapper -->
-		<div id="content-wrapper" class="d-flex flex-column" style="margin-left:220px;">
+		<div id="content-wrapper" class="d-flex flex-column doclinc-content-wrapper">
 			<div id="content">
 				<!-- Topbar -->
-				<nav class="navbar navbar-expand navbar-light topbar mb-4 static-top shadow" style="background: #f8fafc; position:sticky; top:0; z-index:1020;">
+				<nav class="navbar navbar-expand navbar-light topbar mb-4 static-top shadow doclinc-topbar">
 					<button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
 						<i class="fa fa-bars"></i>
 					</button>
 					<!-- Hospital Branding -->
 					<div class="d-none d-md-flex align-items-center mr-auto">
-						<span class="h5 mb-0 font-weight-bold" style="color:#2e8b57;">Halaman Admin Doclinc</span>
+						<span class="h5 mb-0 font-weight-bold doclinc-topbar-brand">Halaman Admin Doclinc</span>
 					</div>
 					<ul class="navbar-nav ml-auto align-items-center">
 						<!-- Notification Bell -->
 						<li class="nav-item dropdown no-arrow mx-2">
 							<a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 								<i class="fas fa-bell fa-lg text-gray-600"></i>
-								<span class="badge badge-danger badge-counter" style="font-size:0.7rem;">3</span>
+								<span class="badge badge-danger badge-counter doclinc-badge-counter">3</span>
 							</a>
 							<div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="alertsDropdown">
 								<h6 class="dropdown-header">Notifications</h6>
@@ -283,7 +190,7 @@
 						<!-- User Profile Dropdown -->
 						<li class="nav-item dropdown no-arrow">
 							<a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-								<img class="img-profile rounded-circle mr-2" src="https://c1.klipartz.com/pngpicture/823/765/sticker-png-login-icon-system-administrator-user-user-profile-icon-design-avatar-face-head-thumbnail.png" style="width:36px; height:36px; object-fit:cover;">
+								<img class="img-profile rounded-circle mr-2 doclinc-profile-image" src="https://c1.klipartz.com/pngpicture/823/765/sticker-png-login-icon-system-administrator-user-user-profile-icon-design-avatar-face-head-thumbnail.png">
 								<span class="d-none d-lg-inline text-gray-700 small font-weight-bold"><?= html_escape($this->session->userdata('username') ?: '') ?></span>
 							</a>
 							<div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
@@ -306,4 +213,4 @@
 				</nav>
 				<!-- End of Topbar -->
 				<!-- Begin Page Content -->
-				<div class="container-fluid">
+				<div class="container-fluid doclinc-admin-page">

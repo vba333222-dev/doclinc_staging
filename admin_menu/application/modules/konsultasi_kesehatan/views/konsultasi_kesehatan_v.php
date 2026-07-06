@@ -47,14 +47,14 @@ if (!function_exists('doclinc_admin_puskesmas_label')) {
 }
 ?>
 
-<div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here">
+<div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
-		<h1 class="h3 mb-1 font-weight-bold"><i class="fas fa-fw fa-stethoscope"></i> Monitoring Konsultasi</h1>
-		<div class="text-white-50">Pantau status konsultasi, Puskesmas tujuan, PIC personel, dan timeline operasional.</div>
+		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-stethoscope"></i> Monitoring Konsultasi</h1>
+		<div class="text-white-50 doclinc-page-subtitle">Pantau status konsultasi, Puskesmas tujuan, PIC personel, dan timeline operasional.</div>
 	</div>
 </div>
 
-<div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-4 doclinc-filter-card">
 	<div class="card-body">
 		<form method="get" action="<?= site_url('konsultasi_kesehatan'); ?>">
 			<div class="form-row align-items-end">
@@ -104,7 +104,7 @@ if (!function_exists('doclinc_admin_puskesmas_label')) {
 
 <div class="row">
 	<div class="col">
-		<div class="card shadow-sm">
+		<div class="card shadow-sm doclinc-table-card">
 			<div class="card-header bg-white d-flex justify-content-between align-items-center">
 				<h6 class="m-0 font-weight-bold text-primary">Daftar Konsultasi</h6>
 				<span class="badge badge-light border"><?= count($data_konsultasi); ?> data</span>

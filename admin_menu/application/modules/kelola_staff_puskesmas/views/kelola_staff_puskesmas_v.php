@@ -16,10 +16,10 @@ $form_values = array(
 	'status' => $form_staff ? (string) $form_staff->status : 'aktif',
 );
 ?>
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
+<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
-		<h1 class="h3 mb-1 font-weight-bold"><i class="fas fa-fw fa-users-cog"></i> Staff Puskesmas</h1>
-		<div class="text-white-50">Kelola personel Puskesmas yang dapat ditetapkan sebagai PIC layanan.</div>
+		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-users-cog"></i> Staff Puskesmas</h1>
+		<div class="text-white-50 doclinc-page-subtitle">Kelola personel Puskesmas yang dapat ditetapkan sebagai PIC layanan.</div>
 	</div>
 </div>
 
@@ -38,7 +38,7 @@ $form_values = array(
 			Staff adalah data personel/PIC, bukan otomatis akun login. Akun terkait hanya ditampilkan jika staff sudah terhubung dengan user.
 		</div>
 		<?php if ($is_form): ?>
-			<div class="card shadow mb-4">
+			<div class="card shadow mb-4 doclinc-filter-card">
 				<div class="card-header py-3 d-flex align-items-center justify-content-between">
 					<h6 class="m-0 font-weight-bold text-primary"><?= html_escape($form_title); ?></h6>
 					<a href="<?= site_url('kelola_staff_puskesmas'); ?>" class="btn btn-sm btn-light rounded-pill border">Batal</a>
@@ -108,7 +108,7 @@ $form_values = array(
 			</div>
 		<?php endif; ?>
 
-		<div class="card shadow mb-4">
+		<div class="card shadow mb-4 doclinc-table-card">
 			<div class="card-header py-3 d-flex align-items-center justify-content-between">
 				<h6 class="m-0 font-weight-bold text-primary">Daftar Staff Puskesmas</h6>
 				<a href="<?= site_url('kelola_staff_puskesmas/create'); ?>" class="btn btn-sm btn-success shadow-sm rounded-pill">
