@@ -1,5 +1,5 @@
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-    <h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-newspaper"></i> Kelola News Feed</h1>
+    <h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-newspaper"></i> News & Feed</h1>
     <button type="button" class="btn btn-sm btn-success shadow-sm" data-toggle="modal" data-target="#modalTambah">
         <i class="fas fa-plus fa-sm text-white-50"></i> Tambah News Feed
     </button>
@@ -64,7 +64,7 @@
                                       <i class="fas fa-edit fa-fw text-primary"></i> Edit
                                   </a>
                                   <a class="dropdown-item" href="#modalDelete" data-toggle="modal" data-idfeed="<?= $row->feedId; ?>">
-                                      <i class="fas fa-trash fa-fw text-danger"></i> Delete
+                                      <i class="fas fa-trash fa-fw text-danger"></i> Hapus
                                   </a>
                               </div>
                             </div>
@@ -107,8 +107,8 @@
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
           </div>
       </form>
     </div>
@@ -145,8 +145,8 @@
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="submit" class="btn btn-primary">Update</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
           </div>
       </form>
     </div>

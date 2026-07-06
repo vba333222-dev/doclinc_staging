@@ -355,7 +355,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 									<p class="text-primary font-weight-bold"><?= $baru->nama; ?></p>
 								</div>
 								<div class="col-md-6">
-									<p class="mb-2"><strong><i class="fas fa-user-md"></i> Nama Dokter:</strong></p>
+									<p class="mb-2"><strong><i class="fas fa-hospital-user"></i> Akun Puskesmas:</strong></p>
 									<p class="text-success font-weight-bold"><?= $baru->name; ?></p>
 								</div>
 							</div>
@@ -380,7 +380,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 						<div class="col">
 							<div class="card shadow-sm h-100">
 								<div class="card-header bg-primary text-white">
-									<h6 class="mb-0"><i class="fas fa-route"></i> Rute Pasien ke Dokter</h6>
+									<h6 class="mb-0"><i class="fas fa-route"></i> Rute Kunjungan Puskesmas</h6>
 								</div>
 								<div class="card-body" style="max-height: 400px; overflow-y: auto; font-size: 14px;">
 									<div id="routeInfo<?= $baru->request_id; ?>" class="mb-3 fw-bold text-dark"></div>
@@ -422,7 +422,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 									<p class="text-primary font-weight-bold"><?= $proses->nama; ?></p>
 								</div>
 								<div class="col-md-6">
-									<p class="mb-2"><strong><i class="fas fa-user-md"></i> Nama Dokter:</strong></p>
+									<p class="mb-2"><strong><i class="fas fa-hospital-user"></i> Akun Puskesmas:</strong></p>
 									<p class="text-success font-weight-bold"><?= $proses->name; ?></p>
 								</div>
 							</div>
@@ -488,7 +488,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 						<div class="col">
 							<div class="card shadow-sm h-100">
 								<div class="card-header bg-primary text-white">
-									<h6 class="mb-0"><i class="fas fa-route"></i> Rute Pasien ke Dokter</h6>
+									<h6 class="mb-0"><i class="fas fa-route"></i> Rute Kunjungan Puskesmas</h6>
 								</div>
 								<div class="card-body" style="max-height: 400px; overflow-y: auto; font-size: 14px;">
 									<div id="routeInfo<?= $proses->request_id; ?>" class="mb-3 fw-bold text-dark"></div>
@@ -625,7 +625,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 							dokterMarker = new google.maps.Marker({
 								position: dokterPos,
 								map: map,
-								title: "Dokter",
+								title: "Petugas Puskesmas",
 								icon: {
 									url: 'https://img.icons8.com/emoji/48/ambulance-emoji.png',
 									scaledSize: new google.maps.Size(50, 50),
@@ -758,7 +758,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 							dokterMarker = new google.maps.Marker({
 								position: dokterPos,
 								map: map,
-								title: "Dokter",
+								title: "Petugas Puskesmas",
 								icon: {
 									url: 'https://img.icons8.com/emoji/48/ambulance-emoji.png',
 									scaledSize: new google.maps.Size(50, 50),
@@ -1022,7 +1022,7 @@ $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
                             </div>
                         </div>
                         <small>Selesai Konsultasi: ${jumlah_konsultasi}</small><br>
-                        <small>Kunjungan Nakes: ${jumlah_kunjungan}</small>
+                        <small>Kunjungan Puskesmas: ${jumlah_kunjungan}</small>
                     </div>`;
 				});
 
