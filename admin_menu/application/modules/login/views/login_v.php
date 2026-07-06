@@ -1,6 +1,9 @@
 <?php
 define('SITE_KEY', '6Lf_m3AiAAAAAAZp-LaIetcNMbsWdNQx7_yKvCtV');
 define('SECRET_KEY', '6Lf_m3AiAAAAACYyqHSHYMf9Bt5uMn8dnRDJyPhu');
+$doclinc_admin_base_url = rtrim(base_url(), '/');
+$doclinc_public_base_url = preg_replace('#/admin_menu$#', '', $doclinc_admin_base_url);
+$doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,7 +25,6 @@ define('SECRET_KEY', '6Lf_m3AiAAAAACYyqHSHYMf9Bt5uMn8dnRDJyPhu');
   <link rel="apple-touch-icon" sizes="144x144" href="<?php echo base_url(); ?>assets/img/apple-icon-144x144.png">
   <link rel="apple-touch-icon" sizes="152x152" href="<?php echo base_url(); ?>assets/img/apple-icon-152x152.png">
   <link rel="apple-touch-icon" sizes="180x180" href="<?php echo base_url(); ?>assets/img/apple-icon-180x180.png">
-  <link rel="icon" type="image/png" sizes="192x192"  href="<?php echo base_url(); ?>assets/img/android-icon-192x192.png">
   <link rel="icon" type="image/png" sizes="32x32" href="<?php echo base_url(); ?>assets/img/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="96x96" href="<?php echo base_url(); ?>assets/img/favicon-96x96.png">
   <link rel="icon" type="image/png" sizes="16x16" href="<?php echo base_url(); ?>assets/img/favicon-16x16.png"> -->
@@ -31,6 +33,15 @@ define('SECRET_KEY', '6Lf_m3AiAAAAACYyqHSHYMf9Bt5uMn8dnRDJyPhu');
 	<meta name="msapplication-TileImage" content="<?php echo base_url(); ?>assets/img/ms-icon-144x144.png">
 	<meta name="theme-color" content="#ffffff">
 	<title>Admin Doclinc</title>
+	<script>
+		(function() {
+			var storedTheme = null;
+			try {
+				storedTheme = localStorage.getItem('doclinc_admin_theme');
+			} catch (error) {}
+			document.documentElement.setAttribute('data-theme', storedTheme === 'dark' ? 'dark' : 'light');
+		})();
+	</script>
 	<!-- Custom fonts for this template-->
 	<link href="<?php echo base_url(); ?>assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
 	<link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
@@ -43,17 +54,17 @@ define('SECRET_KEY', '6Lf_m3AiAAAAACYyqHSHYMf9Bt5uMn8dnRDJyPhu');
 	<!-- Custom CSS -->
 	<link href="<?php echo base_url(); ?>assets/css/custom.css" rel="stylesheet">
 	<script src="https://www.google.com/recaptcha/api.js" async defer></script>
-	<link rel="icon" type="image/png" href="<?php echo base_url('assets/img/android-icon-192x192.png'); ?>">
+	<link rel="icon" type="image/png" href="<?php echo html_escape($doclinc_logo_url); ?>">
 </head>
 
-<body class="bg-brown-100">
+<body class="bg-brown-100 doclinc-login-page">
 	<div class="container">
-		<div class="row justify-content-center align-items-center" style="min-height: 100vh; background: linear-gradient(135deg, #e0f7fa 0%, #fffde4 100%);">
+		<div class="row justify-content-center align-items-center doclinc-login-shell">
 			<div class="col-md-7 col-lg-5">
-				<div class="card border-0 shadow-lg rounded-4 animate__animated animate__fadeInDown" style="background: #ffffffcc;">
+				<div class="card border-0 shadow-lg rounded-4 animate__animated animate__fadeInDown doclinc-login-card">
 					<div class="card-body p-5">
 						<div class="text-center mb-4">
-							<img src="<?php echo base_url('assets/img/asoka-logo-only.png'); ?>" alt="Logo Doclinc" style="width:70px; margin-bottom:10px;">
+							<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="Doclinc" class="doclinc-login-logo">
 							<h1 class="h4 text-primary font-weight-bold mb-2">Selamat Datang di Admin Doclinc</h1>
 							<p class="text-muted mb-0">Silakan login untuk mengakses sistem administrasi Doclinc</p>
 						</div>
