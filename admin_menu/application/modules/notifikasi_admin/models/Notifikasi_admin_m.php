@@ -3,20 +3,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Notifikasi_admin_m extends MX_Controller
 {
-	private $event_types = array(
-		'request_created',
-		'request_accepted',
-		'request_cancelled',
-		'visit_started',
-		'visit_arrived',
-		'visit_in_service',
-		'visit_completed',
-		'request_completed',
-		'pic_assigned',
-		'pic_changed',
-		'pic_cleared',
-	);
-
 	public function __construct()
 	{
 		parent::__construct();
@@ -59,7 +45,6 @@ class Notifikasi_admin_m extends MX_Controller
 		return (int) $this->with_db_debug_disabled(function () use ($last_seen_event_id) {
 			return $this->db
 				->where('event_id >', (int) $last_seen_event_id)
-				->where_in('event_type', $this->event_types)
 				->count_all_results('request_events');
 		}, 0);
 	}
@@ -115,7 +100,6 @@ class Notifikasi_admin_m extends MX_Controller
 				$this->db->join('m_puskesmas assigned_puskesmas', "assigned_puskesmas.kode_pkm = $routed_puskesmas_code_expr", 'left', FALSE);
 			}
 			return $this->db
-				->where_in('request_events.event_type', $this->event_types)
 				->order_by('request_events.event_id', 'DESC')
 				->limit($limit)
 				->get()
@@ -192,7 +176,6 @@ class Notifikasi_admin_m extends MX_Controller
 		$row = $this->with_db_debug_disabled(function () {
 			return $this->db
 				->select_max('event_id', 'max_event_id')
-				->where_in('event_type', $this->event_types)
 				->get('request_events')
 				->row();
 		}, null);
