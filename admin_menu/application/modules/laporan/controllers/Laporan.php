@@ -22,19 +22,25 @@ class Laporan extends MX_Controller
 
 			if ($tipe === 'perhari') {
 				$tanggal = $this->input->get('tanggal');
+				$tanggal_awal = $this->input->get('tanggal_awal');
+				$tanggal_akhir = $this->input->get('tanggal_akhir');
 				$puskesmas = $this->input->get('puskesmas');
 				$dokter = $this->input->get('dokter');
 				$status = $this->input->get('status');
 				$keyword = $this->input->get('keyword');
 
 				$tipeBtn = $this->input->get('tipeBtn');
+				$summary = array();
+				$breakdown = array();
 
 				if ($tipeBtn == 1) {
-					$data = $this->Laporan_m->get_laporan_perhari($tanggal, $puskesmas, $dokter, $status, $keyword);
+					$data = $this->Laporan_m->get_laporan_perhari($tanggal, $puskesmas, $dokter, $status, $keyword, $tanggal_awal, $tanggal_akhir);
+					$summary = $this->Laporan_m->summarize_report_rows($data);
+					$breakdown = $this->Laporan_m->build_puskesmas_breakdown($data);
 				} elseif ($tipeBtn == 2) {
-					$data = $this->Laporan_m->get_laporan_perhari_jumlah_pasien($tanggal, $puskesmas, $dokter, $status, $keyword);
+					$data = $this->Laporan_m->get_laporan_perhari_jumlah_pasien($tanggal, $puskesmas, $dokter, $status, $keyword, $tanggal_awal, $tanggal_akhir);
 				} elseif ($tipeBtn == 3) {
-					$data = $this->Laporan_m->get_laporan_perhari_jumlah_diagnosa($tanggal, $puskesmas, $dokter, $status, $keyword);
+					$data = $this->Laporan_m->get_laporan_perhari_jumlah_diagnosa($tanggal, $puskesmas, $dokter, $status, $keyword, $tanggal_awal, $tanggal_akhir);
 				}
 			} elseif ($tipe === 'perminggu') {
 				$tanggal_awal = $this->input->get('tanggal_awal'); // optional filter mingguan
@@ -48,7 +54,9 @@ class Laporan extends MX_Controller
 
 			$this->output->set_content_type('application/json')->set_output(json_encode([
 				'status' => 'success',
-				'data' => $data ?? []
+				'data' => $data ?? [],
+				'summary' => $summary ?? array(),
+				'breakdown' => $breakdown ?? array()
 			]));
 		} else {
 			// Akses biasa (non-AJAX)
