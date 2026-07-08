@@ -695,6 +695,55 @@ footer.sticky-footer {
     color: var(--doclinc-muted) !important;
 }
 
+.doclinc-notification-badge {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.1rem;
+}
+
+.doclinc-notification-menu {
+    min-width: 320px;
+    max-width: 360px;
+}
+
+.doclinc-notification-mark-read {
+    color: var(--doclinc-primary-dark);
+    font-size: 0.72rem;
+    text-decoration: none;
+}
+
+.doclinc-notification-mark-read:hover,
+.doclinc-notification-mark-read:focus {
+    color: var(--doclinc-info);
+    text-decoration: underline;
+}
+
+.doclinc-notification-item {
+    border-bottom: 1px solid var(--doclinc-border);
+    color: var(--doclinc-text);
+    white-space: normal;
+}
+
+.doclinc-notification-item:last-child {
+    border-bottom: 0;
+}
+
+.doclinc-notification-meta,
+.doclinc-notification-message,
+.doclinc-notification-time {
+    color: var(--doclinc-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.doclinc-notification-message {
+    margin-top: 0.18rem;
+}
+
+.doclinc-notification-time {
+    margin-top: 0.28rem;
+}
+
 html[data-theme="dark"] .bg-light,
 html[data-theme="dark"] .modal-body.bg-light {
     background-color: #0f172a !important;

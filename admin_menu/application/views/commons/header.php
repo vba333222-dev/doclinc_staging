@@ -181,10 +181,16 @@
 						<li class="nav-item dropdown no-arrow mx-2">
 							<a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 								<i class="fas fa-bell fa-lg text-gray-600"></i>
+								<span class="badge badge-danger badge-counter doclinc-notification-badge" id="doclincNotificationBadge" style="display:none;"></span>
 							</a>
-							<div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="alertsDropdown">
-								<h6 class="dropdown-header">Notifikasi</h6>
-								<div class="dropdown-item text-center small text-muted py-3">Belum ada notifikasi baru.</div>
+							<div class="dropdown-menu dropdown-menu-right shadow animated--grow-in doclinc-notification-menu" aria-labelledby="alertsDropdown">
+								<div class="dropdown-header d-flex align-items-center justify-content-between">
+									<span>Notifikasi</span>
+									<button type="button" class="btn btn-link btn-sm p-0 doclinc-notification-mark-read" id="doclincNotificationMarkRead" style="display:none;">Tandai semua dibaca</button>
+								</div>
+								<div id="doclincNotificationList">
+									<div class="dropdown-item text-center small text-muted py-3">Belum ada notifikasi baru.</div>
+								</div>
 							</div>
 						</li>
 						<!-- User Profile Dropdown -->
@@ -214,3 +220,80 @@
 				<!-- End of Topbar -->
 				<!-- Begin Page Content -->
 				<div class="container-fluid doclinc-admin-page">
+					<script type="text/javascript">
+						$(function() {
+							var summaryUrl = "<?= site_url('notifikasi_admin/summary'); ?>";
+							var markReadUrl = "<?= site_url('notifikasi_admin/mark_read'); ?>";
+							var $badge = $('#doclincNotificationBadge');
+							var $list = $('#doclincNotificationList');
+							var $markRead = $('#doclincNotificationMarkRead');
+							var emptyHtml = '<div class="dropdown-item text-center small text-muted py-3">Belum ada notifikasi baru.</div>';
+
+							function escapeHtml(value) {
+								return $('<div>').text(value || '').html();
+							}
+
+							function renderNeutral() {
+								$badge.hide().text('');
+								$markRead.hide();
+								$list.html(emptyHtml);
+							}
+
+							function renderSummary(response) {
+								if (!response || response.ok !== true) {
+									renderNeutral();
+									return;
+								}
+
+								var unreadCount = parseInt(response.unread_count || 0, 10);
+								if (unreadCount > 0) {
+									$badge.text(unreadCount > 99 ? '99+' : unreadCount).show();
+									$markRead.show();
+								} else {
+									$badge.hide().text('');
+									$markRead.hide();
+								}
+
+								var events = $.isArray(response.events) ? response.events : [];
+								if (!events.length) {
+									$list.html(emptyHtml);
+									return;
+								}
+
+								var html = '';
+								$.each(events, function(index, event) {
+									var requestId = event.request_id ? '#REQ-' + escapeHtml(event.request_id) : 'Request';
+									var puskesmas = event.puskesmas ? '<span class="doclinc-notification-puskesmas">' + escapeHtml(event.puskesmas) + '</span>' : '';
+									var message = event.message ? '<div class="doclinc-notification-message">' + escapeHtml(event.message) + '</div>' : '';
+									html += '<div class="dropdown-item doclinc-notification-item">'
+										+ '<div class="font-weight-bold">' + escapeHtml(event.title || 'Aktivitas konsultasi diperbarui') + '</div>'
+										+ '<div class="doclinc-notification-meta">' + requestId + (puskesmas ? ' &middot; ' + puskesmas : '') + '</div>'
+										+ message
+										+ '<div class="doclinc-notification-time">' + escapeHtml(event.created_at_label || event.created_at || '') + '</div>'
+										+ '</div>';
+								});
+								$list.html(html);
+							}
+
+							function loadNotifications() {
+								$.ajax({
+									url: summaryUrl,
+									type: 'GET',
+									dataType: 'json',
+									cache: false
+								}).done(renderSummary).fail(renderNeutral);
+							}
+
+							$markRead.on('click', function(event) {
+								event.preventDefault();
+								$.ajax({
+									url: markReadUrl,
+									type: 'POST',
+									dataType: 'json'
+								}).done(loadNotifications).fail(renderNeutral);
+							});
+
+							loadNotifications();
+							window.setInterval(loadNotifications, 60000);
+						});
+					</script>
