@@ -15,7 +15,7 @@ class Kelola_dokter_nakes extends MX_Controller
 	}
 	public function index()
 	{
-		$this->session->set_flashdata('title', 'Kelola Dokter/Nakes');
+		$this->session->set_flashdata('title', 'Akun Puskesmas');
 		$this->session->set_flashdata('active_tab_kelola_dokter_nakes', 'active');
 		$x['data_dokter_nakes'] = $this->Kelola_dokter_nakes_m->get_data_dokter_nakes();
 		$x['puskesmas_options'] = $this->Kelola_dokter_nakes_m->get_puskesmas_options();
@@ -80,12 +80,12 @@ class Kelola_dokter_nakes extends MX_Controller
 
 		$result = $this->Kelola_dokter_nakes_m->create_dokter_nakes($data);
 		if ($result) {
-			$this->session->set_flashdata('success', 'Akun Puskesmas/Nakes berhasil ditambahkan.');
+			$this->session->set_flashdata('success', 'Akun Puskesmas berhasil ditambahkan.');
 			redirect('kelola_dokter_nakes', 'refresh');
 			return;
 		}
 
-		$this->session->set_flashdata('error', 'Akun Puskesmas/Nakes gagal ditambahkan.');
+		$this->session->set_flashdata('error', 'Akun Puskesmas gagal ditambahkan.');
 		redirect('kelola_dokter_nakes', 'refresh');
 	}
 	public function aktifkan_user()
@@ -97,7 +97,7 @@ class Kelola_dokter_nakes extends MX_Controller
 		$remark_aktif = $this->input->post('remark_aktif');
 		$user = $this->session->userdata('username');
 		$this->Kelola_dokter_nakes_m->aktifkan_user($id_user, $user, $remark_aktif);
-		$this->session->set_flashdata('success', 'Anda berhasil mengaktifkan user.');
+		$this->session->set_flashdata('success', 'Akun Puskesmas berhasil diaktifkan.');
 		redirect('kelola_dokter_nakes', 'refresh');
 	}
 	public function nonaktifkan_user()
@@ -109,7 +109,7 @@ class Kelola_dokter_nakes extends MX_Controller
 		$remark_nonaktif = $this->input->post('remark_nonaktif');
 		$user = $this->session->userdata('username');
 		$this->Kelola_dokter_nakes_m->nonaktifkan_user($id_user, $user, $remark_nonaktif);
-		$this->session->set_flashdata('success', 'Anda berhasil menonaktifkan user.');
+		$this->session->set_flashdata('success', 'Akun Puskesmas berhasil dinonaktifkan.');
 		redirect('kelola_dokter_nakes', 'refresh');
 	}
 
@@ -189,8 +189,10 @@ class Kelola_dokter_nakes extends MX_Controller
 			return;
 		}
 		$id_dokter_nakes = (int) $this->input->post('id_dokter_nakes');
-		$this->Kelola_dokter_nakes_m->delete_dokter_nakes($id_dokter_nakes);
-		$this->session->set_flashdata('success', 'Data berhasil dihapus.');
+		$remark_nonaktif = $this->input->post('remark_nonaktif');
+		$user = $this->session->userdata('username');
+		$this->Kelola_dokter_nakes_m->delete_dokter_nakes($id_dokter_nakes, $user, $remark_nonaktif);
+		$this->session->set_flashdata('success', 'Akun Puskesmas dinonaktifkan. Data akun tidak dihapus.');
 		redirect('kelola_dokter_nakes', 'refresh');
 	}
 

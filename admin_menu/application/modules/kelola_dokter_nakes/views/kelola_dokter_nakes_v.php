@@ -10,6 +10,9 @@ foreach ($puskesmas_options as $puskesmas) {
 </div>
 
 <div class="container-fluid">
+	<div class="doclinc-helper-note mb-4">
+		Akun Puskesmas digunakan sebagai akses login koordinasi Puskesmas. Sistem legacy masih menyimpan akun ini dengan peran internal dokter untuk kompatibilitas, namun pengelolaannya tetap sebagai akun Puskesmas.
+	</div>
 	<div class="card shadow mb-4">
 		<div class="card-header py-3 d-flex align-items-center justify-content-between">
 			<h6 class="m-0 font-weight-bold text-primary">Daftar Akun Puskesmas</h6>
@@ -74,16 +77,16 @@ foreach ($puskesmas_options as $puskesmas) {
 										<form action="<?= site_url('kelola_dokter_nakes/nonaktifkan_user') ?>" method="post" class="d-inline">
 											<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
 											<input type="hidden" name="remark_nonaktif" value="<?= html_escape($data->remark ?? ''); ?>">
-											<button type="submit" class="btn btn-secondary btn-sm rounded-pill" onclick="return confirm('Nonaktifkan akun ini?');">
-												<i class="fas fa-ban"></i> Nonaktif
+											<button type="submit" class="btn btn-secondary btn-sm rounded-pill" onclick="return confirm('Nonaktifkan akun Puskesmas ini? Akun tidak dihapus dan dapat diaktifkan kembali.');">
+												<i class="fas fa-ban"></i> Nonaktifkan Akun
 											</button>
 										</form>
 									<?php else: ?>
 										<form action="<?= site_url('kelola_dokter_nakes/aktifkan_user') ?>" method="post" class="d-inline">
 											<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
 											<input type="hidden" name="remark_aktif" value="<?= html_escape($data->remark ?? ''); ?>">
-											<button type="submit" class="btn btn-success btn-sm rounded-pill" onclick="return confirm('Aktifkan akun ini?');">
-												<i class="fas fa-check"></i> Aktif
+											<button type="submit" class="btn btn-success btn-sm rounded-pill" onclick="return confirm('Aktifkan akun Puskesmas ini?');">
+												<i class="fas fa-check"></i> Aktifkan Akun
 											</button>
 										</form>
 									<?php endif; ?>
@@ -96,7 +99,7 @@ foreach ($puskesmas_options as $puskesmas) {
 									<div class="modal-content border-0 shadow-sm">
 										<div class="modal-header bg-info text-white">
 											<h5 class="modal-title" id="editModalLabel<?= $data->userId ?>">
-												<i class="fas fa-hospital-user mr-2"></i>Perbarui Akun Puskesmas
+												<i class="fas fa-hospital-user mr-2"></i>Edit Akun Puskesmas
 											</h5>
 											<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
 												<span aria-hidden="true">&times;</span>

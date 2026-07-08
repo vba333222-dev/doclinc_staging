@@ -165,15 +165,9 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		return $this->update_status($id_user, 'nonaktif', $user, $remark_nonaktif);
 	}
 
-	public function delete_dokter_nakes($id_user)
+	public function delete_dokter_nakes($id_user, $user = null, $remark_nonaktif = null)
 	{
-		if (!$this->db->table_exists('users')) {
-			return false;
-		}
-
-		$this->db->where('userId', $id_user);
-		$this->db->where('role', 'dokter');
-		return $this->db->delete('users');
+		return $this->update_status($id_user, 'nonaktif', $user, $remark_nonaktif);
 	}
 
 	public function update_dokter_nakes($id_user, $data)
@@ -221,7 +215,12 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		}
 
 		$data = array('status' => $status);
-		foreach (array('remark' => $remark, 'updated_by' => $user, 'updated_at' => date('Y-m-d H:i:s')) as $field => $value) {
+		$updates = array('updated_by' => $user, 'updated_at' => date('Y-m-d H:i:s'));
+		if ($remark !== null) {
+			$updates['remark'] = $remark;
+		}
+
+		foreach ($updates as $field => $value) {
 			if ($this->db->field_exists($field, 'users')) {
 				$data[$field] = $value;
 			}
