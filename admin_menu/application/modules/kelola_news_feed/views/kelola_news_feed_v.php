@@ -4,6 +4,9 @@
         <i class="fas fa-plus fa-sm text-white-50"></i> Tambah News Feed
     </button>
 </div>
+<div class="doclinc-helper-note mb-3">
+    Pengelolaan konten dan feed yang tampil sebagai informasi publik Doclinc.
+</div>
 <!-- Content Row -->
 <div class="row">
     <div class="col">

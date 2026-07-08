@@ -4,6 +4,9 @@
 		<i class="fas fa-plus fa-sm text-white-50"></i> Tambah Keluhan
 	</button>
 </div>
+<div class="doclinc-helper-note mb-3">
+	Master data kategori keluhan untuk pengelompokan referensi keluhan pada layanan Doclinc.
+</div>
 <!-- Content Row -->
 <div class="row">
 	<div class="col">

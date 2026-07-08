@@ -1,6 +1,9 @@
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
 	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-comments"></i> Layanan Kesehatan</h1>
 </div>
+<div class="doclinc-helper-note mb-3">
+	Halaman referensi layanan legacy ini menampilkan data permintaan yang masih terkait layanan kesehatan. Untuk pemantauan konsultasi harian, gunakan menu Monitoring Konsultasi.
+</div>
 <!-- Content Row -->
 <div class="row">
 	<div class="col">
