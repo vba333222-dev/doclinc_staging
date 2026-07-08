@@ -222,6 +222,11 @@
 				<div class="container-fluid doclinc-admin-page">
 					<script type="text/javascript">
 						$(function() {
+							if (window.doclincAdminNotificationsInitialized) {
+								return;
+							}
+							window.doclincAdminNotificationsInitialized = true;
+
 							var summaryUrl = "<?= site_url('notifikasi_admin/summary'); ?>";
 							var markReadUrl = "<?= site_url('notifikasi_admin/mark_read'); ?>";
 							var $badge = $('#doclincNotificationBadge');
@@ -280,20 +285,26 @@
 									url: summaryUrl,
 									type: 'GET',
 									dataType: 'json',
-									cache: false
+									cache: false,
+									xhrFields: {
+										withCredentials: true
+									}
 								}).done(renderSummary).fail(renderNeutral);
 							}
 
-							$markRead.on('click', function(event) {
+							$markRead.off('click.doclincNotifications').on('click.doclincNotifications', function(event) {
 								event.preventDefault();
 								$.ajax({
 									url: markReadUrl,
 									type: 'POST',
-									dataType: 'json'
+									dataType: 'json',
+									xhrFields: {
+										withCredentials: true
+									}
 								}).done(loadNotifications).fail(renderNeutral);
 							});
 
 							loadNotifications();
-							window.setInterval(loadNotifications, 60000);
+							window.doclincAdminNotificationsTimer = window.setInterval(loadNotifications, 60000);
 						});
 					</script>
