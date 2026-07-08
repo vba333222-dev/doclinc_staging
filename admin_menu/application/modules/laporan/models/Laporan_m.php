@@ -185,13 +185,13 @@ class Laporan_m extends MX_Controller
 
 	private function apply_report_filters($date_expr, $diagnosa_expr, $puskesmas_code_expr, $dokter_expr, $tanggal = null, $puskesmas = null, $dokter = null, $status = null, $keyword = null, $tanggal_awal = null, $tanggal_akhir = null)
 	{
-		if ($tanggal_awal) {
-			$this->db->where("DATE($date_expr) >=", $tanggal_awal);
+		if ($date_expr !== 'NULL' && $tanggal_awal) {
+			$this->db->where("DATE($date_expr) >= " . $this->db->escape($tanggal_awal), NULL, FALSE);
 		}
-		if ($tanggal_akhir) {
-			$this->db->where("DATE($date_expr) <=", $tanggal_akhir);
+		if ($date_expr !== 'NULL' && $tanggal_akhir) {
+			$this->db->where("DATE($date_expr) <= " . $this->db->escape($tanggal_akhir), NULL, FALSE);
 		}
-		if (!$tanggal_awal && !$tanggal_akhir && $tanggal) {
+		if ($date_expr !== 'NULL' && !$tanggal_awal && !$tanggal_akhir && $tanggal) {
 			$this->db->where("DATE($date_expr) = " . $this->db->escape($tanggal), NULL, FALSE);
 		}
 		if ($puskesmas === '__legacy__') {
