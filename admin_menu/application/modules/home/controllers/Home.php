@@ -16,51 +16,10 @@ class Home extends MX_Controller
 		$this->session->set_flashdata('title', 'Dashboard');
 		$this->session->set_flashdata('active_tab_dashboard', 'active');
 		unset($_SESSION['active_tab_keluhan']);
-		$year = date('Y');
-		$month = date('m');
-		$get_konsultasi_baru = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Pending'");
-		$get_konsultasi_proses = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Accepted'");
-		$get_konsultasi_selesai = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Completed'");
-		$get_konsultasi_cancel = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Cancelled'");
-		$x['konsultasi_baru'] = $get_konsultasi_baru->row()->jml;
-		$x['konsultasi_proses'] = $get_konsultasi_proses->row()->jml;
-		$x['konsultasi_selesai'] = $get_konsultasi_selesai->row()->jml;
-		$x['konsultasi_cancel'] = $get_konsultasi_cancel->row()->jml;
-		$x['konsultasi_baru_list'] = $this->Home_m->konsultasi_baru_list();
-		$x['konsultasi_proses_list'] = $this->Home_m->konsultasi_proses_list();
-		$x['konsultasi_selesai_list'] = $this->Home_m->konsultasi_selesai_list()->result();
-		$x['selesai_konsultasi'] = $this->Home_m->selesai_konsultasi_per_puskesmas();
-		$x['kunjungan_nakes'] = $this->Home_m->kunjungan_nakes_per_puskesmas();
-		$bulan = array('01' => 'JANUARI', '02' => 'FEBRUARI', '03' => 'MARET', '04' => 'APRIL', '05' => 'MEI', '06' => 'JUNI', '07' => 'JULI', '08' => 'AGUSTUS', '09' => 'SEPTEMBER', '10' => 'OKTOBER', '11' => 'NOVEMBER', '12' => 'DESEMBER');
-		$bulan_txt = '';
-		$nilai_txt = '';
-		for ($i = 1; $i <= 12; $i++) {
-			$value_bln = str_pad($i, 2, "0", STR_PAD_LEFT);
-			$bulan_txt .= "'" . $bulan[$value_bln] . "'";
-			$data = $this->Home_m->get_konsul_perbulan(date('Y-' . $value_bln));
-			$nilai_txt .= "'" . $data->row()->total_nilai . "'";
-			if ($i < 12) {
-				$bulan_txt .= ", ";
-				$nilai_txt .= ", ";
-			}
-		}
-		$x['bulan_txt'] = $bulan_txt;
-		$x['nilai_txt'] = $nilai_txt;
-
-		// Konversi ke array indexed by remark
-		$konsultasi_map = [];
-		foreach ($x['selesai_konsultasi'] as $row) {
-			$konsultasi_map[$row->remark] = $row->jumlah_selesai;
-		}
-
-		$kunjungan_map = [];
-		foreach ($x['kunjungan_nakes'] as $row) {
-			$kunjungan_map[$row->remark] = $row->jumlah_kunjungan;
-		}
-
-		// ✅ Kirim hasil konversi ke view
-		$x['konsultasi_map'] = $konsultasi_map;
-		$x['kunjungan_map'] = $kunjungan_map;
+		$x['operational_summary'] = $this->Home_m->get_operational_summary();
+		$x['puskesmas_distribution'] = $this->Home_m->get_puskesmas_distribution(8);
+		$x['attention_requests'] = $this->Home_m->get_attention_requests(8);
+		$x['recent_activity'] = $this->Home_m->get_recent_request_events(8);
 
 		$this->load->view('commons/header');
 		$this->load->view('home_v', $x);
