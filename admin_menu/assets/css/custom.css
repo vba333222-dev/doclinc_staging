@@ -417,6 +417,26 @@ body {
     font-size: 0.82rem;
 }
 
+.doclinc-helper-note,
+.doclinc-warning-note {
+    border: 1px solid var(--doclinc-border);
+    border-left-width: 4px;
+    border-radius: var(--doclinc-radius);
+    background: var(--doclinc-surface);
+    color: var(--doclinc-text);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    padding: 0.85rem 1rem;
+}
+
+.doclinc-helper-note {
+    border-left-color: var(--doclinc-info);
+}
+
+.doclinc-warning-note {
+    border-left-color: #f6c23e;
+}
+
 .dropdown-menu {
     background: var(--doclinc-dropdown-bg);
     border-color: var(--doclinc-border);

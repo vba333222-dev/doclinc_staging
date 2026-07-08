@@ -112,7 +112,7 @@
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Layanan</div>
+			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Master Data</div>
 			<li class="nav-item <?= $doclinc_active_keluhan; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_keluhan'); ?>">
 					<i class="fas fa-comments"></i>
@@ -124,13 +124,6 @@
 				<a class="nav-link" href="<?php echo site_url('kelola_layanan_kesehatan'); ?>">
 					<i class="fas fa-clinic-medical"></i>
 					<span>Layanan Kesehatan</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_tindakan; ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_tindakan'); ?>">
-					<i class="fas fa-procedures"></i>
-					<span>Tindakan</span>
 				</a>
 			</li>
 
@@ -147,6 +140,14 @@
 				<a class="nav-link" href="<?php echo site_url('kelola_news_feed'); ?>">
 					<i class="fas fa-newspaper"></i>
 					<span>News & Feed</span>
+				</a>
+			</li>
+
+			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Maintenance</div>
+			<li class="nav-item <?= $doclinc_active_tindakan; ?>">
+				<a class="nav-link" href="<?php echo site_url('kelola_tindakan'); ?>">
+					<i class="fas fa-procedures"></i>
+					<span>Tindakan</span>
 				</a>
 			</li>
 

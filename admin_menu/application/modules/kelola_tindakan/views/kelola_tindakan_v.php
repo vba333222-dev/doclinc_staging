@@ -1,6 +1,9 @@
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
     <h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-comments"></i> Tindakan</h1>
 </div>
+<div class="doclinc-warning-note mb-3">
+    Halaman maintenance data legacy ini bukan alur kerja operasional harian konsultasi. Gunakan dengan hati-hati karena perubahan di halaman ini memengaruhi data tindakan/saran legacy.
+</div>
 <!-- Content Row -->
 <div class="row">
     <div class="col">
