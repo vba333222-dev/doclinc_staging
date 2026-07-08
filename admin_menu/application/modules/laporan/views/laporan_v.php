@@ -420,7 +420,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				},
 				error: function() {
 					latestRows = [];
-					$hasil.html('<div class="alert alert-danger">Terjadi kesalahan saat mengambil data laporan.</div>');
+					$hasil.html('<div class="alert alert-warning">Data laporan belum bisa dimuat. Silakan coba ulang atau sesuaikan filter.</div>');
 				}
 			});
 		}
