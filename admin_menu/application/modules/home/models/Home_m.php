@@ -190,7 +190,7 @@ class Home_m extends MX_Controller
 		$summary['in_progress'] = $summary['accepted'];
 		if ($this->db->field_exists('visit_status', 'requests')) {
 			$this->db->where('visit_status IS NOT NULL', NULL, FALSE);
-			$this->db->where("TRIM(visit_status) <>", '', FALSE);
+			$this->db->where("TRIM(visit_status) <> ''", NULL, FALSE);
 			$this->db->where('request_status <>', 'Completed');
 			$summary['in_progress'] = (int) $this->db->count_all_results('requests');
 		}
