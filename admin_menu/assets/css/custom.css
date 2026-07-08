@@ -744,6 +744,124 @@ footer.sticky-footer {
     margin-top: 0.28rem;
 }
 
+.doclinc-dashboard-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.doclinc-dashboard-card {
+    align-items: center;
+    background: var(--doclinc-surface);
+    border: 1px solid var(--doclinc-border);
+    border-left: 4px solid var(--doclinc-primary);
+    border-radius: var(--doclinc-radius);
+    box-shadow: 0 2px 8px var(--doclinc-shadow);
+    color: var(--doclinc-text);
+    display: flex;
+    gap: 0.85rem;
+    min-height: 104px;
+    padding: 1rem;
+}
+
+.doclinc-dashboard-card-icon {
+    align-items: center;
+    background: var(--doclinc-table-head);
+    border-radius: 999px;
+    color: var(--doclinc-primary-dark);
+    display: inline-flex;
+    height: 42px;
+    justify-content: center;
+    width: 42px;
+}
+
+.doclinc-dashboard-card-value {
+    color: var(--doclinc-text);
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.doclinc-dashboard-card-label {
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.doclinc-dashboard-card-warning {
+    border-left-color: #f6c23e;
+}
+
+.doclinc-dashboard-card-info,
+.doclinc-dashboard-card-service {
+    border-left-color: var(--doclinc-info);
+}
+
+.doclinc-dashboard-card-success {
+    border-left-color: var(--doclinc-primary);
+}
+
+.doclinc-dashboard-card-legacy {
+    border-left-color: #e74a3b;
+}
+
+.doclinc-dashboard-panel {
+    border: 1px solid var(--doclinc-border);
+}
+
+.doclinc-dashboard-panel .card-header {
+    min-height: 56px;
+}
+
+.doclinc-distribution-row + .doclinc-distribution-row {
+    margin-top: 1rem;
+}
+
+.doclinc-distribution-bar {
+    background: var(--doclinc-table-head);
+    border-radius: 999px;
+    height: 8px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.doclinc-distribution-bar > div {
+    background: var(--doclinc-primary);
+    height: 100%;
+}
+
+.doclinc-shortcut-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.doclinc-shortcut-grid a {
+    align-items: center;
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-text);
+    display: flex;
+    gap: 0.65rem;
+    min-height: 58px;
+    padding: 0.8rem;
+}
+
+.doclinc-shortcut-grid a:hover,
+.doclinc-shortcut-grid a:focus {
+    border-color: var(--doclinc-primary);
+    color: var(--doclinc-primary-dark);
+    text-decoration: none;
+}
+
+.doclinc-attention-item,
+.doclinc-activity-item {
+    background: var(--doclinc-surface);
+    color: var(--doclinc-text);
+}
+
 html[data-theme="dark"] .bg-light,
 html[data-theme="dark"] .modal-body.bg-light {
     background-color: #0f172a !important;
