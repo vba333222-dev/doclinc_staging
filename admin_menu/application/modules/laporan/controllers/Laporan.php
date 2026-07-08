@@ -7,6 +7,14 @@ class Laporan extends MX_Controller
 		parent::__construct();
 		$this->load->model('Laporan_m');
 		if ($this->session->userdata('is_login') == FALSE) {
+			if ($this->input->is_ajax_request()) {
+				$this->output_json(array(
+					'success' => false,
+					'status' => 'error',
+					'message' => 'Sesi admin berakhir. Silakan login kembali.'
+				), 401);
+				exit;
+			}
 			redirect('/', 'refresh');
 		}
 	}
@@ -24,6 +32,7 @@ class Laporan extends MX_Controller
 		$json = json_encode($payload, $flags);
 		if ($json === false) {
 			$json = json_encode(array(
+				'success' => false,
 				'status' => 'error',
 				'message' => 'Data laporan belum bisa dimuat.'
 			));
@@ -69,25 +78,35 @@ class Laporan extends MX_Controller
 					} elseif ($tipeBtn == 3) {
 						$data = $this->Laporan_m->get_laporan_perhari_jumlah_diagnosa($tanggal, $puskesmas, $dokter, $status, $keyword, $tanggal_awal, $tanggal_akhir);
 					} else {
-						$this->output_json(array('status' => 'error', 'message' => 'Tipe tombol laporan tidak dikenali.'));
+						$this->output_json(array(
+							'success' => false,
+							'status' => 'error',
+							'message' => 'Tipe tombol laporan tidak dikenali.'
+						));
 						return;
 					}
 				} elseif ($tipe === 'perminggu') {
 					$data = array();
 				} else {
-					$this->output_json(array('status' => 'error', 'message' => 'Tipe laporan tidak dikenali.'));
+					$this->output_json(array(
+						'success' => false,
+						'status' => 'error',
+						'message' => 'Tipe laporan tidak dikenali.'
+					));
 					return;
 				}
 
 				$this->output_json(array(
+					'success' => true,
 					'status' => 'success',
 					'data' => $data,
 					'summary' => $summary,
 					'breakdown' => $breakdown
 				));
-			} catch (Throwable $e) {
-				log_message('error', 'Laporan AJAX gagal dimuat: ' . $e->getMessage());
+			} catch (Exception $e) {
+				log_message('error', 'Laporan AJAX failed: ' . $e->getMessage());
 				$this->output_json(array(
+					'success' => false,
 					'status' => 'error',
 					'message' => 'Data laporan belum bisa dimuat.'
 				));

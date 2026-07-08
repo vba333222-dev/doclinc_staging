@@ -402,8 +402,14 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				data: $form.serialize(),
 				dataType: 'json',
 				success: function(response) {
+					var isSuccess = response && (response.success === true || response.status === 'success');
+					if (!isSuccess) {
+						latestRows = [];
+						$hasil.html('<div class="alert alert-warning">' + escapeHtml(response && response.message ? response.message : 'Data laporan belum bisa dimuat.') + '</div>');
+						return;
+					}
 					var rows = response.data || [];
-					if (response.status !== 'success' || rows.length === 0) {
+					if (rows.length === 0) {
 						latestRows = [];
 						$hasil.html('<div class="doclinc-empty-state">Belum ada data laporan sesuai filter. Gunakan Reset untuk kembali ke semua data.</div>');
 						return;
