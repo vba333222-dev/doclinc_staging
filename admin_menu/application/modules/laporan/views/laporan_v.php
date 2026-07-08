@@ -4,11 +4,10 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 <div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
 		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-file-alt"></i> Laporan</h1>
-		<div class="text-white-50 doclinc-page-subtitle">Rekap konsultasi berdasarkan tanggal, status, Puskesmas, PIC, dan aktivitas terakhir.</div>
+		<div class="text-white-50 doclinc-page-subtitle">Rekap operasional konsultasi berbasis Puskesmas, status, PIC, dan aktivitas terakhir.</div>
 	</div>
-	<!-- <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a> -->
 </div>
-<!-- Content Row -->
+
 <div class="row">
 	<div class="col-lg-3 col-md-6 mb-4">
 		<div class="card border-left-primary shadow h-100 py-2">
@@ -52,16 +51,29 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 	</div>
 </div>
 
-<!-- Forms for each report type -->
 <div id="form-perhari" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
 	<form id="formLaporanPerHari" action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
+		<div class="d-flex align-items-start justify-content-between flex-wrap mb-3">
+			<div>
+				<h5 class="mb-1 font-weight-bold">Laporan konsultasi harian</h5>
+				<div class="doclinc-report-meta">Gunakan filter ini untuk evaluasi layanan per Puskesmas. Halaman ini hanya menampilkan data dan tidak mengubah status konsultasi.</div>
+			</div>
+		</div>
 		<div class="form-row align-items-end">
-			<div class="col-auto">
+			<div class="col-auto mb-2">
 				<label for="tanggal_hari" class="col-form-label">Tanggal</label>
 				<input type="date" class="form-control" id="tanggal_hari" name="tanggal">
 			</div>
-			<div class="col-auto">
-				<label for="puskesmas_hari" class="col-form-label">Nama Puskesmas</label>
+			<div class="col-auto mb-2">
+				<label for="tanggal_awal_hari" class="col-form-label">Dari</label>
+				<input type="date" class="form-control" id="tanggal_awal_hari" name="tanggal_awal">
+			</div>
+			<div class="col-auto mb-2">
+				<label for="tanggal_akhir_hari" class="col-form-label">Sampai</label>
+				<input type="date" class="form-control" id="tanggal_akhir_hari" name="tanggal_akhir">
+			</div>
+			<div class="col-auto mb-2">
+				<label for="puskesmas_hari" class="col-form-label">Puskesmas</label>
 				<select class="form-control" id="puskesmas_hari" name="puskesmas">
 					<option value="">Semua Puskesmas</option>
 					<?php foreach ($puskesmas_options as $puskesmas): ?>
@@ -70,41 +82,43 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 					<option value="__legacy__">Legacy / Belum terklasifikasi</option>
 				</select>
 			</div>
-			<div class="col-auto">
+			<div class="col-auto mb-2">
 				<label for="status_hari" class="col-form-label">Status</label>
 				<select class="form-control" id="status_hari" name="status">
-					<option value="">Semua</option>
+					<option value="">Semua status</option>
 					<option value="Pending">Pending</option>
 					<option value="Accepted">Accepted</option>
 					<option value="Completed">Completed</option>
 					<option value="Cancelled">Cancelled</option>
 				</select>
 			</div>
-			<div class="col-auto">
+			<div class="col-auto mb-2">
 				<label for="dokter_hari" class="col-form-label">Akun Puskesmas</label>
 				<input type="text" class="form-control" id="dokter_hari" name="dokter" placeholder="Nama akun">
 			</div>
-			<div class="col-auto">
+			<div class="col-auto mb-2">
 				<label for="keyword_hari" class="col-form-label">Keyword</label>
 				<input type="text" class="form-control" id="keyword_hari" name="keyword" placeholder="ID, warga, diagnosa">
 			</div>
 			<input type="hidden" name="tipe" value="perhari">
 			<input type="hidden" name="tipeBtn" id="tipeBtn">
 
-			<div class="col-auto">
+			<div class="col-auto mb-2">
 				<button type="button" id="btnTampilkan" class="btn btn-primary">Tampilkan</button>
 				<button type="button" id="btnJumlahPasien" class="btn btn-success">Jumlah Pasien</button>
 				<button type="button" id="btnJumlahDiagnosa" class="btn btn-secondary">Jumlah Diagnosa</button>
+				<button type="button" id="btnResetLaporan" class="btn btn-outline-secondary">Reset</button>
 			</div>
 
-			<!-- Tombol Cetak & Export Excel di kanan -->
-			<div class="col ms-auto d-flex justify-content-end" style="gap: 1rem;">
-				<button type="button" id="btnCetak" class="btn btn-secondary">Cetak</button>
-				<button type="button" id="btnExport" class="btn btn-success">Export Excel</button>
+			<div class="col mb-2 ml-auto d-flex justify-content-end flex-wrap" style="gap: 0.75rem;">
+				<button type="button" id="btnCetak" class="btn btn-secondary">Cetak Laporan</button>
+				<button type="button" id="btnExport" class="btn btn-outline-secondary" disabled title="Route export Excel belum tersedia di modul Laporan">Export Excel</button>
 			</div>
 		</div>
 	</form>
-	<div id="hasil-laporan-perhari" class="mt-4 doclinc-table-card"></div>
+	<div id="hasil-laporan-perhari" class="mt-4 doclinc-table-card">
+		<div class="doclinc-empty-state">Pilih filter, lalu tampilkan laporan.</div>
+	</div>
 </div>
 
 <div id="form-perminggu" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
@@ -119,7 +133,6 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				<input type="number" class="form-control" id="minggu_ke" name="minggu" min="1" max="53" required>
 			</div>
 			<input type="hidden" name="tipe" value="perminggu">
-
 			<div class="col-auto">
 				<button type="submit" class="btn btn-success">Tampilkan</button>
 			</div>
@@ -164,6 +177,23 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 	</form>
 </div>
 
+<div class="modal fade doclinc-detail-modal" id="laporanDetailModal" tabindex="-1" role="dialog" aria-labelledby="laporanDetailTitle" aria-hidden="true">
+	<div class="modal-dialog modal-xl" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="laporanDetailTitle">Detail laporan</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body bg-light" id="laporanDetailBody"></div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
 	document.querySelectorAll('.show-form').forEach(function(btn) {
 		btn.addEventListener('click', function() {
@@ -172,7 +202,6 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			});
 			var formId = this.getAttribute('data-form');
 			document.getElementById(formId).style.display = 'block';
-			// Scroll to form
 			document.getElementById(formId).scrollIntoView({
 				behavior: 'smooth',
 				block: 'start'
@@ -183,16 +212,36 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 
 <script>
 	$(document).ready(function() {
+		var latestRows = [];
+		var uploadBaseUrl = '<?= base_url('../uploads/'); ?>';
+		var eventLabels = {
+			request_created: 'Konsultasi baru dibuat',
+			request_accepted: 'Konsultasi diterima',
+			request_cancelled: 'Konsultasi dibatalkan',
+			pic_assigned: 'PIC ditugaskan',
+			pic_changed: 'PIC diganti',
+			pic_cleared: 'PIC dihapus',
+			visit_started: 'Kunjungan dimulai',
+			visit_arrived: 'Nakes tiba di lokasi',
+			visit_in_service: 'Layanan sedang berjalan',
+			visit_completed: 'Kunjungan selesai',
+			request_completed: 'Konsultasi selesai'
+		};
+
 		function escapeHtml(value) {
-			return $('<div>').text(value == null ? '-' : value).html();
+			return $('<div>').text(value == null || value === '' ? '-' : value).html();
 		}
 
 		function shortText(value, limit) {
-			value = value == null ? '-' : String(value);
+			value = value == null || value === '' ? '-' : String(value);
 			if (value.length <= limit) {
 				return value;
 			}
 			return value.substring(0, limit - 3) + '...';
+		}
+
+		function safeText(value) {
+			return value == null || value === '' ? '-' : String(value);
 		}
 
 		function statusBadge(status) {
@@ -206,214 +255,271 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			return '<span class="badge ' + (classes[status] || 'badge-secondary') + '">' + safeStatus + '</span>';
 		}
 
-		// Handler untuk tombol Tampilkan
-		$('#btnTampilkan').on('click', function(e) {
-			e.preventDefault();
-			var tipeBtn = $('#tipeBtn').val(1);
+		function visitBadge(visitStatus) {
+			if (!visitStatus) {
+				return '';
+			}
+			return '<span class="badge badge-light border ml-1">' + escapeHtml(visitStatus) + '</span>';
+		}
+
+		function latestEventInfo(row) {
+			var latestEvent = row.latest_request_event || null;
+			if (!latestEvent) {
+				return {
+					label: 'Belum ada aktivitas',
+					time: ''
+				};
+			}
+			return {
+				label: latestEvent.message || eventLabels[latestEvent.event_type] || 'Aktivitas konsultasi diperbarui',
+				time: latestEvent.created_at || ''
+			};
+		}
+
+		function picHtml(row) {
+			if (!row.pic_staff_name) {
+				return '<span class="doclinc-pic-empty">Belum ditentukan</span>';
+			}
+			var meta = row.pic_staff_profesi ? '<div class="doclinc-report-meta">' + escapeHtml(row.pic_staff_profesi) + '</div>' : '';
+			return '<span class="doclinc-pic-chip"><i class="fas fa-user-nurse"></i>' + escapeHtml(row.pic_staff_name) + '</span>' + meta;
+		}
+
+		function renderSummary(summary) {
+			summary = summary || {};
+			var cards = [{
+				label: 'Total konsultasi',
+				value: summary.total || 0,
+				icon: 'fa-clipboard-list'
+			}, {
+				label: 'Selesai',
+				value: summary.completed || 0,
+				icon: 'fa-check-circle'
+			}, {
+				label: 'Batal',
+				value: summary.cancelled || 0,
+				icon: 'fa-ban'
+			}, {
+				label: 'Masih berjalan / belum selesai',
+				value: summary.active || 0,
+				icon: 'fa-hourglass-half'
+			}, {
+				label: 'Legacy / Belum terklasifikasi',
+				value: summary.legacy || 0,
+				icon: 'fa-exclamation-triangle'
+			}, {
+				label: 'Puskesmas aktif terlibat',
+				value: summary.puskesmas_count || 0,
+				icon: 'fa-hospital'
+			}];
+			var html = '<div class="doclinc-report-summary mb-4">';
+			$.each(cards, function(_, card) {
+				html += '<div class="doclinc-report-summary-card">';
+				html += '<div class="doclinc-monitor-summary-icon"><i class="fas ' + card.icon + '"></i></div>';
+				html += '<div><div class="doclinc-monitor-summary-value">' + escapeHtml(card.value) + '</div>';
+				html += '<div class="doclinc-monitor-summary-label">' + escapeHtml(card.label) + '</div></div>';
+				html += '</div>';
+			});
+			html += '</div>';
+			return html;
+		}
+
+		function renderBreakdown(items) {
+			items = items || [];
+			if (!items.length) {
+				return '<div class="doclinc-report-breakdown mb-4"><div class="doclinc-empty-state">Belum ada breakdown Puskesmas untuk filter ini.</div></div>';
+			}
+			var html = '<div class="doclinc-report-breakdown mb-4"><div class="d-flex align-items-center justify-content-between mb-2 flex-wrap">';
+			html += '<h6 class="font-weight-bold mb-1">Breakdown Puskesmas</h6>';
+			html += '<div class="doclinc-report-meta">Persentase selesai dihitung dari hasil filter saat ini.</div></div>';
+			html += '<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr>';
+			html += '<th>Puskesmas</th><th>Total</th><th>Selesai</th><th>Batal</th><th>Aktif</th><th>% Selesai</th>';
+			html += '</tr></thead><tbody>';
+			$.each(items, function(_, item) {
+				html += '<tr>';
+				html += '<td class="font-weight-bold">' + escapeHtml(item.nama_puskesmas) + '</td>';
+				html += '<td>' + escapeHtml(item.total) + '</td>';
+				html += '<td>' + escapeHtml(item.completed) + '</td>';
+				html += '<td>' + escapeHtml(item.cancelled) + '</td>';
+				html += '<td>' + escapeHtml(item.active) + '</td>';
+				html += '<td><div class="doclinc-report-progress"><span style="width:' + escapeHtml(item.completed_percent || 0) + '%"></span></div><small>' + escapeHtml(item.completed_percent || 0) + '%</small></td>';
+				html += '</tr>';
+			});
+			html += '</tbody></table></div></div>';
+			return html;
+		}
+
+		function renderReportRows(rows, summary, breakdown) {
+			var html = '<div id="print-area">';
+			html += '<div class="d-flex align-items-start justify-content-between flex-wrap mb-3">';
+			html += '<div><h5 class="font-weight-bold mb-1">Laporan Operasional Konsultasi</h5><div class="doclinc-report-meta">Data bersifat baca-saja dan mengikuti filter yang sedang dipakai.</div></div>';
+			html += '</div>';
+			html += renderSummary(summary);
+			html += renderBreakdown(breakdown);
+			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr>';
+			html += '<th>Tanggal</th><th>Request ID</th><th>Puskesmas</th><th>Warga</th><th>Status</th><th>PIC</th><th>Aktivitas terakhir</th><th>Diagnosa / Saran</th><th>Lampiran</th><th class="no-print">Detail</th>';
+			html += '</tr></thead><tbody>';
+			$.each(rows, function(i, row) {
+				var latest = latestEventInfo(row);
+				var hasFoto = row.foto && String(row.foto).trim() !== '';
+				html += '<tr>';
+				html += '<td><strong>' + escapeHtml(row.tanggal || row.waktu) + '</strong><div class="doclinc-report-meta">' + escapeHtml(row.waktu || '-') + '</div></td>';
+				html += '<td><strong>#' + escapeHtml(row.request_id) + '</strong></td>';
+				html += '<td><strong>' + escapeHtml(row.nama_puskesmas) + '</strong></td>';
+				html += '<td>' + escapeHtml(row.nama_user) + '</td>';
+				html += '<td>' + statusBadge(row.request_status) + visitBadge(row.visit_status) + '</td>';
+				html += '<td>' + picHtml(row) + '</td>';
+				html += '<td><div class="doclinc-timeline-pill">' + escapeHtml(latest.label) + (latest.time ? '<span>' + escapeHtml(latest.time) + '</span>' : '') + '</div></td>';
+				html += '<td><strong>Diagnosa:</strong> ' + escapeHtml(shortText(row.diagnosa, 56)) + '<div class="doclinc-report-meta"><strong>Saran:</strong> ' + escapeHtml(shortText(row.saran, 64)) + '</div></td>';
+				html += '<td>' + (hasFoto ? '<span class="badge badge-info">Ada foto</span>' : '<span class="doclinc-report-meta">Tidak ada</span>') + '</td>';
+				html += '<td class="no-print"><button type="button" class="btn btn-sm btn-outline-primary btn-detail-laporan" data-index="' + i + '">Lihat</button></td>';
+				html += '</tr>';
+			});
+			html += '</tbody></table></div>';
+			html += '<br><br><div class="print-signature"><div style="width: 87%; text-align: right; margin-bottom: 40px;">Cilegon, <span id="tanggal-hari-ini"></span></div><div style="display: flex; justify-content: space-between;"><div style="text-align: center; width: 40%;">Petugas,<br><br><br><br>(________________)</div><div style="text-align: center; width: 40%;">Kepala Dinas Kesehatan,<br><br><br><br>(________________)</div></div></div>';
+			html += '</div>';
+			return html;
+		}
+
+		function setPrintDate() {
+			var tanggalElemen = document.getElementById('tanggal-hari-ini');
+			if (tanggalElemen) {
+				tanggalElemen.innerText = new Date().toLocaleDateString('id-ID', {
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric'
+				});
+			}
+		}
+
+		function fetchReport(tipeBtn) {
+			$('#tipeBtn').val(tipeBtn);
 			var $form = $('#formLaporanPerHari');
 			var $hasil = $('#hasil-laporan-perhari');
-			$hasil.html('<div class="text-center"><span class="spinner-border spinner-border-sm"></span> Memuat...</div>');
+			$hasil.html('<div class="text-center"><span class="spinner-border spinner-border-sm"></span> Memuat laporan...</div>');
 			$.ajax({
 				url: $form.attr('action'),
 				type: 'GET',
 				data: $form.serialize(),
 				dataType: 'json',
 				success: function(response) {
-					if (response.status === 'success' && response.data.length > 0) {
-						var eventLabels = {
-							request_created: 'Permintaan dibuat',
-							request_accepted: 'Permintaan diterima',
-							request_cancelled: 'Permintaan dibatalkan/ditolak',
-							pic_assigned: 'PIC ditetapkan',
-							pic_changed: 'PIC diganti',
-							pic_cleared: 'PIC dibatalkan',
-							visit_started: 'Perjalanan dimulai',
-							visit_arrived: 'Tiba di lokasi',
-							visit_in_service: 'Pelayanan dimulai',
-							visit_completed: 'Kunjungan selesai',
-							request_completed: 'Permintaan selesai'
-						};
-						var html = '<div id="print-area"><h5>Rincian Konsultasi Per Hari</h5>';
-						html += '<div class="table-responsive"><table class="table table-bordered table-sm"><thead><tr>';
-						html += '<th>No</th><th>Tanggal/Waktu</th><th>Request</th><th>Status</th><th>Puskesmas</th><th>PIC</th><th>Aktivitas Terakhir</th><th>Akun Puskesmas</th><th>Warga</th><th>Diagnosa</th><th>Saran</th>';
-						html += '</tr></thead><tbody>';
-						$.each(response.data, function(i, row) {
-							var picName = row.pic_staff_name || 'Belum ditentukan';
-							var picProfesi = row.pic_staff_profesi ? '<br><small>' + escapeHtml(row.pic_staff_profesi) + '</small>' : '';
-							var latestEvent = row.latest_request_event || null;
-							var latestLabel = 'Belum ada aktivitas';
-							var latestTime = '';
-							if (latestEvent) {
-								latestLabel = latestEvent.message || eventLabels[latestEvent.event_type] || 'Aktivitas tercatat';
-								latestTime = latestEvent.created_at || '';
-							}
-							html += '<tr>';
-							html += '<td>' + (i + 1) + '</td>';
-							html += '<td>' + escapeHtml(row.waktu) + '</td>';
-							html += '<td>#' + escapeHtml(row.request_id) + '</td>';
-							html += '<td>' + statusBadge(row.request_status) + '</td>';
-							html += '<td>' + escapeHtml(row.nama_puskesmas) + '</td>';
-							html += '<td>' + escapeHtml(picName) + picProfesi + '</td>';
-							html += '<td>' + escapeHtml(latestLabel) + (latestTime ? '<br><small>' + escapeHtml(latestTime) + '</small>' : '') + '</td>';
-							html += '<td>' + escapeHtml(row.name) + '</td>';
-							html += '<td>' + escapeHtml(row.nama_user) + '</td>';
-							html += '<td title="' + escapeHtml(row.diagnosa) + '">' + escapeHtml(shortText(row.diagnosa, 80)) + '</td>';
-							html += '<td title="' + escapeHtml(row.saran) + '">' + escapeHtml(shortText(row.saran, 90)) + '</td>';
-							html += '</tr>';
-						});
-						html += '</tbody></table></div><br><br><div class="print-signature"><div style="width: 87%; text-align: right; margin-bottom: 40px;">Cilegon, <span id="tanggal-hari-ini"></span></div><div style="display: flex; justify-content: space-between;"><div style="text-align: center; width: 40%;">Petugas,<br><br><br><br>(________________)</div><div style="text-align: center; width: 40%;">Kepala Dinas Kesehatan,<br><br><br><br>(________________)</div></div></div></div>';
-						$hasil.html(html);
-
-						// Set tanggal otomatis
-						const tanggalElemen = document.getElementById("tanggal-hari-ini");
-						if (tanggalElemen) {
-							const today = new Date();
-							const options = {
-								year: 'numeric',
-								month: 'long',
-								day: 'numeric'
-							};
-							tanggalElemen.innerText = today.toLocaleDateString('id-ID', options);
-						}
+					var rows = response.data || [];
+					if (response.status !== 'success' || rows.length === 0) {
+						latestRows = [];
+						$hasil.html('<div class="doclinc-empty-state">Belum ada data laporan sesuai filter. Gunakan Reset untuk kembali ke semua data.</div>');
+						return;
+					}
+					if (tipeBtn === 1) {
+						latestRows = rows;
+						$hasil.html(renderReportRows(rows, response.summary, response.breakdown));
+						setPrintDate();
+					} else if (tipeBtn === 2) {
+						renderJumlahPasien(rows, $hasil);
 					} else {
-						$hasil.html('<div class="alert alert-info">Belum ada data laporan sesuai filter.</div>');
+						renderJumlahDiagnosa(rows, $hasil);
 					}
 				},
 				error: function() {
-					$hasil.html('<div class="alert alert-danger">Terjadi kesalahan saat mengambil data.</div>');
+					latestRows = [];
+					$hasil.html('<div class="alert alert-danger">Terjadi kesalahan saat mengambil data laporan.</div>');
 				}
 			});
+		}
+
+		function renderJumlahPasien(rows, $hasil) {
+			var html = '<div id="print-area"><h5 class="font-weight-bold">Jumlah Pasien per Puskesmas</h5>';
+			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr><th>No</th><th>Puskesmas</th><th>Jumlah Pasien</th></tr></thead><tbody>';
+			$.each(rows, function(i, row) {
+				html += '<tr><td>' + (i + 1) + '</td><td class="font-weight-bold">' + escapeHtml(row.nama_puskesmas) + '</td><td>' + escapeHtml(row.jumlah_pasien) + '</td></tr>';
+			});
+			html += '</tbody></table></div></div>';
+			$hasil.html(html);
+		}
+
+		function renderJumlahDiagnosa(rows, $hasil) {
+			var html = '<div id="print-area"><h5 class="font-weight-bold">Jumlah Diagnosa per Puskesmas</h5>';
+			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr><th>No</th><th>Puskesmas</th><th>Diagnosa</th><th>Jumlah</th></tr></thead><tbody>';
+			var grouped = {};
+			$.each(rows, function(_, row) {
+				var key = safeText(row.nama_puskesmas);
+				if (!grouped[key]) {
+					grouped[key] = [];
+				}
+				grouped[key].push(row);
+			});
+			var no = 1;
+			$.each(grouped, function(puskesmas, items) {
+				$.each(items, function(idx, row) {
+					html += '<tr>';
+					if (idx === 0) {
+						html += '<td rowspan="' + items.length + '">' + (no++) + '</td>';
+						html += '<td rowspan="' + items.length + '" class="font-weight-bold">' + escapeHtml(puskesmas) + '</td>';
+					}
+					html += '<td>' + escapeHtml(row.diagnosa) + '</td><td>' + escapeHtml(row.jumlah_diagnosa) + '</td></tr>';
+				});
+			});
+			html += '</tbody></table></div></div>';
+			$hasil.html(html);
+		}
+
+		$('#btnTampilkan').on('click', function(e) {
+			e.preventDefault();
+			fetchReport(1);
 		});
 
 		$('#btnJumlahPasien').on('click', function(e) {
 			e.preventDefault();
-			var tipeBtn = $('#tipeBtn').val(2);
-			var $form = $('#formLaporanPerHari');
-			var $hasil = $('#hasil-laporan-perhari');
-			$hasil.html('<div class="text-center"><span class="spinner-border spinner-border-sm"></span> Memuat...</div>');
-			$.ajax({
-				url: $form.attr('action'),
-				type: 'GET',
-				data: $form.serialize(),
-				dataType: 'json',
-				success: function(response) {
-					if (response.status === 'success' && response.data.length > 0) {
-						var html = '<div id="print-area"><h5>Jumlah Pasien per Puskesmas</h5>';
-						html += '<div class="table-responsive"><table class="table table-bordered table-sm"><thead><tr>';
-						html += '<th>No</th><th>Nama Puskesmas</th><th>Jumlah Pasien</th>';
-						html += '</tr></thead><tbody>';
-						$.each(response.data, function(i, row) {
-							html += '<tr>';
-							html += '<td>' + (i + 1) + '</td>';
-							html += '<td>' + escapeHtml(row.nama_puskesmas) + '</td>';
-							html += '<td>' + escapeHtml(row.jumlah_pasien) + '</td>';
-							html += '</tr>';
-						});
-						html += '</tbody></table></div><br><br><div class="print-signature"><div style="width: 87%; text-align: right; margin-bottom: 40px;">Cilegon, <span id="tanggal-hari-ini"></span></div><div style="display: flex; justify-content: space-between;"><div style="text-align: center; width: 40%;">Petugas,<br><br><br><br>(________________)</div><div style="text-align: center; width: 40%;">Kepala Dinas Kesehatan,<br><br><br><br>(________________)</div></div></div></div>';
-						$hasil.html(html);
-
-						// Set tanggal otomatis
-						const tanggalElemen = document.getElementById("tanggal-hari-ini");
-						if (tanggalElemen) {
-							const today = new Date();
-							const options = {
-								year: 'numeric',
-								month: 'long',
-								day: 'numeric'
-							};
-							tanggalElemen.innerText = today.toLocaleDateString('id-ID', options);
-						}
-					} else {
-						$hasil.html('<div class="alert alert-info">Belum ada data laporan sesuai filter.</div>');
-					}
-				},
-				error: function() {
-					$hasil.html('<div class="alert alert-danger">Terjadi kesalahan saat mengambil data.</div>');
-				}
-			});
+			fetchReport(2);
 		});
 
 		$('#btnJumlahDiagnosa').on('click', function(e) {
 			e.preventDefault();
-			$('#tipeBtn').val(3);
-			var $form = $('#formLaporanPerHari');
-			var $hasil = $('#hasil-laporan-perhari');
-			$hasil.html('<div class="text-center"><span class="spinner-border spinner-border-sm"></span> Memuat...</div>');
-			$.ajax({
-				url: $form.attr('action'),
-				type: 'GET',
-				data: $form.serialize(),
-				dataType: 'json',
-				success: function(response) {
-					if (response.status === 'success' && response.data.length > 0) {
-						var html = '<div id="print-area"><h5>Jumlah Diagnosa per Puskesmas</h5>';
-						html += '<div class="table-responsive"><table class="table table-bordered table-sm"><thead><tr>';
-						html += '<th>No</th><th>Nama Puskesmas</th><th>Diagnosa</th><th>Jumlah Diagnosa</th>';
-						html += '</tr></thead><tbody>';
-						// Kelompokkan data berdasarkan nama_puskesmas
-						var grouped = {};
-						$.each(response.data, function(i, row) {
-							if (!grouped[row.nama_puskesmas]) {
-								grouped[row.nama_puskesmas] = [];
-							}
-							grouped[row.nama_puskesmas].push(row);
-						});
-						var no = 1;
-						$.each(grouped, function(puskesmas, rows) {
-							$.each(rows, function(idx, row) {
-								html += '<tr>';
-								if (idx === 0) {
-									html += '<td rowspan="' + rows.length + '" style="vertical-align: middle; text-align: center;">' + (no++) + '</td>';
-									html += '<td rowspan="' + rows.length + '" style="vertical-align: middle; text-align: center;">' + escapeHtml(row.nama_puskesmas) + '</td>';
-								}
-								html += '<td>' + escapeHtml(row.diagnosa) + '</td>';
-								html += '<td>' + escapeHtml(row.jumlah_diagnosa) + '</td>';
-								html += '</tr>';
-							});
-						});
-						html += '</tbody></table></div><br><br><div class="print-signature"><div style="width: 87%; text-align: right; margin-bottom: 40px;">Cilegon, <span id="tanggal-hari-ini"></span></div><div style="display: flex; justify-content: space-between;"><div style="text-align: center; width: 40%;">Petugas,<br><br><br><br>(________________)</div><div style="text-align: center; width: 40%;">Kepala Dinas Kesehatan,<br><br><br><br>(________________)</div></div></div></div>';
-						$hasil.html(html);
-
-						// Set tanggal otomatis
-						const tanggalElemen = document.getElementById("tanggal-hari-ini");
-						if (tanggalElemen) {
-							const today = new Date();
-							const options = {
-								year: 'numeric',
-								month: 'long',
-								day: 'numeric'
-							};
-							tanggalElemen.innerText = today.toLocaleDateString('id-ID', options);
-						}
-					} else {
-						$hasil.html('<div class="alert alert-info">Belum ada data laporan sesuai filter.</div>');
-					}
-				},
-				error: function() {
-					$hasil.html('<div class="alert alert-danger">Terjadi kesalahan saat mengambil data.</div>');
-				}
-			});
+			fetchReport(3);
 		});
-	});
-</script>
 
-<script>
-	// Cetak laporan per hari
-	$('#btnCetak').on('click', function() {
-		const printContents = document.getElementById('print-area').innerHTML;
-		const originalContents = document.body.innerHTML;
+		$('#btnResetLaporan').on('click', function() {
+			$('#formLaporanPerHari')[0].reset();
+			$('#tipeBtn').val('');
+			$('#hasil-laporan-perhari').html('<div class="doclinc-empty-state">Pilih filter, lalu tampilkan laporan.</div>');
+			latestRows = [];
+		});
 
-		document.body.innerHTML = printContents;
-		window.print();
-		document.body.innerHTML = originalContents;
-		location.reload(); // untuk refresh supaya event handler dan layout normal kembali
-	});
+		$(document).on('click', '.btn-detail-laporan', function() {
+			var row = latestRows[$(this).data('index')];
+			if (!row) {
+				return;
+			}
+			var latest = latestEventInfo(row);
+			var fotoHtml = row.foto ? '<img src="' + uploadBaseUrl + encodeURIComponent(row.foto) + '" alt="Foto konsultasi" class="img-fluid rounded border">' : '<div class="doclinc-empty-state">Tidak ada lampiran foto.</div>';
+			var body = '<div class="row">';
+			body += '<div class="col-lg-6 mb-3"><div class="doclinc-detail-block"><h6>Identitas laporan</h6>';
+			body += '<p><strong>Request ID:</strong> #' + escapeHtml(row.request_id) + '</p>';
+			body += '<p><strong>Warga:</strong> ' + escapeHtml(row.nama_user) + '</p>';
+			body += '<p><strong>Puskesmas:</strong> ' + escapeHtml(row.nama_puskesmas) + '</p>';
+			body += '<p><strong>Status:</strong> ' + statusBadge(row.request_status) + visitBadge(row.visit_status) + '</p>';
+			body += '<p class="mb-0"><strong>PIC:</strong><br>' + picHtml(row) + '</p></div></div>';
+			body += '<div class="col-lg-6 mb-3"><div class="doclinc-detail-block"><h6>Aktivitas terakhir</h6>';
+			body += '<div class="doclinc-timeline-pill">' + escapeHtml(latest.label) + (latest.time ? '<span>' + escapeHtml(latest.time) + '</span>' : '') + '</div></div></div>';
+			body += '<div class="col-lg-7 mb-3"><div class="doclinc-detail-block"><h6>Diagnosa / Saran</h6>';
+			body += '<p><strong>Diagnosa:</strong><br>' + escapeHtml(row.diagnosa) + '</p>';
+			body += '<p class="mb-0"><strong>Saran:</strong><br>' + escapeHtml(row.saran) + '</p></div></div>';
+			body += '<div class="col-lg-5 mb-3"><div class="doclinc-detail-block"><h6>Lampiran / Foto</h6>' + fotoHtml + '</div></div>';
+			body += '</div>';
+			$('#laporanDetailTitle').text('Detail laporan #' + safeText(row.request_id));
+			$('#laporanDetailBody').html(body);
+			$('#laporanDetailModal').modal('show');
+		});
 
-	// Export laporan per hari ke Excel
-	$('#btnExport').on('click', function() {
-		var $form = $('#formLaporanPerHari');
-		var params = $form.serialize();
-		var url = $form.attr('action') + '/export_excel?' + params;
-		window.open(url, '_blank');
+		$('#btnCetak').on('click', function() {
+			var printArea = document.getElementById('print-area');
+			if (!printArea) {
+				return;
+			}
+			var printContents = printArea.innerHTML;
+			var originalContents = document.body.innerHTML;
+			document.body.innerHTML = printContents;
+			window.print();
+			document.body.innerHTML = originalContents;
+			location.reload();
+		});
 	});
 </script>
