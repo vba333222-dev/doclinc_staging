@@ -22,16 +22,47 @@ if (!function_exists('doclinc_admin_status_badge')) {
 	{
 		switch ((string) $status) {
 			case 'Pending':
-				return '<span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> Pending</span>';
+				return '<span class="badge badge-warning doclinc-status-badge"><i class="fas fa-hourglass-half"></i> Pending</span>';
 			case 'Accepted':
-				return '<span class="badge badge-primary"><i class="fas fa-check-circle"></i> Accepted</span>';
+				return '<span class="badge badge-primary doclinc-status-badge"><i class="fas fa-check-circle"></i> Accepted</span>';
 			case 'Completed':
-				return '<span class="badge badge-success"><i class="fas fa-check"></i> Completed</span>';
+				return '<span class="badge badge-success doclinc-status-badge"><i class="fas fa-check"></i> Completed</span>';
 			case 'Cancelled':
-				return '<span class="badge badge-danger"><i class="fas fa-times"></i> Cancelled</span>';
+				return '<span class="badge badge-danger doclinc-status-badge"><i class="fas fa-times"></i> Cancelled</span>';
 			default:
-				return '<span class="badge badge-secondary">Unknown</span>';
+				return '<span class="badge badge-secondary doclinc-status-badge">Unknown</span>';
 		}
+	}
+}
+
+if (!function_exists('doclinc_admin_visit_badge')) {
+	function doclinc_admin_visit_badge($status)
+	{
+		$status = trim((string) $status);
+		if ($status === '') {
+			return '<span class="badge badge-light border doclinc-status-badge">Belum ada visit</span>';
+		}
+		return '<span class="badge badge-info doclinc-status-badge">' . html_escape($status) . '</span>';
+	}
+}
+
+if (!function_exists('doclinc_admin_event_label')) {
+	function doclinc_admin_event_label($event_type)
+	{
+		$labels = array(
+			'request_created' => 'Konsultasi baru dibuat',
+			'request_accepted' => 'Konsultasi diterima',
+			'request_cancelled' => 'Konsultasi dibatalkan',
+			'pic_assigned' => 'PIC ditugaskan',
+			'pic_changed' => 'PIC diganti',
+			'pic_cleared' => 'PIC dihapus',
+			'visit_started' => 'Kunjungan dimulai',
+			'visit_arrived' => 'Nakes tiba di lokasi',
+			'visit_in_service' => 'Layanan sedang berjalan',
+			'visit_completed' => 'Kunjungan selesai',
+			'request_completed' => 'Konsultasi selesai',
+		);
+		return isset($labels[$event_type]) ? $labels[$event_type] : 'Aktivitas konsultasi diperbarui';
 	}
 }
 
@@ -45,13 +76,56 @@ if (!function_exists('doclinc_admin_puskesmas_label')) {
 		return $value;
 	}
 }
+
+$summary = array('total' => count($data_konsultasi), 'Pending' => 0, 'Accepted' => 0, 'Completed' => 0, 'legacy' => 0, 'in_progress' => 0);
+$has_visit_status = false;
+foreach ($data_konsultasi as $row) {
+	$status = isset($row->request_status) ? (string) $row->request_status : '';
+	if (isset($summary[$status])) {
+		$summary[$status]++;
+	}
+	$puskesmas_label = doclinc_admin_puskesmas_label($row->puskesmas ?? '');
+	if ($puskesmas_label === 'Legacy / Belum terklasifikasi') {
+		$summary['legacy']++;
+	}
+	$visit_status = trim((string) ($row->visit_status ?? ''));
+	if ($visit_status !== '') {
+		$has_visit_status = true;
+		if ($status !== 'Completed') {
+			$summary['in_progress']++;
+		}
+	}
+}
+if (!$has_visit_status) {
+	$summary['in_progress'] = $summary['Accepted'];
+}
+$summary_cards = array(
+	array('label' => 'Total konsultasi', 'value' => $summary['total'], 'icon' => 'fa-list-alt', 'tone' => 'primary'),
+	array('label' => 'Pending / Menunggu', 'value' => $summary['Pending'], 'icon' => 'fa-hourglass-half', 'tone' => 'warning'),
+	array('label' => 'Accepted / Diterima', 'value' => $summary['Accepted'], 'icon' => 'fa-check-circle', 'tone' => 'info'),
+	array('label' => 'Dalam layanan', 'value' => $summary['in_progress'], 'icon' => 'fa-stethoscope', 'tone' => 'service'),
+	array('label' => 'Completed / Selesai', 'value' => $summary['Completed'], 'icon' => 'fa-clipboard-check', 'tone' => 'success'),
+	array('label' => 'Legacy / Belum terklasifikasi', 'value' => $summary['legacy'], 'icon' => 'fa-exclamation-triangle', 'tone' => 'legacy'),
+);
 ?>
 
 <div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
 		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-stethoscope"></i> Monitoring Konsultasi</h1>
-		<div class="text-white-50 doclinc-page-subtitle">Pantau status konsultasi, Puskesmas tujuan, PIC personel, dan timeline operasional.</div>
+		<div class="doclinc-page-subtitle">Pantau status konsultasi, Puskesmas tujuan, PIC personel, dan timeline operasional secara read-only.</div>
 	</div>
+</div>
+
+<div class="doclinc-monitor-summary mb-4">
+	<?php foreach ($summary_cards as $card): ?>
+		<div class="doclinc-monitor-summary-card doclinc-monitor-summary-<?= html_escape($card['tone']); ?>">
+			<div class="doclinc-monitor-summary-icon"><i class="fas <?= html_escape($card['icon']); ?>"></i></div>
+			<div>
+				<div class="doclinc-monitor-summary-value"><?= number_format((int) $card['value']); ?></div>
+				<div class="doclinc-monitor-summary-label"><?= html_escape($card['label']); ?></div>
+			</div>
+		</div>
+	<?php endforeach; ?>
 </div>
 
 <div class="card shadow-sm mb-4 doclinc-filter-card">
@@ -95,9 +169,10 @@ if (!function_exists('doclinc_admin_puskesmas_label')) {
 					<button type="submit" class="btn btn-primary btn-block">Filter</button>
 				</div>
 			</div>
-			<?php if (!empty(array_filter($filters))): ?>
+			<div class="d-flex justify-content-between align-items-center flex-wrap">
+				<div class="doclinc-meta-text">Filter memakai parameter yang sama dan tidak mengubah data konsultasi.</div>
 				<a href="<?= site_url('konsultasi_kesehatan'); ?>" class="btn btn-sm btn-light border">Reset filter</a>
-			<?php endif; ?>
+			</div>
 		</form>
 	</div>
 </div>
@@ -110,125 +185,192 @@ if (!function_exists('doclinc_admin_puskesmas_label')) {
 				<span class="badge badge-light border"><?= count($data_konsultasi); ?> data</span>
 			</div>
 			<div class="card-body table-responsive">
-				<table class="table table-bordered table-hover table-sm" id="tbl_konsultasi" style="width:100%" cellspacing="0">
-					<thead class="thead-light">
+				<table class="table table-hover doclinc-monitor-table" id="tbl_konsultasi" style="width:100%" cellspacing="0">
+					<thead>
 						<tr>
-							<th class="text-center" width="4%">No</th>
 							<th>Request</th>
 							<th>Warga</th>
-							<th>Keluhan</th>
+							<th>Puskesmas & PIC</th>
 							<th>Status</th>
-							<th>Puskesmas</th>
-							<th>PIC Personel</th>
 							<th>Timeline</th>
 							<th>Diagnosa / Saran</th>
-							<th>Foto</th>
-							<th>Akun Puskesmas</th>
+							<th>Lampiran</th>
+							<th>Detail</th>
 						</tr>
 					</thead>
 					<tbody>
-						<?php $no = 0; ?>
 						<?php foreach ($data_konsultasi as $row): ?>
 							<?php
-							$no++;
+							$request_id = isset($row->request_id) ? (int) $row->request_id : 0;
 							$puskesmas_label = doclinc_admin_puskesmas_label($row->puskesmas ?? '');
 							$request_description = (string) ($row->request_description ?? '-');
-							$location = trim((string) ($row->location ?? ''));
-							$date_label = !empty($row->date) && strtotime($row->date) ? date('d-m-Y', strtotime($row->date)) : '-';
+							$location = trim((string) ($row->location_detail ?? '')) !== '' ? trim((string) $row->location_detail) : trim((string) ($row->location ?? ''));
+							$date_label = !empty($row->date) && strtotime($row->date) ? date('d M Y', strtotime($row->date)) : '-';
+							$request_events = !empty($row->request_events) && is_array($row->request_events) ? $row->request_events : array();
+							$latest_event = !empty($request_events) ? $request_events[0] : null;
+							$latest_event_label = $latest_event ? (!empty($latest_event->message) ? $latest_event->message : doclinc_admin_event_label($latest_event->event_type ?? '')) : '';
+							$latest_event_time = $latest_event && !empty($latest_event->created_at) && strtotime($latest_event->created_at) ? date('d M H:i', strtotime($latest_event->created_at)) : '';
+							$pic_name = trim((string) ($row->pic_staff_name ?? ''));
+							$pic_profesi = trim((string) ($row->pic_staff_profesi ?? ''));
 							?>
-							<tr>
-								<td class="text-center"><?= $no; ?></td>
+							<tr class="doclinc-request-card">
 								<td>
-									<div class="font-weight-bold">#<?= html_escape($row->request_id ?? '-'); ?></div>
-									<small class="text-muted"><?= html_escape($date_label); ?></small>
+									<div class="font-weight-bold text-nowrap">#<?= html_escape($request_id ?: '-'); ?></div>
+									<div class="doclinc-request-meta"><?= html_escape($date_label); ?></div>
 								</td>
 								<td>
 									<div class="font-weight-bold"><?= html_escape($row->nama_warga ?? '-'); ?></div>
-									<?php if ($location !== ''): ?>
-										<small class="text-muted" title="<?= html_escape($location); ?>"><?= html_escape(doclinc_admin_short_text($location, 70)); ?></small>
-									<?php endif; ?>
+									<div class="doclinc-request-meta" title="<?= html_escape($location); ?>"><?= html_escape(doclinc_admin_short_text($location, 72)); ?></div>
 								</td>
-								<td title="<?= html_escape($request_description); ?>"><?= html_escape(doclinc_admin_short_text($request_description, 110)); ?></td>
-								<td><?= doclinc_admin_status_badge($row->request_status ?? ''); ?></td>
 								<td>
 									<div class="font-weight-bold"><?= html_escape($puskesmas_label); ?></div>
 									<?php if (!empty($row->assigned_puskesmas_code)): ?>
-										<small class="text-muted"><?= html_escape($row->assigned_puskesmas_code); ?></small>
+										<div class="doclinc-request-meta"><?= html_escape($row->assigned_puskesmas_code); ?></div>
 									<?php endif; ?>
-								</td>
-								<td>
-									<?php if (!empty($row->pic_staff_name)): ?>
-										<strong><?= html_escape($row->pic_staff_name); ?></strong>
-										<?php if (!empty($row->pic_staff_profesi)): ?>
-											<br><small class="text-muted"><?= html_escape($row->pic_staff_profesi); ?></small>
+									<div class="mt-2">
+										<?php if ($pic_name !== ''): ?>
+											<span class="doclinc-pic-chip"><i class="fas fa-user-nurse"></i> <?= html_escape($pic_name); ?></span>
+											<?php if ($pic_profesi !== ''): ?>
+												<div class="doclinc-request-meta mt-1"><?= html_escape($pic_profesi); ?></div>
+											<?php endif; ?>
+										<?php else: ?>
+											<span class="doclinc-pic-chip doclinc-pic-empty">Belum ditentukan</span>
 										<?php endif; ?>
-									<?php else: ?>
-										<span class="text-muted">Belum ditentukan</span>
-									<?php endif; ?>
+									</div>
 								</td>
 								<td>
-									<?php
-									$event_labels = array(
-										'request_created' => 'Permintaan dibuat',
-										'request_accepted' => 'Permintaan diterima',
-										'request_cancelled' => 'Permintaan dibatalkan/ditolak',
-										'pic_assigned' => 'PIC ditetapkan',
-										'pic_changed' => 'PIC diganti',
-										'pic_cleared' => 'PIC dibatalkan',
-										'visit_started' => 'Perjalanan dimulai',
-										'visit_arrived' => 'Tiba di lokasi',
-										'visit_in_service' => 'Pelayanan dimulai',
-										'visit_completed' => 'Kunjungan selesai',
-										'request_completed' => 'Permintaan selesai',
-									);
-									$request_events = !empty($row->request_events) && is_array($row->request_events) ? $row->request_events : array();
-									?>
-									<?php if (!empty($request_events)): ?>
-										<div class="small">
-											<?php foreach ($request_events as $event): ?>
-												<?php
-												$event_type = isset($event->event_type) ? (string) $event->event_type : '';
-												$event_label = !empty($event->message) ? $event->message : (isset($event_labels[$event_type]) ? $event_labels[$event_type] : '');
-												$event_time = !empty($event->created_at) && strtotime($event->created_at) ? date('d-m H:i', strtotime($event->created_at)) : '';
-												if ($event_label === '') {
-													continue;
-												}
-												?>
-												<div class="mb-1">
-													<strong><?= html_escape($event_label); ?></strong>
-													<?php if ($event_time !== ''): ?>
-														<br><span class="text-muted"><?= html_escape($event_time); ?></span>
-													<?php endif; ?>
-												</div>
-											<?php endforeach; ?>
+									<?= doclinc_admin_status_badge($row->request_status ?? ''); ?>
+									<div class="mt-2"><?= doclinc_admin_visit_badge($row->visit_status ?? ''); ?></div>
+								</td>
+								<td>
+									<?php if ($latest_event): ?>
+										<div class="doclinc-timeline-pill">
+											<strong><?= html_escape(doclinc_admin_short_text($latest_event_label, 70)); ?></strong>
+											<?php if ($latest_event_time !== ''): ?>
+												<span><?= html_escape($latest_event_time); ?></span>
+											<?php endif; ?>
 										</div>
 									<?php else: ?>
 										<span class="text-muted">Belum ada timeline</span>
 									<?php endif; ?>
 								</td>
 								<td>
-									<div><strong>Diagnosa:</strong> <?= html_escape(doclinc_admin_short_text($row->diagnosa ?? '-', 70)); ?></div>
-									<div><strong>Saran:</strong> <?= html_escape(doclinc_admin_short_text($row->saran ?? '-', 90)); ?></div>
-									<?php if (!empty($row->kriteria)): ?>
-										<small class="text-muted"><?= html_escape($row->kriteria); ?></small>
-									<?php endif; ?>
+									<div><strong>Diagnosa:</strong> <?= html_escape(doclinc_admin_short_text($row->diagnosa ?? '-', 62)); ?></div>
+									<div class="doclinc-request-meta"><strong>Saran:</strong> <?= html_escape(doclinc_admin_short_text($row->saran ?? '-', 78)); ?></div>
 								</td>
 								<td>
 									<?php if (!empty($row->foto)): ?>
-										<img src="<?= base_url('../uploads/' . rawurlencode($row->foto)); ?>" alt="Foto konsultasi" class="img-thumbnail" width="80" height="80">
+										<img src="<?= base_url('../uploads/' . rawurlencode($row->foto)); ?>" alt="Foto konsultasi" class="doclinc-monitor-thumb">
 									<?php else: ?>
 										<span class="text-muted">-</span>
 									<?php endif; ?>
 								</td>
-								<td><?= html_escape($row->nama_akun_puskesmas ?? '-'); ?></td>
+								<td>
+									<button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#detailKonsultasi<?= $request_id; ?>">
+										Detail
+									</button>
+								</td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+				<?php if (empty($data_konsultasi)): ?>
+					<div class="doclinc-empty-state">
+						Belum ada konsultasi sesuai filter.
+						<div class="mt-2"><a href="<?= site_url('konsultasi_kesehatan'); ?>" class="btn btn-sm btn-light border">Reset filter</a></div>
+					</div>
+				<?php endif; ?>
 			</div>
 		</div>
 	</div>
 </div>
+
+<?php foreach ($data_konsultasi as $row): ?>
+	<?php
+	$request_id = isset($row->request_id) ? (int) $row->request_id : 0;
+	$puskesmas_label = doclinc_admin_puskesmas_label($row->puskesmas ?? '');
+	$location = trim((string) ($row->location_detail ?? '')) !== '' ? trim((string) $row->location_detail) : trim((string) ($row->location ?? ''));
+	$request_events = !empty($row->request_events) && is_array($row->request_events) ? $row->request_events : array();
+	$pic_name = trim((string) ($row->pic_staff_name ?? ''));
+	?>
+	<div class="modal fade doclinc-detail-modal" id="detailKonsultasi<?= $request_id; ?>" tabindex="-1" role="dialog" aria-labelledby="detailKonsultasiLabel<?= $request_id; ?>" aria-hidden="true">
+		<div class="modal-dialog modal-xl" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="detailKonsultasiLabel<?= $request_id; ?>">Detail Konsultasi #<?= html_escape($request_id ?: '-'); ?></h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-lg-5 mb-3">
+							<div class="doclinc-detail-block">
+								<h6>Koordinasi</h6>
+								<dl class="row mb-0">
+									<dt class="col-sm-4">Request</dt>
+									<dd class="col-sm-8">#<?= html_escape($request_id ?: '-'); ?></dd>
+									<dt class="col-sm-4">Warga</dt>
+									<dd class="col-sm-8"><?= html_escape($row->nama_warga ?? '-'); ?></dd>
+									<dt class="col-sm-4">Alamat</dt>
+									<dd class="col-sm-8"><?= html_escape($location !== '' ? $location : '-'); ?></dd>
+									<dt class="col-sm-4">Puskesmas</dt>
+									<dd class="col-sm-8"><?= html_escape($puskesmas_label); ?></dd>
+									<dt class="col-sm-4">PIC</dt>
+									<dd class="col-sm-8"><?= html_escape($pic_name !== '' ? $pic_name : 'Belum ditentukan'); ?></dd>
+								</dl>
+							</div>
+							<div class="doclinc-detail-block mt-3">
+								<h6>Status</h6>
+								<?= doclinc_admin_status_badge($row->request_status ?? ''); ?>
+								<span class="ml-2"><?= doclinc_admin_visit_badge($row->visit_status ?? ''); ?></span>
+							</div>
+							<div class="doclinc-detail-block mt-3">
+								<h6>Diagnosa / Saran</h6>
+								<p><strong>Diagnosa:</strong><br><?= nl2br(html_escape(trim((string) ($row->diagnosa ?? '')) !== '' ? $row->diagnosa : '-')); ?></p>
+								<p class="mb-0"><strong>Saran:</strong><br><?= nl2br(html_escape(trim((string) ($row->saran ?? '')) !== '' ? $row->saran : '-')); ?></p>
+							</div>
+						</div>
+						<div class="col-lg-4 mb-3">
+							<div class="doclinc-detail-block h-100">
+								<h6>Timeline</h6>
+								<?php if (empty($request_events)): ?>
+									<div class="doclinc-empty-state">Belum ada timeline untuk request ini.</div>
+								<?php else: ?>
+									<div class="doclinc-timeline-list">
+										<?php foreach ($request_events as $event): ?>
+											<?php
+											$event_label = !empty($event->message) ? $event->message : doclinc_admin_event_label($event->event_type ?? '');
+											$event_time = !empty($event->created_at) && strtotime($event->created_at) ? date('d M Y H:i', strtotime($event->created_at)) : '-';
+											?>
+											<div class="doclinc-timeline-row">
+												<div class="font-weight-bold"><?= html_escape($event_label); ?></div>
+												<div class="doclinc-request-meta"><?= html_escape($event_time); ?></div>
+											</div>
+										<?php endforeach; ?>
+									</div>
+								<?php endif; ?>
+							</div>
+						</div>
+						<div class="col-lg-3 mb-3">
+							<div class="doclinc-detail-block h-100">
+								<h6>Lampiran</h6>
+								<?php if (!empty($row->foto)): ?>
+									<img src="<?= base_url('../uploads/' . rawurlencode($row->foto)); ?>" alt="Foto konsultasi" class="img-fluid rounded border">
+								<?php else: ?>
+									<div class="doclinc-empty-state">Tidak ada lampiran foto.</div>
+								<?php endif; ?>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+				</div>
+			</div>
+		</div>
+	</div>
+<?php endforeach; ?>
 
 <script type="text/javascript">
 	$(document).ready(function() {
@@ -239,7 +381,7 @@ if (!function_exists('doclinc_admin_puskesmas_label')) {
 				lengthMenu: 'Tampilkan _MENU_ data',
 				search: 'Cari:',
 				emptyTable: 'Belum ada konsultasi sesuai filter.',
-				zeroRecords: 'Tidak ada data sesuai filter',
+				zeroRecords: 'Belum ada konsultasi sesuai filter.',
 				info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
 				infoEmpty: 'Menampilkan 0 data',
 				infoFiltered: '(difilter dari _MAX_ total data)',

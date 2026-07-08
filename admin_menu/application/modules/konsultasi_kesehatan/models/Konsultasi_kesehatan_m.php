@@ -98,7 +98,7 @@ class Konsultasi_kesehatan_m extends MX_Controller
 			return false;
 		}
 
-		foreach (array('event_id', 'request_id', 'event_type', 'message', 'created_at') as $field) {
+		foreach (array('event_id', 'request_id', 'event_type', 'created_at') as $field) {
 			if (!$this->db->field_exists($field, 'request_events')) {
 				return false;
 			}
@@ -132,7 +132,10 @@ class Konsultasi_kesehatan_m extends MX_Controller
 			$limit_per_request = 5;
 		}
 
-		$select = array('event_id', 'request_id', 'event_type', 'message', 'created_at');
+		$select = array('event_id', 'request_id', 'event_type', 'created_at');
+		if ($this->db->field_exists('message', 'request_events')) {
+			$select[] = 'message';
+		}
 		foreach (array('actor_role', 'actor_user_id', 'actor_staff_id') as $field) {
 			if ($this->db->field_exists($field, 'request_events')) {
 				$select[] = $field;
@@ -143,19 +146,6 @@ class Konsultasi_kesehatan_m extends MX_Controller
 			->select(implode(', ', $select))
 			->from('request_events')
 			->where_in('request_id', array_values($ids))
-			->where_in('event_type', array(
-				'request_created',
-				'request_accepted',
-				'request_cancelled',
-				'pic_assigned',
-				'pic_changed',
-				'pic_cleared',
-				'visit_started',
-				'visit_arrived',
-				'visit_in_service',
-				'visit_completed',
-				'request_completed',
-			))
 			->order_by('request_id', 'ASC')
 			->order_by('created_at', 'DESC')
 			->order_by('event_id', 'DESC')
@@ -178,7 +168,7 @@ class Konsultasi_kesehatan_m extends MX_Controller
 
 	public function get_puskesmas_options()
 	{
-		if (!$this->db->table_exists('m_puskesmas')) {
+		if (!$this->db->table_exists('m_puskesmas') || !$this->db->field_exists('kode_pkm', 'm_puskesmas') || !$this->db->field_exists('nama_puskesmas', 'm_puskesmas')) {
 			return array();
 		}
 
@@ -200,27 +190,42 @@ class Konsultasi_kesehatan_m extends MX_Controller
 		}
 
 		$filters = is_array($filters) ? $filters : array();
-		$date_select = $this->db->field_exists('date', 'requests') ? 'requests.date' : 'requests.created_at AS date';
-		$date_filter_expr = $this->db->field_exists('date', 'requests') ? 'requests.date' : 'requests.created_at';
+		$date_select = $this->db->field_exists('date', 'requests')
+			? 'requests.date'
+			: ($this->db->field_exists('created_at', 'requests') ? 'requests.created_at AS date' : 'NULL AS date');
+		$date_filter_expr = $this->db->field_exists('date', 'requests')
+			? 'requests.date'
+			: ($this->db->field_exists('created_at', 'requests') ? 'requests.created_at' : 'NULL');
+		$created_at_select = $this->db->field_exists('created_at', 'requests') ? 'requests.created_at' : 'NULL AS created_at';
+		$location_select = $this->db->field_exists('location', 'requests') ? 'requests.location' : 'NULL AS location';
 		$location_detail_select = $this->db->field_exists('location_detail', 'requests') ? 'requests.location_detail' : 'NULL AS location_detail';
+		$visit_status_select = $this->db->field_exists('visit_status', 'requests') ? 'requests.visit_status' : 'NULL AS visit_status';
 		$lattitude_dokter_select = $this->db->field_exists('lattitude_dokter', 'requests') ? 'requests.lattitude_dokter' : 'NULL AS lattitude_dokter';
 		$longitude_dokter_select = $this->db->field_exists('longitude_dokter', 'requests') ? 'requests.longitude_dokter' : 'NULL AS longitude_dokter';
+		$lattitude_select = $this->db->field_exists('lattitude', 'requests') ? 'requests.lattitude' : 'NULL AS lattitude';
+		$longitude_select = $this->db->field_exists('longitude', 'requests') ? 'requests.longitude' : 'NULL AS longitude';
 		$has_assigned_puskesmas_code = $this->db->field_exists('assigned_puskesmas_code', 'requests');
 		$has_assigned_puskesmas_name = $this->db->field_exists('assigned_puskesmas_name', 'requests');
 		$assigned_puskesmas_name_expr = $has_assigned_puskesmas_name ? "NULLIF(TRIM(requests.assigned_puskesmas_name), '')" : 'NULL';
 		$assigned_puskesmas_code_expr = $has_assigned_puskesmas_code ? "NULLIF(TRIM(requests.assigned_puskesmas_code), '')" : 'NULL';
 		$routed_puskesmas_code_expr = "CASE WHEN UPPER($assigned_puskesmas_code_expr) = 'DEFAULT' THEN NULL ELSE $assigned_puskesmas_code_expr END";
 		$assigned_puskesmas_name_clean_expr = "CASE WHEN UPPER(COALESCE($assigned_puskesmas_name_expr, '')) IN ('DEFAULT', 'PUSKESMAS DEFAULT') THEN NULL ELSE $assigned_puskesmas_name_expr END";
-		$has_puskesmas = $this->db->table_exists('m_puskesmas');
+		$has_puskesmas = $this->db->table_exists('m_puskesmas') && $this->db->field_exists('kode_pkm', 'm_puskesmas') && $this->db->field_exists('nama_puskesmas', 'm_puskesmas');
 		$puskesmas_select = $has_puskesmas
 			? "COALESCE($assigned_puskesmas_name_clean_expr, assigned_puskesmas.nama_puskesmas, $routed_puskesmas_code_expr, 'Legacy / Belum terklasifikasi') AS puskesmas"
 			: "COALESCE($assigned_puskesmas_name_clean_expr, $routed_puskesmas_code_expr, 'Legacy / Belum terklasifikasi') AS puskesmas";
-		$konsultasi_select = $this->db->table_exists('konsultasi')
-			? 'konsultasi.diagnosa, konsultasi.saran, konsultasi.kriteria, konsultasi.foto'
-			: 'medicalrecords.diagnosis AS diagnosa, medicalrecords.recommendations AS saran, NULL AS kriteria, NULL AS foto';
-		$konsultasi_join = $this->db->table_exists('konsultasi')
-			? 'LEFT JOIN konsultasi ON konsultasi.request_id=requests.request_id'
-			: 'LEFT JOIN medicalrecords ON medicalrecords.request_id=requests.request_id';
+		if ($this->db->table_exists('konsultasi')) {
+			$konsultasi_select = 'konsultasi.diagnosa, konsultasi.saran, konsultasi.kriteria, konsultasi.foto';
+			$konsultasi_join = 'LEFT JOIN konsultasi ON konsultasi.request_id=requests.request_id';
+		} elseif ($this->db->table_exists('medicalrecords')) {
+			$diagnosis_select = $this->db->field_exists('diagnosis', 'medicalrecords') ? 'medicalrecords.diagnosis AS diagnosa' : 'NULL AS diagnosa';
+			$recommendations_select = $this->db->field_exists('recommendations', 'medicalrecords') ? 'medicalrecords.recommendations AS saran' : 'NULL AS saran';
+			$konsultasi_select = "$diagnosis_select, $recommendations_select, NULL AS kriteria, NULL AS foto";
+			$konsultasi_join = $this->db->field_exists('request_id', 'medicalrecords') ? 'LEFT JOIN medicalrecords ON medicalrecords.request_id=requests.request_id' : '';
+		} else {
+			$konsultasi_select = 'NULL AS diagnosa, NULL AS saran, NULL AS kriteria, NULL AS foto';
+			$konsultasi_join = '';
+		}
 		$puskesmas_join = $has_puskesmas
 			? "LEFT JOIN m_puskesmas assigned_puskesmas ON assigned_puskesmas.kode_pkm = $routed_puskesmas_code_expr"
 			: '';
@@ -290,16 +295,17 @@ class Konsultasi_kesehatan_m extends MX_Controller
 										$puskesmas_select,
 										$pic_select
 										$date_select,
+										$visit_status_select,
 										requests.request_description,
 										requests.request_status,
 										$konsultasi_select,
-										requests.location,
+										$location_select,
 										$location_detail_select,
-										requests.lattitude,
-										requests.longitude,
+										$lattitude_select,
+										$longitude_select,
 										$lattitude_dokter_select,
 										$longitude_dokter_select,
-										requests.created_at
+										$created_at_select
 									FROM
 										requests
 									$konsultasi_join
