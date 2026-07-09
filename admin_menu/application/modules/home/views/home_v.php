@@ -11,6 +11,12 @@ $cards = array(
 $distribution = isset($puskesmas_distribution) && is_array($puskesmas_distribution) ? $puskesmas_distribution : array();
 $attention = isset($attention_requests) && is_array($attention_requests) ? $attention_requests : array();
 $activity = isset($recent_activity) && is_array($recent_activity) ? $recent_activity : array();
+$diagnosis_analytics = isset($diagnosis_analytics) && is_array($diagnosis_analytics) ? $diagnosis_analytics : array();
+$top_diagnoses = isset($diagnosis_analytics['top_diagnoses']) && is_array($diagnosis_analytics['top_diagnoses']) ? $diagnosis_analytics['top_diagnoses'] : array();
+$diagnosis_distribution = isset($diagnosis_analytics['puskesmas_distribution']) && is_array($diagnosis_analytics['puskesmas_distribution']) ? $diagnosis_analytics['puskesmas_distribution'] : array();
+$diagnosis_period_days = (int) ($diagnosis_analytics['period_days'] ?? 30);
+$max_top_diagnosis = (int) ($diagnosis_analytics['max_top_total'] ?? 0);
+$max_puskesmas_diagnosis = (int) ($diagnosis_analytics['max_puskesmas_total'] ?? 0);
 $max_distribution = 0;
 foreach ($distribution as $row) {
 	$max_distribution = max($max_distribution, (int) ($row->total ?? 0));
@@ -88,6 +94,64 @@ foreach ($distribution as $row) {
 				</div>
 			</div>
 		</div>
+	</div>
+</div>
+
+<div class="card shadow-sm doclinc-dashboard-panel doclinc-diagnosis-panel mb-4">
+	<div class="card-header d-flex flex-wrap align-items-center justify-content-between">
+		<div>
+			<h2 class="h6 mb-1 font-weight-bold">Tren Diagnosis per Puskesmas</h2>
+			<div class="doclinc-meta-text">Periode <?= number_format($diagnosis_period_days); ?> hari terakhir</div>
+		</div>
+		<span class="badge badge-light border">Rekam medis</span>
+	</div>
+	<div class="card-body">
+		<div class="doclinc-dashboard-note mb-3">
+			Data ini berasal dari rekam medis yang sudah diisi Nakes/Dokter. Tren gejala warga membutuhkan penyimpanan gejala terstruktur agar analitik lebih akurat.
+		</div>
+		<?php if (empty($top_diagnoses) && empty($diagnosis_distribution)): ?>
+			<div class="doclinc-empty-state">Belum ada data diagnosis pada periode ini.</div>
+		<?php else: ?>
+			<div class="row">
+				<div class="col-xl-5 mb-3 mb-xl-0">
+					<h3 class="doclinc-section-kicker">Top Diagnosis</h3>
+					<?php foreach ($top_diagnoses as $row): ?>
+						<?php
+						$total = (int) ($row->total ?? 0);
+						$percent = $max_top_diagnosis > 0 ? max(4, round(($total / $max_top_diagnosis) * 100)) : 0;
+						?>
+						<div class="doclinc-diagnosis-row">
+							<div class="d-flex justify-content-between align-items-start">
+								<strong><?= html_escape($row->diagnosis ?? '-'); ?></strong>
+								<span><?= number_format($total); ?></span>
+							</div>
+							<div class="doclinc-diagnosis-bar"><div style="width: <?= (int) $percent; ?>%;"></div></div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+				<div class="col-xl-7">
+					<h3 class="doclinc-section-kicker">Distribusi per Puskesmas</h3>
+					<?php foreach ($diagnosis_distribution as $row): ?>
+						<?php
+						$total = (int) ($row->total ?? 0);
+						$percent = $max_puskesmas_diagnosis > 0 ? max(4, round(($total / $max_puskesmas_diagnosis) * 100)) : 0;
+						?>
+						<div class="doclinc-diagnosis-puskesmas">
+							<div class="d-flex justify-content-between align-items-start">
+								<div>
+									<strong><?= html_escape($row->puskesmas ?? 'Legacy / Belum terklasifikasi'); ?></strong>
+									<div class="doclinc-meta-text">
+										Top: <?= html_escape($row->top_diagnosis ?? '-'); ?> · <?= number_format((int) ($row->top_diagnosis_total ?? 0)); ?> kasus
+									</div>
+								</div>
+								<span class="font-weight-bold"><?= number_format($total); ?></span>
+							</div>
+							<div class="doclinc-diagnosis-bar"><div style="width: <?= (int) $percent; ?>%;"></div></div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		<?php endif; ?>
 	</div>
 </div>
 

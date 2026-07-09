@@ -831,6 +831,49 @@ footer.sticky-footer {
     height: 100%;
 }
 
+.doclinc-dashboard-note {
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+    padding: 0.75rem 0.85rem;
+}
+
+.doclinc-section-kicker {
+    color: var(--doclinc-muted);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    margin: 0 0 0.8rem;
+    text-transform: uppercase;
+}
+
+.doclinc-diagnosis-row + .doclinc-diagnosis-row,
+.doclinc-diagnosis-puskesmas + .doclinc-diagnosis-puskesmas {
+    margin-top: 0.95rem;
+}
+
+.doclinc-diagnosis-row strong,
+.doclinc-diagnosis-puskesmas strong {
+    color: var(--doclinc-text);
+    font-size: 0.9rem;
+}
+
+.doclinc-diagnosis-bar {
+    background: var(--doclinc-table-head);
+    border-radius: 999px;
+    height: 7px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.doclinc-diagnosis-bar > div {
+    background: #4f8f7b;
+    height: 100%;
+}
+
 .doclinc-shortcut-grid {
     display: grid;
     gap: 0.75rem;

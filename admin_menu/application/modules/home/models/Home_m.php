@@ -84,6 +84,28 @@ class Home_m extends MX_Controller
 		return $this->request_date_expr($request_alias);
 	}
 
+	private function medicalrecord_date_expr($medical_alias = 'medicalrecords', $request_alias = 'requests')
+	{
+		if ($this->db->field_exists('created_at', 'medicalrecords')) {
+			return "$medical_alias.created_at";
+		}
+
+		if ($this->db->field_exists('updated_at', 'medicalrecords')) {
+			return "$medical_alias.updated_at";
+		}
+
+		return $this->request_date_expr($request_alias);
+	}
+
+	private function can_query_diagnosis_analytics()
+	{
+		return $this->db->table_exists('medicalrecords')
+			&& $this->db->table_exists('requests')
+			&& $this->db->field_exists('request_id', 'medicalrecords')
+			&& $this->db->field_exists('diagnosis', 'medicalrecords')
+			&& $this->db->field_exists('request_id', 'requests');
+	}
+
 	private function can_query_request_events()
 	{
 		if (!$this->db->table_exists('request_events')) {
@@ -453,6 +475,97 @@ class Home_m extends MX_Controller
 		$this->db->order_by('jumlah', 'DESC');
 		$this->db->limit($limit);
 		return $this->db->get()->result();
+	}
+
+	public function get_diagnosis_dashboard($days = 30)
+	{
+		$days = (int) $days;
+		if (!in_array($days, array(7, 30, 90), true)) {
+			$days = 30;
+		}
+
+		$analytics = array(
+			'period_days' => $days,
+			'top_diagnoses' => array(),
+			'puskesmas_distribution' => array(),
+			'max_top_total' => 0,
+			'max_puskesmas_total' => 0,
+			'source_available' => $this->can_query_diagnosis_analytics(),
+		);
+
+		if (!$analytics['source_available']) {
+			return $analytics;
+		}
+
+		$date_expr = $this->medicalrecord_date_expr('medicalrecords', 'requests');
+		$display_expr = $this->puskesmas_display_expr('requests', 'assigned_puskesmas');
+		$code_expr = $this->puskesmas_key_expr('requests');
+
+		$this->db->select("TRIM(medicalrecords.diagnosis) AS diagnosis, COUNT(*) AS total", FALSE);
+		$this->db->from('medicalrecords');
+		$this->db->join('requests', 'requests.request_id = medicalrecords.request_id', 'inner');
+		$this->apply_diagnosis_analytics_filters($date_expr, $days);
+		$this->db->group_by('TRIM(medicalrecords.diagnosis)', FALSE);
+		$this->db->order_by('total', 'DESC');
+		$this->db->limit(8);
+		$analytics['top_diagnoses'] = $this->db->get()->result();
+		foreach ($analytics['top_diagnoses'] as $row) {
+			$analytics['max_top_total'] = max($analytics['max_top_total'], (int) ($row->total ?? 0));
+		}
+
+		$this->db->select("$display_expr AS puskesmas, $code_expr AS puskesmas_code, TRIM(medicalrecords.diagnosis) AS diagnosis, COUNT(*) AS total", FALSE);
+		$this->db->from('medicalrecords');
+		$this->db->join('requests', 'requests.request_id = medicalrecords.request_id', 'inner');
+		if ($this->can_join_puskesmas()) {
+			$this->db->join('m_puskesmas assigned_puskesmas', 'assigned_puskesmas.kode_pkm = ' . $this->assigned_puskesmas_code_expr('requests'), 'left', FALSE);
+		}
+		$this->apply_diagnosis_analytics_filters($date_expr, $days);
+		$this->db->group_by($display_expr, FALSE);
+		$this->db->group_by($code_expr, FALSE);
+		$this->db->group_by('TRIM(medicalrecords.diagnosis)', FALSE);
+		$this->db->order_by('total', 'DESC');
+		$rows = $this->db->get()->result();
+
+		$grouped = array();
+		foreach ($rows as $row) {
+			$key = (string) ($row->puskesmas_code ?? 'LEGACY_UNCLASSIFIED');
+			if (!isset($grouped[$key])) {
+				$grouped[$key] = (object) array(
+					'puskesmas' => $row->puskesmas ?? 'Legacy / Belum terklasifikasi',
+					'puskesmas_code' => $row->puskesmas_code ?? 'LEGACY_UNCLASSIFIED',
+					'total' => 0,
+					'top_diagnosis' => '-',
+					'top_diagnosis_total' => 0,
+				);
+			}
+
+			$total = (int) ($row->total ?? 0);
+			$grouped[$key]->total += $total;
+			if ($total > $grouped[$key]->top_diagnosis_total) {
+				$grouped[$key]->top_diagnosis = $row->diagnosis ?? '-';
+				$grouped[$key]->top_diagnosis_total = $total;
+			}
+		}
+
+		$analytics['puskesmas_distribution'] = array_values($grouped);
+		usort($analytics['puskesmas_distribution'], function ($a, $b) {
+			return (int) $b->total <=> (int) $a->total;
+		});
+		$analytics['puskesmas_distribution'] = array_slice($analytics['puskesmas_distribution'], 0, 8);
+		foreach ($analytics['puskesmas_distribution'] as $row) {
+			$analytics['max_puskesmas_total'] = max($analytics['max_puskesmas_total'], (int) ($row->total ?? 0));
+		}
+
+		return $analytics;
+	}
+
+	private function apply_diagnosis_analytics_filters($date_expr, $days)
+	{
+		$this->db->where('medicalrecords.diagnosis IS NOT NULL', NULL, FALSE);
+		$this->db->where("TRIM(medicalrecords.diagnosis) <> ''", NULL, FALSE);
+		if ($date_expr !== 'NULL') {
+			$this->db->where("DATE($date_expr) >= DATE_SUB(CURDATE(), INTERVAL " . (int) $days . " DAY)", NULL, FALSE);
+		}
 	}
 
 	public function change_password($email, $new_password)
