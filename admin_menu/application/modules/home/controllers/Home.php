@@ -10,6 +10,9 @@ class Home extends MX_Controller
 		if ($this->session->userdata('is_login') == FALSE) {
 			redirect('/', 'refresh');
 		}
+		if ($this->session->userdata('level') !== 'admin') {
+			show_error('Akses admin diperlukan.', 403, 'Akses ditolak');
+		}
 	}
 	public function index()
 	{
