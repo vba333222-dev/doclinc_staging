@@ -36,17 +36,17 @@
                               <td><?= $no;?></td>
                               <td>
                                   <div class="btn-group">
-                                      <button type="button" class="btn btn-<?= $color_status;?>"><?= $row->status;?></button>
-                                      <button type="button" class="btn btn-outline-<?= $color_status;?> dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                      <button type="button" class="btn btn-<?= html_escape($color_status);?>"><?= html_escape($row->status ?? '-');?></button>
+                                      <button type="button" class="btn btn-outline-<?= html_escape($color_status);?> dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <span class="sr-only">Toggle Dropdown</span>
                                       </button>
                                       <div class="dropdown-menu">
                                         <?php if ($row->status=='aktif'){ ?>
-                                            <a class="dropdown-item" href="#modalNonaktif" data-toggle="modal" data-iduser="<?= $row->userId;?>" data-namauser="<?= $row->nama;?>">
-                                                <i class="fas fa-ban fa-fw text-danger"></i> Non Aktifkan
+                                            <a class="dropdown-item" href="#modalNonaktif" data-toggle="modal" data-iduser="<?= html_escape($row->userId ?? '');?>" data-namauser="<?= html_escape($row->nama ?? '');?>">
+                                                <i class="fas fa-ban fa-fw text-danger"></i> Nonaktifkan
                                             </a>
                                         <?php }elseif ($row->status=='nonaktif'){ ?>
-                                            <a class="dropdown-item" href="#modalAktif" data-toggle="modal" data-iduser="<?= $row->userId;?>" data-namauser="<?= $row->nama;?>">
+                                            <a class="dropdown-item" href="#modalAktif" data-toggle="modal" data-iduser="<?= html_escape($row->userId ?? '');?>" data-namauser="<?= html_escape($row->nama ?? '');?>">
                                                 <i class="fas fa-check-circle fa-fw text-success"></i> Aktifkan
                                             </a>
                                         <?php }?>
@@ -63,7 +63,7 @@
                                 <?php 
                                     if(!empty($row->ktp)){
                                 ?>
-                                    <a href="../uploads/<?= $row->ktp;?>" target="_BLANK">Lihat</a>
+                                    <a href="../uploads/<?= rawurlencode($row->ktp);?>" target="_BLANK" rel="noopener">Lihat</a>
                                 <?php 
                                     }
                                 ?>
@@ -72,12 +72,12 @@
                                 <?php 
                                     if(!empty($row->foto)){
                                 ?>
-                                    <a href="../uploads/<?= $row->foto;?>" target="_BLANK">Lihat</a>
+                                    <a href="../uploads/<?= rawurlencode($row->foto);?>" target="_BLANK" rel="noopener">Lihat</a>
                                 <?php 
                                     }
                                 ?>
                               </td>
-                              <td><?= $row->role;?></td>
+                              <td><?= html_escape($row->role ?? '-');?></td>
                             </tr>
                           <?php endforeach ?>
                         </tbody>
@@ -106,8 +106,8 @@
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            <button type="submit" class="btn btn-primary">Aktifkan</button>
           </div>
       </form>
     </div>
@@ -117,7 +117,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Non Aktifkan?</h5>
+        <h5 class="modal-title">Nonaktifkan?</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -132,8 +132,8 @@
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            <button type="submit" class="btn btn-primary">Nonaktifkan</button>
           </div>
       </form>
     </div>
@@ -159,7 +159,7 @@
       var iduser = button.data('iduser');
       var namauser = button.data('namauser');
       var modal = $(this);
-      modal.find('.modal-body span[name="nama_user"]').html(namauser);
+      modal.find('.modal-body span[name="nama_user"]').text(namauser);
       modal.find('.modal-body input[name="id_user"]').val(iduser);
     });
     $('#modalNonaktif').on('show.bs.modal', function (event) {
@@ -167,7 +167,7 @@
       var iduser = button.data('iduser');
       var namauser = button.data('namauser');
       var modal = $(this);
-      modal.find('.modal-body span[name="nama_user"]').html(namauser);
+      modal.find('.modal-body span[name="nama_user"]').text(namauser);
       modal.find('.modal-body input[name="id_user"]').val(iduser);
     });
 </script>

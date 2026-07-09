@@ -133,7 +133,7 @@
                             Perumahan Emerald Lake Blok A1 No 14 Kramatwatu,<br>
                             Serang, Banten 42161<br>
                             Phone : 0821-1592-5549<br>
-                            Email : asokaconsulting@gmail.com
+                            Email : -
                         </td>
                     </tr>
                 </table>

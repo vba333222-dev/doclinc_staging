@@ -137,7 +137,7 @@
             return $query;
         }
         public function news_events_delete($id){
-            $query = $this->db->query("DELETE FROM tbl_news WHERE id = '$id'");
+            $query = $this->db->query("UPDATE tbl_news SET status = 'arsip', modify_date='".date('Y-m-d H:i:s')."' WHERE id = '$id'");
             return $query;
         }
         public function service_detail($id,$service){
@@ -419,7 +419,7 @@
             return $query; 
         }
         public function portofolio_delete($id){
-            $query = $this->db->query("DELETE FROM tbl_portofolio WHERE id = '$id'");
+            $query = $this->db->query("UPDATE tbl_portofolio SET status = 'non-aktif', modify_date='".date('Y-m-d H:i:s')."' WHERE id = '$id'");
             return $query;
         }
         public function getDataHargaDetail($id_harga){

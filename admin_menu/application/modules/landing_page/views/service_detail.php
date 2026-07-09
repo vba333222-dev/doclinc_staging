@@ -11,7 +11,7 @@
 <div class="row">
   <div class="col-12">
     <div class="card shadow-sm">
-      <div class="card-header font-weight-bold"><?= $nama_service;?></div>
+      <div class="card-header font-weight-bold"><?= html_escape($nama_service ?? '-');?></div>
       <div class="card-body">
         <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNew">+ Tambah baru</button>
         <button class="btn btn-sm btn-default-asoka mb-3 float-right" data-toggle="modal" data-target="#tutor">Contenting Guides</button>
@@ -34,10 +34,10 @@
             ?>
               <tr>
                 <td><?= $i;?></td>
-                <td><?= $x->title;?></td>
+                <td><?= html_escape($x->title ?? '-');?></td>
                 <td><div style="max-height:150px;overflow-y:scroll;"><?= $x->content;?></div></td>
-                <td><?= $x->create_user;?></td>
-                <td><?= $x->modify_date;?></td>
+                <td><?= html_escape($x->create_user ?? '-');?></td>
+                <td><?= html_escape($x->modify_date ?? '-');?></td>
                 <td>
                   <div class="btn-group btn-group-sm">
                     <a href="#modalEdit<?= $x->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Edit">
@@ -46,9 +46,9 @@
                     <a href="<?php echo base_url('landing_page/service_detail_sub/'.$x->id.'/'.$x->title);?>" class="btn btn-primary tooltip-title" title="Lebih detail">
                       <i class="far fa-list-alt fa-fw"></i>
                     </a>
-                    <a href="<?php echo base_url('landing_page/service_detail_delete/'.$x->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" class="btn btn-danger hapus tooltip-title" title="Hapus">
-                      <i class="far fa-trash-alt fa-fw"></i>
-                    </a>
+                    <form action="<?php echo base_url('landing_page/service_detail_delete/'.$x->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus detail layanan legacy ini?');">
+                      <button type="submit" class="btn btn-danger hapus tooltip-title" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
+                    </form>
                   </div>
                 </td>
               </tr>

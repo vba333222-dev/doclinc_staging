@@ -43,38 +43,38 @@
             ?>
               <tr>
                 <td><?= $i;?></td>
-                <td><?= $x->nama;?></td>
-                <td><?= $x->jabatan;?></td>
-                <td><?= $x->no_sipp;?></td>
+                <td><?= html_escape($x->nama ?? '-');?></td>
+                <td><?= html_escape($x->jabatan ?? '-');?></td>
+                <td><?= html_escape($x->no_sipp ?? '-');?></td>
                 <!-- <td><?= $x->quotes;?></td> -->
-                <td><?= $x->email;?></td>
-                <td><?= $x->username;?></td>
-                <td><?= $x->nama_level;?></td>
+                <td><?= html_escape($x->email ?? '-');?></td>
+                <td><?= html_escape($x->username ?? '-');?></td>
+                <td><?= html_escape($x->nama_level ?? '-');?></td>
                 <!-- <td><?= substr($x->ig, 0, 26).'...';?></td>
                 <td><?= substr($x->twitter, 0 ,23).'...';?></td>
                 <td><?= substr($x->fb, 0 , 25).'...';?></td> -->
-                <td><img src="https://asokaconsulting.co.id/assets/img/testimonials/<?= $x->avatar;?>"   style="width:auto;height:70px;"></td> 
+                <td><img src="<?= base_url('../assets/img/testimonials/' . rawurlencode($x->avatar));?>"   style="width:auto;height:70px;"></td>
                 <td>
                   <div class="btn-group btn-group-sm">
-                    <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" 
-                    data-id="<?= $x->id;?>" 
-                    data-nama="<?= $x->nama;?>" 
-                    data-jabatan="<?= $x->jabatan;?>" 
-                    data-nosipp="<?= $x->no_sipp;?>" 
-                    data-quotes="<?= $x->quotes;?>" 
-                    data-email="<?= $x->email;?>"
-                    data-username="<?= $x->username;?>"
-                    data-level="<?= $x->nama_level;?>"
-                    data-ig="<?= $x->ig;?>" 
-                    data-twitter="<?= $x->twitter;?>" 
-                    data-fb="<?= $x->fb;?>"
-                    data-avatar="<?= $x->avatar;?>"
-                    data-signature="<?= $x->signature;?>" title="Edit">
+                    <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal"
+                    data-id="<?= html_escape($x->id ?? '');?>"
+                    data-nama="<?= html_escape($x->nama ?? '');?>"
+                    data-jabatan="<?= html_escape($x->jabatan ?? '');?>"
+                    data-nosipp="<?= html_escape($x->no_sipp ?? '');?>"
+                    data-quotes="<?= html_escape($x->quotes ?? '');?>"
+                    data-email="<?= html_escape($x->email ?? '');?>"
+                    data-username="<?= html_escape($x->username ?? '');?>"
+                    data-level="<?= html_escape($x->nama_level ?? '');?>"
+                    data-ig="<?= html_escape($x->ig ?? '');?>"
+                    data-twitter="<?= html_escape($x->twitter ?? '');?>"
+                    data-fb="<?= html_escape($x->fb ?? '');?>"
+                    data-avatar="<?= html_escape($x->avatar ?? '');?>"
+                    data-signature="<?= html_escape($x->signature ?? '');?>" title="Edit">
                       <i class="far fa-edit fa-fw"></i>
                     </a>           
-                    <a href="<?php echo base_url('landing_page/the_team_delete/'.$x->id.'/'.$x->username);?>" class="btn btn-danger tooltip-title" title="Hapus">
-                      <i class="far fa-trash-alt fa-fw"></i>
-                    </a>
+                    <form action="<?php echo base_url('landing_page/the_team_delete/'.$x->id.'/'.rawurlencode($x->username));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus team legacy ini dan nonaktifkan akun terkait?');">
+                      <button type="submit" class="btn btn-danger tooltip-title" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
+                    </form>
                   </div>
                 </td>
               </tr>

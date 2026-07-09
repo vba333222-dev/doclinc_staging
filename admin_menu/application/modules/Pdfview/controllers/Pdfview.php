@@ -12,6 +12,11 @@
 			}
 			// $this->load->model('Pdf_view_m'); 
 		}
+		private function report_key($segment = 3)
+		{
+			$value = (string) $this->uri->segment($segment);
+			return preg_replace('/[^A-Za-z0-9_\-.]/', '', $value);
+		}
 	    public function index()
 	    {
 	        // panggil library yang kita buat sebelumnya yang bernama pdfgenerator
@@ -34,7 +39,7 @@
 	    }
 		public function Test_kesehatan_mental_report()
 		{
-			$nomor=$this->uri->segment('3');
+			$nomor=$this->report_key(3);
 			$data['data_report']=$this->db->query("SELECT
 										tbl_trans_test_kesehatan_mental.nomor,
 										tbl_trans_test_kesehatan_mental.nama,
@@ -84,7 +89,7 @@
 		public function Test_kepribadian_report()
 		{
 			
-			$nomor=$this->uri->segment(3); 
+			$nomor=$this->report_key(3);
 			$data['data_report']=$this->db->query("SELECT
 														tbl_trans_test_kepribadian.id_trans_kepribadian,
 														tbl_trans_test_kepribadian.id_test_kepribadian,
@@ -233,7 +238,7 @@
 
 		public function final_report_test_kepribadian()
 		{ 
-			$nomor=$this->uri->segment(3); 
+			$nomor=$this->report_key(3);
 			// panggil library yang kita buat sebelumnya yang bernama pdfgenerator
 	        $this->load->library('pdfgenerator');
 			$data['data_report']=$this->db->query("SELECT
@@ -280,7 +285,7 @@
 
 		public function Test_papi_report()
 		{
-			$nomor=$this->uri->segment(3); 
+			$nomor=$this->report_key(3);
 			$data['data_report']=$this->db->query("SELECT
 														tbl_trans_test_papi.nomor_test,
 														tbl_trans_test_papi.nama,
