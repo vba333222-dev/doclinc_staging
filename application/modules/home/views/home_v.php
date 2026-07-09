@@ -1184,6 +1184,15 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									<div class="d-grid gap-2">
 										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary w-100" onclick="openActiveConsultation(<?= html_escape((int) $dlCurrentRequest->request_id); ?>); return false;">Lihat Detail</a>
 										<?php if ($dl_current_status === 'Pending') : ?>
+											<button type="button"
+												class="btn btn-sm btn-outline-success rounded-pill edit-warga-request"
+												data-request-id="<?= html_escape((int) $dlCurrentRequest->request_id); ?>"
+												data-keluhan="<?= html_escape($dl_current_keluhan); ?>"
+												data-location="<?= html_escape(isset($dlCurrentRequest->location) ? $dlCurrentRequest->location : ''); ?>"
+												data-lat="<?= html_escape(isset($dlCurrentRequest->patient_latitude) && $dlCurrentRequest->patient_latitude !== null ? $dlCurrentRequest->patient_latitude : (isset($dlCurrentRequest->lattitude) ? $dlCurrentRequest->lattitude : '')); ?>"
+												data-lng="<?= html_escape(isset($dlCurrentRequest->patient_longitude) && $dlCurrentRequest->patient_longitude !== null ? $dlCurrentRequest->patient_longitude : (isset($dlCurrentRequest->longitude) ? $dlCurrentRequest->longitude : '')); ?>">
+												<i class="fas fa-edit me-1"></i> Edit Request
+											</button>
 											<button type="button" class="btn btn-sm btn-outline-danger rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $dlCurrentRequest->request_id); ?>">
 												<i class="fas fa-times-circle me-1"></i> Batalkan
 											</button>
@@ -1484,6 +1493,15 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											</div>
 										<?php elseif ($request_status === 'Pending') : ?>
 											<div class="mt-3">
+												<button type="button"
+													class="btn btn-outline-success btn-sm rounded-pill edit-warga-request me-1"
+													data-request-id="<?= html_escape((int) $id_request); ?>"
+													data-keluhan="<?= html_escape($keluhan); ?>"
+													data-location="<?= html_escape(isset($data->location) ? $data->location : ''); ?>"
+													data-lat="<?= html_escape(isset($data->patient_latitude) && $data->patient_latitude !== null ? $data->patient_latitude : (isset($data->lattitude) ? $data->lattitude : '')); ?>"
+													data-lng="<?= html_escape(isset($data->patient_longitude) && $data->patient_longitude !== null ? $data->patient_longitude : (isset($data->longitude) ? $data->longitude : '')); ?>">
+													<i class="fas fa-edit me-1"></i> Edit Request
+												</button>
 												<button type="button" class="btn btn-outline-danger btn-sm rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $id_request); ?>">
 													<i class="fas fa-times-circle me-1"></i> Batalkan
 												</button>
@@ -1734,6 +1752,39 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					<i class="fas fa-user fs-4"></i>
 					<span class="d-block small mt-1">Profile</span>
 				</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="editRequestModal" tabindex="-1" aria-labelledby="editRequestModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<div>
+						<h1 class="modal-title fs-5" id="editRequestModalLabel">Edit Request Konsultasi</h1>
+						<p class="text-muted small mb-0">Perubahan hanya dapat dilakukan selama request belum diproses.</p>
+					</div>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<form id="editRequestForm" method="post" action="<?= html_escape(base_url('home/updateRequestById')); ?>">
+					<div class="modal-body">
+						<input type="hidden" name="requestId" id="edit_request_id">
+						<input type="hidden" name="lat" id="edit_request_lat">
+						<input type="hidden" name="lng" id="edit_request_lng">
+						<div class="mb-3">
+							<label for="edit_request_keluhan" class="form-label fw-semibold">Keluhan</label>
+							<textarea class="form-control" name="keluhan" id="edit_request_keluhan" rows="4" required></textarea>
+						</div>
+						<div class="mb-0">
+							<label for="edit_request_alamat" class="form-label fw-semibold">Alamat / Patokan</label>
+							<textarea class="form-control" name="alamat" id="edit_request_alamat" rows="3"></textarea>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+						<button type="submit" class="btn btn-success">Simpan</button>
+					</div>
+				</form>
 			</div>
 		</div>
 	</div>
@@ -2369,6 +2420,75 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					items: 3
 				}
 			}
+		});
+
+		$(document).on('click', '.edit-warga-request', function(event) {
+			event.preventDefault();
+			event.stopPropagation();
+
+			const button = $(this);
+			const requestId = button.attr('data-request-id');
+			if (!requestId) {
+				Swal.fire('Gagal', 'Data request tidak ditemukan.', 'error');
+				return;
+			}
+
+			$('#edit_request_id').val(requestId);
+			$('#edit_request_keluhan').val(button.attr('data-keluhan') || '');
+			$('#edit_request_alamat').val(button.attr('data-location') || '');
+			$('#edit_request_lat').val(button.attr('data-lat') || '');
+			$('#edit_request_lng').val(button.attr('data-lng') || '');
+
+			const modalElement = document.getElementById('editRequestModal');
+			if (modalElement && window.bootstrap) {
+				bootstrap.Modal.getOrCreateInstance(modalElement).show();
+			} else {
+				$('#editRequestModal').modal('show');
+			}
+		});
+
+		$('#editRequestForm').on('submit', function(event) {
+			event.preventDefault();
+
+			const form = $(this);
+			const submitButton = form.find('button[type="submit"]');
+			submitButton.prop('disabled', true).addClass('disabled');
+
+			$.ajax({
+				url: form.attr('action'),
+				type: 'POST',
+				dataType: 'json',
+				data: form.serialize(),
+				success: function(response) {
+					if (typeof response === 'string') {
+						try {
+							response = JSON.parse(response);
+						} catch (error) {}
+					}
+
+					if (response && response.status === 'success') {
+						Swal.fire({
+							title: 'Berhasil',
+							text: response.message || 'Request konsultasi berhasil diperbarui.',
+							icon: 'success',
+							showConfirmButton: false,
+							timer: 1200,
+							timerProgressBar: true
+						}).then(() => {
+							window.location.reload();
+						});
+						return;
+					}
+
+					submitButton.prop('disabled', false).removeClass('disabled');
+					Swal.fire('Gagal', response && response.message ? response.message : 'Request belum dapat diperbarui.', 'error');
+				},
+				error: function(xhr) {
+					submitButton.prop('disabled', false).removeClass('disabled');
+					const response = xhr.responseJSON || {};
+					Swal.fire('Gagal', response.message || 'Request sudah diproses dan tidak dapat diedit.', 'error');
+				}
+			});
 		});
 
 		$(document).on('click', '.cancel-warga-request', function(event) {
