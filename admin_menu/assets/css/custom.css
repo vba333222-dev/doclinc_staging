@@ -947,6 +947,39 @@ footer.sticky-footer {
     line-height: 1.35;
 }
 
+.doclinc-staff-note {
+    align-items: flex-start;
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-left: 4px solid var(--doclinc-info);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-text);
+    display: flex;
+    gap: 0.6rem;
+    line-height: 1.45;
+    margin-bottom: 1rem;
+    padding: 0.8rem 0.95rem;
+}
+
+.doclinc-staff-note i {
+    color: var(--doclinc-info);
+    margin-top: 0.15rem;
+}
+
+.doclinc-staff-table thead th {
+    color: var(--doclinc-text);
+    font-size: 0.76rem;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.doclinc-staff-table td {
+    color: var(--doclinc-text);
+    vertical-align: middle;
+}
+
+.doclinc-staff-chip,
 .doclinc-pic-chip {
     align-items: center;
     background: var(--doclinc-table-head);
@@ -960,8 +993,31 @@ footer.sticky-footer {
     padding: 0.25rem 0.55rem;
 }
 
+.doclinc-staff-chip-active {
+    background: rgba(9, 173, 116, 0.12);
+    border-color: rgba(9, 173, 116, 0.42);
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-staff-chip-inactive {
+    background: var(--doclinc-button-surface);
+    color: var(--doclinc-muted);
+}
+
 .doclinc-pic-empty {
     color: var(--doclinc-muted);
+}
+
+.doclinc-action-stack {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: center;
+}
+
+.doclinc-action-stack form {
+    margin: 0;
 }
 
 .doclinc-timeline-pill {
