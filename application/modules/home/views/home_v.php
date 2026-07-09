@@ -30,6 +30,36 @@ if (!function_exists('doclinc_history_safe_lines')) {
 	}
 }
 
+if (!function_exists('doclinc_warga_visit_timeline')) {
+	function doclinc_warga_visit_timeline($timeline)
+	{
+		if (empty($timeline) || !is_array($timeline)) {
+			return '';
+		}
+
+		$html = '<div class="doclinc-visit-timeline">';
+		foreach ($timeline as $step) {
+			$label = isset($step['label']) ? trim((string) $step['label']) : '';
+			if ($label === '') {
+				continue;
+			}
+			$time = isset($step['time']) ? trim((string) $step['time']) : '';
+			$is_active = !empty($step['active']);
+			$class = 'doclinc-visit-step' . ($is_active ? ' doclinc-visit-step--active' : '');
+			$html .= '<div class="' . html_escape($class) . '">';
+			$html .= '<span class="doclinc-visit-step-dot"></span>';
+			$html .= '<div><strong>' . html_escape($label) . '</strong>';
+			if ($time !== '' && strtotime($time)) {
+				$html .= '<span class="doclinc-visit-meta">' . html_escape(date('d M Y H:i', strtotime($time))) . '</span>';
+			}
+			$html .= '</div></div>';
+		}
+		$html .= '</div>';
+
+		return $html === '<div class="doclinc-visit-timeline"></div>' ? '' : $html;
+	}
+}
+
 if (!function_exists('doclinc_history_format_complaint')) {
 	function doclinc_history_format_complaint($value)
 	{
@@ -607,6 +637,68 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			color: #6c757d;
 		}
 
+		.doclinc-visit-summary {
+			border: 1px solid #d8eee5;
+			border-radius: 12px;
+			background: #f7fcfa;
+			padding: 10px 12px;
+		}
+
+		.doclinc-visit-summary__label {
+			margin: 0;
+			color: #1f513c;
+			font-size: 13px;
+			font-weight: 800;
+			line-height: 1.35;
+		}
+
+		.doclinc-visit-meta {
+			display: block;
+			color: #6c757d;
+			font-size: 11px;
+			line-height: 1.35;
+		}
+
+		.doclinc-visit-timeline {
+			display: grid;
+			gap: 8px;
+			margin-top: 10px;
+		}
+
+		.doclinc-visit-step {
+			display: grid;
+			grid-template-columns: 16px minmax(0, 1fr);
+			gap: 8px;
+			align-items: flex-start;
+			color: #6c757d;
+			font-size: 12px;
+		}
+
+		.doclinc-visit-step strong {
+			display: block;
+			color: #43524c;
+			font-size: 12px;
+			line-height: 1.35;
+		}
+
+		.doclinc-visit-step-dot {
+			width: 10px;
+			height: 10px;
+			margin-top: 3px;
+			border: 2px solid #bfd9ce;
+			border-radius: 999px;
+			background: #fff;
+		}
+
+		.doclinc-visit-step--active strong {
+			color: #1f513c;
+		}
+
+		.doclinc-visit-step--active .doclinc-visit-step-dot {
+			border-color: #09ad74;
+			background: #09ad74;
+		}
+
 		.doclinc-visit-marker {
 			position: relative;
 			width: 78px;
@@ -1161,6 +1253,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$dl_current_keluhan = !empty($dlCurrentRequest->request_description) ? $dlCurrentRequest->request_description : 'Keluhan tersimpan';
 								$dl_puskesmas_label = doclinc_request_puskesmas_label($dlCurrentRequest);
 								$dl_queue_number_label = doclinc_request_queue_number_label($dlCurrentRequest);
+								$dl_visit_status = isset($dlCurrentRequest->warga_visit_status) ? $dlCurrentRequest->warga_visit_status : (isset($dlCurrentRequest->visit_status) ? doclinc_normalize_visit_status($dlCurrentRequest->visit_status) : 'not_started');
+								$dl_visit_label = isset($dlCurrentRequest->warga_visit_status_label) ? $dlCurrentRequest->warga_visit_status_label : ($dl_visit_status !== '' ? doclinc_visit_status_label($dl_visit_status) : 'Menunggu proses layanan');
+								$dl_visit_updated = !empty($dlCurrentRequest->warga_visit_updated_at) && strtotime($dlCurrentRequest->warga_visit_updated_at) ? date('d M Y H:i', strtotime($dlCurrentRequest->warga_visit_updated_at)) : '';
+								$dl_visit_timeline = isset($dlCurrentRequest->warga_visit_timeline) ? $dlCurrentRequest->warga_visit_timeline : array();
 							?>
 								<div class="dl-card p-3" data-request-id="<?= (int) $dlCurrentRequest->request_id; ?>">
 									<div class="d-flex justify-content-between align-items-start gap-3 mb-3">
@@ -1181,6 +1277,15 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 										<span class="history-result-label">Keluhan</span>
 										<div class="history-result-value"><?= doclinc_warga_complaint_summary($dl_current_keluhan); ?></div>
 									</div>
+									<?php if ($dl_current_status === 'Accepted') : ?>
+										<div class="doclinc-visit-summary mb-3">
+											<p class="doclinc-visit-summary__label" data-visit-summary-label="<?= html_escape((int) $dlCurrentRequest->request_id); ?>"><?= html_escape($dl_visit_label); ?></p>
+											<?php if ($dl_visit_updated !== '') : ?>
+												<span class="doclinc-visit-meta" data-visit-summary-meta="<?= html_escape((int) $dlCurrentRequest->request_id); ?>">Diperbarui <?= html_escape($dl_visit_updated); ?></span>
+											<?php endif; ?>
+											<?= doclinc_warga_visit_timeline($dl_visit_timeline); ?>
+										</div>
+									<?php endif; ?>
 									<div class="d-grid gap-2">
 										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary w-100" onclick="openActiveConsultation(<?= html_escape((int) $dlCurrentRequest->request_id); ?>); return false;">Lihat Detail</a>
 										<?php if ($dl_current_status === 'Pending') : ?>
@@ -1404,7 +1509,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$puskesmas_label = doclinc_request_puskesmas_label($data);
 								$queue_number_label = doclinc_request_queue_number_label($data);
 								$visit_status = isset($data->visit_status) ? doclinc_normalize_visit_status($data->visit_status) : '';
-								$visit_label = $visit_status !== '' ? doclinc_visit_status_label($visit_status) : '';
+								$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
+								$visit_label = isset($data->warga_visit_status_label) ? $data->warga_visit_status_label : doclinc_visit_status_label($visit_status);
+								$visit_updated = !empty($data->warga_visit_updated_at) && strtotime($data->warga_visit_updated_at) ? date('d M Y H:i', strtotime($data->warga_visit_updated_at)) : '';
+								$visit_timeline = isset($data->warga_visit_timeline) ? $data->warga_visit_timeline : array();
 								$consultation_mode = isset($data->consultation_mode) ? trim((string) $data->consultation_mode) : '';
 								$mode_label = doclinc_consultation_mode_label($consultation_mode);
 								$handling_nakes_name = doclinc_request_handling_nakes_name($data);
@@ -1446,6 +1554,15 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan</div>
 											<?= doclinc_warga_complaint_summary($keluhan); ?>
 										</div>
+										<?php if ($request_status === 'Accepted') : ?>
+											<div class="doclinc-visit-summary mb-3">
+												<p class="doclinc-visit-summary__label" data-visit-summary-label="<?= html_escape((int) $id_request); ?>"><?= html_escape($visit_label); ?></p>
+												<?php if ($visit_updated !== '') : ?>
+													<span class="doclinc-visit-meta" data-visit-summary-meta="<?= html_escape((int) $id_request); ?>">Diperbarui <?= html_escape($visit_updated); ?></span>
+												<?php endif; ?>
+												<?= doclinc_warga_visit_timeline($visit_timeline); ?>
+											</div>
+										<?php endif; ?>
 										<p class="mb-0 small fw-bold"><i class="fas fa-stethoscope fa-fw"></i> Nakes :</p>
 										<p class="mb-0"><?= html_escape($handling_nakes_name !== '' ? $handling_nakes_name : 'Menunggu nakes menerima konsultasi'); ?></p>
 										<p class="mb-0 small fw-bold"><i class="far fa-clock fa-fw"></i> Estimasi :</p>
@@ -1534,6 +1651,11 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$handling_nakes_name = doclinc_request_handling_nakes_name($data);
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
 								$mode_label = doclinc_consultation_mode_label(isset($data->consultation_mode) ? $data->consultation_mode : '');
+								$visit_status_completed = isset($data->warga_visit_status) ? $data->warga_visit_status : (isset($data->visit_status) ? doclinc_normalize_visit_status($data->visit_status) : 'not_started');
+								$visit_status_completed = $visit_status_completed !== '' ? $visit_status_completed : 'not_started';
+								$visit_label_completed = isset($data->warga_visit_status_label) ? $data->warga_visit_status_label : doclinc_visit_status_label($visit_status_completed);
+								$visit_updated_completed = !empty($data->warga_visit_updated_at) && strtotime($data->warga_visit_updated_at) ? date('d M Y H:i', strtotime($data->warga_visit_updated_at)) : '';
+								$visit_timeline_completed = isset($data->warga_visit_timeline) ? $data->warga_visit_timeline : array();
 								$diagnosa = !empty($data->diagnosa) ? $data->diagnosa : (!empty($data->diagnosis) ? $data->diagnosis : '-');
 								$saran_dokter = !empty($data->saran) ? $data->saran : $saran;
 								$card_id = !empty($data->konsul_id) ? $data->konsul_id : $id_request;
@@ -1587,6 +1709,18 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan Awal</div>
 											<?= doclinc_warga_complaint_summary($keluhan); ?>
 										</div>
+										<?php if ($visit_status_completed !== 'not_started' || !empty($visit_timeline_completed)) : ?>
+											<div class="history-section">
+												<div class="history-section-title"><i class="fas fa-route me-1"></i> Status Layanan</div>
+												<div class="doclinc-visit-summary">
+													<p class="doclinc-visit-summary__label"><?= html_escape($visit_label_completed); ?></p>
+													<?php if ($visit_updated_completed !== '') : ?>
+														<span class="doclinc-visit-meta">Diperbarui <?= html_escape($visit_updated_completed); ?></span>
+													<?php endif; ?>
+													<?= doclinc_warga_visit_timeline($visit_timeline_completed); ?>
+												</div>
+											</div>
+										<?php endif; ?>
 										<div class="history-section">
 											<div class="history-section-title"><i class="fas fa-file-medical-alt me-1"></i> Hasil Konsultasi</div>
 											<div class="history-result-row">
@@ -1937,6 +2071,21 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				element.classList.toggle('text-success', !isError && !!message);
 			}
 
+			function setVisitSummary(requestId, response) {
+				const labelElement = document.querySelector('[data-visit-summary-label="' + requestId + '"]');
+				const metaElement = document.querySelector('[data-visit-summary-meta="' + requestId + '"]');
+				const label = response && (response.warga_visit_status_label || response.visit_status_label) ? (response.warga_visit_status_label || response.visit_status_label) : '';
+				if (labelElement && label) {
+					labelElement.textContent = label;
+				}
+				if (metaElement) {
+					const updatedAt = response && response.nakes && response.nakes.updated_at ? response.nakes.updated_at : '';
+					if (updatedAt) {
+						metaElement.textContent = 'Diperbarui ' + updatedAt;
+					}
+				}
+			}
+
 			function setVisitRouteSummary(requestId, response) {
 				const route = response && response.route ? response.route : {};
 				const patient = response && response.patient ? response.patient : null;
@@ -2191,6 +2340,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 							if (response && (response.tracking_active === false || (response.request_status && response.request_status !== 'Accepted'))) {
 								setVisitRouteSummary(requestId, response);
+								setVisitSummary(requestId, response);
 								setVisitStatus(requestId, response.message || 'Tracking lokasi dihentikan');
 								clearVisitRoute(mapContainerId);
 								stopPolling(requestId);
@@ -2205,9 +2355,11 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									ns.updateVisitMapMarkers(mapContainerId, patientLocation, nakesLocation, response.route);
 								}
 								setVisitRouteSummary(requestId, response);
+								setVisitSummary(requestId, response);
 								setVisitStatus(requestId, getVisitStatusMessage(response, nakesLocation ? 'Lokasi nakes tersedia' : 'Lokasi nakes belum tersedia'));
 							} else if (response && response.status === 'pending') {
 								setVisitRouteSummary(requestId, response);
+								setVisitSummary(requestId, response);
 								setVisitStatus(requestId, getVisitStatusMessage(response, response.message || 'Lokasi nakes belum tersedia'));
 							} else {
 								setVisitRouteSummary(requestId, response || {});

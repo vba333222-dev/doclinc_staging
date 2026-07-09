@@ -473,6 +473,7 @@ class Home extends MX_Controller
 				? doclinc_normalize_visit_status($request->visit_status)
 				: '';
 			$terminal_visit_status = $terminal_visit_status !== '' ? $terminal_visit_status : 'not_started';
+			$terminal_visit_label = $this->Home_m->warga_visit_status_label($terminal_visit_status);
 			$this->output->set_output(json_encode(array(
 				'status' => 'inactive',
 				'success' => false,
@@ -481,7 +482,9 @@ class Home extends MX_Controller
 				'request_id' => $request_id,
 				'request_status' => $request->request_status,
 				'visit_status' => $terminal_visit_status,
-				'visit_status_label' => doclinc_visit_status_label($terminal_visit_status),
+				'visit_status_label' => $terminal_visit_label,
+				'warga_visit_status_label' => $terminal_visit_label,
+				'visit_timeline' => $this->Home_m->get_warga_visit_timeline($request_id, $request),
 				'route' => $default_route,
 				'arrival' => $default_arrival,
 			)));
@@ -506,17 +509,20 @@ class Home extends MX_Controller
 			? doclinc_normalize_visit_status($row->visit_status)
 			: '';
 		$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
+		$visit_status_label = $this->Home_m->warga_visit_status_label($visit_status);
 		$visit_workflow = [
 			'request_id' => $request_id,
 			'request_status' => $row->request_status,
 			'visit_status' => $visit_status,
-			'visit_status_label' => doclinc_visit_status_label($visit_status),
+			'visit_status_label' => $visit_status_label,
+			'warga_visit_status_label' => $visit_status_label,
 			'consultation_mode' => isset($row->consultation_mode) ? $row->consultation_mode : null,
 			'consultation_mode_label' => function_exists('doclinc_consultation_mode_label') ? doclinc_consultation_mode_label(isset($row->consultation_mode) ? $row->consultation_mode : null) : '',
 			'visit_started_at' => isset($row->visit_started_at) ? $row->visit_started_at : null,
 			'visit_arrived_at' => isset($row->visit_arrived_at) ? $row->visit_arrived_at : null,
 			'visit_in_service_at' => isset($row->visit_in_service_at) ? $row->visit_in_service_at : null,
 			'visit_completed_at' => isset($row->visit_completed_at) ? $row->visit_completed_at : null,
+			'visit_timeline' => $this->Home_m->get_warga_visit_timeline($request_id, $row),
 			'route' => $default_route,
 			'arrival' => $default_arrival,
 			'tracking_active' => true,
