@@ -109,10 +109,11 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$this->session->set_flashdata('title', 'Staff Puskesmas');
 		$this->session->set_flashdata('active_tab_kelola_staff_puskesmas', 'active');
 
+		$filter_input = $this->input->method(TRUE) === 'POST' ? 'post' : 'get';
 		$filters = array(
-			'kode_pkm' => trim((string) $this->input->get('kode_pkm', TRUE)),
-			'status' => trim((string) $this->input->get('status', TRUE)),
-			'keyword' => trim((string) $this->input->get('keyword', TRUE)),
+			'kode_pkm' => trim((string) $this->input->{$filter_input}('kode_pkm', TRUE)),
+			'status' => trim((string) $this->input->{$filter_input}('status', TRUE)),
+			'keyword' => trim((string) $this->input->{$filter_input}('keyword', TRUE)),
 		);
 
 		$data = array(
