@@ -1341,6 +1341,145 @@ footer.sticky-footer {
     padding: 0.28rem 0.65rem;
 }
 
+.doclinc-account-list-card .card-header {
+    gap: 1rem;
+}
+
+.doclinc-account-toolbar {
+    align-items: center;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.doclinc-account-search {
+    background: var(--doclinc-input-bg);
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    color: var(--doclinc-input-text);
+    font-size: 0.86rem;
+    max-width: 360px;
+    min-height: 36px;
+    padding: 0.42rem 0.9rem;
+}
+
+.doclinc-account-search:focus {
+    background: var(--doclinc-input-bg);
+    border-color: var(--doclinc-primary);
+    box-shadow: 0 0 0 0.12rem rgba(9, 173, 116, 0.12);
+    color: var(--doclinc-input-text);
+}
+
+.doclinc-account-list {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.doclinc-account-card {
+    background: var(--doclinc-surface);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    box-shadow: 0 2px 8px var(--doclinc-shadow);
+    color: var(--doclinc-text);
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 1rem;
+}
+
+.doclinc-account-header {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.8rem;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+}
+
+.doclinc-account-header .doclinc-status-chip {
+    flex: 0 0 auto;
+    margin-top: 0.1rem;
+}
+
+.doclinc-account-meta {
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+    line-height: 1.35;
+    margin-top: 0.18rem;
+    overflow-wrap: anywhere;
+}
+
+.doclinc-account-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.doclinc-account-field {
+    min-width: 0;
+}
+
+.doclinc-account-field span {
+    color: var(--doclinc-muted);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.18rem;
+    text-transform: uppercase;
+}
+
+.doclinc-account-field strong {
+    color: var(--doclinc-text);
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.doclinc-account-field-wide {
+    grid-column: 1 / -1;
+}
+
+.doclinc-account-puskesmas {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.doclinc-account-puskesmas strong {
+    flex: 1 1 160px;
+}
+
+.doclinc-account-actions {
+    align-items: center;
+    border-top: 1px solid var(--doclinc-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+}
+
+.doclinc-account-actions form {
+    margin: 0;
+}
+
+.doclinc-account-danger {
+    margin-left: auto;
+}
+
+.doclinc-account-empty {
+    background: var(--doclinc-table-head);
+    border: 1px dashed var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-muted);
+    font-size: 0.9rem;
+    padding: 1.25rem;
+    text-align: center;
+}
+
 html[data-theme="dark"] .bg-light,
 html[data-theme="dark"] .modal-body.bg-light {
     background-color: #0f172a !important;
@@ -1404,6 +1543,33 @@ html[data-theme="dark"] .doclinc-action-danger {
 
     .admin-directions-panel {
         max-height: 300px;
+    }
+
+    .doclinc-account-list {
+        grid-template-columns: 1fr;
+    }
+
+    .doclinc-account-toolbar {
+        justify-content: stretch;
+    }
+
+    .doclinc-account-search {
+        max-width: none;
+        width: 100%;
+    }
+
+    .doclinc-account-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .doclinc-account-actions .doclinc-action-btn,
+    .doclinc-account-actions form {
+        width: 100%;
+    }
+
+    .doclinc-account-danger {
+        margin-left: 0;
     }
 }
 
