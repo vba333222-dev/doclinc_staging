@@ -353,9 +353,142 @@ class Home_m extends MX_Controller
 			$status = isset($row->visit_status) ? $this->warga_normalize_visit_status($row->visit_status) : 'not_started';
 			$row->warga_visit_status = $status;
 			$row->warga_visit_status_label = $this->warga_visit_status_label($status);
+			$row->warga_top_status_label = $this->warga_top_status_label(isset($row->request_status) ? $row->request_status : '', $status);
 			$row->warga_visit_updated_at = $this->warga_visit_updated_at($row, $status);
 			$row->warga_visit_timeline = $this->get_warga_visit_timeline(isset($row->request_id) ? (int) $row->request_id : 0, $row);
 		}
+		$this->decorate_warga_pic_display($requests);
+	}
+
+	public function warga_top_status_label($request_status, $visit_status = null)
+	{
+		$visit_status = $this->warga_normalize_visit_status($visit_status);
+		if ($visit_status !== 'not_started') {
+			return $this->warga_visit_status_label($visit_status);
+		}
+
+		$request_status = trim((string) $request_status);
+		if ($request_status === 'Pending') {
+			return 'Menunggu diterima Puskesmas';
+		}
+		if ($request_status === 'Accepted') {
+			return 'Request diterima';
+		}
+		if ($request_status === 'Completed') {
+			return 'Layanan selesai';
+		}
+		if ($request_status === 'Cancelled') {
+			return 'Request dibatalkan';
+		}
+
+		return 'Status layanan diperbarui';
+	}
+
+	public function get_warga_pic_assignment($request_id)
+	{
+		$map = $this->get_warga_pic_assignments_by_request_ids(array($request_id));
+		$request_id = (int) $request_id;
+		return isset($map[$request_id]) ? $map[$request_id] : null;
+	}
+
+	private function decorate_warga_pic_display(&$requests)
+	{
+		$request_ids = array();
+		foreach ($requests as $row) {
+			if (isset($row->request_id) && (int) $row->request_id > 0) {
+				$request_ids[] = (int) $row->request_id;
+			}
+		}
+
+		$assignment_map = $this->get_warga_pic_assignments_by_request_ids($request_ids);
+		foreach ($requests as $row) {
+			$request_id = isset($row->request_id) ? (int) $row->request_id : 0;
+			$assignment = $request_id > 0 && isset($assignment_map[$request_id]) ? $assignment_map[$request_id] : null;
+			$this->apply_warga_pic_assignment($row, $assignment);
+		}
+	}
+
+	private function get_warga_pic_assignments_by_request_ids($request_ids)
+	{
+		if (!$this->warga_pic_assignment_table_ready() || !is_array($request_ids)) {
+			return array();
+		}
+
+		$ids = array();
+		foreach ($request_ids as $request_id) {
+			$request_id = (int) $request_id;
+			if ($request_id > 0) {
+				$ids[$request_id] = $request_id;
+			}
+		}
+		if (empty($ids)) {
+			return array();
+		}
+
+		$select = array(
+			'rsa.assignment_id',
+			'rsa.request_id',
+			'rsa.staff_id',
+			'rsa.assigned_at',
+			'ps.nama AS staff_nama',
+			$this->db->field_exists('profesi', 'puskesmas_staff') ? 'ps.profesi AS staff_profesi' : 'NULL AS staff_profesi',
+			$this->db->field_exists('no_hp', 'puskesmas_staff') ? 'ps.no_hp AS staff_no_hp' : 'NULL AS staff_no_hp',
+		);
+
+		$rows = $this->db
+			->select(implode(', ', $select), FALSE)
+			->from('request_staff_assignments AS rsa')
+			->join('puskesmas_staff AS ps', 'ps.staff_id = rsa.staff_id', 'left')
+			->where('rsa.status', 'aktif')
+			->where_in('rsa.request_id', array_values($ids))
+			->order_by('rsa.assigned_at', 'DESC')
+			->order_by('rsa.assignment_id', 'DESC')
+			->get()
+			->result();
+
+		$map = array();
+		foreach ($rows as $row) {
+			$request_id = isset($row->request_id) ? (int) $row->request_id : 0;
+			if ($request_id > 0 && !isset($map[$request_id])) {
+				$map[$request_id] = $row;
+			}
+		}
+
+		return $map;
+	}
+
+	private function apply_warga_pic_assignment($row, $assignment)
+	{
+		$pic_name = $assignment && !empty($assignment->staff_nama) ? trim((string) $assignment->staff_nama) : '';
+		$pic_profesi = $assignment && !empty($assignment->staff_profesi) ? trim((string) $assignment->staff_profesi) : '';
+		$pic_no_hp = $assignment && !empty($assignment->staff_no_hp) ? trim((string) $assignment->staff_no_hp) : '';
+		$row->assigned_pic_name = $pic_name;
+		$row->assigned_pic_profesi = $pic_profesi;
+		$row->assigned_pic_no_hp = $pic_no_hp;
+		$row->assigned_pic_label = $pic_name !== ''
+			? 'PIC layanan: ' . $pic_name . ($pic_profesi !== '' ? ' - ' . $pic_profesi : '')
+			: 'PIC layanan belum ditentukan';
+	}
+
+	private function warga_pic_assignment_table_ready()
+	{
+		if (!$this->db->table_exists('request_staff_assignments') || !$this->db->table_exists('puskesmas_staff')) {
+			return false;
+		}
+
+		foreach (array('assignment_id', 'request_id', 'staff_id', 'status', 'assigned_at') as $field) {
+			if (!$this->db->field_exists($field, 'request_staff_assignments')) {
+				return false;
+			}
+		}
+
+		foreach (array('staff_id', 'nama') as $field) {
+			if (!$this->db->field_exists($field, 'puskesmas_staff')) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	private function warga_normalize_visit_status($status)

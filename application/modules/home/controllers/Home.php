@@ -474,6 +474,8 @@ class Home extends MX_Controller
 				: '';
 			$terminal_visit_status = $terminal_visit_status !== '' ? $terminal_visit_status : 'not_started';
 			$terminal_visit_label = $this->Home_m->warga_visit_status_label($terminal_visit_status);
+			$terminal_top_label = $this->Home_m->warga_top_status_label($request->request_status, $terminal_visit_status);
+			$terminal_pic_payload = $this->warga_pic_payload($request_id);
 			$this->output->set_output(json_encode(array(
 				'status' => 'inactive',
 				'success' => false,
@@ -484,10 +486,11 @@ class Home extends MX_Controller
 				'visit_status' => $terminal_visit_status,
 				'visit_status_label' => $terminal_visit_label,
 				'warga_visit_status_label' => $terminal_visit_label,
+				'warga_top_status_label' => $terminal_top_label,
 				'visit_timeline' => $this->Home_m->get_warga_visit_timeline($request_id, $request),
 				'route' => $default_route,
 				'arrival' => $default_arrival,
-			)));
+			) + $terminal_pic_payload));
 			return;
 		}
 		if (!doclinc_can_view_visit_location($request_id, $user_id, $role)) {
@@ -510,12 +513,15 @@ class Home extends MX_Controller
 			: '';
 		$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
 		$visit_status_label = $this->Home_m->warga_visit_status_label($visit_status);
+		$top_status_label = $this->Home_m->warga_top_status_label($row->request_status, $visit_status);
+		$pic_payload = $this->warga_pic_payload($request_id);
 		$visit_workflow = [
 			'request_id' => $request_id,
 			'request_status' => $row->request_status,
 			'visit_status' => $visit_status,
 			'visit_status_label' => $visit_status_label,
 			'warga_visit_status_label' => $visit_status_label,
+			'warga_top_status_label' => $top_status_label,
 			'consultation_mode' => isset($row->consultation_mode) ? $row->consultation_mode : null,
 			'consultation_mode_label' => function_exists('doclinc_consultation_mode_label') ? doclinc_consultation_mode_label(isset($row->consultation_mode) ? $row->consultation_mode : null) : '',
 			'visit_started_at' => isset($row->visit_started_at) ? $row->visit_started_at : null,
@@ -526,7 +532,7 @@ class Home extends MX_Controller
 			'route' => $default_route,
 			'arrival' => $default_arrival,
 			'tracking_active' => true,
-		];
+		] + $pic_payload;
 
 		$patient_latitude = null;
 		$patient_longitude = null;
@@ -668,6 +674,23 @@ class Home extends MX_Controller
 			echo json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']);
 			exit;
 		}
+	}
+
+	private function warga_pic_payload($request_id)
+	{
+		$assignment = $this->Home_m->get_warga_pic_assignment($request_id);
+		$pic_name = $assignment && !empty($assignment->staff_nama) ? trim((string) $assignment->staff_nama) : '';
+		$pic_profesi = $assignment && !empty($assignment->staff_profesi) ? trim((string) $assignment->staff_profesi) : '';
+		$pic_no_hp = $assignment && !empty($assignment->staff_no_hp) ? trim((string) $assignment->staff_no_hp) : '';
+
+		return array(
+			'assigned_pic_name' => $pic_name,
+			'assigned_pic_profesi' => $pic_profesi,
+			'assigned_pic_no_hp' => $pic_no_hp,
+			'assigned_pic_label' => $pic_name !== ''
+				? 'PIC layanan: ' . $pic_name . ($pic_profesi !== '' ? ' - ' . $pic_profesi : '')
+				: 'PIC layanan belum ditentukan',
+		);
 	}
 
 	private function require_post_json()
