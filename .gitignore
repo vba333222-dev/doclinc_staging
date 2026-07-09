@@ -1,8 +1,19 @@
 .env
+.env.*
+!.env.example
+
+error_log
+AI_CONTEXT.md
+AUDIT_REPORT.md
+managed_context/
+test_suite_analysis/
+doclinc_development_brief*.json
+doclinc_master_development_prompt*.md
 
 database/backups/
 database/*.sql
 database/**/*.sql
+*.sql
 *.log
 
 application/logs/*
@@ -54,3 +65,5 @@ node_modules/
 
 application/third_party/firebase/*firebase-adminsdk*.json
 *firebase-adminsdk*.json
+
+.env
