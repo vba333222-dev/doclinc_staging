@@ -24,8 +24,14 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 			</div>
 			<div class="card-body doclinc-table-body">
 				<div class="doclinc-account-toolbar">
-					<label for="accountCardSearch" class="sr-only">Cari akun Puskesmas</label>
-					<input type="text" id="accountCardSearch" class="form-control doclinc-account-search" placeholder="Cari nama, username, email, atau Puskesmas">
+					<label for="puskesmasAccountSelector">Puskesmas aktif</label>
+					<select id="puskesmasAccountSelector" class="form-control doclinc-puskesmas-selector">
+						<option value="">Pilih Puskesmas aktif</option>
+						<option value="__all">Semua Puskesmas aktif</option>
+						<?php foreach ($puskesmas_options as $puskesmas): ?>
+							<option value="<?= html_escape($puskesmas->nama_puskesmas); ?>"><?= html_escape($puskesmas->nama_puskesmas); ?></option>
+						<?php endforeach; ?>
+					</select>
 				</div>
 
 				<?php if (empty($account_rows)): ?>
@@ -38,77 +44,59 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 							$nama_pkm = $data->nama_puskesmas ?? ($puskesmas_names[$kode_pkm] ?? '');
 							$puskesmas_status = $data->puskesmas_status ?? '';
 							$is_active = ($data->status ?? '') === 'aktif';
-							$search_text = strtolower(trim(implode(' ', array(
-								$data->nama ?? '',
-								$data->username ?? '',
-								$data->email ?? '',
-								$data->no_hp ?? '',
-								$kode_pkm,
-								$nama_pkm,
-								$data->status ?? '',
-							))));
+							if ($kode_pkm !== '' && $nama_pkm !== '' && $puskesmas_status !== 'nonaktif') {
+								$relationship_note = 'Terhubung ke Puskesmas aktif';
+							} elseif ($kode_pkm !== '' && $puskesmas_status === 'nonaktif') {
+								$relationship_note = 'Puskesmas nonaktif';
+							} else {
+								$relationship_note = 'Belum terhubung ke Puskesmas aktif';
+							}
 							?>
-							<div class="doclinc-account-card" data-search="<?= html_escape($search_text); ?>">
-								<div class="doclinc-account-header">
+							<div class="doclinc-account-card" data-puskesmas-name="<?= html_escape($nama_pkm); ?>" data-puskesmas-active="<?= ($kode_pkm !== '' && $nama_pkm !== '' && $puskesmas_status !== 'nonaktif') ? '1' : '0'; ?>">
+								<div class="doclinc-account-card__header">
 									<div>
-										<div class="doclinc-account-name"><?= html_escape($data->nama ?? '-'); ?></div>
-										<div class="doclinc-account-meta">@<?= html_escape($data->username ?? '-'); ?></div>
+										<div class="doclinc-account-card__title"><?= html_escape($data->nama ?? '-'); ?></div>
 									</div>
-									<span class="doclinc-status-chip <?= $is_active ? 'is-active' : 'is-inactive'; ?>">
+									<span class="doclinc-account-card__status <?= $is_active ? 'is-active' : 'is-inactive'; ?>">
 										<?= $is_active ? 'Aktif' : 'Nonaktif'; ?>
 									</span>
 								</div>
 
-								<div class="doclinc-account-grid">
-									<div class="doclinc-account-field">
-										<span>Email</span>
-										<strong class="doclinc-text-wrap"><?= html_escape($data->email ?? '-'); ?></strong>
+								<div class="doclinc-account-card__body">
+									<div class="doclinc-account-card__meta">
+										<span>Puskesmas</span>
+										<strong><?= html_escape($nama_pkm !== '' ? $nama_pkm : 'Belum terhubung'); ?></strong>
 									</div>
-									<div class="doclinc-account-field">
+									<div class="doclinc-account-card__meta">
 										<span>No. Telepon</span>
 										<strong><?= html_escape($data->no_hp ?? '-'); ?></strong>
 									</div>
-									<div class="doclinc-account-field doclinc-account-field-wide">
-										<span>Puskesmas</span>
-										<div class="doclinc-account-puskesmas">
-											<span class="doclinc-code-chip"><?= html_escape($kode_pkm !== '' ? $kode_pkm : '-'); ?></span>
-											<strong><?= html_escape($nama_pkm !== '' ? $nama_pkm : 'Belum terhubung ke Puskesmas aktif'); ?></strong>
-										</div>
-										<?php if ($kode_pkm !== '' && $puskesmas_status === 'nonaktif'): ?>
-											<div class="doclinc-warning-text">Puskesmas nonaktif</div>
-										<?php elseif ($nama_pkm === ''): ?>
-											<div class="doclinc-muted-text">Periksa mapping kode Puskesmas akun ini.</div>
-										<?php endif; ?>
+									<div class="doclinc-account-card__note <?= $relationship_note === 'Puskesmas nonaktif' ? 'is-warning' : ($relationship_note === 'Belum terhubung ke Puskesmas aktif' ? 'is-muted' : ''); ?>">
+										<?= html_escape($relationship_note); ?>
 									</div>
 								</div>
 
-								<div class="doclinc-account-actions">
-									<button type="button" class="btn doclinc-action-btn" data-toggle="modal" data-target="#editModal<?= (int) $data->userId ?>">
-										<i class="fas fa-edit"></i> Edit
-									</button>
-									<?php if ($is_active): ?>
-										<form action="<?= site_url('kelola_dokter_nakes/nonaktifkan_user') ?>" method="post" class="d-inline">
-											<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
-											<input type="hidden" name="remark_nonaktif" value="<?= html_escape($data->remark ?? ''); ?>">
-											<button type="submit" class="btn doclinc-action-btn" onclick="return confirm('Nonaktifkan akun Puskesmas ini? Akun tidak dihapus dan dapat diaktifkan kembali.');">
-												<i class="fas fa-ban"></i> Nonaktifkan Akun
-											</button>
-										</form>
-									<?php else: ?>
-										<form action="<?= site_url('kelola_dokter_nakes/aktifkan_user') ?>" method="post" class="d-inline">
-											<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
-											<input type="hidden" name="remark_aktif" value="<?= html_escape($data->remark ?? ''); ?>">
-											<button type="submit" class="btn doclinc-action-btn doclinc-action-primary" onclick="return confirm('Aktifkan akun Puskesmas ini?');">
-												<i class="fas fa-check"></i> Aktifkan Akun
-											</button>
-										</form>
-										<form action="<?= site_url('kelola_dokter_nakes/destroy_dokter_nakes') ?>" method="post" class="d-inline">
-											<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
-											<button type="submit" class="btn doclinc-action-btn doclinc-action-danger doclinc-account-danger" onclick="return confirm('Hapus permanen akun ini? Aksi ini hanya boleh untuk akun test/tidak terpakai dan tidak dapat dibatalkan.');">
-												<i class="fas fa-trash-alt"></i> Hapus Permanen
-											</button>
-										</form>
-									<?php endif; ?>
+								<div class="doclinc-account-card__footer">
+									<div class="doclinc-account-card__actions">
+										<button type="button" class="btn doclinc-action-btn doclinc-action-btn--primary" data-toggle="modal" data-target="#editModal<?= (int) $data->userId ?>">Edit</button>
+										<?php if ($is_active): ?>
+											<form action="<?= site_url('kelola_dokter_nakes/nonaktifkan_user') ?>" method="post" class="d-inline">
+												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
+												<input type="hidden" name="remark_nonaktif" value="<?= html_escape($data->remark ?? ''); ?>">
+												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan akun Puskesmas ini? Akun tidak dihapus dan dapat diaktifkan kembali.');">Nonaktifkan</button>
+											</form>
+										<?php else: ?>
+											<form action="<?= site_url('kelola_dokter_nakes/aktifkan_user') ?>" method="post" class="d-inline">
+												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
+												<input type="hidden" name="remark_aktif" value="<?= html_escape($data->remark ?? ''); ?>">
+												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan akun Puskesmas ini?');">Aktifkan</button>
+											</form>
+											<form action="<?= site_url('kelola_dokter_nakes/destroy_dokter_nakes') ?>" method="post" class="d-inline">
+												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
+												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--danger doclinc-account-danger" onclick="return confirm('Hapus permanen akun ini? Aksi ini tidak dapat dibatalkan.');">Hapus</button>
+											</form>
+										<?php endif; ?>
+									</div>
 								</div>
 							</div>
 
@@ -198,7 +186,6 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 							</div>
 						<?php endforeach; ?>
 					</div>
-					<div class="doclinc-account-empty d-none" id="accountCardSearchEmpty">Belum ada akun Puskesmas.</div>
 				<?php endif; ?>
 			</div>
 		</div>
@@ -304,28 +291,33 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 
 <script>
 	document.addEventListener('DOMContentLoaded', function() {
-		var searchInput = document.getElementById('accountCardSearch');
+		var selector = document.getElementById('puskesmasAccountSelector');
 		var cards = Array.prototype.slice.call(document.querySelectorAll('.doclinc-account-card'));
-		var emptyState = document.getElementById('accountCardSearchEmpty');
-		if (!searchInput || cards.length === 0) {
+		if (!selector || cards.length === 0) {
 			return;
 		}
 
-		searchInput.addEventListener('input', function() {
-			var query = searchInput.value.toLowerCase().trim();
-			var visibleCount = 0;
-
+		selector.addEventListener('change', function() {
+			var selected = selector.value;
 			cards.forEach(function(card) {
-				var haystack = card.getAttribute('data-search') || '';
-				var visible = query === '' || haystack.indexOf(query) !== -1;
-				card.classList.toggle('d-none', !visible);
-				if (visible) {
-					visibleCount++;
-				}
+				card.classList.remove('doclinc-card-highlight');
 			});
 
-			if (emptyState) {
-				emptyState.classList.toggle('d-none', visibleCount !== 0);
+			if (selected === '' || selected === '__all') {
+				window.scrollTo({ top: 0, behavior: 'smooth' });
+				return;
+			}
+
+			var matches = cards.filter(function(card) {
+				return card.getAttribute('data-puskesmas-active') === '1' && card.getAttribute('data-puskesmas-name') === selected;
+			});
+
+			matches.forEach(function(card) {
+				card.classList.add('doclinc-card-highlight');
+			});
+
+			if (matches.length > 0) {
+				matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
 			}
 		});
 	});
