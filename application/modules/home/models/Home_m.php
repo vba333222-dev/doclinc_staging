@@ -18,6 +18,30 @@ class Home_m extends MX_Controller
 		}
 	}
 
+	public function get_master_gejala_keluhan_options()
+	{
+		if (!$this->db->table_exists('keluhan')) {
+			return array();
+		}
+
+		$select = array();
+		$select[] = $this->db->field_exists('id_keluhan', 'keluhan') ? 'id_keluhan' : 'NULL AS id_keluhan';
+		$select[] = $this->db->field_exists('nama_keluhan', 'keluhan') ? 'nama_keluhan' : 'NULL AS nama_keluhan';
+		$select[] = $this->db->field_exists('status', 'keluhan') ? 'status' : 'NULL AS status';
+
+		$this->db->select(implode(', ', $select), FALSE);
+		$this->db->from('keluhan');
+		if ($this->db->field_exists('status', 'keluhan')) {
+			$this->db->where('status', 'Aktif');
+		}
+		if ($this->db->field_exists('nama_keluhan', 'keluhan')) {
+			$this->db->where("TRIM(nama_keluhan) <> ''", null, false);
+			$this->db->order_by('nama_keluhan', 'ASC');
+		}
+
+		return $this->db->get()->result();
+	}
+
 	private function applyDoctorFilters($kode_pkm)
 	{
 		$this->db->where('users.role', 'dokter');

@@ -1,11 +1,11 @@
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-comments"></i> Keluhan</h1>
+	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-comments"></i> Master Gejala/Keluhan</h1>
 	<button type="button" class="btn btn-sm btn-success shadow-sm" data-toggle="modal" data-target="#modalTambah">
 		<i class="fas fa-plus fa-sm text-white-50"></i> Tambah Keluhan
 	</button>
 </div>
 <div class="doclinc-helper-note mb-3">
-	Master data kategori keluhan untuk pengelompokan referensi keluhan pada layanan Doclinc.
+	Data ini digunakan sebagai pilihan gejala/keluhan umum saat warga membuat request konsultasi.
 </div>
 <!-- Content Row -->
 <div class="row">

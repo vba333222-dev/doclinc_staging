@@ -47,6 +47,9 @@ $dokter_id = $dokter;
 $nama = '';
 $token = '';
 $ui_asset_base = base_url('assets/doclinc_ui/konsultasi_nakes/');
+$master_gejala_keluhan_options = isset($master_gejala_keluhan_options) && is_array($master_gejala_keluhan_options)
+	? $master_gejala_keluhan_options
+	: array();
 
 $this->load->model('Konsultasi_m');
 $coordinate = $this->Konsultasi_m->getAllDataLocations($dokter);
@@ -537,8 +540,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					</div>
 					<div class="consult-input-stack">
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_keluhan_utama">Keluhan utama</label>
-							<input type="text" id="ui_keluhan_utama" class="consult-field form-control" placeholder="Contoh: demam, batuk, nyeri perut" required>
+							<label class="consult-field-label" for="ui_gejala_keluhan_utama">Gejala/Keluhan utama</label>
+							<select id="ui_gejala_keluhan_utama" name="gejala_utama" class="consult-field form-control">
+								<option value="">Pilih gejala/keluhan</option>
+								<?php foreach ($master_gejala_keluhan_options as $option): ?>
+									<?php $option_name = trim((string) ($option->nama_keluhan ?? '')); ?>
+									<?php if ($option_name === '') continue; ?>
+									<option value="<?= html_escape($option_name); ?>"><?= html_escape($option_name); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_keluhan_utama">Detail keluhan singkat</label>
+							<input type="text" id="ui_keluhan_utama" class="consult-field form-control" placeholder="Contoh: demam, batuk, nyeri perut">
 						</div>
 						<div class="consult-field-group">
 							<label class="consult-field-label" for="ui_lama_keluhan">Lama keluhan</label>
@@ -549,8 +563,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							<input type="text" id="ui_gejala_tambahan" class="consult-field form-control" placeholder="Contoh: mual, pusing, sesak, atau kosongkan">
 						</div>
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_deskripsi_keluhan">Deskripsi keluhan sakit anda</label>
-							<textarea id="ui_deskripsi_keluhan" class="consult-field consult-field-keluhan form-control" placeholder="Ceritakan kondisi yang dirasakan dengan bahasa sehari-hari" required></textarea>
+							<label class="consult-field-label" for="ui_deskripsi_keluhan">Detail keluhan</label>
+							<textarea id="ui_deskripsi_keluhan" class="consult-field consult-field-keluhan form-control" placeholder="Ceritakan keluhan yang dirasakan warga" required></textarea>
 						</div>
 					</div>
 					<textarea
@@ -861,13 +875,14 @@ Lama keluhan:
 		}
 
 		function syncStructuredConsultationFields() {
+			const gejalaKeluhanUtama = getStructuredValue('ui_gejala_keluhan_utama');
 			const keluhanUtama = getStructuredValue('ui_keluhan_utama');
 			const lamaKeluhan = getStructuredValue('ui_lama_keluhan');
 			const deskripsiKeluhan = getStructuredValue('ui_deskripsi_keluhan');
 
-			if (keluhanUtama === '') {
-				alert('Silakan isi keluhan utama.');
-				focusStructuredField('ui_keluhan_utama');
+			if (gejalaKeluhanUtama === '' && keluhanUtama === '') {
+				alert('Silakan pilih gejala/keluhan atau isi detail keluhan singkat.');
+				focusStructuredField('ui_gejala_keluhan_utama');
 				return false;
 			}
 
@@ -885,7 +900,8 @@ Lama keluhan:
 
 			const keluhanPayload = [
 				'Anamnesa',
-				'Keluhan utama: ' + keluhanUtama,
+				'Gejala/Keluhan utama: ' + (gejalaKeluhanUtama !== '' ? gejalaKeluhanUtama : keluhanUtama),
+				'Keluhan utama: ' + optionalStructuredValue('ui_keluhan_utama'),
 				'Lama keluhan: ' + lamaKeluhan,
 				'Gejala tambahan: ' + optionalStructuredValue('ui_gejala_tambahan'),
 				'Deskripsi keluhan: ' + deskripsiKeluhan
