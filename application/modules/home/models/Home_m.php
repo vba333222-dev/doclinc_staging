@@ -169,6 +169,7 @@ class Home_m extends MX_Controller
 				$row->request_description = '[Keluhan tidak dapat didekripsi]';
 			}
 		}
+		$this->decorate_warga_visit_display($result);
 
 		return $result;
 	}
@@ -251,8 +252,147 @@ class Home_m extends MX_Controller
 				$row->request_description = 'Keluhan tersimpan';
 			}
 		}
+		$this->decorate_warga_visit_display($hasil);
 
 		return $hasil;
+	}
+
+	public function warga_visit_status_label($status)
+	{
+		$raw_status = strtolower(trim((string) $status));
+		$status = function_exists('doclinc_normalize_visit_status') ? doclinc_normalize_visit_status($status) : $raw_status;
+		if ($raw_status !== '' && $status === '') {
+			return 'Status layanan diperbarui';
+		}
+		$status = $status !== '' ? $status : 'not_started';
+		$labels = array(
+			'not_started' => 'Menunggu proses layanan',
+			'en_route' => 'Nakes sedang menuju lokasi',
+			'arrived' => 'Nakes tiba di lokasi',
+			'in_service' => 'Pemeriksaan sedang berlangsung',
+			'completed' => 'Layanan selesai',
+		);
+
+		return isset($labels[$status]) ? $labels[$status] : 'Status layanan diperbarui';
+	}
+
+	public function get_warga_visit_timeline($request_id, $request = null)
+	{
+		$request_id = (int) $request_id;
+		if ($request_id < 1) {
+			return array();
+		}
+
+		$event_labels = array(
+			'request_accepted' => 'Request diterima',
+			'visit_started' => 'Nakes sedang menuju lokasi',
+			'visit_arrived' => 'Nakes tiba di lokasi',
+			'visit_in_service' => 'Pemeriksaan sedang berlangsung',
+			'visit_completed' => 'Layanan selesai',
+		);
+
+		$timeline = array();
+		if ($this->warga_request_event_table_ready()) {
+			$events = $this->db
+				->select('event_type, created_at')
+				->from('request_events')
+				->where('request_id', $request_id)
+				->where_in('event_type', array_keys($event_labels))
+				->order_by('created_at', 'ASC')
+				->get()
+				->result();
+			foreach ($events as $event) {
+				$event_type = isset($event->event_type) ? (string) $event->event_type : '';
+				if (!isset($event_labels[$event_type])) {
+					continue;
+				}
+				$timeline[] = array(
+					'label' => $event_labels[$event_type],
+					'time' => isset($event->created_at) ? $event->created_at : '',
+					'active' => true,
+				);
+			}
+		}
+
+		if (!empty($timeline) || !$request) {
+			return $timeline;
+		}
+
+		$current_status = isset($request->visit_status) ? $this->warga_normalize_visit_status($request->visit_status) : 'not_started';
+		$status_order = array('not_started' => 0, 'en_route' => 1, 'arrived' => 2, 'in_service' => 3, 'completed' => 4);
+		$fallback_steps = array(
+			array('status' => 'en_route', 'label' => 'Nakes sedang menuju lokasi', 'field' => 'visit_started_at'),
+			array('status' => 'arrived', 'label' => 'Nakes tiba di lokasi', 'field' => 'visit_arrived_at'),
+			array('status' => 'in_service', 'label' => 'Pemeriksaan sedang berlangsung', 'field' => 'visit_in_service_at'),
+			array('status' => 'completed', 'label' => 'Layanan selesai', 'field' => 'visit_completed_at'),
+		);
+
+		foreach ($fallback_steps as $step) {
+			$is_active = isset($status_order[$current_status], $status_order[$step['status']]) && $status_order[$current_status] >= $status_order[$step['status']];
+			$time = isset($request->{$step['field']}) ? $request->{$step['field']} : '';
+			if (!$is_active && empty($time)) {
+				continue;
+			}
+			$timeline[] = array(
+				'label' => $step['label'],
+				'time' => $time,
+				'active' => $is_active,
+			);
+		}
+
+		return $timeline;
+	}
+
+	private function decorate_warga_visit_display(&$requests)
+	{
+		if (empty($requests) || !is_array($requests)) {
+			return;
+		}
+
+		foreach ($requests as $row) {
+			$status = isset($row->visit_status) ? $this->warga_normalize_visit_status($row->visit_status) : 'not_started';
+			$row->warga_visit_status = $status;
+			$row->warga_visit_status_label = $this->warga_visit_status_label($status);
+			$row->warga_visit_updated_at = $this->warga_visit_updated_at($row, $status);
+			$row->warga_visit_timeline = $this->get_warga_visit_timeline(isset($row->request_id) ? (int) $row->request_id : 0, $row);
+		}
+	}
+
+	private function warga_normalize_visit_status($status)
+	{
+		$normalized = function_exists('doclinc_normalize_visit_status') ? doclinc_normalize_visit_status($status) : strtolower(trim((string) $status));
+		return $normalized !== '' ? $normalized : 'not_started';
+	}
+
+	private function warga_visit_updated_at($request, $status)
+	{
+		$status = $this->warga_normalize_visit_status($status);
+		$field_map = array(
+			'en_route' => 'visit_started_at',
+			'arrived' => 'visit_arrived_at',
+			'in_service' => 'visit_in_service_at',
+			'completed' => 'visit_completed_at',
+		);
+
+		if (isset($field_map[$status]) && !empty($request->{$field_map[$status]})) {
+			return $request->{$field_map[$status]};
+		}
+		return !empty($request->updated_at) ? $request->updated_at : '';
+	}
+
+	private function warga_request_event_table_ready()
+	{
+		if (!$this->db->table_exists('request_events')) {
+			return false;
+		}
+
+		foreach (array('request_id', 'event_type', 'created_at') as $field) {
+			if (!$this->db->field_exists($field, 'request_events')) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	public function getTerapiByKonsulId($konsul_id)
