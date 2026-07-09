@@ -34,8 +34,9 @@ $form_values = array(
 	<?php if (empty($table_ready)): ?>
 		<div class="alert alert-warning shadow-sm">Tabel staff Puskesmas belum tersedia.</div>
 	<?php else: ?>
-		<div class="alert alert-info shadow-sm">
-			Staff adalah data personel/PIC, bukan otomatis akun login. Akun terkait hanya ditampilkan jika staff sudah terhubung dengan user.
+		<div class="doclinc-staff-note shadow-sm">
+			<i class="fas fa-info-circle"></i>
+			<span>Data staff digunakan sebagai personel/PIC layanan. Ini tidak otomatis membuat akun login.</span>
 		</div>
 		<?php if ($is_form): ?>
 			<div class="card shadow mb-4 doclinc-filter-card">
@@ -57,7 +58,7 @@ $form_values = array(
 											</option>
 										<?php endforeach; ?>
 									</select>
-									<small class="form-text text-muted">Pilih Puskesmas aktif tempat staff berada.</small>
+									<small class="form-text text-muted">Pilih Puskesmas aktif sebagai unit koordinasi staff.</small>
 								</div>
 							</div>
 							<div class="col-md-6">
@@ -71,7 +72,7 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Profesi</label>
-									<input type="text" class="form-control rounded-pill border-info" name="profesi" value="<?= html_escape($form_values['profesi']); ?>" placeholder="Dokter, perawat, bidan, atau profesi lain">
+									<input type="text" class="form-control rounded-pill border-info" name="profesi" value="<?= html_escape($form_values['profesi']); ?>" placeholder="Profesi atau peran layanan">
 								</div>
 							</div>
 							<div class="col-md-6">
@@ -95,7 +96,7 @@ $form_values = array(
 										<option value="aktif" <?= $form_values['status'] === 'aktif' ? 'selected' : ''; ?>>Aktif</option>
 										<option value="nonaktif" <?= $form_values['status'] === 'nonaktif' ? 'selected' : ''; ?>>Nonaktif</option>
 									</select>
-									<small class="form-text text-muted">Staff aktif dapat dipilih sebagai PIC sesuai Puskesmasnya.</small>
+									<small class="form-text text-muted">Staff aktif dapat dipilih sebagai PIC untuk Puskesmas yang sama.</small>
 								</div>
 							</div>
 						</div>
@@ -145,68 +146,78 @@ $form_values = array(
 				</form>
 
 				<div class="table-responsive">
-					<table class="table table-bordered" id="tbl_staff_puskesmas" width="100%" cellspacing="0">
+					<table class="table table-bordered doclinc-staff-table" id="tbl_staff_puskesmas" width="100%" cellspacing="0">
 						<thead>
 							<tr class="bg-info text-black">
-								<th class="text-center" width="5%">No</th>
-								<th>Nama</th>
+								<th>Staff</th>
 								<th>Puskesmas</th>
 								<th>Profesi</th>
-								<th>Nomor SIP</th>
-								<th>No HP</th>
+								<th>Kontak</th>
+								<th>Akun terkait</th>
 								<th>Status</th>
-								<th>Akun Terkait</th>
 								<th class="text-center">Aksi</th>
 							</tr>
 						</thead>
 						<tbody>
 							<?php if (!empty($staff_rows)): ?>
-								<?php $no = 1;
-								foreach ($staff_rows as $row): ?>
+								<?php foreach ($staff_rows as $row): ?>
 									<?php
-									$akun_label = 'Tidak terhubung ke akun login';
+									$akun_label = 'Tidak ada akun terkait';
 									if (!empty($row->akun_nama) || !empty($row->akun_username) || !empty($row->akun_email)) {
 										$akun_label = trim((string) ($row->akun_nama ?: $row->akun_username ?: $row->akun_email));
 									}
 									?>
 									<tr>
-										<td class="text-center"><?= $no++; ?></td>
-										<td title="<?= html_escape($row->nama ?? '-'); ?>"><?= html_escape($row->nama ?? '-'); ?></td>
-										<td>
-											<span class="badge badge-info"><?= html_escape($row->kode_pkm ?? '-'); ?></span>
-											<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? 'Puskesmas tidak ditemukan'); ?></div>
-										</td>
-										<td title="<?= html_escape($row->profesi ?? '-'); ?>"><?= html_escape($row->profesi ?: '-'); ?></td>
-										<td title="<?= html_escape($row->nomor_sip ?? '-'); ?>"><?= html_escape($row->nomor_sip ?: '-'); ?></td>
-										<td><?= html_escape($row->no_hp ?: '-'); ?></td>
-										<td>
-											<span class="badge badge-<?= ($row->status ?? '') === 'aktif' ? 'success' : 'secondary'; ?>">
-												<?= html_escape(ucfirst($row->status ?? '-')); ?>
-											</span>
+										<td title="<?= html_escape($row->nama ?? '-'); ?>">
+											<div class="font-weight-bold"><?= html_escape($row->nama ?? '-'); ?></div>
+											<div class="small text-muted">Staff Puskesmas</div>
 										</td>
 										<td>
-											<?= html_escape($akun_label); ?>
+											<span class="doclinc-staff-chip"><i class="fas fa-clinic-medical"></i> <?= html_escape($row->kode_pkm ?? '-'); ?></span>
+											<div class="small text-muted mt-1"><?= html_escape($row->nama_puskesmas ?? 'Puskesmas tidak ditemukan'); ?></div>
+										</td>
+										<td title="<?= html_escape($row->profesi ?? '-'); ?>">
+											<?= html_escape($row->profesi ?: '-'); ?>
+											<?php if (!empty($row->nomor_sip)): ?>
+												<div class="small text-muted">SIP: <?= html_escape($row->nomor_sip); ?></div>
+											<?php endif; ?>
+										</td>
+										<td>
+											<?= html_escape($row->no_hp ?: '-'); ?>
+										</td>
+										<td>
+											<div><?= html_escape($akun_label); ?></div>
 											<?php if (!empty($row->akun_username) && $akun_label !== $row->akun_username): ?>
 												<div class="small text-muted"><?= html_escape($row->akun_username); ?></div>
 											<?php endif; ?>
+											<?php if (!empty($row->akun_email)): ?>
+												<div class="small text-muted"><?= html_escape($row->akun_email); ?></div>
+											<?php endif; ?>
+										</td>
+										<td>
+											<span class="doclinc-staff-chip <?= ($row->status ?? '') === 'aktif' ? 'doclinc-staff-chip-active' : 'doclinc-staff-chip-inactive'; ?>">
+												<?= ($row->status ?? '') === 'aktif' ? 'Aktif' : 'Nonaktif'; ?>
+											</span>
 										</td>
 										<td class="text-center">
-											<a href="<?= site_url('kelola_staff_puskesmas/edit/' . (int) $row->staff_id); ?>" class="btn btn-info btn-sm rounded-pill">
-												<i class="fas fa-edit"></i> Edit
-											</a>
-											<?php if (($row->status ?? '') === 'aktif'): ?>
-												<form action="<?= site_url('kelola_staff_puskesmas/deactivate/' . (int) $row->staff_id); ?>" method="post" class="d-inline">
-													<button type="submit" class="btn btn-secondary btn-sm rounded-pill" onclick="return confirm('Nonaktifkan staff ini?');">
-														<i class="fas fa-ban"></i> Nonaktifkan
-													</button>
-												</form>
-											<?php else: ?>
-												<form action="<?= site_url('kelola_staff_puskesmas/activate/' . (int) $row->staff_id); ?>" method="post" class="d-inline">
-													<button type="submit" class="btn btn-success btn-sm rounded-pill" onclick="return confirm('Aktifkan staff ini?');">
-														<i class="fas fa-check"></i> Aktifkan
-													</button>
-												</form>
-											<?php endif; ?>
+											<div class="doclinc-action-stack">
+												<a href="<?= site_url('kelola_staff_puskesmas/edit/' . (int) $row->staff_id); ?>" class="btn btn-info btn-sm rounded-pill">
+													<i class="fas fa-edit"></i> Edit
+												</a>
+												<?php if (($row->status ?? '') === 'aktif'): ?>
+													<form action="<?= site_url('kelola_staff_puskesmas/deactivate/' . (int) $row->staff_id); ?>" method="post">
+														<button type="submit" class="btn btn-secondary btn-sm rounded-pill" onclick="return confirm('Nonaktifkan staff ini? Data staff, riwayat, dan assignment PIC tidak akan dihapus.');">
+															<i class="fas fa-ban"></i> Nonaktifkan
+														</button>
+													</form>
+												<?php else: ?>
+													<form action="<?= site_url('kelola_staff_puskesmas/activate/' . (int) $row->staff_id); ?>" method="post">
+														<button type="submit" class="btn btn-success btn-sm rounded-pill" onclick="return confirm('Aktifkan staff ini?');">
+															<i class="fas fa-check"></i> Aktifkan
+														</button>
+													</form>
+												<?php endif; ?>
+											</div>
 										</td>
 									</tr>
 								<?php endforeach; ?>

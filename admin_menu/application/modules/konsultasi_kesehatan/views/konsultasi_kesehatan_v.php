@@ -55,9 +55,9 @@ if (!function_exists('doclinc_admin_event_label')) {
 			'request_cancelled' => 'Konsultasi dibatalkan',
 			'pic_assigned' => 'PIC ditugaskan',
 			'pic_changed' => 'PIC diganti',
-			'pic_cleared' => 'PIC dihapus',
+			'pic_cleared' => 'PIC dilepas',
 			'visit_started' => 'Kunjungan dimulai',
-			'visit_arrived' => 'Nakes tiba di lokasi',
+			'visit_arrived' => 'PIC tiba di lokasi',
 			'visit_in_service' => 'Layanan sedang berjalan',
 			'visit_completed' => 'Kunjungan selesai',
 			'request_completed' => 'Konsultasi selesai',
@@ -112,7 +112,7 @@ $summary_cards = array(
 <div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
 		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-stethoscope"></i> Monitoring Konsultasi</h1>
-		<div class="doclinc-page-subtitle">Pantau status konsultasi, Puskesmas tujuan, PIC personel, dan timeline operasional secara read-only.</div>
+		<div class="doclinc-page-subtitle">Pantau status konsultasi, Puskesmas tujuan, PIC Staff Puskesmas, dan timeline operasional secara read-only.</div>
 	</div>
 </div>
 
@@ -190,7 +190,7 @@ $summary_cards = array(
 						<tr>
 							<th>Request</th>
 							<th>Warga</th>
-							<th>Puskesmas & PIC</th>
+							<th>Puskesmas & PIC Staff</th>
 							<th>Status</th>
 							<th>Timeline</th>
 							<th>Diagnosa / Saran</th>
@@ -229,12 +229,12 @@ $summary_cards = array(
 									<?php endif; ?>
 									<div class="mt-2">
 										<?php if ($pic_name !== ''): ?>
-											<span class="doclinc-pic-chip"><i class="fas fa-user-nurse"></i> <?= html_escape($pic_name); ?></span>
+											<span class="doclinc-pic-chip"><i class="fas fa-user-check"></i> PIC: <?= html_escape($pic_name); ?></span>
 											<?php if ($pic_profesi !== ''): ?>
 												<div class="doclinc-request-meta mt-1"><?= html_escape($pic_profesi); ?></div>
 											<?php endif; ?>
 										<?php else: ?>
-											<span class="doclinc-pic-chip doclinc-pic-empty">Belum ditentukan</span>
+											<span class="doclinc-pic-chip doclinc-pic-empty">PIC belum ditentukan</span>
 										<?php endif; ?>
 									</div>
 								</td>
@@ -316,7 +316,7 @@ $summary_cards = array(
 									<dd class="col-sm-8"><?= html_escape($location !== '' ? $location : '-'); ?></dd>
 									<dt class="col-sm-4">Puskesmas</dt>
 									<dd class="col-sm-8"><?= html_escape($puskesmas_label); ?></dd>
-									<dt class="col-sm-4">PIC</dt>
+									<dt class="col-sm-4">PIC Staff</dt>
 									<dd class="col-sm-8"><?= html_escape($pic_name !== '' ? $pic_name : 'Belum ditentukan'); ?></dd>
 								</dl>
 							</div>
