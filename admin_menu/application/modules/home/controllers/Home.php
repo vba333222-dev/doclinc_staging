@@ -23,6 +23,7 @@ class Home extends MX_Controller
 		$x['puskesmas_distribution'] = $this->Home_m->get_puskesmas_distribution(8);
 		$x['attention_requests'] = $this->Home_m->get_attention_requests(8);
 		$x['recent_activity'] = $this->Home_m->get_recent_request_events(8);
+		$x['diagnosis_analytics'] = $this->Home_m->get_diagnosis_dashboard(30);
 
 		$this->load->view('commons/header');
 		$this->load->view('home_v', $x);
