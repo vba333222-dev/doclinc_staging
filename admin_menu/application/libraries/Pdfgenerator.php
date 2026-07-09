@@ -1,16 +1,28 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
-// panggil autoload dompdf nya
-// require_once 'dompdf/autoload.inc.php';
-require_once 'dompdf-master/autoload.inc.php';
-use Dompdf\Dompdf;
-use Dompdf\Options;
+
+foreach (array(
+    FCPATH . 'vendor/autoload.php',
+    APPPATH . 'libraries/dompdf-master/autoload.inc.php',
+    __DIR__ . DIRECTORY_SEPARATOR . 'dompdf-master' . DIRECTORY_SEPARATOR . 'autoload.inc.php',
+    FCPATH . 'dompdf-master/autoload.inc.php',
+) as $pdf_autoload) {
+    if (is_file($pdf_autoload)) {
+        require_once $pdf_autoload;
+        break;
+    }
+}
+
 class Pdfgenerator {
     public function generate($html, $filename='uhuy', $paper = '', $orientation = '', $stream=TRUE)
     {   
-        $options = new Options();
+        if (!class_exists('Dompdf\Dompdf') || !class_exists('Dompdf\Options')) {
+            return FALSE;
+        }
+
+        $options = new \Dompdf\Options();
         $options->set('isRemoteEnabled', TRUE);
-        $dompdf = new Dompdf($options);
+        $dompdf = new \Dompdf\Dompdf($options);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();

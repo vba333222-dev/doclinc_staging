@@ -17,9 +17,44 @@
 			$value = (string) $this->uri->segment($segment);
 			return preg_replace('/[^A-Za-z0-9_\-.]/', '', $value);
 		}
+		private function pdf_dependency_available()
+		{
+			foreach (array(
+				FCPATH . 'vendor/autoload.php',
+				APPPATH . 'libraries/dompdf-master/autoload.inc.php',
+				APPPATH . 'libraries' . DIRECTORY_SEPARATOR . 'dompdf-master' . DIRECTORY_SEPARATOR . 'autoload.inc.php',
+				FCPATH . 'dompdf-master/autoload.inc.php',
+			) as $autoload) {
+				if (is_file($autoload)) {
+					require_once $autoload;
+					if (class_exists('Dompdf\Dompdf', FALSE) && class_exists('Dompdf\Options', FALSE)) {
+						return TRUE;
+					}
+				}
+			}
+
+			return class_exists('Dompdf\Dompdf', FALSE) && class_exists('Dompdf\Options', FALSE);
+		}
+
+		private function ensure_pdf_dependency()
+		{
+			if ($this->pdf_dependency_available()) {
+				return TRUE;
+			}
+
+			$this->output
+				->set_status_header(503)
+				->set_content_type('text/html', 'utf-8')
+				->set_output('<h1>PDF tidak tersedia</h1><p>Modul PDF belum tersedia di lingkungan ini.</p>');
+			return FALSE;
+		}
+
 	    public function index()
 	    {
 	        // panggil library yang kita buat sebelumnya yang bernama pdfgenerator
+			if (!$this->ensure_pdf_dependency()) {
+				return;
+			}
 	        $this->load->library('pdfgenerator');
 	        
 	        // title dari pdf
@@ -68,6 +103,9 @@
 									WHERE tbl_trans_test_kesehatan_mental.nomor='".$nomor."' GROUP BY tbl_trans_test_kesehatan_mental.nomor"); 
 			 
 	        // panggil library yang kita buat sebelumnya yang bernama pdfgenerator
+			if (!$this->ensure_pdf_dependency()) {
+				return;
+			}
 	        $this->load->library('pdfgenerator');
 	        
 	        // title dari pdf
@@ -218,6 +256,9 @@
 															WHERE tbl_trans_test_kepribadian.nomor='$nomor' AND
 															 tbl_trans_test_kepribadian.id_test_kepribadian BETWEEN 181 AND 195");
 	        // panggil library yang kita buat sebelumnya yang bernama pdfgenerator
+			if (!$this->ensure_pdf_dependency()) {
+				return;
+			}
 	        $this->load->library('pdfgenerator');
 	        
 	        // title dari pdf
@@ -240,6 +281,9 @@
 		{ 
 			$nomor=$this->report_key(3);
 			// panggil library yang kita buat sebelumnya yang bernama pdfgenerator
+			if (!$this->ensure_pdf_dependency()) {
+				return;
+			}
 	        $this->load->library('pdfgenerator');
 			$data['data_report']=$this->db->query("SELECT
 													tbl_trans_test_kepribadian.id_trans_kepribadian,
@@ -327,6 +371,9 @@
 			$data['data_papi_z'] = $this->db->query("SELECT * FROM v_test_papi_z WHERE nomor_test='$nomor'"); 
 
 	        // panggil library yang kita buat sebelumnya yang bernama pdfgenerator
+			if (!$this->ensure_pdf_dependency()) {
+				return;
+			}
 	        $this->load->library('pdfgenerator');
 	        
 	        // title dari pdf
