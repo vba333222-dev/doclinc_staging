@@ -89,6 +89,12 @@ foreach ($puskesmas_options as $puskesmas) {
 												<i class="fas fa-check"></i> Aktifkan Akun
 											</button>
 										</form>
+										<form action="<?= site_url('kelola_dokter_nakes/destroy_dokter_nakes') ?>" method="post" class="d-inline">
+											<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
+											<button type="submit" class="btn btn-danger btn-sm rounded-pill" onclick="return confirm('Hapus permanen akun ini? Aksi ini hanya boleh untuk akun test/tidak terpakai dan tidak dapat dibatalkan.');">
+												<i class="fas fa-trash-alt"></i> Hapus Permanen
+											</button>
+										</form>
 									<?php endif; ?>
 								</td>
 							</tr>

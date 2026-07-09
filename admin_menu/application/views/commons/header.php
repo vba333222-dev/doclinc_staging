@@ -60,8 +60,6 @@
 		$doclinc_active_akun_puskesmas = ($doclinc_admin_segment === 'kelola_dokter_nakes' || $this->session->flashdata('active_tab_kelola_dokter_nakes')) ? 'active' : '';
 		$doclinc_active_staff_puskesmas = ($doclinc_admin_segment === 'kelola_staff_puskesmas' || $this->session->flashdata('active_tab_kelola_staff_puskesmas')) ? 'active' : '';
 		$doclinc_active_keluhan = ($doclinc_admin_segment === 'kelola_keluhan' || $this->session->flashdata('active_tab_keluhan')) ? 'active' : '';
-		$doclinc_active_layanan = ($doclinc_admin_segment === 'kelola_layanan_kesehatan' || $this->session->flashdata('active_tab_kelola_layanan_kesehatan')) ? 'active' : '';
-		$doclinc_active_tindakan = ($doclinc_admin_segment === 'kelola_tindakan' || $this->session->flashdata('active_tab_tindakan')) ? 'active' : '';
 		$doclinc_active_laporan = ($doclinc_admin_segment === 'laporan' || $this->session->flashdata('active_tab_laporan')) ? 'active' : '';
 		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed' || $this->session->flashdata('active_tab_news_feed')) ? 'active' : '';
 		?>
@@ -116,14 +114,7 @@
 			<li class="nav-item <?= $doclinc_active_keluhan; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_keluhan'); ?>">
 					<i class="fas fa-comments"></i>
-					<span>Keluhan</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_layanan; ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_layanan_kesehatan'); ?>">
-					<i class="fas fa-clinic-medical"></i>
-					<span>Layanan Kesehatan</span>
+					<span>Master Keluhan</span>
 				</a>
 			</li>
 
@@ -140,14 +131,6 @@
 				<a class="nav-link" href="<?php echo site_url('kelola_news_feed'); ?>">
 					<i class="fas fa-newspaper"></i>
 					<span>News & Feed</span>
-				</a>
-			</li>
-
-			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Maintenance</div>
-			<li class="nav-item <?= $doclinc_active_tindakan; ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_tindakan'); ?>">
-					<i class="fas fa-procedures"></i>
-					<span>Tindakan</span>
 				</a>
 			</li>
 

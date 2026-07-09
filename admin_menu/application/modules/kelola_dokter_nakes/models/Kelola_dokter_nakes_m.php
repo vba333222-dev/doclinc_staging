@@ -170,6 +170,81 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		return $this->update_status($id_user, 'nonaktif', $user, $remark_nonaktif);
 	}
 
+	public function get_dokter_user($id_user)
+	{
+		$id_user = (int) $id_user;
+		if ($id_user < 1 || !$this->db->table_exists('users')) {
+			return null;
+		}
+
+		return $this->db
+			->where('userId', $id_user)
+			->where('role', 'dokter')
+			->get('users')
+			->row();
+	}
+
+	public function blocking_relations_for_user($id_user)
+	{
+		$id_user = (int) $id_user;
+		if ($id_user < 1) {
+			return array();
+		}
+
+		$checks = array(
+			array('requests', 'user_id', 'requests.user_id'),
+			array('requests', 'dokter_id', 'requests.dokter_id'),
+			array('requests', 'accepted_by_user_id', 'requests.accepted_by_user_id'),
+			array('requests', 'assigned_nakes_user_id', 'requests.assigned_nakes_user_id'),
+			array('requests', 'assigned_nakes_by_user_id', 'requests.assigned_nakes_by_user_id'),
+			array('medicalrecords', 'user_id', 'medicalrecords.user_id'),
+			array('medicalrecords', 'dokter_id', 'medicalrecords.dokter_id'),
+			array('puskesmas_staff', 'user_id', 'puskesmas_staff.user_id'),
+			array('admin_notification_reads', 'user_id', 'admin_notification_reads.user_id'),
+			array('notifications', 'recipient_user_id', 'notifications.recipient_user_id'),
+			array('notifications', 'actor_user_id', 'notifications.actor_user_id'),
+			array('consultation_messages', 'sender_user_id', 'consultation_messages.sender_user_id'),
+			array('call_sessions', 'caller_user_id', 'call_sessions.caller_user_id'),
+			array('call_sessions', 'callee_user_id', 'call_sessions.callee_user_id'),
+			array('request_events', 'actor_user_id', 'request_events.actor_user_id'),
+			array('request_staff_assignments', 'assigned_by_user_id', 'request_staff_assignments.assigned_by_user_id'),
+		);
+
+		$blocking = array();
+		foreach ($checks as $check) {
+			list($table, $field, $label) = $check;
+			if (!$this->db->table_exists($table) || !$this->db->field_exists($field, $table)) {
+				continue;
+			}
+
+			$count = (int) $this->db
+				->where($field, $id_user)
+				->count_all_results($table);
+			if ($count > 0) {
+				$blocking[$label] = $count;
+			}
+		}
+
+		return $blocking;
+	}
+
+	public function destroy_dokter_nakes($id_user)
+	{
+		$id_user = (int) $id_user;
+		if ($id_user < 1 || !$this->db->table_exists('users')) {
+			return false;
+		}
+
+		$this->db->where('userId', $id_user);
+		$this->db->where('role', 'dokter');
+		$result = $this->db->delete('users');
+		if ($result) {
+			$this->log_audit('admin_destroy_puskesmas_nakes_user', $id_user);
+		}
+
+		return $result;
+	}
+
 	public function update_dokter_nakes($id_user, $data)
 	{
 		if (!$this->db->table_exists('users')) {

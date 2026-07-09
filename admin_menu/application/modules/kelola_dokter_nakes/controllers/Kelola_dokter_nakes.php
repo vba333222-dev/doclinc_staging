@@ -196,6 +196,41 @@ class Kelola_dokter_nakes extends MX_Controller
 		redirect('kelola_dokter_nakes', 'refresh');
 	}
 
+	public function destroy_dokter_nakes()
+	{
+		if (!$this->require_post()) {
+			return;
+		}
+
+		$id_user = (int) $this->input->post('id_user');
+		$target = $this->Kelola_dokter_nakes_m->get_dokter_user($id_user);
+		if (!$target) {
+			$this->session->set_flashdata('error', 'Akun Puskesmas tidak ditemukan atau bukan akun Puskesmas.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+
+		if ((string) ($target->username ?? '') === (string) $this->session->userdata('username')) {
+			$this->session->set_flashdata('error', 'Akun yang sedang digunakan tidak dapat dihapus permanen.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+
+		$blocking_relations = $this->Kelola_dokter_nakes_m->blocking_relations_for_user($id_user);
+		if (!empty($blocking_relations)) {
+			$this->session->set_flashdata('error', 'Akun tidak dapat dihapus permanen karena masih memiliki riwayat/relasi data. Nonaktifkan akun sebagai alternatif.');
+			redirect('kelola_dokter_nakes', 'refresh');
+			return;
+		}
+
+		if ($this->Kelola_dokter_nakes_m->destroy_dokter_nakes($id_user)) {
+			$this->session->set_flashdata('success', 'Akun Puskesmas berhasil dihapus permanen.');
+		} else {
+			$this->session->set_flashdata('error', 'Akun Puskesmas gagal dihapus permanen.');
+		}
+		redirect('kelola_dokter_nakes', 'refresh');
+	}
+
 	private function require_post()
 	{
 		if ($this->input->method(TRUE) === 'POST') {
