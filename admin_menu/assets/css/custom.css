@@ -1152,6 +1152,195 @@ footer.sticky-footer {
     height: 100%;
 }
 
+.doclinc-akun-page .you-are-here {
+    background: var(--doclinc-page);
+    color: var(--doclinc-text);
+}
+
+.doclinc-akun-page .doclinc-page-title {
+    align-items: center;
+    display: inline-flex;
+    font-size: 1.35rem;
+    font-weight: 700;
+    gap: 0.45rem;
+    letter-spacing: 0;
+}
+
+.doclinc-akun-helper {
+    font-size: 0.86rem;
+    line-height: 1.5;
+    padding: 0.7rem 0.85rem;
+}
+
+.doclinc-table-body {
+    padding: 1rem;
+}
+
+.doclinc-admin-table {
+    color: var(--doclinc-text);
+    font-size: 0.86rem;
+}
+
+.doclinc-admin-table thead th {
+    background: var(--doclinc-table-head) !important;
+    border-bottom: 1px solid var(--doclinc-border) !important;
+    border-top: 0;
+    color: var(--doclinc-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 0.72rem 0.75rem;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.doclinc-admin-table tbody td {
+    border-color: var(--doclinc-border);
+    padding: 0.68rem 0.75rem;
+    vertical-align: middle;
+}
+
+.doclinc-admin-table tbody tr:hover {
+    background: var(--doclinc-table-hover);
+}
+
+.doclinc-akun-table td:nth-child(2) {
+    min-width: 150px;
+}
+
+.doclinc-akun-table td:nth-child(3) {
+    max-width: 210px;
+}
+
+.doclinc-akun-table td:nth-child(5) {
+    min-width: 190px;
+}
+
+.doclinc-account-name {
+    color: var(--doclinc-text);
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.doclinc-text-wrap {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.doclinc-muted-text {
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+    line-height: 1.35;
+}
+
+.doclinc-warning-text {
+    color: #9f6b13;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    margin-top: 0.12rem;
+}
+
+.doclinc-code-chip,
+.doclinc-status-chip {
+    align-items: center;
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    padding: 0.26rem 0.48rem;
+    white-space: nowrap;
+}
+
+.doclinc-code-chip {
+    background: var(--doclinc-table-head);
+    color: var(--doclinc-text);
+}
+
+.doclinc-status-chip.is-active {
+    background: rgba(9, 173, 116, 0.1);
+    border-color: rgba(9, 173, 116, 0.28);
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-status-chip.is-inactive {
+    background: var(--doclinc-button-surface);
+    color: var(--doclinc-muted);
+}
+
+.doclinc-table-actions {
+    align-items: center;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: center;
+    min-width: 170px;
+}
+
+.doclinc-table-actions form {
+    margin: 0;
+}
+
+.doclinc-action-btn {
+    align-items: center;
+    background: var(--doclinc-button-surface);
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    color: var(--doclinc-text);
+    display: inline-flex;
+    font-size: 0.75rem;
+    font-weight: 700;
+    gap: 0.32rem;
+    justify-content: center;
+    line-height: 1;
+    min-height: 31px;
+    padding: 0.42rem 0.68rem;
+    white-space: nowrap;
+}
+
+.doclinc-action-btn:hover {
+    background: var(--doclinc-table-hover);
+    border-color: var(--doclinc-primary);
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-action-primary {
+    background: rgba(9, 173, 116, 0.11) !important;
+    border-color: rgba(9, 173, 116, 0.3) !important;
+    color: var(--doclinc-primary-dark) !important;
+}
+
+.doclinc-action-danger {
+    background: rgba(220, 53, 69, 0.06) !important;
+    border-color: rgba(220, 53, 69, 0.32) !important;
+    color: #b02a37 !important;
+}
+
+.doclinc-action-danger:hover {
+    background: rgba(220, 53, 69, 0.12) !important;
+    border-color: rgba(220, 53, 69, 0.48) !important;
+}
+
+.doclinc-table-card .dataTables_wrapper .dataTables_length,
+.doclinc-table-card .dataTables_wrapper .dataTables_filter {
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+    margin-bottom: 0.85rem;
+}
+
+.doclinc-table-card .dataTables_wrapper .dataTables_filter input,
+.doclinc-table-card .dataTables_wrapper .dataTables_length select {
+    background: var(--doclinc-input-bg);
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    color: var(--doclinc-input-text);
+    font-size: 0.82rem;
+    min-height: 32px;
+    padding: 0.28rem 0.65rem;
+}
+
 html[data-theme="dark"] .bg-light,
 html[data-theme="dark"] .modal-body.bg-light {
     background-color: #0f172a !important;
@@ -1182,6 +1371,14 @@ html[data-theme="dark"] .badge-light,
 html[data-theme="dark"] .badge-secondary {
     background-color: #263445;
     color: #dbe7f3;
+}
+
+html[data-theme="dark"] .doclinc-warning-text {
+    color: #f6c56f;
+}
+
+html[data-theme="dark"] .doclinc-action-danger {
+    color: #ff9aa5 !important;
 }
 
 .print-signature {

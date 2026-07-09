@@ -5,97 +5,98 @@ foreach ($puskesmas_options as $puskesmas) {
 	$puskesmas_names[(string) $puskesmas->kode_pkm] = $puskesmas->nama_puskesmas;
 }
 ?>
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-hospital"></i> Akun Puskesmas</h1>
-</div>
-
-<div class="container-fluid">
-	<div class="doclinc-helper-note mb-4">
-		Akun Puskesmas digunakan sebagai akses login koordinasi Puskesmas. Sistem legacy masih menyimpan akun ini dengan peran internal dokter untuk kompatibilitas, namun pengelolaannya tetap sebagai akun Puskesmas.
+<div class="doclinc-admin-page doclinc-akun-page">
+	<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
+		<h1 class="doclinc-page-title mb-0"><i class="fas fa-fw fa-hospital"></i> Akun Puskesmas</h1>
 	</div>
-	<div class="card shadow mb-4">
-		<div class="card-header py-3 d-flex align-items-center justify-content-between">
-			<h6 class="m-0 font-weight-bold text-primary">Daftar Akun Puskesmas</h6>
-			<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill" data-toggle="modal" data-target="#modalTambahDokterNakes">
-				<i class="fas fa-plus-circle mr-1"></i> Tambah Akun Puskesmas
-			</button>
+
+	<div class="container-fluid">
+		<div class="doclinc-helper-note doclinc-akun-helper mb-4">
+			Akun Puskesmas digunakan sebagai akses login koordinasi Puskesmas. Sistem legacy masih menyimpan akun ini dengan peran internal dokter untuk kompatibilitas, namun pengelolaannya tetap sebagai akun Puskesmas.
 		</div>
-		<div class="card-body">
+		<div class="card shadow mb-4 doclinc-table-card">
+			<div class="card-header py-3 d-flex align-items-center justify-content-between">
+				<h6 class="m-0 font-weight-bold">Daftar Akun Puskesmas</h6>
+				<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill doclinc-action-btn doclinc-action-primary" data-toggle="modal" data-target="#modalTambahDokterNakes">
+					<i class="fas fa-plus-circle mr-1"></i> Tambah Akun Puskesmas
+				</button>
+			</div>
+			<div class="card-body doclinc-table-body">
 			<!-- <div class="row mb-3">
 				<div class="col-md-4">
 					<input type="text" id="searchInput" class="form-control rounded-pill" placeholder="Cari nama akun, username, atau Puskesmas...">
 				</div>
 			</div> -->
 			<div class="table-responsive">
-				<table class="table table-bordered" id="tbl_dokter_nakes" width="100%" cellspacing="0">
+				<table class="table table-bordered doclinc-admin-table doclinc-akun-table" id="tbl_dokter_nakes" width="100%" cellspacing="0">
 					<thead>
-						<tr class="bg-info text-black">
-							<th class="text-center" width="5%"><i class="fas fa-list-ol"></i></th>
-							<th><i class="fas fa-user-md"></i> Nama</th>
-							<th><i class="fas fa-envelope"></i> Email</th>
-							<th><i class="fas fa-user"></i> Username</th>
-							<th><i class="fas fa-hospital"></i> Puskesmas</th>
-							<th><i class="fas fa-phone"></i> No. Telepon</th>
-							<th><i class="fas fa-toggle-on"></i> Status</th>
-							<th class="text-center"><i class="fas fa-cogs"></i> Aksi</th>
+						<tr>
+							<th class="text-center" width="4%">No</th>
+							<th>Nama</th>
+							<th>Email</th>
+							<th>Username</th>
+							<th>Puskesmas</th>
+							<th>No. Telepon</th>
+							<th>Status</th>
+							<th class="text-center">Aksi</th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php $no = 1;
 						foreach ($data_dokter_nakes->result() as $data): ?>
 							<tr class="align-middle">
-								<td class="text-center"><?= $no++; ?></td>
-								<td>
-									<i class="fas fa-user-circle mr-2 text-secondary"></i>
-									<?= html_escape($data->nama ?? '-'); ?>
+								<td class="text-center doclinc-muted-text"><?= $no++; ?></td>
+								<td class="doclinc-account-cell">
+									<div class="doclinc-account-name"><?= html_escape($data->nama ?? '-'); ?></div>
 								</td>
-								<td><?= html_escape($data->email ?? '-'); ?></td>
-								<td><?= html_escape($data->username ?? '-'); ?></td>
+								<td class="doclinc-text-wrap"><?= html_escape($data->email ?? '-'); ?></td>
+								<td class="doclinc-muted-text doclinc-text-wrap"><?= html_escape($data->username ?? '-'); ?></td>
 								<td>
 									<?php
 									$kode_pkm = trim((string) ($data->remark ?? ''));
 									$nama_pkm = $data->nama_puskesmas ?? ($puskesmas_names[$kode_pkm] ?? '');
 									$puskesmas_status = $data->puskesmas_status ?? '';
 									?>
-									<span class="badge badge-info"><?= html_escape($kode_pkm !== '' ? $kode_pkm : '-'); ?></span>
-									<div class="small text-muted"><?= html_escape($nama_pkm !== '' ? $nama_pkm : 'Belum terhubung ke puskesmas aktif'); ?></div>
+									<span class="doclinc-code-chip"><?= html_escape($kode_pkm !== '' ? $kode_pkm : '-'); ?></span>
+									<div class="doclinc-muted-text mt-1"><?= html_escape($nama_pkm !== '' ? $nama_pkm : 'Belum terhubung ke puskesmas aktif'); ?></div>
 									<?php if ($kode_pkm !== '' && $puskesmas_status === 'nonaktif'): ?>
-										<div class="small text-warning">Puskesmas nonaktif</div>
+										<div class="doclinc-warning-text">Puskesmas nonaktif</div>
 									<?php endif; ?>
 								</td>
-								<td><i class="fas fa-phone-alt text-info mr-1"></i><?= html_escape($data->no_hp ?? '-'); ?></td>
+								<td class="doclinc-muted-text"><?= html_escape($data->no_hp ?? '-'); ?></td>
 								<td>
-									<span class="badge badge-<?= ($data->status ?? '') === 'aktif' ? 'success' : 'secondary'; ?>">
-										<?= html_escape(ucfirst($data->status ?? '-')); ?>
+									<span class="doclinc-status-chip <?= ($data->status ?? '') === 'aktif' ? 'is-active' : 'is-inactive'; ?>">
+										<?= ($data->status ?? '') === 'aktif' ? 'Aktif' : 'Nonaktif'; ?>
 									</span>
 								</td>
 								<td class="text-center">
-									<button type="button" class="btn btn-info btn-sm rounded-pill" data-toggle="modal" data-target="#editModal<?= $data->userId ?>">
-										<i class="fas fa-edit"></i> Edit
-									</button>
-									<?php if (($data->status ?? '') === 'aktif'): ?>
-										<form action="<?= site_url('kelola_dokter_nakes/nonaktifkan_user') ?>" method="post" class="d-inline">
-											<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
-											<input type="hidden" name="remark_nonaktif" value="<?= html_escape($data->remark ?? ''); ?>">
-											<button type="submit" class="btn btn-secondary btn-sm rounded-pill" onclick="return confirm('Nonaktifkan akun Puskesmas ini? Akun tidak dihapus dan dapat diaktifkan kembali.');">
-												<i class="fas fa-ban"></i> Nonaktifkan Akun
-											</button>
-										</form>
-									<?php else: ?>
-										<form action="<?= site_url('kelola_dokter_nakes/aktifkan_user') ?>" method="post" class="d-inline">
-											<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
-											<input type="hidden" name="remark_aktif" value="<?= html_escape($data->remark ?? ''); ?>">
-											<button type="submit" class="btn btn-success btn-sm rounded-pill" onclick="return confirm('Aktifkan akun Puskesmas ini?');">
-												<i class="fas fa-check"></i> Aktifkan Akun
-											</button>
-										</form>
-										<form action="<?= site_url('kelola_dokter_nakes/destroy_dokter_nakes') ?>" method="post" class="d-inline">
-											<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
-											<button type="submit" class="btn btn-danger btn-sm rounded-pill" onclick="return confirm('Hapus permanen akun ini? Aksi ini hanya boleh untuk akun test/tidak terpakai dan tidak dapat dibatalkan.');">
-												<i class="fas fa-trash-alt"></i> Hapus Permanen
-											</button>
-										</form>
-									<?php endif; ?>
+										<button type="button" class="btn doclinc-action-btn" data-toggle="modal" data-target="#editModal<?= $data->userId ?>">
+											<i class="fas fa-edit"></i> Edit
+										</button>
+										<?php if (($data->status ?? '') === 'aktif'): ?>
+											<form action="<?= site_url('kelola_dokter_nakes/nonaktifkan_user') ?>" method="post" class="d-inline">
+												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
+												<input type="hidden" name="remark_nonaktif" value="<?= html_escape($data->remark ?? ''); ?>">
+												<button type="submit" class="btn doclinc-action-btn" onclick="return confirm('Nonaktifkan akun Puskesmas ini? Akun tidak dihapus dan dapat diaktifkan kembali.');">
+													<i class="fas fa-ban"></i> Nonaktifkan Akun
+												</button>
+											</form>
+										<?php else: ?>
+											<form action="<?= site_url('kelola_dokter_nakes/aktifkan_user') ?>" method="post" class="d-inline">
+												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
+												<input type="hidden" name="remark_aktif" value="<?= html_escape($data->remark ?? ''); ?>">
+												<button type="submit" class="btn doclinc-action-btn doclinc-action-primary" onclick="return confirm('Aktifkan akun Puskesmas ini?');">
+													<i class="fas fa-check"></i> Aktifkan Akun
+												</button>
+											</form>
+											<form action="<?= site_url('kelola_dokter_nakes/destroy_dokter_nakes') ?>" method="post" class="d-inline">
+												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
+												<button type="submit" class="btn doclinc-action-btn doclinc-action-danger" onclick="return confirm('Hapus permanen akun ini? Aksi ini hanya boleh untuk akun test/tidak terpakai dan tidak dapat dibatalkan.');">
+													<i class="fas fa-trash-alt"></i> Hapus Permanen
+												</button>
+											</form>
+										<?php endif; ?>
+									</div>
 								</td>
 							</tr>
 
@@ -190,6 +191,7 @@ foreach ($puskesmas_options as $puskesmas) {
 			</div>
 		</div>
 	</div>
+</div>
 </div>
 
 <div class="modal fade" id="modalTambahDokterNakes" tabindex="-1" role="dialog" aria-labelledby="modalTambahDokterNakesLabel" aria-hidden="true">
@@ -287,6 +289,7 @@ foreach ($puskesmas_options as $puskesmas) {
 			</form>
 		</div>
 	</div>
+</div>
 </div>
 
 <script>
