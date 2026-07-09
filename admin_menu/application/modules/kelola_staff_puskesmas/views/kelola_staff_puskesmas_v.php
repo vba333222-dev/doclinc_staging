@@ -117,7 +117,7 @@ $form_values = array(
 				</a>
 			</div>
 			<div class="card-body">
-				<form method="get" action="<?= site_url('kelola_staff_puskesmas'); ?>" class="mb-3" id="staffPuskesmasFilterForm" data-filter-url="<?= html_escape(site_url('kelola_staff_puskesmas')); ?>">
+				<form method="post" action="<?= site_url('kelola_staff_puskesmas'); ?>" class="mb-3" id="staffPuskesmasFilterForm">
 					<div class="row">
 						<div class="col-md-4 mb-2">
 							<select name="kode_pkm" class="form-control rounded-pill">
@@ -232,16 +232,6 @@ $form_values = array(
 
 <script type="text/javascript">
 	$(document).ready(function() {
-		$('#staffPuskesmasFilterForm').on('submit', function(event) {
-			event.preventDefault();
-			var baseUrl = $(this).data('filter-url');
-			var params = $(this).serializeArray().filter(function(item) {
-				return item.value !== '';
-			});
-			var query = $.param(params);
-			window.location.href = baseUrl + (query ? '&' + query : '');
-		});
-
 		$('#tbl_staff_puskesmas').DataTable({
 			searching: false,
 			language: {
