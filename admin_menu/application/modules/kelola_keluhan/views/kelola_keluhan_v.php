@@ -36,11 +36,11 @@
 						?>
 							<tr>
 								<td><?= $no; ?></td>
-								<td><?= $row->id_keluhan; ?></td>
-								<td><?= $row->kategori; ?></td>
-								<td><?= $row->nama_keluhan; ?></td>
-								<td><?= $row->deskripsi; ?></td>
-								<td><span class="badge badge-<?= $status_color; ?>"><?= $row->status; ?></span></td>
+								<td><?= html_escape($row->id_keluhan ?? '-'); ?></td>
+								<td><?= html_escape($row->kategori ?? '-'); ?></td>
+								<td><?= html_escape($row->nama_keluhan ?? '-'); ?></td>
+								<td><?= html_escape($row->deskripsi ?? '-'); ?></td>
+								<td><span class="badge badge-<?= html_escape($status_color); ?>"><?= html_escape($row->status ?? '-'); ?></span></td>
 								<td>
 									<div class="btn-group">
 										<button type="button" class="btn btn-outline-secondary">Aksi</button>
@@ -49,22 +49,22 @@
 										</button>
 										<div class="dropdown-menu">
 											<a class="dropdown-item" href="#modalEdit" data-toggle="modal"
-												data-idkeluhan="<?= $row->id_keluhan; ?>"
-												data-kategori="<?= $row->kategori; ?>"
-												data-namakeluhan="<?= $row->nama_keluhan; ?>"
-												data-deskripsi="<?= $row->deskripsi; ?>">
+												data-idkeluhan="<?= html_escape($row->id_keluhan ?? ''); ?>"
+												data-kategori="<?= html_escape($row->kategori ?? ''); ?>"
+												data-namakeluhan="<?= html_escape($row->nama_keluhan ?? ''); ?>"
+												data-deskripsi="<?= html_escape($row->deskripsi ?? ''); ?>">
 												<i class="fas fa-edit fa-fw text-primary"></i> Edit
 											</a>
 											<?php
 											if ($row->status == 'Aktif') {
 											?>
-												<a class="dropdown-item" href="#modalDelete" data-toggle="modal" data-idkeluhan="<?= $row->id_keluhan; ?>">
-													<i class="fas fa-ban fa-fw text-danger"></i> Non-Aktifkan
+												<a class="dropdown-item" href="#modalDelete" data-toggle="modal" data-idkeluhan="<?= html_escape($row->id_keluhan ?? ''); ?>">
+													<i class="fas fa-ban fa-fw text-danger"></i> Nonaktifkan
 												</a>
 											<?php
 											} else {
 											?>
-												<a class="dropdown-item" href="#modalAktif" data-toggle="modal" data-idkeluhan="<?= $row->id_keluhan; ?>">
+												<a class="dropdown-item" href="#modalAktif" data-toggle="modal" data-idkeluhan="<?= html_escape($row->id_keluhan ?? ''); ?>">
 													<i class="fas fa-check fa-fw text-success"></i> Aktifkan
 												</a>
 											<?php
@@ -180,7 +180,7 @@
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="exampleModalLabel">Non-Aktifkan keluhan?</h5>
+				<h5 class="modal-title" id="exampleModalLabel">Nonaktifkan keluhan?</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -188,6 +188,7 @@
 			<form action="<?= site_url('kelola_keluhan/delete_keluhan'); ?>" method="POST">
 				<div class="modal-body">
 					<input type="hidden" name="id_keluhan">
+					<p class="text-muted mb-2">Keluhan akan dinonaktifkan sebagai master data, bukan dihapus permanen.</p>
 					<div class="form-group">
 						<label for="remark" class="col-form-label">Catatan :</label>
 						<textarea class="form-control" id="remark" name="remark" required></textarea>

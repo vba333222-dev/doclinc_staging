@@ -2,7 +2,7 @@
     <h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-comments"></i> Tindakan</h1>
 </div>
 <div class="doclinc-warning-note mb-3">
-    Halaman maintenance data legacy ini bukan alur kerja operasional harian konsultasi. Gunakan dengan hati-hati karena perubahan di halaman ini memengaruhi data tindakan/saran legacy.
+    Halaman ini digunakan untuk pemeliharaan data tindakan/saran legacy. Gunakan dengan hati-hati.
 </div>
 <!-- Content Row -->
 <div class="row">
@@ -27,7 +27,7 @@
                       ?>
                         <tr>
                           <td><?= $no;?></td>
-                          <td><?= $row->konsul_id;?></td>
+                          <td><?= html_escape($row->konsul_id ?? '-');?></td>
                           <td></td>
                           <td></td>
                           <td><?= html_escape($row->diagnosa ?? '-');?></td>
@@ -39,11 +39,11 @@
                                 <span class="sr-only">Toggle Dropdown</span>
                               </button>
                               <div class="dropdown-menu">
-                                  <a class="dropdown-item" href="#modalEdit" data-toggle="modal" data-idtindakan="<?= $row->konsul_id;?>">
+                                  <a class="dropdown-item" href="#modalEdit" data-toggle="modal" data-idtindakan="<?= html_escape($row->konsul_id ?? '');?>">
                                       <i class="fas fa-edit fa-fw text-primary"></i> Edit
                                   </a>
-                                  <a class="dropdown-item" href="#modalDelete" data-toggle="modal" data-idtindakan="<?= $row->konsul_id;?>">
-                                      <i class="fas fa-trash fa-fw text-danger"></i> Hapus
+                                  <a class="dropdown-item" href="#modalDelete" data-toggle="modal" data-idtindakan="<?= html_escape($row->konsul_id ?? '');?>">
+                                      <i class="fas fa-ban fa-fw text-danger"></i> Nonaktifkan
                                   </a>
                               </div>
                             </div>
@@ -77,7 +77,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-            <button type="submit" class="btn btn-primary">Simpan</button>
+            <button type="submit" class="btn btn-primary">Perbarui</button>
           </div>
       </form>
     </div>
@@ -87,7 +87,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Hapus tindakan?</h5>
+        <h5 class="modal-title" id="exampleModalLabel">Nonaktifkan tindakan legacy?</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -95,6 +95,7 @@
       <form action="<?= site_url('kelola_tindakan/delete_tindakan'); ?>" method="POST">
           <div class="modal-body">
               <input type="hidden" name="konsul_id">
+              <p class="text-muted mb-2">Tindakan/saran legacy akan ditandai Non-Aktif, bukan dihapus permanen.</p>
               <div class="form-group">
                 <label for="remark" class="col-form-label">Catatan :</label>
                 <textarea class="form-control" id="remark" name="remark" required></textarea>
@@ -102,7 +103,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-            <button type="submit" class="btn btn-danger">Hapus</button>
+            <button type="submit" class="btn btn-danger">Nonaktifkan</button>
           </div>
       </form>
     </div>
