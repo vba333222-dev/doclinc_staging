@@ -32,13 +32,13 @@
                       ?>
                         <tr>
                           <td><?= $no;?></td>
-                          <td><?= $row->feedId;?></td>
+                          <td><?= html_escape($row->feedId ?? '-');?></td>
                           <td><?= html_escape($row->subject ?? '-');?></td>
                           <td><?php if (!empty($row->gambar)): ?><img src="<?= base_url('uploads/feeds/') . rawurlencode($row->gambar); ?>" width="100" alt="News Feed"><?php else: ?>-<?php endif; ?></td>
                           <td><?= !empty($row->create_at) ? date('d-m-Y',strtotime($row->create_at)) : '-';?></td>
                           <td>
                                 <?php
-                                    $status = $row->status;
+                                    $status = $row->status ?? '';
                                     $status_badge = '';
                                     switch ($status) {
                                         case 'aktif':
@@ -54,8 +54,8 @@
                                     echo $status_badge;
                                 ?>
                             </td>
-                          <td><?= $row->create_user;?></td>
-                          <td><?= $row->create_at;?></td>
+                          <td><?= html_escape($row->create_user ?? '-');?></td>
+                          <td><?= html_escape($row->create_at ?? '-');?></td>
                           <td>
                             <div class="btn-group">
                               <button type="button" class="btn btn-outline-secondary">Aksi</button>
@@ -63,11 +63,11 @@
                                 <span class="sr-only">Toggle Dropdown</span>
                               </button>
                               <div class="dropdown-menu">
-                                  <a class="dropdown-item" href="#modalEdit" data-toggle="modal" data-idfeed="<?= $row->feedId; ?>">
+                                  <a class="dropdown-item" href="#modalEdit" data-toggle="modal" data-idfeed="<?= html_escape($row->feedId ?? ''); ?>">
                                       <i class="fas fa-edit fa-fw text-primary"></i> Edit
                                   </a>
-                                  <a class="dropdown-item" href="#modalDelete" data-toggle="modal" data-idfeed="<?= $row->feedId; ?>">
-                                      <i class="fas fa-trash fa-fw text-danger"></i> Hapus
+                                  <a class="dropdown-item" href="#modalDelete" data-toggle="modal" data-idfeed="<?= html_escape($row->feedId ?? ''); ?>">
+                                      <i class="fas fa-ban fa-fw text-danger"></i> Nonaktifkan
                                   </a>
                               </div>
                             </div>
@@ -99,7 +99,8 @@
               </div>
               <div class="form-group">
                 <label for="gambar" class="col-form-label">Gambar :</label>
-                <input type="file" class="form-control" id="gambar" name="gambar" required>
+                <input type="file" class="form-control" id="gambar" name="gambar" accept=".jpg,.jpeg,.png,image/jpeg,image/png" required>
+                <small class="form-text text-muted">Format jpg/jpeg/png, maksimal 2 MB.</small>
               </div>
               <div class="form-group">
                 <label for="status" class="col-form-label">Status :</label>
@@ -137,7 +138,8 @@
               </div>
               <div class="form-group">
                 <label for="gambar_edit" class="col-form-label">Gambar :</label>
-                <input type="file" class="form-control" id="gambar_edit" name="gambar">
+                <input type="file" class="form-control" id="gambar_edit" name="gambar" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                <small class="form-text text-muted">Kosongkan jika gambar tidak diubah. Format jpg/jpeg/png, maksimal 2 MB.</small>
               </div>
               <div class="form-group">
                 <label for="status" class="col-form-label">Status :</label>
@@ -149,19 +151,19 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-            <button type="submit" class="btn btn-primary">Simpan</button>
+            <button type="submit" class="btn btn-primary">Perbarui</button>
           </div>
       </form>
     </div>
   </div>
 </div>
 
-<!-- Modal Delete News Feed -->
+<!-- Modal Nonaktif News Feed -->
 <div class="modal fade" id="modalDelete" tabindex="-1" role="dialog" aria-labelledby="modalDeleteLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalDeleteLabel">Hapus News Feed</h5>
+        <h5 class="modal-title" id="modalDeleteLabel">Nonaktifkan News Feed</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -169,11 +171,11 @@
       <form action="<?= site_url('kelola_news_feed/delete'); ?>" method="POST">
           <div class="modal-body">
               <input type="hidden" name="feedId">
-              <p>Apakah Anda yakin ingin menghapus news feed ini?</p>
+              <p>News feed akan dinonaktifkan dan tidak dihapus permanen.</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-            <button type="submit" class="btn btn-danger">Hapus</button>
+            <button type="submit" class="btn btn-danger">Nonaktifkan</button>
           </div>
       </form>
     </div>

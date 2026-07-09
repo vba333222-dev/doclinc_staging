@@ -48,6 +48,7 @@
                 return false;
             }
             $this->db->where('feedId', $id);
-            $this->db->delete('feeds');
+            $this->db->update('feeds', array('status' => 'non-aktif'));
+            return $this->db->affected_rows() > 0;
         }
     }

@@ -7,7 +7,11 @@
 			if($this->session->userdata('is_login')==FALSE)
 	        {
 	        	redirect('/','refresh');
-	        }
+			}
+			if($this->session->userdata('level') !== 'admin')
+			{
+				redirect('home','refresh');
+			}
 		}
 		public function index(){
 			$this->session->set_flashdata('title', 'Kelola Keluhan');
@@ -23,6 +27,9 @@
 
 		public function tambah_keluhan()
 		{
+			if (!$this->require_post()) {
+				return;
+			}
 			// Ambil ID terakhir dari database
 			$last_id = $this->Kelola_keluhan_m->get_last_id();
 			// Jika tidak ada data, mulai dari K001
@@ -48,6 +55,9 @@
 
 		public function edit_keluhan()
 		{
+			if (!$this->require_post()) {
+				return;
+			}
 			$id_keluhan = $this->input->post('id_keluhan');
 			$kategori = $this->input->post('kategori');
 			$namakeluhan = $this->input->post('namakeluhan');
@@ -61,6 +71,9 @@
 
 		public function activate_keluhan()
 		{
+			if (!$this->require_post()) {
+				return;
+			}
 			$id_keluhan = $this->input->post('id_keluhan');
 			$remark = $this->input->post('remark');
 			$modify_user = $this->session->userdata('username');
@@ -72,6 +85,9 @@
 
 		public function delete_keluhan()
 		{
+			if (!$this->require_post()) {
+				return;
+			}
 			$id_keluhan = $this->input->post('id_keluhan');
 			$remark = $this->input->post('remark');
 			$modify_user = $this->session->userdata('username');
@@ -79,5 +95,16 @@
 			$this->Kelola_keluhan_m->delete_keluhan($id_keluhan,$remark,$modify_user,$modify_date);
 			$this->session->set_flashdata('success', 'Anda berhasil menonaktifkan data keluhan.');
 			redirect('kelola_keluhan','refresh');
+		}
+
+		private function require_post()
+		{
+			if ($this->input->method(TRUE) === 'POST') {
+				return true;
+			}
+			$this->output->set_status_header(405);
+			$this->session->set_flashdata('error', 'Metode tidak diizinkan.');
+			redirect('kelola_keluhan','refresh');
+			return false;
 		}
 	}

@@ -7,7 +7,11 @@
 			if($this->session->userdata('is_login')==FALSE)
 	        {
 	        	redirect('/','refresh');
-	        }
+			}
+			if($this->session->userdata('level') !== 'admin')
+			{
+				redirect('home','refresh');
+			}
 		}
 		public function index(){
 			$this->session->set_flashdata('title', 'Kelola news_feed');
@@ -22,12 +26,18 @@
 		}
 		public function get_news_feed()
 		{
+            if (!$this->require_post()) {
+                return;
+            }
 		    $id=$this->input->post('feedId');
 		    $data=$this->Kelola_newsfeed_m->get_news_feed($id);
 		    $this->output->set_content_type('application/json')->set_output(json_encode($data));
 		}
         public function tambah()
         {
+            if (!$this->require_post()) {
+                return;
+            }
             $upload_path = FCPATH . 'uploads/feeds/';
             if (!is_dir($upload_path)) {
                 mkdir($upload_path, 0755, TRUE);
@@ -41,12 +51,13 @@
             $config['remove_spaces'] = TRUE;
             $this->load->library('upload', $config);
             if ($this->upload->do_upload('gambar')) {
-                $data = $this->input->post();
-                $data ['subject']= $this->input->post('subject');
+                $status = $this->normalize_status($this->input->post('status'));
+                $data = array();
+                $data['subject']= $this->input->post('subject', TRUE);
                 $data['gambar'] = $this->upload->data('file_name');
                 $data['create_at'] = date('Y-m-d H:i:s');
 				$data['create_user'] =$this->session->userdata("username");
-                $data ['status']= $this->input->post('status');
+                $data['status']= $status;
                 $this->Kelola_newsfeed_m->insert_news($data);
                 $this->session->set_flashdata('success', 'Anda berhasil menambah data.');
             } else {
@@ -56,7 +67,9 @@
         }
         public function edit()
         {
-            $data = $this->input->post();
+            if (!$this->require_post()) {
+                return;
+            }
             $gambar='';
             if (!empty($_FILES['gambar']['name'])) {
                 $upload_path = FCPATH . 'uploads/feeds/';
@@ -79,17 +92,37 @@
                 }
             }
             $feedId= $this->input->post('feedId_edit');
-            $subject= $this->input->post('subject_edit');
-            $status= $this->input->post('status_edit');
+            $subject= $this->input->post('subject_edit', TRUE);
+            $status= $this->normalize_status($this->input->post('status_edit'));
             $this->Kelola_newsfeed_m->update_news($feedId,$gambar,$subject,$status);
 			$this->session->set_flashdata('success', 'Anda berhasil edit data.');
 			redirect('kelola_news_feed','refresh');
         }
         public function delete()
         {
+            if (!$this->require_post()) {
+                return;
+            }
             $id = $this->input->post('feedId');
             $this->Kelola_newsfeed_m->delete_news($id);
-			$this->session->set_flashdata('success', 'Anda berhasil menghapus data.');
+			$this->session->set_flashdata('success', 'News feed berhasil dinonaktifkan.');
 			redirect('kelola_news_feed','refresh');
         }
+
+        private function normalize_status($status)
+        {
+            $status = trim((string) $status);
+            return in_array($status, array('aktif', 'non-aktif'), true) ? $status : 'non-aktif';
+        }
+
+		private function require_post()
+		{
+			if ($this->input->method(TRUE) === 'POST') {
+				return true;
+			}
+			$this->output->set_status_header(405);
+			$this->session->set_flashdata('error', 'Metode tidak diizinkan.');
+			redirect('kelola_news_feed','refresh');
+			return false;
+		}
 	}
