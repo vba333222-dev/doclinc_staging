@@ -350,16 +350,93 @@ class Home_m extends MX_Controller
 		return $this->db->where('userId', $idUser)->get('users');
 	}
 
-	public function updateRequestById($id)
+	public function get_request_for_pending_edit($request_id, $user_id)
 	{
-		$id = (int) $id;
-		if ($id < 1) {
+		$request_id = (int) $request_id;
+		$user_id = (int) $user_id;
+		if ($request_id < 1 || $user_id < 1) {
+			return null;
+		}
+
+		$select = array(
+			'request_id',
+			'user_id',
+			'request_status',
+			$this->db->field_exists('request_description', 'requests') ? 'request_description' : 'NULL AS request_description',
+			$this->db->field_exists('location', 'requests') ? 'location' : 'NULL AS location',
+			$this->db->field_exists('lattitude', 'requests') ? 'lattitude' : 'NULL AS lattitude',
+			$this->db->field_exists('longitude', 'requests') ? 'longitude' : 'NULL AS longitude',
+			$this->db->field_exists('patient_latitude', 'requests') ? 'patient_latitude' : 'NULL AS patient_latitude',
+			$this->db->field_exists('patient_longitude', 'requests') ? 'patient_longitude' : 'NULL AS patient_longitude',
+			$this->db->field_exists('accepted_by_user_id', 'requests') ? 'accepted_by_user_id' : 'NULL AS accepted_by_user_id',
+			$this->db->field_exists('assigned_nakes_user_id', 'requests') ? 'assigned_nakes_user_id' : 'NULL AS assigned_nakes_user_id',
+			$this->db->field_exists('assigned_nakes_by_user_id', 'requests') ? 'assigned_nakes_by_user_id' : 'NULL AS assigned_nakes_by_user_id',
+		);
+
+		return $this->db
+			->select(implode(', ', $select), FALSE)
+			->where('request_id', $request_id)
+			->where('user_id', $user_id)
+			->get('requests')
+			->row();
+	}
+
+	public function request_has_processing_assignment($request)
+	{
+		if (!$request) {
+			return true;
+		}
+
+		foreach (array('accepted_by_user_id', 'assigned_nakes_user_id', 'assigned_nakes_by_user_id') as $field) {
+			if (isset($request->{$field}) && (int) $request->{$field} > 0) {
+				return true;
+			}
+		}
+
+		if (
+			!$this->db->table_exists('request_staff_assignments')
+			|| !$this->db->field_exists('request_id', 'request_staff_assignments')
+			|| !$this->db->field_exists('status', 'request_staff_assignments')
+		) {
 			return false;
 		}
 
-		$data = [];
-		if ($this->db->field_exists('date', 'requests')) {
-			$data['date'] = date('Y-m-d');
+		return $this->db
+			->where('request_id', (int) $request->request_id)
+			->where('status', 'aktif')
+			->count_all_results('request_staff_assignments') > 0;
+	}
+
+	public function updateRequestById($id, $user_id = null, $payload = array())
+	{
+		$id = (int) $id;
+		$user_id = (int) ($user_id ?: $this->session->userdata('id'));
+		if ($id < 1 || $user_id < 1) {
+			return false;
+		}
+
+		$data = array();
+		if (isset($payload['request_description']) && $payload['request_description'] !== '' && $this->db->field_exists('request_description', 'requests')) {
+			$data['request_description'] = $payload['request_description'];
+		}
+		if (array_key_exists('location', $payload) && $this->db->field_exists('location', 'requests')) {
+			$data['location'] = $payload['location'];
+		}
+		$lat = isset($payload['lat']) ? $payload['lat'] : null;
+		$lng = isset($payload['lng']) ? $payload['lng'] : null;
+		if ($this->is_valid_latitude($lat) && $this->is_valid_longitude($lng)) {
+			if ($this->db->field_exists('lattitude', 'requests')) {
+				$data['lattitude'] = $lat;
+			}
+			if ($this->db->field_exists('longitude', 'requests')) {
+				$data['longitude'] = $lng;
+			}
+			if ($this->db->field_exists('patient_latitude', 'requests')) {
+				$data['patient_latitude'] = $lat;
+			}
+			if ($this->db->field_exists('patient_longitude', 'requests')) {
+				$data['patient_longitude'] = $lng;
+			}
 		}
 		if ($this->db->field_exists('updated_at', 'requests')) {
 			$data['updated_at'] = date('Y-m-d H:i:s');
@@ -369,8 +446,8 @@ class Home_m extends MX_Controller
 		}
 
 		$this->db->where('request_id', $id);
-		$this->db->where('user_id', $this->session->userdata('id')); // Pastikan user_id sesuai dengan session
-		$this->db->where('request_status', 'Pending'); // Pastikan status request adalah 'Pending'
+		$this->db->where('user_id', $user_id);
+		$this->db->where('request_status', 'Pending');
 		$this->db->update('requests', $data);
 
 		if ($this->db->affected_rows() > 0) {
@@ -380,6 +457,16 @@ class Home_m extends MX_Controller
 			log_message('error', "Gagal update request ID $id");
 			return false;
 		}
+	}
+
+	private function is_valid_latitude($value)
+	{
+		return is_numeric($value) && (float) $value >= -90 && (float) $value <= 90;
+	}
+
+	private function is_valid_longitude($value)
+	{
+		return is_numeric($value) && (float) $value >= -180 && (float) $value <= 180;
 	}
 
 	public function cancel_request($request_id, $user_id)

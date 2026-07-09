@@ -294,19 +294,60 @@ class Home extends MX_Controller
 		if (!$this->require_post_json()) {
 			return;
 		}
-		$id = (int) $this->input->post('requestId');
-		if ($id < 1 || !doclinc_can_view_request($id, $this->session->userdata('id'), 'warga')) {
+		$id = (int) ($this->input->post('requestId') ?: $this->input->post('request_id'));
+		$user_id = (int) $this->session->userdata('id');
+		if ($this->session->userdata('role') !== 'warga' || $id < 1 || !doclinc_can_view_request($id, $user_id, 'warga')) {
 			doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_update'));
 			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
 			return;
 		}
-		if ($this->Home_m->updateRequestById($id)) {
-			$response = (['status' => 'success', 'message' => 'Data berhasil diupdate']);
-		} else {
-			doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_update'));
-			$response = (['status' => 'error', 'message' => 'Gagal mengupdate data']);
+
+		$request = $this->Home_m->get_request_for_pending_edit($id, $user_id);
+		if (!$request) {
+			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			return;
 		}
-		$this->output->set_output(json_encode($response));
+
+		if ($request->request_status !== 'Pending') {
+			$this->output->set_status_header(409)->set_output(json_encode(['status' => 'error', 'message' => 'Request sudah diproses dan tidak dapat diedit.']));
+			return;
+		}
+		if ($this->Home_m->request_has_processing_assignment($request)) {
+			$this->output->set_status_header(409)->set_output(json_encode(['status' => 'error', 'message' => 'Request sudah diproses dan tidak dapat diedit.']));
+			return;
+		}
+
+		$keluhan = trim((string) $this->input->post('keluhan', TRUE));
+		$alamat = trim((string) $this->input->post('alamat', TRUE));
+		$lat = trim((string) $this->input->post('lat', TRUE));
+		$lng = trim((string) $this->input->post('lng', TRUE));
+
+		if ($keluhan === '') {
+			$this->output->set_status_header(400)->set_output(json_encode(['status' => 'error', 'message' => 'Keluhan wajib diisi.']));
+			return;
+		}
+
+		$this->load->library('encryption');
+		$encrypted_keluhan = $this->encryption->encrypt($keluhan);
+		if ($encrypted_keluhan === false) {
+			$this->output->set_status_header(500)->set_output(json_encode(['status' => 'error', 'message' => 'Request belum dapat diperbarui.']));
+			return;
+		}
+
+		$payload = array(
+			'request_description' => base64_encode($encrypted_keluhan),
+			'location' => $alamat,
+			'lat' => $lat,
+			'lng' => $lng,
+		);
+
+		if ($this->Home_m->updateRequestById($id, $user_id, $payload)) {
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Request konsultasi berhasil diperbarui.']));
+			return;
+		}
+
+		$this->output->set_status_header(409);
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Request sudah diproses dan tidak dapat diedit.']));
 	}
 
 	public function deleterequestbyid()
