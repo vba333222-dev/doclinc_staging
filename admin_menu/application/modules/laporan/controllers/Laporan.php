@@ -11,11 +11,22 @@ class Laporan extends MX_Controller
 				$this->output_json(array(
 					'success' => false,
 					'status' => 'error',
-					'message' => 'Sesi admin berakhir. Silakan login kembali.'
+					'message' => 'Sesi admin berakhir. Silakan login ulang.'
 				), 401);
 				exit;
 			}
 			redirect('/', 'refresh');
+		}
+		if ($this->session->userdata('level') !== 'admin') {
+			if ($this->input->is_ajax_request()) {
+				$this->output_json(array(
+					'success' => false,
+					'status' => 'error',
+					'message' => 'Akses admin diperlukan.'
+				), 403);
+				exit;
+			}
+			redirect('home', 'refresh');
 		}
 	}
 
