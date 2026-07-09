@@ -11,7 +11,7 @@
 <div class="row">
   <div class="col-12">
     <div class="card shadow-sm">
-      <div class="card-header font-weight-bold"><?= str_replace('%20', ' ', $nama_title);?></div>
+      <div class="card-header font-weight-bold"><?= html_escape(str_replace('%20', ' ', $nama_title));?></div>
       <div class="card-body">
         <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNewPaket">+ Tambah paket</button>
         <button class="btn btn-sm btn-default-asoka mb-3 float-right" data-toggle="modal" data-target="#tutor">Contenting Guides</button>
@@ -35,21 +35,21 @@
             ?>
               <tr>
                 <td><?= $i;?></td>
-                <td><?= $x->paket;?></td>
+                <td><?= html_escape($x->paket ?? '-');?></td>
                 <td><div style="max-height:150px;overflow-y:scroll;"><?= $x->desc;?></div></td>
                 <td>
                   <a href="#modalLihatHarga<?= $x->id;?>" class="btn btn-default-asoka btn-sm tooltip-title" data-toggle="modal" title="Lihat">Lihat</a>
                 </td>
-                <td><?= $x->create_user;?></td>
-                <td><?= $x->modify_date;?></td>
+                <td><?= html_escape($x->create_user ?? '-');?></td>
+                <td><?= html_escape($x->modify_date ?? '-');?></td>
                 <td>
                   <div class="btn-group btn-group-sm">
                     <a href="#modalEdit<?= $x->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Edit">
                       <i class="far fa-edit fa-fw"></i>
                     </a>
-                    <a href="<?php echo base_url('landing_page/service_detail_sub_delete/'.$x->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" class="btn btn-danger tooltip-title" title="Hapus">
-                      <i class="far fa-trash-alt fa-fw"></i>
-                    </a>
+                    <form action="<?php echo base_url('landing_page/service_detail_sub_delete/'.$x->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus paket legacy ini?');">
+                      <button type="submit" class="btn btn-danger tooltip-title" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
+                    </form>
                   </div>
                 </td>
               </tr>
@@ -98,7 +98,7 @@
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel"><?= $x->paket;?></h5>
+          <h5 class="modal-title" id="exampleModalLabel"><?= html_escape($x->paket ?? '-');?></h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -151,7 +151,7 @@
               ?>
                 <tr>
                   <td><?= $no;?></td>
-                  <td><?= $row->nama_paket;?></td>
+                  <td><?= html_escape($row->nama_paket ?? '-');?></td>
                   <td>Rp <?= number_format($row->harga,0);?></td>
                   <td>
                   <?php
@@ -162,7 +162,7 @@
                     }
                   ?>
                   </td>
-                  <td><?= $row->expired_diskon;?></td>
+                  <td><?= html_escape($row->expired_diskon ?? '-');?></td>
                   <td>
                     <a href="#modalLihatAlat<?= $row->id;?>" class="btn btn-default-asoka btn-sm tooltip-title" data-toggle="modal" title="Lihat">Lihat</a>
                   </td>
@@ -171,9 +171,9 @@
                       <a href="#modalEditHarga<?= $row->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Edit harga">
                         <i class="far fa-edit fa-fw"></i>
                       </a>
-                      <a href="<?php echo base_url('landing_page/service_harga_delete/'.$row->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" class="btn btn-danger tooltip-title" title="Edit harga">
-                        <i class="far fa-trash-alt fa-fw"></i>
-                      </a>
+                      <form action="<?php echo base_url('landing_page/service_harga_delete/'.$row->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus investasi legacy ini?');">
+                        <button type="submit" class="btn btn-danger tooltip-title" title="Hapus harga"><i class="far fa-trash-alt fa-fw"></i></button>
+                      </form>
                     </div>
                   </td>
                 </tr>
@@ -194,7 +194,7 @@
       <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel"><?= $row->nama_paket;?></h5>
+            <h5 class="modal-title" id="exampleModalLabel"><?= html_escape($row->nama_paket ?? '-');?></h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
@@ -219,11 +219,11 @@
                 ?>
                   <tr>
                     <td><?= $no;?></td>
-                    <td><?= $key->nama_alat_tes;?></td>
+                    <td><?= html_escape($key->nama_alat_tes ?? '-');?></td>
                     <td>
-                      <a href="<?php echo base_url('landing_page/service_harga_detail_delete_alat/'.$key->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" class="btn btn-danger tooltip-title btn-sm" title="Hapus">
-                        <i class="far fa-trash-alt fa-fw"></i>
-                      </a>
+                      <form action="<?php echo base_url('landing_page/service_harga_detail_delete_alat/'.$key->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus alat test dari paket legacy ini?');">
+                        <button type="submit" class="btn btn-danger tooltip-title btn-sm" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
+                      </form>
                     </td>
                   </tr>
                 <?php

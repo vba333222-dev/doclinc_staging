@@ -36,18 +36,18 @@
             ?>
               <tr>
                 <td><?= $i;?></td>
-                <td><img src="https://asokaconsulting.co.id/assets/img/uploads/portofolio/<?= $x->pict;?>"  style="width:auto;height:70px;"></td> 
-                <td><?= $x->title;?></td>
-                <td><?= $x->description;?></td>
-                <td><?= $x->status;?></td>
+                <td><img src="<?= base_url('../assets/img/uploads/portofolio/' . rawurlencode($x->pict));?>"  style="width:auto;height:70px;"></td>
+                <td><?= html_escape($x->title ?? '-');?></td>
+                <td><?= html_escape($x->description ?? '-');?></td>
+                <td><?= html_escape($x->status ?? '-');?></td>
                 <td>
                   <div class="btn-group btn-group-sm">
                     <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" data-id="<?= $x->id;?>" data-title="<?= $x->title;?>" data-description="<?= $x->description;?>" data-status="<?= $x->status;?>" data-pict="<?= $x->pict;?>" title="Edit">
                       <i class="far fa-edit fa-fw"></i>
                     </a>           
-                    <a href="<?php echo base_url('landing_page/portofolio_delete/'.$x->id);?>" class="btn btn-danger tooltip-title" title="Hapus">
-                      <i class="far fa-trash-alt fa-fw"></i>
-                    </a>
+                    <form action="<?php echo base_url('landing_page/portofolio_delete/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus portofolio legacy ini?');">
+                      <button type="submit" class="btn btn-danger tooltip-title" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
+                    </form>
                   </div>
                 </td>
               </tr>

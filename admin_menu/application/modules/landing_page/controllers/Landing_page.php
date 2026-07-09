@@ -11,6 +11,55 @@
 			if ($this->session->userdata('level') !== 'admin') {
 				redirect('home', 'refresh');
 			}
+			$this->guard_mutation_methods();
+		}
+		private function guard_mutation_methods()
+		{
+			$read_methods = array(
+				'home',
+				'about',
+				'news_events',
+				'services',
+				'service_detail',
+				'service_detail_sub',
+				'contact_us',
+				'partner',
+				'the_team',
+				'f_a_q',
+				'portofolio',
+			);
+			$method = $this->router->fetch_method();
+			if (!in_array($method, $read_methods, true) && $this->input->method(TRUE) !== 'POST') {
+				$this->output->set_status_header(405);
+				$this->session->set_flashdata('info', '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert">Metode tidak diizinkan untuk perubahan data landing page legacy.</div>');
+				redirect('landing_page/home', 'refresh');
+			}
+		}
+
+		private function upload_landing_image($field, $upload_path, $required = false)
+		{
+			if (empty($_FILES[$field]['name'])) {
+				return $required ? false : '';
+			}
+			if (!is_dir($upload_path)) {
+				mkdir($upload_path, 0755, TRUE);
+			}
+			$config = array(
+				'upload_path' => $upload_path,
+				'allowed_types' => 'jpg|jpeg|png',
+				'max_size' => 2048,
+				'encrypt_name' => TRUE,
+				'detect_mime' => TRUE,
+				'mod_mime_fix' => TRUE,
+				'remove_spaces' => TRUE,
+			);
+			$this->load->library('upload');
+			$this->upload->initialize($config);
+			if (!$this->upload->do_upload($field)) {
+				$this->session->set_flashdata('info', '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert">' . html_escape(strip_tags($this->upload->display_errors('', ''))) . '</div>');
+				return false;
+			}
+			return $this->upload->data('file_name');
 		}
 		// rowcode for home
 		public function home(){
@@ -91,15 +140,10 @@
 			redirect('landing_page/about');
 		}
 		public function about_update_pict(){
-			$date = date('Ymd_His_');
-			$temp   = $_FILES['pict']['tmp_name'];
-	        $name   = $_FILES['pict']['name'];
-	        $size   = $_FILES['pict']['size'];
-	        $type   = $_FILES['pict']['type'];
-	        $datename = $date.$name;
-	        $folder = "../assets/img/";
-	        $target_file = $folder.$datename;
-	        move_uploaded_file($temp, $target_file);
+	        $datename = $this->upload_landing_image('pict', '../assets/img/', true);
+			if ($datename === false) {
+				redirect('landing_page/about');
+			}
 
 	        $data = $this->Landing_page_m->about_update_pict($datename);
 			echo json_encode($data);	
@@ -131,16 +175,10 @@
 			$preview = addslashes($this->input->post('preview'));
 			$status = $this->input->post('status');
 
-			$date = date('Ymd_');
-			$temp   = $_FILES['gambar']['tmp_name'];
-	        $name   = str_replace(' ', '_', $_FILES['gambar']['name']);
-	        $size   = $_FILES['gambar']['size'];
-	        $type   = $_FILES['gambar']['type'];
-	        $filename = $date.$name;
-	        // $filename = $name;
-	        $folder = "../assets/img/uploads/news/";
-	        $target_file = $folder.$filename;
-	        move_uploaded_file($temp, $target_file);
+	        $filename = $this->upload_landing_image('gambar', '../assets/img/uploads/news/', true);
+			if ($filename === false) {
+				redirect('landing_page/news_events');
+			}
 
 			$data = $this->Landing_page_m->news_events_add($title,$content,$preview,$filename,$status);
 			echo json_encode($data);
@@ -164,16 +202,10 @@
 			$status = $this->input->post('status');
 
 
-			$date = date('Ymd_');
-			$temp   = $_FILES['gambar']['tmp_name'];
-	        $name   = $_FILES['gambar']['name'];
-	        $size   = $_FILES['gambar']['size'];
-	        $type   = $_FILES['gambar']['type'];
-	        $filename = $date.$name;
-	        // $filename = $name;
-	        $folder = "../assets/img/uploads/news/";
-	        $target_file = $folder.$filename;
-	        move_uploaded_file($temp, $target_file);
+	        $filename = $this->upload_landing_image('gambar', '../assets/img/uploads/news/');
+			if ($filename === false) {
+				redirect('landing_page/news_events');
+			}
 
 			$data = $this->Landing_page_m->news_events_update($id,$title,$content,$preview,$filename,$status);
 			echo json_encode($data);
@@ -536,15 +568,10 @@
 		}
 		public function add_partner(){ 
 			$alt_name=$this->input->post('alt_name');  
-			$date = date('Ymd_His_');
-			$temp   = $_FILES['logo_partner']['tmp_name'];
-	        $name   = $_FILES['logo_partner']['name'];
-	        $size   = $_FILES['logo_partner']['size'];
-	        $type   = $_FILES['logo_partner']['type'];
-	        $datename = $date.$name; 
-	        $folder = "../assets/img/";
-	        $target_file = $folder.$datename;
-	        move_uploaded_file($temp, $target_file);
+	        $datename = $this->upload_landing_image('logo_partner', '../assets/img/', true);
+			if ($datename === false) {
+				redirect('landing_page/partner');
+			}
 
 	        $data = $this->Landing_page_m->add_partner($datename, $alt_name);
 			echo json_encode($data);	
@@ -579,16 +606,11 @@
 			$logo=$this->input->post('logo_edit');  
 			$alt_name=$this->input->post('alt_name_edit'); 
 
-			$date = date('Ymd_His_');
-			$temp   = $_FILES['logo_edit2']['tmp_name'];
-	        $name   = $_FILES['logo_edit2']['name'];
-	        $size   = $_FILES['logo_edit2']['size'];
-	        $type   = $_FILES['logo_edit2']['type'];
-	        $datename = $date.$name; 
-	        $folder = "../assets/img/";
-	        $target_file = $folder.$datename;
-			if ($name!=''){
-				move_uploaded_file($temp, $target_file);
+	        $datename = $this->upload_landing_image('logo_edit2', '../assets/img/');
+			if ($datename === false) {
+				redirect('landing_page/partner');
+			}
+			if ($datename!=''){
 				$logo=$datename;
 			}else{
 				$logo=$logo;
@@ -631,32 +653,18 @@
 			$ig=$this->input->post('ig');
 			$twitter=$this->input->post('twitter');  
 			$fb=$this->input->post('fb');   
-			$date = date('Ymd_His_');
-			$temp   = $_FILES['avatar']['tmp_name'];
-	        $name   = $_FILES['avatar']['name'];
-	        $size   = $_FILES['avatar']['size'];
-	        $type   = $_FILES['avatar']['type'];
-	        $datename = $date.$name; 
-	        $folder = "../assets/img/testimonials/";
-	        $target_file = $folder.$datename;
-
-	        $temp_sign   = $_FILES['signature']['tmp_name'];
-	        $name_sign   = $_FILES['signature']['name'];
-	        $size_sign   = $_FILES['signature']['size'];
-	        $type_sign   = $_FILES['signature']['type'];
-	        $datename_sign = $date.$name_sign; 
-	        $folder_sign = "assets/img/";
-	        $target_file_sign = $folder_sign.$datename_sign;
+	        $datename = $this->upload_landing_image('avatar', '../assets/img/testimonials/', true);
+			if ($datename === false) {
+				redirect('landing_page/the_team');
+			}
+	        $datename_sign = $this->upload_landing_image('signature', 'assets/img/');
+			if ($datename_sign === false) {
+				redirect('landing_page/the_team');
+			}
 
 	        $cek_username = $this->Landing_page_m->cek_username($username);
 			$valid_username = $cek_username->row_array()['username'];
 			if ($valid_username==NULL) {
-		        move_uploaded_file($temp, $target_file);
-
-		        if ($temp_sign!=''){
-					move_uploaded_file($temp_sign, $target_file_sign);
-				}
-
 		        $data = $this->Landing_page_m->add_the_team($nama, $jabatan, $no_sipp, $quotes, $level, $email, $username, $password, $ig, $twitter, $fb, $datename, $datename_sign);
 				echo json_encode($data);	
 				
@@ -711,30 +719,21 @@
 			$fb=$this->input->post('fb_'); 
 		    $avatar=$this->input->post('avatar_');   
 		    $signature=$this->input->post('signature_');   
-			$date = date('Ymd_His_');
-			$temp   = $_FILES['avatar2_']['tmp_name'];
-	        $name   = $_FILES['avatar2_']['name'];
-	        $size   = $_FILES['avatar2_']['size'];
-	        $type   = $_FILES['avatar2_']['type'];
-	        $datename = $date.$name; 
-	        $folder = "../assets/img/testimonials/";
-	        $target_file = $folder.$datename;
-			if ($name!=''){
-				move_uploaded_file($temp, $target_file);
+	        $datename = $this->upload_landing_image('avatar2_', '../assets/img/testimonials/');
+			if ($datename === false) {
+				redirect('landing_page/the_team');
+			}
+			if ($datename!=''){
 				$avatar=$datename;
 			}else{
 				$avatar=$avatar;
 			} 
 
-			$temp_sign   = $_FILES['signature2_']['tmp_name'];
-	        $name_sign   = $_FILES['signature2_']['name'];
-	        $size_sign   = $_FILES['signature2_']['size'];
-	        $type_sign   = $_FILES['signature2_']['type'];
-	        $datename_sign = $date.$name_sign; 
-	        $folder_sign = "assets/img/";
-	        $target_file_sign = $folder_sign.$datename_sign;
-	        if ($name_sign!=''){
-				move_uploaded_file($temp_sign, $target_file_sign);
+	        $datename_sign = $this->upload_landing_image('signature2_', 'assets/img/');
+			if ($datename_sign === false) {
+				redirect('landing_page/the_team');
+			}
+	        if ($datename_sign!=''){
 				$signature=$datename_sign;
 			}else{
 				$signature=$signature;
@@ -827,16 +826,10 @@
 			$title=addslashes($this->input->post('title'));
 			$description=addslashes($this->input->post('description'));
 			$status=$this->input->post('status');
-			$date = date('Ymd_His_');
-			$temp   = $_FILES['pict']['tmp_name'];
-	        $name   = $_FILES['pict']['name'];
-	        $size   = $_FILES['pict']['size'];
-	        $type   = $_FILES['pict']['type'];
-	        $datename = $date.$name; 
-	        $folder = "../assets/img/uploads/portofolio/";
-	        $target_file = $folder.$datename;
-			
-	        move_uploaded_file($temp, $target_file);
+	        $datename = $this->upload_landing_image('pict', '../assets/img/uploads/portofolio/', true);
+			if ($datename === false) {
+				redirect('landing_page/portofolio');
+			}
 
 	        $data = $this->Landing_page_m->add_portofolio($title, $description, $datename, $status);
 			echo json_encode($data);	
@@ -858,16 +851,11 @@
 			$description=addslashes($this->input->post('description'));
 			$status=$this->input->post('status');
 			$pict=$this->input->post('pictnya');
-			$date = date('Ymd_His_');
-			$temp   = $_FILES['pict']['tmp_name'];
-	        $name   = $_FILES['pict']['name'];
-	        $size   = $_FILES['pict']['size'];
-	        $type   = $_FILES['pict']['type'];
-	        $datename = $date.$name; 
-	        $folder = "../assets/img/uploads/portofolio/";
-	        $target_file = $folder.$datename;
-			if ($name!='') {
-				move_uploaded_file($temp, $target_file);
+	        $datename = $this->upload_landing_image('pict', '../assets/img/uploads/portofolio/');
+			if ($datename === false) {
+				redirect('landing_page/portofolio');
+			}
+			if ($datename!='') {
 				$pict = $datename;
 			}else{
 				$pict = $pict;

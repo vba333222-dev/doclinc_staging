@@ -37,7 +37,7 @@
                           <tr>
                               <td><?= $no;?></td>
                               <!-- <td><img src="../../assets/img/uploads/news/<?= $row->thumbnail;?>" class="img-thumbnail shadow-sm" style="height: 80px;"></td> -->
-                              <td><img src="https://asokaconsulting.co.id/assets/img/uploads/news/<?= $row->thumbnail;?>" class="img-thumbnail shadow-sm" style="height: 80px;"></td>
+                              <td><img src="<?= base_url('../assets/img/uploads/news/' . rawurlencode($row->thumbnail));?>" class="img-thumbnail shadow-sm" style="height: 80px;"></td>
                               <td><?= $row->title;?></td>
                               <td><?= $row->preview_content;?>...</td>
                               <?php if ($row->status=='hero'): ?>
@@ -93,7 +93,7 @@
                               <td>
                                   <div class="btn-group btn-group-sm">
                                     <a href="#modalEdit<?= $row->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Edit"><i class="fas fa-edit fa-fw"></i></a>
-                                    <a href="https://asokaconsulting.co.id/news/content/<?= $row->id;?>" class="btn btn-primary tooltip-title" target="_BLANK" title="Preview"><i class="fas fa-eye fa-fw"></i></a>
+                                    <a href="#" class="btn btn-primary tooltip-title disabled" title="Preview legacy dinonaktifkan"><i class="fas fa-eye fa-fw"></i></a>
                                     <a href="#modalHapus<?= $row->id;?>" class="btn btn-danger tooltip-title" data-toggle="modal" title="Hapus"><i class="fas fa-trash fa-fw"></i></a>
                                   </div>
                               </td>
@@ -185,7 +185,7 @@
           </div>
           <div class="form-group mb-3">
             <!-- <img src="../../assets/img/uploads/news/<?= $row->thumbnail;?>" class="img-thumbnail shadow-sm" style="height: 150px;"> -->
-            <img src="https://asokaconsulting.co.id/assets/img/uploads/news/<?= $row->thumbnail;?>" class="img-thumbnail shadow-sm" style="height: 150px;">
+            <img src="<?= base_url('../assets/img/uploads/news/' . rawurlencode($row->thumbnail));?>" class="img-thumbnail shadow-sm" style="height: 150px;">
             <small id="taglineHelp" class="form-text text-muted mb-0">*Current Thumbnail</small>
           </div>
           <div class="input-group mb-3">
@@ -268,7 +268,7 @@
           <center>
             <div class="form-group">
                 <label>Anda Yakin Akan Menghapus ? </label><br>
-                <img src="https://asokaconsulting.co.id/assets/img/uploads/news/<?= $row->thumbnail;?>" class="img-thumbnail shadow-sm" style="height: 150px;">
+                <img src="<?= base_url('../assets/img/uploads/news/' . rawurlencode($row->thumbnail));?>" class="img-thumbnail shadow-sm" style="height: 150px;">
                 <input type="hidden" class="form-control" name="idnya" value="<?= $row->id;?>">
                 <p><b><?= $row->title; ?></b> - <?= substr($row->content, 157,300);?>...</p>
             </div>

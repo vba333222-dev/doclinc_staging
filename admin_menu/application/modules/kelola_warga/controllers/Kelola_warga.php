@@ -24,6 +24,9 @@
 		}
 		public function aktifkan_user()
 		{
+			if (!$this->require_post()) {
+				return;
+			}
 			$id_user = $this->input->post('id_user');
 			$remark_aktif = $this->input->post('remark_aktif');
 			$user = $this->session->userdata('username');
@@ -33,11 +36,25 @@
 		}
 		public function nonaktifkan_user()
 		{
+			if (!$this->require_post()) {
+				return;
+			}
 			$id_user = $this->input->post('id_user');
 			$remark_nonaktif = $this->input->post('remark_nonaktif');
 			$user = $this->session->userdata('username');
 			$this->Kelola_warga_m->nonaktifkan_user($id_user,$user,$remark_nonaktif);
 			$this->session->set_flashdata('success', 'Anda berhasil menonaktifkan user.');
 			redirect('kelola_warga','refresh');
+		}
+
+		private function require_post()
+		{
+			if ($this->input->method(TRUE) === 'POST') {
+				return true;
+			}
+			$this->output->set_status_header(405);
+			$this->session->set_flashdata('error', 'Metode tidak diizinkan.');
+			redirect('kelola_warga','refresh');
+			return false;
 		}
 	}

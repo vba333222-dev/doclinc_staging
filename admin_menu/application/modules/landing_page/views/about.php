@@ -20,7 +20,7 @@
 <div class="row">
   <div class="col-12 col-lg-6 mb-3 position-relative">
     <!-- <img src="../../assets/img/<?= $pict;?>" class="img-fluid img-thumbnail shadow-sm"> -->
-    <img src="https://asokaconsulting.co.id/assets/img/<?= $pict;?>" class="img-fluid img-thumbnail shadow-sm">
+    <img src="<?= base_url('../assets/img/' . rawurlencode($pict));?>" class="img-fluid img-thumbnail shadow-sm">
     <button class="btn btn-default-asoka float-right" style="position:absolute;top:20px;right:34px;" data-toggle="modal" data-target="#modalPict">Edit</button>
   </div>
   <div class="col-12 col-lg-6 mb-3">

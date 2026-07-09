@@ -37,11 +37,11 @@
             ?>
               <tr>
                 <td><?= $i;?></td>
-                <td><?= $x->service;?></td>
-                <td><?= $x->short_desc;?></td>
-                <td><?= $x->no_wa;?></td>
-                <td><?= $x->create_user;?></td>
-                <td><?= $x->modify_date;?></td>
+                <td><?= html_escape($x->service ?? '-');?></td>
+                <td><?= html_escape($x->short_desc ?? '-');?></td>
+                <td><?= html_escape($x->no_wa ?? '-');?></td>
+                <td><?= html_escape($x->create_user ?? '-');?></td>
+                <td><?= html_escape($x->modify_date ?? '-');?></td>
                 <td>
                   <div class="btn-group btn-group-sm">
                     <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" data-id="<?= $x->id;?>" data-service="<?= $x->service;?>" data-shortdesc="<?= $x->short_desc;?>" data-wa="<?= $x->no_wa;?>" title="Edit">
@@ -50,9 +50,9 @@
                     <a href="<?php echo base_url('landing_page/service_detail/'.$x->id.'/'.$x->service);?>" class="btn btn-primary tooltip-title" title="Lebih detail">
                       <i class="far fa-list-alt fa-fw"></i>
                     </a>
-                    <a href="<?php echo base_url('landing_page/service_delete/'.$x->id);?>" class="btn btn-danger tooltip-title" title="Hapus">
-                      <i class="far fa-trash-alt fa-fw"></i>
-                    </a>
+                    <form action="<?php echo base_url('landing_page/service_delete/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus layanan legacy ini?');">
+                      <button type="submit" class="btn btn-danger tooltip-title" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
+                    </form>
                   </div>
                 </td>
               </tr>
