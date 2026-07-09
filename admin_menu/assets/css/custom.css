@@ -874,6 +874,79 @@ footer.sticky-footer {
     height: 100%;
 }
 
+.doclinc-record-card {
+    border: 1px solid var(--doclinc-border);
+}
+
+.doclinc-record-table {
+    color: var(--doclinc-text);
+    font-size: 0.86rem;
+}
+
+.doclinc-record-table thead th {
+    background: var(--doclinc-table-head);
+    border-bottom: 1px solid var(--doclinc-border);
+    color: var(--doclinc-muted);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.doclinc-record-table td {
+    border-top: 1px solid var(--doclinc-border);
+    vertical-align: middle;
+}
+
+.doclinc-record-badge {
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    color: var(--doclinc-text);
+    display: inline-flex;
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 0.28rem 0.55rem;
+}
+
+.doclinc-record-empty {
+    background: var(--doclinc-table-head);
+    border: 1px dashed var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-muted);
+    padding: 1rem;
+    text-align: center;
+}
+
+.doclinc-record-detail-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.doclinc-record-detail-grid > div {
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    padding: 0.75rem;
+}
+
+.doclinc-record-detail-grid span {
+    color: var(--doclinc-muted);
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+}
+
+.doclinc-record-detail-grid strong {
+    color: var(--doclinc-text);
+    font-size: 0.9rem;
+}
+
 .doclinc-shortcut-grid {
     display: grid;
     gap: 0.75rem;

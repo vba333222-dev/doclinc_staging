@@ -60,6 +60,7 @@
 		$doclinc_active_akun_puskesmas = ($doclinc_admin_segment === 'kelola_dokter_nakes' || $this->session->flashdata('active_tab_kelola_dokter_nakes')) ? 'active' : '';
 		$doclinc_active_staff_puskesmas = ($doclinc_admin_segment === 'kelola_staff_puskesmas' || $this->session->flashdata('active_tab_kelola_staff_puskesmas')) ? 'active' : '';
 		$doclinc_active_keluhan = ($doclinc_admin_segment === 'kelola_keluhan' || $this->session->flashdata('active_tab_keluhan')) ? 'active' : '';
+		$doclinc_active_rekam_medis = ($doclinc_admin_segment === 'rekam_medis' || $this->session->flashdata('active_tab_rekam_medis')) ? 'active' : '';
 		$doclinc_active_laporan = ($doclinc_admin_segment === 'laporan' || $this->session->flashdata('active_tab_laporan')) ? 'active' : '';
 		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed' || $this->session->flashdata('active_tab_news_feed')) ? 'active' : '';
 		?>
@@ -119,6 +120,13 @@
 			</li>
 
 			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Laporan</div>
+			<li class="nav-item <?= $doclinc_active_rekam_medis; ?>">
+				<a class="nav-link" href="<?php echo site_url('rekam_medis'); ?>">
+					<i class="fas fa-notes-medical"></i>
+					<span>Rekam Medis</span>
+				</a>
+			</li>
+
 			<li class="nav-item <?= $doclinc_active_laporan; ?>">
 				<a class="nav-link" href="<?php echo site_url('laporan'); ?>">
 					<i class="fas fa-file-alt"></i>
