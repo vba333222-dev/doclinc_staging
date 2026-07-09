@@ -5,6 +5,9 @@ $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '#';
 $map_provider = $this->config->item('map_provider') ?: 'none';
 $mapbox_public_token = $this->config->item('mapbox_public_token') ?: '';
+$master_gejala_keluhan_options = isset($master_gejala_keluhan_options) && is_array($master_gejala_keluhan_options)
+	? $master_gejala_keluhan_options
+	: array();
 foreach ($data_profile->result() as $x) {
 	$usia = $x->usia;
 }
@@ -134,10 +137,12 @@ if (!function_exists('doclinc_warga_complaint_summary')) {
 		}
 
 		$rows = array(
+			'gejala/keluhan utama' => 'Gejala/Keluhan',
 			'keluhan utama' => 'Keluhan utama',
 			'lama keluhan' => 'Lama keluhan',
 			'gejala tambahan' => 'Gejala',
 			'catatan' => 'Catatan',
+			'detail keluhan' => 'Catatan',
 			'deskripsi keluhan' => 'Catatan',
 		);
 
@@ -1905,7 +1910,18 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						<input type="hidden" name="lat" id="edit_request_lat">
 						<input type="hidden" name="lng" id="edit_request_lng">
 						<div class="mb-3">
-							<label for="edit_request_keluhan" class="form-label fw-semibold">Keluhan</label>
+							<label for="edit_request_gejala" class="form-label fw-semibold">Gejala/Keluhan utama</label>
+							<select class="form-control" name="gejala_utama" id="edit_request_gejala">
+								<option value="">Pilih gejala/keluhan</option>
+								<?php foreach ($master_gejala_keluhan_options as $option): ?>
+									<?php $option_name = trim((string) ($option->nama_keluhan ?? '')); ?>
+									<?php if ($option_name === '') continue; ?>
+									<option value="<?= html_escape($option_name); ?>"><?= html_escape($option_name); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+						<div class="mb-3">
+							<label for="edit_request_keluhan" class="form-label fw-semibold">Detail keluhan</label>
 							<textarea class="form-control" name="keluhan" id="edit_request_keluhan" rows="4" required></textarea>
 						</div>
 						<div class="mb-0">
@@ -2601,7 +2617,13 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}
 
 			$('#edit_request_id').val(requestId);
-			$('#edit_request_keluhan').val(button.attr('data-keluhan') || '');
+			const parsedComplaint = parseWargaComplaintForEdit(button.attr('data-keluhan') || '');
+			$('#edit_request_gejala').val(parsedComplaint.gejala);
+			if (parsedComplaint.gejala !== '' && $('#edit_request_gejala').val() !== parsedComplaint.gejala) {
+				parsedComplaint.detail = 'Gejala/Keluhan utama: ' + parsedComplaint.gejala + (parsedComplaint.detail !== '' ? "\n" + parsedComplaint.detail : '');
+				$('#edit_request_gejala').val('');
+			}
+			$('#edit_request_keluhan').val(parsedComplaint.detail);
 			$('#edit_request_alamat').val(button.attr('data-location') || '');
 			$('#edit_request_lat').val(button.attr('data-lat') || '');
 			$('#edit_request_lng').val(button.attr('data-lng') || '');
@@ -2613,6 +2635,49 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				$('#editRequestModal').modal('show');
 			}
 		});
+
+		function parseWargaComplaintForEdit(rawText) {
+			const result = {
+				gejala: '',
+				detail: ''
+			};
+			const text = (rawText || '').trim();
+			if (text === '') {
+				return result;
+			}
+
+			const lines = text.split(/\r?\n/);
+			const detailParts = [];
+			lines.forEach(function(line) {
+				const cleanLine = line.replace(/\*\*(.*?)\*\*/g, '$1').trim();
+				if (cleanLine === '' || cleanLine.toLowerCase() === 'anamnesa') {
+					return;
+				}
+
+				const separatorIndex = cleanLine.indexOf(':');
+				if (separatorIndex === -1) {
+					detailParts.push(cleanLine);
+					return;
+				}
+
+				const key = cleanLine.slice(0, separatorIndex).trim().toLowerCase();
+				const value = cleanLine.slice(separatorIndex + 1).trim();
+				if (key === 'gejala/keluhan utama') {
+					result.gejala = value;
+					return;
+				}
+				if (key === 'deskripsi keluhan' || key === 'detail keluhan') {
+					detailParts.push(value);
+					return;
+				}
+				if (key === 'keluhan utama' || key === 'lama keluhan' || key === 'gejala tambahan') {
+					detailParts.push(cleanLine);
+				}
+			});
+
+			result.detail = detailParts.length > 0 ? detailParts.join("\n") : text;
+			return result;
+		}
 
 		$('#editRequestForm').on('submit', function(event) {
 			event.preventDefault();

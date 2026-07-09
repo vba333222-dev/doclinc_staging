@@ -257,6 +257,7 @@ class Home extends MX_Controller
 				$x['getAllRequestJumlah'] = $this->Home_m->getAllRequestJumlah();
 
 				$x['dataDoctor'] = $this->Home_m->getDataDoctor();
+				$x['master_gejala_keluhan_options'] = $this->Home_m->get_master_gejala_keluhan_options();
 
 				$this->load->view('home_v', $x);
 			} elseif ($role == 'dokter') {
@@ -317,11 +318,18 @@ class Home extends MX_Controller
 			return;
 		}
 
+		$gejala_utama = $this->sanitize_gejala_keluhan_choice($this->input->post('gejala_utama', TRUE));
 		$keluhan = trim((string) $this->input->post('keluhan', TRUE));
 		$alamat = trim((string) $this->input->post('alamat', TRUE));
 		$lat = trim((string) $this->input->post('lat', TRUE));
 		$lng = trim((string) $this->input->post('lng', TRUE));
 
+		if ($gejala_utama !== '' && stripos($keluhan, 'Gejala/Keluhan utama:') === false) {
+			$keluhan = $this->build_request_description($gejala_utama, $keluhan);
+		}
+		if ($keluhan === '') {
+			$keluhan = $this->build_request_description($gejala_utama, '');
+		}
 		if ($keluhan === '') {
 			$this->output->set_status_header(400)->set_output(json_encode(['status' => 'error', 'message' => 'Keluhan wajib diisi.']));
 			return;
@@ -348,6 +356,32 @@ class Home extends MX_Controller
 
 		$this->output->set_status_header(409);
 		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Request sudah diproses dan tidak dapat diedit.']));
+	}
+
+	private function sanitize_gejala_keluhan_choice($value)
+	{
+		$value = trim(strip_tags((string) $value));
+		$value = preg_replace('/\s+/u', ' ', $value);
+		if (function_exists('mb_substr')) {
+			return mb_substr($value, 0, 120, 'UTF-8');
+		}
+
+		return substr($value, 0, 120);
+	}
+
+	private function build_request_description($gejala_utama, $detail_keluhan)
+	{
+		$parts = array('Anamnesa');
+		$gejala_utama = $this->sanitize_gejala_keluhan_choice($gejala_utama);
+		$detail_keluhan = trim(strip_tags((string) $detail_keluhan));
+		if ($gejala_utama !== '') {
+			$parts[] = 'Gejala/Keluhan utama: ' . $gejala_utama;
+		}
+		if ($detail_keluhan !== '') {
+			$parts[] = 'Detail keluhan: ' . $detail_keluhan;
+		}
+
+		return count($parts) > 1 ? implode("\n", $parts) : '';
 	}
 
 	public function deleterequestbyid()

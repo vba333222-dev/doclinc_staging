@@ -28,6 +28,7 @@ class Konsultasi extends MX_Controller
 		$data['getFotoDokter'] = $this->Konsultasi_m->getFotoDokter($nama);
 		$data['getDataTokenDoctor'] = $this->Konsultasi_m->getDataTokenDoctor($nama);
 		$data['getDataPenunjangById'] = $this->Konsultasi_m->getDataPenunjangById($userid);
+		$data['master_gejala_keluhan_options'] = $this->Konsultasi_m->get_master_gejala_keluhan_options();
 		if (doclinc_active_consultation_request($userid)) {
 			redirect('home#riwayat');
 			return;
@@ -60,7 +61,8 @@ class Konsultasi extends MX_Controller
 		$id_user = $this->session->userdata('id');
 		$role = $this->session->userdata('role');
 		$riwayat = $this->input->post('data_penunjang');
-		$keluhan = $this->input->post('keluhan');
+		$gejala_utama = $this->sanitize_gejala_keluhan_choice($this->input->post('gejala_utama', TRUE));
+		$keluhan = trim((string) $this->input->post('keluhan', TRUE));
 		$alamat = $this->input->post('alamat');
 		$lattitude = $this->input->post('lat');
 		$longitude = $this->input->post('lng');
@@ -119,6 +121,12 @@ class Konsultasi extends MX_Controller
 			$alamat = !empty($assigned_puskesmas_name)
 				? 'Puskesmas tujuan: ' . $assigned_puskesmas_name
 				: 'Alamat belum tersedia';
+		}
+		if ($gejala_utama !== '' && stripos($keluhan, 'Gejala/Keluhan utama:') === false) {
+			$keluhan = $this->build_request_description($gejala_utama, $keluhan);
+		}
+		if (empty($keluhan)) {
+			$keluhan = $this->build_request_description($gejala_utama, '');
 		}
 		if (empty($keluhan)) {
 			log_message('error', 'Konsultasi warga gagal: keluhan kosong. user_id=' . $id_user . ' puskesmas_code=' . $assigned_puskesmas_code);
@@ -307,6 +315,32 @@ class Konsultasi extends MX_Controller
 	private function is_valid_latitude($value)
 	{
 		return is_numeric($value) && (float) $value >= -90 && (float) $value <= 90;
+	}
+
+	private function sanitize_gejala_keluhan_choice($value)
+	{
+		$value = trim(strip_tags((string) $value));
+		$value = preg_replace('/\s+/u', ' ', $value);
+		if (function_exists('mb_substr')) {
+			return mb_substr($value, 0, 120, 'UTF-8');
+		}
+
+		return substr($value, 0, 120);
+	}
+
+	private function build_request_description($gejala_utama, $detail_keluhan)
+	{
+		$parts = array('Anamnesa');
+		$gejala_utama = $this->sanitize_gejala_keluhan_choice($gejala_utama);
+		$detail_keluhan = trim(strip_tags((string) $detail_keluhan));
+		if ($gejala_utama !== '') {
+			$parts[] = 'Gejala/Keluhan utama: ' . $gejala_utama;
+		}
+		if ($detail_keluhan !== '') {
+			$parts[] = 'Detail keluhan: ' . $detail_keluhan;
+		}
+
+		return count($parts) > 1 ? implode("\n", $parts) : '';
 	}
 
 	private function is_valid_longitude($value)
