@@ -38,7 +38,7 @@
 											</div>
 											<?php if ($show_address || $show_mode_label || $show_distance_label) : ?>
 												<div class="nk-detail-panel nk-card-section">
-													<div class="nk-detail-panel__title">Detail kunjungan</div>
+													<div class="nk-detail-panel__title">Detail request</div>
 													<div class="nk-detail-panel__body">
 														<?php if ($show_address) : ?>
 															<div class="nk-detail-row"><span class="nk-detail-label">Alamat</span><strong class="nk-detail-value"><?= doclinc_history_safe_text($x->location); ?></strong></div>
@@ -68,18 +68,6 @@
 											<?php if (!empty($x->video)) : ?>
 												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#videoModal_<?= html_escape((int) $x->user_id); ?>">Lihat Video</button>
 											<?php endif; ?>
-											<div class="nk-action-panel nk-action-panel--visit-confirm nk-visit-confirm-block nk-card-section">
-												<div class="nk-action-panel__title">Konfirmasi kunjungan?</div>
-												<div class="nk-action-panel__body">
-													<div class="dl-nakes-visit-toggle">
-														<i class="far fa-question-circle fa-fw"></i> Konfirmasikan kunjungan unit:
-													</div>
-													<div class="form-check form-switch mb-0">
-														<label class="form-check-label" for="kunjung" id="labelKunjung">Tidak</label>
-														<input class="form-check-input" type="checkbox" role="switch" id="kunjung" name="kunjung">
-													</div>
-												</div>
-											</div>
 										</div>
 										<div class="card-footer">
 											<div class="dl-nakes-actions">

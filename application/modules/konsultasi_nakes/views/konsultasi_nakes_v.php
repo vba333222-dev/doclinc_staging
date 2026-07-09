@@ -347,6 +347,63 @@ if (!function_exists('formatComplaintText')) {
 			color: var(--doclinc-green);
 		}
 
+		.service-decision-card {
+			border-color: rgba(9, 173, 116, 0.22);
+		}
+
+		.service-decision-helper {
+			margin: 0 0 14px;
+			color: var(--doclinc-muted);
+			font-size: 13px;
+			line-height: 1.5;
+		}
+
+		.service-decision-options {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px;
+		}
+
+		.service-decision-option {
+			min-height: 74px;
+			padding: 12px;
+			border: 1px solid var(--doclinc-border);
+			border-radius: 14px;
+			background: #fff;
+			color: var(--doclinc-text);
+			text-align: left;
+			transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+		}
+
+		.service-decision-option strong,
+		.service-decision-option span {
+			display: block;
+		}
+
+		.service-decision-option strong {
+			font-size: 14px;
+			font-weight: 800;
+		}
+
+		.service-decision-option span {
+			margin-top: 4px;
+			color: var(--doclinc-muted);
+			font-size: 12px;
+			line-height: 1.35;
+		}
+
+		.service-decision-option.is-selected {
+			border-color: var(--doclinc-green);
+			background: #F0FBF6;
+			box-shadow: 0 10px 24px rgba(9, 173, 116, 0.12);
+		}
+
+		.service-decision-state {
+			margin: 12px 0 0;
+			color: var(--doclinc-muted);
+			font-size: 12px;
+		}
+
 		.primary-action {
 			background: var(--doclinc-green);
 			color: #fff;
@@ -663,6 +720,10 @@ if (!function_exists('formatComplaintText')) {
 				flex: 1 1 46%;
 				min-height: 44px;
 			}
+
+			.service-decision-options {
+				grid-template-columns: 1fr;
+			}
 		}
 	</style>
 </head>
@@ -701,8 +762,8 @@ if (!function_exists('formatComplaintText')) {
 						<span class="summary-value"><?= html_escape($queue_code) ?></span>
 					</div>
 					<div class="summary-item">
-						<span class="summary-label">Kriteria</span>
-						<span class="summary-value"><?= html_escape($kriteria !== '' ? $kriteria : '-') ?></span>
+						<span class="summary-label">Jenis Layanan</span>
+						<span class="summary-value"><?= html_escape($kriteria !== '' ? $kriteria : 'Belum ditentukan') ?></span>
 					</div>
 					<div class="summary-item">
 						<span class="summary-label">Konteks</span>
@@ -718,7 +779,7 @@ if (!function_exists('formatComplaintText')) {
 
 			<section class="consult-card chat-card">
 				<h2 class="section-heading text-white"><i class="bi bi-chat-dots"></i> Chat Konsultasi</h2>
-				<p class="chat-copy">Buka percakapan aktif untuk membaca konteks tambahan dari pasien.</p>
+				<p class="chat-copy">Lakukan komunikasi awal dengan warga sebelum menentukan Visit atau Non-Visit.</p>
 				<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="chat-button">
 					<i class="bi bi-chat-dots-fill"></i> Chat Konsultasi
 				</a>
@@ -728,6 +789,22 @@ if (!function_exists('formatComplaintText')) {
 		<input type="hidden" name="dokterid" id="dokterId" value="<?= html_escape($_SESSION['id']) ?>">
 		<form id="form_konsul_nakes" enctype="multipart/form-data">
 			<input type="hidden" name="request_id" id="idReq" value="<?= html_escape($request_id) ?>">
+			<section class="consult-card service-decision-card">
+				<h2 class="section-heading"><i class="bi bi-signpost-split"></i> Tentukan Jenis Layanan</h2>
+				<p class="service-decision-helper">Pilih setelah komunikasi awal dengan warga selesai dilakukan.</p>
+				<div class="service-decision-options" role="group" aria-label="Tentukan jenis layanan">
+					<button type="button" class="service-decision-option" data-kriteria="Kunjungan Nakes" data-label="Visit / Kunjungan">
+						<strong>Visit / Kunjungan</strong>
+						<span>Nakes melakukan kunjungan langsung ke lokasi warga.</span>
+					</button>
+					<button type="button" class="service-decision-option" data-kriteria="Selesai Konsultasi" data-label="Non-Visit / Konsultasi Jarak Jauh">
+						<strong>Non-Visit / Konsultasi Jarak Jauh</strong>
+						<span>Konsultasi diselesaikan jarak jauh setelah asesmen awal.</span>
+					</button>
+				</div>
+				<p class="service-decision-state">Pilihan: <strong id="selectedServiceLabel"><?= html_escape($kriteria !== '' ? $kriteria : 'Belum ditentukan'); ?></strong></p>
+				<input type="hidden" id="kriteria" name="kriteria" value="<?= html_escape($kriteria) ?>">
+			</section>
 			<section class="consult-card">
 				<h2 class="section-heading"><i class="bi bi-clipboard-check"></i> Selesaikan Konsultasi</h2>
 				<div class="form-floating mb-3">
@@ -844,23 +921,19 @@ if (!function_exists('formatComplaintText')) {
 					<label for="ui_saran_utama"><i class="bi bi-chat-dots"></i> Rekomendasi / Saran Utama*</label>
 				</div>
 				<textarea id="saran" name="saran" class="backend-field" aria-hidden="true"></textarea>
-				<div class="form-floating mb-3">
-					<input type="text" id="kriteria" name="kriteria" class="form-control" value="<?= html_escape($kriteria) ?>" readonly>
-					<label for="kriteria"><i class="bi bi-clipboard-check"></i> Kriteria*</label>
-				</div>
 				<div class="form-floating mb-2">
 					<input type="text" class="form-control" id="rujukan" name="rujukan" placeholder="Rujukan">
 					<label for="rujukan"><i class="bi bi-arrow-right-circle"></i> Rujukan</label>
 				</div>
 				<p class="optional-note">Opsional jika pasien tidak memerlukan rujukan.</p>
-				<?php if ($kriteria === 'Kunjungan Nakes') : ?>
+				<div id="visitDocumentationField" class="<?= $kriteria === 'Kunjungan Nakes' ? '' : 'd-none'; ?>">
 					<div class="form-floating mb-2">
 						<input type="file" class="form-control" id="file" name="file" accept="image/*">
 						<label for="file"><i class="bi bi-camera"></i> Foto Kunjungan</label>
 						<img id="preview-image" src="#" alt="Preview Foto" style="display:none;" class="img-thumbnail" />
 					</div>
 					<p class="optional-note">Opsional sesuai kebutuhan dokumentasi kunjungan.</p>
-				<?php endif; ?>
+				</div>
 				<button type="button" class="primary-action shadow-sm" id="save_konsul_nakes">
 					<i class="bi bi-check2-circle"></i> Selesaikan Konsultasi
 				</button>
@@ -1117,6 +1190,33 @@ if (!function_exists('formatComplaintText')) {
 		$(function() {
 			hydrateMobileTerapiRowsFromTable();
 			renderMobileTerapiList();
+
+			const initialKriteria = $('#kriteria').val().trim();
+			if (initialKriteria) {
+				const initialButton = $('.service-decision-option[data-kriteria="' + initialKriteria + '"]');
+				if (initialButton.length) {
+					setServiceDecision(initialKriteria, initialButton.data('label'));
+				}
+			}
+		});
+
+		function setServiceDecision(kriteria, label) {
+			$('#kriteria').val(kriteria);
+			$('#selectedServiceLabel').text(label || kriteria || 'Belum ditentukan');
+			$('.service-decision-option').removeClass('is-selected');
+			$('.service-decision-option[data-kriteria="' + kriteria + '"]').addClass('is-selected');
+
+			if (kriteria === 'Kunjungan Nakes') {
+				$('#visitDocumentationField').removeClass('d-none');
+			} else {
+				$('#visitDocumentationField').addClass('d-none');
+				$('#file').val('');
+				$('#preview-image').hide().attr('src', '#');
+			}
+		}
+
+		$('.service-decision-option').on('click', function() {
+			setServiceDecision($(this).data('kriteria'), $(this).data('label'));
 		});
 
 		$('#save_konsul_nakes').click(function() {
@@ -1130,7 +1230,7 @@ if (!function_exists('formatComplaintText')) {
 			const kriteria = $('#kriteria').val().trim();
 
 			if (!idReq || !diagnosa || !saranUtama || !saran || !kriteria) {
-				Swal.fire("Gagal!", "Data tidak lengkap", "error");
+				Swal.fire("Gagal!", "Lengkapi data dan pilih jenis layanan terlebih dahulu.", "error");
 				return;
 			}
 

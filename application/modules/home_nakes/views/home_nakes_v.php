@@ -563,7 +563,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 									$(acceptButton).prop('disabled', false).removeClass('disabled');
 									return;
 								}
-								const redirectUrl = response && response.redirect_url ? response.redirect_url : `<?= base_url('konsultasi_nakes/konsultasi/'); ?>${reqId}?kriteria=1`;
+								const redirectUrl = response && response.redirect_url ? response.redirect_url : `<?= base_url('konsultasi_nakes/konsultasi/'); ?>${reqId}`;
 
 								const runLegacyAcceptNotification = function() {
 									try {
@@ -2032,14 +2032,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		}
 
 		document.addEventListener('DOMContentLoaded', startDatabaseNotificationPolling);
-	</script>
-
-	<!-- switch -->
-	<script>
-		document.getElementById("kunjung").addEventListener("change", function() {
-			let label = document.getElementById("labelKunjung");
-			label.textContent = this.checked ? "Iya" : "Tidak";
-		});
 	</script>
 
 	<!-- tampil request dari pasien melalui firebase -->

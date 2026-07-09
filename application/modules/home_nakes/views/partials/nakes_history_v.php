@@ -313,7 +313,7 @@ $history_event_time = static function ($event) {
 											</div>
 										</div>
 										<div class="card-footer dl-history-actions">
-											<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id) . '?kriteria=1'); ?>" class="btn btn-success shadow-sm rounded-pill dl-history-primary-action">
+											<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id)); ?>" class="btn btn-success shadow-sm rounded-pill dl-history-primary-action">
 												<i class="fas fa-notes-medical me-2"></i> Lanjutkan Tugas
 											</a>
 											<div class="dl-history-secondary-actions">

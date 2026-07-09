@@ -25,7 +25,6 @@ class Konsultasi_nakes extends MX_Controller
 	public function konsultasi()
 	{
 		$x['request_id'] = $this->uri->segment(3);
-		$kriteria = $this->input->get('kriteria', TRUE);
 		$doctor_id = $this->session->userdata('id');
 		$data_request = $this->Konsultasi_nakes_m->get_data_request($x['request_id'], $doctor_id);
 		$request = $data_request->row();
@@ -42,11 +41,6 @@ class Konsultasi_nakes extends MX_Controller
 		$x['tgl_lahir'] = !empty($request->tgl) ? $request->tgl : null;
 		$x['umur'] = '-';
 		$x['kriteria'] = '';
-		if ((string) $kriteria === '0') {
-			$x['kriteria'] = 'Selesai Konsultasi';
-		} elseif ((string) $kriteria === '1') {
-			$x['kriteria'] = 'Kunjungan Nakes';
-		}
 
 		if (!empty($x['tgl_lahir'])) {
 			try {

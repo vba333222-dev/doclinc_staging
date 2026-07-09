@@ -388,7 +388,7 @@ class Home_nakes extends MX_Controller
 				'message' => $result['message'],
 				'request_id' => $id,
 				'request_status' => 'Accepted',
-				'redirect_url' => base_url('konsultasi_nakes/konsultasi/' . $id) . '?kriteria=1'
+				'redirect_url' => base_url('konsultasi_nakes/konsultasi/' . $id)
 			]));
 			return;
 		}
