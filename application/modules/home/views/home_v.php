@@ -1248,25 +1248,27 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						<?php if (!empty($getAllDataRequests)) : ?>
 							<?php foreach ($getAllDataRequests as $dlCurrentRequest) :
 								$dl_current_status = !empty($dlCurrentRequest->request_status) ? $dlCurrentRequest->request_status : '-';
-								$dl_status_label = $dl_current_status === 'Accepted' ? 'Diterima' : ($dl_current_status === 'Pending' ? 'Menunggu' : $dl_current_status);
 								$dl_current_date = !empty($dlCurrentRequest->date) ? date('d-m-Y', strtotime($dlCurrentRequest->date)) : '-';
 								$dl_current_keluhan = !empty($dlCurrentRequest->request_description) ? $dlCurrentRequest->request_description : 'Keluhan tersimpan';
 								$dl_puskesmas_label = doclinc_request_puskesmas_label($dlCurrentRequest);
 								$dl_queue_number_label = doclinc_request_queue_number_label($dlCurrentRequest);
 								$dl_visit_status = isset($dlCurrentRequest->warga_visit_status) ? $dlCurrentRequest->warga_visit_status : (isset($dlCurrentRequest->visit_status) ? doclinc_normalize_visit_status($dlCurrentRequest->visit_status) : 'not_started');
 								$dl_visit_label = isset($dlCurrentRequest->warga_visit_status_label) ? $dlCurrentRequest->warga_visit_status_label : ($dl_visit_status !== '' ? doclinc_visit_status_label($dl_visit_status) : 'Menunggu proses layanan');
+								$dl_status_label = isset($dlCurrentRequest->warga_top_status_label) ? $dlCurrentRequest->warga_top_status_label : ($dl_current_status === 'Pending' ? 'Menunggu diterima Puskesmas' : $dl_visit_label);
 								$dl_visit_updated = !empty($dlCurrentRequest->warga_visit_updated_at) && strtotime($dlCurrentRequest->warga_visit_updated_at) ? date('d M Y H:i', strtotime($dlCurrentRequest->warga_visit_updated_at)) : '';
 								$dl_visit_timeline = isset($dlCurrentRequest->warga_visit_timeline) ? $dlCurrentRequest->warga_visit_timeline : array();
+								$dl_pic_label = !empty($dlCurrentRequest->assigned_pic_label) ? $dlCurrentRequest->assigned_pic_label : 'PIC layanan belum ditentukan';
 							?>
 								<div class="dl-card p-3" data-request-id="<?= (int) $dlCurrentRequest->request_id; ?>">
 									<div class="d-flex justify-content-between align-items-start gap-3 mb-3">
 										<div>
 											<div class="d-flex align-items-center gap-2 mb-1">
 												<strong><?= html_escape($dl_puskesmas_label); ?></strong>
-												<span class="dl-badge px-2 py-1"><?= html_escape($dl_status_label); ?></span>
+												<span class="dl-badge px-2 py-1" data-warga-top-status="<?= html_escape((int) $dlCurrentRequest->request_id); ?>"><?= html_escape($dl_status_label); ?></span>
 											</div>
 											<div class="history-meta fw-bold"><?= html_escape($dl_queue_number_label); ?></div>
 											<div class="history-meta"><i class="far fa-calendar-alt me-1"></i><?= html_escape($dl_current_date); ?></div>
+											<div class="history-meta" data-warga-pic-label="<?= html_escape((int) $dlCurrentRequest->request_id); ?>"><?= html_escape($dl_pic_label); ?></div>
 										</div>
 										<div class="icon-wrapper">
 											<i class="fas fa-clipboard-list"></i>
@@ -1511,21 +1513,17 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$visit_status = isset($data->visit_status) ? doclinc_normalize_visit_status($data->visit_status) : '';
 								$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
 								$visit_label = isset($data->warga_visit_status_label) ? $data->warga_visit_status_label : doclinc_visit_status_label($visit_status);
+								$top_status_label = isset($data->warga_top_status_label) ? $data->warga_top_status_label : ($request_status === 'Pending' ? 'Menunggu diterima Puskesmas' : $visit_label);
 								$visit_updated = !empty($data->warga_visit_updated_at) && strtotime($data->warga_visit_updated_at) ? date('d M Y H:i', strtotime($data->warga_visit_updated_at)) : '';
 								$visit_timeline = isset($data->warga_visit_timeline) ? $data->warga_visit_timeline : array();
 								$consultation_mode = isset($data->consultation_mode) ? trim((string) $data->consultation_mode) : '';
 								$mode_label = doclinc_consultation_mode_label($consultation_mode);
 								$handling_nakes_name = doclinc_request_handling_nakes_name($data);
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
+								$pic_label = !empty($data->assigned_pic_label) ? $data->assigned_pic_label : 'PIC layanan belum ditentukan';
 
 								// jadikan tanggal di atas formatnya jadi 11 November 2024
 								$tanggal = date('d F Y', strtotime($tanggal));
-
-								if ($status == 'Pending') {
-									$status = 'Menunggu Konfirmasi';
-								} elseif ($status == 'Accepted') {
-									$status = 'Nakes Menuju Lokasi';
-								}
 							?>
 
 								<!-- Popup HTML -->
@@ -1540,7 +1538,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											<p class="mb-0 fw-bold"><?= html_escape($puskesmas_label); ?></p>
 											<p class="mb-0 history-meta"><?= html_escape($queue_number_label); ?> · <?= html_escape($tanggal); ?></p>
 										</div>
-										<span class="badge text-bg-warning ms-auto"><?= html_escape($status); ?></span>
+										<span class="badge text-bg-warning ms-auto" data-warga-top-status="<?= html_escape((int) $id_request); ?>"><?= html_escape($top_status_label); ?></span>
 									</div>
 									<div class="card-body">
 										<div class="mb-2">
@@ -1550,6 +1548,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											<?php endif; ?>
 										</div>
 										<div class="history-meta mb-2"><?= html_escape($handling_nakes_label); ?></div>
+										<div class="history-meta mb-2" data-warga-pic-label="<?= html_escape((int) $id_request); ?>"><?= html_escape($pic_label); ?></div>
 										<div class="history-section mb-3">
 											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan</div>
 											<?= doclinc_warga_complaint_summary($keluhan); ?>
@@ -2072,18 +2071,34 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}
 
 			function setVisitSummary(requestId, response) {
-				const labelElement = document.querySelector('[data-visit-summary-label="' + requestId + '"]');
-				const metaElement = document.querySelector('[data-visit-summary-meta="' + requestId + '"]');
+				const labelElements = document.querySelectorAll('[data-visit-summary-label="' + requestId + '"]');
+				const metaElements = document.querySelectorAll('[data-visit-summary-meta="' + requestId + '"]');
+				const topStatusElements = document.querySelectorAll('[data-warga-top-status="' + requestId + '"]');
+				const picElements = document.querySelectorAll('[data-warga-pic-label="' + requestId + '"]');
 				const label = response && (response.warga_visit_status_label || response.visit_status_label) ? (response.warga_visit_status_label || response.visit_status_label) : '';
-				if (labelElement && label) {
-					labelElement.textContent = label;
-				}
-				if (metaElement) {
+				const topLabel = response && response.warga_top_status_label ? response.warga_top_status_label : label;
+				const picLabel = response && response.assigned_pic_label ? response.assigned_pic_label : '';
+				labelElements.forEach(function(element) {
+					if (label) {
+						element.textContent = label;
+					}
+				});
+				topStatusElements.forEach(function(element) {
+					if (topLabel) {
+						element.textContent = topLabel;
+					}
+				});
+				picElements.forEach(function(element) {
+					if (picLabel) {
+						element.textContent = picLabel;
+					}
+				});
+				metaElements.forEach(function(element) {
 					const updatedAt = response && response.nakes && response.nakes.updated_at ? response.nakes.updated_at : '';
 					if (updatedAt) {
-						metaElement.textContent = 'Diperbarui ' + updatedAt;
+						element.textContent = 'Diperbarui ' + updatedAt;
 					}
-				}
+				});
 			}
 
 			function setVisitRouteSummary(requestId, response) {
