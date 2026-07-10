@@ -2,6 +2,8 @@
 $filters = isset($filters) && is_array($filters) ? $filters : array();
 $staff_rows = isset($staff_rows) && is_array($staff_rows) ? $staff_rows : array();
 $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ? $puskesmas_options : array();
+$account_candidates_by_staff = isset($account_candidates_by_staff) && is_array($account_candidates_by_staff) ? $account_candidates_by_staff : array();
+$command_center_user_ids = isset($command_center_user_ids) && is_array($command_center_user_ids) ? $command_center_user_ids : array();
 $form_mode = isset($form_mode) ? (string) $form_mode : '';
 $form_staff = isset($form_staff) ? $form_staff : null;
 $is_form = in_array($form_mode, array('create', 'edit'), true);
@@ -36,7 +38,7 @@ $form_values = array(
 	<?php else: ?>
 		<div class="doclinc-staff-note shadow-sm">
 			<i class="fas fa-info-circle"></i>
-			<span>Data staff digunakan sebagai personel/PIC layanan. Ini tidak otomatis membuat akun login.</span>
+			<span>Data staff digunakan sebagai personel/PIC layanan. Ini tidak otomatis membuat akun login. Staff dapat dihubungkan ke akun login personal Nakes/Dokter. Akun Puskesmas tetap digunakan sebagai koordinator layanan.</span>
 		</div>
 		<?php if ($is_form): ?>
 			<div class="card shadow mb-4 doclinc-filter-card">
@@ -146,6 +148,7 @@ $form_values = array(
 				</form>
 
 				<div class="table-responsive">
+					<?php $bind_modals = ''; ?>
 					<table class="table table-bordered doclinc-staff-table" id="tbl_staff_puskesmas" width="100%" cellspacing="0">
 						<thead>
 							<tr class="bg-info text-black">
@@ -162,7 +165,13 @@ $form_values = array(
 							<?php if (!empty($staff_rows)): ?>
 								<?php foreach ($staff_rows as $row): ?>
 									<?php
-									$akun_label = 'Tidak ada akun terkait';
+									$staff_id = (int) ($row->staff_id ?? 0);
+									$linked_user_id = (int) ($row->user_id ?? 0);
+									$kode_pkm = (string) ($row->kode_pkm ?? '');
+									$command_center_user_id = isset($command_center_user_ids[$kode_pkm]) ? (int) $command_center_user_ids[$kode_pkm] : 0;
+									$is_command_center_link = $linked_user_id > 0 && $command_center_user_id > 0 && $linked_user_id === $command_center_user_id;
+									$candidates = isset($account_candidates_by_staff[$staff_id]) && is_array($account_candidates_by_staff[$staff_id]) ? $account_candidates_by_staff[$staff_id] : array();
+									$akun_label = 'Belum terhubung akun login';
 									if (!empty($row->akun_nama) || !empty($row->akun_username) || !empty($row->akun_email)) {
 										$akun_label = trim((string) ($row->akun_nama ?: $row->akun_username ?: $row->akun_email));
 									}
@@ -186,12 +195,21 @@ $form_values = array(
 											<?= html_escape($row->no_hp ?: '-'); ?>
 										</td>
 										<td>
-											<div><?= html_escape($akun_label); ?></div>
-											<?php if (!empty($row->akun_username) && $akun_label !== $row->akun_username): ?>
-												<div class="small text-muted"><?= html_escape($row->akun_username); ?></div>
-											<?php endif; ?>
-											<?php if (!empty($row->akun_email)): ?>
-												<div class="small text-muted"><?= html_escape($row->akun_email); ?></div>
+											<?php if ($linked_user_id > 0): ?>
+												<div class="font-weight-bold">Akun login: <?= html_escape($akun_label); ?></div>
+												<?php if (!empty($row->akun_username) && $akun_label !== $row->akun_username): ?>
+													<div class="small text-muted"><?= html_escape($row->akun_username); ?></div>
+												<?php endif; ?>
+												<?php if (!empty($row->akun_email)): ?>
+													<div class="small text-muted"><?= html_escape($row->akun_email); ?></div>
+												<?php endif; ?>
+												<span class="doclinc-staff-chip doclinc-staff-chip-active mt-2">Terhubung</span>
+												<?php if ($is_command_center_link): ?>
+													<div class="small text-warning mt-2">Akun ini terlihat sebagai akun koordinator Puskesmas. Periksa ulang sebelum digunakan sebagai akun personal.</div>
+												<?php endif; ?>
+											<?php else: ?>
+												<div class="text-muted">Belum terhubung akun login</div>
+												<span class="doclinc-staff-chip doclinc-staff-chip-inactive mt-2">Belum terhubung</span>
 											<?php endif; ?>
 										</td>
 										<td>
@@ -217,13 +235,81 @@ $form_values = array(
 														</button>
 													</form>
 												<?php endif; ?>
+												<?php if ($linked_user_id > 0): ?>
+													<form action="<?= site_url('kelola_staff_puskesmas/unbind_account'); ?>" method="post">
+														<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
+														<button type="submit" class="btn btn-outline-warning btn-sm rounded-pill" onclick="return confirm('Lepas akun login dari staff ini? Akun tidak akan dihapus.');">
+															<i class="fas fa-unlink"></i> Lepas Akun
+														</button>
+													</form>
+												<?php else: ?>
+													<button type="button" class="btn btn-outline-primary btn-sm rounded-pill" data-toggle="modal" data-target="#modalBindAccount<?= (int) $staff_id; ?>">
+														<i class="fas fa-link"></i> Hubungkan Akun
+													</button>
+												<?php endif; ?>
 											</div>
 										</td>
 									</tr>
+									<?php if ($linked_user_id < 1): ?>
+										<?php ob_start(); ?>
+										<div class="modal fade" id="modalBindAccount<?= (int) $staff_id; ?>" tabindex="-1" role="dialog" aria-labelledby="modalBindAccountLabel<?= (int) $staff_id; ?>" aria-hidden="true">
+											<div class="modal-dialog" role="document">
+												<div class="modal-content">
+													<form action="<?= site_url('kelola_staff_puskesmas/bind_account'); ?>" method="post">
+														<div class="modal-header">
+															<h5 class="modal-title" id="modalBindAccountLabel<?= (int) $staff_id; ?>">Hubungkan Akun Login Personal</h5>
+															<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+																<span aria-hidden="true">&times;</span>
+															</button>
+														</div>
+														<div class="modal-body">
+															<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
+															<div class="mb-3">
+																<div class="font-weight-bold"><?= html_escape($row->nama ?? '-'); ?></div>
+																<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? 'Puskesmas tidak ditemukan'); ?></div>
+															</div>
+															<?php if (empty($candidates)): ?>
+																<div class="doclinc-staff-account-empty">Belum ada akun personal yang dapat dihubungkan untuk Puskesmas ini.</div>
+															<?php else: ?>
+																<div class="form-group">
+																	<label class="text-info">Akun login personal</label>
+																	<select class="form-control rounded-pill border-info" name="user_id" required>
+																		<option value="">Pilih akun login</option>
+																		<?php foreach ($candidates as $candidate): ?>
+																			<?php
+																			$candidate_label = trim((string) ($candidate->nama ?: $candidate->username ?: $candidate->email));
+																			$candidate_meta = array();
+																			if (!empty($candidate->username)) {
+																				$candidate_meta[] = $candidate->username;
+																			}
+																			if (!empty($candidate->email)) {
+																				$candidate_meta[] = $candidate->email;
+																			}
+																			?>
+																			<option value="<?= (int) $candidate->userId; ?>">
+																				<?= html_escape($candidate_label); ?><?= !empty($candidate_meta) ? ' &middot; ' . html_escape(implode(' / ', $candidate_meta)) : ''; ?>
+																			</option>
+																		<?php endforeach; ?>
+																	</select>
+																	<small class="form-text text-muted">Pilihan hanya menampilkan akun dokter aktif dari Puskesmas yang sama, bukan akun koordinator.</small>
+																</div>
+															<?php endif; ?>
+														</div>
+														<div class="modal-footer">
+															<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
+															<button type="submit" class="btn btn-primary rounded-pill" <?= empty($candidates) ? 'disabled' : ''; ?>>Hubungkan Akun</button>
+														</div>
+													</form>
+												</div>
+											</div>
+										</div>
+										<?php $bind_modals .= ob_get_clean(); ?>
+									<?php endif; ?>
 								<?php endforeach; ?>
 							<?php endif; ?>
 						</tbody>
 					</table>
+					<?= $bind_modals; ?>
 				</div>
 			</div>
 		</div>

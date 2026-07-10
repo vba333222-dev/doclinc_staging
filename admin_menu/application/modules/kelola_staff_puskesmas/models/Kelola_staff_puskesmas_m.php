@@ -43,9 +43,12 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 
 		if ($has_users) {
 			$this->db->select('staff_user.nama AS akun_nama, staff_user.username AS akun_username, staff_user.email AS akun_email');
+			$this->db->select($this->db->field_exists('status', 'users') ? 'staff_user.status AS akun_status' : 'NULL AS akun_status', false);
+			$this->db->select($this->db->field_exists('role', 'users') ? 'staff_user.role AS akun_role' : 'NULL AS akun_role', false);
+			$this->db->select($this->db->field_exists('remark', 'users') ? 'staff_user.remark AS akun_remark' : 'NULL AS akun_remark', false);
 			$this->db->join('users staff_user', 'staff_user.userId = puskesmas_staff.user_id', 'left');
 		} else {
-			$this->db->select('NULL AS akun_nama, NULL AS akun_username, NULL AS akun_email', FALSE);
+			$this->db->select('NULL AS akun_nama, NULL AS akun_username, NULL AS akun_email, NULL AS akun_status, NULL AS akun_role, NULL AS akun_remark', FALSE);
 		}
 
 		$kode_pkm = isset($filters['kode_pkm']) ? trim((string) $filters['kode_pkm']) : '';
@@ -195,6 +198,184 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		}
 
 		return $this->db->count_all_results('m_puskesmas') > 0;
+	}
+
+	public function get_command_center_user_id($kode_pkm)
+	{
+		$kode_pkm = trim((string) $kode_pkm);
+		if ($kode_pkm === '' || !$this->db->table_exists('users') || !$this->db->field_exists('remark', 'users')) {
+			return 0;
+		}
+
+		$this->db
+			->select('userId')
+			->from('users')
+			->where('role', 'dokter')
+			->where('TRIM(remark) =', $kode_pkm);
+		if ($this->db->field_exists('status', 'users')) {
+			$this->db->where('status', 'aktif');
+		}
+
+		$user = $this->db
+			->order_by('userId', 'ASC')
+			->limit(1)
+			->get()
+			->row();
+
+		return $user ? (int) $user->userId : 0;
+	}
+
+	public function get_eligible_account_candidates($kode_pkm, $staff_id = null)
+	{
+		$kode_pkm = trim((string) $kode_pkm);
+		if ($kode_pkm === '' || !$this->table_ready() || !$this->db->table_exists('users') || !$this->db->field_exists('remark', 'users')) {
+			return array();
+		}
+
+		$staff_id = (int) $staff_id;
+		$command_center_user_id = $this->get_command_center_user_id($kode_pkm);
+		$linked_user_ids = $this->get_linked_active_user_ids($staff_id);
+		$has_user_status = $this->db->field_exists('status', 'users');
+
+		$this->db
+			->select('userId, nama, username, email, remark')
+			->from('users')
+			->where('role', 'dokter')
+			->where('TRIM(remark) =', $kode_pkm);
+		if ($has_user_status) {
+			$this->db->select('status');
+			$this->db->where('status', 'aktif');
+		} else {
+			$this->db->select('NULL AS status', false);
+		}
+		if ($command_center_user_id > 0) {
+			$this->db->where('userId !=', $command_center_user_id);
+		}
+		if (!empty($linked_user_ids)) {
+			$this->db->where_not_in('userId', $linked_user_ids);
+		}
+
+		return $this->db
+			->order_by('nama', 'ASC')
+			->order_by('username', 'ASC')
+			->get()
+			->result();
+	}
+
+	public function bind_staff_account($staff_id, $user_id)
+	{
+		$staff_id = (int) $staff_id;
+		$user_id = (int) $user_id;
+		if ($staff_id < 1 || $user_id < 1 || !$this->table_ready()) {
+			return array('status' => 'error', 'message' => 'Data staff atau akun login tidak valid.');
+		}
+
+		$staff = $this->get_by_id($staff_id);
+		$user = $this->get_dokter_account_by_id($user_id);
+		if (!$staff || !$user) {
+			return array('status' => 'error', 'message' => 'Staff atau akun login tidak ditemukan.');
+		}
+
+		$kode_pkm = trim((string) $staff->kode_pkm);
+		$user_remark = trim((string) ($user->remark ?? ''));
+		if ($kode_pkm === '' || $user_remark !== $kode_pkm) {
+			return array('status' => 'error', 'message' => 'Akun login harus berasal dari Puskesmas yang sama.');
+		}
+		if (isset($user->status) && $user->status !== 'aktif') {
+			return array('status' => 'error', 'message' => 'Akun login harus dalam status aktif.');
+		}
+		if ($this->get_command_center_user_id($kode_pkm) === $user_id) {
+			return array('status' => 'error', 'message' => 'Akun koordinator Puskesmas tidak dapat dihubungkan sebagai akun personal staff.');
+		}
+		if ($this->account_linked_to_other_active_staff($user_id, $staff_id)) {
+			return array('status' => 'error', 'message' => 'Akun login sudah terhubung ke staff aktif lain.');
+		}
+
+		$updated = $this->db
+			->where('staff_id', $staff_id)
+			->update('puskesmas_staff', array('user_id' => $user_id));
+
+		return $updated
+			? array('status' => 'success', 'message' => 'Akun login personal berhasil dihubungkan.')
+			: array('status' => 'error', 'message' => 'Akun login belum dapat dihubungkan.');
+	}
+
+	public function unbind_staff_account($staff_id)
+	{
+		$staff_id = (int) $staff_id;
+		if ($staff_id < 1 || !$this->table_ready()) {
+			return array('status' => 'error', 'message' => 'Data staff tidak valid.');
+		}
+		if (!$this->get_by_id($staff_id)) {
+			return array('status' => 'error', 'message' => 'Staff tidak ditemukan.');
+		}
+
+		$updated = $this->db
+			->where('staff_id', $staff_id)
+			->update('puskesmas_staff', array('user_id' => null));
+
+		return $updated
+			? array('status' => 'success', 'message' => 'Akun login berhasil dilepas dari staff. Akun tidak dihapus.')
+			: array('status' => 'error', 'message' => 'Akun login belum dapat dilepas.');
+	}
+
+	public function get_dokter_account_by_id($user_id)
+	{
+		$user_id = (int) $user_id;
+		if ($user_id < 1 || !$this->db->table_exists('users')) {
+			return null;
+		}
+
+		$this->db
+			->where('userId', $user_id)
+			->where('role', 'dokter');
+
+		return $this->db->get('users')->row();
+	}
+
+	public function account_linked_to_other_active_staff($user_id, $staff_id)
+	{
+		$user_id = (int) $user_id;
+		$staff_id = (int) $staff_id;
+		if ($user_id < 1 || !$this->table_ready()) {
+			return false;
+		}
+
+		$this->db
+			->where('user_id', $user_id)
+			->where('staff_id !=', $staff_id)
+			->where('status', 'aktif');
+
+		return $this->db->count_all_results('puskesmas_staff') > 0;
+	}
+
+	private function get_linked_active_user_ids($exclude_staff_id = null)
+	{
+		if (!$this->table_ready()) {
+			return array();
+		}
+
+		$exclude_staff_id = (int) $exclude_staff_id;
+		$this->db
+			->select('user_id')
+			->from('puskesmas_staff')
+			->where('user_id IS NOT NULL', null, false)
+			->where('user_id !=', 0)
+			->where('status', 'aktif');
+		if ($exclude_staff_id > 0) {
+			$this->db->where('staff_id !=', $exclude_staff_id);
+		}
+
+		$rows = $this->db->get()->result();
+		$user_ids = array();
+		foreach ($rows as $row) {
+			$user_id = (int) ($row->user_id ?? 0);
+			if ($user_id > 0) {
+				$user_ids[] = $user_id;
+			}
+		}
+
+		return array_values(array_unique($user_ids));
 	}
 
 	private function filter_staff_payload($data)
