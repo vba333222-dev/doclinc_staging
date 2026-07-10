@@ -1,11 +1,9 @@
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
-	<div>
-		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-hospital"></i> Master Puskesmas</h1>
-		<div class="text-white-50 doclinc-page-subtitle">Kelola data Puskesmas aktif yang digunakan untuk routing dan koordinasi layanan Doclinc.</div>
+<div class="doclinc-admin-page doclinc-akun-page">
+	<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
+		<h1 class="doclinc-page-title mb-0"><i class="fas fa-fw fa-hospital"></i> Master Puskesmas</h1>
 	</div>
-</div>
 
-<div class="container-fluid">
+	<div class="container-fluid">
 	<?php if ($this->session->flashdata('success')): ?>
 		<div class="alert alert-success shadow-sm"><?= html_escape($this->session->flashdata('success')); ?></div>
 	<?php endif; ?>
@@ -13,21 +11,26 @@
 		<div class="alert alert-danger shadow-sm"><?= html_escape($this->session->flashdata('error')); ?></div>
 	<?php endif; ?>
 
-	<div class="card shadow mb-4 doclinc-table-card">
+	<div class="card shadow mb-4 doclinc-table-card doclinc-account-list-card">
 		<div class="card-header py-3 d-flex align-items-center justify-content-between">
-			<h6 class="m-0 font-weight-bold text-primary">Daftar Puskesmas</h6>
-			<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill" data-toggle="modal" data-target="#modalTambahPuskesmas">
+			<div>
+				<h6 class="m-0 font-weight-bold">Daftar Puskesmas</h6>
+				<div class="doclinc-muted-text mt-1">Kelola data Puskesmas aktif yang digunakan untuk routing dan koordinasi layanan Doclinc.</div>
+			</div>
+			<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill doclinc-action-btn doclinc-action-primary" data-toggle="modal" data-target="#modalTambahPuskesmas">
 				<i class="fas fa-plus-circle mr-1"></i> Tambah Puskesmas
 			</button>
 		</div>
-		<div class="card-body">
+		<div class="card-body doclinc-table-body">
 			<?php if ($puskesmas && $puskesmas->num_rows() > 0): ?>
-				<div class="doclinc-admin-card-toolbar">
-					<label for="puskesmasCardSearch">Cari Puskesmas</label>
-					<input type="search" id="puskesmasCardSearch" class="form-control doclinc-account-search" placeholder="Nama, kode, alamat, atau status">
+				<div class="doclinc-account-toolbar">
+					<div class="doclinc-account-toolbar__field">
+						<label for="puskesmasCardSearch">Cari Puskesmas</label>
+						<input type="search" id="puskesmasCardSearch" class="form-control doclinc-account-search" placeholder="Nama, kode, alamat, atau status">
+					</div>
 				</div>
 				<?php $edit_modals = ''; ?>
-				<div class="doclinc-admin-card-grid">
+				<div class="doclinc-account-list">
 					<?php foreach ($puskesmas->result() as $row): ?>
 								<?php
 								$is_default = strtoupper((string) ($row->kode_pkm ?? '')) === 'DEFAULT';
@@ -36,33 +39,39 @@
 								$display_name = $is_default ? 'Legacy / Belum terklasifikasi' : ($row->nama_puskesmas ?? '-');
 								$search_text = implode(' ', array($display_name, $row->kode_pkm ?? '', $row->alamat ?? '', $row->latitude ?? '', $row->longitude ?? '', $status_label));
 								?>
-							<article class="doclinc-admin-card" data-puskesmas-search="<?= html_escape($search_text); ?>">
-								<div class="doclinc-admin-card__head">
+							<div class="doclinc-account-card" data-puskesmas-search="<?= html_escape($search_text); ?>">
+								<div class="doclinc-account-card__header">
 									<div>
-										<h3 class="doclinc-admin-card__title"><?= html_escape($display_name); ?></h3>
-										<div class="doclinc-admin-card__role">Kode: <?= html_escape($row->kode_pkm ?? '-'); ?></div>
+										<div class="doclinc-account-card__title"><?= html_escape($display_name); ?></div>
 									</div>
-									<span class="doclinc-admin-badge <?= $status === 'aktif' && !$is_default ? 'is-active' : ($is_default ? 'is-warning' : 'is-inactive'); ?>">
+									<span class="doclinc-account-card__status <?= $status === 'aktif' && !$is_default ? 'is-active' : ($is_default ? 'is-warning' : 'is-inactive'); ?>">
 										<?= html_escape($status_label); ?>
 									</span>
 								</div>
 
-								<div class="doclinc-admin-card__body">
-									<div class="doclinc-admin-card__meta doclinc-admin-card__meta--wide">
+								<div class="doclinc-account-card__body">
+									<div class="doclinc-account-card__meta">
+										<span>Kode Puskesmas</span>
+										<strong><span class="doclinc-code-chip"><?= html_escape($row->kode_pkm ?? '-'); ?></span></strong>
+									</div>
+									<div class="doclinc-account-card__meta">
 										<span>Alamat</span>
-										<strong><?= html_escape($row->alamat ?: '-'); ?></strong>
+										<strong><?= html_escape($row->alamat ?: 'Alamat belum tersedia'); ?></strong>
 									</div>
-									<div class="doclinc-admin-card__meta">
-										<span>Latitude</span>
-										<strong><?= html_escape($row->latitude ?: '-'); ?></strong>
-									</div>
-									<div class="doclinc-admin-card__meta">
-										<span>Longitude</span>
-										<strong><?= html_escape($row->longitude ?: '-'); ?></strong>
+									<div class="doclinc-account-grid">
+										<div class="doclinc-account-field">
+											<span>Latitude</span>
+											<strong><?= html_escape($row->latitude ?: 'Koordinat belum tersedia'); ?></strong>
+										</div>
+										<div class="doclinc-account-field">
+											<span>Longitude</span>
+											<strong><?= html_escape($row->longitude ?: 'Koordinat belum tersedia'); ?></strong>
+										</div>
 									</div>
 								</div>
 
-								<div class="doclinc-admin-card__actions">
+								<div class="doclinc-account-card__footer">
+									<div class="doclinc-account-card__actions">
 									<button type="button" class="btn doclinc-action-btn doclinc-action-btn--primary" data-toggle="modal" data-target="#editPuskesmas<?= html_escape($row->kode_pkm); ?>">
 										<i class="fas fa-edit"></i> Edit
 									</button>
@@ -85,8 +94,9 @@
 											</button>
 										</form>
 									<?php endif; ?>
+									</div>
 								</div>
-							</article>
+							</div>
 
 							<?php ob_start(); ?>
 							<div class="modal fade" id="editPuskesmas<?= html_escape($row->kode_pkm); ?>" tabindex="-1" role="dialog" aria-hidden="true">
@@ -150,11 +160,12 @@
 					<?php endforeach; ?>
 				</div>
 				<?= $edit_modals; ?>
-				<div class="doclinc-admin-empty d-none" id="puskesmasCardSearchEmpty">Belum ada data Puskesmas.</div>
+				<div class="doclinc-account-empty d-none" id="puskesmasCardSearchEmpty">Belum ada data Puskesmas.</div>
 			<?php else: ?>
-				<div class="doclinc-admin-empty">Belum ada data Puskesmas.</div>
+				<div class="doclinc-account-empty">Belum ada data Puskesmas.</div>
 			<?php endif; ?>
 		</div>
+	</div>
 	</div>
 </div>
 
