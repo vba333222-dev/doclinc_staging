@@ -104,6 +104,59 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$this->set_status($staff_id, 'nonaktif');
 	}
 
+	public function bind_account()
+	{
+		if (!$this->require_post()) {
+			return;
+		}
+		if (!$this->Kelola_staff_puskesmas_m->table_ready()) {
+			$this->session->set_flashdata('error', 'Tabel personel Puskesmas belum tersedia.');
+			redirect('kelola_staff_puskesmas', 'refresh');
+			return;
+		}
+
+		$staff_id = (int) $this->input->post('staff_id');
+		$user_id = (int) $this->input->post('user_id');
+		if ($staff_id < 1 || $user_id < 1) {
+			$this->session->set_flashdata('error', 'Data staff atau akun login tidak valid.');
+			redirect('kelola_staff_puskesmas', 'refresh');
+			return;
+		}
+
+		$result = $this->Kelola_staff_puskesmas_m->bind_staff_account($staff_id, $user_id);
+		$this->session->set_flashdata(
+			!empty($result['status']) && $result['status'] === 'success' ? 'success' : 'error',
+			!empty($result['message']) ? $result['message'] : 'Akun login belum dapat dihubungkan.'
+		);
+		redirect('kelola_staff_puskesmas', 'refresh');
+	}
+
+	public function unbind_account()
+	{
+		if (!$this->require_post()) {
+			return;
+		}
+		if (!$this->Kelola_staff_puskesmas_m->table_ready()) {
+			$this->session->set_flashdata('error', 'Tabel personel Puskesmas belum tersedia.');
+			redirect('kelola_staff_puskesmas', 'refresh');
+			return;
+		}
+
+		$staff_id = (int) $this->input->post('staff_id');
+		if ($staff_id < 1) {
+			$this->session->set_flashdata('error', 'Data staff tidak valid.');
+			redirect('kelola_staff_puskesmas', 'refresh');
+			return;
+		}
+
+		$result = $this->Kelola_staff_puskesmas_m->unbind_staff_account($staff_id);
+		$this->session->set_flashdata(
+			!empty($result['status']) && $result['status'] === 'success' ? 'success' : 'error',
+			!empty($result['message']) ? $result['message'] : 'Akun login belum dapat dilepas.'
+		);
+		redirect('kelola_staff_puskesmas', 'refresh');
+	}
+
 	private function render_page($form_mode = '', $staff_id = null)
 	{
 		$this->session->set_flashdata('title', 'Staff Puskesmas');
@@ -121,12 +174,24 @@ class Kelola_staff_puskesmas extends MX_Controller
 			'filters' => $filters,
 			'staff_rows' => array(),
 			'puskesmas_options' => $this->Kelola_staff_puskesmas_m->get_active_puskesmas_options(),
+			'account_candidates_by_staff' => array(),
+			'command_center_user_ids' => array(),
 			'form_mode' => $form_mode,
 			'form_staff' => null,
 		);
 
 		if ($data['table_ready']) {
 			$data['staff_rows'] = $this->Kelola_staff_puskesmas_m->get_all($filters);
+			foreach ($data['staff_rows'] as $staff_row) {
+				$current_staff_id = (int) ($staff_row->staff_id ?? 0);
+				$kode_pkm = trim((string) ($staff_row->kode_pkm ?? ''));
+				if ($current_staff_id > 0) {
+					$data['account_candidates_by_staff'][$current_staff_id] = $this->Kelola_staff_puskesmas_m->get_eligible_account_candidates($kode_pkm, $current_staff_id);
+				}
+				if ($kode_pkm !== '' && !array_key_exists($kode_pkm, $data['command_center_user_ids'])) {
+					$data['command_center_user_ids'][$kode_pkm] = $this->Kelola_staff_puskesmas_m->get_command_center_user_id($kode_pkm);
+				}
+			}
 			if ($form_mode === 'edit') {
 				$data['form_staff'] = $this->Kelola_staff_puskesmas_m->get_by_id((int) $staff_id);
 				if (!$data['form_staff']) {

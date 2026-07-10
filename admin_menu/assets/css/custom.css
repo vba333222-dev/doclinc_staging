@@ -1124,6 +1124,15 @@ footer.sticky-footer {
     color: var(--doclinc-muted);
 }
 
+.doclinc-staff-account-empty {
+    background: var(--doclinc-table-head);
+    border: 1px dashed var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-muted);
+    font-size: 0.86rem;
+    padding: 0.9rem;
+}
+
 .doclinc-action-stack {
     align-items: center;
     display: flex;
