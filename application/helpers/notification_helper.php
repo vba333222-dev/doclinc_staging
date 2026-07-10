@@ -9,6 +9,99 @@ if (!function_exists('doclinc_notifications_ready')) {
 	}
 }
 
+if (!function_exists('doclinc_notification_user_context')) {
+	function doclinc_notification_user_context($user_id)
+	{
+		static $context_cache = array();
+		$user_id = (int) $user_id;
+		if (array_key_exists($user_id, $context_cache)) {
+			return $context_cache[$user_id];
+		}
+		$CI = &get_instance();
+		$user = $user_id > 0 ? $CI->db
+			->select('userId, role')
+			->where('userId', $user_id)
+			->limit(1)
+			->get('users')
+			->row() : null;
+		if (!$user) {
+			$context_cache[$user_id] = array('role' => '', 'identity' => null);
+			return $context_cache[$user_id];
+		}
+
+		$identity = null;
+		if ((string) $user->role === 'dokter') {
+			$CI->load->helper('request_authz');
+			$identity = doclinc_dokter_identity_context($user_id);
+		}
+		$context_cache[$user_id] = array('role' => (string) $user->role, 'identity' => $identity);
+		return $context_cache[$user_id];
+	}
+}
+
+if (!function_exists('doclinc_apply_notification_visibility')) {
+	function doclinc_apply_notification_visibility($db, $user_context, $notification_alias = 'notifications')
+	{
+		if (!is_array($user_context) || !isset($user_context['role']) || $user_context['role'] !== 'dokter') {
+			return;
+		}
+
+		$identity = isset($user_context['identity']) && is_array($user_context['identity'])
+			? $user_context['identity']
+			: array();
+		$non_operational = "({$notification_alias}.entity_type <> 'request' AND ({$notification_alias}.recipient_puskesmas_code IS NULL OR TRIM({$notification_alias}.recipient_puskesmas_code) = ''))";
+		if (empty($identity['valid'])) {
+			$db->where($non_operational, null, false);
+			return;
+		}
+
+		$user_id = (int) $identity['user_id'];
+		$puskesmas_code = trim((string) $identity['puskesmas_code']);
+		$request_tenant = '(TRIM(notification_request.assigned_puskesmas_code) = ' . $db->escape($puskesmas_code) . ')';
+		if ($identity['account_type'] === 'command_center') {
+			$legacy_tenant = "((notification_request.assigned_puskesmas_code IS NULL OR TRIM(notification_request.assigned_puskesmas_code) = '') AND notification_request.dokter_id = {$user_id})";
+			$request_visibility = "({$notification_alias}.entity_type = 'request' AND ({$request_tenant} OR {$legacy_tenant}))";
+			$puskesmas_broadcast = "({$notification_alias}.entity_type <> 'request' AND TRIM({$notification_alias}.recipient_puskesmas_code) = " . $db->escape($puskesmas_code) . ')';
+			$db->where("({$non_operational} OR {$request_visibility} OR {$puskesmas_broadcast})", null, false);
+			return;
+		}
+
+		if ($identity['account_type'] !== 'personal' || empty($identity['staff_id'])) {
+			$db->where($non_operational, null, false);
+			return;
+		}
+
+		$staff_id = (int) $identity['staff_id'];
+		$direct_assignment = $db->field_exists('assigned_nakes_user_id', 'requests')
+			? 'COALESCE(notification_request.assigned_nakes_user_id, 0)'
+			: '0';
+		$legacy_owners = array();
+		if ($db->field_exists('accepted_by_user_id', 'requests')) {
+			$legacy_owners[] = "notification_request.accepted_by_user_id = {$user_id}";
+		}
+		if ($db->field_exists('dokter_id', 'requests')) {
+			$legacy_owners[] = "notification_request.dokter_id = {$user_id}";
+		}
+		$legacy_owner = !empty($legacy_owners) ? '(' . implode(' OR ', $legacy_owners) . ')' : '0 = 1';
+
+		$active_count = '0';
+		$matching_count = '0';
+		if ($db->table_exists('request_staff_assignments') && $db->table_exists('puskesmas_staff')) {
+			$assignment_table = $db->dbprefix('request_staff_assignments');
+			$staff_table = $db->dbprefix('puskesmas_staff');
+			$active_count = "(SELECT COUNT(*) FROM {$assignment_table} notification_rsa WHERE notification_rsa.request_id = notification_request.request_id AND notification_rsa.status = 'aktif')";
+			$matching_count = "(SELECT COUNT(*) FROM {$assignment_table} notification_match INNER JOIN {$staff_table} notification_staff ON notification_staff.staff_id = notification_match.staff_id WHERE notification_match.request_id = notification_request.request_id AND notification_match.status = 'aktif' AND notification_match.staff_id = {$staff_id} AND notification_staff.user_id = {$user_id} AND notification_staff.status = 'aktif' AND TRIM(notification_staff.kode_pkm) = " . $db->escape($puskesmas_code) . ')';
+		}
+
+		$explicit_agreement = "({$active_count} = 0 OR ({$active_count} = 1 AND {$matching_count} = 1))";
+		$staff_assignment = "({$active_count} = 1 AND {$matching_count} = 1)";
+		$legacy_fallback = "({$active_count} = 0 AND {$legacy_owner})";
+		$personal_owner = "(({$direct_assignment} = {$user_id} AND {$explicit_agreement}) OR ({$direct_assignment} = 0 AND ({$staff_assignment} OR {$legacy_fallback})))";
+		$request_visibility = "({$notification_alias}.entity_type = 'request' AND {$request_tenant} AND {$personal_owner})";
+		$db->where("({$non_operational} OR {$request_visibility})", null, false);
+	}
+}
+
 if (!function_exists('doclinc_create_notification')) {
 	function doclinc_create_notification($payload)
 	{
@@ -73,6 +166,13 @@ if (!function_exists('doclinc_notify_user')) {
 		if (!$user) {
 			return false;
 		}
+		if ((string) $user->role === 'dokter' && (string) $entity_type === 'request') {
+			$CI->load->helper('request_authz');
+			$identity = doclinc_dokter_identity_context($recipient_user_id);
+			if (!doclinc_can_view_request_notification((int) $entity_id, $identity)) {
+				return false;
+			}
+		}
 
 		return doclinc_create_notification(array(
 			'recipient_user_id' => $recipient_user_id,
@@ -101,26 +201,35 @@ if (!function_exists('doclinc_notify_puskesmas')) {
 
 		$CI = &get_instance();
 		if (!$CI->db->field_exists('remark', 'users')) {
-			log_message('error', 'Puskesmas notification skipped: users.remark is missing');
 			return 0;
 		}
 
-		$users = $CI->db
+		$user = $CI->db
 			->select('userId, role')
 			->where('role', 'dokter')
 			->where('status', 'aktif')
 			->where('TRIM(remark) = ' . $CI->db->escape($puskesmas_code), null, false)
+			->order_by('userId', 'ASC')
+			->limit(1)
 			->get('users')
-			->result();
+			->row();
 
-		if (empty($users)) {
-			log_message('error', 'Puskesmas notification skipped: no active nakes user for code ' . $puskesmas_code);
+		if (!$user) {
+			return 0;
+		}
+		$CI->load->helper('request_authz');
+		$identity = doclinc_dokter_identity_context((int) $user->userId);
+		if (empty($identity['valid'])
+			|| $identity['account_type'] !== 'command_center'
+			|| trim((string) $identity['puskesmas_code']) !== $puskesmas_code) {
+			return 0;
+		}
+		if ((string) $entity_type === 'request'
+			&& !doclinc_can_view_request_notification((int) $entity_id, $identity)) {
 			return 0;
 		}
 
-		$count = 0;
-		foreach ($users as $user) {
-			$created = doclinc_create_notification(array(
+		$created = doclinc_create_notification(array(
 				'recipient_user_id' => $user->userId,
 				'recipient_role' => $user->role,
 				'recipient_puskesmas_code' => $puskesmas_code,
@@ -131,12 +240,8 @@ if (!function_exists('doclinc_notify_puskesmas')) {
 				'title' => $title,
 				'message' => $message,
 			));
-			if ($created) {
-				$count++;
-			}
-		}
 
-		return $count;
+		return $created ? 1 : 0;
 	}
 }
 
@@ -154,12 +259,18 @@ if (!function_exists('doclinc_get_unread_notifications')) {
 		}
 
 		$CI = &get_instance();
-		return $CI->db
-			->where('recipient_user_id', $user_id)
+		$user_context = doclinc_notification_user_context($user_id);
+		$CI->db
+			->select('notifications.*')
+			->from('notifications')
+			->join('requests notification_request', "notifications.entity_type = 'request' AND notification_request.request_id = CAST(notifications.entity_id AS UNSIGNED)", 'left', false)
+			->where('notifications.recipient_user_id', $user_id)
 			->where('is_read', 0)
-			->order_by('created_at', 'DESC')
-			->limit($limit)
-			->get('notifications')
+			->order_by('notifications.created_at', 'DESC')
+			->limit($limit);
+		doclinc_apply_notification_visibility($CI->db, $user_context);
+		return $CI->db
+			->get()
 			->result_array();
 	}
 }
@@ -177,10 +288,14 @@ if (!function_exists('doclinc_count_unread_notifications')) {
 		}
 
 		$CI = &get_instance();
-		return (int) $CI->db
-			->where('recipient_user_id', $user_id)
-			->where('is_read', 0)
-			->count_all_results('notifications');
+		$user_context = doclinc_notification_user_context($user_id);
+		$CI->db
+			->from('notifications')
+			->join('requests notification_request', "notifications.entity_type = 'request' AND notification_request.request_id = CAST(notifications.entity_id AS UNSIGNED)", 'left', false)
+			->where('notifications.recipient_user_id', $user_id)
+			->where('notifications.is_read', 0);
+		doclinc_apply_notification_visibility($CI->db, $user_context);
+		return (int) $CI->db->count_all_results();
 	}
 }
 
@@ -198,11 +313,16 @@ if (!function_exists('doclinc_mark_notification_read')) {
 		}
 
 		$CI = &get_instance();
+		$user_context = doclinc_notification_user_context($user_id);
+		$CI->db
+			->select('notifications.notification_id, notifications.is_read')
+			->from('notifications')
+			->join('requests notification_request', "notifications.entity_type = 'request' AND notification_request.request_id = CAST(notifications.entity_id AS UNSIGNED)", 'left', false)
+			->where('notifications.notification_id', $notification_id)
+			->where('notifications.recipient_user_id', $user_id);
+		doclinc_apply_notification_visibility($CI->db, $user_context);
 		$notification = $CI->db
-			->select('notification_id, is_read')
-			->where('notification_id', $notification_id)
-			->where('recipient_user_id', $user_id)
-			->get('notifications')
+			->get()
 			->row();
 		if (!$notification) {
 			return false;
