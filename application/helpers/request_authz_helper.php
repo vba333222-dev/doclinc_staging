@@ -636,6 +636,44 @@ if (!function_exists('doclinc_can_view_request_notification')) {
 	}
 }
 
+if (!function_exists('doclinc_can_coordinate_request')) {
+	function doclinc_can_coordinate_request($request, $identity_context = null)
+	{
+		if (is_numeric($request)) {
+			$request = doclinc_request_row((int) $request);
+		}
+		if (!$request || !isset($request->request_id)) {
+			return false;
+		}
+
+		if ($identity_context === null) {
+			$identity_context = doclinc_dokter_identity_context();
+		}
+		if (!is_array($identity_context)
+			|| empty($identity_context['valid'])
+			|| $identity_context['account_type'] !== 'command_center') {
+			return false;
+		}
+
+		$user_id = isset($identity_context['user_id']) ? (int) $identity_context['user_id'] : 0;
+		$puskesmas_code = isset($identity_context['puskesmas_code'])
+			? doclinc_normalize_puskesmas_code($identity_context['puskesmas_code'])
+			: '';
+		if ($user_id < 1 || $puskesmas_code === '') {
+			return false;
+		}
+
+		$request_code = isset($request->assigned_puskesmas_code)
+			? trim((string) $request->assigned_puskesmas_code)
+			: '';
+		if ($request_code !== '') {
+			return strtoupper($request_code) !== 'DEFAULT' && $request_code === $puskesmas_code;
+		}
+
+		return isset($request->dokter_id) && (string) $request->dokter_id === (string) $user_id;
+	}
+}
+
 if (!function_exists('doclinc_can_view_request')) {
 	function doclinc_can_view_request($request_id, $user_id = null, $role = null)
 	{
