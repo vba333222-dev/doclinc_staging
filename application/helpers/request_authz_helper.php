@@ -40,6 +40,250 @@ if (!function_exists('doclinc_normalize_puskesmas_code')) {
 	}
 }
 
+if (!function_exists('doclinc_dokter_identity_context')) {
+	function doclinc_dokter_identity_context($user_id = null)
+	{
+		static $context_cache = array();
+
+		if ($user_id === null) {
+			$user_id = doclinc_current_user_id();
+		}
+		$user_id = (int) $user_id;
+		$cache_key = (string) $user_id;
+		if (array_key_exists($cache_key, $context_cache)) {
+			return $context_cache[$cache_key];
+		}
+
+		$context = array(
+			'valid' => false,
+			'account_type' => 'unclassified',
+			'user_id' => $user_id > 0 ? $user_id : 0,
+			'role' => null,
+			'user_status' => null,
+			'remark' => null,
+			'puskesmas_code' => null,
+			'puskesmas_name' => null,
+			'puskesmas_status' => null,
+			'staff_id' => null,
+			'staff_status' => null,
+			'staff_profesi' => null,
+			'is_command_center' => false,
+			'is_personal' => false,
+			'errors' => array(),
+		);
+
+		if ($user_id < 1) {
+			$context['errors'][] = 'user_missing';
+			$context_cache[$cache_key] = $context;
+			return $context;
+		}
+
+		$CI = &get_instance();
+		$db = $CI->load->database('default', true);
+		$db_debug = $db->db_debug;
+		$db->db_debug = false;
+		$finish = function ($result) use (&$context_cache, $cache_key, $db, $db_debug) {
+			$db->db_debug = $db_debug;
+			$context_cache[$cache_key] = $result;
+			return $result;
+		};
+
+		if (!$db->table_exists('users')) {
+			$context['errors'][] = 'user_missing';
+			return $finish($context);
+		}
+		foreach (array('userId', 'role', 'status', 'remark') as $field) {
+			if (!$db->field_exists($field, 'users')) {
+				$context['errors'][] = 'user_schema_invalid';
+				return $finish($context);
+			}
+		}
+
+		$user_query = $db
+			->select('userId, role, status, remark')
+			->where('userId', $user_id)
+			->limit(1)
+			->get('users');
+		if (!$user_query) {
+			$context['errors'][] = 'user_lookup_failed';
+			return $finish($context);
+		}
+
+		$user = $user_query->row();
+		if (!$user) {
+			$context['errors'][] = 'user_missing';
+			return $finish($context);
+		}
+
+		$context['role'] = isset($user->role) ? (string) $user->role : null;
+		$context['user_status'] = isset($user->status) ? (string) $user->status : null;
+		$context['remark'] = isset($user->remark) ? trim((string) $user->remark) : null;
+		if ($context['role'] !== 'dokter') {
+			$context['errors'][] = 'role_invalid';
+			return $finish($context);
+		}
+		if ($context['user_status'] !== 'aktif') {
+			$context['errors'][] = 'user_inactive';
+			return $finish($context);
+		}
+
+		$puskesmas_code = doclinc_normalize_puskesmas_code($context['remark']);
+		if ($puskesmas_code === '') {
+			$context['errors'][] = 'remark_invalid';
+			return $finish($context);
+		}
+		$context['puskesmas_code'] = $puskesmas_code;
+
+		if (!$db->table_exists('m_puskesmas') || !$db->field_exists('kode_pkm', 'm_puskesmas')) {
+			$context['errors'][] = 'puskesmas_invalid';
+			return $finish($context);
+		}
+
+		$puskesmas_select = array('kode_pkm');
+		if ($db->field_exists('nama_puskesmas', 'm_puskesmas')) {
+			$puskesmas_select[] = 'nama_puskesmas';
+		}
+		if ($db->field_exists('status', 'm_puskesmas')) {
+			$puskesmas_select[] = 'status';
+		}
+		$puskesmas_query = $db
+			->select(implode(', ', $puskesmas_select))
+			->where('kode_pkm', $puskesmas_code)
+			->limit(1)
+			->get('m_puskesmas');
+		if (!$puskesmas_query) {
+			$context['errors'][] = 'puskesmas_invalid';
+			return $finish($context);
+		}
+
+		$puskesmas = $puskesmas_query->row();
+		if (!$puskesmas) {
+			$context['errors'][] = 'puskesmas_invalid';
+			return $finish($context);
+		}
+		$context['puskesmas_name'] = isset($puskesmas->nama_puskesmas) ? (string) $puskesmas->nama_puskesmas : null;
+		$context['puskesmas_status'] = isset($puskesmas->status) ? (string) $puskesmas->status : null;
+		if ($db->field_exists('status', 'm_puskesmas') && $context['puskesmas_status'] !== 'aktif') {
+			$context['errors'][] = 'puskesmas_invalid';
+			return $finish($context);
+		}
+
+		$command_center_query = $db
+			->select('userId')
+			->where('role', 'dokter')
+			->where('status', 'aktif')
+			->where('TRIM(remark) = ' . $db->escape($puskesmas_code), null, false)
+			->order_by('userId', 'ASC')
+			->limit(1)
+			->get('users');
+		if (!$command_center_query) {
+			$context['errors'][] = 'command_center_lookup_failed';
+			return $finish($context);
+		}
+		$command_center = $command_center_query->row();
+		$is_canonical_command_center = $command_center
+			&& (string) $command_center->userId === (string) $user_id;
+
+		if (!$db->table_exists('puskesmas_staff')) {
+			$context['errors'][] = 'staff_schema_invalid';
+			return $finish($context);
+		}
+		foreach (array('staff_id', 'user_id', 'kode_pkm', 'status') as $field) {
+			if (!$db->field_exists($field, 'puskesmas_staff')) {
+				$context['errors'][] = 'staff_schema_invalid';
+				return $finish($context);
+			}
+		}
+
+		$staff_select = array('staff_id', 'user_id', 'kode_pkm', 'status');
+		if ($db->field_exists('profesi', 'puskesmas_staff')) {
+			$staff_select[] = 'profesi';
+		}
+		$staff_query = $db
+			->select(implode(', ', $staff_select))
+			->where('user_id', $user_id)
+			->order_by('staff_id', 'ASC')
+			->get('puskesmas_staff');
+		if (!$staff_query) {
+			$context['errors'][] = 'staff_lookup_failed';
+			return $finish($context);
+		}
+
+		$staff_rows = $staff_query->result();
+		$staff_count = count($staff_rows);
+		if ($is_canonical_command_center) {
+			if ($staff_count > 0) {
+				$context['errors'][] = 'command_center_linked_to_staff';
+				if ($staff_count > 1) {
+					$context['errors'][] = 'multiple_staff_links';
+				}
+				return $finish($context);
+			}
+
+			$context['valid'] = true;
+			$context['account_type'] = 'command_center';
+			$context['is_command_center'] = true;
+			return $finish($context);
+		}
+
+		if ($staff_count < 1) {
+			$context['errors'][] = 'personal_staff_missing';
+			return $finish($context);
+		}
+		if ($staff_count > 1) {
+			$context['errors'][] = 'multiple_staff_links';
+			return $finish($context);
+		}
+
+		$staff = $staff_rows[0];
+		$context['staff_id'] = isset($staff->staff_id) ? (int) $staff->staff_id : null;
+		$context['staff_status'] = isset($staff->status) ? (string) $staff->status : null;
+		$context['staff_profesi'] = isset($staff->profesi) ? (string) $staff->profesi : null;
+		if ($context['staff_status'] !== 'aktif') {
+			$context['errors'][] = 'personal_staff_inactive';
+			return $finish($context);
+		}
+
+		$staff_puskesmas_code = isset($staff->kode_pkm)
+			? doclinc_normalize_puskesmas_code($staff->kode_pkm)
+			: '';
+		if ($staff_puskesmas_code === '' || $staff_puskesmas_code !== $puskesmas_code) {
+			$context['errors'][] = 'staff_puskesmas_mismatch';
+			return $finish($context);
+		}
+
+		$context['valid'] = true;
+		$context['account_type'] = 'personal';
+		$context['is_personal'] = true;
+		return $finish($context);
+	}
+}
+
+if (!function_exists('doclinc_is_command_center')) {
+	function doclinc_is_command_center($user_id = null)
+	{
+		$context = doclinc_dokter_identity_context($user_id);
+		return $context['valid'] === true && $context['is_command_center'] === true;
+	}
+}
+
+if (!function_exists('doclinc_is_personal_dokter')) {
+	function doclinc_is_personal_dokter($user_id = null)
+	{
+		$context = doclinc_dokter_identity_context($user_id);
+		return $context['valid'] === true && $context['is_personal'] === true;
+	}
+}
+
+if (!function_exists('doclinc_is_classified_dokter')) {
+	function doclinc_is_classified_dokter($user_id = null)
+	{
+		$context = doclinc_dokter_identity_context($user_id);
+		return $context['valid'] === true
+			&& in_array($context['account_type'], array('command_center', 'personal'), true);
+	}
+}
+
 if (!function_exists('doclinc_request_assigned_puskesmas_code')) {
 	function doclinc_request_assigned_puskesmas_code($request)
 	{
