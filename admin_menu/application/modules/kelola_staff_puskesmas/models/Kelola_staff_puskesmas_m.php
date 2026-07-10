@@ -36,9 +36,10 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 
 		if ($has_puskesmas) {
 			$this->db->select('m_puskesmas.nama_puskesmas');
+			$this->db->select($this->db->field_exists('status', 'm_puskesmas') ? 'm_puskesmas.status AS puskesmas_status' : 'NULL AS puskesmas_status', false);
 			$this->db->join('m_puskesmas', 'm_puskesmas.kode_pkm = puskesmas_staff.kode_pkm', 'left');
 		} else {
-			$this->db->select('NULL AS nama_puskesmas', FALSE);
+			$this->db->select('NULL AS nama_puskesmas, NULL AS puskesmas_status', FALSE);
 		}
 
 		if ($has_users) {
@@ -198,6 +199,133 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		}
 
 		return $this->db->count_all_results('m_puskesmas') > 0;
+	}
+
+	public function personal_account_creation_ready()
+	{
+		if (!$this->table_ready() || !$this->db->table_exists('users') || !$this->db->table_exists('m_puskesmas')) {
+			return false;
+		}
+
+		foreach (array('userId', 'nama', 'email', 'username', 'password', 'role', 'status', 'remark') as $field) {
+			if (!$this->db->field_exists($field, 'users')) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	public function username_exists($username)
+	{
+		return $this->user_value_exists_case_insensitive('username', $username);
+	}
+
+	public function email_exists($email)
+	{
+		return $this->user_value_exists_case_insensitive('email', $email);
+	}
+
+	public function create_and_link_personal_account($staff_id, $account)
+	{
+		$staff_id = (int) $staff_id;
+		$nama = trim((string) ($account['nama'] ?? ''));
+		$username = trim((string) ($account['username'] ?? ''));
+		$email = trim((string) ($account['email'] ?? ''));
+		$password_hash = (string) ($account['password'] ?? '');
+		if ($staff_id < 1 || $nama === '' || $username === '' || $email === '' || $password_hash === '' || !$this->personal_account_creation_ready()) {
+			return array('status' => 'error', 'message' => 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
+		}
+
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		if (!$this->db->trans_begin()) {
+			$this->db->db_debug = $db_debug;
+			return array('status' => 'error', 'message' => 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
+		}
+		$staff_query = $this->db->query(
+			'SELECT * FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE staff_id = ? FOR UPDATE',
+			array($staff_id)
+		);
+		if (!$staff_query) {
+			return $this->rollback_account_creation($db_debug, 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
+		}
+
+		$staff = $staff_query->row();
+		if (!$staff) {
+			return $this->rollback_account_creation($db_debug, 'Staff tidak ditemukan.');
+		}
+		if ((int) ($staff->user_id ?? 0) > 0) {
+			return $this->rollback_account_creation($db_debug, 'Staff sudah terhubung ke akun login.');
+		}
+		if (($staff->status ?? '') !== 'aktif') {
+			return $this->rollback_account_creation($db_debug, 'Staff harus aktif sebelum dibuatkan akun.');
+		}
+		$kode_pkm = trim((string) ($staff->kode_pkm ?? ''));
+		if (!$this->puskesmas_is_active($kode_pkm)) {
+			return $this->rollback_account_creation($db_debug, 'Puskesmas staff tidak valid.');
+		}
+		if ($this->username_exists($username)) {
+			return $this->rollback_account_creation($db_debug, 'Username sudah digunakan.');
+		}
+		if ($this->email_exists($email)) {
+			return $this->rollback_account_creation($db_debug, 'Email sudah digunakan.');
+		}
+
+		$now = date('Y-m-d H:i:s');
+		$user_row = array(
+			'nama' => $nama,
+			'email' => $email,
+			'username' => $username,
+			'password' => $password_hash,
+			'role' => 'dokter',
+			'status' => 'nonaktif',
+			'remark' => $kode_pkm,
+		);
+		if ($this->db->field_exists('created_at', 'users')) {
+			$user_row['created_at'] = $now;
+		}
+		if ($this->db->field_exists('updated_at', 'users')) {
+			$user_row['updated_at'] = $now;
+		}
+		if ($this->db->field_exists('updated_by', 'users')) {
+			$user_row['updated_by'] = trim((string) ($account['updated_by'] ?? ''));
+		}
+		if (!$this->db->insert('users', $user_row)) {
+			return $this->rollback_account_creation($db_debug, 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
+		}
+
+		$user_id = (int) $this->db->insert_id();
+		if ($user_id < 1) {
+			return $this->rollback_account_creation($db_debug, 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
+		}
+
+		$staff_update = array('user_id' => $user_id);
+		if ($this->db->field_exists('updated_at', 'puskesmas_staff')) {
+			$staff_update['updated_at'] = $now;
+		}
+		$admin_id = $this->current_admin_id();
+		if ($admin_id !== null && $this->db->field_exists('updated_by_user_id', 'puskesmas_staff')) {
+			$staff_update['updated_by_user_id'] = $admin_id;
+		}
+		$link_succeeded = $this->db
+			->where('staff_id', $staff_id)
+			->where('user_id IS NULL', null, false)
+			->update('puskesmas_staff', $staff_update);
+		if (!$link_succeeded || $this->db->affected_rows() !== 1 || $this->db->trans_status() === false) {
+			return $this->rollback_account_creation($db_debug, 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
+		}
+
+		if (!$this->db->trans_commit()) {
+			$this->db->trans_rollback();
+			$this->db->db_debug = $db_debug;
+			return array('status' => 'error', 'message' => 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
+		}
+		$this->db->db_debug = $db_debug;
+		return array(
+			'status' => 'success',
+			'message' => 'Akun personal berhasil dibuat dan dihubungkan. Akun masih nonaktif dan belum dapat digunakan untuk login.',
+		);
 	}
 
 	public function get_command_center_user_id($kode_pkm)
@@ -376,6 +504,25 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		}
 
 		return array_values(array_unique($user_ids));
+	}
+
+	private function user_value_exists_case_insensitive($field, $value)
+	{
+		$value = strtolower(trim((string) $value));
+		if ($value === '' || !in_array($field, array('username', 'email'), true) || !$this->db->table_exists('users')) {
+			return false;
+		}
+
+		return $this->db
+			->where('LOWER(TRIM(' . $field . ')) =', $value)
+			->count_all_results('users') > 0;
+	}
+
+	private function rollback_account_creation($db_debug, $message)
+	{
+		$this->db->trans_rollback();
+		$this->db->db_debug = $db_debug;
+		return array('status' => 'error', 'message' => $message);
 	}
 
 	private function filter_staff_payload($data)
