@@ -21,7 +21,7 @@ $form_values = array(
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
 		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-users-cog"></i> Staff Puskesmas</h1>
-		<div class="text-white-50 doclinc-page-subtitle">Kelola personel Puskesmas yang dapat ditetapkan sebagai PIC layanan.</div>
+		<div class="text-white-50 doclinc-page-subtitle">Kelola staff/PIC layanan dan hubungkan akun login personal Nakes/Dokter bila tersedia.</div>
 	</div>
 </div>
 
@@ -147,23 +147,10 @@ $form_values = array(
 					</div>
 				</form>
 
-				<div class="table-responsive">
-					<?php $bind_modals = ''; ?>
-					<table class="table table-bordered doclinc-staff-table" id="tbl_staff_puskesmas" width="100%" cellspacing="0">
-						<thead>
-							<tr class="bg-info text-black">
-								<th>Staff</th>
-								<th>Puskesmas</th>
-								<th>Profesi</th>
-								<th>Kontak</th>
-								<th>Akun terkait</th>
-								<th>Status</th>
-								<th class="text-center">Aksi</th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php if (!empty($staff_rows)): ?>
-								<?php foreach ($staff_rows as $row): ?>
+				<?php $bind_modals = ''; ?>
+				<?php if (!empty($staff_rows)): ?>
+					<div class="doclinc-admin-card-grid">
+						<?php foreach ($staff_rows as $row): ?>
 									<?php
 									$staff_id = (int) ($row->staff_id ?? 0);
 									$linked_user_id = (int) ($row->user_id ?? 0);
@@ -175,62 +162,81 @@ $form_values = array(
 									if (!empty($row->akun_nama) || !empty($row->akun_username) || !empty($row->akun_email)) {
 										$akun_label = trim((string) ($row->akun_nama ?: $row->akun_username ?: $row->akun_email));
 									}
+									$profession_label = trim((string) ($row->profesi ?? ''));
+									if ($profession_label === '') {
+										$profession_label = 'Staff Puskesmas';
+									} else {
+										$profession_labels = array(
+											'dokter' => 'Dokter',
+											'bidan' => 'Bidan',
+											'perawat' => 'Perawat',
+											'staff puskesmas' => 'Staff Puskesmas',
+										);
+										$profession_key = strtolower($profession_label);
+										$profession_label = $profession_labels[$profession_key] ?? $profession_label;
+									}
+									$is_active = ($row->status ?? '') === 'aktif';
 									?>
-									<tr>
-										<td title="<?= html_escape($row->nama ?? '-'); ?>">
-											<div class="font-weight-bold"><?= html_escape($row->nama ?? '-'); ?></div>
-											<div class="small text-muted">Staff Puskesmas</div>
-										</td>
-										<td>
-											<span class="doclinc-staff-chip"><i class="fas fa-clinic-medical"></i> <?= html_escape($row->kode_pkm ?? '-'); ?></span>
-											<div class="small text-muted mt-1"><?= html_escape($row->nama_puskesmas ?? 'Puskesmas tidak ditemukan'); ?></div>
-										</td>
-										<td title="<?= html_escape($row->profesi ?? '-'); ?>">
-											<?= html_escape($row->profesi ?: '-'); ?>
-											<?php if (!empty($row->nomor_sip)): ?>
-												<div class="small text-muted">SIP: <?= html_escape($row->nomor_sip); ?></div>
-											<?php endif; ?>
-										</td>
-										<td>
-											<?= html_escape($row->no_hp ?: '-'); ?>
-										</td>
-										<td>
+									<article class="doclinc-admin-card">
+										<div class="doclinc-admin-card__head">
+											<div>
+												<h3 class="doclinc-admin-card__title"><?= html_escape($row->nama ?? '-'); ?></h3>
+												<div class="doclinc-admin-card__role"><?= html_escape($profession_label); ?></div>
+											</div>
+											<span class="doclinc-admin-badge <?= $is_active ? 'is-active' : 'is-inactive'; ?>">
+												<?= $is_active ? 'Aktif' : 'Nonaktif'; ?>
+											</span>
+										</div>
+
+										<div class="doclinc-admin-card__body">
+											<div class="doclinc-admin-card__meta doclinc-admin-card__meta--wide">
+												<span>Puskesmas</span>
+												<strong><?= html_escape($row->nama_puskesmas ?? 'Puskesmas tidak ditemukan'); ?></strong>
+												<small>Kode: <?= html_escape($row->kode_pkm ?? '-'); ?></small>
+											</div>
+											<div class="doclinc-admin-card__meta">
+												<span>No. Telepon</span>
+												<strong><?= html_escape($row->no_hp ?: '-'); ?></strong>
+											</div>
+											<div class="doclinc-admin-card__meta">
+												<span>Nomor SIP</span>
+												<strong><?= html_escape($row->nomor_sip ?: '-'); ?></strong>
+											</div>
+											<div class="doclinc-admin-card__meta doclinc-admin-card__meta--wide">
+												<span>Akun login personal</span>
 											<?php if ($linked_user_id > 0): ?>
-												<div class="font-weight-bold">Akun login: <?= html_escape($akun_label); ?></div>
+												<strong><?= html_escape($akun_label); ?></strong>
 												<?php if (!empty($row->akun_username) && $akun_label !== $row->akun_username): ?>
-													<div class="small text-muted"><?= html_escape($row->akun_username); ?></div>
+													<small><?= html_escape($row->akun_username); ?></small>
 												<?php endif; ?>
 												<?php if (!empty($row->akun_email)): ?>
-													<div class="small text-muted"><?= html_escape($row->akun_email); ?></div>
+													<small><?= html_escape($row->akun_email); ?></small>
 												<?php endif; ?>
-												<span class="doclinc-staff-chip doclinc-staff-chip-active mt-2">Terhubung</span>
+												<span class="doclinc-admin-badge is-linked mt-2">Terhubung</span>
 												<?php if ($is_command_center_link): ?>
-													<div class="small text-warning mt-2">Akun ini terlihat sebagai akun koordinator Puskesmas. Periksa ulang sebelum digunakan sebagai akun personal.</div>
+													<span class="doclinc-admin-badge is-warning mt-2">Akun command-center</span>
+													<div class="doclinc-admin-card__warning mt-2"><i class="fas fa-exclamation-triangle"></i> Akun ini terlihat sebagai akun koordinator Puskesmas. Periksa ulang sebelum digunakan sebagai akun personal.</div>
 												<?php endif; ?>
 											<?php else: ?>
-												<div class="text-muted">Belum terhubung akun login</div>
-												<span class="doclinc-staff-chip doclinc-staff-chip-inactive mt-2">Belum terhubung</span>
+												<strong class="doclinc-admin-card__muted">Belum terhubung akun login</strong>
+												<span class="doclinc-admin-badge is-unlinked mt-2">Belum terhubung</span>
 											<?php endif; ?>
-										</td>
-										<td>
-											<span class="doclinc-staff-chip <?= ($row->status ?? '') === 'aktif' ? 'doclinc-staff-chip-active' : 'doclinc-staff-chip-inactive'; ?>">
-												<?= ($row->status ?? '') === 'aktif' ? 'Aktif' : 'Nonaktif'; ?>
-											</span>
-										</td>
-										<td class="text-center">
-											<div class="doclinc-action-stack">
-												<a href="<?= site_url('kelola_staff_puskesmas/edit/' . (int) $row->staff_id); ?>" class="btn btn-info btn-sm rounded-pill">
+											</div>
+										</div>
+
+										<div class="doclinc-admin-card__actions">
+												<a href="<?= site_url('kelola_staff_puskesmas/edit/' . (int) $row->staff_id); ?>" class="btn doclinc-action-btn doclinc-action-btn--primary">
 													<i class="fas fa-edit"></i> Edit
 												</a>
 												<?php if (($row->status ?? '') === 'aktif'): ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/deactivate/' . (int) $row->staff_id); ?>" method="post">
-														<button type="submit" class="btn btn-secondary btn-sm rounded-pill" onclick="return confirm('Nonaktifkan staff ini? Data staff, riwayat, dan assignment PIC tidak akan dihapus.');">
+														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan staff ini? Data staff, riwayat, dan assignment PIC tidak akan dihapus.');">
 															<i class="fas fa-ban"></i> Nonaktifkan
 														</button>
 													</form>
 												<?php else: ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/activate/' . (int) $row->staff_id); ?>" method="post">
-														<button type="submit" class="btn btn-success btn-sm rounded-pill" onclick="return confirm('Aktifkan staff ini?');">
+														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan staff ini?');">
 															<i class="fas fa-check"></i> Aktifkan
 														</button>
 													</form>
@@ -238,18 +244,17 @@ $form_values = array(
 												<?php if ($linked_user_id > 0): ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/unbind_account'); ?>" method="post">
 														<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
-														<button type="submit" class="btn btn-outline-warning btn-sm rounded-pill" onclick="return confirm('Lepas akun login dari staff ini? Akun tidak akan dihapus.');">
+														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--warning" onclick="return confirm('Lepas akun login dari staff ini? Akun tidak akan dihapus.');">
 															<i class="fas fa-unlink"></i> Lepas Akun
 														</button>
 													</form>
 												<?php else: ?>
-													<button type="button" class="btn btn-outline-primary btn-sm rounded-pill" data-toggle="modal" data-target="#modalBindAccount<?= (int) $staff_id; ?>">
+													<button type="button" class="btn doclinc-action-btn doclinc-action-btn--secondary" data-toggle="modal" data-target="#modalBindAccount<?= (int) $staff_id; ?>">
 														<i class="fas fa-link"></i> Hubungkan Akun
 													</button>
 												<?php endif; ?>
-											</div>
-										</td>
-									</tr>
+										</div>
+									</article>
 									<?php if ($linked_user_id < 1): ?>
 										<?php ob_start(); ?>
 										<div class="modal fade" id="modalBindAccount<?= (int) $staff_id; ?>" tabindex="-1" role="dialog" aria-labelledby="modalBindAccountLabel<?= (int) $staff_id; ?>" aria-hidden="true">
@@ -305,34 +310,13 @@ $form_values = array(
 										</div>
 										<?php $bind_modals .= ob_get_clean(); ?>
 									<?php endif; ?>
-								<?php endforeach; ?>
-							<?php endif; ?>
-						</tbody>
-					</table>
+						<?php endforeach; ?>
+					</div>
 					<?= $bind_modals; ?>
-				</div>
+				<?php else: ?>
+					<div class="doclinc-admin-empty">Belum ada staff Puskesmas untuk filter ini.</div>
+				<?php endif; ?>
 			</div>
 		</div>
 	<?php endif; ?>
 </div>
-
-<script type="text/javascript">
-	$(document).ready(function() {
-		$('#tbl_staff_puskesmas').DataTable({
-			searching: false,
-			language: {
-				lengthMenu: 'Tampilkan _MENU_ data',
-				search: 'Cari:',
-				emptyTable: 'Belum ada staff Puskesmas sesuai filter.',
-				zeroRecords: 'Tidak ada data sesuai filter',
-				info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
-				infoEmpty: 'Menampilkan 0 data',
-				infoFiltered: '(difilter dari _MAX_ total data)',
-				paginate: {
-					previous: 'Sebelumnya',
-					next: 'Berikutnya'
-				}
-			}
-		});
-	});
-</script>

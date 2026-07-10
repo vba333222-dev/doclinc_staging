@@ -1,7 +1,7 @@
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
 		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-hospital"></i> Master Puskesmas</h1>
-		<div class="text-white-50 doclinc-page-subtitle">Kelola data Puskesmas aktif sebagai unit koordinasi layanan Doclinc.</div>
+		<div class="text-white-50 doclinc-page-subtitle">Kelola data Puskesmas aktif yang digunakan untuk routing dan koordinasi layanan Doclinc.</div>
 	</div>
 </div>
 
@@ -21,64 +21,74 @@
 			</button>
 		</div>
 		<div class="card-body">
-			<div class="table-responsive">
-				<table class="table table-bordered" id="tbl_puskesmas" width="100%" cellspacing="0">
-					<thead>
-						<tr class="bg-info text-black">
-							<th>Kode</th>
-							<th>Nama</th>
-							<th>Alamat</th>
-							<th>Latitude</th>
-							<th>Longitude</th>
-							<th>Status</th>
-							<th class="text-center">Aksi</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php if ($puskesmas && $puskesmas->num_rows() > 0): ?>
-						<?php foreach ($puskesmas->result() as $row): ?>
+			<?php if ($puskesmas && $puskesmas->num_rows() > 0): ?>
+				<div class="doclinc-admin-card-toolbar">
+					<label for="puskesmasCardSearch">Cari Puskesmas</label>
+					<input type="search" id="puskesmasCardSearch" class="form-control doclinc-account-search" placeholder="Nama, kode, alamat, atau status">
+				</div>
+				<?php $edit_modals = ''; ?>
+				<div class="doclinc-admin-card-grid">
+					<?php foreach ($puskesmas->result() as $row): ?>
 								<?php
 								$is_default = strtoupper((string) ($row->kode_pkm ?? '')) === 'DEFAULT';
 								$status = (string) ($row->status ?? '');
 								$status_label = $is_default ? 'Legacy / Fallback' : ($status === 'aktif' ? 'Aktif' : 'Nonaktif');
+								$display_name = $is_default ? 'Legacy / Belum terklasifikasi' : ($row->nama_puskesmas ?? '-');
+								$search_text = implode(' ', array($display_name, $row->kode_pkm ?? '', $row->alamat ?? '', $row->latitude ?? '', $row->longitude ?? '', $status_label));
 								?>
-							<tr>
-								<td><span class="badge badge-<?= $is_default ? 'warning' : 'info'; ?>"><?= html_escape($row->kode_pkm ?? '-'); ?></span></td>
-								<td title="<?= html_escape($row->nama_puskesmas ?? '-'); ?>"><?= html_escape($is_default ? 'Legacy / Belum terklasifikasi' : ($row->nama_puskesmas ?? '-')); ?></td>
-								<td title="<?= html_escape($row->alamat ?? '-'); ?>"><?= html_escape($row->alamat ?? '-'); ?></td>
-								<td><?= html_escape($row->latitude ?: '-'); ?></td>
-								<td><?= html_escape($row->longitude ?: '-'); ?></td>
-								<td>
-									<span class="badge badge-<?= $status === 'aktif' && !$is_default ? 'success' : ($is_default ? 'warning' : 'secondary'); ?>">
+							<article class="doclinc-admin-card" data-puskesmas-search="<?= html_escape($search_text); ?>">
+								<div class="doclinc-admin-card__head">
+									<div>
+										<h3 class="doclinc-admin-card__title"><?= html_escape($display_name); ?></h3>
+										<div class="doclinc-admin-card__role">Kode: <?= html_escape($row->kode_pkm ?? '-'); ?></div>
+									</div>
+									<span class="doclinc-admin-badge <?= $status === 'aktif' && !$is_default ? 'is-active' : ($is_default ? 'is-warning' : 'is-inactive'); ?>">
 										<?= html_escape($status_label); ?>
 									</span>
-								</td>
-								<td class="text-center">
-									<button type="button" class="btn btn-info btn-sm rounded-pill" data-toggle="modal" data-target="#editPuskesmas<?= html_escape($row->kode_pkm); ?>">
+								</div>
+
+								<div class="doclinc-admin-card__body">
+									<div class="doclinc-admin-card__meta doclinc-admin-card__meta--wide">
+										<span>Alamat</span>
+										<strong><?= html_escape($row->alamat ?: '-'); ?></strong>
+									</div>
+									<div class="doclinc-admin-card__meta">
+										<span>Latitude</span>
+										<strong><?= html_escape($row->latitude ?: '-'); ?></strong>
+									</div>
+									<div class="doclinc-admin-card__meta">
+										<span>Longitude</span>
+										<strong><?= html_escape($row->longitude ?: '-'); ?></strong>
+									</div>
+								</div>
+
+								<div class="doclinc-admin-card__actions">
+									<button type="button" class="btn doclinc-action-btn doclinc-action-btn--primary" data-toggle="modal" data-target="#editPuskesmas<?= html_escape($row->kode_pkm); ?>">
 										<i class="fas fa-edit"></i> Edit
 									</button>
 									<?php if (($row->status ?? '') === 'aktif'): ?>
-										<form action="<?= site_url('master_puskesmas/disable') ?>" method="post" class="d-inline">
+										<form action="<?= site_url('master_puskesmas/disable') ?>" method="post">
 											<input type="hidden" name="kode_pkm" value="<?= html_escape($row->kode_pkm ?? ''); ?>">
-											<button type="submit" class="btn btn-secondary btn-sm rounded-pill" onclick="return confirm('Nonaktifkan puskesmas ini?');">
+											<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan puskesmas ini?');">
 												<i class="fas fa-ban"></i> Nonaktifkan
 											</button>
 										</form>
 									<?php elseif ($is_default): ?>
-										<button type="button" class="btn btn-light btn-sm rounded-pill border" disabled>
+										<button type="button" class="btn doclinc-action-btn doclinc-action-btn--secondary" disabled>
 											<i class="fas fa-lock"></i> Legacy
 										</button>
 									<?php else: ?>
-										<form action="<?= site_url('master_puskesmas/enable') ?>" method="post" class="d-inline">
+										<form action="<?= site_url('master_puskesmas/enable') ?>" method="post">
 											<input type="hidden" name="kode_pkm" value="<?= html_escape($row->kode_pkm ?? ''); ?>">
-											<button type="submit" class="btn btn-success btn-sm rounded-pill" onclick="return confirm('Aktifkan puskesmas ini?');">
+											<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan puskesmas ini?');">
 												<i class="fas fa-check"></i> Aktifkan
 											</button>
 										</form>
 									<?php endif; ?>
-								</td>
-							</tr>
+								</div>
+							</article>
 
+							<?php ob_start(); ?>
 							<div class="modal fade" id="editPuskesmas<?= html_escape($row->kode_pkm); ?>" tabindex="-1" role="dialog" aria-hidden="true">
 								<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
 									<div class="modal-content border-0 shadow-sm">
@@ -136,14 +146,47 @@
 									</div>
 								</div>
 							</div>
-						<?php endforeach; ?>
-						<?php endif; ?>
-					</tbody>
-				</table>
-			</div>
+							<?php $edit_modals .= ob_get_clean(); ?>
+					<?php endforeach; ?>
+				</div>
+				<?= $edit_modals; ?>
+				<div class="doclinc-admin-empty d-none" id="puskesmasCardSearchEmpty">Belum ada data Puskesmas.</div>
+			<?php else: ?>
+				<div class="doclinc-admin-empty">Belum ada data Puskesmas.</div>
+			<?php endif; ?>
 		</div>
 	</div>
 </div>
+
+<script type="text/javascript">
+	document.addEventListener('DOMContentLoaded', function() {
+		var searchInput = document.getElementById('puskesmasCardSearch');
+		var emptyState = document.getElementById('puskesmasCardSearchEmpty');
+		var cards = Array.prototype.slice.call(document.querySelectorAll('[data-puskesmas-search]'));
+
+		if (!searchInput || cards.length === 0) {
+			return;
+		}
+
+		searchInput.addEventListener('input', function() {
+			var query = searchInput.value.toLocaleLowerCase().trim();
+			var visibleCount = 0;
+
+			cards.forEach(function(card) {
+				var searchText = (card.getAttribute('data-puskesmas-search') || '').toLocaleLowerCase();
+				var isVisible = query === '' || searchText.indexOf(query) !== -1;
+				card.classList.toggle('d-none', !isVisible);
+				if (isVisible) {
+					visibleCount += 1;
+				}
+			});
+
+			if (emptyState) {
+				emptyState.classList.toggle('d-none', visibleCount > 0);
+			}
+		});
+	});
+</script>
 
 <div class="modal fade" id="modalTambahPuskesmas" tabindex="-1" role="dialog" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
@@ -209,23 +252,3 @@
 		</div>
 	</div>
 </div>
-
-<script type="text/javascript">
-	$(document).ready(function() {
-		$('#tbl_puskesmas').DataTable({
-			language: {
-				lengthMenu: 'Tampilkan _MENU_ data',
-				search: 'Cari:',
-				emptyTable: 'Belum ada data Puskesmas.',
-				zeroRecords: 'Tidak ada data sesuai filter',
-				info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
-				infoEmpty: 'Menampilkan 0 data',
-				infoFiltered: '(difilter dari _MAX_ total data)',
-				paginate: {
-					previous: 'Sebelumnya',
-					next: 'Berikutnya'
-				}
-			}
-		});
-	});
-</script>
