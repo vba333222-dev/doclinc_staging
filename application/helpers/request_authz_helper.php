@@ -674,6 +674,213 @@ if (!function_exists('doclinc_can_coordinate_request')) {
 	}
 }
 
+if (!function_exists('doclinc_nakes_request_access_context')) {
+	function doclinc_nakes_request_access_context($request_or_id, $identity_context = null)
+	{
+		$request_id = is_object($request_or_id) && isset($request_or_id->request_id)
+			? (int) $request_or_id->request_id
+			: (int) $request_or_id;
+		$context = array(
+			'valid' => false,
+			'request_id' => $request_id > 0 ? $request_id : 0,
+			'account_type' => 'unclassified',
+			'tenant_match' => false,
+			'can_view' => false,
+			'can_handle' => false,
+			'request_status' => null,
+			'puskesmas_code' => null,
+			'active_assignment_count' => 0,
+			'active_staff_id' => null,
+			'active_staff_user_id' => null,
+			'ownership_source' => null,
+			'errors' => array(),
+		);
+		if ($request_id < 1) {
+			$context['errors'][] = 'request_missing';
+			return $context;
+		}
+
+		if ($identity_context === null) {
+			$identity_context = doclinc_dokter_identity_context();
+		}
+		if (!is_array($identity_context) || empty($identity_context['valid'])) {
+			$context['errors'][] = 'identity_invalid';
+			return $context;
+		}
+		$context['account_type'] = (string) $identity_context['account_type'];
+		$context['puskesmas_code'] = doclinc_normalize_puskesmas_code($identity_context['puskesmas_code']);
+		$user_id = (int) $identity_context['user_id'];
+		if ($context['puskesmas_code'] === '' || $user_id < 1) {
+			$context['errors'][] = 'identity_invalid';
+			return $context;
+		}
+
+		$CI = &get_instance();
+		$fields = array('request_id', 'request_status', 'assigned_puskesmas_code', 'dokter_id');
+		foreach (array('accepted_by_user_id', 'assigned_nakes_user_id') as $optional_field) {
+			if ($CI->db->field_exists($optional_field, 'requests')) {
+				$fields[] = $optional_field;
+			}
+		}
+		$request = $CI->db
+			->select(implode(', ', $fields))
+			->where('request_id', $request_id)
+			->limit(1)
+			->get('requests')
+			->row();
+		if (!$request) {
+			$context['errors'][] = 'request_missing';
+			return $context;
+		}
+		$context['request_status'] = (string) $request->request_status;
+
+		$request_code = isset($request->assigned_puskesmas_code) ? trim((string) $request->assigned_puskesmas_code) : '';
+		$explicit_tenant_match = $request_code !== ''
+			&& strtoupper($request_code) !== 'DEFAULT'
+			&& $request_code === $context['puskesmas_code'];
+		$legacy_tenant = $request_code === '';
+		if (!$explicit_tenant_match && !$legacy_tenant) {
+			$context['errors'][] = 'tenant_mismatch';
+			return $context;
+		}
+
+		$direct_user_id = isset($request->assigned_nakes_user_id) ? (int) $request->assigned_nakes_user_id : 0;
+		$accepted_user_id = isset($request->accepted_by_user_id) ? (int) $request->accepted_by_user_id : 0;
+		$legacy_dokter_id = isset($request->dokter_id) ? (int) $request->dokter_id : 0;
+		$canonical = $CI->db
+			->select('userId')
+			->where('role', 'dokter')
+			->where('status', 'aktif')
+			->where('TRIM(remark) = ' . $CI->db->escape($context['puskesmas_code']), null, false)
+			->order_by('userId', 'ASC')
+			->limit(1)
+			->get('users')
+			->row();
+		$canonical_user_id = $canonical ? (int) $canonical->userId : 0;
+		$canonical_identity = $canonical_user_id > 0 ? doclinc_dokter_identity_context($canonical_user_id) : null;
+		$canonical_is_valid = !empty($canonical_identity['valid'])
+			&& $canonical_identity['account_type'] === 'command_center';
+
+		$assignments = array();
+		if ($CI->db->table_exists('request_staff_assignments') && $CI->db->table_exists('puskesmas_staff')) {
+			$assignments = $CI->db
+				->select('rsa.staff_id, rsa.kode_pkm, ps.user_id, ps.status AS staff_status, ps.kode_pkm AS staff_kode_pkm')
+				->from('request_staff_assignments AS rsa')
+				->join('puskesmas_staff AS ps', 'ps.staff_id = rsa.staff_id', 'left')
+				->where('rsa.request_id', $request_id)
+				->where('rsa.status', 'aktif')
+				->get()
+				->result();
+		}
+		$context['active_assignment_count'] = count($assignments);
+		if (count($assignments) === 1) {
+			$context['active_staff_id'] = (int) $assignments[0]->staff_id;
+			$context['active_staff_user_id'] = !empty($assignments[0]->user_id) ? (int) $assignments[0]->user_id : null;
+		}
+
+		if ($context['account_type'] === 'command_center') {
+			$context['tenant_match'] = $explicit_tenant_match
+				|| ($legacy_tenant && $legacy_dokter_id === $user_id);
+			$context['can_view'] = $context['tenant_match'];
+			$context['valid'] = $context['can_view'];
+			if (!$context['tenant_match'] || $context['request_status'] !== 'Accepted' || count($assignments) > 1) {
+				return $context;
+			}
+
+			if (count($assignments) === 1
+				&& ((string) $assignments[0]->staff_status !== 'aktif'
+					|| trim((string) $assignments[0]->kode_pkm) !== $context['puskesmas_code']
+					|| trim((string) $assignments[0]->staff_kode_pkm) !== $context['puskesmas_code'])) {
+				$context['errors'][] = 'assigned_staff_invalid';
+				return $context;
+			}
+
+			if (count($assignments) === 1 && !empty($assignments[0]->user_id)) {
+				$assigned_identity = doclinc_dokter_identity_context((int) $assignments[0]->user_id);
+				if (!empty($assigned_identity['valid']) && $assigned_identity['account_type'] === 'personal') {
+					$context['ownership_source'] = 'assigned_personal_staff';
+					return $context;
+				}
+				$context['errors'][] = 'assigned_staff_identity_invalid';
+				return $context;
+			}
+
+			if ($direct_user_id === $user_id) {
+				$context['can_handle'] = true;
+				$context['ownership_source'] = 'assigned_nakes_user_id';
+			} elseif ($direct_user_id === 0 && $accepted_user_id === $user_id) {
+				$context['can_handle'] = true;
+				$context['ownership_source'] = 'accepted_by_user_id';
+			} elseif ($direct_user_id === 0 && $accepted_user_id === 0 && $legacy_dokter_id === $user_id) {
+				$context['can_handle'] = true;
+				$context['ownership_source'] = 'dokter_id';
+			}
+			$context['valid'] = $context['can_view'];
+			return $context;
+		}
+
+		if ($context['account_type'] !== 'personal') {
+			$context['errors'][] = 'account_unclassified';
+			return $context;
+		}
+
+		$matching_assignment = count($assignments) === 1
+			&& (int) $assignments[0]->staff_id === (int) $identity_context['staff_id']
+			&& (int) $assignments[0]->user_id === $user_id
+			&& (string) $assignments[0]->staff_status === 'aktif'
+			&& trim((string) $assignments[0]->kode_pkm) === $context['puskesmas_code']
+			&& trim((string) $assignments[0]->staff_kode_pkm) === $context['puskesmas_code'];
+		$legacy_owner_match = $direct_user_id === $user_id
+			|| ($direct_user_id === 0 && $accepted_user_id === $user_id)
+			|| ($direct_user_id === 0 && $accepted_user_id === 0 && $legacy_dokter_id === $user_id);
+		$context['tenant_match'] = $explicit_tenant_match || ($legacy_tenant && ($matching_assignment || $legacy_owner_match));
+		if (!$context['tenant_match'] || $context['request_status'] === 'Pending' || count($assignments) > 1) {
+			return $context;
+		}
+
+		if (count($assignments) === 1) {
+			if (!$matching_assignment) {
+				return $context;
+			}
+			if ($direct_user_id !== 0
+				&& $direct_user_id !== $user_id
+				&& ($direct_user_id !== $canonical_user_id || !$canonical_is_valid)) {
+				$context['errors'][] = 'direct_assignment_conflict';
+				return $context;
+			}
+			$context['can_view'] = true;
+			$context['ownership_source'] = $direct_user_id === $canonical_user_id
+				? 'staff_assignment_command_center_bridge'
+				: 'staff_assignment';
+		} elseif ($legacy_owner_match) {
+			$context['can_view'] = true;
+			$context['ownership_source'] = $direct_user_id === $user_id
+				? 'assigned_nakes_user_id'
+				: ($accepted_user_id === $user_id ? 'accepted_by_user_id' : 'dokter_id');
+		}
+
+		$context['can_handle'] = $context['can_view'] && $context['request_status'] === 'Accepted';
+		$context['valid'] = $context['can_view'];
+		return $context;
+	}
+}
+
+if (!function_exists('doclinc_can_view_nakes_request')) {
+	function doclinc_can_view_nakes_request($request_or_id, $identity_context = null)
+	{
+		$context = doclinc_nakes_request_access_context($request_or_id, $identity_context);
+		return !empty($context['can_view']);
+	}
+}
+
+if (!function_exists('doclinc_can_handle_nakes_request')) {
+	function doclinc_can_handle_nakes_request($request_or_id, $identity_context = null)
+	{
+		$context = doclinc_nakes_request_access_context($request_or_id, $identity_context);
+		return !empty($context['can_handle']);
+	}
+}
+
 if (!function_exists('doclinc_can_view_request')) {
 	function doclinc_can_view_request($request_id, $user_id = null, $role = null)
 	{

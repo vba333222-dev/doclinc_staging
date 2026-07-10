@@ -25,8 +25,14 @@ class Konsultasi_nakes extends MX_Controller
 	public function konsultasi()
 	{
 		$x['request_id'] = $this->uri->segment(3);
-		$doctor_id = $this->session->userdata('id');
-		$data_request = $this->Konsultasi_nakes_m->get_data_request($x['request_id'], $doctor_id);
+		$doctor_id = (int) $this->session->userdata('id');
+		$identity_context = doclinc_dokter_identity_context($doctor_id);
+		$access_context = doclinc_nakes_request_access_context($x['request_id'], $identity_context);
+		if (empty($access_context['can_view'])) {
+			redirect('home_nakes');
+			return;
+		}
+		$data_request = $this->Konsultasi_nakes_m->get_data_request($x['request_id'], $doctor_id, $identity_context);
 		$request = $data_request->row();
 		if (!$request) {
 			doclinc_log_request_event('unauthorized_request_access', $x['request_id'], array('target' => 'konsultasi_nakes'));
@@ -41,6 +47,7 @@ class Konsultasi_nakes extends MX_Controller
 		$x['tgl_lahir'] = !empty($request->tgl) ? $request->tgl : null;
 		$x['umur'] = '-';
 		$x['kriteria'] = '';
+		$x['can_handle_request'] = !empty($access_context['can_handle']);
 
 		if (!empty($x['tgl_lahir'])) {
 			try {
@@ -133,8 +140,8 @@ class Konsultasi_nakes extends MX_Controller
 		}
 
 		$request_id = (int) $this->input->post('request_id');
-		$doctor_id = $this->session->userdata('id');
-		$role = $this->session->userdata('role');
+		$doctor_id = (int) $this->session->userdata('id');
+		$identity_context = doclinc_dokter_identity_context($doctor_id);
 		$diagnosa = $this->input->post('diagnosa');
 		$saran = $this->input->post('saran');
 		$kriteria = $this->input->post('kriteria');
@@ -147,9 +154,10 @@ class Konsultasi_nakes extends MX_Controller
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Data tidak lengkap']));
 			return;
 		}
-		if ($role !== 'dokter' || !doclinc_can_update_request($request_id, $doctor_id, $role, array('Accepted'))) {
+		$access_context = doclinc_nakes_request_access_context($request_id, $identity_context);
+		if (empty($access_context['can_handle'])) {
 			$this->output->set_status_header(403);
-			doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'complete', 'role' => $role));
+			doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'complete'));
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
 			return;
 		}
@@ -184,7 +192,8 @@ class Konsultasi_nakes extends MX_Controller
 			$rujukan,
 			$foto,
 			$terapi,
-			$doctor_id
+			$doctor_id,
+			$identity_context
 		);
 
 		if ($result) {
@@ -212,7 +221,9 @@ class Konsultasi_nakes extends MX_Controller
 					}
 				}
 			}
-			$event_puskesmas_code = $request && isset($request->assigned_puskesmas_code) ? $request->assigned_puskesmas_code : $this->session->userdata('remark');
+			$event_puskesmas_code = $request && isset($request->assigned_puskesmas_code) && trim((string) $request->assigned_puskesmas_code) !== ''
+				? $request->assigned_puskesmas_code
+				: $identity_context['puskesmas_code'];
 			$this->Home_nakes_m->append_request_event($request_id, 'request_completed', array(
 				'puskesmas_code' => $event_puskesmas_code,
 				'actor_user_id' => $doctor_id,

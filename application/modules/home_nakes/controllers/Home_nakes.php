@@ -438,7 +438,7 @@ class Home_nakes extends MX_Controller
 		}
 		$user_id = (int) $this->session->userdata('id');
 		$identity_context = doclinc_dokter_identity_context($user_id);
-		if (empty($identity_context['valid']) || $identity_context['account_type'] !== 'command_center') {
+		if (empty($identity_context['valid'])) {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
@@ -447,9 +447,14 @@ class Home_nakes extends MX_Controller
 
 		$request_id = (int) ($this->input->post('request_id') ?: $this->input->post('id'));
 		$request = $request_id > 0 ? doclinc_request_row($request_id) : null;
-		if (!$request
-			|| (string) $request->request_status !== 'Pending'
-			|| !doclinc_can_coordinate_request($request, $identity_context)) {
+		$access_context = $request ? doclinc_nakes_request_access_context($request, $identity_context) : null;
+		$can_cancel_pending = $request
+			&& (string) $request->request_status === 'Pending'
+			&& doclinc_can_coordinate_request($request, $identity_context);
+		$can_cancel_accepted = $request
+			&& (string) $request->request_status === 'Accepted'
+			&& !empty($access_context['can_handle']);
+		if (!$can_cancel_pending && !$can_cancel_accepted) {
 			if (function_exists('doclinc_log_request_event')) {
 				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'nakes_cancel'));
 			}
@@ -503,7 +508,9 @@ class Home_nakes extends MX_Controller
 				->set_output(json_encode(array('status' => false, 'message' => 'Metode tidak diizinkan')));
 			return;
 		}
-		if ($this->session->userdata('role') !== 'dokter') {
+		$user_id = (int) $this->session->userdata('id');
+		$identity_context = doclinc_dokter_identity_context($user_id);
+		if (empty($identity_context['valid'])) {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(array('status' => false, 'message' => 'Akses tidak diizinkan')));
@@ -511,7 +518,6 @@ class Home_nakes extends MX_Controller
 		}
 
 		$request_id = (int) $this->input->get('request_id', TRUE);
-		$user_id = (int) $this->session->userdata('id');
 		if ($request_id < 1) {
 			$this->output
 				->set_status_header(400)
@@ -526,7 +532,8 @@ class Home_nakes extends MX_Controller
 				->set_output(json_encode(array('status' => false, 'message' => 'Request tidak ditemukan')));
 			return;
 		}
-		if (!function_exists('doclinc_request_is_handled_by_nakes') || !doclinc_request_is_handled_by_nakes($request, $user_id)) {
+		$access_context = doclinc_nakes_request_access_context($request, $identity_context);
+		if (empty($access_context['can_handle'])) {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(array('status' => false, 'message' => 'Akses tidak diizinkan')));
@@ -550,14 +557,7 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		if (!doclinc_can_update_visit_location($request_id, $user_id, 'dokter')) {
-			$this->output
-				->set_status_header(403)
-				->set_output(json_encode(array('status' => false, 'message' => 'Akses tidak diizinkan')));
-			return;
-		}
-
-		$row = $this->Home_nakes_m->get_visit_location($request_id, $user_id);
+		$row = $this->Home_nakes_m->get_visit_location($request_id, $user_id, $identity_context);
 		if (!$row) {
 			$this->output
 				->set_status_header(404)
@@ -576,7 +576,9 @@ class Home_nakes extends MX_Controller
 				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Metode tidak diizinkan']));
 			return;
 		}
-		if ($this->session->userdata('role') !== 'dokter') {
+		$user_id = (int) $this->session->userdata('id');
+		$identity_context = doclinc_dokter_identity_context($user_id);
+		if (empty($identity_context['valid'])) {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Akses tidak diizinkan']));
@@ -589,7 +591,6 @@ class Home_nakes extends MX_Controller
 		$accuracy_m = $this->visit_location_optional_float('accuracy_m', 'accuracy');
 		$heading = $this->visit_location_optional_float('heading');
 		$speed_mps = $this->visit_location_optional_float('speed_mps', 'speed');
-		$user_id = (int) $this->session->userdata('id');
 		if ($request_id < 1 || !$this->is_valid_latitude($latitude) || !$this->is_valid_longitude($longitude)) {
 			if (function_exists('doclinc_log_request_event') && $request_id > 0) {
 				doclinc_log_request_event('visit_location_rejected_invalid_coordinate', $request_id);
@@ -612,7 +613,8 @@ class Home_nakes extends MX_Controller
 				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Request tidak ditemukan']));
 			return;
 		}
-		if (!function_exists('doclinc_request_is_handled_by_nakes') || !doclinc_request_is_handled_by_nakes($request, $user_id)) {
+		$access_context = doclinc_nakes_request_access_context($request, $identity_context);
+		if (empty($access_context['can_handle'])) {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Akses tidak diizinkan']));
@@ -635,13 +637,6 @@ class Home_nakes extends MX_Controller
 			)));
 			return;
 		}
-		if (!doclinc_can_update_visit_location($request_id, $user_id, 'dokter')) {
-			$this->output
-				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Akses tidak diizinkan']));
-			return;
-		}
-
 		$max_accuracy_m = function_exists('doclinc_visit_location_max_accuracy_meters') ? doclinc_visit_location_max_accuracy_meters() : 100;
 		if ($accuracy_m !== null && $accuracy_m > $max_accuracy_m) {
 			if (function_exists('doclinc_log_request_event')) {
@@ -674,14 +669,14 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		if (!$this->Home_nakes_m->update_visit_location($request_id, $user_id, (float) $latitude, (float) $longitude)) {
+		if (!$this->Home_nakes_m->update_visit_location($request_id, $user_id, (float) $latitude, (float) $longitude, $identity_context)) {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Lokasi nakes tidak dapat diperbarui']));
 			return;
 		}
 
-		$row = $this->Home_nakes_m->get_visit_location($request_id, $user_id);
+		$row = $this->Home_nakes_m->get_visit_location($request_id, $user_id, $identity_context);
 		$payload = $row ? $this->build_nakes_visit_location_payload($row, 'success', (float) $latitude, (float) $longitude) : array();
 		$this->output->set_output(json_encode(array_merge($payload, [
 			'status' => 'success',
@@ -704,7 +699,9 @@ class Home_nakes extends MX_Controller
 				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
 			return;
 		}
-		if ($this->session->userdata('role') !== 'dokter') {
+		$user_id = (int) $this->session->userdata('id');
+		$identity_context = doclinc_dokter_identity_context($user_id);
+		if (empty($identity_context['valid'])) {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
@@ -713,7 +710,6 @@ class Home_nakes extends MX_Controller
 
 		$request_id = (int) $this->input->post('request_id');
 		$visit_status = doclinc_normalize_visit_status($this->input->post('visit_status'));
-		$user_id = (int) $this->session->userdata('id');
 		if ($request_id < 1 || $visit_status === '') {
 			$this->output
 				->set_status_header(400)
@@ -728,7 +724,8 @@ class Home_nakes extends MX_Controller
 				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan']));
 			return;
 		}
-		if (!doclinc_can_update_visit_status($request_id, $user_id, 'dokter')) {
+		$access_context = doclinc_nakes_request_access_context($request, $identity_context);
+		if (empty($access_context['can_handle'])) {
 			if (function_exists('doclinc_log_request_event')) {
 				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'visit_status', 'visit_status' => $visit_status));
 			}
@@ -738,7 +735,7 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		$result = $this->Home_nakes_m->update_visit_status($request_id, $user_id, $visit_status);
+		$result = $this->Home_nakes_m->update_visit_status($request_id, $user_id, $visit_status, $identity_context);
 		if (empty($result['status']) || $result['status'] !== 'success') {
 			$this->output
 				->set_status_header(400)
