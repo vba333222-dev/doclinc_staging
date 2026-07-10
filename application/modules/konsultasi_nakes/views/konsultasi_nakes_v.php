@@ -4,6 +4,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
+$can_handle_request = !empty($can_handle_request);
 
 if ((string) $kriteria === '0') {
 	$kriteria = 'Selesai Konsultasi';
@@ -787,8 +788,12 @@ if (!function_exists('formatComplaintText')) {
 
 		<input type="hidden" name="userid" id="userId" value="<?= html_escape($userid) ?>">
 		<input type="hidden" name="dokterid" id="dokterId" value="<?= html_escape($_SESSION['id']) ?>">
-		<form id="form_konsul_nakes" enctype="multipart/form-data">
+		<?php if (!$can_handle_request) : ?>
+			<div class="alert alert-info" role="status">Permintaan ini dapat dilihat, tetapi tindakan klinis telah ditugaskan kepada Staff lain.</div>
+		<?php endif; ?>
+		<form id="form_konsul_nakes" enctype="multipart/form-data" data-can-handle="<?= $can_handle_request ? '1' : '0'; ?>">
 			<input type="hidden" name="request_id" id="idReq" value="<?= html_escape($request_id) ?>">
+			<fieldset <?= $can_handle_request ? '' : 'disabled'; ?>>
 			<section class="consult-card service-decision-card">
 				<h2 class="section-heading"><i class="bi bi-signpost-split"></i> Tentukan Jenis Layanan</h2>
 				<p class="service-decision-helper">Pilih setelah komunikasi awal dengan warga selesai dilakukan.</p>
@@ -934,9 +939,12 @@ if (!function_exists('formatComplaintText')) {
 					</div>
 					<p class="optional-note">Opsional sesuai kebutuhan dokumentasi kunjungan.</p>
 				</div>
+			</fieldset>
+			<?php if ($can_handle_request) : ?>
 				<button type="button" class="primary-action shadow-sm" id="save_konsul_nakes">
 					<i class="bi bi-check2-circle"></i> Selesaikan Konsultasi
 				</button>
+			<?php endif; ?>
 			</section>
 		</form>
 		</main>

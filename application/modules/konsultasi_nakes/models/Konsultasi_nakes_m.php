@@ -102,8 +102,20 @@ class Konsultasi_nakes_m extends MX_Controller
 		$this->db->group_end();
 	}
 
-	public function get_data_request($request_id, $doctor_id = null)
+	public function get_data_request($request_id, $doctor_id = null, $identity_context = null)
 	{
+		$doctor_id = (int) $doctor_id;
+		$database_identity = function_exists('doclinc_dokter_identity_context')
+			? doclinc_dokter_identity_context($doctor_id)
+			: null;
+		if ($doctor_id < 1
+			|| !is_array($identity_context)
+			|| empty($identity_context['valid'])
+			|| empty($database_identity['valid'])
+			|| !function_exists('doclinc_can_view_nakes_request')
+			|| !doclinc_can_view_nakes_request($request_id, $database_identity)) {
+			return $this->db->query('SELECT 1 WHERE 1 = 0');
+		}
 		$userIdSelect = $this->db->field_exists('userid', 'users') ? 'users.userid' : 'users.userId AS userid';
 		$tglSelect = $this->db->field_exists('tgl', 'users') ? 'users.tgl' : 'NULL AS tgl';
 
@@ -115,11 +127,6 @@ class Konsultasi_nakes_m extends MX_Controller
 			->join('users', 'requests.user_id = users.userId')
 			->where('requests.request_status', 'Accepted')
 			->where('requests.request_id', $request_id);
-		if ($doctor_id !== null) {
-			$this->where_handling_nakes_owner($doctor_id, 'requests.');
-			$this->where_puskesmas_flow_owner($doctor_id, 'requests.');
-		}
-
 		return $this->db
 			->get();
 	}
@@ -137,21 +144,34 @@ class Konsultasi_nakes_m extends MX_Controller
 	// 					 create_user = '$user'");
 	// }
 
-	public function save_konsultasi_nakes($request_id, $diagnosa, $saran, $kriteria, $rujukan, $file_path, $terapi, $doctor_id = null)
+	public function save_konsultasi_nakes($request_id, $diagnosa, $saran, $kriteria, $rujukan, $file_path, $terapi, $doctor_id = null, $identity_context = null)
 	{
 		$date = date('Y-m-d H:i:s');
 		$user = $doctor_id ?: $this->session->userdata('id');
 		$terapi = is_array($terapi) ? $terapi : [];
 
-		$request = $this->db
-			->where('request_id', $request_id)
-			->get('requests')
-			->row();
-		if (!$request || !$this->request_matches_user_puskesmas($request, $user)) {
+		$database_identity = function_exists('doclinc_dokter_identity_context')
+			? doclinc_dokter_identity_context($user)
+			: null;
+		if (!is_array($identity_context)
+			|| empty($identity_context['valid'])
+			|| empty($database_identity['valid'])
+			|| (int) $identity_context['user_id'] !== (int) $user) {
 			return false;
 		}
 
 		$this->db->trans_begin();
+		$request = $this->db->query(
+			'SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
+			array($request_id)
+		)->row();
+		$access_context = $request && function_exists('doclinc_nakes_request_access_context')
+			? doclinc_nakes_request_access_context($request_id, $database_identity)
+			: null;
+		if (!$request || empty($access_context['can_handle']) || (string) $request->request_status !== 'Accepted') {
+			$this->db->trans_rollback();
+			return false;
+		}
 
 		$request_data = ['request_status' => 'Completed'];
 		if ($this->db->field_exists('updated_at', 'requests')) {
@@ -167,10 +187,13 @@ class Konsultasi_nakes_m extends MX_Controller
 			}
 		}
 
-		$this->db->where('request_id', $request_id);
-		$this->where_handling_nakes_owner($user);
-		$this->where_puskesmas_flow_owner($user);
-		$this->db->where('request_status', 'Accepted');
+		$this->db->where('request_id', $request_id)->where('request_status', 'Accepted');
+		$request_code = isset($request->assigned_puskesmas_code) ? trim((string) $request->assigned_puskesmas_code) : '';
+		if ($request_code !== '') {
+			$this->db->where('TRIM(assigned_puskesmas_code) = ' . $this->db->escape($database_identity['puskesmas_code']), null, false);
+		} else {
+			$this->db->group_start()->where('assigned_puskesmas_code IS NULL', null, false)->or_where("TRIM(assigned_puskesmas_code) = ''", null, false)->group_end();
+		}
 		if ($this->db->field_exists('visit_completed_at', 'requests')) {
 			$this->db->set('visit_completed_at', 'COALESCE(visit_completed_at, ' . $this->db->escape($date) . ')', FALSE);
 		}

@@ -469,11 +469,22 @@ class Home_nakes_m extends MX_Controller
 
 		return $this->db->order_by('requests.request_id', 'DESC')->get();
 	}
-	public function get_visit_location($request_id, $nakes_user_id)
+	public function get_visit_location($request_id, $nakes_user_id, $identity_context = null)
 	{
 		$request_id = (int) $request_id;
 		$nakes_user_id = (int) $nakes_user_id;
 		if ($request_id < 1 || $nakes_user_id < 1) {
+			return null;
+		}
+		$database_identity = function_exists('doclinc_dokter_identity_context')
+			? doclinc_dokter_identity_context($nakes_user_id)
+			: null;
+		if (!is_array($identity_context)
+			|| empty($identity_context['valid'])
+			|| empty($database_identity['valid'])
+			|| (int) $identity_context['user_id'] !== $nakes_user_id
+			|| !function_exists('doclinc_can_handle_nakes_request')
+			|| !doclinc_can_handle_nakes_request($request_id, $database_identity)) {
 			return null;
 		}
 
@@ -504,7 +515,6 @@ class Home_nakes_m extends MX_Controller
 			->select(implode(', ', $select), FALSE)
 			->where('request_id', $request_id)
 			->where('request_status', 'Accepted');
-		$this->where_handling_nakes_owner($nakes_user_id);
 
 		return $this->db->get('requests')->row();
 	}
@@ -683,25 +693,36 @@ class Home_nakes_m extends MX_Controller
 			return array('status' => 'error', 'message' => 'Data request tidak lengkap');
 		}
 		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
-		if (!$this->command_center_identity_matches($identity_context, $user_id, $puskesmas_code)) {
+		$database_identity = function_exists('doclinc_dokter_identity_context')
+			? doclinc_dokter_identity_context($user_id)
+			: null;
+		if (!is_array($identity_context)
+			|| empty($identity_context['valid'])
+			|| empty($database_identity['valid'])
+			|| (int) $identity_context['user_id'] !== $user_id
+			|| trim((string) $identity_context['puskesmas_code']) !== $puskesmas_code) {
 			return array('status' => 'error', 'message' => 'Akses tidak diizinkan untuk tindakan ini.');
 		}
 
-		$request = $this->db
-			->where('request_id', $request_id)
-			->get('requests')
-			->row();
+		$this->db->trans_begin();
+		$request = $this->db->query(
+			'SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
+			array($request_id)
+		)->row();
 		if (!$request) {
+			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Request tidak ditemukan');
 		}
-		if (!$this->request_matches_command_center_tenant($request, $user_id, $puskesmas_code)) {
-			return array('status' => 'error', 'message' => 'Request tidak ditemukan atau akses tidak diizinkan');
-		}
-
-		if (in_array($request->request_status, array('Completed', 'Cancelled'), true)) {
-			return array('status' => 'error', 'message' => 'Request tidak dapat dibatalkan');
-		}
-		if ($request->request_status !== 'Pending') {
+		$access_context = function_exists('doclinc_nakes_request_access_context')
+			? doclinc_nakes_request_access_context($request_id, $database_identity)
+			: null;
+		$can_cancel_pending = (string) $request->request_status === 'Pending'
+			&& function_exists('doclinc_can_coordinate_request')
+			&& doclinc_can_coordinate_request($request, $database_identity);
+		$can_cancel_accepted = (string) $request->request_status === 'Accepted'
+			&& !empty($access_context['can_handle']);
+		if (!$can_cancel_pending && !$can_cancel_accepted) {
+			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Request tidak dapat dibatalkan');
 		}
 
@@ -712,11 +733,20 @@ class Home_nakes_m extends MX_Controller
 
 		$this->db
 			->where('request_id', $request_id)
-			->where('request_status', 'Pending');
-		$this->where_command_center_tenant($user_id, $puskesmas_code);
+			->where('request_status', $request->request_status);
+		$request_code = isset($request->assigned_puskesmas_code) ? trim((string) $request->assigned_puskesmas_code) : '';
+		if ($request_code !== '') {
+			$this->db->where('TRIM(assigned_puskesmas_code) = ' . $this->db->escape($puskesmas_code), null, false);
+		} else {
+			$this->db->group_start()
+				->where('assigned_puskesmas_code IS NULL', null, false)
+				->or_where("TRIM(assigned_puskesmas_code) = ''", null, false)
+			->group_end();
+		}
 
 		$this->db->update('requests', $data);
-		if ($this->db->affected_rows() > 0) {
+		if ($this->db->affected_rows() > 0 && $this->db->trans_status() !== false) {
+			$this->db->trans_commit();
 			$event_puskesmas_code = $puskesmas_code;
 			if (isset($request->assigned_puskesmas_code) && trim((string) $request->assigned_puskesmas_code) !== '') {
 				$event_puskesmas_code = $request->assigned_puskesmas_code;
@@ -737,9 +767,10 @@ class Home_nakes_m extends MX_Controller
 			return array('status' => 'success', 'message' => 'Request berhasil dibatalkan');
 		}
 
+		$this->db->trans_rollback();
 		return array('status' => 'error', 'message' => 'Request tidak ditemukan atau akses tidak diizinkan');
 	}
-	public function update_visit_status($request_id, $user_id, $next_status)
+	public function update_visit_status($request_id, $user_id, $next_status, $identity_context = null)
 	{
 		$request_id = (int) $request_id;
 		$user_id = (int) $user_id;
@@ -755,17 +786,34 @@ class Home_nakes_m extends MX_Controller
 			}
 		}
 
-		$request = $this->db
-			->where('request_id', $request_id)
-			->get('requests')
-			->row();
+		$database_identity = function_exists('doclinc_dokter_identity_context')
+			? doclinc_dokter_identity_context($user_id)
+			: null;
+		if (!is_array($identity_context)
+			|| empty($identity_context['valid'])
+			|| empty($database_identity['valid'])
+			|| (int) $identity_context['user_id'] !== $user_id) {
+			return array('status' => 'error', 'message' => 'Akses tidak diizinkan');
+		}
+
+		$this->db->trans_begin();
+		$request = $this->db->query(
+			'SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
+			array($request_id)
+		)->row();
 		if (!$request) {
+			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Request tidak ditemukan');
 		}
 		if ($request->request_status !== 'Accepted') {
+			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Status kunjungan hanya dapat diperbarui untuk konsultasi aktif');
 		}
-		if (!$this->request_matches_puskesmas_code($request, $this->get_user_puskesmas_code($user_id))) {
+		$access_context = function_exists('doclinc_nakes_request_access_context')
+			? doclinc_nakes_request_access_context($request_id, $database_identity)
+			: null;
+		if (empty($access_context['can_handle'])) {
+			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Status kunjungan tidak dapat diperbarui');
 		}
 
@@ -773,6 +821,7 @@ class Home_nakes_m extends MX_Controller
 			? (doclinc_normalize_visit_status($request->visit_status) ?: 'not_started')
 			: ($request->visit_status ?: 'not_started');
 		if (function_exists('doclinc_allowed_visit_status_transition') && !doclinc_allowed_visit_status_transition($current_status, $next_status)) {
+			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Perubahan status kunjungan tidak valid');
 		}
 
@@ -800,13 +849,23 @@ class Home_nakes_m extends MX_Controller
 		$this->db
 			->where('request_id', $request_id)
 			->where('request_status', 'Accepted');
-		$this->where_handling_nakes_owner($user_id);
-		$this->where_puskesmas_flow_owner($user_id);
+		$request_code = isset($request->assigned_puskesmas_code) ? trim((string) $request->assigned_puskesmas_code) : '';
+		if ($request_code !== '') {
+			$this->db->where('TRIM(assigned_puskesmas_code) = ' . $this->db->escape($database_identity['puskesmas_code']), null, false);
+		} else {
+			$this->db->group_start()->where('assigned_puskesmas_code IS NULL', null, false)->or_where("TRIM(assigned_puskesmas_code) = ''", null, false)->group_end();
+		}
 		$this->db->update('requests', $data);
 
 		if ($this->db->affected_rows() < 1 && $current_status !== $next_status) {
+			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Status kunjungan tidak dapat diperbarui');
 		}
+		if ($this->db->trans_status() === false) {
+			$this->db->trans_rollback();
+			return array('status' => 'error', 'message' => 'Status kunjungan tidak dapat diperbarui');
+		}
+		$this->db->trans_commit();
 
 		$row = $this->db
 			->where('request_id', $request_id)
@@ -843,11 +902,33 @@ class Home_nakes_m extends MX_Controller
 			'visit_status_label' => function_exists('doclinc_visit_status_label') ? doclinc_visit_status_label($visit_status) : $visit_status,
 		);
 	}
-	public function update_visit_location($request_id, $user_id, $latitude, $longitude)
+	public function update_visit_location($request_id, $user_id, $latitude, $longitude, $identity_context = null)
 	{
 		$request_id = (int) $request_id;
 		$user_id = (int) $user_id;
 		if ($request_id < 1 || $user_id < 1) {
+			return false;
+		}
+		$database_identity = function_exists('doclinc_dokter_identity_context')
+			? doclinc_dokter_identity_context($user_id)
+			: null;
+		if (!is_array($identity_context)
+			|| empty($identity_context['valid'])
+			|| empty($database_identity['valid'])
+			|| (int) $identity_context['user_id'] !== $user_id) {
+			return false;
+		}
+
+		$this->db->trans_begin();
+		$request = $this->db->query(
+			'SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
+			array($request_id)
+		)->row();
+		$access_context = $request && function_exists('doclinc_nakes_request_access_context')
+			? doclinc_nakes_request_access_context($request_id, $database_identity)
+			: null;
+		if (!$request || empty($access_context['can_handle']) || (string) $request->request_status !== 'Accepted') {
+			$this->db->trans_rollback();
 			return false;
 		}
 
@@ -865,11 +946,20 @@ class Home_nakes_m extends MX_Controller
 		$this->db
 			->where('request_id', $request_id)
 			->where('request_status', 'Accepted');
-		$this->where_handling_nakes_owner($user_id);
-		$this->where_puskesmas_flow_owner($user_id);
+		$request_code = isset($request->assigned_puskesmas_code) ? trim((string) $request->assigned_puskesmas_code) : '';
+		if ($request_code !== '') {
+			$this->db->where('TRIM(assigned_puskesmas_code) = ' . $this->db->escape($database_identity['puskesmas_code']), null, false);
+		} else {
+			$this->db->group_start()->where('assigned_puskesmas_code IS NULL', null, false)->or_where("TRIM(assigned_puskesmas_code) = ''", null, false)->group_end();
+		}
 		$this->db->update('requests', $data);
-
-		return $this->db->affected_rows() > 0;
+		$changed = $this->db->affected_rows() > 0;
+		if (!$changed || $this->db->trans_status() === false) {
+			$this->db->trans_rollback();
+			return false;
+		}
+		$this->db->trans_commit();
+		return true;
 	}
 	public function get_location_user($id)
 	{
