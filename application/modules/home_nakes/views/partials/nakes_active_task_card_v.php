@@ -43,6 +43,7 @@
 				<div class="dl-task-meta">No. Antrian: <?= html_escape($active_queue_code); ?> · <?= html_escape($active_mode_label); ?></div>
 			</div>
 		</div>
+		<?php if (!empty($can_coordinate_staff)) : ?>
 		<div class="nk-pic-inline">
 			<span>PIC Personel</span>
 			<strong>
@@ -104,6 +105,7 @@
 				</div>
 			</div>
 		<?php endif; ?>
+		<?php endif; ?>
 		<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $nakes_primary_active->request_id)); ?>" class="btn btn-success rounded-pill w-100 mt-3 fw-bold">
 			Lanjutkan Penanganan
 		</a>
@@ -111,7 +113,7 @@
 		<?php
 		$this->load->view('partials/nakes_empty_state_v', array(
 			'empty_title' => 'Tidak ada penanganan aktif',
-			'empty_message' => 'Permintaan baru akan muncul di sini atau di Antrian Puskesmas.',
+			'empty_message' => !empty($nakes_is_personal) ? 'Layanan yang ditugaskan kepada Anda akan muncul di sini.' : 'Permintaan baru akan muncul di sini atau di Antrian Puskesmas.',
 		));
 		?>
 	<?php endif; ?>

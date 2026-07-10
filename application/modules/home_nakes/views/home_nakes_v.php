@@ -4,6 +4,11 @@ $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '#';
 $map_provider = $this->config->item('map_provider') ?: 'none';
 $mapbox_public_token = $this->config->item('mapbox_public_token') ?: '';
+$nakes_account_type = isset($nakes_account_type) ? (string) $nakes_account_type : 'unclassified';
+$nakes_is_command_center = $nakes_account_type === 'command_center';
+$nakes_is_personal = $nakes_account_type === 'personal';
+$nakes_is_unclassified = !$nakes_is_command_center && !$nakes_is_personal;
+$can_coordinate_staff = !empty($can_coordinate_staff) && $nakes_is_command_center;
 
 if (!function_exists('doclinc_history_safe_text')) {
 	function doclinc_history_safe_text($value, $fallback = '-')
@@ -142,9 +147,15 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		<div class="contents">
 			<?php $this->load->view('partials/nakes_appbar_v', get_defined_vars()); ?>
 			<div class="position-relative">
-				<?php $this->load->view('partials/nakes_dashboard_v', get_defined_vars()); ?>
-				<?php $this->load->view('partials/nakes_requests_v', get_defined_vars()); ?>
-				<?php $this->load->view('partials/nakes_history_v', get_defined_vars()); ?>
+				<?php if ($nakes_is_unclassified) : ?>
+					<?php $this->load->view('partials/nakes_access_state_v', get_defined_vars()); ?>
+				<?php else : ?>
+					<?php $this->load->view('partials/nakes_dashboard_v', get_defined_vars()); ?>
+					<?php if ($nakes_is_command_center) : ?>
+						<?php $this->load->view('partials/nakes_requests_v', get_defined_vars()); ?>
+					<?php endif; ?>
+					<?php $this->load->view('partials/nakes_history_v', get_defined_vars()); ?>
+				<?php endif; ?>
 				<?php $this->load->view('partials/nakes_profile_v', get_defined_vars()); ?>
 			</div>
 		</div>

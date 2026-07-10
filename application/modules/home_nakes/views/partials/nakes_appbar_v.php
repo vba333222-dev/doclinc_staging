@@ -1,13 +1,16 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 <?php
 $nakes_photo = isset($profile['foto']) ? trim((string) $profile['foto']) : '';
-$nakes_puskesmas_name = isset($profile['assigned_puskesmas_name']) ? trim((string) $profile['assigned_puskesmas_name']) : '';
-$nakes_puskesmas_code = isset($profile['remark']) ? trim((string) $profile['remark']) : trim((string) $this->session->userdata('remark'));
+$appbar_puskesmas_name = isset($nakes_puskesmas_name) ? trim((string) $nakes_puskesmas_name) : '';
+$appbar_puskesmas_code = isset($nakes_puskesmas_code) ? trim((string) $nakes_puskesmas_code) : '';
+$appbar_account_label = !empty($nakes_is_command_center)
+	? 'Akun Koordinasi Puskesmas'
+	: (!empty($nakes_is_personal) ? 'Akun Personal Nakes' : 'Akun Nakes');
 $nakes_weak_value = static function ($value) {
 	$value = trim(strip_tags((string) $value));
 	return $value === '' || in_array(strtolower($value), array('n/a', 'na', '-', 'belum ditentukan', 'default'), true);
 };
-$nakes_puskesmas_display = !$nakes_weak_value($nakes_puskesmas_name) ? $nakes_puskesmas_name : (!$nakes_weak_value($nakes_puskesmas_code) ? $nakes_puskesmas_code : '');
+$nakes_puskesmas_display = !$nakes_weak_value($appbar_puskesmas_name) ? $appbar_puskesmas_name : (!$nakes_weak_value($appbar_puskesmas_code) ? $appbar_puskesmas_code : '');
 if ($nakes_puskesmas_display !== '' && stripos($nakes_puskesmas_display, 'puskesmas') !== 0) {
 	$nakes_puskesmas_display = 'Puskesmas ' . $nakes_puskesmas_display;
 }
@@ -26,7 +29,7 @@ if ($nakes_puskesmas_display !== '' && stripos($nakes_puskesmas_display, 'puskes
 						?>
 						<div class="min-w-0">
 							<strong><?= html_escape($nakes_name); ?></strong>
-							<small>Akun Koordinasi Puskesmas<?= $nakes_puskesmas_display !== '' ? ' · ' . html_escape($nakes_puskesmas_display) : ' · Belum dikonfigurasi'; ?></small>
+							<small><?= html_escape($appbar_account_label); ?><?= $nakes_puskesmas_display !== '' ? ' · ' . html_escape($nakes_puskesmas_display) : ' · Belum dikonfigurasi'; ?></small>
 						</div>
 					</div>
 					<a class="dl-nakes-icon-btn position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif" aria-label="Notifikasi">

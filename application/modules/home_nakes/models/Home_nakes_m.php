@@ -63,6 +63,11 @@ class Home_nakes_m extends MX_Controller
 		return $this->db->query('SELECT 1 WHERE 1 = 0');
 	}
 
+	public function empty_request_list()
+	{
+		return $this->empty_query();
+	}
+
 	private function normalize_puskesmas_code($puskesmas_code)
 	{
 		$puskesmas_code = trim((string) $puskesmas_code);
@@ -177,6 +182,182 @@ class Home_nakes_m extends MX_Controller
 			}
 		}
 		$this->db->group_end();
+	}
+
+	private function classified_identity_is($identity_context, $account_type)
+	{
+		return is_array($identity_context)
+			&& !empty($identity_context['valid'])
+			&& isset($identity_context['account_type'])
+			&& $identity_context['account_type'] === $account_type
+			&& !empty($identity_context['user_id'])
+			&& !empty($identity_context['puskesmas_code']);
+	}
+
+	private function begin_classified_request_query($with_completed_result = false)
+	{
+		$this->select_request_base();
+		$this->db
+			->from('requests')
+			->join('users', 'requests.user_id = users.userId', 'left');
+		$this->join_handling_nakes_display();
+		$this->join_riwayat_or_default();
+
+		if (!$with_completed_result) {
+			return;
+		}
+
+		if ($this->db->table_exists('medicalrecords')) {
+			$this->db
+				->select('medicalrecords.record_id AS medical_record_id')
+				->select('medicalrecords.diagnosis AS diagnosa')
+				->select('medicalrecords.recommendations AS saran')
+				->select('medicalrecords.diagnosis AS diagnosis')
+				->select('medicalrecords.treatment AS treatment')
+				->select('medicalrecords.recommendations AS recommendations')
+				->select('medicalrecords.created_at AS result_created_at')
+				->join('(SELECT request_id, MAX(record_id) AS record_id FROM medicalrecords GROUP BY request_id) latest_medicalrecords', 'latest_medicalrecords.request_id = requests.request_id', 'left', false)
+				->join('medicalrecords', 'medicalrecords.record_id = latest_medicalrecords.record_id', 'left');
+			return;
+		}
+
+		if ($this->db->table_exists('konsultasi')) {
+			$this->db
+				->select('konsultasi.*')
+				->join('konsultasi', 'requests.request_id = konsultasi.request_id', 'left');
+			foreach (array('diagnosa', 'saran', 'diagnosis', 'treatment', 'recommendations') as $field) {
+				if (!$this->db->field_exists($field, 'konsultasi')) {
+					$this->db->select('NULL AS ' . $field, false);
+				}
+			}
+			return;
+		}
+
+		$this->db
+			->select('NULL AS diagnosa', false)
+			->select('NULL AS saran', false)
+			->select('NULL AS diagnosis', false)
+			->select('NULL AS treatment', false)
+			->select('NULL AS recommendations', false);
+	}
+
+	private function where_command_center_puskesmas($user_id, $puskesmas_code)
+	{
+		$user_id = (int) $user_id;
+		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
+		$this->db->group_start();
+		if ($puskesmas_code !== '' && $this->db->field_exists('assigned_puskesmas_code', 'requests')) {
+			$this->db->where('TRIM(requests.assigned_puskesmas_code) = ' . $this->db->escape($puskesmas_code), null, false);
+			$this->db->or_group_start()
+				->group_start()
+					->where('requests.assigned_puskesmas_code IS NULL', null, false)
+					->or_where("TRIM(requests.assigned_puskesmas_code) = ''", null, false)
+				->group_end()
+				->where('requests.dokter_id', $user_id)
+			->group_end();
+		} else {
+			$this->db->where('1 = 0', null, false);
+		}
+		$this->db->group_end();
+	}
+
+	private function where_personal_request_visibility($identity_context)
+	{
+		$user_id = (int) $identity_context['user_id'];
+		$staff_id = (int) $identity_context['staff_id'];
+		$puskesmas_code = $this->normalize_puskesmas_code($identity_context['puskesmas_code']);
+		if ($user_id < 1 || $staff_id < 1 || $puskesmas_code === '' || !$this->db->field_exists('assigned_puskesmas_code', 'requests')) {
+			$this->db->where('1 = 0', null, false);
+			return;
+		}
+
+		$this->db->where('TRIM(requests.assigned_puskesmas_code) = ' . $this->db->escape($puskesmas_code), null, false);
+		$direct_assignment = $this->db->field_exists('assigned_nakes_user_id', 'requests')
+			? 'COALESCE(requests.assigned_nakes_user_id, 0)'
+			: '0';
+		$legacy_owners = array();
+		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+			$legacy_owners[] = 'requests.accepted_by_user_id = ' . $user_id;
+		}
+		if ($this->db->field_exists('dokter_id', 'requests')) {
+			$legacy_owners[] = 'requests.dokter_id = ' . $user_id;
+		}
+		$legacy_owner_sql = !empty($legacy_owners) ? '(' . implode(' OR ', $legacy_owners) . ')' : '0 = 1';
+
+		$active_assignment_count = '0';
+		$matching_assignment_count = '0';
+		if ($this->staff_assignment_table_ready()) {
+			$assignment_table = $this->db->dbprefix('request_staff_assignments');
+			$staff_table = $this->db->dbprefix('puskesmas_staff');
+			$active_assignment_count = "(SELECT COUNT(*) FROM {$assignment_table} rsa_visibility WHERE rsa_visibility.request_id = requests.request_id AND rsa_visibility.status = 'aktif')";
+			$matching_assignment_count = "(SELECT COUNT(*) FROM {$assignment_table} rsa_personal INNER JOIN {$staff_table} ps_personal ON ps_personal.staff_id = rsa_personal.staff_id WHERE rsa_personal.request_id = requests.request_id AND rsa_personal.status = 'aktif' AND rsa_personal.staff_id = {$staff_id} AND ps_personal.user_id = {$user_id} AND ps_personal.status = 'aktif' AND TRIM(ps_personal.kode_pkm) = " . $this->db->escape($puskesmas_code) . ')';
+		}
+
+		$explicit_sources_agree = "({$active_assignment_count} = 0 OR ({$active_assignment_count} = 1 AND {$matching_assignment_count} = 1))";
+		$matching_staff_assignment = "({$active_assignment_count} = 1 AND {$matching_assignment_count} = 1)";
+		$legacy_fallback = "({$active_assignment_count} = 0 AND {$legacy_owner_sql})";
+		$visibility_sql = "(({$direct_assignment} = {$user_id} AND {$explicit_sources_agree}) OR ({$direct_assignment} = 0 AND ({$matching_staff_assignment} OR {$legacy_fallback})))";
+		$this->db->where($visibility_sql, null, false);
+	}
+
+	public function request_keluhan_command_center($identity_context)
+	{
+		if (!$this->classified_identity_is($identity_context, 'command_center')) {
+			return $this->empty_query();
+		}
+
+		$this->begin_classified_request_query(false);
+		$this->db->where('requests.request_status', 'Pending');
+		$this->where_command_center_puskesmas($identity_context['user_id'], $identity_context['puskesmas_code']);
+		return $this->db->order_by('requests.request_id', 'DESC')->get();
+	}
+
+	public function request_keluhan_accept_command_center($identity_context)
+	{
+		if (!$this->classified_identity_is($identity_context, 'command_center')) {
+			return $this->empty_query();
+		}
+
+		$this->begin_classified_request_query(false);
+		$this->db->where('requests.request_status', 'Accepted');
+		$this->where_command_center_puskesmas($identity_context['user_id'], $identity_context['puskesmas_code']);
+		return $this->db->order_by('requests.request_id', 'DESC')->get();
+	}
+
+	public function request_keluhan_completed_command_center($identity_context)
+	{
+		if (!$this->classified_identity_is($identity_context, 'command_center')) {
+			return $this->empty_query();
+		}
+
+		$this->begin_classified_request_query(true);
+		$this->db->where('requests.request_status', 'Completed');
+		$this->where_command_center_puskesmas($identity_context['user_id'], $identity_context['puskesmas_code']);
+		return $this->db->order_by('requests.request_id', 'DESC')->get();
+	}
+
+	public function request_keluhan_accept_personal($identity_context)
+	{
+		if (!$this->classified_identity_is($identity_context, 'personal') || empty($identity_context['staff_id'])) {
+			return $this->empty_query();
+		}
+
+		$this->begin_classified_request_query(false);
+		$this->db->where('requests.request_status', 'Accepted');
+		$this->where_personal_request_visibility($identity_context);
+		return $this->db->order_by('requests.request_id', 'DESC')->get();
+	}
+
+	public function request_keluhan_completed_personal($identity_context)
+	{
+		if (!$this->classified_identity_is($identity_context, 'personal') || empty($identity_context['staff_id'])) {
+			return $this->empty_query();
+		}
+
+		$this->begin_classified_request_query(true);
+		$this->db->where('requests.request_status', 'Completed');
+		$this->where_personal_request_visibility($identity_context);
+		return $this->db->order_by('requests.request_id', 'DESC')->get();
 	}
 
 	public function request_keluhan($id, $puskesmas_code = '')

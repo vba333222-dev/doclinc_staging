@@ -177,46 +177,76 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		$uid = $this->session->userdata('id');
-		$name = $this->session->userdata('username');
+		$uid = (int) $this->session->userdata('id');
+		$identity_context = doclinc_dokter_identity_context($uid);
+		$account_type = !empty($identity_context['valid']) ? (string) $identity_context['account_type'] : 'unclassified';
+		$puskesmas_code = !empty($identity_context['puskesmas_code']) ? (string) $identity_context['puskesmas_code'] : '';
+		$d['nakes_account_type'] = $account_type;
+		$d['nakes_identity_valid'] = !empty($identity_context['valid']);
+		$d['can_coordinate_staff'] = $account_type === 'command_center';
+		$d['nakes_identity_staff'] = array(
+			'staff_id' => isset($identity_context['staff_id']) ? $identity_context['staff_id'] : null,
+			'staff_status' => isset($identity_context['staff_status']) ? $identity_context['staff_status'] : null,
+			'staff_profesi' => isset($identity_context['staff_profesi']) ? $identity_context['staff_profesi'] : null,
+		);
+		$d['nakes_puskesmas_code'] = $puskesmas_code;
+		$d['nakes_puskesmas_name'] = !empty($identity_context['puskesmas_name']) ? (string) $identity_context['puskesmas_name'] : '';
 		$d['profile'] = $this->Home_nakes_m->get_profile_by_id($uid);
-		$puskesmas_code = trim((string) (isset($d['profile']['remark']) ? $d['profile']['remark'] : ''));
-		if ($puskesmas_code === '') {
-			$puskesmas_code = trim((string) $this->session->userdata('remark'));
+		if (!is_array($d['profile'])) {
+			$d['profile'] = array();
 		}
-		if ($puskesmas_code !== '') {
-			$this->session->set_userdata('remark', $puskesmas_code);
+		if ($d['nakes_puskesmas_name'] !== '') {
+			$d['profile']['assigned_puskesmas_name'] = $d['nakes_puskesmas_name'];
 		}
-		if (empty($puskesmas_code)) {
-			log_message('error', 'Akun Puskesmas/Nakes belum memiliki kode puskesmas: ' . $uid);
+
+		$d['data_request_new'] = $this->Home_nakes_m->empty_request_list();
+		$d['data_request_accept'] = $this->Home_nakes_m->empty_request_list();
+		$d['data_request_completed'] = $this->Home_nakes_m->empty_request_list();
+		$d['puskesmas_staff_list'] = array();
+		$d['puskesmas_staff_count'] = 0;
+		$d['staff_assignment_ready'] = false;
+		$d['puskesmas_staff_options'] = array();
+		$d['request_staff_assignment_map'] = array();
+		$d['request_staff_latest_assignment_map'] = array();
+		$d['request_event_ready'] = false;
+		$d['request_event_map'] = array();
+
+		if ($account_type === 'command_center') {
+			$d['data_request_new'] = $this->Home_nakes_m->request_keluhan_command_center($identity_context);
+			$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept_command_center($identity_context);
+			$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed_command_center($identity_context);
+			$d['puskesmas_staff_list'] = $this->Home_nakes_m->get_puskesmas_staff_by_code($puskesmas_code);
+			$d['puskesmas_staff_count'] = $this->Home_nakes_m->count_puskesmas_staff_by_code($puskesmas_code);
+			$d['staff_assignment_ready'] = $this->Home_nakes_m->staff_assignment_table_ready();
+			$d['puskesmas_staff_options'] = $this->Home_nakes_m->get_active_staff_options_by_code($puskesmas_code);
+
+			$assignment_request_ids = array();
+			$completed_assignment_request_ids = array();
+			foreach ($d['data_request_accept']->result() as $request_row) {
+				$assignment_request_ids[] = (int) $request_row->request_id;
+			}
+			foreach ($d['data_request_completed']->result() as $request_row) {
+				$completed_assignment_request_ids[] = (int) $request_row->request_id;
+			}
+			$d['request_staff_assignment_map'] = $d['staff_assignment_ready']
+				? $this->Home_nakes_m->get_active_staff_assignments_by_request_ids($assignment_request_ids)
+				: array();
+			$d['request_staff_latest_assignment_map'] = $d['staff_assignment_ready']
+				? $this->Home_nakes_m->get_latest_staff_assignments_by_request_ids($completed_assignment_request_ids)
+				: array();
+			$event_request_ids = array_merge($assignment_request_ids, $completed_assignment_request_ids);
+			$d['request_event_ready'] = $this->Home_nakes_m->request_event_table_ready();
+			$d['request_event_map'] = $d['request_event_ready']
+				? $this->Home_nakes_m->get_request_events_by_request_ids($event_request_ids, 5)
+				: array();
+		} elseif ($account_type === 'personal') {
+			$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept_personal($identity_context);
+			$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed_personal($identity_context);
 		}
-		$d['puskesmas_staff_list'] = $this->Home_nakes_m->get_puskesmas_staff_by_code($puskesmas_code);
-		$d['puskesmas_staff_count'] = $this->Home_nakes_m->count_puskesmas_staff_by_code($puskesmas_code);
-		$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed($uid);
-		$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept($uid);
-		$d['data_request_new'] = $this->Home_nakes_m->request_keluhan($uid, $puskesmas_code);
-		$d['staff_assignment_ready'] = $this->Home_nakes_m->staff_assignment_table_ready();
-		$d['puskesmas_staff_options'] = $this->Home_nakes_m->get_active_staff_options_by_code($puskesmas_code);
-		$assignment_request_ids = array();
-		$completed_assignment_request_ids = array();
-		foreach ($d['data_request_accept']->result() as $request_row) {
-			$assignment_request_ids[] = (int) $request_row->request_id;
-		}
-		foreach ($d['data_request_completed']->result() as $request_row) {
-			$completed_assignment_request_ids[] = (int) $request_row->request_id;
-		}
-		$d['request_staff_assignment_map'] = $d['staff_assignment_ready']
-			? $this->Home_nakes_m->get_active_staff_assignments_by_request_ids($assignment_request_ids)
-			: array();
-		$d['request_staff_latest_assignment_map'] = $d['staff_assignment_ready']
-			? $this->Home_nakes_m->get_latest_staff_assignments_by_request_ids($completed_assignment_request_ids)
-			: array();
-		$event_request_ids = array_merge($assignment_request_ids, $completed_assignment_request_ids);
-		$d['request_event_ready'] = $this->Home_nakes_m->request_event_table_ready();
-		$d['request_event_map'] = $d['request_event_ready']
-			? $this->Home_nakes_m->get_request_events_by_request_ids($event_request_ids, 5)
-			: array();
-		$d['data_user'] = $this->Home_nakes_m->get_location_user($uid);
+
+		$d['data_user'] = $d['nakes_identity_valid']
+			? $this->Home_nakes_m->get_location_user($uid)
+			: $this->Home_nakes_m->empty_request_list();
 
 		$latitude_dokter = '';
 		$longitude_dokter = '';

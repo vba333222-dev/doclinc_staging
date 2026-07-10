@@ -6,8 +6,12 @@ $profile_birthdate = isset($profile['tgl']) ? (string) $profile['tgl'] : '';
 $profile_gender = isset($profile['gender']) ? (string) $profile['gender'] : '';
 $profile_phone = isset($profile['no_hp']) ? (string) $profile['no_hp'] : '';
 $profile_address = isset($profile['alamat']) ? (string) $profile['alamat'] : '';
-$profile_puskesmas_name = isset($profile['assigned_puskesmas_name']) ? trim((string) $profile['assigned_puskesmas_name']) : '';
-$profile_puskesmas_code = isset($profile['remark']) ? trim((string) $profile['remark']) : trim((string) $this->session->userdata('remark'));
+$profile_puskesmas_name = isset($nakes_puskesmas_name) ? trim((string) $nakes_puskesmas_name) : '';
+$profile_puskesmas_code = isset($nakes_puskesmas_code) ? trim((string) $nakes_puskesmas_code) : '';
+$profile_account_type = isset($nakes_account_type) ? (string) $nakes_account_type : 'unclassified';
+$profile_is_command_center = $profile_account_type === 'command_center';
+$profile_is_personal = $profile_account_type === 'personal';
+$profile_identity_staff = isset($nakes_identity_staff) && is_array($nakes_identity_staff) ? $nakes_identity_staff : array();
 $profile_weak_value = static function ($value) {
 	$value = trim(strip_tags((string) $value));
 	return $value === '' || in_array(strtolower($value), array('n/a', 'na', '-', 'belum ditentukan', 'default'), true);
@@ -35,9 +39,9 @@ $profile_rows = array(
 							));
 							?>
 							<div class="min-w-0">
-								<span>Akun Koordinasi Puskesmas</span>
+								<span><?= $profile_is_command_center ? 'Akun Koordinasi Puskesmas' : ($profile_is_personal ? 'Akun Personal Nakes' : 'Akun Nakes'); ?></span>
 								<strong><?= html_escape($profile_name); ?></strong>
-								<small>Unit Koordinasi</small>
+								<small><?= $profile_is_command_center ? 'Unit Koordinasi' : ($profile_is_personal ? 'Staff Puskesmas' : 'Belum terklasifikasi'); ?></small>
 							</div>
 						</div>
 
@@ -50,8 +54,14 @@ $profile_rows = array(
 								</div>
 								<div class="nk-info-row">
 									<span class="nk-info-label">Status Akun</span>
-									<strong class="nk-info-value">Aktif</strong>
+									<strong class="nk-info-value"><?= !empty($nakes_identity_valid) ? 'Aktif' : 'Perlu pemeriksaan'; ?></strong>
 								</div>
+								<?php if ($profile_is_personal && !empty($profile_identity_staff['staff_profesi'])) : ?>
+								<div class="nk-info-row">
+									<span class="nk-info-label">Profesi Staff</span>
+									<strong class="nk-info-value"><?= html_escape($profile_identity_staff['staff_profesi']); ?></strong>
+								</div>
+								<?php endif; ?>
 								<div class="nk-info-row">
 									<span class="nk-info-label">Jadwal Unit</span>
 									<strong class="nk-info-value">Belum dikonfigurasi</strong>
@@ -59,6 +69,7 @@ $profile_rows = array(
 							</div>
 						</div>
 
+						<?php if ($profile_is_command_center) : ?>
 						<div class="nk-staff-card nk-staff-card--profile">
 							<div class="dl-profile-section-title">Personel Unit</div>
 							<p class="nk-staff-copy">Data personel yang terdaftar pada unit Puskesmas.</p>
@@ -89,6 +100,7 @@ $profile_rows = array(
 								<div class="nk-staff-more"><?= html_escape((string) $profile_staff_count); ?> personel terdaftar.</div>
 							<?php endif; ?>
 						</div>
+						<?php endif; ?>
 
 						<div class="dl-profile-info-card">
 							<div class="dl-profile-section-title">Informasi kontak</div>
