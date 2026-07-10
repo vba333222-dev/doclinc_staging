@@ -1787,6 +1787,222 @@ footer.sticky-footer {
     text-align: center;
 }
 
+.doclinc-admin-card-grid {
+    display: grid;
+    gap: 1.05rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.doclinc-admin-card-toolbar {
+    align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.doclinc-admin-card-toolbar label {
+    color: var(--doclinc-muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.35rem;
+    max-width: 360px;
+    text-transform: uppercase;
+    width: 100%;
+}
+
+.doclinc-admin-card {
+    background: var(--doclinc-surface);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    color: var(--doclinc-text);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 1.05rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.doclinc-admin-card:hover {
+    border-color: rgba(9, 173, 116, 0.24);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.doclinc-admin-card__head {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.85rem;
+    justify-content: space-between;
+    min-width: 0;
+}
+
+.doclinc-admin-card__head > div {
+    min-width: 0;
+}
+
+.doclinc-admin-card__title {
+    color: var(--doclinc-text);
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.3;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.doclinc-admin-card__role {
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+    font-weight: 650;
+    line-height: 1.35;
+    margin-top: 0.22rem;
+    overflow-wrap: anywhere;
+}
+
+.doclinc-admin-card__body {
+    display: grid;
+    gap: 0.8rem 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 1rem;
+}
+
+.doclinc-admin-card__meta {
+    min-width: 0;
+}
+
+.doclinc-admin-card__meta--wide {
+    grid-column: 1 / -1;
+}
+
+.doclinc-admin-card__meta > span:first-child {
+    color: var(--doclinc-muted);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
+}
+
+.doclinc-admin-card__meta strong,
+.doclinc-admin-card__meta small {
+    color: var(--doclinc-text);
+    display: block;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.doclinc-admin-card__meta strong {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.doclinc-admin-card__meta small {
+    color: var(--doclinc-muted);
+    font-size: 0.78rem;
+    margin-top: 0.12rem;
+}
+
+.doclinc-admin-card__meta .doclinc-admin-card__muted {
+    color: var(--doclinc-muted);
+    font-weight: 650;
+}
+
+.doclinc-admin-card__warning {
+    background: rgba(246, 194, 62, 0.11);
+    border: 1px solid rgba(246, 194, 62, 0.28);
+    border-radius: var(--doclinc-radius);
+    color: #8a5b0a;
+    font-size: 0.78rem;
+    font-weight: 650;
+    line-height: 1.4;
+    padding: 0.55rem 0.65rem;
+}
+
+.doclinc-admin-card__actions {
+    align-items: center;
+    border-top: 1px solid var(--doclinc-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.42rem;
+    margin-top: auto;
+    padding-top: 0.9rem;
+}
+
+.doclinc-admin-card__body + .doclinc-admin-card__actions {
+    margin-top: 1rem;
+}
+
+.doclinc-admin-card__actions form {
+    margin: 0;
+}
+
+.doclinc-admin-badge {
+    align-items: center;
+    background: var(--doclinc-button-surface);
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    color: var(--doclinc-muted);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 0.32rem 0.55rem;
+    white-space: nowrap;
+}
+
+.doclinc-admin-badge.is-active,
+.doclinc-admin-badge.is-linked {
+    background: rgba(9, 173, 116, 0.1);
+    border-color: rgba(9, 173, 116, 0.3);
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-admin-badge.is-inactive,
+.doclinc-admin-badge.is-unlinked {
+    background: var(--doclinc-button-surface);
+    color: var(--doclinc-muted);
+}
+
+.doclinc-admin-badge.is-warning {
+    background: rgba(246, 194, 62, 0.12);
+    border-color: rgba(246, 194, 62, 0.36);
+    color: #8a5b0a;
+}
+
+.doclinc-action-btn--warning {
+    background: rgba(246, 194, 62, 0.08) !important;
+    border-color: rgba(180, 120, 20, 0.38) !important;
+    color: #8a5b0a !important;
+}
+
+.doclinc-action-btn--warning:hover {
+    background: rgba(246, 194, 62, 0.16) !important;
+    border-color: rgba(180, 120, 20, 0.56) !important;
+    color: #714a07 !important;
+}
+
+.doclinc-admin-empty {
+    background: var(--doclinc-table-head);
+    border: 1px dashed var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-muted);
+    font-size: 0.9rem;
+    padding: 1.35rem;
+    text-align: center;
+}
+
+html[data-theme="dark"] .doclinc-admin-card {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="dark"] .doclinc-admin-card__warning,
+html[data-theme="dark"] .doclinc-admin-badge.is-warning,
+html[data-theme="dark"] .doclinc-action-btn--warning {
+    color: #f6c56f !important;
+}
+
 .doclinc-card-highlight {
     border-color: rgba(9, 173, 116, 0.46);
     box-shadow: 0 0 0 3px rgba(9, 173, 116, 0.1), 0 14px 30px rgba(15, 23, 42, 0.1);
@@ -1861,6 +2077,14 @@ html[data-theme="dark"] .doclinc-action-danger {
         grid-template-columns: 1fr;
     }
 
+    .doclinc-admin-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .doclinc-admin-card-toolbar {
+        align-items: stretch;
+    }
+
     .doclinc-account-toolbar {
         justify-content: stretch;
     }
@@ -1882,6 +2106,17 @@ html[data-theme="dark"] .doclinc-action-danger {
 
     .doclinc-account-card__actions .doclinc-action-btn,
     .doclinc-account-card__actions form {
+        width: 100%;
+    }
+
+    .doclinc-admin-card__actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .doclinc-admin-card__actions .doclinc-action-btn,
+    .doclinc-admin-card__actions form {
+        justify-content: center;
         width: 100%;
     }
 
