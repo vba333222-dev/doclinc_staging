@@ -82,6 +82,7 @@ $puskesmas_staff_options = isset($puskesmas_staff_options) && is_array($puskesma
 $request_staff_assignment_map = isset($request_staff_assignment_map) && is_array($request_staff_assignment_map) ? $request_staff_assignment_map : array();
 $request_staff_latest_assignment_map = isset($request_staff_latest_assignment_map) && is_array($request_staff_latest_assignment_map) ? $request_staff_latest_assignment_map : array();
 $request_event_map = isset($request_event_map) && is_array($request_event_map) ? $request_event_map : array();
+$can_coordinate_staff = isset($can_coordinate_staff) ? (bool) $can_coordinate_staff : false;
 $staff_assignment_success = $this->session->flashdata('staff_assignment_success');
 $staff_assignment_error = $this->session->flashdata('staff_assignment_error');
 
@@ -131,9 +132,9 @@ $history_event_time = static function ($event) {
 							<span>aktif</span>
 						</div>
 					</div>
-					<?php if ($staff_assignment_success) : ?>
+					<?php if ($can_coordinate_staff && $staff_assignment_success) : ?>
 						<div class="alert alert-success nk-pic-alert" role="alert"><?= html_escape($staff_assignment_success); ?></div>
-					<?php elseif ($staff_assignment_error) : ?>
+					<?php elseif ($can_coordinate_staff && $staff_assignment_error) : ?>
 						<div class="alert alert-warning nk-pic-alert" role="alert"><?= html_escape($staff_assignment_error); ?></div>
 					<?php endif; ?>
 					<ul class="nav nav-tabs nav-justified mb-3 dl-tabs dl-history-tabs" id="myTab" role="tablist">
@@ -227,6 +228,7 @@ $history_event_time = static function ($event) {
 													<div class="nk-detail-row"><span class="nk-detail-label">Rute</span><strong class="nk-detail-value"><span class="visit-route-distance dl-route-soft" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span><span class="visit-route-eta dl-route-soft dl-route-duration" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span></strong></div>
 												</div>
 											</div>
+											<?php if ($can_coordinate_staff) : ?>
 											<div class="nk-action-panel nk-action-panel--pic nk-card-section">
 												<div class="nk-action-panel__title">PIC Personel</div>
 												<div class="nk-action-panel__body">
@@ -290,6 +292,7 @@ $history_event_time = static function ($event) {
 														<?php endforeach; ?>
 													</div>
 												</div>
+											<?php endif; ?>
 											<?php endif; ?>
 											<div class="visit-route-provider-note mt-2 d-none" data-route-provider-note="<?= html_escape((int) $x->request_id); ?>"></div>
 											<div class="alert alert-success py-2 px-3 mt-2 mb-0 d-none" data-arrival-notice="<?= html_escape((int) $x->request_id); ?>">
@@ -409,14 +412,14 @@ $history_event_time = static function ($event) {
 												<?php if ($puskesmas !== '') : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Puskesmas</span><strong class="nk-info-value"><?= doclinc_history_safe_text($puskesmas); ?></strong></div>
 												<?php endif; ?>
-												<?php if ($pic_assignment) : ?>
+												<?php if ($can_coordinate_staff && $pic_assignment) : ?>
 													<div class="nk-info-row"><span class="nk-info-label">PIC Personel</span><strong class="nk-info-value"><?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_profesi) ? ' · ' . html_escape($pic_assignment->staff_profesi) : ''; ?><?= !empty($pic_assignment->staff_no_hp) ? ' · ' . html_escape($pic_assignment->staff_no_hp) : ''; ?></strong></div>
 												<?php endif; ?>
 												<?php if ($completed_preview !== '') : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Hasil</span><strong class="nk-info-value"><?= html_escape($completed_preview); ?></strong></div>
 												<?php endif; ?>
 											</div>
-											<?php if (!empty($request_events)) : ?>
+											<?php if ($can_coordinate_staff && !empty($request_events)) : ?>
 												<div class="nk-action-panel nk-action-panel--timeline nk-card-section">
 													<div class="nk-action-panel__title">Timeline Operasional</div>
 													<div class="nk-timeline-list">

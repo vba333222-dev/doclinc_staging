@@ -1,7 +1,11 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 				<div id="beranda" class="content active">
 					<div class="dl-dashboard-stack">
+						<?php if (!empty($nakes_is_personal)) : ?>
+							<div class="alert alert-info mb-0" role="status">Akun personal hanya menampilkan layanan yang ditugaskan kepada Anda.</div>
+						<?php endif; ?>
 						<?php $this->load->view('partials/nakes_stat_cards_v', get_defined_vars()); ?>
+						<?php if (!empty($nakes_is_command_center)) : ?>
 						<?php
 						$dashboard_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_list) ? array_slice($puskesmas_staff_list, 0, 3) : array();
 						$dashboard_staff_count = isset($puskesmas_staff_count) ? (int) $puskesmas_staff_count : count($dashboard_staff_rows);
@@ -41,13 +45,15 @@
 								<?php endif; ?>
 							<?php endif; ?>
 						</div>
+						<?php endif; ?>
 						<?php
 						$this->load->view('partials/nakes_section_header_v', array(
-							'section_title' => 'Penanganan Unit Berjalan',
+							'section_title' => !empty($nakes_is_personal) ? 'Penanganan Anda' : 'Penanganan Unit Berjalan',
 							'section_link_label' => 'Lihat',
 							'section_link_target' => '#riwayat_konsul',
 						));
 						$this->load->view('partials/nakes_active_task_card_v', get_defined_vars());
+						if (!empty($nakes_is_command_center)) :
 						$this->load->view('partials/nakes_section_header_v', array(
 							'section_title' => 'Permintaan Masuk Puskesmas',
 							'section_link_label' => 'Semua',
@@ -76,5 +82,6 @@
 							<?php endforeach;
 							endif; ?>
 						</div>
+						<?php endif; ?>
 					</div>
 				</div>
