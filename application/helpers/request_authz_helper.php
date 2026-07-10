@@ -563,6 +563,79 @@ if (!function_exists('doclinc_request_is_handled_by_nakes')) {
 	}
 }
 
+if (!function_exists('doclinc_can_view_request_notification')) {
+	function doclinc_can_view_request_notification($request_id, $identity_context = null)
+	{
+			$request_id = (int) $request_id;
+			if ($request_id < 1) {
+				return false;
+			}
+
+			if ($identity_context === null) {
+				$identity_context = doclinc_dokter_identity_context();
+			}
+			if (!is_array($identity_context) || empty($identity_context['valid'])) {
+				return false;
+			}
+
+			$user_id = isset($identity_context['user_id']) ? (int) $identity_context['user_id'] : 0;
+			$puskesmas_code = isset($identity_context['puskesmas_code'])
+				? doclinc_normalize_puskesmas_code($identity_context['puskesmas_code'])
+				: '';
+			$request = doclinc_request_row($request_id);
+			if (!$request || $user_id < 1 || $puskesmas_code === '') {
+				return false;
+			}
+
+			$request_puskesmas_code = isset($request->assigned_puskesmas_code)
+				? trim((string) $request->assigned_puskesmas_code)
+				: '';
+			if ($identity_context['account_type'] === 'command_center') {
+				return $request_puskesmas_code === $puskesmas_code
+					|| ($request_puskesmas_code === '' && (string) $request->dokter_id === (string) $user_id);
+			}
+
+			if ($identity_context['account_type'] !== 'personal' || $request_puskesmas_code !== $puskesmas_code) {
+				return false;
+			}
+
+			$staff_id = isset($identity_context['staff_id']) ? (int) $identity_context['staff_id'] : 0;
+			if ($staff_id < 1) {
+				return false;
+			}
+
+			$CI = &get_instance();
+			$active_assignments = array();
+			if ($CI->db->table_exists('request_staff_assignments')) {
+				$active_assignments = $CI->db
+					->select('staff_id')
+					->where('request_id', $request_id)
+					->where('status', 'aktif')
+					->get('request_staff_assignments')
+					->result();
+			}
+
+			$active_count = count($active_assignments);
+			$matching_count = 0;
+			foreach ($active_assignments as $assignment) {
+				if ((int) $assignment->staff_id === $staff_id) {
+					$matching_count++;
+				}
+			}
+			$direct_user_id = isset($request->assigned_nakes_user_id) ? (int) $request->assigned_nakes_user_id : 0;
+			if ($direct_user_id > 0) {
+				return $direct_user_id === $user_id
+					&& ($active_count === 0 || ($active_count === 1 && $matching_count === 1));
+			}
+			if ($active_count > 0) {
+				return $active_count === 1 && $matching_count === 1;
+			}
+
+			return (isset($request->accepted_by_user_id) && (string) $request->accepted_by_user_id === (string) $user_id)
+				|| (isset($request->dokter_id) && (string) $request->dokter_id === (string) $user_id);
+	}
+}
+
 if (!function_exists('doclinc_can_view_request')) {
 	function doclinc_can_view_request($request_id, $user_id = null, $role = null)
 	{

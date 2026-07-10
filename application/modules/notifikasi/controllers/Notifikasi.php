@@ -26,12 +26,13 @@ class Notifikasi extends MX_Controller
 		}
 
 		$user_id = (int) $this->session->userdata('id');
-		$role = $this->session->userdata('role') ?: '';
+		$user_context = doclinc_notification_user_context($user_id);
+		$role = !empty($user_context['role']) ? $user_context['role'] : ($this->session->userdata('role') ?: '');
 		$limit = (int) $this->input->get('limit', TRUE);
 		$limit = $limit > 0 ? $limit : 20;
 		$notifications = doclinc_get_unread_notifications($user_id, $limit);
 		foreach ($notifications as &$notification) {
-			$notification['action_url'] = $this->notification_action_url($notification, $user_id, $role);
+			$notification['action_url'] = $this->notification_action_url($notification, $user_id, $role, $user_context);
 		}
 		unset($notification);
 
@@ -71,7 +72,7 @@ class Notifikasi extends MX_Controller
 		$this->output->set_output(json_encode(array('status' => 'success')));
 	}
 
-	private function notification_action_url($notification, $user_id, $role)
+	private function notification_action_url($notification, $user_id, $role, $user_context = null)
 	{
 		$fallback = base_url('notifikasi');
 		if (empty($notification['entity_type']) || $notification['entity_type'] !== 'request') {
@@ -82,7 +83,14 @@ class Notifikasi extends MX_Controller
 		if ($request_id < 1) {
 			return $fallback;
 		}
-		if (!doclinc_can_view_request($request_id, $user_id, $role)) {
+		$identity_context = is_array($user_context) && isset($user_context['identity'])
+			? $user_context['identity']
+			: null;
+		if ($role === 'dokter') {
+			if (!doclinc_can_view_request_notification($request_id, $identity_context)) {
+				return $fallback;
+			}
+		} elseif (!doclinc_can_view_request($request_id, $user_id, $role)) {
 			return $fallback;
 		}
 
@@ -95,9 +103,14 @@ class Notifikasi extends MX_Controller
 		}
 
 		if ($role === 'dokter') {
-			$is_handler = (string) $request->dokter_id === (string) $user_id
-				|| (isset($request->accepted_by_user_id) && (string) $request->accepted_by_user_id === (string) $user_id);
-			if ($request->request_status === 'Pending') {
+			$is_personal = is_array($identity_context)
+				&& !empty($identity_context['valid'])
+				&& $identity_context['account_type'] === 'personal';
+			$is_handler = $is_personal
+				|| (string) $request->dokter_id === (string) $user_id
+				|| (isset($request->accepted_by_user_id) && (string) $request->accepted_by_user_id === (string) $user_id)
+				|| (isset($request->assigned_nakes_user_id) && (string) $request->assigned_nakes_user_id === (string) $user_id);
+			if (!$is_personal && $request->request_status === 'Pending') {
 				return base_url('home_nakes?highlight_request_id=' . $request_id) . '#req_konsul';
 			}
 			if ($is_handler && $request->request_status === 'Accepted') {
