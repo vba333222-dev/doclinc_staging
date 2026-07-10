@@ -151,7 +151,7 @@ $form_values = array(
 					</div>
 				</form>
 
-				<?php $bind_modals = ''; ?>
+				<?php $account_modals = ''; ?>
 				<?php if (!empty($staff_rows)): ?>
 					<div class="doclinc-account-list">
 						<?php foreach ($staff_rows as $row): ?>
@@ -180,6 +180,13 @@ $form_values = array(
 										$profession_label = $profession_labels[$profession_key] ?? $profession_label;
 									}
 									$is_active = ($row->status ?? '') === 'aktif';
+									$linked_account_is_active = ($row->akun_status ?? '') === 'aktif';
+									$puskesmas_status = $row->puskesmas_status ?? null;
+									$puskesmas_is_valid = trim($kode_pkm) !== ''
+										&& strtoupper(trim($kode_pkm)) !== 'DEFAULT'
+										&& !empty($row->nama_puskesmas)
+										&& ($puskesmas_status === null || $puskesmas_status === 'aktif');
+									$can_create_personal_account = $is_active && $linked_user_id < 1 && $puskesmas_is_valid;
 									?>
 									<div class="doclinc-account-card">
 										<div class="doclinc-account-card__header">
@@ -221,7 +228,12 @@ $form_values = array(
 												<?php if (!empty($row->akun_email)): ?>
 													<small><?= html_escape($row->akun_email); ?></small>
 												<?php endif; ?>
-												<span class="doclinc-status-chip is-active mt-2">Terhubung</span>
+												<span class="doclinc-status-chip <?= $linked_account_is_active ? 'is-active' : 'is-inactive'; ?> mt-2">
+													<?= $linked_account_is_active ? 'Terhubung — Aktif' : 'Terhubung — Nonaktif'; ?>
+												</span>
+												<?php if (!$linked_account_is_active): ?>
+													<small class="text-danger mt-1">Akun belum dapat digunakan untuk login.</small>
+												<?php endif; ?>
 												<?php if ($is_command_center_link): ?>
 													<div class="doclinc-account-card__note is-warning mt-2"><i class="fas fa-exclamation-triangle mr-1"></i> Akun ini terlihat sebagai akun koordinator Puskesmas. Periksa ulang sebelum digunakan sebagai akun personal.</div>
 												<?php endif; ?>
@@ -261,6 +273,11 @@ $form_values = array(
 													<button type="button" class="btn doclinc-action-btn doclinc-action-btn--secondary" data-toggle="modal" data-target="#modalBindAccount<?= (int) $staff_id; ?>">
 														<i class="fas fa-link"></i> Hubungkan Akun
 													</button>
+													<?php if ($can_create_personal_account): ?>
+														<button type="button" class="btn doclinc-action-btn doclinc-action-btn--primary" data-toggle="modal" data-target="#modalCreatePersonalAccount<?= (int) $staff_id; ?>">
+															<i class="fas fa-user-plus"></i> Buat Akun Personal
+														</button>
+													<?php endif; ?>
 												<?php endif; ?>
 											</div>
 										</div>
@@ -318,11 +335,65 @@ $form_values = array(
 												</div>
 											</div>
 										</div>
-										<?php $bind_modals .= ob_get_clean(); ?>
+										<?php $account_modals .= ob_get_clean(); ?>
+
+										<?php if ($can_create_personal_account): ?>
+											<?php ob_start(); ?>
+											<div class="modal fade" id="modalCreatePersonalAccount<?= (int) $staff_id; ?>" tabindex="-1" role="dialog" aria-labelledby="modalCreatePersonalAccountLabel<?= (int) $staff_id; ?>" aria-hidden="true">
+												<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+													<div class="modal-content border-0 shadow-sm">
+														<form action="<?= site_url('kelola_staff_puskesmas/create_personal_account'); ?>" method="post">
+															<div class="modal-header bg-info text-white">
+																<h5 class="modal-title" id="modalCreatePersonalAccountLabel<?= (int) $staff_id; ?>"><i class="fas fa-user-plus mr-2"></i>Buat Akun Personal</h5>
+																<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+															</div>
+															<div class="modal-body bg-light">
+																<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
+																<div class="mb-3">
+																	<div class="font-weight-bold"><?= html_escape($row->nama ?? '-'); ?></div>
+																	<div class="small text-muted"><?= html_escape($profession_label); ?></div>
+																	<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? '-'); ?> (<?= html_escape($row->kode_pkm ?? '-'); ?>)</div>
+																</div>
+																<div class="alert alert-warning">Akun akan dibuat dan langsung dihubungkan ke staff ini. Status akun tetap nonaktif sampai pembatasan akses akun personal selesai.</div>
+																<div class="row">
+																	<div class="col-md-6"><div class="form-group">
+																		<label class="text-info">Nama Akun</label>
+																		<input type="text" class="form-control rounded-pill border-info" name="nama" value="<?= html_escape($row->nama ?? ''); ?>" maxlength="100" required>
+																	</div></div>
+																	<div class="col-md-6"><div class="form-group">
+																		<label class="text-info">Username</label>
+																		<input type="text" class="form-control rounded-pill border-info" name="username" minlength="3" maxlength="100" pattern="[A-Za-z0-9._-]+" autocomplete="username" required>
+																	</div></div>
+																</div>
+																<div class="form-group">
+																	<label class="text-info">Email</label>
+																	<input type="email" class="form-control rounded-pill border-info" name="email" maxlength="100" autocomplete="email" required>
+																</div>
+																<div class="row">
+																	<div class="col-md-6"><div class="form-group">
+																		<label class="text-info">Password Sementara</label>
+																		<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" autocomplete="new-password" required>
+																	</div></div>
+																	<div class="col-md-6"><div class="form-group">
+																		<label class="text-info">Konfirmasi Password</label>
+																		<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" autocomplete="new-password" required>
+																	</div></div>
+																</div>
+															</div>
+															<div class="modal-footer border-0">
+																<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
+																<button type="submit" class="btn btn-info rounded-pill">Buat dan Hubungkan Akun</button>
+															</div>
+														</form>
+													</div>
+												</div>
+											</div>
+											<?php $account_modals .= ob_get_clean(); ?>
+										<?php endif; ?>
 									<?php endif; ?>
 						<?php endforeach; ?>
 					</div>
-					<?= $bind_modals; ?>
+					<?= $account_modals; ?>
 				<?php else: ?>
 					<div class="doclinc-account-empty">Belum ada staff Puskesmas untuk filter ini.</div>
 				<?php endif; ?>

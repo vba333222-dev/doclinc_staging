@@ -131,6 +131,86 @@ class Kelola_staff_puskesmas extends MX_Controller
 		redirect('kelola_staff_puskesmas', 'refresh');
 	}
 
+	public function create_personal_account()
+	{
+		if (!$this->require_post()) {
+			return;
+		}
+		if (!$this->Kelola_staff_puskesmas_m->personal_account_creation_ready()) {
+			$this->personal_account_flash('Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
+			return;
+		}
+
+		$staff_id = (int) $this->input->post('staff_id');
+		$nama = trim((string) $this->input->post('nama', TRUE));
+		$username = trim((string) $this->input->post('username', TRUE));
+		$email = trim((string) $this->input->post('email', TRUE));
+		$password = (string) $this->input->post('password');
+		$confirm_password = (string) $this->input->post('confirm_password');
+
+		$staff = $staff_id > 0 ? $this->Kelola_staff_puskesmas_m->get_by_id($staff_id) : null;
+		if (!$staff) {
+			$this->personal_account_flash('Staff tidak ditemukan.');
+			return;
+		}
+		if ((int) ($staff->user_id ?? 0) > 0) {
+			$this->personal_account_flash('Staff sudah terhubung ke akun login.');
+			return;
+		}
+		if (($staff->status ?? '') !== 'aktif') {
+			$this->personal_account_flash('Staff harus aktif sebelum dibuatkan akun.');
+			return;
+		}
+		if (!$this->Kelola_staff_puskesmas_m->puskesmas_is_active($staff->kode_pkm ?? '')) {
+			$this->personal_account_flash('Puskesmas staff tidak valid.');
+			return;
+		}
+		if ($nama === '' || strlen($nama) > 100) {
+			$this->personal_account_flash('Nama akun wajib diisi dan maksimal 100 karakter.');
+			return;
+		}
+		if ($username === '' || strlen($username) < 3 || strlen($username) > 100 || !preg_match('/^[A-Za-z0-9._-]+$/', $username)) {
+			$this->personal_account_flash('Username harus 3-100 karakter dan hanya boleh berisi huruf, angka, titik, garis bawah, atau tanda hubung.');
+			return;
+		}
+		if ($email === '' || strlen($email) > 100 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+			$this->personal_account_flash('Email tidak valid.');
+			return;
+		}
+		if (strlen($password) < 8) {
+			$this->personal_account_flash('Password minimal 8 karakter.');
+			return;
+		}
+		if ($password !== $confirm_password) {
+			$this->personal_account_flash('Konfirmasi password tidak cocok.');
+			return;
+		}
+		if ($this->Kelola_staff_puskesmas_m->username_exists($username)) {
+			$this->personal_account_flash('Username sudah digunakan.');
+			return;
+		}
+		if ($this->Kelola_staff_puskesmas_m->email_exists($email)) {
+			$this->personal_account_flash('Email sudah digunakan.');
+			return;
+		}
+
+		$this->load->helper('password_compat');
+		$result = $this->Kelola_staff_puskesmas_m->create_and_link_personal_account($staff_id, array(
+			'nama' => $nama,
+			'username' => $username,
+			'email' => $email,
+			'password' => doclinc_password_hash($password),
+			'updated_by' => (string) $this->session->userdata('username'),
+		));
+
+		$is_success = !empty($result['status']) && $result['status'] === 'success';
+		$this->session->set_flashdata(
+			$is_success ? 'success' : 'error',
+			!empty($result['message']) ? $result['message'] : 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.'
+		);
+		redirect('kelola_staff_puskesmas', 'refresh');
+	}
+
 	public function unbind_account()
 	{
 		if (!$this->require_post()) {
@@ -275,5 +355,11 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$this->session->set_flashdata('error', 'Metode tidak diizinkan.');
 		redirect('kelola_staff_puskesmas', 'refresh');
 		return false;
+	}
+
+	private function personal_account_flash($message)
+	{
+		$this->session->set_flashdata('error', $message);
+		redirect('kelola_staff_puskesmas', 'refresh');
 	}
 }
