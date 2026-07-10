@@ -39,8 +39,9 @@ class Login extends MX_Controller
 		$lattitude = htmlspecialchars($this->input->post('lattitude'));
 		$longitude = htmlspecialchars($this->input->post('longitude'));
 		$auth = $this->Login_m->auth($username);
-		if ($auth->num_rows() > 0 && doclinc_password_verify($password, (string) $auth->row()->password)) {
-			$user = $auth->row();
+		$user = $auth->num_rows() > 0 ? $auth->row() : null;
+		$dokter_is_allowed = !$user || $user->role !== 'dokter' || ($user->status ?? null) === 'aktif';
+		if ($user && $dokter_is_allowed && doclinc_password_verify($password, (string) $user->password)) {
 			if (doclinc_password_needs_rehash((string) $user->password)) {
 				$this->Login_m->update_password($user->userId, doclinc_password_hash($password));
 			}
