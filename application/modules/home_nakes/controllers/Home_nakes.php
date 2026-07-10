@@ -279,19 +279,20 @@ class Home_nakes extends MX_Controller
 		}
 
 		$user_id = (int) $this->session->userdata('id');
-		$profile = $this->Home_nakes_m->get_profile_by_id($user_id);
-		$puskesmas_code = trim((string) (isset($profile['remark']) ? $profile['remark'] : $this->session->userdata('remark')));
+		$identity_context = doclinc_dokter_identity_context($user_id);
+		$puskesmas_code = !empty($identity_context['puskesmas_code']) ? (string) $identity_context['puskesmas_code'] : '';
 		$request_id = (int) $this->input->post('request_id');
 		$staff_id = (int) $this->input->post('staff_id');
 		$note = trim((string) $this->input->post('note', TRUE));
 
-		if ($puskesmas_code === '' || strtoupper($puskesmas_code) === 'DEFAULT' || $request_id < 1 || $staff_id < 1) {
-			$this->session->set_flashdata('staff_assignment_error', 'Data PIC personel tidak valid');
+		$request = $request_id > 0 ? doclinc_request_row($request_id) : null;
+		if ($staff_id < 1 || !doclinc_can_coordinate_request($request, $identity_context)) {
+			$this->session->set_flashdata('staff_assignment_error', 'Akses tidak diizinkan untuk tindakan ini.');
 			redirect('home_nakes#riwayat_konsul');
 			return;
 		}
 
-		$result = $this->Home_nakes_m->assign_staff_to_request($request_id, $staff_id, $puskesmas_code, $user_id, $note);
+		$result = $this->Home_nakes_m->assign_staff_to_request($request_id, $staff_id, $puskesmas_code, $user_id, $note, $identity_context);
 		$message = !empty($result['message']) ? $result['message'] : 'Gagal menetapkan PIC personel';
 		$this->session->set_flashdata(
 			isset($result['status']) && $result['status'] === 'success' ? 'staff_assignment_success' : 'staff_assignment_error',
@@ -311,17 +312,18 @@ class Home_nakes extends MX_Controller
 		}
 
 		$user_id = (int) $this->session->userdata('id');
-		$profile = $this->Home_nakes_m->get_profile_by_id($user_id);
-		$puskesmas_code = trim((string) (isset($profile['remark']) ? $profile['remark'] : $this->session->userdata('remark')));
+		$identity_context = doclinc_dokter_identity_context($user_id);
+		$puskesmas_code = !empty($identity_context['puskesmas_code']) ? (string) $identity_context['puskesmas_code'] : '';
 		$request_id = (int) $this->input->post('request_id');
 
-		if ($puskesmas_code === '' || strtoupper($puskesmas_code) === 'DEFAULT' || $request_id < 1) {
-			$this->session->set_flashdata('staff_assignment_error', 'Data PIC personel tidak valid');
+		$request = $request_id > 0 ? doclinc_request_row($request_id) : null;
+		if (!doclinc_can_coordinate_request($request, $identity_context)) {
+			$this->session->set_flashdata('staff_assignment_error', 'Akses tidak diizinkan untuk tindakan ini.');
 			redirect('home_nakes#riwayat_konsul');
 			return;
 		}
 
-		$result = $this->Home_nakes_m->clear_staff_assignment($request_id, $puskesmas_code, $user_id);
+		$result = $this->Home_nakes_m->clear_staff_assignment($request_id, $puskesmas_code, $user_id, $identity_context);
 		$message = !empty($result['message']) ? $result['message'] : 'Gagal membatalkan PIC personel';
 		$this->session->set_flashdata(
 			isset($result['status']) && $result['status'] === 'success' ? 'staff_assignment_success' : 'staff_assignment_error',
@@ -371,7 +373,9 @@ class Home_nakes extends MX_Controller
 				->set_output(json_encode(['status' => 'error', 'message' => 'Metode tidak diizinkan']));
 			return;
 		}
-		if ($this->session->userdata('role') !== 'dokter') {
+		$id_user = (int) $this->session->userdata('id');
+		$identity_context = doclinc_dokter_identity_context($id_user);
+		if (empty($identity_context['valid']) || $identity_context['account_type'] !== 'command_center') {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
@@ -379,15 +383,7 @@ class Home_nakes extends MX_Controller
 		}
 
 		$id = (int) $this->input->post('id');
-		$id_user = $this->session->userdata('id');
-		$profile = $this->Home_nakes_m->get_profile_by_id($id_user);
-		$puskesmas_code = trim((string) (isset($profile['remark']) ? $profile['remark'] : ''));
-		if ($puskesmas_code === '') {
-			$puskesmas_code = trim((string) $this->session->userdata('remark'));
-		}
-		if ($puskesmas_code !== '') {
-			$this->session->set_userdata('remark', $puskesmas_code);
-		}
+		$puskesmas_code = (string) $identity_context['puskesmas_code'];
 		$latitude = $this->input->post('latitude');
 		$longitude = $this->input->post('longitude');
 
@@ -396,7 +392,15 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		$result = $this->Home_nakes_m->accept_request($id, $id_user, $latitude, $longitude, $puskesmas_code);
+		$request = doclinc_request_row($id);
+		if (!$request || (string) $request->request_status !== 'Pending' || !doclinc_can_coordinate_request($request, $identity_context)) {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan untuk tindakan ini.']));
+			return;
+		}
+
+		$result = $this->Home_nakes_m->accept_request($id, $id_user, $latitude, $longitude, $puskesmas_code, $identity_context);
 		if (!empty($result['status']) && $result['status'] === 'success') {
 			if (empty($result['already_accepted'])) {
 				doclinc_log_request_event('request_accepted', $id);
@@ -432,7 +436,9 @@ class Home_nakes extends MX_Controller
 		if (!$this->require_post_json()) {
 			return;
 		}
-		if ($this->session->userdata('role') !== 'dokter') {
+		$user_id = (int) $this->session->userdata('id');
+		$identity_context = doclinc_dokter_identity_context($user_id);
+		if (empty($identity_context['valid']) || $identity_context['account_type'] !== 'command_center') {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
@@ -440,8 +446,10 @@ class Home_nakes extends MX_Controller
 		}
 
 		$request_id = (int) ($this->input->post('request_id') ?: $this->input->post('id'));
-		$user_id = (int) $this->session->userdata('id');
-		if ($request_id < 1 || !doclinc_can_cancel_request($request_id, $user_id, 'dokter')) {
+		$request = $request_id > 0 ? doclinc_request_row($request_id) : null;
+		if (!$request
+			|| (string) $request->request_status !== 'Pending'
+			|| !doclinc_can_coordinate_request($request, $identity_context)) {
 			if (function_exists('doclinc_log_request_event')) {
 				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'nakes_cancel'));
 			}
@@ -451,17 +459,8 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		$profile = $this->Home_nakes_m->get_profile_by_id($user_id);
-		$puskesmas_code = trim((string) (isset($profile['remark']) ? $profile['remark'] : ''));
-		if ($puskesmas_code === '') {
-			$puskesmas_code = trim((string) $this->session->userdata('remark'));
-		}
-		if ($puskesmas_code !== '') {
-			$this->session->set_userdata('remark', $puskesmas_code);
-		}
-
-		$request = doclinc_request_row($request_id);
-		$result = $this->Home_nakes_m->cancel_request($request_id, $user_id, $puskesmas_code);
+		$puskesmas_code = (string) $identity_context['puskesmas_code'];
+		$result = $this->Home_nakes_m->cancel_request($request_id, $user_id, $puskesmas_code, $identity_context);
 		if (empty($result['status']) || $result['status'] !== 'success') {
 			if (function_exists('doclinc_log_request_event')) {
 				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'nakes_cancel'));
