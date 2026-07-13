@@ -438,7 +438,7 @@ class Home_nakes extends MX_Controller
 		}
 		$user_id = (int) $this->session->userdata('id');
 		$identity_context = doclinc_dokter_identity_context($user_id);
-		if (empty($identity_context['valid'])) {
+		if (empty($identity_context['valid']) || $identity_context['account_type'] !== 'command_center') {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
@@ -447,14 +447,9 @@ class Home_nakes extends MX_Controller
 
 		$request_id = (int) ($this->input->post('request_id') ?: $this->input->post('id'));
 		$request = $request_id > 0 ? doclinc_request_row($request_id) : null;
-		$access_context = $request ? doclinc_nakes_request_access_context($request, $identity_context) : null;
-		$can_cancel_pending = $request
-			&& (string) $request->request_status === 'Pending'
-			&& doclinc_can_coordinate_request($request, $identity_context);
-		$can_cancel_accepted = $request
-			&& (string) $request->request_status === 'Accepted'
-			&& !empty($access_context['can_handle']);
-		if (!$can_cancel_pending && !$can_cancel_accepted) {
+		if (!$request
+			|| (string) $request->request_status !== 'Pending'
+			|| !doclinc_can_coordinate_request($request, $identity_context)) {
 			if (function_exists('doclinc_log_request_event')) {
 				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'nakes_cancel'));
 			}

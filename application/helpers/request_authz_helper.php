@@ -41,7 +41,7 @@ if (!function_exists('doclinc_normalize_puskesmas_code')) {
 }
 
 if (!function_exists('doclinc_dokter_identity_context')) {
-	function doclinc_dokter_identity_context($user_id = null)
+	function doclinc_dokter_identity_context($user_id = null, $refresh = false)
 	{
 		static $context_cache = array();
 
@@ -50,7 +50,7 @@ if (!function_exists('doclinc_dokter_identity_context')) {
 		}
 		$user_id = (int) $user_id;
 		$cache_key = (string) $user_id;
-		if (array_key_exists($cache_key, $context_cache)) {
+		if (!$refresh && array_key_exists($cache_key, $context_cache)) {
 			return $context_cache[$cache_key];
 		}
 

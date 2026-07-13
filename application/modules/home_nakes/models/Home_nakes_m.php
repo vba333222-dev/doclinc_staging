@@ -477,7 +477,7 @@ class Home_nakes_m extends MX_Controller
 			return null;
 		}
 		$database_identity = function_exists('doclinc_dokter_identity_context')
-			? doclinc_dokter_identity_context($nakes_user_id)
+			? doclinc_dokter_identity_context($nakes_user_id, true)
 			: null;
 		if (!is_array($identity_context)
 			|| empty($identity_context['valid'])
@@ -693,14 +693,9 @@ class Home_nakes_m extends MX_Controller
 			return array('status' => 'error', 'message' => 'Data request tidak lengkap');
 		}
 		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
-		$database_identity = function_exists('doclinc_dokter_identity_context')
-			? doclinc_dokter_identity_context($user_id)
-			: null;
 		if (!is_array($identity_context)
 			|| empty($identity_context['valid'])
-			|| empty($database_identity['valid'])
-			|| (int) $identity_context['user_id'] !== $user_id
-			|| trim((string) $identity_context['puskesmas_code']) !== $puskesmas_code) {
+			|| (int) $identity_context['user_id'] !== $user_id) {
 			return array('status' => 'error', 'message' => 'Akses tidak diizinkan untuk tindakan ini.');
 		}
 
@@ -713,15 +708,15 @@ class Home_nakes_m extends MX_Controller
 			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Request tidak ditemukan');
 		}
-		$access_context = function_exists('doclinc_nakes_request_access_context')
-			? doclinc_nakes_request_access_context($request_id, $database_identity)
+		$database_identity = function_exists('doclinc_dokter_identity_context')
+			? doclinc_dokter_identity_context($user_id, true)
 			: null;
-		$can_cancel_pending = (string) $request->request_status === 'Pending'
-			&& function_exists('doclinc_can_coordinate_request')
-			&& doclinc_can_coordinate_request($request, $database_identity);
-		$can_cancel_accepted = (string) $request->request_status === 'Accepted'
-			&& !empty($access_context['can_handle']);
-		if (!$can_cancel_pending && !$can_cancel_accepted) {
+		if (empty($database_identity['valid'])
+			|| $database_identity['account_type'] !== 'command_center'
+			|| trim((string) $database_identity['puskesmas_code']) !== $puskesmas_code
+			|| (string) $request->request_status !== 'Pending'
+			|| !function_exists('doclinc_can_coordinate_request')
+			|| !doclinc_can_coordinate_request($request, $database_identity)) {
 			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Request tidak dapat dibatalkan');
 		}
@@ -733,16 +728,8 @@ class Home_nakes_m extends MX_Controller
 
 		$this->db
 			->where('request_id', $request_id)
-			->where('request_status', $request->request_status);
-		$request_code = isset($request->assigned_puskesmas_code) ? trim((string) $request->assigned_puskesmas_code) : '';
-		if ($request_code !== '') {
-			$this->db->where('TRIM(assigned_puskesmas_code) = ' . $this->db->escape($puskesmas_code), null, false);
-		} else {
-			$this->db->group_start()
-				->where('assigned_puskesmas_code IS NULL', null, false)
-				->or_where("TRIM(assigned_puskesmas_code) = ''", null, false)
-			->group_end();
-		}
+			->where('request_status', 'Pending');
+		$this->where_command_center_tenant($user_id, $puskesmas_code);
 
 		$this->db->update('requests', $data);
 		if ($this->db->affected_rows() > 0 && $this->db->trans_status() !== false) {
@@ -786,12 +773,8 @@ class Home_nakes_m extends MX_Controller
 			}
 		}
 
-		$database_identity = function_exists('doclinc_dokter_identity_context')
-			? doclinc_dokter_identity_context($user_id)
-			: null;
 		if (!is_array($identity_context)
 			|| empty($identity_context['valid'])
-			|| empty($database_identity['valid'])
 			|| (int) $identity_context['user_id'] !== $user_id) {
 			return array('status' => 'error', 'message' => 'Akses tidak diizinkan');
 		}
@@ -809,6 +792,9 @@ class Home_nakes_m extends MX_Controller
 			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Status kunjungan hanya dapat diperbarui untuk konsultasi aktif');
 		}
+		$database_identity = function_exists('doclinc_dokter_identity_context')
+			? doclinc_dokter_identity_context($user_id, true)
+			: null;
 		$access_context = function_exists('doclinc_nakes_request_access_context')
 			? doclinc_nakes_request_access_context($request_id, $database_identity)
 			: null;
@@ -909,12 +895,8 @@ class Home_nakes_m extends MX_Controller
 		if ($request_id < 1 || $user_id < 1) {
 			return false;
 		}
-		$database_identity = function_exists('doclinc_dokter_identity_context')
-			? doclinc_dokter_identity_context($user_id)
-			: null;
 		if (!is_array($identity_context)
 			|| empty($identity_context['valid'])
-			|| empty($database_identity['valid'])
 			|| (int) $identity_context['user_id'] !== $user_id) {
 			return false;
 		}
@@ -924,6 +906,9 @@ class Home_nakes_m extends MX_Controller
 			'SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
 			array($request_id)
 		)->row();
+		$database_identity = function_exists('doclinc_dokter_identity_context')
+			? doclinc_dokter_identity_context($user_id, true)
+			: null;
 		$access_context = $request && function_exists('doclinc_nakes_request_access_context')
 			? doclinc_nakes_request_access_context($request_id, $database_identity)
 			: null;

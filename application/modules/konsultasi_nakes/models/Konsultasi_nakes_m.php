@@ -106,11 +106,12 @@ class Konsultasi_nakes_m extends MX_Controller
 	{
 		$doctor_id = (int) $doctor_id;
 		$database_identity = function_exists('doclinc_dokter_identity_context')
-			? doclinc_dokter_identity_context($doctor_id)
+			? doclinc_dokter_identity_context($doctor_id, true)
 			: null;
 		if ($doctor_id < 1
 			|| !is_array($identity_context)
 			|| empty($identity_context['valid'])
+			|| (int) $identity_context['user_id'] !== $doctor_id
 			|| empty($database_identity['valid'])
 			|| !function_exists('doclinc_can_view_nakes_request')
 			|| !doclinc_can_view_nakes_request($request_id, $database_identity)) {
@@ -150,12 +151,8 @@ class Konsultasi_nakes_m extends MX_Controller
 		$user = $doctor_id ?: $this->session->userdata('id');
 		$terapi = is_array($terapi) ? $terapi : [];
 
-		$database_identity = function_exists('doclinc_dokter_identity_context')
-			? doclinc_dokter_identity_context($user)
-			: null;
 		if (!is_array($identity_context)
 			|| empty($identity_context['valid'])
-			|| empty($database_identity['valid'])
 			|| (int) $identity_context['user_id'] !== (int) $user) {
 			return false;
 		}
@@ -165,6 +162,9 @@ class Konsultasi_nakes_m extends MX_Controller
 			'SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
 			array($request_id)
 		)->row();
+		$database_identity = function_exists('doclinc_dokter_identity_context')
+			? doclinc_dokter_identity_context($user, true)
+			: null;
 		$access_context = $request && function_exists('doclinc_nakes_request_access_context')
 			? doclinc_nakes_request_access_context($request_id, $database_identity)
 			: null;
