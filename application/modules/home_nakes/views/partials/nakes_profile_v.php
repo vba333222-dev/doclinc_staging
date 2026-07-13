@@ -123,10 +123,10 @@ $profile_rows = array(
 
 						<div class="dl-profile-actions">
 							<button type="button" class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#modalProfil">
-								<i class="bi bi-pencil-fill me-2"></i>Edit Profil
+								<i class="bi bi-pencil-fill me-2"></i>Edit profil
 							</button>
 							<button type="button" class="btn btn-outline-danger shadow-sm" id="btn-logout">
-								<i class="bi bi-box-arrow-right me-2"></i>Logout
+								<i class="bi bi-box-arrow-right me-2"></i>Keluar
 							</button>
 						</div>
 					</div>

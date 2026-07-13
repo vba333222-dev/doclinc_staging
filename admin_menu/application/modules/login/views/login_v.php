@@ -66,7 +66,6 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 						<div class="text-center mb-4">
 							<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="DocLink" class="doclinc-login-logo">
 							<h1 class="h4 text-primary font-weight-bold mb-2">Masuk ke Admin DocLink</h1>
-							<p class="text-muted mb-0">Silakan login untuk mengakses sistem administrasi DocLink</p>
 						</div>
 						<div class="info text-center mb-3">
 							<?php echo $this->session->flashdata('info'); ?>
@@ -93,7 +92,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 								<div class="invalid-feedback">Password tidak boleh kosong.</div>
 							</div>
 							<button id="login" class="btn btn-primary btn-block rounded-pill py-2 font-weight-bold shadow-sm">
-								<i class="fas fa-sign-in-alt mr-2"></i>Login
+								<i class="fas fa-sign-in-alt mr-2"></i>Masuk
 							</button>
 						</form>
 						<div class="text-center mt-3">
@@ -114,7 +113,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title">Lupa password?</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
 						<span aria-hidden="true">&times;</span>
 					</button>
 				</div>
@@ -122,7 +121,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 					<form action="<?php echo site_url('login/reset_password'); ?>" method="POST" id="lupa">
 						<div id="pesan_cust"></div>
 						<div class="form-group mb-3">
-							<label for="email_cust">Masukkan email Anda (Pastikan email aktif)</label>
+							<label for="email_cust">Email aktif</label>
 							<input type="email" class="form-control" id="email_cust" name="email_cust" placeholder="name@example.com" required>
 						</div>
 						<div class="form-group mb-3">
@@ -133,7 +132,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 							<div class="g-recaptcha" id="g-recaptcha" data-sitekey="<?= SITE_KEY; ?>"></div>
 							<div id="invalid-captcha"></div>
 						</center>
-						<button class="btn btn-primary btn-block" type="submit" id="lupa_submit">Submit</button>
+						<button class="btn btn-primary btn-block" type="submit" id="lupa_submit">Kirim password baru</button>
 					</form>
 				</div>
 			</div>
@@ -189,7 +188,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 			});
 			$('form#lupa').submit(function(event) {
 				if ($('#g-recaptcha-response').val() == '') {
-					alert('Captcha harus terisi dengan benar');
+					alert('Lengkapi captcha.');
 					return false;
 				} else {
 					$('#lupa_submit').attr('disabled', true);

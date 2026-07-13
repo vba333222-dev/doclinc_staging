@@ -14,40 +14,40 @@
 			<div class="col-md-4">
 				<center>
 					<img class="p-2" src="<?= base_url('assets/images/doklincwhite.png'); ?>" alt="" height="70px">
-					<p class="fw-bold text-white text-uppercase">Registrasi</p>
+					<p class="fw-bold text-white text-uppercase">Daftar</p>
 				</center>
 				<div class="card shadow-lg" style="border-radius: 10px; overflow: hidden;">
 					<div class="card-body" style="background-color: #e0f2f1;">
 						<form id="signupForm">
 							<div class="form-floating mb-2">
-							  <input type="text" class="form-control" id="nama_lengkap" name="nama_lengkap" placeholder="Nama Lengkap">
-							  <label for="nama_lengkap">Nama Lengkap</label>
+							  <input type="text" class="form-control" id="nama_lengkap" name="nama_lengkap" placeholder="Nama lengkap">
+							  <label for="nama_lengkap">Nama lengkap</label>
 							</div>
 							<div class="form-floating mb-2">
 							  <input type="email" class="form-control" id="email" name="email" placeholder="Email">
 							  <label for="email">Email</label>
 							</div>
 							<div class="form-floating mb-2">
-							  <input type="text" class="form-control" id="no_hp" name="no_hp" placeholder="no_hp">
-							  <label for="no_hp">No HP</label>
+							  <input type="text" class="form-control" id="no_hp" name="no_hp" placeholder="Nomor HP">
+							  <label for="no_hp">Nomor HP</label>
 							</div>
 							<div class="form-floating mb-2">
-							  <input type="text" class="form-control" id="username" name="username" placeholder="Username" autocomplete="off">
-							  <label for="username">Username</label>
+							  <input type="text" class="form-control" id="username" name="username" placeholder="Nama pengguna" autocomplete="off">
+							  <label for="username">Nama pengguna</label>
 							</div>
 							<div class="form-floating mb-2">
 							  <input type="password" class="form-control" id="password" name="password" placeholder="Password" autocomplete="off">
 							  <label for="password">Password</label>
 							</div>
 							<div class="form-floating mb-2">
-							  <input type="password" class="form-control" id="k_password" name="k_password" placeholder="Konfirmasi Password">
-							  <label for="k_password">Konfirmasi Password</label>
+							  <input type="password" class="form-control" id="k_password" name="k_password" placeholder="Konfirmasi password">
+							  <label for="k_password">Konfirmasi password</label>
 							</div>
 							<div class="row g-2">
 				                <div class="col">
 				                    <div class="d-grid">
 
-				                        <button type="submit" class="btn btn-success">Submit</button>
+				                        <button type="submit" class="btn btn-success">Daftar</button>
 
 				                    </div>
 
