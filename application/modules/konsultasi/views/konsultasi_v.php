@@ -493,13 +493,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 				<section class="consult-card">
 					<div class="consult-card-header">
-						<h2 class="consult-card-title">Riwayat Kesehatan</h2>
+						<h2 class="consult-card-title">Riwayat kesehatan</h2>
 						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
 					</div>
 					<div class="consult-input-stack">
-						<small class="consult-helper">Puskesmas tujuan akan ditentukan otomatis dari lokasi Anda.</small>
+						<small class="consult-helper">Pastikan lokasi Anda aktif.</small>
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_penyakit_pernah">Penyakit yang pernah diderita</label>
+							<label class="consult-field-label" for="ui_penyakit_pernah">Riwayat penyakit</label>
 							<input type="text" id="ui_penyakit_pernah" class="consult-field form-control" placeholder="Contoh: asma, hipertensi, atau kosongkan jika tidak ada">
 						</div>
 						<div class="consult-field-group">
@@ -511,7 +511,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							<input type="text" id="ui_alergi" class="consult-field form-control" placeholder="Contoh: obat, makanan, atau kosongkan">
 						</div>
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_obat_dikonsumsi">Obat yang sedang dikonsumsi</label>
+							<label class="consult-field-label" for="ui_obat_dikonsumsi">Obat saat ini</label>
 							<input type="text" id="ui_obat_dikonsumsi" class="consult-field form-control" placeholder="Nama obat jika ada">
 						</div>
 						<div class="consult-grid-two">
@@ -540,9 +540,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					</div>
 					<div class="consult-input-stack">
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_gejala_keluhan_utama">Gejala/Keluhan utama</label>
+							<label class="consult-field-label" for="ui_gejala_keluhan_utama">Keluhan utama</label>
 							<select id="ui_gejala_keluhan_utama" name="gejala_utama" class="consult-field form-control">
-								<option value="">Pilih gejala/keluhan</option>
+								<option value="">Pilih keluhan</option>
 								<?php foreach ($master_gejala_keluhan_options as $option): ?>
 									<?php $option_name = trim((string) ($option->nama_keluhan ?? '')); ?>
 									<?php if ($option_name === '') continue; ?>
@@ -564,7 +564,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						</div>
 						<div class="consult-field-group">
 							<label class="consult-field-label" for="ui_deskripsi_keluhan">Detail keluhan</label>
-							<textarea id="ui_deskripsi_keluhan" class="consult-field consult-field-keluhan form-control" placeholder="Ceritakan keluhan yang dirasakan warga" required></textarea>
+							<textarea id="ui_deskripsi_keluhan" class="consult-field consult-field-keluhan form-control" placeholder="Ceritakan keluhan Anda" required></textarea>
 						</div>
 					</div>
 					<textarea
@@ -586,7 +586,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 				<section class="consult-card">
 					<div class="consult-card-header">
-						<h2 class="consult-card-title">Foto / Video <span class="d-inline-block">(untuk sakit luar)</span></h2>
+						<h2 class="consult-card-title">Foto dan video</h2>
 						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
 					</div>
 					<div class="consult-upload-stack">
@@ -616,7 +616,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 				<section class="consult-card">
 					<div class="consult-card-header">
-						<h2 class="consult-card-title">Data Diri</h2>
+						<h2 class="consult-card-title">Data diri</h2>
 						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-plus.svg'); ?>" alt="">
 					</div>
 					<textarea id="address" name="alamat" class="consult-field consult-field-address form-control" placeholder="Alamat"></textarea>
@@ -630,10 +630,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 				<label class="consult-consent" for="kunjung">
 					<input class="form-check-input" type="checkbox" role="switch" id="kunjung" name="kunjung">
-					<span>Bersedia dikunjungi dokter</span>
+					<span>Bersedia dikunjungi Nakes</span>
 				</label>
 
-				<button type="button" class="consult-submit" id="save_konsul">Kirim Form</button>
+				<button type="button" class="consult-submit" id="save_konsul">Kirim</button>
 			</form>
 		</main>
 
@@ -650,9 +650,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				<i class="fas fa-file-medical"></i>
 				<span>Riwayat</span>
 			</a>
-			<a class="consult-nav-link" href="<?= html_escape(base_url('home#profile')); ?>" aria-label="Profile">
+			<a class="consult-nav-link" href="<?= html_escape(base_url('home#profile')); ?>" aria-label="Profil">
 				<i class="fas fa-user"></i>
-				<span>Profile</span>
+				<span>Profil</span>
 			</a>
 		</nav>
 	</div>
@@ -662,11 +662,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="modalLabel">Isi Data Penunjang</h5>
+					<h5 class="modal-title" id="modalLabel">Data penunjang</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 				<div class="modal-body">
-					<label for="popupTextarea" class="form-label">Data Penunjang:</label>
+					<label for="popupTextarea" class="form-label">Data penunjang:</label>
 					<textarea id="popupTextarea" class="form-control" style="height: 180px;">
 Riwayat Kesehatan
 Penyakit yang pernah diderita:
@@ -688,7 +688,7 @@ Berat Badan:
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="modalKeluhanLabel">Isi Keluhan Pasien</h5>
+					<h5 class="modal-title" id="modalKeluhanLabel">Keluhan</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 				<div class="modal-body">
@@ -760,7 +760,7 @@ Lama keluhan:
 		if (currentHour >= '16') {
 			Swal.fire({
 				title: 'Peringatan',
-				text: 'Konsultasi hanya dapat dilakukan via chat setelah jam 16.00. Kunjungan ke rumah tidak tersedia.',
+				text: 'Setelah pukul 16.00, hanya konsultasi melalui chat yang tersedia.',
 				icon: 'warning',
 				allowOutsideClick: false, // Prevent clicking outside the modal
 				allowEscapeKey: false, // Prevent closing with the escape key
@@ -808,7 +808,7 @@ Lama keluhan:
 		document.getElementById('simpanData').addEventListener('click', function() {
 			const data = document.getElementById('popupTextarea').value.trim();
 			if (data === '') {
-				alert('Silakan isi data penunjang terlebih dahulu.');
+				alert('Isi data penunjang.');
 				return;
 			}
 
@@ -833,7 +833,7 @@ Lama keluhan:
 		document.getElementById('simpanKeluhan').addEventListener('click', function() {
 			const data = document.getElementById('popupKeluhan').value.trim();
 			if (data === '') {
-				alert('Silakan isi keluhan terlebih dahulu.');
+				alert('Isi keluhan.');
 				return;
 			}
 
@@ -881,19 +881,19 @@ Lama keluhan:
 			const deskripsiKeluhan = getStructuredValue('ui_deskripsi_keluhan');
 
 			if (gejalaKeluhanUtama === '' && keluhanUtama === '') {
-				alert('Silakan pilih gejala/keluhan atau isi detail keluhan singkat.');
+				alert('Pilih atau tulis keluhan utama.');
 				focusStructuredField('ui_gejala_keluhan_utama');
 				return false;
 			}
 
 			if (lamaKeluhan === '') {
-				alert('Silakan isi lama keluhan.');
+				alert('Isi lama keluhan.');
 				focusStructuredField('ui_lama_keluhan');
 				return false;
 			}
 
 			if (deskripsiKeluhan === '') {
-				alert('Silakan isi deskripsi keluhan.');
+				alert('Isi detail keluhan.');
 				focusStructuredField('ui_deskripsi_keluhan');
 				return false;
 			}
@@ -947,13 +947,13 @@ Lama keluhan:
 					$('#save_konsul')
 						.data('skipGeolocationRetry', true)
 						.prop('disabled', false)
-						.text('Kirim Form')
+						.text('Kirim')
 						.trigger('click');
 				}, function() {
 					$('#save_konsul')
 						.data('skipGeolocationRetry', true)
 						.prop('disabled', false)
-						.text('Kirim Form')
+						.text('Kirim')
 						.trigger('click');
 				}, {
 					enableHighAccuracy: true,
@@ -966,10 +966,10 @@ Lama keluhan:
 			$('#save_konsul').data('skipGeolocationRetry', false);
 
 			if (data_penunjang === '') {
-				alert('Silakan isi data penunjang terlebih dahulu.');
+				alert('Isi data penunjang.');
 				return;
 			} else if (keluhan === '') {
-				alert('Silakan isi keluhan terlebih dahulu.');
+				alert('Isi keluhan.');
 				return;
 			} else if (lat === '' || lng === '') {
 				Swal.fire("Gagal!", "Lokasi pasien belum tersedia. Aktifkan izin lokasi lalu coba lagi.", "error");
@@ -1001,8 +1001,8 @@ Lama keluhan:
 						} catch (e) {}
 					}
 					if (!(response == 1 || (response && response.status === 'success'))) {
-						const message = response && response.message ? response.message : 'Konsultasi gagal dikirim';
-						$('#save_konsul').prop('disabled', false).text('Kirim Form');
+						const message = response && response.message ? response.message : 'Konsultasi gagal dikirim.';
+						$('#save_konsul').prop('disabled', false).text('Kirim');
 						Swal.fire("Gagal!", message, "error");
 						return;
 					}
@@ -1062,7 +1062,7 @@ Lama keluhan:
 				},
 				error: function() {
 					// Jika terjadi error, munculkan kembali tombol kirim
-					$('#save_konsul').prop('disabled', false).text('Kirim Form');
+					$('#save_konsul').prop('disabled', false).text('Kirim');
 					alert('Terjadi kesalahan saat mengirim data. Silakan coba lagi.');
 				}
 			});
@@ -1208,13 +1208,13 @@ Lama keluhan:
 				// 	alert("User denied the request for Geolocation.");
 				// 	break;
 				case error.POSITION_UNAVAILABLE:
-					alert("Location information is unavailable.");
+					alert("Lokasi belum tersedia.");
 					break;
 				case error.TIMEOUT:
-					alert("The request to get user location timed out.");
+					alert("Waktu pengambilan lokasi habis.");
 					break;
 				case error.UNKNOWN_ERROR:
-					alert("An unknown error occurred.");
+					alert("Lokasi belum tersedia.");
 					break;
 			}
 		}

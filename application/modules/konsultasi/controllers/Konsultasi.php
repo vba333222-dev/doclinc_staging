@@ -77,7 +77,7 @@ class Konsultasi extends MX_Controller
 		$video = '';
 
 		if (empty($id_user)) {
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Session pengguna tidak ditemukan']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Sesi pengguna tidak ditemukan.']));
 			return;
 		}
 		if ($role !== 'warga') {
@@ -88,7 +88,7 @@ class Konsultasi extends MX_Controller
 		}
 		if (doclinc_active_consultation_request($id_user)) {
 			$this->output->set_status_header(409);
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Selesaikan atau batalkan konsultasi aktif terlebih dahulu.']));
 			return;
 		}
 		if (!$has_patient_location) {
@@ -99,14 +99,14 @@ class Konsultasi extends MX_Controller
 		$assigned_puskesmas = doclinc_find_puskesmas_by_service_area($patient_latitude, $patient_longitude);
 		if (!$assigned_puskesmas) {
 			log_message('error', 'Konsultasi warga gagal: lokasi tidak masuk area layanan.');
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Lokasi Anda belum masuk area layanan puskesmas aktif.']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Lokasi di luar area layanan.']));
 			return;
 		}
 		$assigned_puskesmas_code = trim((string) ($assigned_puskesmas->kode_pkm ?? ''));
 		$assigned_puskesmas_name = trim((string) ($assigned_puskesmas->nama_puskesmas ?? ''));
 		if ($assigned_puskesmas_code === '' || strtoupper($assigned_puskesmas_code) === 'DEFAULT') {
 			log_message('error', 'Konsultasi warga gagal: kode puskesmas tujuan tidak valid.');
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Puskesmas tujuan belum dapat ditentukan dari lokasi Anda.']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Puskesmas tujuan belum tersedia.']));
 			return;
 		}
 		$queue_handler_user_id = doclinc_get_queue_handler_user_id($assigned_puskesmas_code);
@@ -114,7 +114,7 @@ class Konsultasi extends MX_Controller
 			$this->output->set_status_header(503);
 			log_message('error', 'Konsultasi warga gagal: akun puskesmas aktif tidak ditemukan. puskesmas_code=' . $assigned_puskesmas_code);
 			doclinc_log_request_event('unauthorized_request_update', null, array('target' => 'create', 'puskesmas_code' => $assigned_puskesmas_code));
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Puskesmas tujuan belum siap menerima konsultasi. Silakan coba lagi nanti.']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Puskesmas belum dapat menerima konsultasi.']));
 			return;
 		}
 		if (empty($alamat)) {
@@ -130,7 +130,7 @@ class Konsultasi extends MX_Controller
 		}
 		if (empty($keluhan)) {
 			log_message('error', 'Konsultasi warga gagal: keluhan kosong. user_id=' . $id_user . ' puskesmas_code=' . $assigned_puskesmas_code);
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Data konsultasi belum lengkap']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Lengkapi data konsultasi.']));
 			return;
 		}
 
@@ -235,12 +235,12 @@ class Konsultasi extends MX_Controller
 				'Ada permintaan konsultasi baru untuk Puskesmas ' . $assigned_puskesmas_name,
 				$id_user
 			);
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Konsultasi berhasil dikirim']));
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Permintaan dikirim.']));
 			return;
 		}
 
 		log_message('error', 'Konsultasi warga gagal insert request. user_id=' . $id_user . ' puskesmas_code=' . $assigned_puskesmas_code . ' handler_user_id=' . $queue_handler_user_id);
-		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Konsultasi gagal dikirim']));
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Permintaan belum dapat dikirim.']));
 	}
 
 
@@ -351,9 +351,9 @@ class Konsultasi extends MX_Controller
 	private function consultation_upload_error_message($field)
 	{
 		if ($field === 'video') {
-			return 'File lampiran tidak valid. Gunakan MP4/MOV untuk video dengan ukuran maksimal 10 MB.';
+			return 'Gunakan video MP4 atau MOV maksimal 10 MB.';
 		}
 
-		return 'File lampiran tidak valid. Gunakan JPG/PNG untuk foto dengan ukuran maksimal 10 MB.';
+		return 'Gunakan foto JPG atau PNG maksimal 10 MB.';
 	}
 }

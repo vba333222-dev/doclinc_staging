@@ -68,7 +68,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 	{
 		$text = trim((string) $value);
 		if ($text === '') {
-			return '<p class="history-empty-text mb-0">Keluhan tersimpan</p>';
+			return '<p class="history-empty-text mb-0">Detail keluhan belum tersedia.</p>';
 		}
 
 		$lines = preg_split('/\R/u', $text);
@@ -115,7 +115,7 @@ if (!function_exists('doclinc_warga_complaint_summary')) {
 	{
 		$text = trim((string) $value);
 		if ($text === '') {
-			return '<p class="dl-complaint-preview mb-0">Keluhan tersimpan</p>';
+			return '<p class="dl-complaint-preview mb-0">Detail keluhan belum tersedia.</p>';
 		}
 
 		$fields = array();
@@ -163,7 +163,7 @@ if (!function_exists('doclinc_warga_complaint_summary')) {
 			} elseif (strlen($preview) > 160) {
 				$preview = substr($preview, 0, 157) . '...';
 			}
-			$html .= '<p class="dl-complaint-preview mb-0">' . html_escape($preview !== '' ? $preview : 'Keluhan tersimpan') . '</p>';
+			$html .= '<p class="dl-complaint-preview mb-0">' . html_escape($preview !== '' ? $preview : 'Detail keluhan belum tersedia.') . '</p>';
 		}
 
 		$html .= '</div>';
@@ -1208,16 +1208,16 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				<div id="beranda" class="content active">
 					<section class="dl-hero">
 						<div class="dl-hero-content">
-							<h2 class="dl-hero-title">Mulai Konsultasi</h2>
-							<p class="dl-hero-text">Ceritakan keluhan Anda agar nakes dapat membantu.</p>
+							<h2 class="dl-hero-title">Mulai konsultasi</h2>
+							<p class="dl-hero-text">Ceritakan keluhan Anda kepada Nakes.</p>
 							<?php if ($doclinc_has_active_request) : ?>
 								<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">
-									Lihat Konsultasi Aktif <i class="fas fa-clipboard-list"></i>
+									Lihat konsultasi <i class="fas fa-clipboard-list"></i>
 								</a>
-								<p class="history-empty-text mt-2 mb-0">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.</p>
+								<p class="history-empty-text mt-2 mb-0">Selesaikan atau batalkan konsultasi aktif terlebih dahulu.</p>
 							<?php else : ?>
 								<a href="#" class="dl-btn-secondary" onclick="showContent('konsultasi_kesehatan')">
-									Buat Konsultasi <i class="fas fa-plus-circle"></i>
+									Buat permintaan <i class="fas fa-plus-circle"></i>
 								</a>
 							<?php endif; ?>
 						</div>
@@ -1228,14 +1228,14 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								<i class="fas fa-user-md"></i>
 								<span class="filler"></span>
 							</div>
-							<span class="small"><?= $doclinc_has_active_request ? 'Konsultasi Aktif' : 'Konsultasi Kesehatan'; ?></span>
+							<span class="small"><?= $doclinc_has_active_request ? 'Konsultasi aktif' : 'Buat permintaan'; ?></span>
 						</a>
 						<a href="#" data-bs-toggle="modal" class="feature-menu dl-feature-card" onclick="showContent('riwayat')">
 							<div class="icon-wrapper">
 								<i class="fas fa-briefcase-medical"></i>
 								<span class="filler"></span>
 							</div>
-							<span class="small">Catatan Kesehatan</span>
+							<span class="small">Catatan kesehatan</span>
 						</a>
 						<a href="#" class="feature-menu dl-feature-card">
 							<div class="icon-wrapper bg-secondary">
@@ -1247,22 +1247,22 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					</div>
 					<section>
 						<div class="dl-section-header">
-							<h3 class="dl-section-title">Konsultasi Saat Ini</h3>
-							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="history-meta text-decoration-none" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat Semua</a>
+							<h3 class="dl-section-title">Konsultasi saat ini</h3>
+							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="history-meta text-decoration-none" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat semua</a>
 						</div>
 						<?php if (!empty($getAllDataRequests)) : ?>
 							<?php foreach ($getAllDataRequests as $dlCurrentRequest) :
 								$dl_current_status = !empty($dlCurrentRequest->request_status) ? $dlCurrentRequest->request_status : '-';
 								$dl_current_date = !empty($dlCurrentRequest->date) ? date('d-m-Y', strtotime($dlCurrentRequest->date)) : '-';
-								$dl_current_keluhan = !empty($dlCurrentRequest->request_description) ? $dlCurrentRequest->request_description : 'Keluhan tersimpan';
+								$dl_current_keluhan = !empty($dlCurrentRequest->request_description) ? $dlCurrentRequest->request_description : 'Detail keluhan belum tersedia.';
 								$dl_puskesmas_label = doclinc_request_puskesmas_label($dlCurrentRequest);
 								$dl_queue_number_label = doclinc_request_queue_number_label($dlCurrentRequest);
 								$dl_visit_status = isset($dlCurrentRequest->warga_visit_status) ? $dlCurrentRequest->warga_visit_status : (isset($dlCurrentRequest->visit_status) ? doclinc_normalize_visit_status($dlCurrentRequest->visit_status) : 'not_started');
-								$dl_visit_label = isset($dlCurrentRequest->warga_visit_status_label) ? $dlCurrentRequest->warga_visit_status_label : ($dl_visit_status !== '' ? doclinc_visit_status_label($dl_visit_status) : 'Menunggu proses layanan');
-								$dl_status_label = isset($dlCurrentRequest->warga_top_status_label) ? $dlCurrentRequest->warga_top_status_label : ($dl_current_status === 'Pending' ? 'Menunggu diterima Puskesmas' : $dl_visit_label);
+								$dl_visit_label = isset($dlCurrentRequest->warga_visit_status_label) ? $dlCurrentRequest->warga_visit_status_label : ($dl_visit_status !== '' ? doclinc_visit_status_label($dl_visit_status) : 'Belum dimulai');
+								$dl_status_label = isset($dlCurrentRequest->warga_top_status_label) ? $dlCurrentRequest->warga_top_status_label : ($dl_current_status === 'Pending' ? 'Menunggu konfirmasi Puskesmas' : $dl_visit_label);
 								$dl_visit_updated = !empty($dlCurrentRequest->warga_visit_updated_at) && strtotime($dlCurrentRequest->warga_visit_updated_at) ? date('d M Y H:i', strtotime($dlCurrentRequest->warga_visit_updated_at)) : '';
 								$dl_visit_timeline = isset($dlCurrentRequest->warga_visit_timeline) ? $dlCurrentRequest->warga_visit_timeline : array();
-								$dl_pic_label = !empty($dlCurrentRequest->assigned_pic_label) ? $dlCurrentRequest->assigned_pic_label : 'PIC layanan belum ditentukan';
+								$dl_pic_label = !empty($dlCurrentRequest->assigned_pic_label) ? $dlCurrentRequest->assigned_pic_label : 'PIC belum dipilih.';
 							?>
 								<div class="dl-card p-3" data-request-id="<?= (int) $dlCurrentRequest->request_id; ?>">
 									<div class="d-flex justify-content-between align-items-start gap-3 mb-3">
@@ -1294,7 +1294,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 										</div>
 									<?php endif; ?>
 									<div class="d-grid gap-2">
-										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary w-100" onclick="openActiveConsultation(<?= html_escape((int) $dlCurrentRequest->request_id); ?>); return false;">Lihat Detail</a>
+										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary w-100" onclick="openActiveConsultation(<?= html_escape((int) $dlCurrentRequest->request_id); ?>); return false;">Lihat detail</a>
 										<?php if ($dl_current_status === 'Pending') : ?>
 											<button type="button"
 												class="btn btn-sm btn-outline-success rounded-pill edit-warga-request"
@@ -1303,7 +1303,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												data-location="<?= html_escape(isset($dlCurrentRequest->location) ? $dlCurrentRequest->location : ''); ?>"
 												data-lat="<?= html_escape(isset($dlCurrentRequest->patient_latitude) && $dlCurrentRequest->patient_latitude !== null ? $dlCurrentRequest->patient_latitude : (isset($dlCurrentRequest->lattitude) ? $dlCurrentRequest->lattitude : '')); ?>"
 												data-lng="<?= html_escape(isset($dlCurrentRequest->patient_longitude) && $dlCurrentRequest->patient_longitude !== null ? $dlCurrentRequest->patient_longitude : (isset($dlCurrentRequest->longitude) ? $dlCurrentRequest->longitude : '')); ?>">
-												<i class="fas fa-edit me-1"></i> Edit Request
+												<i class="fas fa-edit me-1"></i> Ubah permintaan
 											</button>
 											<button type="button" class="btn btn-sm btn-outline-danger rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $dlCurrentRequest->request_id); ?>">
 												<i class="fas fa-times-circle me-1"></i> Batalkan
@@ -1315,14 +1315,14 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							endforeach; ?>
 						<?php else : ?>
 							<div class="dl-empty-state text-center">
-								<p class="history-empty-text mb-0">Belum ada konsultasi aktif.</p>
+								<p class="history-empty-text mb-0">Belum ada konsultasi.</p>
 							</div>
 						<?php endif; ?>
 					</section>
 					<div class="row">
 						<div class="col">
 							<div class="dl-section-header">
-								<p class="dl-section-title">News & Feed</p>
+								<p class="dl-section-title">Berita</p>
 								<div class="flex-grow-1">
 									<hr class="m-0">
 								</div>
@@ -1343,11 +1343,11 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					</div>
 				</div>
 				<div id="konsultasi_kesehatan" class="content">
-					<h2 class="dl-section-title mb-3">Konsultasi Kesehatan</h2>
+					<h2 class="dl-section-title mb-3">Buat permintaan</h2>
 					<?php if ($doclinc_has_active_request) : ?>
 						<div class="dl-empty-state text-center">
-							<p class="history-empty-text mb-3">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.</p>
-							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat Konsultasi Aktif</a>
+							<p class="history-empty-text mb-3">Selesaikan atau batalkan konsultasi aktif terlebih dahulu.</p>
+							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat konsultasi</a>
 						</div>
 					<?php else : ?>
 					<div class="card shadow mb-2 rounded-4 bg-white clickable-card dl-card"
@@ -1484,7 +1484,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					</div>
 				</div>
 				<div id="riwayat" class="content">
-					<h2 class="dl-section-title mb-3">Konsultasi Saya</h2>
+					<h2 class="dl-section-title mb-3">Konsultasi saya</h2>
 					<ul class="nav nav-tabs nav-justified mb-3 dl-tabs" id="myTab" role="tablist">
 						<li class="nav-item" role="presentation">
 							<button class="nav-link active" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="false">Saat ini</button>
@@ -1500,7 +1500,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							if (empty($getAllDataRequests)) :
 							?>
 								<div class="text-center py-4 dl-empty-state">
-									<p class="history-empty-text mb-0">Belum ada konsultasi aktif.</p>
+									<p class="history-empty-text mb-0">Belum ada konsultasi.</p>
 								</div>
 							<?php
 							endif;
@@ -1518,14 +1518,14 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$visit_status = isset($data->visit_status) ? doclinc_normalize_visit_status($data->visit_status) : '';
 								$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
 								$visit_label = isset($data->warga_visit_status_label) ? $data->warga_visit_status_label : doclinc_visit_status_label($visit_status);
-								$top_status_label = isset($data->warga_top_status_label) ? $data->warga_top_status_label : ($request_status === 'Pending' ? 'Menunggu diterima Puskesmas' : $visit_label);
+								$top_status_label = isset($data->warga_top_status_label) ? $data->warga_top_status_label : ($request_status === 'Pending' ? 'Menunggu konfirmasi Puskesmas' : $visit_label);
 								$visit_updated = !empty($data->warga_visit_updated_at) && strtotime($data->warga_visit_updated_at) ? date('d M Y H:i', strtotime($data->warga_visit_updated_at)) : '';
 								$visit_timeline = isset($data->warga_visit_timeline) ? $data->warga_visit_timeline : array();
 								$consultation_mode = isset($data->consultation_mode) ? trim((string) $data->consultation_mode) : '';
 								$mode_label = doclinc_consultation_mode_label($consultation_mode);
 								$handling_nakes_name = doclinc_request_handling_nakes_name($data);
-								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
-								$pic_label = !empty($data->assigned_pic_label) ? $data->assigned_pic_label : 'PIC layanan belum ditentukan';
+								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Nakes belum tersedia.';
+								$pic_label = !empty($data->assigned_pic_label) ? $data->assigned_pic_label : 'PIC belum dipilih.';
 
 								// jadikan tanggal di atas formatnya jadi 11 November 2024
 								$tanggal = date('d F Y', strtotime($tanggal));
@@ -1534,7 +1534,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								<!-- Popup HTML -->
 								<div id="acceptedPopup" class="popup-alert" style="display: none;">
 									<span class="close-btn" onclick="closePopup()">&times;</span>
-									✅ Nakes telah menerima permintaan konsultasi Anda.
+									✅ Permintaan diterima.
 								</div>
 
 								<div class="card shadow mb-2 dl-card" data-request-id="<?= html_escape((int) $id_request); ?>">
@@ -1567,24 +1567,24 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												<?= doclinc_warga_visit_timeline($visit_timeline); ?>
 											</div>
 										<?php endif; ?>
-										<p class="mb-0 small fw-bold"><i class="fas fa-stethoscope fa-fw"></i> Nakes :</p>
-										<p class="mb-0"><?= html_escape($handling_nakes_name !== '' ? $handling_nakes_name : 'Menunggu nakes menerima konsultasi'); ?></p>
-										<p class="mb-0 small fw-bold"><i class="far fa-clock fa-fw"></i> Estimasi :</p>
+										<p class="mb-0 small fw-bold"><i class="fas fa-stethoscope fa-fw"></i> Nakes:</p>
+										<p class="mb-0"><?= html_escape($handling_nakes_name !== '' ? $handling_nakes_name : 'Belum tersedia'); ?></p>
+										<p class="mb-0 small fw-bold"><i class="far fa-clock fa-fw"></i> Estimasi:</p>
 										<input type="text" name="latitudes" id="latitudes" value="<?= $lat; ?>" hidden />
 										<input type="text" name="longitudes" id="longitudes" value="<?= $lng; ?>" hidden />
 										<span id="estimasi"></span>
 										<?php if ($request_status === 'Accepted') : ?>
 											<div class="mt-3">
 												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-success btn-sm rounded-pill dl-btn-primary">
-													<i class="fas fa-comments me-1"></i> Chat Konsultasi
+													<i class="fas fa-comments me-1"></i> Buka chat
 												</a>
 												<button type="button" class="btn btn-outline-success btn-sm rounded-pill ms-1 visit-location-toggle" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
-													<i class="fas fa-map-marker-alt me-1"></i> Lihat Lokasi Nakes
+													<i class="fas fa-map-marker-alt me-1"></i> Lihat lokasi
 												</button>
 												<div class="doclinc-visit-status mt-2" data-visit-status="<?= html_escape((int) $id_request); ?>"></div>
 												<div class="visit-map-toolbar d-none" data-visit-toolbar="<?= html_escape((int) $id_request); ?>">
 													<button type="button" class="btn btn-light border visit-route-recenter" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
-														<i class="fas fa-crosshairs me-1"></i> Pusatkan rute
+														<i class="fas fa-crosshairs me-1"></i> Pusatkan
 													</button>
 													<button type="button" class="btn btn-success visit-route-refresh" data-request-id="<?= html_escape((int) $id_request); ?>" data-map-id="visit-map-<?= html_escape((int) $id_request); ?>">
 														<i class="fas fa-sync-alt me-1"></i> Perbarui
@@ -1621,7 +1621,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 													data-location="<?= html_escape(isset($data->location) ? $data->location : ''); ?>"
 													data-lat="<?= html_escape(isset($data->patient_latitude) && $data->patient_latitude !== null ? $data->patient_latitude : (isset($data->lattitude) ? $data->lattitude : '')); ?>"
 													data-lng="<?= html_escape(isset($data->patient_longitude) && $data->patient_longitude !== null ? $data->patient_longitude : (isset($data->longitude) ? $data->longitude : '')); ?>">
-													<i class="fas fa-edit me-1"></i> Edit Request
+													<i class="fas fa-edit me-1"></i> Ubah permintaan
 												</button>
 												<button type="button" class="btn btn-outline-danger btn-sm rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $id_request); ?>">
 													<i class="fas fa-times-circle me-1"></i> Batalkan
@@ -1641,19 +1641,19 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							?>
 								<div class="text-center py-4 dl-empty-state">
 									<img src="<?= html_escape(base_url('assets/images/not found.svg')); ?>" width="180" alt="Tidak ada data">
-									<p class="mb-0 mt-3 text-muted">Belum ada riwayat konsultasi selesai.</p>
+									<p class="mb-0 mt-3 text-muted">Belum ada riwayat.</p>
 								</div>
 							<?php
 							}
 							foreach ($getAllDataRequestsCompleted as $data) {
 								$id_request = (int) $data->request_id;
 								$tanggal = !empty($data->date) ? $data->date : '';
-								$keluhan = !empty($data->request_description) ? $data->request_description : 'Keluhan tersimpan';
+								$keluhan = !empty($data->request_description) ? $data->request_description : 'Detail keluhan belum tersedia.';
 								$saran	 = !empty($data->recommendations) ? $data->recommendations : '-';
 								$dokter_id = $data->dokter_id;
 								$nama_dokter_riwayat = !empty($data->nama_dokter) ? $data->nama_dokter : 'Dokter';
 								$handling_nakes_name = doclinc_request_handling_nakes_name($data);
-								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Menunggu nakes menerima konsultasi';
+								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Nakes belum tersedia.';
 								$mode_label = doclinc_consultation_mode_label(isset($data->consultation_mode) ? $data->consultation_mode : '');
 								$visit_status_completed = isset($data->warga_visit_status) ? $data->warga_visit_status : (isset($data->visit_status) ? doclinc_normalize_visit_status($data->visit_status) : 'not_started');
 								$visit_status_completed = $visit_status_completed !== '' ? $visit_status_completed : 'not_started';
@@ -1671,10 +1671,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$queue_number_label = doclinc_request_queue_number_label($data);
 								$hasil_rows = doclinc_warga_parse_detail_rows($treatment . "\n" . $saran_dokter);
 								$dokumentasi_labels = array(
-									'tindakan non-obat' => 'Tindakan Non-Obat',
-									'pemeriksaan / monitoring' => 'Pemeriksaan / Monitoring',
-									'follow-up / edukasi' => 'Follow-up / Edukasi',
-									'catatan tindakan lain' => 'Catatan Tindakan Lain',
+									'tindakan non-obat' => 'Tindakan non-obat',
+									'pemeriksaan / monitoring' => 'Pemantauan',
+									'follow-up / edukasi' => 'Edukasi lanjutan',
+									'catatan tindakan lain' => 'Catatan tindakan lain',
 								);
 								$has_dokumentasi = false;
 								foreach (array_keys($dokumentasi_labels) as $dok_key) {
@@ -1705,17 +1705,17 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												Mode: <?= html_escape($mode_label); ?>
 											</div>
 										</div>
-										<span class="history-status-badge">Completed</span>
+										<span class="history-status-badge">Selesai</span>
 									</div>
 									<input type="hidden" id="reqIdRat" value="<?= $id_request; ?>">
 									<div class="card-body">
 										<div class="history-section">
-											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan Awal</div>
+											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan awal</div>
 											<?= doclinc_warga_complaint_summary($keluhan); ?>
 										</div>
 										<?php if ($visit_status_completed !== 'not_started' || !empty($visit_timeline_completed)) : ?>
 											<div class="history-section">
-												<div class="history-section-title"><i class="fas fa-route me-1"></i> Status Layanan</div>
+												<div class="history-section-title"><i class="fas fa-route me-1"></i> Status layanan</div>
 												<div class="doclinc-visit-summary">
 													<p class="doclinc-visit-summary__label"><?= html_escape($visit_label_completed); ?></p>
 													<?php if ($visit_updated_completed !== '') : ?>
@@ -1726,13 +1726,13 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											</div>
 										<?php endif; ?>
 										<div class="history-section">
-											<div class="history-section-title"><i class="fas fa-file-medical-alt me-1"></i> Hasil Konsultasi</div>
+											<div class="history-section-title"><i class="fas fa-file-medical-alt me-1"></i> Hasil konsultasi</div>
 											<div class="history-result-row">
-												<span class="history-result-label">Diagnosa</span>
+												<span class="history-result-label">Diagnosis</span>
 												<div class="history-result-value"><?= doclinc_history_safe_lines($diagnosa); ?></div>
 											</div>
 											<div class="history-result-row">
-												<span class="history-result-label">Terapi / Tindakan / Obat</span>
+												<span class="history-result-label">Terapi, tindakan, obat</span>
 												<?php if (!empty($terapi_list)) : ?>
 													<div class="history-therapy-list">
 														<?php foreach ($terapi_list as $index => $terapi) : ?>
@@ -1750,26 +1750,26 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												<?php elseif (!empty($hasil_rows)) : ?>
 													<?= doclinc_warga_render_result_rows($hasil_rows, array_combine(array_keys($hasil_rows), array_map('ucwords', array_keys($hasil_rows)))); ?>
 												<?php else : ?>
-													<p class="history-empty-text mb-0">Belum ada terapi/tindakan yang tercatat.</p>
+													<p class="history-empty-text mb-0">Belum ada terapi.</p>
 												<?php endif; ?>
 											</div>
 											<div class="history-result-row">
-												<span class="history-result-label">Rekomendasi / Saran</span>
+												<span class="history-result-label">Saran</span>
 												<div class="history-result-value"><?= $saran_clean !== '' ? nl2br(html_escape($saran_clean), false) : '<span class="history-empty-text">Belum ada rekomendasi tambahan.</span>'; ?></div>
 											</div>
 										</div>
 										<?php if ($has_dokumentasi) : ?>
 											<div class="history-section">
-												<div class="history-section-title"><i class="fas fa-clipboard-check me-1"></i> Dokumentasi Tindakan</div>
+												<div class="history-section-title"><i class="fas fa-clipboard-check me-1"></i> Dokumentasi tindakan</div>
 												<?= doclinc_warga_render_result_rows(doclinc_warga_parse_detail_rows($treatment . "\n" . $saran_dokter), $dokumentasi_labels); ?>
 											</div>
 										<?php endif; ?>
 										<input type="hidden" id="doktId" value="<?= html_escape($dokter_id); ?>">
 										<button class="btn btn-sm btn-outline-success mt-2 dl-btn-secondary" onclick="downloadCard('card-<?= html_escape($card_id); ?>')">
-											<i class="fas fa-file-download"></i> Download Resep
+											<i class="fas fa-file-download"></i> Unduh resep
 										</button>
 										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-sm btn-outline-secondary mt-2 dl-btn-secondary">
-											<i class="fas fa-comments"></i> Lihat Chat
+											<i class="fas fa-comments"></i> Buka chat
 										</a>
 									</div>
 								</div>
@@ -1796,20 +1796,20 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					?>
 					<div class="dl-profile-card dl-card">
 						<div class="dl-profile-card__head">
-							<h4>Profil Pengguna</h4>
+							<h4>Profil pengguna</h4>
 							<span><?= html_escape($nama !== '' ? $nama : 'Pengguna Doclinc'); ?></span>
 						</div>
 						<div class="dl-profile-fields">
 							<div class="dl-profile-field">
-								<label for="nama_lengkap"><i class="fas fa-user me-1"></i> Nama Lengkap</label>
+								<label for="nama_lengkap"><i class="fas fa-user me-1"></i> Nama lengkap</label>
 								<input type="text" id="nama_lengkap" value="<?= html_escape($nama); ?>" placeholder="Nama Lengkap" readonly>
 							</div>
 							<div class="dl-profile-field">
-								<label for="tgl"><i class="fas fa-calendar-alt me-1"></i> Tanggal Lahir</label>
+								<label for="tgl"><i class="fas fa-calendar-alt me-1"></i> Tanggal lahir</label>
 								<input type="date" id="tgl" placeholder="Tanggal Lahir" value="<?= html_escape($tgl); ?>" readonly>
 							</div>
 							<div class="dl-profile-field">
-								<label for="jk"><i class="fas fa-venus-mars me-1"></i> Jenis Kelamin</label>
+								<label for="jk"><i class="fas fa-venus-mars me-1"></i> Jenis kelamin</label>
 								<input type="text" id="jk" placeholder="Jenis Kelamin" value="<?= html_escape($jk); ?>" readonly>
 							</div>
 							<div class="dl-profile-field">
@@ -1823,10 +1823,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						</div>
 						<div class="dl-profile-actions">
 							<button type="button" class="btn btn-outline-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#modalProfil" hidden>
-								<i class="fas fa-edit me-1"></i> Edit Profil
+								<i class="fas fa-edit me-1"></i> Ubah profil
 							</button>
 							<button type="button" class="btn btn-outline-danger w-100" id="btn-logout">
-								<i class="fas fa-sign-out-alt me-1"></i> Logout
+								<i class="fas fa-sign-out-alt me-1"></i> Keluar
 							</button>
 						</div>
 					</div>
@@ -1888,7 +1888,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				</a>
 				<a href="#" id="profile-tab" class="col menu-item" onclick="showContent('profile')">
 					<i class="fas fa-user fs-4"></i>
-					<span class="d-block small mt-1">Profile</span>
+					<span class="d-block small mt-1">Profil</span>
 				</a>
 			</div>
 		</div>
@@ -1899,10 +1899,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			<div class="modal-content">
 				<div class="modal-header">
 					<div>
-						<h1 class="modal-title fs-5" id="editRequestModalLabel">Edit Request Konsultasi</h1>
-						<p class="text-muted small mb-0">Perubahan hanya dapat dilakukan selama request belum diproses.</p>
+						<h1 class="modal-title fs-5" id="editRequestModalLabel">Ubah permintaan</h1>
+						<p class="text-muted small mb-0">Hanya dapat diubah sebelum diterima.</p>
 					</div>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 				<form id="editRequestForm" method="post" action="<?= html_escape(base_url('home/updateRequestById')); ?>">
 					<div class="modal-body">
@@ -1910,9 +1910,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						<input type="hidden" name="lat" id="edit_request_lat">
 						<input type="hidden" name="lng" id="edit_request_lng">
 						<div class="mb-3">
-							<label for="edit_request_gejala" class="form-label fw-semibold">Gejala/Keluhan utama</label>
+							<label for="edit_request_gejala" class="form-label fw-semibold">Keluhan utama</label>
 							<select class="form-control" name="gejala_utama" id="edit_request_gejala">
-								<option value="">Pilih gejala/keluhan</option>
+								<option value="">Pilih keluhan</option>
 								<?php foreach ($master_gejala_keluhan_options as $option): ?>
 									<?php $option_name = trim((string) ($option->nama_keluhan ?? '')); ?>
 									<?php if ($option_name === '') continue; ?>
@@ -1925,7 +1925,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							<textarea class="form-control" name="keluhan" id="edit_request_keluhan" rows="4" required></textarea>
 						</div>
 						<div class="mb-0">
-							<label for="edit_request_alamat" class="form-label fw-semibold">Alamat / Patokan</label>
+							<label for="edit_request_alamat" class="form-label fw-semibold">Alamat atau patokan</label>
 							<textarea class="form-control" name="alamat" id="edit_request_alamat" rows="3"></textarea>
 						</div>
 					</div>
@@ -1942,8 +1942,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="modalProfilLabel">Edit Profil</h1>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					<h1 class="modal-title fs-5" id="modalProfilLabel">Ubah profil</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 				<form action="" method="post">
 					<div class="modal-body">
@@ -1970,8 +1970,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						<button type="submit" class="btn btn-success">Save changes</button>
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+						<button type="submit" class="btn btn-success">Simpan</button>
 					</div>
 				</form>
 			</div>
@@ -1982,10 +1982,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		<div class="offcanvas-header dl-notification-header">
 			<div class="dl-notification-title">
 				<i class="bi bi-bell-fill"></i>
-				<span class="offcanvas-title" id="offcanvasNotifLabel">Pusat Notifikasi</span>
+				<span class="offcanvas-title" id="offcanvasNotifLabel">Notifikasi</span>
 				<span class="badge text-bg-danger" id="badgeNotifs" style="display: none;"></span>
 			</div>
-			<button type="button" class="btn-close dl-notification-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+			<button type="button" class="btn-close dl-notification-close" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
 		</div>
 		<div class="offcanvas-body dl-notification-body">
 			<div id="notificationList" class="notification-list dl-notification-list"></div>
@@ -1996,14 +1996,14 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content border-0 shadow-lg">
 				<div class="modal-header bg-success text-white">
-					<h5 class="modal-title" id="ratingModalLabel">Beri Rating Konsultasi</h5>
-					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+					<h5 class="modal-title" id="ratingModalLabel">Beri penilaian</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 				<div class="modal-body text-center">
 					<div class="mb-3">
 						<img id="gambarDokter" src="" alt="Foto Dokter" class="rounded-circle border border-success shadow-sm" width="100" height="100">
 					</div>
-					<p class="fw-bold">Bagaimana pengalaman konsultasimu dengan <span id="namaDokter" class="text-success"></span>?</p>
+					<p class="fw-bold">Bagaimana konsultasi Anda dengan <span id="namaDokter" class="text-success"></span>?</p>
 					<!-- Form Rating -->
 					<form id="ratingForm">
 						<input type="hidden" name="iduser" value="<?= $this->session->userdata('id') ?>">
@@ -2023,7 +2023,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								<label for="star1" title="Buruk"><i class="fas fa-star"></i></label>
 							</div>
 						</div>
-						<button type="submit" class="btn btn-success w-100">Kirim Rating</button>
+						<button type="submit" class="btn btn-success w-100">Kirim penilaian</button>
 					</form>
 				</div>
 			</div>
@@ -2140,7 +2140,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				if (!patientAvailable) {
 					statusText = 'Lokasi pasien belum tersedia';
 				} else if (!nakesAvailable) {
-					statusText = 'Menunggu lokasi nakes';
+					statusText = 'Menunggu lokasi Nakes';
 				} else if (isValhallaRoute) {
 					statusText = 'Estimasi berdasarkan rute jalan';
 				} else if (!hasGeometry && hasDistance) {
@@ -2372,7 +2372,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							if (response && (response.tracking_active === false || (response.request_status && response.request_status !== 'Accepted'))) {
 								setVisitRouteSummary(requestId, response);
 								setVisitSummary(requestId, response);
-								setVisitStatus(requestId, response.message || 'Tracking lokasi dihentikan');
+								setVisitStatus(requestId, response.message || 'Pelacakan kunjungan dihentikan.');
 								clearVisitRoute(mapContainerId);
 								stopPolling(requestId);
 								return;
@@ -2387,21 +2387,21 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								}
 								setVisitRouteSummary(requestId, response);
 								setVisitSummary(requestId, response);
-								setVisitStatus(requestId, getVisitStatusMessage(response, nakesLocation ? 'Lokasi nakes tersedia' : 'Lokasi nakes belum tersedia'));
+								setVisitStatus(requestId, getVisitStatusMessage(response, nakesLocation ? 'Lokasi Nakes tersedia.' : 'Lokasi Nakes belum tersedia.'));
 							} else if (response && response.status === 'pending') {
 								setVisitRouteSummary(requestId, response);
 								setVisitSummary(requestId, response);
-								setVisitStatus(requestId, getVisitStatusMessage(response, response.message || 'Lokasi nakes belum tersedia'));
+								setVisitStatus(requestId, getVisitStatusMessage(response, response.message || 'Lokasi Nakes belum tersedia.'));
 							} else {
 								setVisitRouteSummary(requestId, response || {});
-								setVisitStatus(requestId, response && response.message ? response.message : 'Gagal memuat lokasi nakes', true);
+								setVisitStatus(requestId, response && response.message ? response.message : 'Lokasi Nakes belum tersedia.', true);
 							}
 
 							timers[requestId] = setTimeout(poll, pollIntervalMs);
 						},
 						error: function(xhr) {
 							const response = xhr.responseJSON || {};
-							setVisitStatus(requestId, response.message || 'Gagal memuat lokasi nakes', true);
+							setVisitStatus(requestId, response.message || 'Lokasi Nakes belum tersedia.', true);
 							if (xhr.status === 403 || xhr.status === 404 || xhr.status === 405) {
 								stopPolling(requestId);
 								return;
@@ -2458,7 +2458,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			if (!lastPopupTime || (currentTime - lastPopupTime) > 3600000) { // 1 hour = 3600000 ms
 				Swal.fire({
 					title: 'Informasi',
-					text: 'Jam operasional kunjungan nakes dari 08.00 s/d 17.00',
+					text: 'Jam kunjungan: 08.00–17.00.',
 					icon: 'info',
 					confirmButtonText: 'OK'
 				}).then(() => {
@@ -2545,8 +2545,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 		$('#btn-logout').click(function(event) {
 			Swal.fire({
-				title: "Logout?",
-				text: "Kamu yakin ingin keluar?",
+				title: "Keluar?",
+				text: "Keluar dari akun ini?",
 				icon: "warning",
 				showCancelButton: true,
 				confirmButtonText: "Ya",
@@ -2555,7 +2555,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}).then((result) => {
 				if (result.isConfirmed) {
 					Swal.fire({
-						title: "See you!",
+						title: "Sampai jumpa",
 						icon: "success",
 						showConfirmButton: false,
 						timer: 1500,
@@ -2612,7 +2612,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			const button = $(this);
 			const requestId = button.attr('data-request-id');
 			if (!requestId) {
-				Swal.fire('Gagal', 'Data request tidak ditemukan.', 'error');
+				Swal.fire('Gagal', 'Permintaan tidak ditemukan.', 'error');
 				return;
 			}
 
@@ -2701,7 +2701,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					if (response && response.status === 'success') {
 						Swal.fire({
 							title: 'Berhasil',
-							text: response.message || 'Request konsultasi berhasil diperbarui.',
+							text: response.message || 'Permintaan berhasil diubah.',
 							icon: 'success',
 							showConfirmButton: false,
 							timer: 1200,
@@ -2713,12 +2713,12 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					}
 
 					submitButton.prop('disabled', false).removeClass('disabled');
-					Swal.fire('Gagal', response && response.message ? response.message : 'Request belum dapat diperbarui.', 'error');
+					Swal.fire('Gagal', response && response.message ? response.message : 'Permintaan belum dapat diubah.', 'error');
 				},
 				error: function(xhr) {
 					submitButton.prop('disabled', false).removeClass('disabled');
 					const response = xhr.responseJSON || {};
-					Swal.fire('Gagal', response.message || 'Request sudah diproses dan tidak dapat diedit.', 'error');
+					Swal.fire('Gagal', response.message || 'Hanya dapat diubah sebelum diterima.', 'error');
 				}
 			});
 		});
@@ -2730,13 +2730,13 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			const button = $(this);
 			const requestId = button.data('request-id');
 			if (!requestId) {
-				Swal.fire('Gagal', 'Data request tidak ditemukan.', 'error');
+				Swal.fire('Gagal', 'Permintaan tidak ditemukan.', 'error');
 				return;
 			}
 
 			Swal.fire({
-				title: 'Batalkan konsultasi?',
-				text: 'Permintaan konsultasi yang dibatalkan tidak dapat dilanjutkan.',
+				title: 'Batalkan permintaan?',
+				text: 'Permintaan yang dibatalkan tidak dapat dilanjutkan.',
 				icon: 'warning',
 				showCancelButton: true,
 				confirmButtonText: 'Ya, batalkan',
@@ -2764,7 +2764,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						if (response && response.status === 'success') {
 							Swal.fire({
 								title: 'Berhasil',
-								text: response.message || 'Konsultasi berhasil dibatalkan.',
+								text: response.message || 'Permintaan dibatalkan.',
 								icon: 'success',
 								showConfirmButton: false,
 								timer: 1200,
@@ -2776,12 +2776,12 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						}
 
 						button.prop('disabled', false).removeClass('disabled');
-						Swal.fire('Gagal', response && response.message ? response.message : 'Konsultasi tidak dapat dibatalkan.', 'error');
+						Swal.fire('Gagal', response && response.message ? response.message : 'Permintaan tidak dapat dibatalkan.', 'error');
 					},
 					error: function(xhr) {
 						button.prop('disabled', false).removeClass('disabled');
 						const response = xhr.responseJSON || {};
-						Swal.fire('Gagal', response.message || 'Konsultasi tidak dapat dibatalkan.', 'error');
+						Swal.fire('Gagal', response.message || 'Permintaan tidak dapat dibatalkan.', 'error');
 					}
 				});
 			});
@@ -2998,10 +2998,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				navigator.geolocation.watchPosition(updateLocation, showError);
 			} else {
 				Swal.fire({
-					title: "Error",
-					text: "Geolocation is not supported by this browser.",
+					title: "Gagal",
+					text: "Lokasi tidak didukung perangkat ini.",
 					icon: "error",
-					confirmButtonText: "OK"
+					confirmButtonText: "Tutup"
 				});
 			}
 		}
@@ -3059,7 +3059,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						if (result[index]) { // Pastikan ada data untuk elemen ini
 							// element.textContent = result[index].time + ' From You';
 							const timeText = result[index].time; // Contoh: "22 mins"
-							element.textContent = timeText + " From You";
+							element.textContent = timeText + " dari lokasi Anda";
 
 							// Ambil angka durasi dari string (misalnya "22 mins" -> 22)
 							const duration = parseInt(timeText);
@@ -3088,7 +3088,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				heroCard.style.cursor = 'not-allowed';
 
 				// Ganti teks "Available" menjadi "Not Available"
-				badge.textContent = "Not Available";
+				badge.textContent = "Belum tersedia";
 				badge.classList.remove('bg-success');
 				badge.classList.add('bg-danger');
 
@@ -3102,10 +3102,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					event.preventDefault();
 					event.stopPropagation();
 					Swal.fire({
-						title: 'Pahlawan Tidak Tersedia',
-						text: 'Pahlawan ini tidak bisa dipilih karena tidak memiliki durasi atau jaraknya lebih dari 20 menit.',
+						title: 'Nakes belum tersedia',
+						text: 'Pilih Nakes lain.',
 						icon: 'warning',
-						confirmButtonText: 'OK'
+						confirmButtonText: 'Tutup'
 					});
 				}, true);
 			}
@@ -3220,7 +3220,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						// buatkan alert yang dengan swal
 						Swal.fire({
 							title: 'Peringatan',
-							text: 'Anda tidak bisa mengajukan konsultasi, karena posisi Anda saat ini berada di luar Kota Cilegon.',
+							text: 'Konsultasi hanya tersedia di Kota Cilegon.',
 							icon: 'warning',
 							confirmButtonText: 'Tutup'
 						}).then((result) => {
@@ -3235,7 +3235,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						// Tanggal sudah lewat
 						Swal.fire({
 							title: 'Peringatan',
-							text: 'Tidak bisa melakukan Konsultasi. Silakan pilih Tenaga Kesehatan yang lain.',
+							text: 'Pilih Nakes lain.',
 							icon: 'warning',
 							confirmButtonText: 'Tutup'
 						});
@@ -3247,7 +3247,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							// Jika userIdWarga tidak sama dengan userIdPasien
 							Swal.fire({
 								title: 'Peringatan',
-								text: 'Anda tidak bisa melakukan konsultasi, karena permintaan konsultasi sudah melebihi batas.',
+								text: 'Batas permintaan sudah tercapai.',
 								icon: 'warning',
 								confirmButtonText: 'Tutup'
 							});
@@ -3262,7 +3262,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						if (tgl == today) {
 							Swal.fire({
 								title: 'Peringatan',
-								text: 'Anda tidak bisa melakukan konsultasi di hari yang sama.',
+								text: 'Konsultasi baru belum tersedia hari ini.',
 								icon: 'warning',
 								confirmButtonText: 'Tutup'
 							});
@@ -3275,7 +3275,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								// Tidak bisa konsultasi lagi hari ini
 								Swal.fire({
 									title: 'Peringatan',
-									text: 'Anda sudah melakukan konsultasi hari ini. Silakan tunggu sampai besok atau tunggu konsultasi ini selesai.',
+									text: 'Tunggu konsultasi aktif selesai.',
 									icon: 'warning',
 									confirmButtonText: 'Tutup'
 								});
@@ -3332,7 +3332,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							// Jika status masih Pending atau Accepted
 							Swal.fire({
 								title: 'Peringatan',
-								text: 'Anda tidak bisa melakukan konsultasi, karena konsultasi sebelumnya belum selesai.',
+								text: 'Selesaikan konsultasi sebelumnya.',
 								icon: 'warning',
 								confirmButtonText: 'Tutup'
 							});
@@ -3393,7 +3393,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			content.appendChild(title);
 
 			const message = document.createElement('small');
-			message.textContent = item.message || 'Tidak ada detail';
+			message.textContent = item.message || 'Detail belum tersedia.';
 			content.appendChild(message);
 
 			const timestamp = document.createElement('small');
@@ -3416,7 +3416,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}
 			notificationList.innerHTML = '';
 			if (!items || !items.length) {
-				notificationList.innerHTML = '<div class="dl-notification-empty"><i class="bi bi-bell"></i><span>Tidak ada notifikasi</span></div>';
+				notificationList.innerHTML = '<div class="dl-notification-empty"><i class="bi bi-bell"></i><span>Belum ada notifikasi.</span></div>';
 				setNotificationCount(0);
 				return;
 			}
@@ -3670,7 +3670,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					break; // tampilkan hanya sekali jika ada
 				} else if (notif.id_req !== request_id) {
 					if (statusNotif) {
-						statusNotif.innerHTML = "Menunggu Antrian";
+						statusNotif.innerHTML = "Menunggu antrean";
 					}
 				}
 			}
@@ -3799,7 +3799,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 							Swal.fire({
 								title: 'Berhasil',
-								text: 'Rating berhasil disimpan.',
+								text: 'Penilaian disimpan.',
 								icon: 'success',
 								confirmButtonText: 'OK'
 							}).then(() => {
@@ -3809,8 +3809,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							});
 						} else {
 							Swal.fire({
-								title: 'Error',
-								text: 'Gagal menyimpan rating, coba lagi.',
+								title: 'Gagal',
+								text: 'Penilaian belum tersimpan.',
 								icon: 'error',
 								confirmButtonText: 'OK'
 							});
@@ -3818,7 +3818,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					},
 					error: function(xhr, status, error) {
 						Swal.fire({
-							title: 'Error',
+							title: 'Gagal',
 							text: 'Terjadi kesalahan.',
 							icon: 'error',
 							confirmButtonText: 'OK'

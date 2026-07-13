@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="UTF-8">
-	<title>Resep Dokter</title>
+	<title>Resep dokter</title>
 	<style>
 		body {
 			font-family: Arial, sans-serif;
@@ -30,20 +30,20 @@
 </head>
 
 <body>
-	<h2>Resep Dokter</h2>
+	<h2>Resep dokter</h2>
 
 	<p><strong>Tanggal:</strong> <?= $resep->tanggal ?></p>
 	<p><strong>Dokter:</strong> <?= $resep->nama_dokter ?></p>
 	<p><strong>Keluhan:</strong> <?= $resep->keluhan ?></p>
-	<p><strong>Diagnosa:</strong> <?= $resep->diagnosa ?></p>
+	<p><strong>Diagnosis:</strong> <?= $resep->diagnosa ?></p>
 	<p><strong>Saran:</strong> <?= $resep->saran_dokter ?></p>
 
-	<h4>Obat / Terapi</h4>
+	<h4>Obat dan terapi</h4>
 	<table>
 		<thead>
 			<tr>
 				<th>No</th>
-				<th>Nama Terapi</th>
+				<th>Nama terapi</th>
 				<th>Keterangan</th>
 			</tr>
 		</thead>
