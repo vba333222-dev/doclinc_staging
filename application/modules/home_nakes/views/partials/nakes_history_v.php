@@ -89,23 +89,23 @@ $staff_assignment_error = $this->session->flashdata('staff_assignment_error');
 $history_event_label = static function ($event) {
 	$event_type = isset($event->event_type) ? (string) $event->event_type : '';
 	if ($event_type === 'pic_assigned') {
-		return 'PIC personel ditetapkan';
+		return 'PIC ditetapkan';
 	}
 	if ($event_type === 'pic_changed') {
-		return 'PIC personel diganti';
+		return 'PIC diganti';
 	}
 	if ($event_type === 'pic_cleared') {
-		return 'PIC personel dibatalkan';
+		return 'PIC dilepas';
 	}
 	$event_labels = array(
 		'request_created' => 'Permintaan dibuat',
 		'request_accepted' => 'Permintaan diterima',
-		'request_cancelled' => 'Permintaan dibatalkan/ditolak',
+		'request_cancelled' => 'Permintaan dibatalkan',
 		'visit_started' => 'Perjalanan dimulai',
 		'visit_arrived' => 'Tiba di lokasi',
-		'visit_in_service' => 'Pelayanan dimulai',
+		'visit_in_service' => 'Mulai ditangani',
 		'visit_completed' => 'Kunjungan selesai',
-		'request_completed' => 'Permintaan selesai',
+		'request_completed' => 'Konsultasi selesai',
 	);
 	if (isset($event_labels[$event_type])) {
 		return $event_labels[$event_type];
@@ -124,8 +124,8 @@ $history_event_time = static function ($event) {
 				<div id="riwayat_konsul" class="content">
 					<div class="dl-history-page-head">
 						<div>
-							<span>Operasional konsultasi</span>
-							<h2>Riwayat Konsultasi</h2>
+							<span>Konsultasi</span>
+							<h2>Riwayat konsultasi</h2>
 						</div>
 						<div class="dl-history-counts">
 							<strong><?= html_escape((string) $nakes_active_count); ?></strong>
@@ -230,7 +230,7 @@ $history_event_time = static function ($event) {
 											</div>
 											<?php if ($can_coordinate_staff) : ?>
 											<div class="nk-action-panel nk-action-panel--pic nk-card-section">
-												<div class="nk-action-panel__title">PIC Personel</div>
+												<div class="nk-action-panel__title">PIC</div>
 												<div class="nk-action-panel__body">
 													<div class="nk-pic-current">
 														<span>Status PIC</span>
@@ -246,17 +246,17 @@ $history_event_time = static function ($event) {
 														<?php endif; ?>
 													</div>
 													<?php if (!$staff_assignment_ready) : ?>
-														<p class="nk-pic-muted">Fitur PIC personel belum tersedia.</p>
+														<p class="nk-pic-muted">Fitur PIC belum tersedia.</p>
 													<?php elseif (empty($puskesmas_staff_options)) : ?>
-														<p class="nk-pic-muted">Belum ada personel aktif untuk ditetapkan.</p>
+														<p class="nk-pic-muted">Belum ada staf aktif.</p>
 													<?php else : ?>
 														<form method="post" action="<?= html_escape(base_url('home_nakes/assign_staff')); ?>" class="nk-pic-form">
 															<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
 															<select name="staff_id" class="form-select form-select-sm" required>
-																<option value="">Pilih personel</option>
+																<option value="">Pilih staf</option>
 																<?php foreach ($puskesmas_staff_options as $staff_option) : ?>
 																	<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= $pic_assignment && (int) $pic_assignment->staff_id === (int) $staff_option->staff_id ? 'selected' : ''; ?> <?= ($staff_option->personal_account_state ?? '') === 'invalid' ? 'disabled' : ''; ?>>
-																		<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Akun personal tidak valid' : 'Belum memiliki akun personal'); ?>
+																		<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Akun personal perlu dicek' : 'Belum ada akun personal'); ?>
 																	</option>
 																<?php endforeach; ?>
 															</select>
@@ -268,7 +268,7 @@ $history_event_time = static function ($event) {
 														<?php if ($pic_assignment) : ?>
 															<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form">
 																<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
-																<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Batalkan PIC</button>
+																<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Lepas PIC</button>
 															</form>
 														<?php endif; ?>
 													<?php endif; ?>
@@ -276,7 +276,7 @@ $history_event_time = static function ($event) {
 											</div>
 											<?php if (!empty($request_events)) : ?>
 												<div class="nk-action-panel nk-action-panel--timeline nk-card-section">
-													<div class="nk-action-panel__title">Timeline Operasional</div>
+													<div class="nk-action-panel__title">Riwayat</div>
 													<div class="nk-timeline-list">
 														<?php foreach ($request_events as $event) :
 															$event_label = $history_event_label($event);
@@ -306,10 +306,10 @@ $history_event_time = static function ($event) {
 												<div class="nk-action-panel__body">
 													<div class="nk-detail-row dl-visit-workflow-label"><span class="nk-detail-label">Status</span><strong class="nk-detail-value visit-workflow-label"><?= html_escape($visit_status_label); ?></strong></div>
 													<div class="dl-visit-workflow-actions nk-visit-actions">
-														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="en_route" <?= $visit_next_status[$visit_status] === 'en_route' ? '' : 'disabled'; ?>>Mulai Perjalanan</button>
-														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived" <?= $visit_next_status[$visit_status] === 'arrived' ? '' : 'disabled'; ?>>Tiba di Lokasi</button>
-														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="in_service" <?= $visit_next_status[$visit_status] === 'in_service' ? '' : 'disabled'; ?>>Mulai Penanganan</button>
-														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="completed" <?= $visit_next_status[$visit_status] === 'completed' ? '' : 'disabled'; ?>>Kunjungan Selesai</button>
+														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="en_route" <?= $visit_next_status[$visit_status] === 'en_route' ? '' : 'disabled'; ?>>Mulai perjalanan</button>
+														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived" <?= $visit_next_status[$visit_status] === 'arrived' ? '' : 'disabled'; ?>>Tiba di lokasi</button>
+														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="in_service" <?= $visit_next_status[$visit_status] === 'in_service' ? '' : 'disabled'; ?>>Mulai penanganan</button>
+														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="completed" <?= $visit_next_status[$visit_status] === 'completed' ? '' : 'disabled'; ?>>Kunjungan selesai</button>
 													</div>
 												</div>
 												<div class="small mt-2 visit-workflow-message" data-visit-workflow-message="<?= html_escape((int) $x->request_id); ?>"></div>
@@ -329,7 +329,7 @@ $history_event_time = static function ($event) {
 											</div>
 											<div class="dl-history-secondary-actions">
 												<button type="button" class="btn btn-outline-primary shadow-sm rounded-pill start-nakes-visit-tracking" data-request-id="<?= html_escape((int) $x->request_id); ?>">
-													<i class="fas fa-location-arrow me-2"></i> Aktifkan Visit
+													<i class="fas fa-location-arrow me-2"></i> Lacak kunjungan
 												</button>
 												<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
 													<i class="fas fa-times-circle me-2"></i> Batalkan
@@ -413,7 +413,7 @@ $history_event_time = static function ($event) {
 													<div class="nk-info-row"><span class="nk-info-label">Puskesmas</span><strong class="nk-info-value"><?= doclinc_history_safe_text($puskesmas); ?></strong></div>
 												<?php endif; ?>
 												<?php if ($can_coordinate_staff && $pic_assignment) : ?>
-													<div class="nk-info-row"><span class="nk-info-label">PIC Personel</span><strong class="nk-info-value"><?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_profesi) ? ' · ' . html_escape($pic_assignment->staff_profesi) : ''; ?><?= !empty($pic_assignment->staff_no_hp) ? ' · ' . html_escape($pic_assignment->staff_no_hp) : ''; ?></strong></div>
+													<div class="nk-info-row"><span class="nk-info-label">PIC</span><strong class="nk-info-value"><?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_profesi) ? ' · ' . html_escape($pic_assignment->staff_profesi) : ''; ?><?= !empty($pic_assignment->staff_no_hp) ? ' · ' . html_escape($pic_assignment->staff_no_hp) : ''; ?></strong></div>
 												<?php endif; ?>
 												<?php if ($completed_preview !== '') : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Hasil</span><strong class="nk-info-value"><?= html_escape($completed_preview); ?></strong></div>
@@ -421,7 +421,7 @@ $history_event_time = static function ($event) {
 											</div>
 											<?php if ($can_coordinate_staff && !empty($request_events)) : ?>
 												<div class="nk-action-panel nk-action-panel--timeline nk-card-section">
-													<div class="nk-action-panel__title">Timeline Operasional</div>
+													<div class="nk-action-panel__title">Riwayat</div>
 													<div class="nk-timeline-list">
 														<?php foreach ($request_events as $event) :
 															$event_label = $history_event_label($event);

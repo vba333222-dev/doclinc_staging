@@ -31,7 +31,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return;
 		}
 		if (!$this->Kelola_staff_puskesmas_m->table_ready()) {
-			$this->session->set_flashdata('error', 'Tabel personel Puskesmas belum tersedia.');
+			$this->session->set_flashdata('error', 'Data staf belum tersedia.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}
@@ -68,7 +68,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return;
 		}
 		if (!$this->Kelola_staff_puskesmas_m->table_ready()) {
-			$this->session->set_flashdata('error', 'Tabel personel Puskesmas belum tersedia.');
+			$this->session->set_flashdata('error', 'Data staf belum tersedia.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}
@@ -110,7 +110,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return;
 		}
 		if (!$this->Kelola_staff_puskesmas_m->table_ready()) {
-			$this->session->set_flashdata('error', 'Tabel personel Puskesmas belum tersedia.');
+			$this->session->set_flashdata('error', 'Data staf belum tersedia.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}
@@ -149,15 +149,15 @@ class Kelola_staff_puskesmas extends MX_Controller
 
 		$staff = $staff_id > 0 ? $this->Kelola_staff_puskesmas_m->get_by_id($staff_id) : null;
 		if (!$staff) {
-			$this->personal_account_flash('Staff tidak ditemukan.');
+			$this->personal_account_flash('Staf tidak ditemukan.');
 			return;
 		}
 		if ((int) ($staff->user_id ?? 0) > 0) {
-			$this->personal_account_flash('Staff sudah terhubung ke akun login.');
+			$this->personal_account_flash('Staf sudah memiliki akun personal.');
 			return;
 		}
 		if (($staff->status ?? '') !== 'aktif') {
-			$this->personal_account_flash('Staff harus aktif sebelum dibuatkan akun.');
+			$this->personal_account_flash('Aktifkan staf terlebih dahulu.');
 			return;
 		}
 		if (!$this->Kelola_staff_puskesmas_m->puskesmas_is_active($staff->kode_pkm ?? '')) {
@@ -166,7 +166,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 		}
 		$eligibility = $this->Kelola_staff_puskesmas_m->get_personal_account_creation_eligibility($staff);
 		if (empty($eligibility['eligible'])) {
-			$this->personal_account_flash(!empty($eligibility['message']) ? $eligibility['message'] : 'Staff belum memenuhi syarat pembuatan akun personal.');
+			$this->personal_account_flash(!empty($eligibility['message']) ? $eligibility['message'] : 'Staf belum dapat dibuatkan akun personal.');
 			return;
 		}
 		if ($username === '' || strlen($username) < 3 || strlen($username) > 100 || !preg_match('/^[A-Za-z0-9._-]+$/', $username)) {
@@ -207,7 +207,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return;
 		}
 		if (!$this->Kelola_staff_puskesmas_m->table_ready()) {
-			$this->session->set_flashdata('error', 'Tabel personel Puskesmas belum tersedia.');
+			$this->session->set_flashdata('error', 'Data staf belum tersedia.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}
@@ -229,7 +229,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 
 	private function render_page($form_mode = '', $staff_id = null)
 	{
-		$this->session->set_flashdata('title', 'Staff Puskesmas');
+		$this->session->set_flashdata('title', 'Staf Puskesmas');
 		$this->session->set_flashdata('active_tab_kelola_staff_puskesmas', 'active');
 
 		$filter_input = $this->input->method(TRUE) === 'POST' ? 'post' : 'get';
@@ -317,7 +317,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return;
 		}
 		if (!$this->Kelola_staff_puskesmas_m->table_ready()) {
-			$this->session->set_flashdata('error', 'Tabel personel Puskesmas belum tersedia.');
+			$this->session->set_flashdata('error', 'Data staf belum tersedia.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}

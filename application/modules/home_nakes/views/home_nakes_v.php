@@ -165,7 +165,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header nk-profile-modal__header">
-					<h5 class="modal-title" id="modalProfilLabel"><span><i class="bi bi-pencil-fill"></i></span>Edit Profil</h5>
+					<h5 class="modal-title" id="modalProfilLabel"><span><i class="bi bi-pencil-fill"></i></span>Edit profil</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<form id="formEditProfile" enctype="multipart/form-data">
@@ -179,18 +179,18 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						</div>
 						<div class="form-floating nk-profile-modal__field">
 							<input type="text" class="form-control" id="nama_lengkap_edit" name="nama_lengkap" value="<?= $this->session->userdata('nama'); ?>" placeholder="Nama Lengkap">
-							<label for="nama_lengkap_edit"><i class="bi bi-person-fill me-2"></i>Nama Lengkap</label>
+							<label for="nama_lengkap_edit"><i class="bi bi-person-fill me-2"></i>Nama lengkap</label>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
 							<input type="date" class="form-control" id="tgl_edit" name="tgl_lahir" value="<?= $profile['tgl'] ?>" placeholder="Tanggal Lahir">
-							<label for="tgl_edit"><i class="bi bi-calendar-event-fill me-2"></i>Tanggal Lahir</label>
+							<label for="tgl_edit"><i class="bi bi-calendar-event-fill me-2"></i>Tanggal lahir</label>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
 							<select class="form-select" name="jk" id="jk_edit">
 								<option value="Laki-laki" <?= $this->session->userdata('jk') == 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
 								<option value="Perempuan" <?= $this->session->userdata('jk') == 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
 							</select>
-							<label for="jk_edit"><i class="bi bi-gender-ambiguous me-2"></i>Jenis Kelamin</label>
+							<label for="jk_edit"><i class="bi bi-gender-ambiguous me-2"></i>Jenis kelamin</label>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
 							<input type="text" class="form-control" id="no_hp_edit" name="no_hp" value="<?= $profile['no_hp'] ?>" placeholder="Nomor HP">
@@ -214,7 +214,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		<div class="offcanvas-header nk-notification-header">
 			<div class="nk-notification-title">
 				<span class="nk-notification-title-icon"><i class="bi bi-bell-fill"></i></span>
-				<span class="offcanvas-title" id="offcanvasNotifLabel">Pusat Notifikasi</span>
+				<span class="offcanvas-title" id="offcanvasNotifLabel">Pusat notifikasi</span>
 				<span class="badge text-bg-danger nk-notification-badge" id="badgeNotifs" style="display: none;"></span>
 			</div>
 			<button type="button" class="btn-close nk-notification-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -247,7 +247,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				</div>
 				<div class="visit-route-card">
 					<div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-						<div class="visit-route-card-title">Rute Anda ke Pasien</div>
+						<div class="visit-route-card-title">Rute Anda ke pasien</div>
 						<span class="visit-route-status" id="nakesVisitRouteStatus">Menghitung...</span>
 					</div>
 					<div class="visit-route-card-row">
@@ -313,7 +313,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				<div class="modal-dialog modal-dialog-centered modal-lg">
 					<div class="modal-content">
 						<div class="modal-header">
-							<h5 class="modal-title" id="fotoModalLabel_<?php echo $x->user_id; ?>">Preview Foto</h5>
+							<h5 class="modal-title" id="fotoModalLabel_<?php echo $x->user_id; ?>">Pratinjau foto</h5>
 							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 						</div>
 						<div class="modal-body text-center">
@@ -330,7 +330,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				<div class="modal-dialog modal-dialog-centered modal-lg">
 					<div class="modal-content">
 						<div class="modal-header">
-							<h5 class="modal-title" id="videoModalLabel_<?php echo $x->user_id; ?>">Preview Video</h5>
+							<h5 class="modal-title" id="videoModalLabel_<?php echo $x->user_id; ?>">Pratinjau video</h5>
 							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 						</div>
 						<div class="modal-body text-center">
@@ -569,7 +569,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 									} catch (e) {}
 								}
 								if (!(response == 1 || response === true || (response && response.status === 'success'))) {
-									const message = response && response.message ? response.message : 'Request gagal diterima';
+									const message = response && response.message ? response.message : 'Permintaan gagal diterima.';
 									Swal.fire("Gagal", message, "error");
 									$(acceptButton).prop('disabled', false).removeClass('disabled');
 									return;
@@ -586,7 +586,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 										newMessageRef.set({
 											id_req: id,
 											id_user: id_user,
-											status: 'Nakes Menuju Lokasi',
+											status: 'Nakes menuju lokasi',
 											text: 'Nakes sedang Menyiapkan obat dan Kendaraan',
 											timestamp: Date.now()
 										});
@@ -605,7 +605,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					<br><br>
 					Berdasarkan informasi yang kami terima, Anda mengalami:<br>
 					<b>${keluhan}</b>.<br><br>
-					<b>Riwayat Penyakit</b> : <br>
+					<b>Riwayat penyakit</b> : <br>
 					<b>${riwayat}</b>
 					<br><br>
 					Saya siap membantu Anda dengan penanganan medis yang tepat.<br><br>
@@ -662,7 +662,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 								}, 300);
 							},
 							error: function() {
-								Swal.fire("Gagal", "Request gagal diterima", "error");
+								Swal.fire("Gagal", "Permintaan gagal diterima.", "error");
 								$(acceptButton).prop('disabled', false).removeClass('disabled');
 							}
 						});
@@ -708,7 +708,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			const button = $(this);
 			const requestId = button.data('request-id');
 			if (!requestId) {
-				Swal.fire('Gagal', 'Data request tidak ditemukan.', 'error');
+				Swal.fire('Gagal', 'Permintaan tidak ditemukan.', 'error');
 				return;
 			}
 
@@ -1204,8 +1204,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 								clearNakesRouteLayers();
 								setNakesArrivalNotice(requestId, null);
 								setRouteText(requestId, null);
-								setMapStatus(response.message || 'Tracking kunjungan sudah selesai.');
-								setTrackingStatus(requestId, response.message || 'Tracking kunjungan sudah selesai.');
+								setMapStatus(response.message || 'Pelacakan kunjungan selesai.');
+								setTrackingStatus(requestId, response.message || 'Pelacakan kunjungan selesai.');
 								return;
 							}
 							renderVisitMap(requestId, response, fallbackPatientLocation);
@@ -1328,7 +1328,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 							stopTracking(requestId);
 							clearNakesRouteLayers();
 							setNakesArrivalNotice(requestId, null);
-							setTrackingStatus(requestId, response.message || 'Tracking kunjungan sudah selesai.');
+							setTrackingStatus(requestId, response.message || 'Pelacakan kunjungan selesai.');
 							return;
 						}
 
@@ -1368,11 +1368,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				}
 
 				if (watches[requestId]) {
-					setTrackingStatus(requestId, 'Tracking lokasi aktif');
+					setTrackingStatus(requestId, 'Pelacakan kunjungan aktif.');
 					return;
 				}
 
-				setTrackingStatus(requestId, 'Tracking lokasi aktif');
+				setTrackingStatus(requestId, 'Pelacakan kunjungan aktif.');
 				const watchId = navigator.geolocation.watchPosition(
 					function(position) {
 						postVisitLocation(requestId, position);

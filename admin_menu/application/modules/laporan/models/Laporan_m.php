@@ -245,8 +245,8 @@ class Laporan_m extends MX_Controller
 		$routed_puskesmas_code_expr = "CASE WHEN UPPER($assigned_puskesmas_code_expr) = 'DEFAULT' THEN NULL ELSE $assigned_puskesmas_code_expr END";
 		$assigned_puskesmas_name_clean_expr = "CASE WHEN UPPER(COALESCE($assigned_puskesmas_name_expr, '')) IN ('DEFAULT', 'PUSKESMAS DEFAULT') THEN NULL ELSE $assigned_puskesmas_name_expr END";
 		$puskesmas_expr = $has_puskesmas
-			? "COALESCE($assigned_puskesmas_name_clean_expr, assigned_puskesmas.nama_puskesmas, $routed_puskesmas_code_expr, 'Legacy / Belum terklasifikasi')"
-			: "COALESCE($assigned_puskesmas_name_clean_expr, $routed_puskesmas_code_expr, 'Legacy / Belum terklasifikasi')";
+			? "COALESCE($assigned_puskesmas_name_clean_expr, assigned_puskesmas.nama_puskesmas, $routed_puskesmas_code_expr, 'Perlu dicek')"
+			: "COALESCE($assigned_puskesmas_name_clean_expr, $routed_puskesmas_code_expr, 'Perlu dicek')";
 		$dokter_expr = $has_dokter ? "COALESCE(m_dokter.name, dokter_user.nama, '-')" : "COALESCE(dokter_user.nama, '-')";
 		$include_pic = $aggregate_select === '' && $this->can_query_pic_assignment();
 
@@ -357,10 +357,10 @@ class Laporan_m extends MX_Controller
 
 			$name = trim((string) ($row->nama_puskesmas ?? ''));
 			$code = trim((string) ($row->assigned_puskesmas_code ?? ''));
-			if ($name === '' || $name === 'Legacy / Belum terklasifikasi' || $code === '' || strtoupper($code) === 'DEFAULT') {
+			if ($name === '' || $name === 'Perlu dicek' || $code === '' || strtoupper($code) === 'DEFAULT') {
 				$summary['legacy']++;
 			}
-			if ($name !== '' && $name !== 'Legacy / Belum terklasifikasi') {
+			if ($name !== '' && $name !== 'Perlu dicek') {
 				$puskesmas[$name] = true;
 			}
 		}
@@ -375,7 +375,7 @@ class Laporan_m extends MX_Controller
 		foreach ((array) $rows as $row) {
 			$name = trim((string) ($row->nama_puskesmas ?? ''));
 			if ($name === '') {
-				$name = 'Legacy / Belum terklasifikasi';
+				$name = 'Perlu dicek';
 			}
 			if (!isset($breakdown[$name])) {
 				$breakdown[$name] = array(

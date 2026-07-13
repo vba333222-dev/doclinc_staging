@@ -2,7 +2,7 @@
 				<div id="beranda" class="content active">
 					<div class="dl-dashboard-stack">
 						<?php if (!empty($nakes_is_personal)) : ?>
-							<div class="alert alert-info mb-0" role="status">Akun personal hanya menampilkan layanan yang ditugaskan kepada Anda.</div>
+							<div class="alert alert-info mb-0" role="status">Hanya tugas Anda yang tampil di sini.</div>
 						<?php endif; ?>
 						<?php $this->load->view('partials/nakes_stat_cards_v', get_defined_vars()); ?>
 						<?php if (!empty($nakes_is_command_center)) : ?>
@@ -10,14 +10,13 @@
 						$dashboard_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_list) ? array_slice($puskesmas_staff_list, 0, 3) : array();
 						$dashboard_staff_count = isset($puskesmas_staff_count) ? (int) $puskesmas_staff_count : count($dashboard_staff_rows);
 						$this->load->view('partials/nakes_section_header_v', array(
-							'section_title' => 'Personel Puskesmas',
+							'section_title' => 'Staf Puskesmas',
 							'section_meta' => (string) $dashboard_staff_count . ' terdaftar',
 						));
 						?>
 						<div class="dl-nakes-card dl-dashboard-section nk-staff-card">
-							<p class="nk-staff-copy">Data personel yang terdaftar pada unit Puskesmas.</p>
 							<?php if (empty($dashboard_staff_rows)) : ?>
-								<div class="nk-staff-empty">Belum ada personel terdaftar.</div>
+								<div class="nk-staff-empty">Belum ada staf.</div>
 							<?php else : ?>
 								<div class="nk-staff-list">
 									<?php foreach ($dashboard_staff_rows as $staff) :
@@ -41,21 +40,21 @@
 									<?php endforeach; ?>
 								</div>
 								<?php if ($dashboard_staff_count > count($dashboard_staff_rows)) : ?>
-									<div class="nk-staff-more"><?= html_escape((string) ($dashboard_staff_count - count($dashboard_staff_rows))); ?> personel lainnya tersedia di profil.</div>
+									<div class="nk-staff-more"><?= html_escape((string) ($dashboard_staff_count - count($dashboard_staff_rows))); ?> staf lainnya ada di profil.</div>
 								<?php endif; ?>
 							<?php endif; ?>
 						</div>
 						<?php endif; ?>
 						<?php
 						$this->load->view('partials/nakes_section_header_v', array(
-							'section_title' => !empty($nakes_is_personal) ? 'Penanganan Anda' : 'Penanganan Unit Berjalan',
+							'section_title' => !empty($nakes_is_personal) ? 'Tugas Anda' : 'Sedang ditangani',
 							'section_link_label' => 'Lihat',
 							'section_link_target' => '#riwayat_konsul',
 						));
 						$this->load->view('partials/nakes_active_task_card_v', get_defined_vars());
 						if (!empty($nakes_is_command_center)) :
 						$this->load->view('partials/nakes_section_header_v', array(
-							'section_title' => 'Permintaan Masuk Puskesmas',
+							'section_title' => 'Permintaan masuk Puskesmas',
 							'section_link_label' => 'Semua',
 							'section_link_target' => '#req_konsul',
 						));
