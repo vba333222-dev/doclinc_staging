@@ -296,7 +296,7 @@ class Home_nakes extends MX_Controller
 		}
 
 		$result = $this->Home_nakes_m->assign_staff_to_request($request_id, $staff_id, $puskesmas_code, $user_id, $note, $identity_context);
-		$message = !empty($result['message']) ? $result['message'] : 'Gagal menetapkan PIC personel';
+		$message = !empty($result['message']) ? $result['message'] : 'PIC gagal ditetapkan.';
 		$this->session->set_flashdata(
 			isset($result['status']) && $result['status'] === 'success' ? 'staff_assignment_success' : 'staff_assignment_error',
 			$message
@@ -329,7 +329,7 @@ class Home_nakes extends MX_Controller
 		}
 
 		$result = $this->Home_nakes_m->clear_staff_assignment($request_id, $puskesmas_code, $user_id, $identity_context);
-		$message = !empty($result['message']) ? $result['message'] : 'Gagal membatalkan PIC personel';
+		$message = !empty($result['message']) ? $result['message'] : 'PIC gagal dilepas.';
 		$this->session->set_flashdata(
 			isset($result['status']) && $result['status'] === 'success' ? 'staff_assignment_success' : 'staff_assignment_error',
 			$message
@@ -393,7 +393,7 @@ class Home_nakes extends MX_Controller
 		$longitude = $this->input->post('longitude');
 
 		if (empty($id) || empty($id_user)) {
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Data request tidak lengkap']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Data permintaan tidak lengkap.']));
 			return;
 		}
 
@@ -433,7 +433,7 @@ class Home_nakes extends MX_Controller
 		}
 
 		doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'accept'));
-		$message = !empty($result['message']) ? $result['message'] : 'Request tidak ditemukan atau bukan milik dokter login';
+		$message = !empty($result['message']) ? $result['message'] : 'Permintaan tidak dapat diakses.';
 		$this->output->set_output(json_encode(['status' => 'error', 'message' => $message]));
 	}
 	public function cancel_request()
@@ -470,7 +470,7 @@ class Home_nakes extends MX_Controller
 			if (function_exists('doclinc_log_request_event')) {
 				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'nakes_cancel'));
 			}
-			$message = !empty($result['message']) ? $result['message'] : 'Request tidak dapat dibatalkan';
+			$message = !empty($result['message']) ? $result['message'] : 'Permintaan tidak dapat dibatalkan.';
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(['status' => 'error', 'message' => $message]));
@@ -521,7 +521,7 @@ class Home_nakes extends MX_Controller
 		if ($request_id < 1) {
 			$this->output
 				->set_status_header(400)
-				->set_output(json_encode(array('status' => false, 'message' => 'Data request tidak valid')));
+				->set_output(json_encode(array('status' => false, 'message' => 'Data permintaan tidak valid.')));
 			return;
 		}
 
@@ -529,7 +529,7 @@ class Home_nakes extends MX_Controller
 		if (!$request) {
 			$this->output
 				->set_status_header(404)
-				->set_output(json_encode(array('status' => false, 'message' => 'Request tidak ditemukan')));
+				->set_output(json_encode(array('status' => false, 'message' => 'Permintaan tidak ditemukan.')));
 			return;
 		}
 		$access_context = doclinc_nakes_request_access_context($request, $identity_context);
@@ -548,7 +548,7 @@ class Home_nakes extends MX_Controller
 				'status' => 'inactive',
 				'success' => false,
 				'tracking_active' => false,
-				'message' => 'Tracking kunjungan sudah selesai.',
+				'message' => 'Pelacakan kunjungan selesai.',
 				'request_id' => $request_id,
 				'request_status' => isset($request->request_status) ? $request->request_status : null,
 				'visit_status' => $current_visit_status,
@@ -561,7 +561,7 @@ class Home_nakes extends MX_Controller
 		if (!$row) {
 			$this->output
 				->set_status_header(404)
-				->set_output(json_encode(array('status' => false, 'message' => 'Request tidak ditemukan')));
+				->set_output(json_encode(array('status' => false, 'message' => 'Permintaan tidak ditemukan.')));
 			return;
 		}
 
@@ -610,7 +610,7 @@ class Home_nakes extends MX_Controller
 		if (!$request) {
 			$this->output
 				->set_status_header(404)
-				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Request tidak ditemukan']));
+				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Permintaan tidak ditemukan.']));
 			return;
 		}
 		$access_context = doclinc_nakes_request_access_context($request, $identity_context);
@@ -629,7 +629,7 @@ class Home_nakes extends MX_Controller
 				'status' => 'inactive',
 				'success' => false,
 				'tracking_active' => false,
-				'message' => 'Tracking kunjungan sudah selesai.',
+				'message' => 'Pelacakan kunjungan selesai.',
 				'request_id' => $request_id,
 				'request_status' => isset($request->request_status) ? $request->request_status : null,
 				'visit_status' => $current_visit_status,
@@ -721,7 +721,7 @@ class Home_nakes extends MX_Controller
 		if (!$request) {
 			$this->output
 				->set_status_header(404)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Permintaan tidak ditemukan.']));
 			return;
 		}
 		$access_context = doclinc_nakes_request_access_context($request, $identity_context);

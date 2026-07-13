@@ -72,7 +72,7 @@ class Rekam_medis_m extends MX_Controller
 		$assigned_code = $this->puskesmas_code_expr();
 		$master_name = $this->can_join_puskesmas() ? 'assigned_puskesmas.nama_puskesmas' : 'NULL';
 
-		return "COALESCE($assigned_name, $master_name, $assigned_code, 'Legacy / Belum terklasifikasi')";
+		return "COALESCE($assigned_name, $master_name, $assigned_code, 'Perlu dicek')";
 	}
 
 	private function can_join_puskesmas()

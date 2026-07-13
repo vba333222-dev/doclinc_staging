@@ -38,7 +38,7 @@
 											</div>
 											<?php if ($show_address || $show_mode_label || $show_distance_label) : ?>
 												<div class="nk-detail-panel nk-card-section">
-													<div class="nk-detail-panel__title">Detail request</div>
+													<div class="nk-detail-panel__title">Detail permintaan</div>
 													<div class="nk-detail-panel__body">
 														<?php if ($show_address) : ?>
 															<div class="nk-detail-row"><span class="nk-detail-label">Alamat</span><strong class="nk-detail-value"><?= doclinc_history_safe_text($x->location); ?></strong></div>
@@ -61,12 +61,12 @@
 											<?php endif; ?>
 											<!-- <a class="btn btn-info btn-sm">Lihat Foto</a> <a class="btn btn-info btn-sm">Lihat Video</a> -->
 											<?php if (!empty($x->photos)) : ?>
-												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#fotoModal_<?= html_escape((int) $x->user_id); ?>">Lihat Foto</button>
+														<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#fotoModal_<?= html_escape((int) $x->user_id); ?>">Lihat foto</button>
 
 											<?php endif; ?>
 
 											<?php if (!empty($x->video)) : ?>
-												<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#videoModal_<?= html_escape((int) $x->user_id); ?>">Lihat Video</button>
+														<button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#videoModal_<?= html_escape((int) $x->user_id); ?>">Lihat video</button>
 											<?php endif; ?>
 										</div>
 										<div class="card-footer">

@@ -32,12 +32,25 @@ if (!function_exists('doclinc_record_service_label')) {
 		$mode = strtolower(trim((string) $mode));
 		$visit_status = strtolower(trim((string) $visit_status));
 		if ($mode === 'visit' || in_array($visit_status, array('en_route', 'arrived', 'in_service', 'completed'), true)) {
-			return 'Visit';
+			return 'Kunjungan';
 		}
 		if ($mode === 'non_visit') {
-			return 'Non-Visit';
+			return 'Tanpa kunjungan';
 		}
-		return 'Belum diklasifikasikan';
+		return 'Perlu dicek';
+	}
+}
+
+if (!function_exists('doclinc_record_status_label')) {
+	function doclinc_record_status_label($status)
+	{
+		$labels = array(
+			'Pending' => 'Menunggu',
+			'Accepted' => 'Diterima',
+			'Completed' => 'Selesai',
+			'Cancelled' => 'Dibatalkan',
+		);
+		return isset($labels[$status]) ? $labels[$status] : 'Perlu dicek';
 	}
 }
 
@@ -45,15 +58,15 @@ $summary_cards = array(
 	array('label' => 'Total rekam medis', 'value' => (int) ($summary['total'] ?? 0), 'icon' => 'fa-notes-medical', 'tone' => 'primary'),
 	array('label' => '30 hari terakhir', 'value' => (int) ($summary['last_30_days'] ?? 0), 'icon' => 'fa-calendar-alt', 'tone' => 'info'),
 	array('label' => 'Puskesmas terlibat', 'value' => (int) ($summary['puskesmas_count'] ?? 0), 'icon' => 'fa-hospital', 'tone' => 'success'),
-	array('label' => 'Top diagnosis', 'value' => doclinc_record_short_text($summary['top_diagnosis'] ?? '-', 28), 'icon' => 'fa-chart-bar', 'tone' => 'service', 'meta' => number_format((int) ($summary['top_diagnosis_count'] ?? 0)) . ' kasus'),
+	array('label' => 'Diagnosis terbanyak', 'value' => doclinc_record_short_text($summary['top_diagnosis'] ?? '-', 28), 'icon' => 'fa-chart-bar', 'tone' => 'service', 'meta' => number_format((int) ($summary['top_diagnosis_count'] ?? 0)) . ' kasus'),
 );
 ?>
 
 <div class="doclinc-record-library">
 	<div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 		<div>
-			<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-notes-medical"></i> Perpustakaan Rekam Medis</h1>
-			<div class="doclinc-page-subtitle">Data berasal dari rekam medis konsultasi yang sudah diisi Nakes/Dokter.</div>
+			<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-notes-medical"></i> Rekam medis</h1>
+			<div class="doclinc-page-subtitle">Rekam medis yang sudah diisi.</div>
 		</div>
 	</div>
 
@@ -78,7 +91,7 @@ $summary_cards = array(
 				<div class="form-row align-items-end">
 					<div class="form-group col-lg-4">
 						<label class="small font-weight-bold text-muted" for="keyword">Cari</label>
-						<input type="text" class="form-control" id="keyword" name="keyword" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="Pasien, diagnosis, Puskesmas, request ID">
+						<input type="text" class="form-control" id="keyword" name="keyword" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="Pasien, diagnosis, Puskesmas, ID">
 					</div>
 					<div class="form-group col-lg-3">
 						<label class="small font-weight-bold text-muted" for="puskesmas">Puskesmas</label>
@@ -109,8 +122,8 @@ $summary_cards = array(
 
 	<div class="card shadow-sm doclinc-record-card">
 		<div class="card-header d-flex flex-wrap align-items-center justify-content-between">
-			<h2 class="h6 mb-0 font-weight-bold">Daftar Rekam Medis</h2>
-			<span class="doclinc-meta-text">Read-only &middot; maksimal 200 data terbaru</span>
+			<h2 class="h6 mb-0 font-weight-bold">Daftar rekam medis</h2>
+			<span class="doclinc-meta-text">Maksimal 200 data terbaru</span>
 		</div>
 		<div class="card-body">
 			<?php if (empty($records)): ?>
@@ -124,7 +137,7 @@ $summary_cards = array(
 								<th>Pasien</th>
 								<th>Puskesmas</th>
 								<th>Diagnosis</th>
-								<th>Jenis Layanan</th>
+								<th>Jenis layanan</th>
 								<th>Status</th>
 								<th>Aksi</th>
 							</tr>
@@ -135,12 +148,12 @@ $summary_cards = array(
 									<td><?= html_escape(doclinc_record_date($row->created_at ?? '')); ?></td>
 									<td><?= html_escape($row->patient_name ?? '-'); ?></td>
 									<td>
-										<div class="font-weight-bold"><?= html_escape($row->puskesmas_name ?? 'Legacy / Belum terklasifikasi'); ?></div>
+										<div class="font-weight-bold"><?= html_escape($row->puskesmas_name ?? 'Perlu dicek'); ?></div>
 										<div class="doclinc-meta-text"><?= html_escape($row->puskesmas_code ?? '-'); ?></div>
 									</td>
 									<td><?= html_escape(doclinc_record_short_text($row->diagnosis ?? '-', 64)); ?></td>
 									<td><span class="doclinc-record-badge"><?= html_escape(doclinc_record_service_label($row->consultation_mode ?? '', $row->visit_status ?? '')); ?></span></td>
-									<td><span class="doclinc-record-badge"><?= html_escape($row->request_status ?? '-'); ?></span></td>
+									<td><span class="doclinc-record-badge"><?= html_escape(doclinc_record_status_label($row->request_status ?? '')); ?></span></td>
 									<td>
 										<button type="button" class="btn btn-sm btn-outline-primary doclinc-record-detail" data-record-id="<?= (int) ($row->record_id ?? 0); ?>">
 											Detail
@@ -161,10 +174,10 @@ $summary_cards = array(
 		<div class="modal-content">
 			<div class="modal-header">
 				<div>
-					<h5 class="modal-title" id="recordDetailModalLabel">Detail Rekam Medis</h5>
-					<div class="doclinc-meta-text">Informasi read-only untuk admin.</div>
+					<h5 class="modal-title" id="recordDetailModalLabel">Detail rekam medis</h5>
+					<div class="doclinc-meta-text">Hanya dapat dilihat.</div>
 				</div>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
@@ -188,12 +201,33 @@ $summary_cards = array(
 			mode = String(mode || '').toLowerCase();
 			visitStatus = String(visitStatus || '').toLowerCase();
 			if (mode === 'visit' || ['en_route', 'arrived', 'in_service', 'completed'].indexOf(visitStatus) !== -1) {
-				return 'Visit';
+				return 'Kunjungan';
 			}
 			if (mode === 'non_visit') {
-				return 'Non-Visit';
+				return 'Tanpa kunjungan';
 			}
-			return 'Belum diklasifikasikan';
+			return 'Perlu dicek';
+		}
+
+		function requestStatusLabel(status) {
+			var labels = {
+				Pending: 'Menunggu',
+				Accepted: 'Diterima',
+				Completed: 'Selesai',
+				Cancelled: 'Dibatalkan'
+			};
+			return labels[status] || 'Perlu dicek';
+		}
+
+		function visitStatusLabel(status) {
+			var labels = {
+				not_started: 'Belum dimulai',
+				en_route: 'Dalam perjalanan',
+				arrived: 'Sudah tiba',
+				in_service: 'Ditangani',
+				completed: 'Selesai'
+			};
+			return status ? (labels[status] || 'Perlu dicek') : '-';
 		}
 
 		function formatText(value) {
@@ -205,18 +239,18 @@ $summary_cards = array(
 			return '' +
 				'<div class="doclinc-record-detail-grid">' +
 				'<div><span>Pasien</span><strong>' + escapeHtml(data.patient_name) + '</strong></div>' +
-				'<div><span>Request ID</span><strong>#' + escapeHtml(data.request_id) + '</strong></div>' +
+				'<div><span>ID permintaan</span><strong>#' + escapeHtml(data.request_id) + '</strong></div>' +
 				'<div><span>Puskesmas</span><strong>' + escapeHtml(data.puskesmas_name) + '</strong></div>' +
-				'<div><span>Status Request</span><strong>' + escapeHtml(data.request_status) + '</strong></div>' +
-				'<div><span>Jenis Layanan</span><strong>' + escapeHtml(serviceLabel(data.consultation_mode, data.visit_status)) + '</strong></div>' +
-				'<div><span>Visit Status</span><strong>' + escapeHtml(data.visit_status || '-') + '</strong></div>' +
-				'<div><span>Nakes/Dokter</span><strong>' + escapeHtml(data.provider_name || '-') + '</strong></div>' +
+				'<div><span>Status konsultasi</span><strong>' + escapeHtml(requestStatusLabel(data.request_status)) + '</strong></div>' +
+				'<div><span>Jenis layanan</span><strong>' + escapeHtml(serviceLabel(data.consultation_mode, data.visit_status)) + '</strong></div>' +
+				'<div><span>Status kunjungan</span><strong>' + escapeHtml(visitStatusLabel(data.visit_status)) + '</strong></div>' +
+				'<div><span>Nakes atau dokter</span><strong>' + escapeHtml(data.provider_name || '-') + '</strong></div>' +
 				'<div><span>Dibuat</span><strong>' + escapeHtml(data.created_at || '-') + '</strong></div>' +
 				'</div>' +
 				'<hr>' +
 				'<h6 class="font-weight-bold">Diagnosis</h6><p>' + formatText(data.diagnosis) + '</p>' +
-				'<h6 class="font-weight-bold">Tindakan / Terapi</h6><p>' + formatText(data.treatment) + '</p>' +
-				'<h6 class="font-weight-bold">Saran / Catatan</h6><p>' + formatText(data.recommendations || data.notes) + '</p>';
+				'<h6 class="font-weight-bold">Tindakan dan terapi</h6><p>' + formatText(data.treatment) + '</p>' +
+				'<h6 class="font-weight-bold">Saran dan catatan</h6><p>' + formatText(data.recommendations || data.notes) + '</p>';
 		}
 
 		$(function() {

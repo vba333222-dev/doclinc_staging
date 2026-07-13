@@ -39,31 +39,31 @@ $profile_rows = array(
 							));
 							?>
 							<div class="min-w-0">
-								<span><?= $profile_is_command_center ? 'Akun Koordinasi Puskesmas' : ($profile_is_personal ? 'Akun Personal Nakes' : 'Akun Nakes'); ?></span>
+								<span><?= $profile_is_command_center ? 'Akun Puskesmas' : ($profile_is_personal ? 'Akun personal' : 'Akun perlu dicek'); ?></span>
 								<strong><?= html_escape($profile_name); ?></strong>
-								<small><?= $profile_is_command_center ? 'Unit Koordinasi' : ($profile_is_personal ? 'Staff Puskesmas' : 'Belum terklasifikasi'); ?></small>
+								<small><?= $profile_is_command_center ? 'Akun Puskesmas' : ($profile_is_personal ? 'Akun personal' : 'Perlu dicek'); ?></small>
 							</div>
 						</div>
 
 						<div class="nk-assignment-card">
-							<div class="dl-profile-section-title">Konteks Penugasan</div>
+							<div class="dl-profile-section-title">Konteks penugasan</div>
 							<div class="nk-info-list">
 								<div class="nk-info-row">
-									<span class="nk-info-label">Puskesmas Penugasan</span>
+									<span class="nk-info-label">Puskesmas penugasan</span>
 									<strong class="nk-info-value"><?= html_escape($profile_puskesmas_display); ?></strong>
 								</div>
 								<div class="nk-info-row">
-									<span class="nk-info-label">Status Akun</span>
+									<span class="nk-info-label">Status akun</span>
 									<strong class="nk-info-value"><?= !empty($nakes_identity_valid) ? 'Aktif' : 'Perlu pemeriksaan'; ?></strong>
 								</div>
 								<?php if ($profile_is_personal && !empty($profile_identity_staff['staff_profesi'])) : ?>
 								<div class="nk-info-row">
-									<span class="nk-info-label">Profesi Staff</span>
+									<span class="nk-info-label">Profesi staf</span>
 									<strong class="nk-info-value"><?= html_escape($profile_identity_staff['staff_profesi']); ?></strong>
 								</div>
 								<?php endif; ?>
 								<div class="nk-info-row">
-									<span class="nk-info-label">Jadwal Unit</span>
+									<span class="nk-info-label">Jadwal unit</span>
 									<strong class="nk-info-value">Belum dikonfigurasi</strong>
 								</div>
 							</div>
@@ -71,10 +71,9 @@ $profile_rows = array(
 
 						<?php if ($profile_is_command_center) : ?>
 						<div class="nk-staff-card nk-staff-card--profile">
-							<div class="dl-profile-section-title">Personel Unit</div>
-							<p class="nk-staff-copy">Data personel yang terdaftar pada unit Puskesmas.</p>
+							<div class="dl-profile-section-title">Staf Puskesmas</div>
 							<?php if (empty($profile_staff_rows)) : ?>
-								<div class="nk-staff-empty">Belum ada personel terdaftar.</div>
+								<div class="nk-staff-empty">Belum ada staf.</div>
 							<?php else : ?>
 								<div class="nk-staff-list">
 									<?php foreach ($profile_staff_rows as $staff) :
@@ -97,7 +96,7 @@ $profile_rows = array(
 										</div>
 									<?php endforeach; ?>
 								</div>
-								<div class="nk-staff-more"><?= html_escape((string) $profile_staff_count); ?> personel terdaftar.</div>
+								<div class="nk-staff-more"><?= html_escape((string) $profile_staff_count); ?> staf terdaftar.</div>
 							<?php endif; ?>
 						</div>
 						<?php endif; ?>

@@ -9,7 +9,7 @@ $form_mode = isset($form_mode) ? (string) $form_mode : '';
 $form_staff = isset($form_staff) ? $form_staff : null;
 $is_form = in_array($form_mode, array('create', 'edit'), true);
 $form_action = $form_mode === 'edit' && $form_staff ? site_url('kelola_staff_puskesmas/update/' . (int) $form_staff->staff_id) : site_url('kelola_staff_puskesmas/store');
-$form_title = $form_mode === 'edit' ? 'Edit Staff Puskesmas' : 'Tambah Staff Puskesmas';
+$form_title = $form_mode === 'edit' ? 'Edit staf' : 'Tambah staf';
 $form_values = array(
 	'kode_pkm' => $form_staff ? (string) $form_staff->kode_pkm : '',
 	'nama' => $form_staff ? (string) $form_staff->nama : '',
@@ -21,7 +21,7 @@ $form_values = array(
 ?>
 <div class="doclinc-admin-page doclinc-akun-page">
 	<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-		<h1 class="doclinc-page-title mb-0"><i class="fas fa-fw fa-users-cog"></i> Staff Puskesmas</h1>
+		<h1 class="doclinc-page-title mb-0"><i class="fas fa-fw fa-users-cog"></i> Staf Puskesmas</h1>
 	</div>
 
 	<div class="container-fluid">
@@ -33,11 +33,11 @@ $form_values = array(
 	<?php endif; ?>
 
 	<?php if (empty($table_ready)): ?>
-		<div class="alert alert-warning shadow-sm">Tabel staff Puskesmas belum tersedia.</div>
+		<div class="alert alert-warning shadow-sm">Data staf belum tersedia.</div>
 	<?php else: ?>
 		<div class="doclinc-staff-note shadow-sm">
 			<i class="fas fa-info-circle"></i>
-			<span>Data staff digunakan sebagai personel/PIC layanan. Ini tidak otomatis membuat akun login. Staff dapat dihubungkan ke akun login personal Nakes/Dokter. Akun Puskesmas tetap digunakan sebagai koordinator layanan.</span>
+			<span>Staf dapat dipilih sebagai PIC layanan.</span>
 		</div>
 		<?php if ($is_form): ?>
 			<div class="card shadow mb-4 doclinc-filter-card">
@@ -59,13 +59,13 @@ $form_values = array(
 											</option>
 										<?php endforeach; ?>
 									</select>
-									<small class="form-text text-muted">Pilih Puskesmas aktif sebagai unit koordinasi staff.</small>
+									<small class="form-text text-muted">Pilih Puskesmas staf.</small>
 								</div>
 							</div>
 							<div class="col-md-6">
 								<div class="form-group">
-									<label class="text-info">Nama Staff</label>
-									<input type="text" class="form-control rounded-pill border-info" name="nama" value="<?= html_escape($form_values['nama']); ?>" placeholder="Nama personel" required>
+									<label class="text-info">Nama staf</label>
+									<input type="text" class="form-control rounded-pill border-info" name="nama" value="<?= html_escape($form_values['nama']); ?>" placeholder="Nama staf" required>
 								</div>
 							</div>
 						</div>
@@ -79,7 +79,7 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">No HP</label>
-									<input type="text" class="form-control rounded-pill border-info" name="no_hp" value="<?= html_escape($form_values['no_hp']); ?>" placeholder="Nomor kontak staff">
+									<input type="text" class="form-control rounded-pill border-info" name="no_hp" value="<?= html_escape($form_values['no_hp']); ?>" placeholder="Nomor kontak staf">
 								</div>
 							</div>
 						</div>
@@ -97,7 +97,7 @@ $form_values = array(
 										<option value="aktif" <?= $form_values['status'] === 'aktif' ? 'selected' : ''; ?>>Aktif</option>
 										<option value="nonaktif" <?= $form_values['status'] === 'nonaktif' ? 'selected' : ''; ?>>Nonaktif</option>
 									</select>
-									<small class="form-text text-muted">Staff aktif dapat dipilih sebagai PIC untuk Puskesmas yang sama.</small>
+									<small class="form-text text-muted">Staf aktif dapat dipilih sebagai PIC.</small>
 								</div>
 							</div>
 						</div>
@@ -113,11 +113,11 @@ $form_values = array(
 		<div class="card shadow mb-4 doclinc-table-card doclinc-account-list-card">
 			<div class="card-header py-3 d-flex align-items-center justify-content-between">
 				<div>
-					<h6 class="m-0 font-weight-bold">Daftar Staff Puskesmas</h6>
-					<div class="doclinc-muted-text mt-1">Kelola staff/PIC layanan dan hubungkan akun login personal Nakes/Dokter bila tersedia.</div>
+					<h6 class="m-0 font-weight-bold">Daftar staf</h6>
+					<div class="doclinc-muted-text mt-1">Kelola staf dan akun personal.</div>
 				</div>
 				<a href="<?= site_url('kelola_staff_puskesmas/create'); ?>" class="btn btn-sm btn-success shadow-sm rounded-pill doclinc-action-btn doclinc-action-primary">
-					<i class="fas fa-plus-circle mr-1"></i> Tambah Staff Puskesmas
+					<i class="fas fa-plus-circle mr-1"></i> Tambah staf
 				</a>
 			</div>
 			<div class="card-body doclinc-table-body">
@@ -137,7 +137,7 @@ $form_values = array(
 						<div class="col-md-3 mb-2">
 							<label class="sr-only" for="staffFilterStatus">Status</label>
 							<select name="status" id="staffFilterStatus" class="form-control doclinc-puskesmas-selector">
-								<option value="">Semua Status</option>
+								<option value="">Semua status</option>
 								<option value="aktif" <?= (isset($filters['status']) && $filters['status'] === 'aktif') ? 'selected' : ''; ?>>Aktif</option>
 								<option value="nonaktif" <?= (isset($filters['status']) && $filters['status'] === 'nonaktif') ? 'selected' : ''; ?>>Nonaktif</option>
 							</select>
@@ -169,13 +169,13 @@ $form_values = array(
 									}
 									$profession_label = trim((string) ($row->profesi ?? ''));
 									if ($profession_label === '') {
-										$profession_label = 'Staff Puskesmas';
+										$profession_label = 'Staf Puskesmas';
 									} else {
 										$profession_labels = array(
 											'dokter' => 'Dokter',
 											'bidan' => 'Bidan',
 											'perawat' => 'Perawat',
-											'staff puskesmas' => 'Staff Puskesmas',
+											'staff puskesmas' => 'Staf Puskesmas',
 										);
 										$profession_key = strtolower($profession_label);
 										$profession_label = $profession_labels[$profession_key] ?? $profession_label;
@@ -187,9 +187,9 @@ $form_values = array(
 										&& strtoupper(trim($kode_pkm)) !== 'DEFAULT'
 										&& !empty($row->nama_puskesmas)
 										&& ($puskesmas_status === null || $puskesmas_status === 'aktif');
-									$creation_eligibility = $personal_account_eligibility_by_staff[$staff_id] ?? array('eligible' => false, 'message' => 'Staff belum memenuhi syarat pembuatan akun personal.');
+									$creation_eligibility = $personal_account_eligibility_by_staff[$staff_id] ?? array('eligible' => false, 'message' => 'Staf belum dapat dibuatkan akun personal.');
 									$can_create_personal_account = !empty($creation_eligibility['eligible']);
-									$creation_block_message = !empty($creation_eligibility['message']) ? $creation_eligibility['message'] : 'Staff belum memenuhi syarat pembuatan akun personal.';
+									$creation_block_message = !empty($creation_eligibility['message']) ? $creation_eligibility['message'] : 'Staf belum dapat dibuatkan akun personal.';
 									?>
 									<div class="doclinc-account-card">
 										<div class="doclinc-account-card__header">
@@ -254,13 +254,13 @@ $form_values = array(
 												</a>
 												<?php if (($row->status ?? '') === 'aktif'): ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/deactivate/' . (int) $row->staff_id); ?>" method="post">
-														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan staff ini? Data staff, riwayat, dan assignment PIC tidak akan dihapus.');">
+														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan staf ini? Riwayat dan PIC tidak akan dihapus.');">
 															<i class="fas fa-ban"></i> Nonaktifkan
 														</button>
 													</form>
 												<?php else: ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/activate/' . (int) $row->staff_id); ?>" method="post">
-														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan staff ini?');">
+														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan staf ini?');">
 															<i class="fas fa-check"></i> Aktifkan
 														</button>
 													</form>
@@ -268,7 +268,7 @@ $form_values = array(
 												<?php if ($linked_user_id > 0): ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/unbind_account'); ?>" method="post">
 														<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
-														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--warning" onclick="return confirm('Lepas akun login dari staff ini? Akun tidak akan dihapus.');">
+														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--warning" onclick="return confirm('Lepas akun dari staf ini? Akun tidak akan dihapus.');">
 															<i class="fas fa-unlink"></i> Lepas Akun
 														</button>
 													</form>
@@ -296,7 +296,7 @@ $form_values = array(
 												<div class="modal-content">
 													<form action="<?= site_url('kelola_staff_puskesmas/bind_account'); ?>" method="post">
 														<div class="modal-header">
-															<h5 class="modal-title" id="modalBindAccountLabel<?= (int) $staff_id; ?>">Hubungkan Akun Login Personal</h5>
+															<h5 class="modal-title" id="modalBindAccountLabel<?= (int) $staff_id; ?>">Hubungkan akun personal</h5>
 															<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 																<span aria-hidden="true">&times;</span>
 															</button>
@@ -336,7 +336,7 @@ $form_values = array(
 														</div>
 														<div class="modal-footer">
 															<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
-															<button type="submit" class="btn btn-primary rounded-pill" <?= empty($candidates) ? 'disabled' : ''; ?>>Hubungkan Akun</button>
+															<button type="submit" class="btn btn-primary rounded-pill" <?= empty($candidates) ? 'disabled' : ''; ?>>Hubungkan akun</button>
 														</div>
 													</form>
 												</div>
@@ -351,7 +351,7 @@ $form_values = array(
 													<div class="modal-content border-0 shadow-sm">
 														<form action="<?= site_url('kelola_staff_puskesmas/create_personal_account'); ?>" method="post">
 															<div class="modal-header bg-info text-white">
-																<h5 class="modal-title" id="modalCreatePersonalAccountLabel<?= (int) $staff_id; ?>"><i class="fas fa-user-plus mr-2"></i>Buat Akun Personal</h5>
+																<h5 class="modal-title" id="modalCreatePersonalAccountLabel<?= (int) $staff_id; ?>"><i class="fas fa-user-plus mr-2"></i>Buat akun personal</h5>
 																<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 															</div>
 															<div class="modal-body bg-light">
@@ -361,7 +361,7 @@ $form_values = array(
 																	<div class="small text-muted"><?= html_escape($profession_label); ?></div>
 																	<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? '-'); ?> (<?= html_escape($row->kode_pkm ?? '-'); ?>)</div>
 																</div>
-																		<div class="alert alert-info">Akun aktif akan dibuat dan langsung dihubungkan ke staff ini. Password sementara tidak akan ditampilkan kembali.</div>
+																		<div class="alert alert-info">Password tidak ditampilkan kembali.</div>
 																		<div class="row">
 																			<div class="col-md-6"><div class="form-group">
 																				<label class="text-info">Username</label>
@@ -374,18 +374,18 @@ $form_values = array(
 																		</div>
 																<div class="row">
 																	<div class="col-md-6"><div class="form-group">
-																		<label class="text-info">Password Sementara</label>
+																		<label class="text-info">Password sementara</label>
 																		<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" autocomplete="new-password" required>
 																	</div></div>
 																	<div class="col-md-6"><div class="form-group">
-																		<label class="text-info">Konfirmasi Password</label>
+																		<label class="text-info">Konfirmasi password</label>
 																		<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" autocomplete="new-password" required>
 																	</div></div>
 																</div>
 															</div>
 															<div class="modal-footer border-0">
 																<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
-																<button type="submit" class="btn btn-info rounded-pill">Buat dan Hubungkan Akun</button>
+																<button type="submit" class="btn btn-info rounded-pill">Buat akun</button>
 															</div>
 														</form>
 													</div>
@@ -398,7 +398,7 @@ $form_values = array(
 					</div>
 					<?= $account_modals; ?>
 				<?php else: ?>
-					<div class="doclinc-account-empty">Belum ada staff Puskesmas untuk filter ini.</div>
+					<div class="doclinc-account-empty">Belum ada staf untuk filter ini.</div>
 				<?php endif; ?>
 			</div>
 		</div>

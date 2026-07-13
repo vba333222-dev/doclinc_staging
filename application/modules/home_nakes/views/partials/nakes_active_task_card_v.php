@@ -12,23 +12,23 @@
 		$primary_event_label = static function ($event) {
 			$event_type = isset($event->event_type) ? (string) $event->event_type : '';
 			if ($event_type === 'pic_assigned') {
-				return 'PIC personel ditetapkan';
+				return 'PIC ditetapkan';
 			}
 			if ($event_type === 'pic_changed') {
-				return 'PIC personel diganti';
+				return 'PIC diganti';
 			}
 			if ($event_type === 'pic_cleared') {
-				return 'PIC personel dibatalkan';
+				return 'PIC dilepas';
 			}
 			$event_labels = array(
 				'request_created' => 'Permintaan dibuat',
 				'request_accepted' => 'Permintaan diterima',
-				'request_cancelled' => 'Permintaan dibatalkan/ditolak',
+				'request_cancelled' => 'Permintaan dibatalkan',
 				'visit_started' => 'Perjalanan dimulai',
 				'visit_arrived' => 'Tiba di lokasi',
-				'visit_in_service' => 'Pelayanan dimulai',
+				'visit_in_service' => 'Mulai ditangani',
 				'visit_completed' => 'Kunjungan selesai',
-				'request_completed' => 'Permintaan selesai',
+				'request_completed' => 'Konsultasi selesai',
 			);
 			if (isset($event_labels[$event_type])) {
 				return $event_labels[$event_type];
@@ -45,7 +45,7 @@
 		</div>
 		<?php if (!empty($can_coordinate_staff)) : ?>
 		<div class="nk-pic-inline">
-			<span>PIC Personel</span>
+			<span>PIC</span>
 			<strong>
 				<?php if ($primary_pic_assignment) : ?>
 					<?= html_escape($primary_pic_assignment->staff_nama); ?><?= !empty($primary_pic_assignment->staff_profesi) ? ' · ' . html_escape($primary_pic_assignment->staff_profesi) : ''; ?>
@@ -55,20 +55,20 @@
 			</strong>
 		</div>
 		<div class="nk-action-panel nk-action-panel--pic nk-card-section nk-pic-dashboard-panel">
-			<div class="nk-action-panel__title">PIC Personel</div>
+			<div class="nk-action-panel__title">PIC</div>
 			<div class="nk-action-panel__body">
 				<?php if (!$primary_staff_assignment_ready) : ?>
-					<p class="nk-pic-muted">Fitur PIC personel belum tersedia.</p>
+					<p class="nk-pic-muted">Fitur PIC belum tersedia.</p>
 				<?php elseif (empty($primary_staff_options)) : ?>
-					<p class="nk-pic-muted">Belum ada personel aktif untuk ditetapkan.</p>
+					<p class="nk-pic-muted">Belum ada staf aktif.</p>
 				<?php else : ?>
 					<form method="post" action="<?= html_escape(base_url('home_nakes/assign_staff')); ?>" class="nk-pic-form">
 						<input type="hidden" name="request_id" value="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
 						<select name="staff_id" class="form-select form-select-sm" required>
-							<option value="">Pilih personel</option>
+							<option value="">Pilih staf</option>
 							<?php foreach ($primary_staff_options as $staff_option) : ?>
 								<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= $primary_pic_assignment && (int) $primary_pic_assignment->staff_id === (int) $staff_option->staff_id ? 'selected' : ''; ?> <?= ($staff_option->personal_account_state ?? '') === 'invalid' ? 'disabled' : ''; ?>>
-									<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Akun personal tidak valid' : 'Belum memiliki akun personal'); ?>
+									<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Akun personal perlu dicek' : 'Belum ada akun personal'); ?>
 								</option>
 							<?php endforeach; ?>
 						</select>
@@ -80,7 +80,7 @@
 					<?php if ($primary_pic_assignment) : ?>
 						<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form">
 							<input type="hidden" name="request_id" value="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
-							<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Batalkan PIC</button>
+							<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Lepas PIC</button>
 						</form>
 					<?php endif; ?>
 				<?php endif; ?>
@@ -88,7 +88,7 @@
 		</div>
 		<?php if (!empty($primary_events)) : ?>
 			<div class="nk-action-panel nk-action-panel--timeline nk-card-section nk-timeline-dashboard-panel">
-				<div class="nk-action-panel__title">Timeline Operasional</div>
+				<div class="nk-action-panel__title">Riwayat</div>
 				<div class="nk-timeline-list">
 					<?php foreach ($primary_events as $event) :
 						$event_label = $primary_event_label($event);

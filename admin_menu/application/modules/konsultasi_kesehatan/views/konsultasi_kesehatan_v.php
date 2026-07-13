@@ -22,15 +22,15 @@ if (!function_exists('doclinc_admin_status_badge')) {
 	{
 		switch ((string) $status) {
 			case 'Pending':
-				return '<span class="badge badge-warning doclinc-status-badge"><i class="fas fa-hourglass-half"></i> Pending</span>';
+				return '<span class="badge badge-warning doclinc-status-badge"><i class="fas fa-hourglass-half"></i> Menunggu</span>';
 			case 'Accepted':
-				return '<span class="badge badge-primary doclinc-status-badge"><i class="fas fa-check-circle"></i> Accepted</span>';
+				return '<span class="badge badge-primary doclinc-status-badge"><i class="fas fa-check-circle"></i> Diterima</span>';
 			case 'Completed':
-				return '<span class="badge badge-success doclinc-status-badge"><i class="fas fa-check"></i> Completed</span>';
+				return '<span class="badge badge-success doclinc-status-badge"><i class="fas fa-check"></i> Selesai</span>';
 			case 'Cancelled':
-				return '<span class="badge badge-danger doclinc-status-badge"><i class="fas fa-times"></i> Cancelled</span>';
+				return '<span class="badge badge-danger doclinc-status-badge"><i class="fas fa-times"></i> Dibatalkan</span>';
 			default:
-				return '<span class="badge badge-secondary doclinc-status-badge">Unknown</span>';
+				return '<span class="badge badge-secondary doclinc-status-badge">Perlu dicek</span>';
 		}
 	}
 }
@@ -40,9 +40,16 @@ if (!function_exists('doclinc_admin_visit_badge')) {
 	{
 		$status = trim((string) $status);
 		if ($status === '') {
-			return '<span class="badge badge-light border doclinc-status-badge">Belum ada visit</span>';
+			return '<span class="badge badge-light border doclinc-status-badge">Belum ada kunjungan</span>';
 		}
-		return '<span class="badge badge-info doclinc-status-badge">' . html_escape($status) . '</span>';
+		$labels = array(
+			'not_started' => 'Belum dimulai',
+			'en_route' => 'Dalam perjalanan',
+			'arrived' => 'Sudah tiba',
+			'in_service' => 'Ditangani',
+			'completed' => 'Selesai',
+		);
+		return '<span class="badge badge-info doclinc-status-badge">' . html_escape(isset($labels[$status]) ? $labels[$status] : 'Perlu dicek') . '</span>';
 	}
 }
 
@@ -58,11 +65,11 @@ if (!function_exists('doclinc_admin_event_label')) {
 			'pic_cleared' => 'PIC dilepas',
 			'visit_started' => 'Kunjungan dimulai',
 			'visit_arrived' => 'PIC tiba di lokasi',
-			'visit_in_service' => 'Layanan sedang berjalan',
+			'visit_in_service' => 'Sedang ditangani',
 			'visit_completed' => 'Kunjungan selesai',
 			'request_completed' => 'Konsultasi selesai',
 		);
-		return isset($labels[$event_type]) ? $labels[$event_type] : 'Aktivitas konsultasi diperbarui';
+		return isset($labels[$event_type]) ? $labels[$event_type] : 'Konsultasi diperbarui';
 	}
 }
 
@@ -71,7 +78,7 @@ if (!function_exists('doclinc_admin_puskesmas_label')) {
 	{
 		$value = trim((string) $value);
 		if ($value === '' || strtoupper($value) === 'DEFAULT' || strtoupper($value) === 'PUSKESMAS DEFAULT') {
-			return 'Legacy / Belum terklasifikasi';
+			return 'Perlu dicek';
 		}
 		return $value;
 	}
@@ -85,7 +92,7 @@ foreach ($data_konsultasi as $row) {
 		$summary[$status]++;
 	}
 	$puskesmas_label = doclinc_admin_puskesmas_label($row->puskesmas ?? '');
-	if ($puskesmas_label === 'Legacy / Belum terklasifikasi') {
+	if ($puskesmas_label === 'Perlu dicek') {
 		$summary['legacy']++;
 	}
 	$visit_status = trim((string) ($row->visit_status ?? ''));
@@ -101,18 +108,18 @@ if (!$has_visit_status) {
 }
 $summary_cards = array(
 	array('label' => 'Total konsultasi', 'value' => $summary['total'], 'icon' => 'fa-list-alt', 'tone' => 'primary'),
-	array('label' => 'Pending / Menunggu', 'value' => $summary['Pending'], 'icon' => 'fa-hourglass-half', 'tone' => 'warning'),
-	array('label' => 'Accepted / Diterima', 'value' => $summary['Accepted'], 'icon' => 'fa-check-circle', 'tone' => 'info'),
-	array('label' => 'Dalam layanan', 'value' => $summary['in_progress'], 'icon' => 'fa-stethoscope', 'tone' => 'service'),
-	array('label' => 'Completed / Selesai', 'value' => $summary['Completed'], 'icon' => 'fa-clipboard-check', 'tone' => 'success'),
-	array('label' => 'Legacy / Belum terklasifikasi', 'value' => $summary['legacy'], 'icon' => 'fa-exclamation-triangle', 'tone' => 'legacy'),
+	array('label' => 'Menunggu', 'value' => $summary['Pending'], 'icon' => 'fa-hourglass-half', 'tone' => 'warning'),
+	array('label' => 'Diterima', 'value' => $summary['Accepted'], 'icon' => 'fa-check-circle', 'tone' => 'info'),
+	array('label' => 'Ditangani', 'value' => $summary['in_progress'], 'icon' => 'fa-stethoscope', 'tone' => 'service'),
+	array('label' => 'Selesai', 'value' => $summary['Completed'], 'icon' => 'fa-clipboard-check', 'tone' => 'success'),
+	array('label' => 'Perlu dicek', 'value' => $summary['legacy'], 'icon' => 'fa-exclamation-triangle', 'tone' => 'legacy'),
 );
 ?>
 
 <div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
-		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-stethoscope"></i> Monitoring Konsultasi</h1>
-		<div class="doclinc-page-subtitle">Pantau status konsultasi, Puskesmas tujuan, PIC Staff Puskesmas, dan timeline operasional secara read-only.</div>
+		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-stethoscope"></i> Monitoring konsultasi</h1>
+		<div class="doclinc-page-subtitle">Pantau konsultasi dan riwayatnya.</div>
 	</div>
 </div>
 
@@ -136,8 +143,8 @@ $summary_cards = array(
 					<label class="small font-weight-bold text-muted" for="status">Status</label>
 					<select name="status" id="status" class="form-control">
 						<option value="">Semua</option>
-						<?php foreach (array('Pending', 'Accepted', 'Completed', 'Cancelled') as $status): ?>
-							<option value="<?= html_escape($status); ?>" <?= (($filters['status'] ?? '') === $status) ? 'selected' : ''; ?>><?= html_escape($status); ?></option>
+						<?php foreach (array('Pending' => 'Menunggu', 'Accepted' => 'Diterima', 'Completed' => 'Selesai', 'Cancelled' => 'Dibatalkan') as $status => $status_label): ?>
+							<option value="<?= html_escape($status); ?>" <?= (($filters['status'] ?? '') === $status) ? 'selected' : ''; ?>><?= html_escape($status_label); ?></option>
 						<?php endforeach; ?>
 					</select>
 				</div>
@@ -150,7 +157,7 @@ $summary_cards = array(
 								<?= html_escape($puskesmas->nama_puskesmas); ?>
 							</option>
 						<?php endforeach; ?>
-						<option value="__legacy__" <?= (($filters['puskesmas'] ?? '') === '__legacy__') ? 'selected' : ''; ?>>Legacy / Belum terklasifikasi</option>
+						<option value="__legacy__" <?= (($filters['puskesmas'] ?? '') === '__legacy__') ? 'selected' : ''; ?>>Perlu dicek</option>
 					</select>
 				</div>
 				<div class="form-group col-md-2">
@@ -162,7 +169,7 @@ $summary_cards = array(
 					<input type="date" name="date_to" id="date_to" class="form-control" value="<?= html_escape($filters['date_to'] ?? ''); ?>">
 				</div>
 				<div class="form-group col-md-2">
-					<label class="small font-weight-bold text-muted" for="keyword">Keyword</label>
+					<label class="small font-weight-bold text-muted" for="keyword">Kata kunci</label>
 					<input type="text" name="keyword" id="keyword" class="form-control" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="ID, warga, Puskesmas">
 				</div>
 				<div class="form-group col-md-1">
@@ -170,8 +177,7 @@ $summary_cards = array(
 				</div>
 			</div>
 			<div class="d-flex justify-content-between align-items-center flex-wrap">
-				<div class="doclinc-meta-text">Filter memakai parameter yang sama dan tidak mengubah data konsultasi.</div>
-				<a href="<?= site_url('konsultasi_kesehatan'); ?>" class="btn btn-sm btn-light border">Reset filter</a>
+				<a href="<?= site_url('konsultasi_kesehatan'); ?>" class="btn btn-sm btn-light border">Hapus filter</a>
 			</div>
 		</form>
 	</div>
@@ -181,19 +187,19 @@ $summary_cards = array(
 	<div class="col">
 		<div class="card shadow-sm doclinc-table-card">
 			<div class="card-header bg-white d-flex justify-content-between align-items-center">
-				<h6 class="m-0 font-weight-bold text-primary">Daftar Konsultasi</h6>
+				<h6 class="m-0 font-weight-bold text-primary">Daftar konsultasi</h6>
 				<span class="badge badge-light border"><?= count($data_konsultasi); ?> data</span>
 			</div>
 			<div class="card-body table-responsive">
 				<table class="table table-hover doclinc-monitor-table" id="tbl_konsultasi" style="width:100%" cellspacing="0">
 					<thead>
 						<tr>
-							<th>Request</th>
+							<th>Permintaan</th>
 							<th>Warga</th>
-							<th>Puskesmas & PIC Staff</th>
+							<th>Puskesmas dan PIC</th>
 							<th>Status</th>
-							<th>Timeline</th>
-							<th>Diagnosa / Saran</th>
+							<th>Riwayat</th>
+							<th>Diagnosis dan saran</th>
 							<th>Lampiran</th>
 							<th>Detail</th>
 						</tr>
@@ -251,7 +257,7 @@ $summary_cards = array(
 											<?php endif; ?>
 										</div>
 									<?php else: ?>
-										<span class="text-muted">Belum ada timeline</span>
+										<span class="text-muted">Belum ada riwayat</span>
 									<?php endif; ?>
 								</td>
 								<td>
@@ -277,7 +283,7 @@ $summary_cards = array(
 				<?php if (empty($data_konsultasi)): ?>
 					<div class="doclinc-empty-state">
 						Belum ada konsultasi sesuai filter.
-						<div class="mt-2"><a href="<?= site_url('konsultasi_kesehatan'); ?>" class="btn btn-sm btn-light border">Reset filter</a></div>
+						<div class="mt-2"><a href="<?= site_url('konsultasi_kesehatan'); ?>" class="btn btn-sm btn-light border">Hapus filter</a></div>
 					</div>
 				<?php endif; ?>
 			</div>
@@ -297,8 +303,8 @@ $summary_cards = array(
 		<div class="modal-dialog modal-xl" role="document">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="detailKonsultasiLabel<?= $request_id; ?>">Detail Konsultasi #<?= html_escape($request_id ?: '-'); ?></h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<h5 class="modal-title" id="detailKonsultasiLabel<?= $request_id; ?>">Detail konsultasi #<?= html_escape($request_id ?: '-'); ?></h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
 						<span aria-hidden="true">&times;</span>
 					</button>
 				</div>
@@ -308,7 +314,7 @@ $summary_cards = array(
 							<div class="doclinc-detail-block">
 								<h6>Koordinasi</h6>
 								<dl class="row mb-0">
-									<dt class="col-sm-4">Request</dt>
+									<dt class="col-sm-4">ID permintaan</dt>
 									<dd class="col-sm-8">#<?= html_escape($request_id ?: '-'); ?></dd>
 									<dt class="col-sm-4">Warga</dt>
 									<dd class="col-sm-8"><?= html_escape($row->nama_warga ?? '-'); ?></dd>
@@ -316,7 +322,7 @@ $summary_cards = array(
 									<dd class="col-sm-8"><?= html_escape($location !== '' ? $location : '-'); ?></dd>
 									<dt class="col-sm-4">Puskesmas</dt>
 									<dd class="col-sm-8"><?= html_escape($puskesmas_label); ?></dd>
-									<dt class="col-sm-4">PIC Staff</dt>
+									<dt class="col-sm-4">PIC</dt>
 									<dd class="col-sm-8"><?= html_escape($pic_name !== '' ? $pic_name : 'Belum ditentukan'); ?></dd>
 								</dl>
 							</div>
@@ -326,16 +332,16 @@ $summary_cards = array(
 								<span class="ml-2"><?= doclinc_admin_visit_badge($row->visit_status ?? ''); ?></span>
 							</div>
 							<div class="doclinc-detail-block mt-3">
-								<h6>Diagnosa / Saran</h6>
+								<h6>Diagnosis dan saran</h6>
 								<p><strong>Diagnosa:</strong><br><?= nl2br(html_escape(trim((string) ($row->diagnosa ?? '')) !== '' ? $row->diagnosa : '-')); ?></p>
 								<p class="mb-0"><strong>Saran:</strong><br><?= nl2br(html_escape(trim((string) ($row->saran ?? '')) !== '' ? $row->saran : '-')); ?></p>
 							</div>
 						</div>
 						<div class="col-lg-4 mb-3">
 							<div class="doclinc-detail-block h-100">
-								<h6>Timeline</h6>
+								<h6>Riwayat</h6>
 								<?php if (empty($request_events)): ?>
-									<div class="doclinc-empty-state">Belum ada timeline untuk request ini.</div>
+									<div class="doclinc-empty-state">Belum ada riwayat.</div>
 								<?php else: ?>
 									<div class="doclinc-timeline-list">
 										<?php foreach ($request_events as $event): ?>

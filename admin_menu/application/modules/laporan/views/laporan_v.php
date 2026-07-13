@@ -4,7 +4,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 <div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
 		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-file-alt"></i> Laporan</h1>
-		<div class="text-white-50 doclinc-page-subtitle">Rekap operasional konsultasi berbasis Puskesmas, status, PIC, dan aktivitas terakhir.</div>
+		<div class="text-white-50 doclinc-page-subtitle">Lihat rekap konsultasi terbaru.</div>
 	</div>
 </div>
 
@@ -13,9 +13,9 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		<div class="card border-left-primary shadow h-100 py-2">
 			<div class="card-body text-center">
 				<div class="text-xs font-weight-bold text-primary text-uppercase mb-3">
-					<i class="fas fa-calendar-day fa-2x mb-2"></i><br>Laporan Per Hari
+					<i class="fas fa-calendar-day fa-2x mb-2"></i><br>Laporan harian
 				</div>
-				<button type="button" class="btn btn-primary btn-block btn-sm rounded-pill show-form" data-form="form-perhari">Lihat Laporan</button>
+				<button type="button" class="btn btn-primary btn-block btn-sm rounded-pill show-form" data-form="form-perhari">Lihat laporan</button>
 			</div>
 		</div>
 	</div>
@@ -23,9 +23,9 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		<div class="card border-left-success shadow h-100 py-2">
 			<div class="card-body text-center">
 				<div class="text-xs font-weight-bold text-success text-uppercase mb-3">
-					<i class="fas fa-calendar-week fa-2x mb-2"></i><br>Laporan Per Minggu
+					<i class="fas fa-calendar-week fa-2x mb-2"></i><br>Laporan mingguan
 				</div>
-				<button type="button" class="btn btn-success btn-block btn-sm rounded-pill show-form" data-form="form-perminggu">Lihat Laporan</button>
+				<button type="button" class="btn btn-success btn-block btn-sm rounded-pill show-form" data-form="form-perminggu">Lihat laporan</button>
 			</div>
 		</div>
 	</div>
@@ -33,9 +33,9 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		<div class="card border-left-info shadow h-100 py-2">
 			<div class="card-body text-center">
 				<div class="text-xs font-weight-bold text-info text-uppercase mb-3">
-					<i class="fas fa-calendar-alt fa-2x mb-2"></i><br>Laporan Per Bulan
+					<i class="fas fa-calendar-alt fa-2x mb-2"></i><br>Laporan bulanan
 				</div>
-				<button type="button" class="btn btn-info btn-block btn-sm rounded-pill show-form" data-form="form-perbulan">Lihat Laporan</button>
+				<button type="button" class="btn btn-info btn-block btn-sm rounded-pill show-form" data-form="form-perbulan">Lihat laporan</button>
 			</div>
 		</div>
 	</div>
@@ -43,9 +43,9 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		<div class="card border-left-warning shadow h-100 py-2">
 			<div class="card-body text-center">
 				<div class="text-xs font-weight-bold text-warning text-uppercase mb-3">
-					<i class="fas fa-calendar fa-2x mb-2"></i><br>Laporan Per Tahun
+					<i class="fas fa-calendar fa-2x mb-2"></i><br>Laporan tahunan
 				</div>
-				<button type="button" class="btn btn-warning btn-block btn-sm rounded-pill show-form" data-form="form-pertahun">Lihat Laporan</button>
+				<button type="button" class="btn btn-warning btn-block btn-sm rounded-pill show-form" data-form="form-pertahun">Lihat laporan</button>
 			</div>
 		</div>
 	</div>
@@ -56,7 +56,6 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		<div class="d-flex align-items-start justify-content-between flex-wrap mb-3">
 			<div>
 				<h5 class="mb-1 font-weight-bold">Laporan konsultasi harian</h5>
-				<div class="doclinc-report-meta">Gunakan filter ini untuk evaluasi layanan per Puskesmas. Halaman ini hanya menampilkan data dan tidak mengubah status konsultasi.</div>
 			</div>
 		</div>
 		<div class="form-row align-items-end">
@@ -79,17 +78,17 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 					<?php foreach ($puskesmas_options as $puskesmas): ?>
 						<option value="<?= html_escape($puskesmas->kode_pkm); ?>"><?= html_escape($puskesmas->nama_puskesmas); ?></option>
 					<?php endforeach; ?>
-					<option value="__legacy__">Legacy / Belum terklasifikasi</option>
+					<option value="__legacy__">Perlu dicek</option>
 				</select>
 			</div>
 			<div class="col-auto mb-2">
 				<label for="status_hari" class="col-form-label">Status</label>
 				<select class="form-control" id="status_hari" name="status">
 					<option value="">Semua status</option>
-					<option value="Pending">Pending</option>
-					<option value="Accepted">Accepted</option>
-					<option value="Completed">Completed</option>
-					<option value="Cancelled">Cancelled</option>
+					<option value="Pending">Menunggu</option>
+					<option value="Accepted">Diterima</option>
+					<option value="Completed">Selesai</option>
+					<option value="Cancelled">Dibatalkan</option>
 				</select>
 			</div>
 			<div class="col-auto mb-2">
@@ -97,7 +96,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				<input type="text" class="form-control" id="dokter_hari" name="dokter" placeholder="Nama akun">
 			</div>
 			<div class="col-auto mb-2">
-				<label for="keyword_hari" class="col-form-label">Keyword</label>
+				<label for="keyword_hari" class="col-form-label">Kata kunci</label>
 				<input type="text" class="form-control" id="keyword_hari" name="keyword" placeholder="ID, warga, diagnosa">
 			</div>
 			<input type="hidden" name="tipe" value="perhari">
@@ -105,14 +104,14 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 
 			<div class="col-auto mb-2">
 				<button type="button" id="btnTampilkan" class="btn btn-primary">Tampilkan</button>
-				<button type="button" id="btnJumlahPasien" class="btn btn-success">Jumlah Pasien</button>
-				<button type="button" id="btnJumlahDiagnosa" class="btn btn-secondary">Jumlah Diagnosa</button>
+				<button type="button" id="btnJumlahPasien" class="btn btn-success">Jumlah pasien</button>
+				<button type="button" id="btnJumlahDiagnosa" class="btn btn-secondary">Jumlah diagnosis</button>
 				<button type="button" id="btnResetLaporan" class="btn btn-outline-secondary">Reset</button>
 			</div>
 
 			<div class="col mb-2 ml-auto d-flex justify-content-end flex-wrap" style="gap: 0.75rem;">
-				<button type="button" id="btnCetak" class="btn btn-secondary">Cetak Laporan</button>
-				<button type="button" id="btnExport" class="btn btn-outline-secondary" disabled title="Route export Excel belum tersedia di modul Laporan">Export Excel</button>
+				<button type="button" id="btnCetak" class="btn btn-secondary">Cetak laporan</button>
+				<button type="button" id="btnExport" class="btn btn-outline-secondary" disabled title="Ekspor belum tersedia.">Ekspor Excel</button>
 			</div>
 		</div>
 	</form>
@@ -145,7 +144,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			<div class="col-auto">
 				<label for="bulan" class="col-form-label">Bulan</label>
 				<select class="form-control" id="bulan" name="bulan" required>
-					<option value="">Pilih Bulan</option>
+					<option value="">Pilih bulan</option>
 					<?php
 					for ($i = 1; $i <= 12; $i++) {
 						echo '<option value="' . $i . '">' . date('F', mktime(0, 0, 0, $i, 10)) . '</option>';
@@ -223,7 +222,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			pic_cleared: 'PIC dihapus',
 			visit_started: 'Kunjungan dimulai',
 			visit_arrived: 'Nakes tiba di lokasi',
-			visit_in_service: 'Layanan sedang berjalan',
+			visit_in_service: 'Sedang ditangani',
 			visit_completed: 'Kunjungan selesai',
 			request_completed: 'Konsultasi selesai'
 		};
@@ -245,7 +244,13 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		}
 
 		function statusBadge(status) {
-			var safeStatus = escapeHtml(status || 'Unknown');
+			var labels = {
+				Pending: 'Menunggu',
+				Accepted: 'Diterima',
+				Completed: 'Selesai',
+				Cancelled: 'Dibatalkan'
+			};
+			var safeStatus = escapeHtml(labels[status] || 'Perlu dicek');
 			var classes = {
 				Pending: 'badge-warning',
 				Accepted: 'badge-primary',
@@ -259,7 +264,14 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			if (!visitStatus) {
 				return '';
 			}
-			return '<span class="badge badge-light border ml-1">' + escapeHtml(visitStatus) + '</span>';
+			var labels = {
+				not_started: 'Belum dimulai',
+				en_route: 'Dalam perjalanan',
+				arrived: 'Sudah tiba',
+				in_service: 'Ditangani',
+				completed: 'Selesai'
+			};
+			return '<span class="badge badge-light border ml-1">' + escapeHtml(labels[visitStatus] || 'Perlu dicek') + '</span>';
 		}
 
 		function latestEventInfo(row) {
@@ -271,7 +283,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				};
 			}
 			return {
-				label: latestEvent.message || eventLabels[latestEvent.event_type] || 'Aktivitas konsultasi diperbarui',
+				label: latestEvent.message || eventLabels[latestEvent.event_type] || 'Konsultasi diperbarui',
 				time: latestEvent.created_at || ''
 			};
 		}
@@ -295,15 +307,15 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				value: summary.completed || 0,
 				icon: 'fa-check-circle'
 			}, {
-				label: 'Batal',
+				label: 'Dibatalkan',
 				value: summary.cancelled || 0,
 				icon: 'fa-ban'
 			}, {
-				label: 'Masih berjalan / belum selesai',
+				label: 'Ditangani',
 				value: summary.active || 0,
 				icon: 'fa-hourglass-half'
 			}, {
-				label: 'Legacy / Belum terklasifikasi',
+				label: 'Perlu dicek',
 				value: summary.legacy || 0,
 				icon: 'fa-exclamation-triangle'
 			}, {
@@ -326,11 +338,11 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		function renderBreakdown(items) {
 			items = items || [];
 			if (!items.length) {
-				return '<div class="doclinc-report-breakdown mb-4"><div class="doclinc-empty-state">Belum ada breakdown Puskesmas untuk filter ini.</div></div>';
+				return '<div class="doclinc-report-breakdown mb-4"><div class="doclinc-empty-state">Belum ada rekap Puskesmas.</div></div>';
 			}
 			var html = '<div class="doclinc-report-breakdown mb-4"><div class="d-flex align-items-center justify-content-between mb-2 flex-wrap">';
-			html += '<h6 class="font-weight-bold mb-1">Breakdown Puskesmas</h6>';
-			html += '<div class="doclinc-report-meta">Persentase selesai dihitung dari hasil filter saat ini.</div></div>';
+			html += '<h6 class="font-weight-bold mb-1">Rekap Puskesmas</h6>';
+			html += '</div>';
 			html += '<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr>';
 			html += '<th>Puskesmas</th><th>Total</th><th>Selesai</th><th>Batal</th><th>Aktif</th><th>% Selesai</th>';
 			html += '</tr></thead><tbody>';
@@ -351,12 +363,12 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		function renderReportRows(rows, summary, breakdown) {
 			var html = '<div id="print-area">';
 			html += '<div class="d-flex align-items-start justify-content-between flex-wrap mb-3">';
-			html += '<div><h5 class="font-weight-bold mb-1">Laporan Operasional Konsultasi</h5><div class="doclinc-report-meta">Data bersifat baca-saja dan mengikuti filter yang sedang dipakai.</div></div>';
+			html += '<div><h5 class="font-weight-bold mb-1">Laporan konsultasi</h5></div>';
 			html += '</div>';
 			html += renderSummary(summary);
 			html += renderBreakdown(breakdown);
 			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr>';
-			html += '<th>Tanggal</th><th>Request ID</th><th>Puskesmas</th><th>Warga</th><th>Status</th><th>PIC</th><th>Aktivitas terakhir</th><th>Diagnosa / Saran</th><th>Lampiran</th><th class="no-print">Detail</th>';
+			html += '<th>Tanggal</th><th>ID permintaan</th><th>Puskesmas</th><th>Warga</th><th>Status</th><th>PIC</th><th>Aktivitas terbaru</th><th>Diagnosis dan saran</th><th>Lampiran</th><th class="no-print">Detail</th>';
 			html += '</tr></thead><tbody>';
 			$.each(rows, function(i, row) {
 				var latest = latestEventInfo(row);
@@ -411,7 +423,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 					var rows = response.data || [];
 					if (rows.length === 0) {
 						latestRows = [];
-						$hasil.html('<div class="doclinc-empty-state">Belum ada data laporan sesuai filter. Gunakan Reset untuk kembali ke semua data.</div>');
+						$hasil.html('<div class="doclinc-empty-state">Belum ada data laporan. Hapus filter untuk melihat semua data.</div>');
 						return;
 					}
 					if (tipeBtn === 1) {
@@ -432,8 +444,8 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		}
 
 		function renderJumlahPasien(rows, $hasil) {
-			var html = '<div id="print-area"><h5 class="font-weight-bold">Jumlah Pasien per Puskesmas</h5>';
-			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr><th>No</th><th>Puskesmas</th><th>Jumlah Pasien</th></tr></thead><tbody>';
+			var html = '<div id="print-area"><h5 class="font-weight-bold">Jumlah pasien per Puskesmas</h5>';
+			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr><th>No</th><th>Puskesmas</th><th>Jumlah pasien</th></tr></thead><tbody>';
 			$.each(rows, function(i, row) {
 				html += '<tr><td>' + (i + 1) + '</td><td class="font-weight-bold">' + escapeHtml(row.nama_puskesmas) + '</td><td>' + escapeHtml(row.jumlah_pasien) + '</td></tr>';
 			});
@@ -442,7 +454,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		}
 
 		function renderJumlahDiagnosa(rows, $hasil) {
-			var html = '<div id="print-area"><h5 class="font-weight-bold">Jumlah Diagnosa per Puskesmas</h5>';
+			var html = '<div id="print-area"><h5 class="font-weight-bold">Jumlah diagnosis per Puskesmas</h5>';
 			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr><th>No</th><th>Puskesmas</th><th>Diagnosa</th><th>Jumlah</th></tr></thead><tbody>';
 			var grouped = {};
 			$.each(rows, function(_, row) {
@@ -498,17 +510,17 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			var fotoHtml = row.foto ? '<img src="' + uploadBaseUrl + encodeURIComponent(row.foto) + '" alt="Foto konsultasi" class="img-fluid rounded border">' : '<div class="doclinc-empty-state">Tidak ada lampiran foto.</div>';
 			var body = '<div class="row">';
 			body += '<div class="col-lg-6 mb-3"><div class="doclinc-detail-block"><h6>Identitas laporan</h6>';
-			body += '<p><strong>Request ID:</strong> #' + escapeHtml(row.request_id) + '</p>';
+			body += '<p><strong>ID permintaan:</strong> #' + escapeHtml(row.request_id) + '</p>';
 			body += '<p><strong>Warga:</strong> ' + escapeHtml(row.nama_user) + '</p>';
 			body += '<p><strong>Puskesmas:</strong> ' + escapeHtml(row.nama_puskesmas) + '</p>';
 			body += '<p><strong>Status:</strong> ' + statusBadge(row.request_status) + visitBadge(row.visit_status) + '</p>';
 			body += '<p class="mb-0"><strong>PIC:</strong><br>' + picHtml(row) + '</p></div></div>';
 			body += '<div class="col-lg-6 mb-3"><div class="doclinc-detail-block"><h6>Aktivitas terakhir</h6>';
 			body += '<div class="doclinc-timeline-pill">' + escapeHtml(latest.label) + (latest.time ? '<span>' + escapeHtml(latest.time) + '</span>' : '') + '</div></div></div>';
-			body += '<div class="col-lg-7 mb-3"><div class="doclinc-detail-block"><h6>Diagnosa / Saran</h6>';
+			body += '<div class="col-lg-7 mb-3"><div class="doclinc-detail-block"><h6>Diagnosis dan saran</h6>';
 			body += '<p><strong>Diagnosa:</strong><br>' + escapeHtml(row.diagnosa) + '</p>';
 			body += '<p class="mb-0"><strong>Saran:</strong><br>' + escapeHtml(row.saran) + '</p></div></div>';
-			body += '<div class="col-lg-5 mb-3"><div class="doclinc-detail-block"><h6>Lampiran / Foto</h6>' + fotoHtml + '</div></div>';
+			body += '<div class="col-lg-5 mb-3"><div class="doclinc-detail-block"><h6>Lampiran foto</h6>' + fotoHtml + '</div></div>';
 			body += '</div>';
 			$('#laporanDetailTitle').text('Detail laporan #' + safeText(row.request_id));
 			$('#laporanDetailBody').html(body);

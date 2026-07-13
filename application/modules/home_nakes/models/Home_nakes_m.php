@@ -594,7 +594,7 @@ class Home_nakes_m extends MX_Controller
 	public function accept_request($id, $id_user, $latitude, $longitude, $puskesmas_code = '', $identity_context = null)
 	{
 		if (empty($id) || empty($id_user)) {
-			return array('status' => 'error', 'message' => 'Data request tidak lengkap');
+			return array('status' => 'error', 'message' => 'Data permintaan tidak lengkap.');
 		}
 		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
 		if (!$this->command_center_identity_matches($identity_context, $id_user, $puskesmas_code)) {
@@ -606,18 +606,18 @@ class Home_nakes_m extends MX_Controller
 			->get('requests')
 			->row();
 		if (!$request) {
-			return array('status' => 'error', 'message' => 'Request tidak ditemukan');
+			return array('status' => 'error', 'message' => 'Permintaan tidak ditemukan.');
 		}
 		if (!$this->request_matches_command_center_tenant($request, $id_user, $puskesmas_code)) {
-			return array('status' => 'error', 'message' => 'Request tidak ditemukan atau akses tidak diizinkan');
+			return array('status' => 'error', 'message' => 'Permintaan tidak dapat diakses.');
 		}
 
 		if ($request->request_status === 'Accepted') {
-			return array('status' => 'error', 'message' => 'Request sudah diterima');
+			return array('status' => 'error', 'message' => 'Permintaan sudah diterima.');
 		}
 
 		if ($request->request_status !== 'Pending') {
-			return array('status' => 'error', 'message' => 'Request tidak dapat diterima');
+			return array('status' => 'error', 'message' => 'Permintaan tidak dapat diterima.');
 		}
 
 		$data = [
@@ -680,17 +680,17 @@ class Home_nakes_m extends MX_Controller
 				'message' => 'Permintaan diterima oleh Puskesmas.',
 				'metadata' => $event_metadata,
 			));
-			return array('status' => 'success', 'message' => 'Request konsultasi diterima', 'already_accepted' => false);
+			return array('status' => 'success', 'message' => 'Permintaan diterima.', 'already_accepted' => false);
 		}
 
-		return array('status' => 'error', 'message' => 'Request tidak ditemukan atau bukan milik dokter login');
+		return array('status' => 'error', 'message' => 'Permintaan tidak dapat diakses.');
 	}
 	public function cancel_request($request_id, $user_id, $puskesmas_code = '', $identity_context = null)
 	{
 		$request_id = (int) $request_id;
 		$user_id = (int) $user_id;
 		if ($request_id < 1 || $user_id < 1) {
-			return array('status' => 'error', 'message' => 'Data request tidak lengkap');
+			return array('status' => 'error', 'message' => 'Data permintaan tidak lengkap.');
 		}
 		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
 		if (!is_array($identity_context)
@@ -706,7 +706,7 @@ class Home_nakes_m extends MX_Controller
 		)->row();
 		if (!$request) {
 			$this->db->trans_rollback();
-			return array('status' => 'error', 'message' => 'Request tidak ditemukan');
+			return array('status' => 'error', 'message' => 'Permintaan tidak ditemukan.');
 		}
 		$database_identity = function_exists('doclinc_dokter_identity_context')
 			? doclinc_dokter_identity_context($user_id, true)
@@ -718,7 +718,7 @@ class Home_nakes_m extends MX_Controller
 			|| !function_exists('doclinc_can_coordinate_request')
 			|| !doclinc_can_coordinate_request($request, $database_identity)) {
 			$this->db->trans_rollback();
-			return array('status' => 'error', 'message' => 'Request tidak dapat dibatalkan');
+			return array('status' => 'error', 'message' => 'Permintaan tidak dapat dibatalkan.');
 		}
 
 		$data = array('request_status' => 'Cancelled');
@@ -751,11 +751,11 @@ class Home_nakes_m extends MX_Controller
 				'message' => 'Permintaan dibatalkan/ditolak oleh Puskesmas.',
 				'metadata' => $event_metadata,
 			));
-			return array('status' => 'success', 'message' => 'Request berhasil dibatalkan');
+			return array('status' => 'success', 'message' => 'Permintaan dibatalkan.');
 		}
 
 		$this->db->trans_rollback();
-		return array('status' => 'error', 'message' => 'Request tidak ditemukan atau akses tidak diizinkan');
+		return array('status' => 'error', 'message' => 'Permintaan tidak dapat diakses.');
 	}
 	public function update_visit_status($request_id, $user_id, $next_status, $identity_context = null)
 	{
@@ -786,7 +786,7 @@ class Home_nakes_m extends MX_Controller
 		)->row();
 		if (!$request) {
 			$this->db->trans_rollback();
-			return array('status' => 'error', 'message' => 'Request tidak ditemukan');
+			return array('status' => 'error', 'message' => 'Permintaan tidak ditemukan.');
 		}
 		if ($request->request_status !== 'Accepted') {
 			$this->db->trans_rollback();
@@ -1295,10 +1295,10 @@ class Home_nakes_m extends MX_Controller
 		$note = trim((string) $note);
 
 		if ($request_id < 1 || $staff_id < 1 || $assigned_by_user_id < 1 || $kode_pkm === '') {
-			return array('status' => 'error', 'message' => 'Data PIC personel tidak valid');
+			return array('status' => 'error', 'message' => 'Data PIC tidak valid.');
 		}
 		if (!$this->staff_assignment_table_ready()) {
-			return array('status' => 'error', 'message' => 'Tabel assignment PIC belum tersedia');
+			return array('status' => 'error', 'message' => 'Penugasan PIC belum tersedia.');
 		}
 		if (!is_array($identity_context)
 			|| empty($identity_context['valid'])
@@ -1310,7 +1310,7 @@ class Home_nakes_m extends MX_Controller
 
 		$db_debug = $this->db->db_debug;
 		$this->db->db_debug = false;
-		$result = array('status' => 'error', 'message' => 'Gagal menetapkan PIC personel');
+		$result = array('status' => 'error', 'message' => 'PIC gagal ditetapkan.');
 		$transaction_started = false;
 		$committed = false;
 		$staff = null;
@@ -1323,7 +1323,7 @@ class Home_nakes_m extends MX_Controller
 
 		try {
 			if (!$this->db->trans_begin()) {
-				$abort('Gagal menetapkan PIC personel');
+				$abort('PIC gagal ditetapkan.');
 			}
 			$transaction_started = true;
 
@@ -1342,20 +1342,20 @@ class Home_nakes_m extends MX_Controller
 				|| $this->request_assigned_puskesmas_code($request) !== $kode_pkm
 				|| !function_exists('doclinc_can_coordinate_request')
 				|| !doclinc_can_coordinate_request($request, $database_identity)) {
-				$abort('Request tidak ditemukan atau bukan milik Puskesmas login');
+				$abort('Permintaan tidak dapat diakses.');
 			}
 			if ((string) $request->request_status !== 'Accepted') {
-				$abort('PIC hanya dapat ditetapkan pada request aktif');
+				$abort('PIC hanya dapat dipilih saat konsultasi aktif.');
 			}
 
 			$active_assignments = $this->locked_active_staff_assignments($request_id);
 			if ($active_assignments === false) {
-				$abort('Gagal menetapkan PIC personel');
+				$abort('PIC gagal ditetapkan.');
 			}
 			foreach ($active_assignments as $active_assignment) {
 				if ((string) $active_assignment->kode_pkm !== $kode_pkm
 					|| (string) $active_assignment->staff_kode_pkm !== $kode_pkm) {
-					$abort('Assignment PIC tidak valid');
+					$abort('Data PIC tidak valid.');
 				}
 			}
 			$previous_assignment = !empty($active_assignments) ? $active_assignments[0] : null;
@@ -1369,12 +1369,12 @@ class Home_nakes_m extends MX_Controller
 				|| (string) $staff->status !== 'aktif'
 				|| $this->normalize_staff_puskesmas_code($staff->kode_pkm) !== $kode_pkm
 				|| !$this->puskesmas_active_for_assignment($kode_pkm, true)) {
-				$abort('Personel tidak ditemukan atau bukan milik Puskesmas login');
+				$abort('Staf bukan dari Puskesmas ini.');
 			}
 
 			$owner = $this->staff_personal_owner_context($staff, true);
 			if (!$owner['valid']) {
-				$abort('Akun personal personel tidak valid. Assignment sebelumnya tetap dipertahankan.');
+				$abort('Akun perlu dicek. PIC tidak diubah.');
 			}
 			$target_owner_user_id = $owner['user_id'] ?: $assigned_by_user_id;
 			$same_staff_selection = count($active_assignments) === 1
@@ -1394,7 +1394,7 @@ class Home_nakes_m extends MX_Controller
 						'updated_at' => $now,
 					));
 				if ($this->db->affected_rows() !== count($active_assignments)) {
-					$abort('Gagal menetapkan PIC personel');
+					$abort('PIC gagal ditetapkan.');
 				}
 			}
 
@@ -1410,12 +1410,12 @@ class Home_nakes_m extends MX_Controller
 					'created_at' => $now,
 					'updated_at' => $now,
 				))) {
-					$abort('Gagal menetapkan PIC personel');
+					$abort('PIC gagal ditetapkan.');
 				}
 			}
 
 			if (!$this->synchronize_request_staff_owner($request_id, $kode_pkm, $target_owner_user_id, $assigned_by_user_id)) {
-				$abort('Gagal menyelaraskan akun PIC personel');
+				$abort('PIC gagal ditetapkan.');
 			}
 			if (!$this->request_staff_assignment_state_matches(
 				$request_id,
@@ -1425,28 +1425,28 @@ class Home_nakes_m extends MX_Controller
 				$target_owner_user_id,
 				$assigned_by_user_id
 			) || $this->db->trans_status() === false) {
-				$abort('Gagal menetapkan PIC personel');
+				$abort('PIC gagal ditetapkan.');
 			}
 
 			if (!$this->db->trans_commit()) {
 				$this->db->trans_rollback();
 				$transaction_started = false;
-				$abort('Gagal menetapkan PIC personel');
+				$abort('PIC gagal ditetapkan.');
 			}
 			$transaction_started = false;
 			$committed = true;
 			$result = array(
 				'status' => 'success',
 				'message' => $same_staff_selection
-					? 'PIC personel tetap dipilih dan kepemilikan akun telah diselaraskan'
-					: 'PIC personel berhasil ditetapkan',
+					? 'PIC tetap sama.'
+					: 'PIC berhasil ditetapkan.',
 			);
 		} catch (RuntimeException $e) {
 			if ($e->getMessage() !== 'staff_assignment_aborted') {
-				$result = array('status' => 'error', 'message' => 'Gagal menetapkan PIC personel');
+				$result = array('status' => 'error', 'message' => 'PIC gagal ditetapkan.');
 			}
 		} catch (Throwable $e) {
-			$result = array('status' => 'error', 'message' => 'Gagal menetapkan PIC personel');
+			$result = array('status' => 'error', 'message' => 'PIC gagal ditetapkan.');
 		} finally {
 			if ($transaction_started) {
 				$this->db->trans_rollback();
@@ -1463,7 +1463,7 @@ class Home_nakes_m extends MX_Controller
 				'actor_user_id' => $assigned_by_user_id,
 				'actor_staff_id' => $staff_id,
 				'actor_role' => 'dokter',
-				'message' => 'PIC personel diganti.',
+				'message' => 'PIC diganti.',
 				'metadata' => array(
 					'previous_staff_id' => (int) $previous_assignment->staff_id,
 					'previous_staff_name' => (string) $previous_assignment->staff_nama,
@@ -1478,7 +1478,7 @@ class Home_nakes_m extends MX_Controller
 				'actor_user_id' => $assigned_by_user_id,
 				'actor_staff_id' => $staff_id,
 				'actor_role' => 'dokter',
-				'message' => 'PIC personel ditetapkan.',
+				'message' => 'PIC ditetapkan.',
 				'metadata' => array(
 					'staff_id' => $staff_id,
 					'staff_name' => (string) $staff->nama,
@@ -1497,10 +1497,10 @@ class Home_nakes_m extends MX_Controller
 		$kode_pkm = $this->normalize_staff_puskesmas_code($kode_pkm);
 
 		if ($request_id < 1 || $assigned_by_user_id < 1 || $kode_pkm === '') {
-			return array('status' => 'error', 'message' => 'Data PIC personel tidak valid');
+			return array('status' => 'error', 'message' => 'Data PIC tidak valid.');
 		}
 		if (!$this->staff_assignment_table_ready()) {
-			return array('status' => 'error', 'message' => 'Tabel assignment PIC belum tersedia');
+			return array('status' => 'error', 'message' => 'Penugasan PIC belum tersedia.');
 		}
 		if (!is_array($identity_context)
 			|| empty($identity_context['valid'])
@@ -1512,7 +1512,7 @@ class Home_nakes_m extends MX_Controller
 
 		$db_debug = $this->db->db_debug;
 		$this->db->db_debug = false;
-		$result = array('status' => 'error', 'message' => 'Gagal membatalkan PIC personel');
+		$result = array('status' => 'error', 'message' => 'PIC gagal dilepas.');
 		$transaction_started = false;
 		$committed = false;
 		$previous_assignment = null;
@@ -1523,7 +1523,7 @@ class Home_nakes_m extends MX_Controller
 
 		try {
 			if (!$this->db->trans_begin()) {
-				$abort('Gagal membatalkan PIC personel');
+				$abort('PIC gagal dilepas.');
 			}
 			$transaction_started = true;
 			$request_query = $this->db->query(
@@ -1541,10 +1541,10 @@ class Home_nakes_m extends MX_Controller
 				|| $this->request_assigned_puskesmas_code($request) !== $kode_pkm
 				|| !function_exists('doclinc_can_coordinate_request')
 				|| !doclinc_can_coordinate_request($request, $database_identity)) {
-				$abort('Request tidak ditemukan atau bukan milik Puskesmas login');
+				$abort('Permintaan tidak dapat diakses.');
 			}
 			if ((string) $request->request_status !== 'Accepted') {
-				$abort('PIC hanya dapat dibatalkan pada request aktif');
+				$abort('PIC hanya dapat dilepas saat konsultasi aktif.');
 			}
 
 			$active_assignments = $this->locked_active_staff_assignments($request_id);
@@ -1552,7 +1552,7 @@ class Home_nakes_m extends MX_Controller
 				|| count($active_assignments) !== 1
 				|| (string) $active_assignments[0]->kode_pkm !== $kode_pkm
 				|| (string) $active_assignments[0]->staff_kode_pkm !== $kode_pkm) {
-				$abort('PIC aktif tidak ditemukan');
+				$abort('PIC aktif tidak ditemukan.');
 			}
 			$previous_assignment = $active_assignments[0];
 			$now = date('Y-m-d H:i:s');
@@ -1566,7 +1566,7 @@ class Home_nakes_m extends MX_Controller
 				));
 			if ($this->db->affected_rows() !== 1
 				|| !$this->synchronize_request_staff_owner($request_id, $kode_pkm, $assigned_by_user_id, $assigned_by_user_id)) {
-				$abort('Gagal membatalkan PIC personel');
+				$abort('PIC gagal dilepas.');
 			}
 			if (!$this->request_staff_assignment_state_matches(
 				$request_id,
@@ -1576,23 +1576,23 @@ class Home_nakes_m extends MX_Controller
 				$assigned_by_user_id,
 				$assigned_by_user_id
 			) || $this->db->trans_status() === false) {
-				$abort('Gagal membatalkan PIC personel');
+				$abort('PIC gagal dilepas.');
 			}
 
 			if (!$this->db->trans_commit()) {
 				$this->db->trans_rollback();
 				$transaction_started = false;
-				$abort('Gagal membatalkan PIC personel');
+				$abort('PIC gagal dilepas.');
 			}
 			$transaction_started = false;
 			$committed = true;
-			$result = array('status' => 'success', 'message' => 'PIC personel berhasil dibatalkan');
+			$result = array('status' => 'success', 'message' => 'PIC berhasil dilepas.');
 		} catch (RuntimeException $e) {
 			if ($e->getMessage() !== 'staff_unassignment_aborted') {
-				$result = array('status' => 'error', 'message' => 'Gagal membatalkan PIC personel');
+				$result = array('status' => 'error', 'message' => 'PIC gagal dilepas.');
 			}
 		} catch (Throwable $e) {
-			$result = array('status' => 'error', 'message' => 'Gagal membatalkan PIC personel');
+			$result = array('status' => 'error', 'message' => 'PIC gagal dilepas.');
 		} finally {
 			if ($transaction_started) {
 				$this->db->trans_rollback();
@@ -1607,7 +1607,7 @@ class Home_nakes_m extends MX_Controller
 				'actor_user_id' => $assigned_by_user_id,
 				'actor_staff_id' => (int) $previous_assignment->staff_id,
 				'actor_role' => 'dokter',
-				'message' => 'PIC personel dibatalkan.',
+				'message' => 'PIC dilepas.',
 				'metadata' => array(
 					'previous_staff_id' => (int) $previous_assignment->staff_id,
 					'previous_staff_name' => (string) $previous_assignment->staff_nama,
