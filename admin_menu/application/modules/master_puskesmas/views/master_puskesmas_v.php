@@ -15,7 +15,7 @@
 		<div class="card-header py-3 d-flex align-items-center justify-content-between">
 			<div>
 				<h6 class="m-0 font-weight-bold">Daftar Puskesmas</h6>
-				<div class="doclinc-muted-text mt-1">Kelola data Puskesmas aktif yang digunakan untuk routing dan koordinasi layanan Doclinc.</div>
+				<div class="doclinc-muted-text mt-1">Kelola data Puskesmas aktif yang digunakan untuk routing dan koordinasi layanan DocLink.</div>
 			</div>
 			<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill doclinc-action-btn doclinc-action-primary" data-toggle="modal" data-target="#modalTambahPuskesmas">
 				<i class="fas fa-plus-circle mr-1"></i> Tambah Puskesmas

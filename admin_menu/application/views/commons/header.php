@@ -69,7 +69,7 @@
 			<!-- Sidebar - Brand -->
 			<a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
 				<div class="sidebar-brand-icon">
-					<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="Doclinc">
+					<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="DocLink">
 				</div>
 			</a>
 
@@ -158,8 +158,8 @@
 					</button>
 					<!-- Hospital Branding -->
 					<div class="d-none d-md-flex align-items-center mr-auto">
-						<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="Doclinc" class="doclinc-topbar-logo mr-2">
-						<span class="h5 mb-0 font-weight-bold doclinc-topbar-brand">Halaman Admin Doclinc</span>
+						<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="DocLink" class="doclinc-topbar-logo mr-2">
+						<span class="h5 mb-0 font-weight-bold doclinc-topbar-brand">Halaman Admin DocLink</span>
 					</div>
 					<ul class="navbar-nav ml-auto align-items-center">
 						<li class="nav-item mx-2">

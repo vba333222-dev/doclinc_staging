@@ -5,7 +5,7 @@
     </button>
 </div>
 <div class="doclinc-helper-note mb-3">
-    Pengelolaan konten dan feed yang tampil sebagai informasi publik Doclinc.
+    Pengelolaan konten dan feed yang tampil sebagai informasi publik DocLink.
 </div>
 <!-- Content Row -->
 <div class="row">

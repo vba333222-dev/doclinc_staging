@@ -26,7 +26,7 @@ foreach ($distribution as $row) {
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
 		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-tachometer-alt"></i> Dashboard Operasional</h1>
-		<p class="mb-0 doclinc-page-subtitle">Ringkasan koordinasi Puskesmas dan aktivitas konsultasi Doclinc.</p>
+		<p class="mb-0 doclinc-page-subtitle">Ringkasan koordinasi Puskesmas dan aktivitas konsultasi DocLink.</p>
 	</div>
 	<a href="<?= site_url('konsultasi_kesehatan'); ?>" class="btn btn-primary btn-sm shadow-sm">
 		<i class="fas fa-stethoscope mr-1"></i> Monitoring Konsultasi
