@@ -279,14 +279,17 @@ class Home_nakes extends MX_Controller
 		}
 
 		$user_id = (int) $this->session->userdata('id');
-		$identity_context = doclinc_dokter_identity_context($user_id);
+		$identity_context = doclinc_dokter_identity_context($user_id, true);
 		$puskesmas_code = !empty($identity_context['puskesmas_code']) ? (string) $identity_context['puskesmas_code'] : '';
 		$request_id = (int) $this->input->post('request_id');
 		$staff_id = (int) $this->input->post('staff_id');
 		$note = trim((string) $this->input->post('note', TRUE));
 
 		$request = $request_id > 0 ? doclinc_request_row($request_id) : null;
-		if ($staff_id < 1 || !doclinc_can_coordinate_request($request, $identity_context)) {
+		if ($staff_id < 1
+			|| empty($identity_context['valid'])
+			|| $identity_context['account_type'] !== 'command_center'
+			|| !doclinc_can_coordinate_request($request, $identity_context)) {
 			$this->session->set_flashdata('staff_assignment_error', 'Akses tidak diizinkan untuk tindakan ini.');
 			redirect('home_nakes#riwayat_konsul');
 			return;
@@ -312,12 +315,14 @@ class Home_nakes extends MX_Controller
 		}
 
 		$user_id = (int) $this->session->userdata('id');
-		$identity_context = doclinc_dokter_identity_context($user_id);
+		$identity_context = doclinc_dokter_identity_context($user_id, true);
 		$puskesmas_code = !empty($identity_context['puskesmas_code']) ? (string) $identity_context['puskesmas_code'] : '';
 		$request_id = (int) $this->input->post('request_id');
 
 		$request = $request_id > 0 ? doclinc_request_row($request_id) : null;
-		if (!doclinc_can_coordinate_request($request, $identity_context)) {
+		if (empty($identity_context['valid'])
+			|| $identity_context['account_type'] !== 'command_center'
+			|| !doclinc_can_coordinate_request($request, $identity_context)) {
 			$this->session->set_flashdata('staff_assignment_error', 'Akses tidak diizinkan untuk tindakan ini.');
 			redirect('home_nakes#riwayat_konsul');
 			return;
