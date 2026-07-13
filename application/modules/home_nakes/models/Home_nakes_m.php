@@ -1053,8 +1053,8 @@ class Home_nakes_m extends MX_Controller
 			return array();
 		}
 
-		return $this->db
-			->select('staff_id, nama, no_hp, profesi, nomor_sip, status')
+		$rows = $this->db
+			->select('staff_id, nama, no_hp, profesi, nomor_sip, user_id, status, kode_pkm')
 			->from('puskesmas_staff')
 			->where('kode_pkm', $kode_pkm)
 			->where('status', 'aktif')
@@ -1062,6 +1062,13 @@ class Home_nakes_m extends MX_Controller
 			->order_by('staff_id', 'ASC')
 			->get()
 			->result();
+
+		foreach ($rows as $staff) {
+			$owner = $this->staff_personal_owner_context($staff, false);
+			$staff->personal_account_state = $owner['state'];
+		}
+
+		return $rows;
 	}
 
 	public function get_active_staff_assignments_by_request_ids($request_ids)
@@ -1293,83 +1300,164 @@ class Home_nakes_m extends MX_Controller
 		if (!$this->staff_assignment_table_ready()) {
 			return array('status' => 'error', 'message' => 'Tabel assignment PIC belum tersedia');
 		}
-		if (!$this->command_center_identity_matches($identity_context, $assigned_by_user_id, $kode_pkm)) {
+		if (!is_array($identity_context)
+			|| empty($identity_context['valid'])
+			|| $identity_context['account_type'] !== 'command_center'
+			|| (int) $identity_context['user_id'] !== $assigned_by_user_id
+			|| trim((string) $identity_context['puskesmas_code']) !== $kode_pkm) {
 			return array('status' => 'error', 'message' => 'Akses tidak diizinkan untuk tindakan ini.');
 		}
 
-		$this->db->trans_begin();
-		$request = $this->db->query(
-			'SELECT request_id, request_status, assigned_puskesmas_code, dokter_id FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
-			array($request_id)
-		)->row();
-		if (!$this->request_matches_command_center_tenant($request, $assigned_by_user_id, $kode_pkm)) {
-			$this->db->trans_rollback();
-			return array('status' => 'error', 'message' => 'Request tidak ditemukan atau bukan milik Puskesmas login');
-		}
-		if ((string) $request->request_status !== 'Accepted') {
-			$this->db->trans_rollback();
-			return array('status' => 'error', 'message' => 'PIC hanya dapat ditetapkan pada request aktif');
-		}
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$result = array('status' => 'error', 'message' => 'Gagal menetapkan PIC personel');
+		$transaction_started = false;
+		$committed = false;
+		$staff = null;
+		$previous_assignment = null;
+		$assignment_event = null;
+		$abort = function ($message) use (&$result) {
+			$result = array('status' => 'error', 'message' => $message);
+			throw new RuntimeException('staff_assignment_aborted');
+		};
 
-		$staff = $this->db
-			->select('staff_id, nama, profesi')
-			->from('puskesmas_staff')
-			->where('staff_id', $staff_id)
-			->where('kode_pkm', $kode_pkm)
-			->where('status', 'aktif')
-			->get()
-			->row();
-		if (!$staff) {
-			$this->db->trans_rollback();
-			return array('status' => 'error', 'message' => 'Personel tidak ditemukan atau bukan milik Puskesmas login');
-		}
-
-		$active_assignments = $this->db
-			->select('rsa.assignment_id, rsa.staff_id, rsa.kode_pkm, ps.kode_pkm AS staff_kode_pkm')
-			->from('request_staff_assignments AS rsa')
-			->join('puskesmas_staff AS ps', 'ps.staff_id = rsa.staff_id', 'left')
-			->where('rsa.request_id', $request_id)
-			->where('rsa.status', 'aktif')
-			->get()
-			->result();
-		foreach ($active_assignments as $active_assignment) {
-			if ((string) $active_assignment->kode_pkm !== $kode_pkm
-				|| (string) $active_assignment->staff_kode_pkm !== $kode_pkm) {
-				$this->db->trans_rollback();
-				return array('status' => 'error', 'message' => 'Assignment PIC tidak valid');
+		try {
+			if (!$this->db->trans_begin()) {
+				$abort('Gagal menetapkan PIC personel');
 			}
+			$transaction_started = true;
+
+			$request_query = $this->db->query(
+				'SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
+				array($request_id)
+			);
+			$request = $request_query ? $request_query->row() : null;
+			$database_identity = function_exists('doclinc_dokter_identity_context')
+				? doclinc_dokter_identity_context($assigned_by_user_id, true)
+				: null;
+			if (empty($database_identity['valid'])
+				|| $database_identity['account_type'] !== 'command_center'
+				|| trim((string) $database_identity['puskesmas_code']) !== $kode_pkm
+				|| !$request
+				|| $this->request_assigned_puskesmas_code($request) !== $kode_pkm
+				|| !function_exists('doclinc_can_coordinate_request')
+				|| !doclinc_can_coordinate_request($request, $database_identity)) {
+				$abort('Request tidak ditemukan atau bukan milik Puskesmas login');
+			}
+			if ((string) $request->request_status !== 'Accepted') {
+				$abort('PIC hanya dapat ditetapkan pada request aktif');
+			}
+
+			$active_assignments = $this->locked_active_staff_assignments($request_id);
+			if ($active_assignments === false) {
+				$abort('Gagal menetapkan PIC personel');
+			}
+			foreach ($active_assignments as $active_assignment) {
+				if ((string) $active_assignment->kode_pkm !== $kode_pkm
+					|| (string) $active_assignment->staff_kode_pkm !== $kode_pkm) {
+					$abort('Assignment PIC tidak valid');
+				}
+			}
+			$previous_assignment = !empty($active_assignments) ? $active_assignments[0] : null;
+
+			$staff_query = $this->db->query(
+				'SELECT staff_id, kode_pkm, nama, no_hp, profesi, nomor_sip, user_id, status FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE staff_id = ? FOR UPDATE',
+				array($staff_id)
+			);
+			$staff = $staff_query ? $staff_query->row() : null;
+			if (!$staff
+				|| (string) $staff->status !== 'aktif'
+				|| $this->normalize_staff_puskesmas_code($staff->kode_pkm) !== $kode_pkm
+				|| !$this->puskesmas_active_for_assignment($kode_pkm, true)) {
+				$abort('Personel tidak ditemukan atau bukan milik Puskesmas login');
+			}
+
+			$owner = $this->staff_personal_owner_context($staff, true);
+			if (!$owner['valid']) {
+				$abort('Akun personal personel tidak valid. Assignment sebelumnya tetap dipertahankan.');
+			}
+			$target_owner_user_id = $owner['user_id'] ?: $assigned_by_user_id;
+			$same_staff_selection = count($active_assignments) === 1
+				&& (int) $active_assignments[0]->staff_id === $staff_id;
+			$assignment_event = $same_staff_selection
+				? null
+				: ($previous_assignment ? 'pic_changed' : 'pic_assigned');
+
+			$now = date('Y-m-d H:i:s');
+			if (!$same_staff_selection && !empty($active_assignments)) {
+				$this->db
+					->where('request_id', $request_id)
+					->where('status', 'aktif')
+					->update('request_staff_assignments', array(
+						'status' => 'diganti',
+						'ended_at' => $now,
+						'updated_at' => $now,
+					));
+				if ($this->db->affected_rows() !== count($active_assignments)) {
+					$abort('Gagal menetapkan PIC personel');
+				}
+			}
+
+			if (!$same_staff_selection) {
+				if (!$this->db->insert('request_staff_assignments', array(
+					'request_id' => $request_id,
+					'staff_id' => $staff_id,
+					'kode_pkm' => $kode_pkm,
+					'assigned_by_user_id' => $assigned_by_user_id,
+					'status' => 'aktif',
+					'note' => $note !== '' ? $note : null,
+					'assigned_at' => $now,
+					'created_at' => $now,
+					'updated_at' => $now,
+				))) {
+					$abort('Gagal menetapkan PIC personel');
+				}
+			}
+
+			if (!$this->synchronize_request_staff_owner($request_id, $kode_pkm, $target_owner_user_id, $assigned_by_user_id)) {
+				$abort('Gagal menyelaraskan akun PIC personel');
+			}
+			if (!$this->request_staff_assignment_state_matches(
+				$request_id,
+				$kode_pkm,
+				isset($request->assigned_puskesmas_name) ? $request->assigned_puskesmas_name : null,
+				$staff_id,
+				$target_owner_user_id,
+				$assigned_by_user_id
+			) || $this->db->trans_status() === false) {
+				$abort('Gagal menetapkan PIC personel');
+			}
+
+			if (!$this->db->trans_commit()) {
+				$this->db->trans_rollback();
+				$transaction_started = false;
+				$abort('Gagal menetapkan PIC personel');
+			}
+			$transaction_started = false;
+			$committed = true;
+			$result = array(
+				'status' => 'success',
+				'message' => $same_staff_selection
+					? 'PIC personel tetap dipilih dan kepemilikan akun telah diselaraskan'
+					: 'PIC personel berhasil ditetapkan',
+			);
+		} catch (RuntimeException $e) {
+			if ($e->getMessage() !== 'staff_assignment_aborted') {
+				$result = array('status' => 'error', 'message' => 'Gagal menetapkan PIC personel');
+			}
+		} catch (Throwable $e) {
+			$result = array('status' => 'error', 'message' => 'Gagal menetapkan PIC personel');
+		} finally {
+			if ($transaction_started) {
+				$this->db->trans_rollback();
+			}
+			$this->db->db_debug = $db_debug;
 		}
 
-		$previous_assignment = $this->get_active_staff_assignment($request_id);
-		$now = date('Y-m-d H:i:s');
-		$this->db
-			->where('request_id', $request_id)
-			->where('kode_pkm', $kode_pkm)
-			->where('status', 'aktif')
-			->update('request_staff_assignments', array(
-				'status' => 'diganti',
-				'ended_at' => $now,
-				'updated_at' => $now,
-			));
-		$this->db->insert('request_staff_assignments', array(
-			'request_id' => $request_id,
-			'staff_id' => $staff_id,
-			'kode_pkm' => $kode_pkm,
-			'assigned_by_user_id' => $assigned_by_user_id,
-			'status' => 'aktif',
-			'note' => $note !== '' ? $note : null,
-			'assigned_at' => $now,
-			'created_at' => $now,
-			'updated_at' => $now,
-		));
-
-		if ($this->db->trans_status() === false) {
-			$this->db->trans_rollback();
-			return array('status' => 'error', 'message' => 'Gagal menetapkan PIC personel');
+		if (!$committed) {
+			return $result;
 		}
-
-		$this->db->trans_commit();
-		if ($previous_assignment) {
+		if ($assignment_event === 'pic_changed' && $previous_assignment) {
 			$this->append_request_event($request_id, 'pic_changed', array(
 				'puskesmas_code' => $kode_pkm,
 				'actor_user_id' => $assigned_by_user_id,
@@ -1384,7 +1472,7 @@ class Home_nakes_m extends MX_Controller
 					'new_staff_profesi' => (string) $staff->profesi,
 				),
 			));
-		} else {
+		} elseif ($assignment_event === 'pic_assigned') {
 			$this->append_request_event($request_id, 'pic_assigned', array(
 				'puskesmas_code' => $kode_pkm,
 				'actor_user_id' => $assigned_by_user_id,
@@ -1399,7 +1487,7 @@ class Home_nakes_m extends MX_Controller
 				),
 			));
 		}
-		return array('status' => 'success', 'message' => 'PIC personel berhasil ditetapkan');
+		return $result;
 	}
 
 	public function clear_staff_assignment($request_id, $kode_pkm, $assigned_by_user_id, $identity_context = null)
@@ -1414,57 +1502,105 @@ class Home_nakes_m extends MX_Controller
 		if (!$this->staff_assignment_table_ready()) {
 			return array('status' => 'error', 'message' => 'Tabel assignment PIC belum tersedia');
 		}
-		if (!$this->command_center_identity_matches($identity_context, $assigned_by_user_id, $kode_pkm)) {
+		if (!is_array($identity_context)
+			|| empty($identity_context['valid'])
+			|| $identity_context['account_type'] !== 'command_center'
+			|| (int) $identity_context['user_id'] !== $assigned_by_user_id
+			|| trim((string) $identity_context['puskesmas_code']) !== $kode_pkm) {
 			return array('status' => 'error', 'message' => 'Akses tidak diizinkan untuk tindakan ini.');
 		}
 
-		$this->db->trans_begin();
-		$request = $this->db->query(
-			'SELECT request_id, request_status, assigned_puskesmas_code, dokter_id FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
-			array($request_id)
-		)->row();
-		if (!$this->request_matches_command_center_tenant($request, $assigned_by_user_id, $kode_pkm)) {
-			$this->db->trans_rollback();
-			return array('status' => 'error', 'message' => 'Request tidak ditemukan atau bukan milik Puskesmas login');
-		}
-		if ((string) $request->request_status !== 'Accepted') {
-			$this->db->trans_rollback();
-			return array('status' => 'error', 'message' => 'PIC hanya dapat dibatalkan pada request aktif');
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$result = array('status' => 'error', 'message' => 'Gagal membatalkan PIC personel');
+		$transaction_started = false;
+		$committed = false;
+		$previous_assignment = null;
+		$abort = function ($message) use (&$result) {
+			$result = array('status' => 'error', 'message' => $message);
+			throw new RuntimeException('staff_unassignment_aborted');
+		};
+
+		try {
+			if (!$this->db->trans_begin()) {
+				$abort('Gagal membatalkan PIC personel');
+			}
+			$transaction_started = true;
+			$request_query = $this->db->query(
+				'SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
+				array($request_id)
+			);
+			$request = $request_query ? $request_query->row() : null;
+			$database_identity = function_exists('doclinc_dokter_identity_context')
+				? doclinc_dokter_identity_context($assigned_by_user_id, true)
+				: null;
+			if (empty($database_identity['valid'])
+				|| $database_identity['account_type'] !== 'command_center'
+				|| trim((string) $database_identity['puskesmas_code']) !== $kode_pkm
+				|| !$request
+				|| $this->request_assigned_puskesmas_code($request) !== $kode_pkm
+				|| !function_exists('doclinc_can_coordinate_request')
+				|| !doclinc_can_coordinate_request($request, $database_identity)) {
+				$abort('Request tidak ditemukan atau bukan milik Puskesmas login');
+			}
+			if ((string) $request->request_status !== 'Accepted') {
+				$abort('PIC hanya dapat dibatalkan pada request aktif');
+			}
+
+			$active_assignments = $this->locked_active_staff_assignments($request_id);
+			if ($active_assignments === false
+				|| count($active_assignments) !== 1
+				|| (string) $active_assignments[0]->kode_pkm !== $kode_pkm
+				|| (string) $active_assignments[0]->staff_kode_pkm !== $kode_pkm) {
+				$abort('PIC aktif tidak ditemukan');
+			}
+			$previous_assignment = $active_assignments[0];
+			$now = date('Y-m-d H:i:s');
+			$this->db
+				->where('assignment_id', (int) $previous_assignment->assignment_id)
+				->where('status', 'aktif')
+				->update('request_staff_assignments', array(
+					'status' => 'dibatalkan',
+					'ended_at' => $now,
+					'updated_at' => $now,
+				));
+			if ($this->db->affected_rows() !== 1
+				|| !$this->synchronize_request_staff_owner($request_id, $kode_pkm, $assigned_by_user_id, $assigned_by_user_id)) {
+				$abort('Gagal membatalkan PIC personel');
+			}
+			if (!$this->request_staff_assignment_state_matches(
+				$request_id,
+				$kode_pkm,
+				isset($request->assigned_puskesmas_name) ? $request->assigned_puskesmas_name : null,
+				null,
+				$assigned_by_user_id,
+				$assigned_by_user_id
+			) || $this->db->trans_status() === false) {
+				$abort('Gagal membatalkan PIC personel');
+			}
+
+			if (!$this->db->trans_commit()) {
+				$this->db->trans_rollback();
+				$transaction_started = false;
+				$abort('Gagal membatalkan PIC personel');
+			}
+			$transaction_started = false;
+			$committed = true;
+			$result = array('status' => 'success', 'message' => 'PIC personel berhasil dibatalkan');
+		} catch (RuntimeException $e) {
+			if ($e->getMessage() !== 'staff_unassignment_aborted') {
+				$result = array('status' => 'error', 'message' => 'Gagal membatalkan PIC personel');
+			}
+		} catch (Throwable $e) {
+			$result = array('status' => 'error', 'message' => 'Gagal membatalkan PIC personel');
+		} finally {
+			if ($transaction_started) {
+				$this->db->trans_rollback();
+			}
+			$this->db->db_debug = $db_debug;
 		}
 
-		$active_assignments = $this->db
-			->select('rsa.assignment_id, rsa.staff_id, rsa.kode_pkm, ps.kode_pkm AS staff_kode_pkm, ps.nama AS staff_nama, ps.profesi AS staff_profesi')
-			->from('request_staff_assignments AS rsa')
-			->join('puskesmas_staff AS ps', 'ps.staff_id = rsa.staff_id', 'left')
-			->where('rsa.request_id', $request_id)
-			->where('rsa.status', 'aktif')
-			->get()
-			->result();
-		if (count($active_assignments) !== 1
-			|| (string) $active_assignments[0]->kode_pkm !== $kode_pkm
-			|| (string) $active_assignments[0]->staff_kode_pkm !== $kode_pkm) {
-			$this->db->trans_rollback();
-			return array('status' => 'error', 'message' => 'PIC aktif tidak ditemukan');
-		}
-		$previous_assignment = $active_assignments[0];
-		$now = date('Y-m-d H:i:s');
-		$this->db
-			->where('assignment_id', (int) $previous_assignment->assignment_id)
-			->where('kode_pkm', $kode_pkm)
-			->where('status', 'aktif')
-			->update('request_staff_assignments', array(
-				'status' => 'dibatalkan',
-				'ended_at' => $now,
-				'updated_at' => $now,
-			));
-		$changed = $this->db->affected_rows() > 0;
-
-		if ($this->db->trans_status() === false) {
-			$this->db->trans_rollback();
-			return array('status' => 'error', 'message' => 'Gagal membatalkan PIC personel');
-		}
-
-		$this->db->trans_commit();
+		$changed = $committed;
 		if ($changed && $previous_assignment) {
 			$this->append_request_event($request_id, 'pic_cleared', array(
 				'puskesmas_code' => $kode_pkm,
@@ -1479,9 +1615,186 @@ class Home_nakes_m extends MX_Controller
 				),
 			));
 		}
-		return $changed
-			? array('status' => 'success', 'message' => 'PIC personel berhasil dibatalkan')
-			: array('status' => 'error', 'message' => 'PIC aktif tidak ditemukan');
+		return $result;
+	}
+
+	private function locked_active_staff_assignments($request_id)
+	{
+		$sql = 'SELECT rsa.assignment_id, rsa.request_id, rsa.staff_id, rsa.kode_pkm, rsa.assigned_by_user_id, rsa.status, rsa.note, rsa.assigned_at, '
+			. 'ps.kode_pkm AS staff_kode_pkm, ps.nama AS staff_nama, ps.profesi AS staff_profesi '
+			. 'FROM ' . $this->db->dbprefix('request_staff_assignments') . ' rsa '
+			. 'LEFT JOIN ' . $this->db->dbprefix('puskesmas_staff') . ' ps ON ps.staff_id = rsa.staff_id '
+			. 'WHERE rsa.request_id = ? AND rsa.status = ? '
+			. 'ORDER BY rsa.assigned_at DESC, rsa.assignment_id DESC FOR UPDATE';
+		$query = $this->db->query($sql, array((int) $request_id, 'aktif'));
+		return $query ? $query->result() : false;
+	}
+
+	private function puskesmas_active_for_assignment($kode_pkm, $lock = false)
+	{
+		$kode_pkm = $this->normalize_staff_puskesmas_code($kode_pkm);
+		if ($kode_pkm === '' || !$this->db->table_exists('m_puskesmas')) {
+			return false;
+		}
+		$has_status = $this->db->field_exists('status', 'm_puskesmas');
+		if ($lock) {
+			$fields = $has_status ? 'kode_pkm, status' : 'kode_pkm';
+			$query = $this->db->query(
+				'SELECT ' . $fields . ' FROM ' . $this->db->dbprefix('m_puskesmas') . ' WHERE kode_pkm = ? FOR UPDATE',
+				array($kode_pkm)
+			);
+			$puskesmas = $query ? $query->row() : null;
+			return $puskesmas && (!$has_status || (string) $puskesmas->status === 'aktif');
+		}
+		$this->db->where('kode_pkm', $kode_pkm);
+		if ($has_status) {
+			$this->db->where('status', 'aktif');
+		}
+		return $this->db->count_all_results('m_puskesmas') === 1;
+	}
+
+	private function staff_personal_owner_context($staff, $refresh_identity)
+	{
+		$user_id = $staff ? (int) ($staff->user_id ?? 0) : 0;
+		if ($user_id < 1) {
+			return array('valid' => true, 'state' => 'unlinked', 'user_id' => null);
+		}
+		if ($refresh_identity) {
+			return $this->locked_staff_personal_owner_context($staff, $user_id);
+		}
+		$identity = function_exists('doclinc_dokter_identity_context')
+			? doclinc_dokter_identity_context($user_id)
+			: null;
+		$valid = !empty($identity['valid'])
+			&& $identity['account_type'] === 'personal'
+			&& (int) $identity['user_id'] === $user_id
+			&& (int) $identity['staff_id'] === (int) $staff->staff_id
+			&& (string) $identity['role'] === 'dokter'
+			&& (string) $identity['user_status'] === 'aktif'
+			&& trim((string) $identity['puskesmas_code']) === $this->normalize_staff_puskesmas_code($staff->kode_pkm);
+		return array(
+			'valid' => $valid,
+			'state' => $valid ? 'linked' : 'invalid',
+			'user_id' => $valid ? $user_id : null,
+		);
+	}
+
+	private function locked_staff_personal_owner_context($staff, $user_id)
+	{
+		$kode_pkm = $this->normalize_staff_puskesmas_code($staff->kode_pkm);
+		$user_query = $this->db->query(
+			'SELECT userId, role, status, remark FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ? FOR UPDATE',
+			array((int) $user_id)
+		);
+		$user = $user_query ? $user_query->row() : null;
+		if (!$user
+			|| (string) $user->role !== 'dokter'
+			|| (string) $user->status !== 'aktif'
+			|| $this->normalize_staff_puskesmas_code($user->remark) !== $kode_pkm) {
+			return array('valid' => false, 'state' => 'invalid', 'user_id' => null);
+		}
+
+		$canonical_query = $this->db->query(
+			'SELECT userId FROM ' . $this->db->dbprefix('users')
+				. ' WHERE role = ? AND status = ? AND TRIM(remark) = ? ORDER BY userId ASC LIMIT 1 FOR UPDATE',
+			array('dokter', 'aktif', $kode_pkm)
+		);
+		$canonical = $canonical_query ? $canonical_query->row() : null;
+		if (!$canonical || (int) $canonical->userId === (int) $user_id) {
+			return array('valid' => false, 'state' => 'invalid', 'user_id' => null);
+		}
+
+		$links_query = $this->db->query(
+			'SELECT staff_id, kode_pkm, user_id, status FROM ' . $this->db->dbprefix('puskesmas_staff')
+				. ' WHERE user_id = ? ORDER BY staff_id ASC FOR UPDATE',
+			array((int) $user_id)
+		);
+		$links = $links_query ? $links_query->result() : array();
+		$valid = count($links) === 1
+			&& (int) $links[0]->staff_id === (int) $staff->staff_id
+			&& (int) $links[0]->user_id === (int) $user_id
+			&& (string) $links[0]->status === 'aktif'
+			&& $this->normalize_staff_puskesmas_code($links[0]->kode_pkm) === $kode_pkm;
+		return array(
+			'valid' => $valid,
+			'state' => $valid ? 'linked' : 'invalid',
+			'user_id' => $valid ? (int) $user_id : null,
+		);
+	}
+
+	private function synchronize_request_staff_owner($request_id, $kode_pkm, $owner_user_id, $assigned_by_user_id)
+	{
+		if (!$this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+			return false;
+		}
+		$data = array('assigned_nakes_user_id' => (int) $owner_user_id);
+		if ($this->db->field_exists('assigned_nakes_by_user_id', 'requests')) {
+			$data['assigned_nakes_by_user_id'] = (int) $assigned_by_user_id;
+		}
+		$updated = $this->db
+			->where('request_id', (int) $request_id)
+			->where('request_status', 'Accepted')
+			->where('TRIM(assigned_puskesmas_code) = ' . $this->db->escape($kode_pkm), null, false)
+			->update('requests', $data);
+		if (!$updated || $this->db->trans_status() === false) {
+			return false;
+		}
+		$select = array('request_id', 'request_status', 'assigned_puskesmas_code', 'assigned_nakes_user_id');
+		if ($this->db->field_exists('assigned_nakes_by_user_id', 'requests')) {
+			$select[] = 'assigned_nakes_by_user_id';
+		}
+		$request = $this->db
+			->select(implode(', ', $select))
+			->where('request_id', (int) $request_id)
+			->get('requests')
+			->row();
+		if (!$request
+			|| (string) $request->request_status !== 'Accepted'
+			|| $this->request_assigned_puskesmas_code($request) !== $kode_pkm
+			|| (int) $request->assigned_nakes_user_id !== (int) $owner_user_id) {
+			return false;
+		}
+		return !isset($request->assigned_nakes_by_user_id)
+			|| (int) $request->assigned_nakes_by_user_id === (int) $assigned_by_user_id;
+	}
+
+	private function request_staff_assignment_state_matches($request_id, $kode_pkm, $puskesmas_name, $expected_staff_id, $owner_user_id, $assigned_by_user_id)
+	{
+		$active_assignments = $this->locked_active_staff_assignments($request_id);
+		if ($active_assignments === false) {
+			return false;
+		}
+		if ($expected_staff_id === null) {
+			if (count($active_assignments) !== 0) {
+				return false;
+			}
+		} elseif (count($active_assignments) !== 1
+			|| (int) $active_assignments[0]->staff_id !== (int) $expected_staff_id
+			|| (string) $active_assignments[0]->kode_pkm !== $kode_pkm
+			|| (string) $active_assignments[0]->staff_kode_pkm !== $kode_pkm) {
+			return false;
+		}
+
+		$select = array('request_id', 'request_status', 'assigned_puskesmas_code', 'assigned_nakes_user_id');
+		$has_puskesmas_name = $this->db->field_exists('assigned_puskesmas_name', 'requests');
+		if ($has_puskesmas_name) {
+			$select[] = 'assigned_puskesmas_name';
+		}
+		$has_assignment_actor = $this->db->field_exists('assigned_nakes_by_user_id', 'requests');
+		if ($has_assignment_actor) {
+			$select[] = 'assigned_nakes_by_user_id';
+		}
+		$request = $this->db
+			->select(implode(', ', $select))
+			->where('request_id', (int) $request_id)
+			->get('requests')
+			->row();
+		return $request
+			&& (string) $request->request_status === 'Accepted'
+			&& $this->request_assigned_puskesmas_code($request) === $kode_pkm
+			&& (!$has_puskesmas_name || (string) $request->assigned_puskesmas_name === (string) $puskesmas_name)
+			&& (int) $request->assigned_nakes_user_id === (int) $owner_user_id
+			&& (!$has_assignment_actor || (int) $request->assigned_nakes_by_user_id === (int) $assigned_by_user_id);
 	}
 
 
