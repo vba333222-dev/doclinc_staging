@@ -4,6 +4,7 @@ $staff_rows = isset($staff_rows) && is_array($staff_rows) ? $staff_rows : array(
 $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ? $puskesmas_options : array();
 $account_candidates_by_staff = isset($account_candidates_by_staff) && is_array($account_candidates_by_staff) ? $account_candidates_by_staff : array();
 $command_center_user_ids = isset($command_center_user_ids) && is_array($command_center_user_ids) ? $command_center_user_ids : array();
+$personal_account_eligibility_by_staff = isset($personal_account_eligibility_by_staff) && is_array($personal_account_eligibility_by_staff) ? $personal_account_eligibility_by_staff : array();
 $form_mode = isset($form_mode) ? (string) $form_mode : '';
 $form_staff = isset($form_staff) ? $form_staff : null;
 $is_form = in_array($form_mode, array('create', 'edit'), true);
@@ -186,7 +187,9 @@ $form_values = array(
 										&& strtoupper(trim($kode_pkm)) !== 'DEFAULT'
 										&& !empty($row->nama_puskesmas)
 										&& ($puskesmas_status === null || $puskesmas_status === 'aktif');
-									$can_create_personal_account = $is_active && $linked_user_id < 1 && $puskesmas_is_valid;
+									$creation_eligibility = $personal_account_eligibility_by_staff[$staff_id] ?? array('eligible' => false, 'message' => 'Staff belum memenuhi syarat pembuatan akun personal.');
+									$can_create_personal_account = !empty($creation_eligibility['eligible']);
+									$creation_block_message = !empty($creation_eligibility['message']) ? $creation_eligibility['message'] : 'Staff belum memenuhi syarat pembuatan akun personal.';
 									?>
 									<div class="doclinc-account-card">
 										<div class="doclinc-account-card__header">
@@ -273,11 +276,15 @@ $form_values = array(
 													<button type="button" class="btn doclinc-action-btn doclinc-action-btn--secondary" data-toggle="modal" data-target="#modalBindAccount<?= (int) $staff_id; ?>">
 														<i class="fas fa-link"></i> Hubungkan Akun
 													</button>
-													<?php if ($can_create_personal_account): ?>
-														<button type="button" class="btn doclinc-action-btn doclinc-action-btn--primary" data-toggle="modal" data-target="#modalCreatePersonalAccount<?= (int) $staff_id; ?>">
-															<i class="fas fa-user-plus"></i> Buat Akun Personal
-														</button>
-													<?php endif; ?>
+											<?php if ($can_create_personal_account): ?>
+												<button type="button" class="btn doclinc-action-btn doclinc-action-btn--primary" data-toggle="modal" data-target="#modalCreatePersonalAccount<?= (int) $staff_id; ?>">
+													<i class="fas fa-user-plus"></i> Buat Akun Personal
+												</button>
+											<?php elseif ($is_active && $linked_user_id < 1 && $puskesmas_is_valid): ?>
+												<button type="button" class="btn doclinc-action-btn doclinc-action-btn--secondary" disabled title="<?= html_escape($creation_block_message); ?>">
+													<i class="fas fa-user-plus"></i> Buat Akun Personal
+												</button>
+											<?php endif; ?>
 												<?php endif; ?>
 											</div>
 										</div>
@@ -354,21 +361,17 @@ $form_values = array(
 																	<div class="small text-muted"><?= html_escape($profession_label); ?></div>
 																	<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? '-'); ?> (<?= html_escape($row->kode_pkm ?? '-'); ?>)</div>
 																</div>
-																<div class="alert alert-warning">Akun akan dibuat dan langsung dihubungkan ke staff ini. Status akun tetap nonaktif sampai pembatasan akses akun personal selesai.</div>
-																<div class="row">
-																	<div class="col-md-6"><div class="form-group">
-																		<label class="text-info">Nama Akun</label>
-																		<input type="text" class="form-control rounded-pill border-info" name="nama" value="<?= html_escape($row->nama ?? ''); ?>" maxlength="100" required>
-																	</div></div>
-																	<div class="col-md-6"><div class="form-group">
-																		<label class="text-info">Username</label>
-																		<input type="text" class="form-control rounded-pill border-info" name="username" minlength="3" maxlength="100" pattern="[A-Za-z0-9._-]+" autocomplete="username" required>
-																	</div></div>
-																</div>
-																<div class="form-group">
-																	<label class="text-info">Email</label>
-																	<input type="email" class="form-control rounded-pill border-info" name="email" maxlength="100" autocomplete="email" required>
-																</div>
+																		<div class="alert alert-info">Akun aktif akan dibuat dan langsung dihubungkan ke staff ini. Password sementara tidak akan ditampilkan kembali.</div>
+																		<div class="row">
+																			<div class="col-md-6"><div class="form-group">
+																				<label class="text-info">Username</label>
+																				<input type="text" class="form-control rounded-pill border-info" name="username" minlength="3" maxlength="100" pattern="[A-Za-z0-9._-]+" autocomplete="username" required>
+																			</div></div>
+																			<div class="col-md-6"><div class="form-group">
+																				<label class="text-info">Email</label>
+																				<input type="email" class="form-control rounded-pill border-info" name="email" maxlength="100" autocomplete="email" required>
+																			</div></div>
+																		</div>
 																<div class="row">
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Password Sementara</label>

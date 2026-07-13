@@ -226,106 +226,231 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		return $this->user_value_exists_case_insensitive('email', $email);
 	}
 
+	public function get_personal_account_creation_eligibility($staff)
+	{
+		if (!$staff || (int) ($staff->staff_id ?? 0) < 1) {
+			return array('eligible' => false, 'message' => 'Staff tidak ditemukan.');
+		}
+		if ((int) ($staff->user_id ?? 0) > 0) {
+			return array('eligible' => false, 'message' => 'Staff sudah terhubung ke akun login.');
+		}
+		if (($staff->status ?? '') !== 'aktif') {
+			return array('eligible' => false, 'message' => 'Staff harus aktif sebelum dibuatkan akun.');
+		}
+		$staff_name = trim((string) ($staff->nama ?? ''));
+		if ($staff_name === '' || strlen($staff_name) > 100) {
+			return array('eligible' => false, 'message' => 'Nama Staff tidak valid untuk digunakan sebagai nama akun.');
+		}
+
+		$kode_pkm = trim((string) ($staff->kode_pkm ?? ''));
+		if (!$this->puskesmas_is_active($kode_pkm)) {
+			return array('eligible' => false, 'message' => 'Puskesmas staff tidak valid atau tidak aktif.');
+		}
+
+		$command_center_user_id = $this->get_command_center_user_id($kode_pkm);
+		if ($command_center_user_id < 1) {
+			return array('eligible' => false, 'message' => 'Akun command center Puskesmas belum tersedia.');
+		}
+		if ($this->command_center_linked_to_staff($command_center_user_id)) {
+			return array('eligible' => false, 'message' => 'Akun command center Puskesmas terhubung ke data Staff. Periksa data lama sebelum membuat akun personal.');
+		}
+
+		return array('eligible' => true, 'message' => '');
+	}
+
 	public function create_and_link_personal_account($staff_id, $account)
 	{
 		$staff_id = (int) $staff_id;
-		$nama = trim((string) ($account['nama'] ?? ''));
 		$username = trim((string) ($account['username'] ?? ''));
 		$email = trim((string) ($account['email'] ?? ''));
-		$password_hash = (string) ($account['password'] ?? '');
-		if ($staff_id < 1 || $nama === '' || $username === '' || $email === '' || $password_hash === '' || !$this->personal_account_creation_ready()) {
-			return array('status' => 'error', 'message' => 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
+		$password = (string) ($account['plain_password'] ?? '');
+		unset($account['plain_password']);
+		if ($staff_id < 1
+			|| $username === ''
+			|| strlen($username) < 3
+			|| strlen($username) > 100
+			|| !preg_match('/^[A-Za-z0-9._-]+$/', $username)
+			|| $email === ''
+			|| strlen($email) > 100
+			|| !filter_var($email, FILTER_VALIDATE_EMAIL)
+			|| strlen($password) < 8
+			|| !$this->personal_account_creation_ready()) {
+			return array('status' => 'error', 'message' => 'Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
 		}
 
+		$lock_name = 'doclinc_staff_personal_account_create';
 		$db_debug = $this->db->db_debug;
 		$this->db->db_debug = false;
-		if (!$this->db->trans_begin()) {
+		try {
+			$lock_query = $this->db->query('SELECT GET_LOCK(?, 5) AS acquired', array($lock_name));
+		} catch (Throwable $e) {
+			$lock_query = false;
+		}
+		$lock_row = $lock_query ? $lock_query->row() : null;
+		$lock_acquired = $lock_row
+			&& isset($lock_row->acquired)
+			&& ($lock_row->acquired === 1 || $lock_row->acquired === '1');
+		if (!$lock_acquired) {
 			$this->db->db_debug = $db_debug;
-			return array('status' => 'error', 'message' => 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
-		}
-		$staff_query = $this->db->query(
-			'SELECT * FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE staff_id = ? FOR UPDATE',
-			array($staff_id)
-		);
-		if (!$staff_query) {
-			return $this->rollback_account_creation($db_debug, 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
+			return array('status' => 'error', 'message' => 'Proses pembuatan akun sedang digunakan. Silakan coba kembali.');
 		}
 
-		$staff = $staff_query->row();
-		if (!$staff) {
-			return $this->rollback_account_creation($db_debug, 'Staff tidak ditemukan.');
-		}
-		if ((int) ($staff->user_id ?? 0) > 0) {
-			return $this->rollback_account_creation($db_debug, 'Staff sudah terhubung ke akun login.');
-		}
-		if (($staff->status ?? '') !== 'aktif') {
-			return $this->rollback_account_creation($db_debug, 'Staff harus aktif sebelum dibuatkan akun.');
-		}
-		$kode_pkm = trim((string) ($staff->kode_pkm ?? ''));
-		if (!$this->puskesmas_is_active($kode_pkm)) {
-			return $this->rollback_account_creation($db_debug, 'Puskesmas staff tidak valid.');
-		}
-		if ($this->username_exists($username)) {
-			return $this->rollback_account_creation($db_debug, 'Username sudah digunakan.');
-		}
-		if ($this->email_exists($email)) {
-			return $this->rollback_account_creation($db_debug, 'Email sudah digunakan.');
-		}
+		$result = array('status' => 'error', 'message' => 'Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
+		$transaction_started = false;
+		$abort = function ($message) use (&$result) {
+			$result = array('status' => 'error', 'message' => $message);
+			throw new RuntimeException('personal_account_creation_aborted');
+		};
 
-		$now = date('Y-m-d H:i:s');
-		$user_row = array(
-			'nama' => $nama,
-			'email' => $email,
-			'username' => $username,
-			'password' => $password_hash,
-			'role' => 'dokter',
-			'status' => 'nonaktif',
-			'remark' => $kode_pkm,
-		);
-		if ($this->db->field_exists('created_at', 'users')) {
-			$user_row['created_at'] = $now;
-		}
-		if ($this->db->field_exists('updated_at', 'users')) {
-			$user_row['updated_at'] = $now;
-		}
-		if ($this->db->field_exists('updated_by', 'users')) {
-			$user_row['updated_by'] = trim((string) ($account['updated_by'] ?? ''));
-		}
-		if (!$this->db->insert('users', $user_row)) {
-			return $this->rollback_account_creation($db_debug, 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
-		}
+		try {
+			if (!$this->db->trans_begin()) {
+				$abort('Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
+			}
+			$transaction_started = true;
 
-		$user_id = (int) $this->db->insert_id();
-		if ($user_id < 1) {
-			return $this->rollback_account_creation($db_debug, 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
-		}
+			$staff_query = $this->db->query(
+				'SELECT * FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE staff_id = ? FOR UPDATE',
+				array($staff_id)
+			);
+			if (!$staff_query) {
+				$abort('Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
+			}
 
-		$staff_update = array('user_id' => $user_id);
-		if ($this->db->field_exists('updated_at', 'puskesmas_staff')) {
-			$staff_update['updated_at'] = $now;
-		}
-		$admin_id = $this->current_admin_id();
-		if ($admin_id !== null && $this->db->field_exists('updated_by_user_id', 'puskesmas_staff')) {
-			$staff_update['updated_by_user_id'] = $admin_id;
-		}
-		$link_succeeded = $this->db
-			->where('staff_id', $staff_id)
-			->where('user_id IS NULL', null, false)
-			->update('puskesmas_staff', $staff_update);
-		if (!$link_succeeded || $this->db->affected_rows() !== 1 || $this->db->trans_status() === false) {
-			return $this->rollback_account_creation($db_debug, 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
-		}
+			$staff = $staff_query->row();
+			if (!$staff) {
+				$abort('Staff tidak ditemukan.');
+			}
+			if ((int) ($staff->user_id ?? 0) > 0) {
+				$abort('Staff sudah terhubung ke akun login.');
+			}
+			if (($staff->status ?? '') !== 'aktif') {
+				$abort('Staff harus aktif sebelum dibuatkan akun.');
+			}
+			$staff_name = trim((string) ($staff->nama ?? ''));
+			if ($staff_name === '' || strlen($staff_name) > 100) {
+				$abort('Nama Staff tidak valid untuk digunakan sebagai nama akun.');
+			}
+			$kode_pkm = trim((string) ($staff->kode_pkm ?? ''));
+			if (!$this->puskesmas_is_active($kode_pkm)) {
+				$abort('Puskesmas staff tidak valid atau tidak aktif.');
+			}
 
-		if (!$this->db->trans_commit()) {
-			$this->db->trans_rollback();
+			$command_center_user_id = $this->get_command_center_user_id($kode_pkm);
+			if ($command_center_user_id < 1) {
+				$abort('Akun command center Puskesmas belum tersedia.');
+			}
+			$command_center_query = $this->db->query(
+				'SELECT userId FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ? AND role = ? AND TRIM(remark) = ? AND status = ? FOR UPDATE',
+				array($command_center_user_id, 'dokter', $kode_pkm, 'aktif')
+			);
+			if (!$command_center_query || !$command_center_query->row()) {
+				$abort('Akun command center Puskesmas belum tersedia.');
+			}
+			if ($this->command_center_linked_to_staff($command_center_user_id, true)) {
+				$abort('Akun command center Puskesmas terhubung ke data Staff. Periksa data lama sebelum membuat akun personal.');
+			}
+
+			$duplicate_query = $this->db->query(
+				'SELECT username, email FROM ' . $this->db->dbprefix('users') . ' WHERE LOWER(TRIM(username)) = ? OR LOWER(TRIM(email)) = ? FOR UPDATE',
+				array(strtolower($username), strtolower($email))
+			);
+			if (!$duplicate_query) {
+				$abort('Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
+			}
+			foreach ($duplicate_query->result() as $existing_user) {
+				if (strtolower(trim((string) $existing_user->username)) === strtolower($username)) {
+					$abort('Username sudah digunakan.');
+				}
+				if (strtolower(trim((string) $existing_user->email)) === strtolower($email)) {
+					$abort('Email sudah digunakan.');
+				}
+			}
+
+			if (!function_exists('doclinc_password_hash')) {
+				$this->load->helper('password_compat');
+			}
+			$password_hash = function_exists('doclinc_password_hash') ? doclinc_password_hash($password) : false;
+			$password = null;
+			if (!$password_hash) {
+				$abort('Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
+			}
+
+			$now = date('Y-m-d H:i:s');
+			$user_row = array(
+				'nama' => $staff_name,
+				'email' => $email,
+				'username' => $username,
+				'password' => $password_hash,
+				'role' => 'dokter',
+				'status' => 'aktif',
+				'remark' => $kode_pkm,
+			);
+			if ($this->db->field_exists('created_at', 'users')) {
+				$user_row['created_at'] = $now;
+			}
+			if ($this->db->field_exists('updated_at', 'users')) {
+				$user_row['updated_at'] = $now;
+			}
+			if ($this->db->field_exists('updated_by', 'users')) {
+				$user_row['updated_by'] = trim((string) ($account['updated_by'] ?? ''));
+			}
+			if (!$this->db->insert('users', $user_row)) {
+				$abort('Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
+			}
+
+			$user_id = (int) $this->db->insert_id();
+			if ($user_id < 1) {
+				$abort('Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
+			}
+
+			$staff_update = array('user_id' => $user_id);
+			if ($this->db->field_exists('updated_at', 'puskesmas_staff')) {
+				$staff_update['updated_at'] = $now;
+			}
+			$admin_id = $this->current_admin_id();
+			if ($admin_id !== null && $this->db->field_exists('updated_by_user_id', 'puskesmas_staff')) {
+				$staff_update['updated_by_user_id'] = $admin_id;
+			}
+			$link_succeeded = $this->db
+				->where('staff_id', $staff_id)
+				->group_start()
+					->where('user_id IS NULL', null, false)
+					->or_where('user_id', 0)
+				->group_end()
+				->update('puskesmas_staff', $staff_update);
+			if (!$link_succeeded || $this->db->affected_rows() !== 1 || $this->db->trans_status() === false) {
+				$abort('Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
+			}
+
+			if (!$this->db->trans_commit()) {
+				$this->db->trans_rollback();
+				$transaction_started = false;
+				$abort('Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
+			}
+			$transaction_started = false;
+			$result = array(
+				'status' => 'success',
+				'message' => 'Akun personal dengan username ' . $username . ' berhasil dibuat dan dihubungkan.',
+			);
+		} catch (RuntimeException $e) {
+			if ($e->getMessage() !== 'personal_account_creation_aborted') {
+				$result = array('status' => 'error', 'message' => 'Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
+			}
+		} catch (Throwable $e) {
+			$result = array('status' => 'error', 'message' => 'Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
+		} finally {
+			if ($transaction_started) {
+				$this->db->trans_rollback();
+			}
+			try {
+				$this->db->query('SELECT RELEASE_LOCK(?) AS released', array($lock_name));
+			} catch (Throwable $e) {
+				// The account operation is not retried when lock cleanup reports a failure.
+			}
 			$this->db->db_debug = $db_debug;
-			return array('status' => 'error', 'message' => 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
 		}
-		$this->db->db_debug = $db_debug;
-		return array(
-			'status' => 'success',
-			'message' => 'Akun personal berhasil dibuat dan dihubungkan. Akun masih nonaktif dan belum dapat digunakan untuk login.',
-		);
+
+		return $result;
 	}
 
 	public function get_command_center_user_id($kode_pkm)
@@ -477,6 +602,22 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		return $this->db->count_all_results('puskesmas_staff') > 0;
 	}
 
+	private function command_center_linked_to_staff($user_id, $lock_rows = false)
+	{
+		$user_id = (int) $user_id;
+		if ($user_id < 1 || !$this->table_ready()) {
+			return false;
+		}
+
+		$sql = 'SELECT staff_id FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE user_id = ?';
+		if ($lock_rows) {
+			$sql .= ' FOR UPDATE';
+		}
+		$query = $this->db->query($sql, array($user_id));
+
+		return $query && $query->num_rows() > 0;
+	}
+
 	private function get_linked_active_user_ids($exclude_staff_id = null)
 	{
 		if (!$this->table_ready()) {
@@ -516,13 +657,6 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		return $this->db
 			->where('LOWER(TRIM(' . $field . ')) =', $value)
 			->count_all_results('users') > 0;
-	}
-
-	private function rollback_account_creation($db_debug, $message)
-	{
-		$this->db->trans_rollback();
-		$this->db->db_debug = $db_debug;
-		return array('status' => 'error', 'message' => $message);
 	}
 
 	private function filter_staff_payload($data)
