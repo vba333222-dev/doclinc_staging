@@ -32,7 +32,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 	<meta name="msapplication-TileColor" content="#ffffff">
 	<meta name="msapplication-TileImage" content="<?php echo base_url(); ?>assets/img/ms-icon-144x144.png">
 	<meta name="theme-color" content="#ffffff">
-	<title>Admin Doclinc</title>
+	<title>Admin DocLink</title>
 	<script>
 		(function() {
 			var storedTheme = null;
@@ -64,9 +64,9 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 				<div class="card border-0 shadow-lg rounded-4 animate__animated animate__fadeInDown doclinc-login-card">
 					<div class="card-body p-5">
 						<div class="text-center mb-4">
-							<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="Doclinc" class="doclinc-login-logo">
-							<h1 class="h4 text-primary font-weight-bold mb-2">Selamat Datang di Admin Doclinc</h1>
-							<p class="text-muted mb-0">Silakan login untuk mengakses sistem administrasi Doclinc</p>
+							<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="DocLink" class="doclinc-login-logo">
+							<h1 class="h4 text-primary font-weight-bold mb-2">Masuk ke Admin DocLink</h1>
+							<p class="text-muted mb-0">Silakan login untuk mengakses sistem administrasi DocLink</p>
 						</div>
 						<div class="info text-center mb-3">
 							<?php echo $this->session->flashdata('info'); ?>
@@ -104,7 +104,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 					</div>
 				</div>
 				<div class="text-center mt-4">
-					<small class="text-muted">Copyright © Doclinc <?php echo date('Y'); ?></small>
+					<small class="text-muted">Copyright © DocLink <?php echo date('Y'); ?></small>
 				</div>
 			</div>
 		</div>

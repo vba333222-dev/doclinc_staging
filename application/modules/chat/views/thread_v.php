@@ -933,7 +933,7 @@ if ($current_role === 'dokter') {
 	<?php if ($can_receive_call) : ?>
 		<div class="doclinc-incoming-call is-hidden" id="doclincIncomingCall" aria-live="polite">
 			<p class="doclinc-incoming-kicker">Panggilan masuk</p>
-			<p class="doclinc-incoming-name" id="doclincIncomingCaller">Nakes Doclinc</p>
+			<p class="doclinc-incoming-name" id="doclincIncomingCaller">Nakes DocLink</p>
 			<p class="doclinc-incoming-type" id="doclincIncomingType">Panggilan video</p>
 			<div class="doclinc-incoming-actions">
 				<button type="button" class="doclinc-incoming-action reject" id="doclincIncomingReject">Tolak</button>
@@ -1571,7 +1571,7 @@ if ($current_role === 'dokter') {
 					state.callId = call.call_id;
 					state.mode = call.call_type === 'audio' ? 'audio' : 'video';
 					if (elements.incomingCaller) {
-						elements.incomingCaller.textContent = call.caller_name || 'Nakes Doclinc';
+						elements.incomingCaller.textContent = call.caller_name || 'Nakes DocLink';
 					}
 					if (elements.incomingType) {
 						elements.incomingType.textContent = callTypeLabel(call.call_type);

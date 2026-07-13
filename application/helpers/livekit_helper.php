@@ -181,7 +181,7 @@ if (!function_exists('doclinc_livekit_current_user_name')) {
 			}
 		}
 
-		return 'Doclinc User';
+		return 'Pengguna DocLink';
 	}
 }
 

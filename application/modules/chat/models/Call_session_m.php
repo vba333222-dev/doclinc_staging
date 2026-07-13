@@ -379,7 +379,7 @@ class Call_session_m extends CI_Model
 			'call_type' => $call->call_type,
 			'room' => $call->room_name,
 			'status' => $call->status,
-			'caller_name' => $caller_name !== '' ? $caller_name : 'Nakes Doclinc',
+			'caller_name' => $caller_name !== '' ? $caller_name : 'Nakes DocLink',
 		);
 	}
 
