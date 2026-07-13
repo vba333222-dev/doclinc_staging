@@ -310,11 +310,11 @@ class Home extends MX_Controller
 		}
 
 		if ($request->request_status !== 'Pending') {
-			$this->output->set_status_header(409)->set_output(json_encode(['status' => 'error', 'message' => 'Request sudah diproses dan tidak dapat diedit.']));
+			$this->output->set_status_header(409)->set_output(json_encode(['status' => 'error', 'message' => 'Hanya dapat diubah sebelum diterima.']));
 			return;
 		}
 		if ($this->Home_m->request_has_processing_assignment($request)) {
-			$this->output->set_status_header(409)->set_output(json_encode(['status' => 'error', 'message' => 'Request sudah diproses dan tidak dapat diedit.']));
+			$this->output->set_status_header(409)->set_output(json_encode(['status' => 'error', 'message' => 'Hanya dapat diubah sebelum diterima.']));
 			return;
 		}
 
@@ -338,7 +338,7 @@ class Home extends MX_Controller
 		$this->load->library('encryption');
 		$encrypted_keluhan = $this->encryption->encrypt($keluhan);
 		if ($encrypted_keluhan === false) {
-			$this->output->set_status_header(500)->set_output(json_encode(['status' => 'error', 'message' => 'Request belum dapat diperbarui.']));
+			$this->output->set_status_header(500)->set_output(json_encode(['status' => 'error', 'message' => 'Permintaan belum dapat diubah.']));
 			return;
 		}
 
@@ -350,12 +350,12 @@ class Home extends MX_Controller
 		);
 
 		if ($this->Home_m->updateRequestById($id, $user_id, $payload)) {
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Request konsultasi berhasil diperbarui.']));
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Permintaan berhasil diubah.']));
 			return;
 		}
 
 		$this->output->set_status_header(409);
-		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Request sudah diproses dan tidak dapat diedit.']));
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Hanya dapat diubah sebelum diterima.']));
 	}
 
 	private function sanitize_gejala_keluhan_choice($value)
@@ -396,7 +396,7 @@ class Home extends MX_Controller
 			return;
 		}
 		if ($this->Home_m->deleteRequestById($id)) {
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Data berhasil dihapus']));
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Permintaan dihapus.']));
 			return;
 		}
 
@@ -431,7 +431,7 @@ class Home extends MX_Controller
 			}
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak dapat dibatalkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Permintaan tidak dapat dibatalkan.']));
 			return;
 		}
 
@@ -455,7 +455,7 @@ class Home extends MX_Controller
 
 		$this->output->set_output(json_encode([
 			'status' => 'success',
-			'message' => 'Request berhasil dibatalkan',
+			'message' => 'Permintaan dibatalkan.',
 			'request_id' => $request_id,
 			'request_status' => 'Cancelled'
 		]));
@@ -479,7 +479,7 @@ class Home extends MX_Controller
 		if ($request_id < 1) {
 			$this->output
 				->set_status_header(400)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Data request tidak valid', 'route' => $default_route, 'arrival' => $default_arrival]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Permintaan tidak valid.', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 		if ($role !== 'warga') {
@@ -493,7 +493,7 @@ class Home extends MX_Controller
 		if (!$request) {
 			$this->output
 				->set_status_header(404)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Request tidak ditemukan', 'route' => $default_route, 'arrival' => $default_arrival]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Permintaan tidak ditemukan.', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 		if ((string) $request->user_id !== (string) $user_id) {
@@ -514,7 +514,7 @@ class Home extends MX_Controller
 				'status' => 'inactive',
 				'success' => false,
 				'tracking_active' => false,
-				'message' => 'Tracking kunjungan sudah selesai.',
+				'message' => 'Pelacakan kunjungan selesai.',
 				'request_id' => $request_id,
 				'request_status' => $request->request_status,
 				'visit_status' => $terminal_visit_status,
@@ -627,7 +627,7 @@ class Home extends MX_Controller
 				'status' => 'pending',
 				'success' => true,
 				'tracking_active' => true,
-				'message' => 'Lokasi nakes belum tersedia',
+				'message' => 'Lokasi Nakes belum tersedia.',
 			], $visit_workflow, $location_payload)));
 			return;
 		}
@@ -636,7 +636,7 @@ class Home extends MX_Controller
 			'status' => 'success',
 			'success' => true,
 			'tracking_active' => true,
-			'message' => 'Lokasi nakes tersedia',
+			'message' => 'Lokasi Nakes tersedia.',
 		], $visit_workflow, $location_payload)));
 	}
 
@@ -652,9 +652,9 @@ class Home extends MX_Controller
 		$result = $this->Home_m->submit_rating($iduser, $iddokter, $rating);
 
 		if ($result) {
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Rating berhasil dikirim']));
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Penilaian dikirim.']));
 		} else {
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Gagal mengirim rating']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Penilaian belum terkirim.']));
 		}
 	}
 

@@ -273,7 +273,7 @@ class Home_m extends MX_Controller
 			try {
 				$row->request_description = $CI->encryption->decrypt(base64_decode($row->request_description));
 			} catch (Exception $e) {
-				$row->request_description = 'Keluhan tersimpan';
+				$row->request_description = 'Detail keluhan belum tersedia.';
 			}
 		}
 		$this->decorate_warga_visit_display($hasil);
@@ -286,18 +286,18 @@ class Home_m extends MX_Controller
 		$raw_status = strtolower(trim((string) $status));
 		$status = function_exists('doclinc_normalize_visit_status') ? doclinc_normalize_visit_status($status) : $raw_status;
 		if ($raw_status !== '' && $status === '') {
-			return 'Status layanan diperbarui';
+			return 'Status belum tersedia';
 		}
 		$status = $status !== '' ? $status : 'not_started';
 		$labels = array(
-			'not_started' => 'Menunggu proses layanan',
-			'en_route' => 'Nakes sedang menuju lokasi',
-			'arrived' => 'Nakes tiba di lokasi',
-			'in_service' => 'Pemeriksaan sedang berlangsung',
-			'completed' => 'Layanan selesai',
+			'not_started' => 'Kunjungan belum dimulai',
+			'en_route' => 'Nakes menuju lokasi',
+			'arrived' => 'Nakes telah tiba',
+			'in_service' => 'Sedang ditangani',
+			'completed' => 'Selesai',
 		);
 
-		return isset($labels[$status]) ? $labels[$status] : 'Status layanan diperbarui';
+		return isset($labels[$status]) ? $labels[$status] : 'Status belum tersedia';
 	}
 
 	public function get_warga_visit_timeline($request_id, $request = null)
@@ -308,11 +308,11 @@ class Home_m extends MX_Controller
 		}
 
 		$event_labels = array(
-			'request_accepted' => 'Request diterima',
-			'visit_started' => 'Nakes sedang menuju lokasi',
-			'visit_arrived' => 'Nakes tiba di lokasi',
-			'visit_in_service' => 'Pemeriksaan sedang berlangsung',
-			'visit_completed' => 'Layanan selesai',
+			'request_accepted' => 'Diterima',
+			'visit_started' => 'Nakes menuju lokasi',
+			'visit_arrived' => 'Nakes telah tiba',
+			'visit_in_service' => 'Sedang ditangani',
+			'visit_completed' => 'Selesai',
 		);
 
 		$timeline = array();
@@ -345,10 +345,10 @@ class Home_m extends MX_Controller
 		$current_status = isset($request->visit_status) ? $this->warga_normalize_visit_status($request->visit_status) : 'not_started';
 		$status_order = array('not_started' => 0, 'en_route' => 1, 'arrived' => 2, 'in_service' => 3, 'completed' => 4);
 		$fallback_steps = array(
-			array('status' => 'en_route', 'label' => 'Nakes sedang menuju lokasi', 'field' => 'visit_started_at'),
-			array('status' => 'arrived', 'label' => 'Nakes tiba di lokasi', 'field' => 'visit_arrived_at'),
-			array('status' => 'in_service', 'label' => 'Pemeriksaan sedang berlangsung', 'field' => 'visit_in_service_at'),
-			array('status' => 'completed', 'label' => 'Layanan selesai', 'field' => 'visit_completed_at'),
+			array('status' => 'en_route', 'label' => 'Nakes menuju lokasi', 'field' => 'visit_started_at'),
+			array('status' => 'arrived', 'label' => 'Nakes telah tiba', 'field' => 'visit_arrived_at'),
+			array('status' => 'in_service', 'label' => 'Sedang ditangani', 'field' => 'visit_in_service_at'),
+			array('status' => 'completed', 'label' => 'Selesai', 'field' => 'visit_completed_at'),
 		);
 
 		foreach ($fallback_steps as $step) {
@@ -393,19 +393,19 @@ class Home_m extends MX_Controller
 
 		$request_status = trim((string) $request_status);
 		if ($request_status === 'Pending') {
-			return 'Menunggu diterima Puskesmas';
+			return 'Menunggu konfirmasi Puskesmas';
 		}
 		if ($request_status === 'Accepted') {
-			return 'Request diterima';
+			return 'Diterima';
 		}
 		if ($request_status === 'Completed') {
-			return 'Layanan selesai';
+			return 'Selesai';
 		}
 		if ($request_status === 'Cancelled') {
-			return 'Request dibatalkan';
+			return 'Dibatalkan';
 		}
 
-		return 'Status layanan diperbarui';
+		return 'Status belum tersedia';
 	}
 
 	public function get_warga_pic_assignment($request_id)
