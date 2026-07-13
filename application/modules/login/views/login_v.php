@@ -23,8 +23,8 @@
 						<!-- Form Login Modern -->
 						<form id="loginForm">
 							<div class="form-group mb-3 position-relative">
-								<label for="username" class="sr-only">Username</label>
-								<input type="text" class="form-control form-control-lg ps-5" id="username" placeholder="Username" style="border-radius: 10px;" required>
+								<label for="username" class="sr-only">Nama pengguna</label>
+								<input type="text" class="form-control form-control-lg ps-5" id="username" placeholder="Nama pengguna" style="border-radius: 10px;" required>
 								<i class="fas fa-user position-absolute" style="top: 50%; left: 15px; transform: translateY(-50%); color: #00796b;"></i>
 							</div>
 
@@ -35,7 +35,7 @@
 							</div>
 
 							<div class="d-grid gap-2 mb-3">
-								<button type="submit" class="btn btn-success btn-lg" style="background-color: #09AD74; border-radius: 10px;">Login</button>
+								<button type="submit" class="btn btn-success btn-lg" style="background-color: #09AD74; border-radius: 10px;">Masuk</button>
 							</div>
 						</form>
 						<hr>

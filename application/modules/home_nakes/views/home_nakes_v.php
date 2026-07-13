@@ -166,7 +166,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			<div class="modal-content">
 				<div class="modal-header nk-profile-modal__header">
 					<h5 class="modal-title" id="modalProfilLabel"><span><i class="bi bi-pencil-fill"></i></span>Edit profil</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 				<form id="formEditProfile" enctype="multipart/form-data">
 					<div class="modal-body nk-profile-modal__body">
@@ -217,7 +217,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				<span class="offcanvas-title" id="offcanvasNotifLabel">Pusat notifikasi</span>
 				<span class="badge text-bg-danger nk-notification-badge" id="badgeNotifs" style="display: none;"></span>
 			</div>
-			<button type="button" class="btn-close nk-notification-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+			<button type="button" class="btn-close nk-notification-close" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
 		</div>
 		<div class="offcanvas-body nk-notification-body">
 			<div id="notificationList" class="notification-list nk-notification-list"></div>
@@ -228,7 +228,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			<h5 class="offcanvas-title d-flex align-items-center" id="offcanvasMapTujuanLabel">
 				<i class="bi bi-geo-alt-fill me-2 fs-4"></i>Rute Anda ke Pasien
 			</h5>
-			<button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+			<button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
 		</div>
 		<div class="offcanvas-body p-0">
 			<div id="maps" class="w-100 h-100 position-relative">
@@ -282,7 +282,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			<div class="modal-content">
 				<div class="modal-header">
 					<h1 class="modal-title fs-5" id="modalProfilLabel">Chat with Patient</h1>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 
 				<div class="modal-body">
@@ -314,7 +314,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					<div class="modal-content">
 						<div class="modal-header">
 							<h5 class="modal-title" id="fotoModalLabel_<?php echo $x->user_id; ?>">Pratinjau foto</h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 						</div>
 						<div class="modal-body text-center">
 							<img src="<?php echo html_escape(base_url('uploads/' . rawurlencode($photo_file))); ?>" alt="Foto" class="img-fluid rounded border">
@@ -331,7 +331,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					<div class="modal-content">
 						<div class="modal-header">
 							<h5 class="modal-title" id="videoModalLabel_<?php echo $x->user_id; ?>">Pratinjau video</h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 						</div>
 						<div class="modal-body text-center">
 							<video controls width="100%" class="rounded border">
@@ -499,17 +499,16 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 		$('#btn-logout').click(function(event) {
 			Swal.fire({
-				title: "Logout?",
-				text: "Kamu yakin ingin keluar?",
+				title: "Keluar dari akun?",
+				text: "Anda perlu masuk kembali untuk menggunakan akun.",
 				icon: "warning",
 				showCancelButton: true,
-				confirmButtonText: "Ya",
+				confirmButtonText: "Keluar",
 				confirmButtonColor: "#09AD74",
-				cancelButtonText: "Tidak"
+				cancelButtonText: "Batal"
 			}).then((result) => {
 				if (result.isConfirmed) {
 					Swal.fire({
-						title: "See you!",
 						icon: "success",
 						showConfirmButton: false,
 						timer: 1500,

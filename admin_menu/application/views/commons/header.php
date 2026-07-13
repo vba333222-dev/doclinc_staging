@@ -85,7 +85,7 @@
 			<li class="nav-item <?= $doclinc_active_konsultasi; ?>">
 				<a class="nav-link" href="<?php echo site_url('konsultasi_kesehatan'); ?>">
 					<i class="fas fa-stethoscope"></i>
-					<span>Monitoring Konsultasi</span>
+					<span>Pantau konsultasi</span>
 				</a>
 			</li>
 
@@ -93,7 +93,7 @@
 			<li class="nav-item <?= $doclinc_active_master_puskesmas; ?>">
 				<a class="nav-link" href="<?php echo site_url('master_puskesmas'); ?>">
 					<i class="fas fa-hospital"></i>
-					<span>Master Puskesmas</span>
+					<span>Data Puskesmas</span>
 				</a>
 			</li>
 
@@ -107,15 +107,15 @@
 			<li class="nav-item <?= $doclinc_active_staff_puskesmas; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_staff_puskesmas'); ?>">
 					<i class="fas fa-users-cog"></i>
-					<span>Staff Puskesmas</span>
+					<span>Staf Puskesmas</span>
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Master Data</div>
+			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Data</div>
 			<li class="nav-item <?= $doclinc_active_keluhan; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_keluhan'); ?>">
 					<i class="fas fa-comments"></i>
-					<span>Master Keluhan</span>
+					<span>Data keluhan</span>
 				</a>
 			</li>
 
@@ -123,7 +123,7 @@
 			<li class="nav-item <?= $doclinc_active_rekam_medis; ?>">
 				<a class="nav-link" href="<?php echo site_url('rekam_medis'); ?>">
 					<i class="fas fa-notes-medical"></i>
-					<span>Rekam Medis</span>
+					<span>Rekam medis</span>
 				</a>
 			</li>
 
@@ -138,7 +138,7 @@
 			<li class="nav-item <?= $doclinc_active_news; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_news_feed'); ?>">
 					<i class="fas fa-newspaper"></i>
-					<span>News & Feed</span>
+					<span>Berita</span>
 				</a>
 			</li>
 
@@ -193,16 +193,16 @@
 							<div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
 								<a class="dropdown-item" href="#">
 									<i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-									Profile
+									Profil
 								</a>
 								<a class="dropdown-item" href="#">
 									<i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-									Settings
+									Pengaturan
 								</a>
 								<div class="dropdown-divider"></div>
 								<a class="dropdown-item" href="<?php echo site_url('login/logout'); ?>">
 									<i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-									Logout
+									Keluar
 								</a>
 							</div>
 						</li>
@@ -258,7 +258,7 @@
 
 								var html = '';
 								$.each(events, function(index, event) {
-									var requestId = event.request_id ? '#REQ-' + escapeHtml(event.request_id) : 'Request';
+									var requestId = event.request_id ? '#REQ-' + escapeHtml(event.request_id) : 'Permintaan';
 									var puskesmas = event.puskesmas ? '<span class="doclinc-notification-puskesmas">' + escapeHtml(event.puskesmas) + '</span>' : '';
 									var message = event.message ? '<div class="doclinc-notification-message">' + escapeHtml(event.message) + '</div>' : '';
 									html += '<div class="dropdown-item doclinc-notification-item">'

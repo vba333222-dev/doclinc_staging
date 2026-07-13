@@ -57,8 +57,8 @@
 	    	
 	    	$this->Login_m->verification($decode_email);
 	    	$info = '<div class="alert alert-success alert-dismissible fade show shadow border border-success animated fadeInDown" style="z-index:auto;" role="alert">
-	                    <strong> Selamat datang!</strong> Silahkan Login.
-	                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+	                    <strong>Selamat datang!</strong> Silakan masuk.
+	                    <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 	                        <span aria-hidden="true">&times;</span>
 	                    </button>
 	                </div>';
@@ -83,8 +83,8 @@
 	    	$this->send_mail($email,$randomString);
 
 	    	$info = '<div class="alert alert-success alert-dismissible fade show shadow border border-success animated fadeInDown" style="z-index:auto;" role="alert">
-	                    <strong>Berhasil!</strong> Kamu baru saja me-reset password, silakan cek email kamu.<br>Note : Jika email tidak ada pada kotak masuk, mohon dilihat pada SPAM.
-	                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+	                    <strong>Password baru dikirim ke email Anda.</strong>
+	                    <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 	                        <span aria-hidden="true">&times;</span>
 	                    </button>
 	                </div>';
