@@ -137,12 +137,11 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return;
 		}
 		if (!$this->Kelola_staff_puskesmas_m->personal_account_creation_ready()) {
-			$this->personal_account_flash('Akun gagal dibuat. Tidak ada perubahan yang disimpan.');
+			$this->personal_account_flash('Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
 			return;
 		}
 
 		$staff_id = (int) $this->input->post('staff_id');
-		$nama = trim((string) $this->input->post('nama', TRUE));
 		$username = trim((string) $this->input->post('username', TRUE));
 		$email = trim((string) $this->input->post('email', TRUE));
 		$password = (string) $this->input->post('password');
@@ -165,8 +164,9 @@ class Kelola_staff_puskesmas extends MX_Controller
 			$this->personal_account_flash('Puskesmas staff tidak valid.');
 			return;
 		}
-		if ($nama === '' || strlen($nama) > 100) {
-			$this->personal_account_flash('Nama akun wajib diisi dan maksimal 100 karakter.');
+		$eligibility = $this->Kelola_staff_puskesmas_m->get_personal_account_creation_eligibility($staff);
+		if (empty($eligibility['eligible'])) {
+			$this->personal_account_flash(!empty($eligibility['message']) ? $eligibility['message'] : 'Staff belum memenuhi syarat pembuatan akun personal.');
 			return;
 		}
 		if ($username === '' || strlen($username) < 3 || strlen($username) > 100 || !preg_match('/^[A-Za-z0-9._-]+$/', $username)) {
@@ -185,28 +185,18 @@ class Kelola_staff_puskesmas extends MX_Controller
 			$this->personal_account_flash('Konfirmasi password tidak cocok.');
 			return;
 		}
-		if ($this->Kelola_staff_puskesmas_m->username_exists($username)) {
-			$this->personal_account_flash('Username sudah digunakan.');
-			return;
-		}
-		if ($this->Kelola_staff_puskesmas_m->email_exists($email)) {
-			$this->personal_account_flash('Email sudah digunakan.');
-			return;
-		}
-
 		$this->load->helper('password_compat');
 		$result = $this->Kelola_staff_puskesmas_m->create_and_link_personal_account($staff_id, array(
-			'nama' => $nama,
 			'username' => $username,
 			'email' => $email,
-			'password' => doclinc_password_hash($password),
+			'plain_password' => $password,
 			'updated_by' => (string) $this->session->userdata('username'),
 		));
 
 		$is_success = !empty($result['status']) && $result['status'] === 'success';
 		$this->session->set_flashdata(
 			$is_success ? 'success' : 'error',
-			!empty($result['message']) ? $result['message'] : 'Akun gagal dibuat. Tidak ada perubahan yang disimpan.'
+			!empty($result['message']) ? $result['message'] : 'Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.'
 		);
 		redirect('kelola_staff_puskesmas', 'refresh');
 	}
@@ -256,6 +246,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			'puskesmas_options' => $this->Kelola_staff_puskesmas_m->get_active_puskesmas_options(),
 			'account_candidates_by_staff' => array(),
 			'command_center_user_ids' => array(),
+			'personal_account_eligibility_by_staff' => array(),
 			'form_mode' => $form_mode,
 			'form_staff' => null,
 		);
@@ -267,6 +258,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 				$kode_pkm = trim((string) ($staff_row->kode_pkm ?? ''));
 				if ($current_staff_id > 0) {
 					$data['account_candidates_by_staff'][$current_staff_id] = $this->Kelola_staff_puskesmas_m->get_eligible_account_candidates($kode_pkm, $current_staff_id);
+					$data['personal_account_eligibility_by_staff'][$current_staff_id] = $this->Kelola_staff_puskesmas_m->get_personal_account_creation_eligibility($staff_row);
 				}
 				if ($kode_pkm !== '' && !array_key_exists($kode_pkm, $data['command_center_user_ids'])) {
 					$data['command_center_user_ids'][$kode_pkm] = $this->Kelola_staff_puskesmas_m->get_command_center_user_id($kode_pkm);
