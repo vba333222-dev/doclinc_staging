@@ -87,7 +87,7 @@
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="modalTambahLabel">Tambah Keluhan</h5>
+				<h5 class="modal-title" id="modalTambahLabel">Tambah keluhan</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -108,7 +108,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
 					<button type="submit" class="btn btn-primary">Simpan</button>
 				</div>
 			</form>
@@ -119,7 +119,7 @@
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="exampleModalLabel">Edit Keluhan</h5>
+				<h5 class="modal-title" id="exampleModalLabel">Ubah keluhan</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -144,7 +144,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
 					<button type="submit" class="btn btn-primary">Simpan</button>
 				</div>
 			</form>
@@ -169,7 +169,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
 					<button type="submit" class="btn btn-primary">Aktifkan</button>
 				</div>
 			</form>
@@ -188,14 +188,14 @@
 			<form action="<?= site_url('kelola_keluhan/delete_keluhan'); ?>" method="POST">
 				<div class="modal-body">
 					<input type="hidden" name="id_keluhan">
-					<p class="text-muted mb-2">Keluhan akan dinonaktifkan sebagai master data, bukan dihapus permanen.</p>
+					<p class="text-muted mb-2">Keluhan tidak lagi tersedia untuk pilihan baru.</p>
 					<div class="form-group">
 						<label for="remark" class="col-form-label">Catatan :</label>
 						<textarea class="form-control" id="remark" name="remark" required></textarea>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
 					<button type="submit" class="btn btn-primary">Nonaktifkan</button>
 				</div>
 			</form>

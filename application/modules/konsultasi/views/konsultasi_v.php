@@ -759,14 +759,14 @@ Lama keluhan:
 		// Validasi waktu
 		if (currentHour >= '16') {
 			Swal.fire({
-				title: 'Peringatan',
-				text: 'Setelah pukul 16.00, hanya konsultasi melalui chat yang tersedia.',
+				title: 'Di luar jam layanan',
+				text: 'Setelah pukul 16.00, kunjungan tidak tersedia.',
 				icon: 'warning',
 				allowOutsideClick: false, // Prevent clicking outside the modal
 				allowEscapeKey: false, // Prevent closing with the escape key
 				showCancelButton: true,
-				confirmButtonText: 'Batal',
-				cancelButtonText: 'Lanjut'
+				confirmButtonText: 'Kembali',
+				cancelButtonText: 'Lanjut mengisi'
 			}).then((result) => {
 				if (result.isConfirmed) {
 					// alihkan ke halaman utama

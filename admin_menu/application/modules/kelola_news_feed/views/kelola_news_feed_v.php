@@ -86,7 +86,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalTambahLabel">Tambah News Feed</h5>
+        <h5 class="modal-title" id="modalTambahLabel">Tambah berita</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -111,7 +111,7 @@
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
             <button type="submit" class="btn btn-primary">Simpan</button>
           </div>
       </form>
@@ -124,7 +124,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalEditLabel">Edit News Feed</h5>
+        <h5 class="modal-title" id="modalEditLabel">Ubah berita</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -150,7 +150,7 @@
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
             <button type="submit" class="btn btn-primary">Perbarui</button>
           </div>
       </form>
@@ -163,7 +163,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalDeleteLabel">Nonaktifkan News Feed</h5>
+        <h5 class="modal-title" id="modalDeleteLabel">Nonaktifkan berita?</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -171,7 +171,7 @@
       <form action="<?= site_url('kelola_news_feed/delete'); ?>" method="POST">
           <div class="modal-body">
               <input type="hidden" name="feedId">
-              <p>News feed akan dinonaktifkan dan tidak dihapus permanen.</p>
+              <p>Berita tidak lagi ditampilkan setelah dinonaktifkan.</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>

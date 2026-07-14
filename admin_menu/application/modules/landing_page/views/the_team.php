@@ -72,7 +72,7 @@
                     data-signature="<?= html_escape($x->signature ?? '');?>" title="Ubah">
                       <i class="far fa-edit fa-fw"></i>
                     </a>           
-                    <form action="<?php echo base_url('landing_page/the_team_delete/'.$x->id.'/'.rawurlencode($x->username));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus team legacy ini dan nonaktifkan akun terkait?');">
+                    <form action="<?php echo base_url('landing_page/the_team_delete/'.$x->id.'/'.rawurlencode($x->username));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus anggota tim? Data tim akan dihapus. Akun terkait akan dinonaktifkan jika ditemukan.');">
                       <button type="submit" class="btn btn-danger tooltip-title" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
                     </form>
                   </div>
@@ -93,7 +93,7 @@
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah Team</h5>
+        <h5 class="modal-title" id="exampleModalLabel">Tambah anggota tim</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -296,7 +296,7 @@
       var signature = button.data('signature'); // Extract info from data-* attributes  
       // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
       var modal = $(this);
-      modal.find('.modal-title').text('Edit Team');
+      modal.find('.modal-title').text('Ubah anggota tim');
       modal.find('.modal-body input#idnya').val(idnya);
       modal.find('.modal-body input#nama_').val(nama);
       modal.find('.modal-body input#jabatan_').val(jabatan);

@@ -955,7 +955,7 @@ if (!function_exists('formatComplaintText')) {
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="terapiModalLabel">Masukkan Terapi</h5>
+					<h5 class="modal-title" id="terapiModalLabel">Tambahkan terapi</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 				<div class="modal-body">

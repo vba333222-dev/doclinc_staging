@@ -45,7 +45,7 @@
                     <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" data-id="<?= $x->id;?>" data-title="<?= $x->title;?>" data-description="<?= $x->description;?>" data-status="<?= $x->status;?>" data-pict="<?= $x->pict;?>" title="Ubah">
                       <i class="far fa-edit fa-fw"></i>
                     </a>           
-                    <form action="<?php echo base_url('landing_page/portofolio_delete/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus portofolio legacy ini?');">
+                    <form action="<?php echo base_url('landing_page/portofolio_delete/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Nonaktifkan portofolio?');">
                       <button type="submit" class="btn btn-danger tooltip-title" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
                     </form>
                   </div>
@@ -66,7 +66,7 @@
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah Portofolio</h5>
+        <h5 class="modal-title" id="exampleModalLabel">Tambah portofolio</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -151,7 +151,7 @@
       var pict = button.data('pict'); // Extract info from data-* attributes 
       // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
       var modal = $(this);
-      modal.find('.modal-title').text('Edit Team');
+      modal.find('.modal-title').text('Ubah portofolio');
       modal.find('.modal-body input#idnya').val(idnya);
       modal.find('.modal-body input#title').val(title);
       modal.find('.modal-body textarea#description').val(description);

@@ -93,7 +93,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Aktifkan?</h5>
+        <h5 class="modal-title">Aktifkan akun?</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -101,14 +101,14 @@
       <form action="<?= site_url('kelola_warga/aktifkan_user'); ?>" method="POST">
           <div class="modal-body">
               <input type="hidden" name="id_user">
-              <p>Anda yakin ingin mengaktifkan akun <span class="font-weight-bold" name="nama_user"></span></p>
+              <p>Akun <span class="font-weight-bold" name="nama_user"></span> dapat digunakan kembali.</p>
               <div class="form-group mb-0">
                 <label for="remark_aktif" class="col-form-label">Catatan :</label>
                 <textarea class="form-control" id="remark_aktif" name="remark_aktif" required></textarea>
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
             <button type="submit" class="btn btn-primary">Aktifkan</button>
           </div>
       </form>
@@ -119,7 +119,7 @@
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Nonaktifkan?</h5>
+        <h5 class="modal-title">Nonaktifkan akun?</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -127,14 +127,14 @@
       <form action="<?= site_url('kelola_warga/nonaktifkan_user'); ?>" method="POST">
           <div class="modal-body">
               <input type="hidden" name="id_user">
-              <p>Anda yakin ingin menonaktifkan akun <span class="font-weight-bold" name="nama_user"></span></p>
+              <p>Akun <span class="font-weight-bold" name="nama_user"></span> tidak dapat digunakan setelah dinonaktifkan.</p>
               <div class="form-group mb-0">
                 <label for="remark_nonaktif" class="col-form-label">Catatan :</label>
                 <textarea class="form-control" id="remark_nonaktif" name="remark_nonaktif" required></textarea>
               </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
             <button type="submit" class="btn btn-primary">Nonaktifkan</button>
           </div>
       </form>

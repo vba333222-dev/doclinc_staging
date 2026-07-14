@@ -36,7 +36,7 @@
         					<span aria-hidden="true">×</span>
         				</button>
         			</div>
-				<div class="modal-body">Anda perlu masuk kembali untuk menggunakan akun.</div>
+				<div class="modal-body">Anda perlu masuk kembali.</div>
         			<div class="modal-footer">
 					<button class="btn btn-secondary" type="button" data-dismiss="modal">Batal</button>
 					<a class="btn btn-primary" href="<?php echo site_url('login/logout'); ?>">Keluar</a>

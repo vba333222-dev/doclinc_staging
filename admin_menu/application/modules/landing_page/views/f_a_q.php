@@ -45,7 +45,7 @@
                     <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" data-id="<?= $x->id;?>" data-question="<?= $x->question;?>" data-answer="<?= $x->answer;?>"  title="Ubah">
                       <i class="far fa-edit fa-fw"></i>
                     </a>
-                    <form action="<?php echo base_url('landing_page/delete_faq/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus FAQ legacy ini?');">
+                    <form action="<?php echo base_url('landing_page/delete_faq/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus FAQ? Data yang dihapus tidak dapat dipulihkan.');">
                       <button type="submit" class="btn btn-danger tooltip-title"><i class="far fa-trash-alt fa-fw"></i></button>
                     </form>
                   </div>
@@ -66,7 +66,7 @@
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah F.A.Q</h5>
+        <h5 class="modal-title" id="exampleModalLabel">Tambah FAQ</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -127,7 +127,7 @@
       var answer = button.data('answer'); // Extract info from data-* attributes 
       // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
       var modal = $(this);
-      modal.find('.modal-title').text('Edit Team');
+      modal.find('.modal-title').text('Ubah FAQ');
       modal.find('.modal-body input#idnya').val(idnya);
       modal.find('.modal-body input#question_').val(question);
       modal.find('.modal-body input#answer_').val(answer); 

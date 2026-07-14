@@ -165,7 +165,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header nk-profile-modal__header">
-					<h5 class="modal-title" id="modalProfilLabel"><span><i class="bi bi-pencil-fill"></i></span>Edit profil</h5>
+					<h5 class="modal-title" id="modalProfilLabel"><span><i class="bi bi-pencil-fill"></i></span>Ubah profil</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 				<form id="formEditProfile" enctype="multipart/form-data">
@@ -281,7 +281,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="modalProfilLabel">Chat with Patient</h1>
+					<h1 class="modal-title fs-5" id="modalProfilLabel">Chat dengan pasien</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 
@@ -500,7 +500,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		$('#btn-logout').click(function(event) {
 			Swal.fire({
 				title: "Keluar dari akun?",
-				text: "Anda perlu masuk kembali untuk menggunakan akun.",
+				text: "Anda perlu masuk kembali.",
 				icon: "warning",
 				showCancelButton: true,
 				confirmButtonText: "Keluar",
@@ -541,11 +541,12 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 
 				Swal.fire({
-					title: "Anda yakin ingin melanjutkan konsultasi?",
+					title: "Terima konsultasi?",
 					showCancelButton: true,
 					confirmButtonText: "Terima konsultasi",
 					confirmButtonColor: "#09AD74",
-					denyButtonText: "Batal"
+					denyButtonText: "Batal",
+					cancelButtonText: "Batal"
 				}).then((result) => {
 					/* Read more about isConfirmed, isDenied below */
 					if (result.isConfirmed) {
@@ -712,8 +713,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			}
 
 			Swal.fire({
-				title: 'Batalkan konsultasi?',
-				text: 'Permintaan konsultasi akan ditandai dibatalkan.',
+				title: 'Batalkan permintaan?',
+				text: 'Permintaan yang dibatalkan tidak dapat dilanjutkan.',
 				icon: 'warning',
 				showCancelButton: true,
 				confirmButtonText: 'Batalkan',
@@ -1801,7 +1802,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			pasien = button.getAttribute('data-pasien');
 			nama_pasien = button.getAttribute('data-nama');
 			const modal = this;
-			modal.querySelector('.modal-title').textContent = `Chat with ${nama_pasien}`;
+			modal.querySelector('.modal-title').textContent = `Chat dengan ${nama_pasien}`;
 			modal.querySelector('#modal-pasien').value = pasien;
 
 			const chatWith = pasien;
