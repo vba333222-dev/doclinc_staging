@@ -107,7 +107,7 @@
 		<?php endif; ?>
 		<?php endif; ?>
 		<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $nakes_primary_active->request_id)); ?>" class="btn btn-success rounded-pill w-100 mt-3 fw-bold">
-			Lanjutkan Penanganan
+			Lanjutkan penanganan
 		</a>
 	<?php else : ?>
 		<?php

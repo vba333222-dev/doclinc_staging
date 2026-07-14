@@ -16,7 +16,7 @@
         Data Partner
       </div>
       <div class="card-body">
-        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNewPartner">+ Tambah Partner</button>
+        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNewPartner">Tambah mitra</button>
         <div class="table-responsive">
           <table class="table table-hover" id="tbl_partner">
             <thead>
@@ -42,7 +42,7 @@
                 <td><?= html_escape($x->modify_date ?? '-');?></td>
                 <td>
                   <div class="btn-group btn-group-sm">
-                    <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" data-id="<?= $x->id;?>" data-logo="<?= $x->logo;?>" data-alt_name="<?= $x->alt_name;?>" title="Edit">
+                    <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" data-id="<?= $x->id;?>" data-logo="<?= $x->logo;?>" data-alt_name="<?= $x->alt_name;?>" title="Ubah">
                       <i class="far fa-edit fa-fw"></i>
                     </a>                    
                     <form action="<?php echo base_url('landing_page/partner_delete/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus partner legacy ini?');">
@@ -67,7 +67,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel1">Tambah Partner</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -92,7 +92,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel"></h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -108,7 +108,7 @@
             <label for="alt_name" class="col-form-label">Alt Name:</label> 
             <input type="text" class="form-control" name="alt_name_edit" id="alt_name_edit" >
           </div>
-          <button type="submit" class="btn btn-default-asoka float-right">Update</button>
+          <button type="submit" class="btn btn-default-asoka float-right">Perbarui</button>
         </form>
       </div>
     </div>

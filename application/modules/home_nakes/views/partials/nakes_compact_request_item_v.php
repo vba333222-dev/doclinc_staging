@@ -48,5 +48,5 @@ foreach (array('foto', 'photo', 'profile_photo', 'profile_image', 'patient_photo
 			<?php endif; ?>
 		</div>
 	</div>
-	<a href="#req_konsul" class="btn btn-outline-success btn-sm rounded-pill fw-bold" onclick="showContent('req_konsul')">Lihat</a>
+	<a href="#req_konsul" class="btn btn-outline-success btn-sm rounded-pill fw-bold" onclick="showContent('req_konsul')">Lihat permintaan</a>
 </div>

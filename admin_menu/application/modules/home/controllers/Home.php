@@ -38,7 +38,7 @@ class Home extends MX_Controller
 		if ($user_query->num_rows() > 0 && doclinc_password_verify($password, (string) $user_query->row()->password)) {
 			$this->Home_m->change_password($email, $new_password);
 			$info = '<div class="alert alert-success alert-dismissible fade show shadow-sm border border-success animate__animated animate__bounceInUp" role="alert">
-		                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+		                    <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 		                        <span aria-hidden="true">&times;</span>
 		                    </button>
 		                    <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -48,7 +48,7 @@ class Home extends MX_Controller
 			$this->session->set_flashdata('info', $info);
 		} else {
 			$info = '<div class="alert alert-danger alert-dismissible fade show shadow-sm border border-danger animate__animated animate__bounceInUp" role="alert">
-		                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+		                    <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 		                        <span aria-hidden="true">&times;</span>
 		                    </button>
 		                    <p class="font-weight-bold mb-0">Gagal!</p>

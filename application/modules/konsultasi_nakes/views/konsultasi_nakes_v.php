@@ -782,7 +782,7 @@ if (!function_exists('formatComplaintText')) {
 				<h2 class="section-heading text-white"><i class="bi bi-chat-dots"></i> Chat Konsultasi</h2>
 				<p class="chat-copy">Lakukan komunikasi awal dengan warga sebelum menentukan Visit atau Non-Visit.</p>
 				<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="chat-button">
-					<i class="bi bi-chat-dots-fill"></i> Chat Konsultasi
+					<i class="bi bi-chat-dots-fill"></i> Buka chat
 				</a>
 			</section>
 
@@ -852,7 +852,7 @@ if (!function_exists('formatComplaintText')) {
 								</div>
 							</div>
 							<button type="button" id="ui_mobile_terapi_add" class="mobile-terapi-add">
-								<i class="bi bi-plus-circle"></i> Tambah Obat
+								<i class="bi bi-plus-circle"></i> Tambah obat
 							</button>
 						</div>
 						<div id="ui_mobile_terapi_list" class="mobile-terapi-list">
@@ -942,7 +942,7 @@ if (!function_exists('formatComplaintText')) {
 			</fieldset>
 			<?php if ($can_handle_request) : ?>
 				<button type="button" class="primary-action shadow-sm" id="save_konsul_nakes">
-					<i class="bi bi-check2-circle"></i> Selesaikan Konsultasi
+					<i class="bi bi-check2-circle"></i> Selesaikan konsultasi
 				</button>
 			<?php endif; ?>
 			</section>
@@ -1327,7 +1327,7 @@ if (!function_exists('formatComplaintText')) {
 					} else {
 						const message = response && response.message ? response.message : "Konsultasi gagal disimpan";
 						Swal.fire("Gagal!", message, "error");
-						$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan Konsultasi');
+						$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan konsultasi');
 					}
 				},
 				error: function(xhr, status, error) {
@@ -1341,7 +1341,7 @@ if (!function_exists('formatComplaintText')) {
 						} catch (e) {}
 					}
 					Swal.fire("Gagal!", message, "error");
-					$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan Konsultasi');
+					$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan konsultasi');
 				}
 			});
 		});

@@ -74,7 +74,7 @@
 			$data = $this->Landing_page_m->update_tagline($tagline);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -99,7 +99,7 @@
 			$data = $this->Landing_page_m->about_update_desc($desc);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -114,7 +114,7 @@
 			$data = $this->Landing_page_m->about_update_visi($visi);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -129,7 +129,7 @@
 			$data = $this->Landing_page_m->about_update_misi($misi);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -149,7 +149,7 @@
 			echo json_encode($data);	
 			
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -183,7 +183,7 @@
 			$data = $this->Landing_page_m->news_events_add($title,$content,$preview,$filename,$status);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -210,7 +210,7 @@
 			$data = $this->Landing_page_m->news_events_update($id,$title,$content,$preview,$filename,$status);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -226,7 +226,7 @@
 			$data = $this->Landing_page_m->news_events_delete($id);
 			echo json_encode($data);
 			$info = '<div class="alert alert-info border-info shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -272,7 +272,7 @@
 			$data = $this->Landing_page_m->service_update($id,$service,$short_desc,$no_wa);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -289,7 +289,7 @@
 			$data = $this->Landing_page_m->service_add_new($service,$short_desc,$no_wa);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -303,7 +303,7 @@
 			$data = $this->Landing_page_m->service_delete($id);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -319,7 +319,7 @@
 			$data = $this->Landing_page_m->service_detail_update($id,$title,$content);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -335,7 +335,7 @@
 			$data = $this->Landing_page_m->service_detail_add_new($id,$title,$content);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -349,7 +349,7 @@
 			$data = $this->Landing_page_m->service_detail_delete($id);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -365,7 +365,7 @@
 			$data = $this->Landing_page_m->service_detail_sub_update($id,$paket,$desc);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -381,7 +381,7 @@
 			$data = $this->Landing_page_m->service_detail_sub_add_new($id,$paket,$desc);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -395,7 +395,7 @@
 			$data = $this->Landing_page_m->service_detail_sub_delete($id);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -413,7 +413,7 @@
 			$data = $this->Landing_page_m->service_harga_update($id,$nama_paket,$harga,$harga2,$exp_diskon);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -432,7 +432,7 @@
 			$data = $this->Landing_page_m->service_harga_add_new($idservicesubdetail,$nama_paket,$harga,$harga2,$exp_diskon);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -446,7 +446,7 @@
 			$data = $this->Landing_page_m->service_harga_delete($id);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -471,7 +471,7 @@
 			$data = $this->Landing_page_m->contact_address_update($address);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -486,7 +486,7 @@
 			$data = $this->Landing_page_m->contact_address2_update($address2);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -501,7 +501,7 @@
 			$data = $this->Landing_page_m->contact_email_update($email);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -516,7 +516,7 @@
 			$data = $this->Landing_page_m->contact_phone_update($phone);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -531,7 +531,7 @@
 			$data = $this->Landing_page_m->contact_maps_update($gmap);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -546,7 +546,7 @@
 			$data = $this->Landing_page_m->contact_maps2_update($gmap2);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -577,7 +577,7 @@
 			echo json_encode($data);	
 			
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -591,7 +591,7 @@
 			$data = $this->Landing_page_m->partner_delete($id);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -620,7 +620,7 @@
 			echo json_encode($data);	
 			
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -669,7 +669,7 @@
 				echo json_encode($data);	
 				
 				$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-						  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+						  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 						    <span aria-hidden="true">&times;</span>
 						  </button>
 						  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -679,7 +679,7 @@
 		    	$this->session->set_flashdata('info',$info);
 			}else{
 				$info = '<div class="alert alert-danger border-danger shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-						  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+						  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 						    <span aria-hidden="true">&times;</span>
 						  </button>
 						  <p class="font-weight-bold mb-0">Gagal!</p>
@@ -694,7 +694,7 @@
 			$data = $this->Landing_page_m->the_team_delete($id,$username);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -743,7 +743,7 @@
 			echo json_encode($data);	
 			
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -771,7 +771,7 @@
 			echo json_encode($data);	
 			
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -788,7 +788,7 @@
 			$data = $this->Landing_page_m->faq_update($id,$question,$answer);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -802,7 +802,7 @@
 			$data = $this->Landing_page_m->delete_faq($id);
 			echo json_encode($data);
 			$info = '<div class="alert alert-info border-info shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -835,7 +835,7 @@
 			echo json_encode($data);	
 			
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -865,7 +865,7 @@
 			echo json_encode($data);	
 			
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -879,7 +879,7 @@
 			$data = $this->Landing_page_m->portofolio_delete($id);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -896,7 +896,7 @@
 			$data = $this->Landing_page_m->service_harga_detail_delete_alat($id);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>
@@ -913,7 +913,7 @@
 			$data = $this->Landing_page_m->service_harga_detail_add_alat($id_harga,$alat_test);
 			echo json_encode($data);
 			$info = '<div class="alert alert-success border-success shadow-sm mb-0 animate__animated animate__bounceInUp" role="alert">
-					  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 					    <span aria-hidden="true">&times;</span>
 					  </button>
 					  <p class="font-weight-bold mb-0">Berhasil!</p>

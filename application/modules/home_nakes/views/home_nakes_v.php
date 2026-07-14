@@ -543,7 +543,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				Swal.fire({
 					title: "Anda yakin ingin melanjutkan konsultasi?",
 					showCancelButton: true,
-					confirmButtonText: "Iya",
+					confirmButtonText: "Terima konsultasi",
 					confirmButtonColor: "#09AD74",
 					denyButtonText: "Batal"
 				}).then((result) => {
@@ -716,9 +716,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				text: 'Permintaan konsultasi akan ditandai dibatalkan.',
 				icon: 'warning',
 				showCancelButton: true,
-				confirmButtonText: 'Ya, batalkan',
+				confirmButtonText: 'Batalkan',
 				confirmButtonColor: '#dc3545',
-				cancelButtonText: 'Tidak'
+				cancelButtonText: 'Batal'
 			}).then((result) => {
 				if (!result.isConfirmed) {
 					return;
@@ -1750,7 +1750,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						title: "Error",
 						text: "Informasi lokasi tidak tersedia.",
 						icon: "error",
-						confirmButtonText: "OK"
+						confirmButtonText: "Tutup"
 					});
 					break;
 				case error.TIMEOUT:
@@ -1758,7 +1758,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						title: "Error",
 						text: "Permintaan lokasi timeout.",
 						icon: "error",
-						confirmButtonText: "OK"
+						confirmButtonText: "Tutup"
 					});
 					break;
 			}

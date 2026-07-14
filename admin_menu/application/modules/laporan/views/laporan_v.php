@@ -103,10 +103,10 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			<input type="hidden" name="tipeBtn" id="tipeBtn">
 
 			<div class="col-auto mb-2">
-				<button type="button" id="btnTampilkan" class="btn btn-primary">Tampilkan</button>
+				<button type="button" id="btnTampilkan" class="btn btn-primary">Lihat laporan</button>
 				<button type="button" id="btnJumlahPasien" class="btn btn-success">Jumlah pasien</button>
 				<button type="button" id="btnJumlahDiagnosa" class="btn btn-secondary">Jumlah diagnosis</button>
-				<button type="button" id="btnResetLaporan" class="btn btn-outline-secondary">Reset</button>
+				<button type="button" id="btnResetLaporan" class="btn btn-outline-secondary">Hapus filter</button>
 			</div>
 
 			<div class="col mb-2 ml-auto d-flex justify-content-end flex-wrap" style="gap: 0.75rem;">
@@ -133,7 +133,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			</div>
 			<input type="hidden" name="tipe" value="perminggu">
 			<div class="col-auto">
-				<button type="submit" class="btn btn-success">Tampilkan</button>
+				<button type="submit" class="btn btn-success">Lihat laporan</button>
 			</div>
 		</div>
 	</form>
@@ -157,7 +157,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				<input type="number" class="form-control" id="tahun_bulan" name="tahun" min="2000" max="2100" required>
 			</div>
 			<div class="col-auto">
-				<button type="submit" class="btn btn-info">Tampilkan</button>
+				<button type="submit" class="btn btn-info">Lihat laporan</button>
 			</div>
 		</div>
 	</form>
@@ -170,7 +170,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				<input type="number" class="form-control" id="tahun_tahun" name="tahun" min="2000" max="2100" required>
 			</div>
 			<div class="col-auto">
-				<button type="submit" class="btn btn-warning">Tampilkan</button>
+				<button type="submit" class="btn btn-warning">Lihat laporan</button>
 			</div>
 		</div>
 	</form>
@@ -383,7 +383,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				html += '<td><div class="doclinc-timeline-pill">' + escapeHtml(latest.label) + (latest.time ? '<span>' + escapeHtml(latest.time) + '</span>' : '') + '</div></td>';
 				html += '<td><strong>Diagnosa:</strong> ' + escapeHtml(shortText(row.diagnosa, 56)) + '<div class="doclinc-report-meta"><strong>Saran:</strong> ' + escapeHtml(shortText(row.saran, 64)) + '</div></td>';
 				html += '<td>' + (hasFoto ? '<span class="badge badge-info">Ada foto</span>' : '<span class="doclinc-report-meta">Tidak ada</span>') + '</td>';
-				html += '<td class="no-print"><button type="button" class="btn btn-sm btn-outline-primary btn-detail-laporan" data-index="' + i + '">Lihat</button></td>';
+				html += '<td class="no-print"><button type="button" class="btn btn-sm btn-outline-primary btn-detail-laporan" data-index="' + i + '">Lihat detail</button></td>';
 				html += '</tr>';
 			});
 			html += '</tbody></table></div>';

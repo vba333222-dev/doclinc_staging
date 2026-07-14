@@ -181,7 +181,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 						icon: 'error',
 						title: 'Oops!',
 						html: 'Sepertinya ada yang salah nih,<br>Coba periksa email atau password kamu',
-						confirmButtonText: 'Yuk ulangi'
+						confirmButtonText: 'Tutup'
 					})
 				}
 				return false;

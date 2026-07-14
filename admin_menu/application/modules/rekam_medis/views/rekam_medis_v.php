@@ -113,7 +113,7 @@ $summary_cards = array(
 						</select>
 					</div>
 					<div class="form-group col-lg-2">
-						<button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search mr-1"></i> Filter</button>
+						<button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search mr-1"></i> Terapkan filter</button>
 					</div>
 				</div>
 			</form>
@@ -156,7 +156,7 @@ $summary_cards = array(
 									<td><span class="doclinc-record-badge"><?= html_escape(doclinc_record_status_label($row->request_status ?? '')); ?></span></td>
 									<td>
 										<button type="button" class="btn btn-sm btn-outline-primary doclinc-record-detail" data-record-id="<?= (int) ($row->record_id ?? 0); ?>">
-											Detail
+											Lihat detail
 										</button>
 									</td>
 								</tr>

@@ -19,9 +19,9 @@
 
           <!-- Button trigger modal -->
           <button type="button" class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#modalAdd">
-            + Add News & Events
+            Tambah berita
           </button>
-          <button class="btn btn-sm btn-default-asoka mb-3 float-right" data-toggle="modal" data-target="#tutor">Contenting Guides</button>
+          <button class="btn btn-sm btn-default-asoka mb-3 float-right" data-toggle="modal" data-target="#tutor">Lihat panduan</button>
           <div class="table-responsive">
               <table class="table table-hover" id="tbl_news_events" width="100%" cellspacing="0">
                   <thead>
@@ -92,7 +92,7 @@
                               <?php endif ?>
                               <td>
                                   <div class="btn-group btn-group-sm">
-                                    <a href="#modalEdit<?= $row->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Edit"><i class="fas fa-edit fa-fw"></i></a>
+                                    <a href="#modalEdit<?= $row->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Ubah"><i class="fas fa-edit fa-fw"></i></a>
                                     <a href="#" class="btn btn-primary tooltip-title disabled" title="Preview legacy dinonaktifkan"><i class="fas fa-eye fa-fw"></i></a>
                                     <a href="#modalHapus<?= $row->id;?>" class="btn btn-danger tooltip-title" data-toggle="modal" title="Hapus"><i class="fas fa-trash fa-fw"></i></a>
                                   </div>
@@ -113,7 +113,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Add New</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -164,7 +164,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Edit <?= $row->title;?></h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -244,7 +244,7 @@
             </div>
           </div>
           <?php endif ?>
-          <button type="submit" class="btn btn-default-asoka float-right">Simpan Perubahan</button>
+          <button type="submit" class="btn btn-default-asoka float-right">Simpan perubahan</button>
         </form>
       </div>
     </div>
@@ -259,7 +259,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Hapus <?= $row->title;?></h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -273,7 +273,7 @@
                 <p><b><?= $row->title; ?></b> - <?= substr($row->content, 157,300);?>...</p>
             </div>
             <button type="submit" class="btn btn-danger" name="hapus"><i class="fas fa-check-circle"></i> Hapus</button>
-            <button class="btn btn-primary" data-dismiss="modal" aria-label="Close"><i class="fas fa-times-circle"></i> Batal</button>
+            <button class="btn btn-primary" data-dismiss="modal" aria-label="Batal"><i class="fas fa-times-circle"></i> Batal</button>
           </center>
         </form>
       </div>

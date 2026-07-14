@@ -36,7 +36,7 @@
                             <div class="btn-group">
                               <button type="button" class="btn btn-outline-secondary">Aksi</button>
                               <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="sr-only">Toggle Dropdown</span>
+                                <span class="sr-only">Buka menu</span>
                               </button>
                               <div class="dropdown-menu">
                                   <a class="dropdown-item" href="#modalEdit" data-toggle="modal" data-idtindakan="<?= html_escape($row->konsul_id ?? '');?>">
@@ -63,7 +63,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Edit Tindakan</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -88,7 +88,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Nonaktifkan tindakan legacy?</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>

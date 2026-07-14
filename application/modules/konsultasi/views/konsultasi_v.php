@@ -597,7 +597,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						</label>
 						<input type="hidden" id="fileName" name="foto" class="form-control" readonly>
 						<button type="button" onclick="window.flutter_inappwebview.callHandler('takePhoto')" hidden>
-							Ambil Foto dari Kamera
+							Ambil foto
 						</button>
 						<div id="previewContainer" class="consult-preview d-none">
 							<img id="preview" src="" alt="Preview Foto">

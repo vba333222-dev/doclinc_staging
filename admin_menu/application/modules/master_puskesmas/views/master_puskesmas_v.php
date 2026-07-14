@@ -73,7 +73,7 @@
 								<div class="doclinc-account-card__footer">
 									<div class="doclinc-account-card__actions">
 									<button type="button" class="btn doclinc-action-btn doclinc-action-btn--primary" data-toggle="modal" data-target="#editPuskesmas<?= html_escape($row->kode_pkm); ?>">
-										<i class="fas fa-edit"></i> Edit
+										<i class="fas fa-edit"></i> Ubah
 									</button>
 									<?php if (($row->status ?? '') === 'aktif'): ?>
 										<form action="<?= site_url('master_puskesmas/disable') ?>" method="post">
@@ -104,7 +104,7 @@
 									<div class="modal-content border-0 shadow-sm">
 										<div class="modal-header bg-info text-white">
 											<h5 class="modal-title"><i class="fas fa-hospital mr-2"></i>Edit Puskesmas</h5>
-											<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+											<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup">
 												<span aria-hidden="true">&times;</span>
 											</button>
 										</div>
@@ -204,7 +204,7 @@
 		<div class="modal-content border-0 shadow-sm">
 			<div class="modal-header bg-success text-white">
 				<h5 class="modal-title"><i class="fas fa-plus-circle mr-2"></i>Tambah Puskesmas</h5>
-				<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>

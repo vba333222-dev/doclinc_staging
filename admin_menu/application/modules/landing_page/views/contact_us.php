@@ -25,7 +25,7 @@
         <div class="card-body text-center">
           <h4 class="fw-bold mb-3">Alamat</h4>
           <textarea class="form-control mb-3 bg-white" rows="5" readonly><?= $address;?></textarea>
-          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalAlamat">Edit</button>
+          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalAlamat">Ubah</button>
         </div>
       </div>
     </div>
@@ -34,7 +34,7 @@
         <div class="card-body text-center">
           <h4 class="fw-bold mb-3">Alamat 2</h4>
           <textarea class="form-control mb-3 bg-white" rows="5" readonly><?= $address2;?></textarea>
-          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalAlamat2">Edit</button>
+          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalAlamat2">Ubah</button>
         </div>
       </div>
     </div>
@@ -43,7 +43,7 @@
         <div class="card-body">
           <h4 class="fw-bold mb-3 text-center">Google Maps</h4> 
           <textarea class="form-control mb-3 bg-white" rows="5" readonly><?= $gmap;?></textarea>
-          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalMaps">Edit</button>
+          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalMaps">Ubah</button>
         </div>
       </div>
     </div> 
@@ -52,7 +52,7 @@
         <div class="card-body">
           <h4 class="fw-bold mb-3 text-center">Google Maps 2</h4> 
           <textarea class="form-control mb-3 bg-white" rows="5" readonly><?= $gmap2;?></textarea>
-          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalMaps2">Edit</button>
+          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalMaps2">Ubah</button>
         </div>
       </div>
     </div> 
@@ -61,7 +61,7 @@
         <div class="card-body text-center">
           <h4 class="fw-bold mb-3">Email</h4>
           <?= $email;?> 
-          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalEmail">Edit</button>
+          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalEmail">Ubah</button>
         </div>
       </div>
     </div>
@@ -70,7 +70,7 @@
         <div class="card-body">
           <h4 class="fw-bold mb-3 text-center">Nomor Telepon</h4>
           <?= $phone;?>
-          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalTelepon">Edit</button>
+          <button class="btn btn-default-asoka float-right" data-toggle="modal" data-target="#modalTelepon">Ubah</button>
         </div>
       </div>
     </div>
@@ -81,7 +81,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Edit Alamat</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -100,7 +100,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Edit Alamat 2</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -118,7 +118,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Edit gmaps</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -137,7 +137,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Edit gmaps</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -155,7 +155,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Edit Email</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -173,7 +173,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Edit Nomor Telepon</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>

@@ -16,7 +16,7 @@
         Data The Team
       </div>
       <div class="card-body">
-        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#modalTambah">+ Tambah Team</button>
+        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#modalTambah">Tambah tim</button>
         <div class="table-responsive">
           <table class="table table-hover" id="tbl_team">
             <thead>
@@ -69,7 +69,7 @@
                     data-twitter="<?= html_escape($x->twitter ?? '');?>"
                     data-fb="<?= html_escape($x->fb ?? '');?>"
                     data-avatar="<?= html_escape($x->avatar ?? '');?>"
-                    data-signature="<?= html_escape($x->signature ?? '');?>" title="Edit">
+                    data-signature="<?= html_escape($x->signature ?? '');?>" title="Ubah">
                       <i class="far fa-edit fa-fw"></i>
                     </a>           
                     <form action="<?php echo base_url('landing_page/the_team_delete/'.$x->id.'/'.rawurlencode($x->username));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus team legacy ini dan nonaktifkan akun terkait?');">
@@ -94,7 +94,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Tambah Team</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div> 
@@ -179,7 +179,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel"></h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -256,7 +256,7 @@
           <div class="form-group mb-3" id="signaturenya">
           </div>
           <div class="d-flex">
-            <button type="submit" class="btn btn-default-asoka ml-auto">Update</button>
+            <button type="submit" class="btn btn-default-asoka ml-auto">Perbarui</button>
           </div>
         </form>
       </div>

@@ -19,7 +19,7 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 					<div class="doclinc-muted-text mt-1">Kelola akun login koordinasi Puskesmas.</div>
 				</div>
 				<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill doclinc-action-btn doclinc-action-primary" data-toggle="modal" data-target="#modalTambahDokterNakes">
-					<i class="fas fa-plus-circle mr-1"></i> Tambah Akun Puskesmas
+					<i class="fas fa-plus-circle mr-1"></i> Tambah akun
 				</button>
 			</div>
 			<div class="card-body doclinc-table-body">
@@ -78,7 +78,7 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 
 								<div class="doclinc-account-card__footer">
 									<div class="doclinc-account-card__actions">
-										<button type="button" class="btn doclinc-action-btn doclinc-action-btn--primary" data-toggle="modal" data-target="#editModal<?= (int) $data->userId ?>">Edit</button>
+										<button type="button" class="btn doclinc-action-btn doclinc-action-btn--primary" data-toggle="modal" data-target="#editModal<?= (int) $data->userId ?>">Ubah</button>
 										<?php if ($is_active): ?>
 											<form action="<?= site_url('kelola_dokter_nakes/nonaktifkan_user') ?>" method="post" class="d-inline">
 												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
@@ -107,7 +107,7 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 											<h5 class="modal-title" id="editModalLabel<?= (int) $data->userId ?>">
 												<i class="fas fa-hospital-user mr-2"></i>Edit Akun Puskesmas
 											</h5>
-											<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+											<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup">
 												<span aria-hidden="true">&times;</span>
 											</button>
 										</div>
@@ -199,7 +199,7 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 				<h5 class="modal-title" id="modalTambahDokterNakesLabel">
 					<i class="fas fa-user-plus mr-2"></i>Tambah Akun Puskesmas
 				</h5>
-				<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+				<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup">
 					<span aria-hidden="true">&times;</span>
 				</button>
 			</div>
