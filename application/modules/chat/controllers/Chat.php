@@ -45,7 +45,7 @@ class Chat extends MX_Controller
 			doclinc_log_request_event('unauthorized_request_access', $request_id, array('target' => 'chat_messages'));
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(array('status' => 'error', 'message' => 'Akses tidak diizinkan')));
+				->set_output(json_encode(array('status' => 'error', 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -73,7 +73,7 @@ class Chat extends MX_Controller
 			doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'chat_send'));
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(array('status' => 'error', 'message' => 'Akses tidak diizinkan')));
+				->set_output(json_encode(array('status' => 'error', 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -104,7 +104,7 @@ class Chat extends MX_Controller
 		if ($request_id < 1 || !$this->Chat_m->mark_read($request_id, $user_id)) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(array('status' => 'error', 'message' => 'Akses tidak diizinkan')));
+				->set_output(json_encode(array('status' => 'error', 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -172,7 +172,7 @@ class Chat extends MX_Controller
 			doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'chat_upload'));
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return false;
 		}
 

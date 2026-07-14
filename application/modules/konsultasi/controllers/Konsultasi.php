@@ -67,6 +67,7 @@ class Konsultasi extends MX_Controller
 		$lattitude = $this->input->post('lat');
 		$longitude = $this->input->post('lng');
 		$tanggal = $this->input->post('tanggal');
+		$has_missing_patient_location = trim((string) $lattitude) === '' || trim((string) $longitude) === '';
 		$has_patient_location = $this->is_valid_latitude($lattitude) && $this->is_valid_longitude($longitude);
 		$patient_latitude = $has_patient_location ? (float) $lattitude : null;
 		$patient_longitude = $has_patient_location ? (float) $longitude : null;
@@ -77,13 +78,13 @@ class Konsultasi extends MX_Controller
 		$video = '';
 
 		if (empty($id_user)) {
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Sesi pengguna tidak ditemukan.']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Silakan masuk terlebih dahulu.']));
 			return;
 		}
 		if ($role !== 'warga') {
 			$this->output->set_status_header(403);
 			doclinc_log_request_event('unauthorized_request_update', null, array('target' => 'create', 'role' => $role));
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 		if (doclinc_active_consultation_request($id_user)) {
@@ -92,7 +93,10 @@ class Konsultasi extends MX_Controller
 			return;
 		}
 		if (!$has_patient_location) {
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Lokasi pasien belum tersedia. Aktifkan izin lokasi lalu coba lagi.']));
+			$location_message = $has_missing_patient_location
+				? 'Pilih lokasi terlebih dahulu.'
+				: 'Lokasi yang dipilih tidak valid.';
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => $location_message]));
 			return;
 		}
 
@@ -130,7 +134,7 @@ class Konsultasi extends MX_Controller
 		}
 		if (empty($keluhan)) {
 			log_message('error', 'Konsultasi warga gagal: keluhan kosong. user_id=' . $id_user . ' puskesmas_code=' . $assigned_puskesmas_code);
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Lengkapi data konsultasi.']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Masukkan keluhan.']));
 			return;
 		}
 

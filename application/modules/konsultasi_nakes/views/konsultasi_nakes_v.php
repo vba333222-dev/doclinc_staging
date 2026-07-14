@@ -1238,7 +1238,12 @@ if (!function_exists('formatComplaintText')) {
 			const kriteria = $('#kriteria').val().trim();
 
 			if (!idReq || !diagnosa || !saranUtama || !saran || !kriteria) {
-				Swal.fire("Gagal!", "Lengkapi data dan pilih jenis layanan terlebih dahulu.", "error");
+				const validationMessage = !idReq
+					? "Permintaan tidak valid."
+					: (!diagnosa
+						? "Masukkan diagnosis."
+						: ((!saranUtama || !saran) ? "Tambahkan saran." : "Pilih jenis layanan."));
+				Swal.fire("Data belum lengkap", validationMessage, "error");
 				return;
 			}
 

@@ -31,11 +31,11 @@ class Kelola_dokter_nakes extends MX_Controller
 		}
 		$this->load->library('form_validation');
 
-		$this->form_validation->set_rules('nama', 'Nama', 'trim|required');
-		$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
-		$this->form_validation->set_rules('username', 'Username', 'trim|required');
-		$this->form_validation->set_rules('password', 'Password', 'required|min_length[8]');
-		$this->form_validation->set_rules('confirm_password', 'Konfirmasi Password', 'required|matches[password]');
+		$this->form_validation->set_rules('nama', 'Nama', 'trim|required', array('required' => 'Nama lengkap wajib diisi.'));
+		$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email', array('required' => 'Email wajib diisi.', 'valid_email' => 'Masukkan email yang valid.'));
+		$this->form_validation->set_rules('username', 'Username', 'trim|required', array('required' => 'Nama pengguna wajib diisi.'));
+		$this->form_validation->set_rules('password', 'Password', 'required|min_length[8]', array('required' => 'Password wajib diisi.', 'min_length' => 'Password minimal 8 karakter.'));
+		$this->form_validation->set_rules('confirm_password', 'Konfirmasi Password', 'required|matches[password]', array('required' => 'Konfirmasi password wajib diisi.', 'matches' => 'Konfirmasi password tidak sama.'));
 
 		$email = trim((string) $this->input->post('email', TRUE));
 		$username = trim((string) $this->input->post('username', TRUE));
@@ -45,7 +45,7 @@ class Kelola_dokter_nakes extends MX_Controller
 			return;
 		}
 		if ($username && $this->Kelola_dokter_nakes_m->username_exists($username)) {
-			$this->session->set_flashdata('error', 'Username sudah digunakan.');
+			$this->session->set_flashdata('error', 'Nama pengguna sudah digunakan.');
 			redirect('kelola_dokter_nakes', 'refresh');
 			return;
 		}
@@ -60,7 +60,7 @@ class Kelola_dokter_nakes extends MX_Controller
 		$status = in_array($status, array('aktif', 'nonaktif'), TRUE) ? $status : 'aktif';
 		$posted_remark = $this->input->post('remark', TRUE);
 		if ($this->Kelola_dokter_nakes_m->has_active_puskesmas() && !$this->Kelola_dokter_nakes_m->puskesmas_exists($posted_remark)) {
-			$this->session->set_flashdata('error', 'Puskesmas aktif wajib dipilih.');
+			$this->session->set_flashdata('error', 'Pilih Puskesmas yang aktif.');
 			redirect('kelola_dokter_nakes', 'refresh');
 			return;
 		}
@@ -120,9 +120,9 @@ class Kelola_dokter_nakes extends MX_Controller
 		}
 		$this->load->library('form_validation');
 		$id_user = (int) $id_user;
-		$this->form_validation->set_rules('nama', 'Nama', 'trim|required');
-		$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
-		$this->form_validation->set_rules('username', 'Username', 'trim|required');
+		$this->form_validation->set_rules('nama', 'Nama', 'trim|required', array('required' => 'Nama lengkap wajib diisi.'));
+		$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email', array('required' => 'Email wajib diisi.', 'valid_email' => 'Masukkan email yang valid.'));
+		$this->form_validation->set_rules('username', 'Username', 'trim|required', array('required' => 'Nama pengguna wajib diisi.'));
 
 		$email = trim((string) $this->input->post('email', TRUE));
 		$username = trim((string) $this->input->post('username', TRUE));
@@ -135,7 +135,7 @@ class Kelola_dokter_nakes extends MX_Controller
 			return;
 		}
 		if ($username && $this->Kelola_dokter_nakes_m->username_exists($username, $id_user)) {
-			$this->session->set_flashdata('error', 'Username sudah digunakan.');
+			$this->session->set_flashdata('error', 'Nama pengguna sudah digunakan.');
 			redirect('kelola_dokter_nakes', 'refresh');
 			return;
 		}
@@ -145,7 +145,7 @@ class Kelola_dokter_nakes extends MX_Controller
 			return;
 		}
 		if ($password !== '' && $password !== $confirm_password) {
-			$this->session->set_flashdata('error', 'Konfirmasi password tidak sesuai.');
+			$this->session->set_flashdata('error', 'Konfirmasi password tidak sama.');
 			redirect('kelola_dokter_nakes', 'refresh');
 			return;
 		}
@@ -159,7 +159,7 @@ class Kelola_dokter_nakes extends MX_Controller
 		$status = in_array($status, array('aktif', 'nonaktif'), TRUE) ? $status : 'aktif';
 		$posted_remark = $this->input->post('remark', TRUE);
 		if ($this->Kelola_dokter_nakes_m->has_active_puskesmas() && !$this->Kelola_dokter_nakes_m->puskesmas_exists($posted_remark)) {
-			$this->session->set_flashdata('error', 'Puskesmas aktif wajib dipilih.');
+			$this->session->set_flashdata('error', 'Pilih Puskesmas yang aktif.');
 			redirect('kelola_dokter_nakes', 'refresh');
 			return;
 		}

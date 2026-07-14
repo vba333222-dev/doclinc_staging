@@ -2718,7 +2718,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				error: function(xhr) {
 					submitButton.prop('disabled', false).removeClass('disabled');
 					const response = xhr.responseJSON || {};
-					Swal.fire('Gagal', response.message || 'Hanya dapat diubah sebelum diterima.', 'error');
+					Swal.fire('Gagal', response.message || 'Permintaan ini tidak dapat diubah.', 'error');
 				}
 			});
 		});

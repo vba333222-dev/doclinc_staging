@@ -91,7 +91,7 @@
 					} else {
 						Swal.fire({
 							title: "Gagal!",
-							text: "Username dan Password tidak sesuai",
+							text: "Nama pengguna atau password salah.",
 							icon: "error"
 						});
 					}

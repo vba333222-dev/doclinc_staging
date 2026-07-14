@@ -16,7 +16,7 @@ class Home_nakes extends MX_Controller
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
-					->set_output(json_encode(['status' => 'error', 'message' => 'Login diperlukan']));
+					->set_output(json_encode(['status' => 'error', 'message' => 'Silakan masuk terlebih dahulu.']));
 				$this->output->_display();
 				exit;
 			}
@@ -30,7 +30,7 @@ class Home_nakes extends MX_Controller
 		if (!in_array($this->session->userdata('role'), array('dokter', 'nakes'), true)) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+				->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -45,7 +45,7 @@ class Home_nakes extends MX_Controller
 	{
 		$this->output->set_content_type('application/json');
 		if (!in_array($this->session->userdata('role'), array('dokter', 'nakes'), true)) {
-			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 		if (!$this->Call_session_m->table_ready()) {
@@ -87,7 +87,7 @@ class Home_nakes extends MX_Controller
 	{
 		$this->output->set_content_type('application/json');
 		if (!in_array($this->session->userdata('role'), array('dokter', 'nakes'), true)) {
-			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -105,7 +105,7 @@ class Home_nakes extends MX_Controller
 
 		$request = doclinc_request_row((int) $call->request_id);
 		if (!$request || !doclinc_request_is_handled_by_nakes($request, (int) $this->session->userdata('id'))) {
-			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -122,7 +122,7 @@ class Home_nakes extends MX_Controller
 	{
 		$this->output->set_content_type('application/json');
 		if (!in_array($this->session->userdata('role'), array('dokter', 'nakes'), true)) {
-			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -136,7 +136,7 @@ class Home_nakes extends MX_Controller
 
 		$request = doclinc_request_row((int) $call->request_id);
 		if (!$request || !doclinc_request_is_handled_by_nakes($request, (int) $this->session->userdata('id'))) {
-			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -290,7 +290,7 @@ class Home_nakes extends MX_Controller
 			|| empty($identity_context['valid'])
 			|| $identity_context['account_type'] !== 'command_center'
 			|| !doclinc_can_coordinate_request($request, $identity_context)) {
-			$this->session->set_flashdata('staff_assignment_error', 'Akses tidak diizinkan untuk tindakan ini.');
+			$this->session->set_flashdata('staff_assignment_error', 'Anda tidak memiliki akses.');
 			redirect('home_nakes#riwayat_konsul');
 			return;
 		}
@@ -323,7 +323,7 @@ class Home_nakes extends MX_Controller
 		if (empty($identity_context['valid'])
 			|| $identity_context['account_type'] !== 'command_center'
 			|| !doclinc_can_coordinate_request($request, $identity_context)) {
-			$this->session->set_flashdata('staff_assignment_error', 'Akses tidak diizinkan untuk tindakan ini.');
+			$this->session->set_flashdata('staff_assignment_error', 'Anda tidak memiliki akses.');
 			redirect('home_nakes#riwayat_konsul');
 			return;
 		}
@@ -383,7 +383,7 @@ class Home_nakes extends MX_Controller
 		if (empty($identity_context['valid']) || $identity_context['account_type'] !== 'command_center') {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 
@@ -401,7 +401,7 @@ class Home_nakes extends MX_Controller
 		if (!$request || (string) $request->request_status !== 'Pending' || !doclinc_can_coordinate_request($request, $identity_context)) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan untuk tindakan ini.']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 
@@ -446,7 +446,7 @@ class Home_nakes extends MX_Controller
 		if (empty($identity_context['valid']) || $identity_context['account_type'] !== 'command_center') {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 
@@ -460,7 +460,7 @@ class Home_nakes extends MX_Controller
 			}
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 
@@ -513,7 +513,7 @@ class Home_nakes extends MX_Controller
 		if (empty($identity_context['valid'])) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(array('status' => false, 'message' => 'Akses tidak diizinkan')));
+				->set_output(json_encode(array('status' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -536,7 +536,7 @@ class Home_nakes extends MX_Controller
 		if (empty($access_context['can_handle'])) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(array('status' => false, 'message' => 'Akses tidak diizinkan')));
+				->set_output(json_encode(array('status' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 		$current_visit_status = isset($request->visit_status) && $request->visit_status !== null
@@ -581,7 +581,7 @@ class Home_nakes extends MX_Controller
 		if (empty($identity_context['valid'])) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 
@@ -595,13 +595,16 @@ class Home_nakes extends MX_Controller
 			if (function_exists('doclinc_log_request_event') && $request_id > 0) {
 				doclinc_log_request_event('visit_location_rejected_invalid_coordinate', $request_id);
 			}
+			$location_message = $request_id < 1
+				? 'Permintaan tidak valid.'
+				: 'Lokasi Nakes tidak valid.';
 			$this->output
 				->set_status_header(400)
 				->set_output(json_encode([
 					'status' => 'error',
 					'success' => false,
 					'reason' => 'invalid_coordinate',
-					'message' => 'Data lokasi tidak valid'
+					'message' => $location_message
 				]));
 			return;
 		}
@@ -617,7 +620,7 @@ class Home_nakes extends MX_Controller
 		if (empty($access_context['can_handle'])) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 		$current_visit_status = isset($request->visit_status) && $request->visit_status !== null
@@ -704,7 +707,7 @@ class Home_nakes extends MX_Controller
 		if (empty($identity_context['valid'])) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 
@@ -731,7 +734,7 @@ class Home_nakes extends MX_Controller
 			}
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 

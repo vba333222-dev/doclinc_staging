@@ -244,7 +244,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 
 		$kode_pkm = trim((string) ($staff->kode_pkm ?? ''));
 		if (!$this->puskesmas_is_active($kode_pkm)) {
-			return array('eligible' => false, 'message' => 'Puskesmas staff tidak valid atau tidak aktif.');
+			return array('eligible' => false, 'message' => 'Puskesmas staf tidak valid atau tidak aktif.');
 		}
 
 		$command_center_user_id = $this->get_command_center_user_id($kode_pkm);
@@ -332,7 +332,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			}
 			$kode_pkm = trim((string) ($staff->kode_pkm ?? ''));
 			if (!$this->puskesmas_is_active($kode_pkm)) {
-				$abort('Puskesmas staff tidak valid atau tidak aktif.');
+				$abort('Puskesmas staf tidak valid atau tidak aktif.');
 			}
 
 			$command_center_user_id = $this->get_command_center_user_id($kode_pkm);
@@ -359,7 +359,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			}
 			foreach ($duplicate_query->result() as $existing_user) {
 				if (strtolower(trim((string) $existing_user->username)) === strtolower($username)) {
-					$abort('Username sudah digunakan.');
+					$abort('Nama pengguna sudah digunakan.');
 				}
 				if (strtolower(trim((string) $existing_user->email)) === strtolower($email)) {
 					$abort('Email sudah digunakan.');
@@ -519,8 +519,11 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 	{
 		$staff_id = (int) $staff_id;
 		$user_id = (int) $user_id;
-		if ($staff_id < 1 || $user_id < 1 || !$this->table_ready()) {
-			return array('status' => 'error', 'message' => 'Data staff atau akun login tidak valid.');
+		if ($staff_id < 1 || $user_id < 1) {
+			return array('status' => 'error', 'message' => 'Pilih staf dan akun yang valid.');
+		}
+		if (!$this->table_ready()) {
+			return array('status' => 'error', 'message' => 'Data staf belum tersedia.');
 		}
 
 		$staff = $this->get_by_id($staff_id);
@@ -532,16 +535,16 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		$kode_pkm = trim((string) $staff->kode_pkm);
 		$user_remark = trim((string) ($user->remark ?? ''));
 		if ($kode_pkm === '' || $user_remark !== $kode_pkm) {
-			return array('status' => 'error', 'message' => 'Akun login harus berasal dari Puskesmas yang sama.');
+			return array('status' => 'error', 'message' => 'Akun tidak berasal dari Puskesmas ini.');
 		}
 		if (isset($user->status) && $user->status !== 'aktif') {
-			return array('status' => 'error', 'message' => 'Akun login harus dalam status aktif.');
+			return array('status' => 'error', 'message' => 'Pilih akun yang aktif.');
 		}
 		if ($this->get_command_center_user_id($kode_pkm) === $user_id) {
-			return array('status' => 'error', 'message' => 'Akun koordinator Puskesmas tidak dapat dihubungkan sebagai akun personal staff.');
+			return array('status' => 'error', 'message' => 'Akun Puskesmas tidak dapat dihubungkan sebagai akun personal staf.');
 		}
 		if ($this->account_linked_to_other_active_staff($user_id, $staff_id)) {
-			return array('status' => 'error', 'message' => 'Akun login sudah terhubung ke staff aktif lain.');
+			return array('status' => 'error', 'message' => 'Akun sudah terhubung ke staf lain.');
 		}
 
 		$updated = $this->db
@@ -556,8 +559,11 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 	public function unbind_staff_account($staff_id)
 	{
 		$staff_id = (int) $staff_id;
-		if ($staff_id < 1 || !$this->table_ready()) {
-			return array('status' => 'error', 'message' => 'Data staff tidak valid.');
+		if ($staff_id < 1) {
+			return array('status' => 'error', 'message' => 'Pilih staf yang valid.');
+		}
+		if (!$this->table_ready()) {
+			return array('status' => 'error', 'message' => 'Data staf belum tersedia.');
 		}
 		if (!$this->get_by_id($staff_id)) {
 			return array('status' => 'error', 'message' => 'Staf tidak ditemukan.');

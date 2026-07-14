@@ -31,8 +31,8 @@ class Master_puskesmas extends MX_Controller
 			return;
 		}
 		$this->load->library('form_validation');
-		$this->form_validation->set_rules('kode_pkm', 'Kode Puskesmas', 'trim|required');
-		$this->form_validation->set_rules('nama_puskesmas', 'Nama Puskesmas', 'trim|required');
+		$this->form_validation->set_rules('kode_pkm', 'Kode Puskesmas', 'trim|required', array('required' => 'Kode Puskesmas wajib diisi.'));
+		$this->form_validation->set_rules('nama_puskesmas', 'Nama Puskesmas', 'trim|required', array('required' => 'Nama Puskesmas wajib diisi.'));
 
 		$kode = trim((string) $this->input->post('kode_pkm', TRUE));
 		if ($kode !== '' && $this->Master_puskesmas_m->code_exists($kode)) {
@@ -61,7 +61,7 @@ class Master_puskesmas extends MX_Controller
 			return;
 		}
 		$this->load->library('form_validation');
-		$this->form_validation->set_rules('nama_puskesmas', 'Nama Puskesmas', 'trim|required');
+		$this->form_validation->set_rules('nama_puskesmas', 'Nama Puskesmas', 'trim|required', array('required' => 'Nama Puskesmas wajib diisi.'));
 		$kode = trim((string) $kode);
 		$data = $this->build_payload(false);
 

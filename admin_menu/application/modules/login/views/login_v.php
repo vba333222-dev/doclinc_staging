@@ -168,8 +168,8 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 							} else {
 								Swal.fire({
 									icon: 'error',
-									title: 'Oops!',
-									html: 'Akun kamu belum ada/terverifikasi di sistem kami',
+									title: 'Tidak dapat masuk',
+									html: 'Email atau password salah.',
 									showConfirmButton: false,
 									timer: 2500
 								});
@@ -179,8 +179,8 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 				} else {
 					Swal.fire({
 						icon: 'error',
-						title: 'Oops!',
-						html: 'Sepertinya ada yang salah nih,<br>Coba periksa email atau password kamu',
+						title: 'Data belum lengkap',
+						html: 'Email dan password wajib diisi.',
 						confirmButtonText: 'Tutup'
 					})
 				}
@@ -188,7 +188,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 			});
 			$('form#lupa').submit(function(event) {
 				if ($('#g-recaptcha-response').val() == '') {
-					alert('Lengkapi captcha.');
+					alert('Selesaikan verifikasi captcha.');
 					return false;
 				} else {
 					$('#lupa_submit').attr('disabled', true);

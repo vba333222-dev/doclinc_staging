@@ -118,8 +118,8 @@
         			if ($('#new_password').val() != $('#c_new_password').val()) {
         				Swal.fire({
         					icon: 'error',
-        					title: 'Oops!',
-        					html: 'Pastikan "Password baru" dan "Konfirmasi password baru" sesuai',
+						title: 'Password tidak sama',
+						html: 'Konfirmasi password tidak sama.',
 			confirmButtonText: 'Coba lagi'
         				});
         				return false;

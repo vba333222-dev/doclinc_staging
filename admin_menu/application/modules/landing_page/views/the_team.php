@@ -269,13 +269,13 @@
     $('.tooltip-title').tooltip();
     $('form#add_team').submit(function(event) {
       if ($('#password').val()!=$('#c_password').val()) {
-        alert('Password tidak cocok!');
+        alert('Konfirmasi password tidak sama.');
         return false;
       }
     });
     $('form#edit_team').submit(function(event) {
       if ($('#password_').val()!=$('#c_password_').val()) {
-        alert('Password tidak cocok!');
+        alert('Konfirmasi password tidak sama.');
         return false;
       }
     });

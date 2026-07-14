@@ -1222,7 +1222,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					error: function(xhr) {
 						const response = xhr.responseJSON || {};
 						if (xhr.status === 403) {
-							setMapStatus('Akses tidak diizinkan', true);
+							setMapStatus('Anda tidak memiliki akses.', true);
 							return;
 						}
 						if (fallbackPatientLocation) {
@@ -1571,7 +1571,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 				navigator.geolocation.watchPosition(updateLocation, showError);
 			} else {
-				alert("Geolocation tidak didukung oleh browser ini.");
+				alert("Fitur lokasi tidak tersedia di browser ini.");
 			}
 
 			document.querySelectorAll(".lihat-map").forEach(button => {
@@ -1755,16 +1755,16 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				// 	break;
 				case error.POSITION_UNAVAILABLE:
 					Swal.fire({
-						title: "Error",
-						text: "Informasi lokasi tidak tersedia.",
+						title: "Lokasi tidak tersedia",
+						text: "Lokasi tidak tersedia.",
 						icon: "error",
 						confirmButtonText: "Tutup"
 					});
 					break;
 				case error.TIMEOUT:
 					Swal.fire({
-						title: "Error",
-						text: "Permintaan lokasi timeout.",
+						title: "Lokasi belum ditemukan",
+						text: "Lokasi belum ditemukan. Coba lagi.",
 						icon: "error",
 						confirmButtonText: "Tutup"
 					});

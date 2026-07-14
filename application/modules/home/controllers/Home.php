@@ -16,7 +16,7 @@ class Home extends MX_Controller
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
-					->set_output(json_encode(['status' => 'error', 'message' => 'Login diperlukan']));
+					->set_output(json_encode(['status' => 'error', 'message' => 'Silakan masuk terlebih dahulu.']));
 				$this->output->_display();
 				exit;
 			}
@@ -31,7 +31,7 @@ class Home extends MX_Controller
 		if ($this->session->userdata('role') !== 'warga') {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+				->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -55,7 +55,7 @@ class Home extends MX_Controller
 		$this->output->set_content_type('application/json');
 		try {
 			if ($this->session->userdata('role') !== 'warga') {
-				$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'has_incoming' => false, 'message' => 'Akses tidak diizinkan')));
+				$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'has_incoming' => false, 'message' => 'Anda tidak memiliki akses.')));
 				return;
 			}
 
@@ -100,7 +100,7 @@ class Home extends MX_Controller
 	{
 		$this->output->set_content_type('application/json');
 		if ($this->session->userdata('role') !== 'warga') {
-			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -151,7 +151,7 @@ class Home extends MX_Controller
 	{
 		$this->output->set_content_type('application/json');
 		if ($this->session->userdata('role') !== 'warga') {
-			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Akses tidak diizinkan')));
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
@@ -299,22 +299,22 @@ class Home extends MX_Controller
 		$user_id = (int) $this->session->userdata('id');
 		if ($this->session->userdata('role') !== 'warga' || $id < 1 || !doclinc_can_view_request($id, $user_id, 'warga')) {
 			doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_update'));
-			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 
 		$request = $this->Home_m->get_request_for_pending_edit($id, $user_id);
 		if (!$request) {
-			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 
 		if ($request->request_status !== 'Pending') {
-			$this->output->set_status_header(409)->set_output(json_encode(['status' => 'error', 'message' => 'Hanya dapat diubah sebelum diterima.']));
+			$this->output->set_status_header(409)->set_output(json_encode(['status' => 'error', 'message' => 'Permintaan ini tidak dapat diubah.']));
 			return;
 		}
 		if ($this->Home_m->request_has_processing_assignment($request)) {
-			$this->output->set_status_header(409)->set_output(json_encode(['status' => 'error', 'message' => 'Hanya dapat diubah sebelum diterima.']));
+			$this->output->set_status_header(409)->set_output(json_encode(['status' => 'error', 'message' => 'Permintaan ini tidak dapat diubah.']));
 			return;
 		}
 
@@ -355,7 +355,7 @@ class Home extends MX_Controller
 		}
 
 		$this->output->set_status_header(409);
-		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Hanya dapat diubah sebelum diterima.']));
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Permintaan ini tidak dapat diubah.']));
 	}
 
 	private function sanitize_gejala_keluhan_choice($value)
@@ -392,7 +392,7 @@ class Home extends MX_Controller
 		$id = (int) $this->input->post('requestId');
 		if ($id < 1 || !doclinc_can_view_request($id, $this->session->userdata('id'), 'warga')) {
 			doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_delete'));
-			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 		if ($this->Home_m->deleteRequestById($id)) {
@@ -402,7 +402,7 @@ class Home extends MX_Controller
 
 		doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_delete'));
 		$this->output->set_status_header(403);
-		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 	}
 
 	public function cancel_request()
@@ -420,7 +420,7 @@ class Home extends MX_Controller
 			}
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 
@@ -485,7 +485,7 @@ class Home extends MX_Controller
 		if ($role !== 'warga') {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route, 'arrival' => $default_arrival]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 
@@ -499,7 +499,7 @@ class Home extends MX_Controller
 		if ((string) $request->user_id !== (string) $user_id) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route, 'arrival' => $default_arrival]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 		if ($request->request_status !== 'Accepted') {
@@ -530,7 +530,7 @@ class Home extends MX_Controller
 		if (!doclinc_can_view_visit_location($request_id, $user_id, $role)) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route, 'arrival' => $default_arrival]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 
@@ -538,7 +538,7 @@ class Home extends MX_Controller
 		if (!$row) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan', 'route' => $default_route, 'arrival' => $default_arrival]));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.', 'route' => $default_route, 'arrival' => $default_arrival]));
 			return;
 		}
 
@@ -681,7 +681,7 @@ class Home extends MX_Controller
 
 			if (empty($latitudeB) || empty($longitudeB)) {
 				http_response_code(400);
-				echo json_encode(['status' => 'error', 'message' => 'Koordinat tidak lengkap']);
+				echo json_encode(['status' => 'error', 'message' => 'Pilih lokasi terlebih dahulu.']);
 				exit;
 			}
 

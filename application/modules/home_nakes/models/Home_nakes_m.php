@@ -598,7 +598,7 @@ class Home_nakes_m extends MX_Controller
 		}
 		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
 		if (!$this->command_center_identity_matches($identity_context, $id_user, $puskesmas_code)) {
-			return array('status' => 'error', 'message' => 'Akses tidak diizinkan untuk tindakan ini.');
+			return array('status' => 'error', 'message' => 'Anda tidak memiliki akses.');
 		}
 
 		$request = $this->db
@@ -696,7 +696,7 @@ class Home_nakes_m extends MX_Controller
 		if (!is_array($identity_context)
 			|| empty($identity_context['valid'])
 			|| (int) $identity_context['user_id'] !== $user_id) {
-			return array('status' => 'error', 'message' => 'Akses tidak diizinkan untuk tindakan ini.');
+			return array('status' => 'error', 'message' => 'Anda tidak memiliki akses.');
 		}
 
 		$this->db->trans_begin();
@@ -776,7 +776,7 @@ class Home_nakes_m extends MX_Controller
 		if (!is_array($identity_context)
 			|| empty($identity_context['valid'])
 			|| (int) $identity_context['user_id'] !== $user_id) {
-			return array('status' => 'error', 'message' => 'Akses tidak diizinkan');
+			return array('status' => 'error', 'message' => 'Anda tidak memiliki akses.');
 		}
 
 		$this->db->trans_begin();
@@ -1305,7 +1305,7 @@ class Home_nakes_m extends MX_Controller
 			|| $identity_context['account_type'] !== 'command_center'
 			|| (int) $identity_context['user_id'] !== $assigned_by_user_id
 			|| trim((string) $identity_context['puskesmas_code']) !== $kode_pkm) {
-			return array('status' => 'error', 'message' => 'Akses tidak diizinkan untuk tindakan ini.');
+			return array('status' => 'error', 'message' => 'Anda tidak memiliki akses.');
 		}
 
 		$db_debug = $this->db->db_debug;
@@ -1507,7 +1507,7 @@ class Home_nakes_m extends MX_Controller
 			|| $identity_context['account_type'] !== 'command_center'
 			|| (int) $identity_context['user_id'] !== $assigned_by_user_id
 			|| trim((string) $identity_context['puskesmas_code']) !== $kode_pkm) {
-			return array('status' => 'error', 'message' => 'Akses tidak diizinkan untuk tindakan ini.');
+			return array('status' => 'error', 'message' => 'Anda tidak memiliki akses.');
 		}
 
 		$db_debug = $this->db->db_debug;
