@@ -26,6 +26,16 @@ if (!function_exists('doclinc_record_date')) {
 	}
 }
 
+if (!function_exists('doclinc_record_puskesmas_label')) {
+	function doclinc_record_puskesmas_label($value)
+	{
+		$value = trim((string) $value);
+		return $value === '' || in_array(strtoupper($value), array('DEFAULT', 'PUSKESMAS DEFAULT', 'PERLU DICEK'), true)
+			? 'Puskesmas belum tersedia'
+			: $value;
+	}
+}
+
 if (!function_exists('doclinc_record_service_label')) {
 	function doclinc_record_service_label($mode, $visit_status)
 	{
@@ -37,7 +47,7 @@ if (!function_exists('doclinc_record_service_label')) {
 		if ($mode === 'non_visit') {
 			return 'Tanpa kunjungan';
 		}
-		return 'Perlu dicek';
+		return 'Status belum tersedia';
 	}
 }
 
@@ -45,12 +55,13 @@ if (!function_exists('doclinc_record_status_label')) {
 	function doclinc_record_status_label($status)
 	{
 		$labels = array(
-			'Pending' => 'Menunggu',
+			'Pending' => 'Menunggu konfirmasi Puskesmas',
 			'Accepted' => 'Diterima',
+			'in_service' => 'Sedang ditangani',
 			'Completed' => 'Selesai',
 			'Cancelled' => 'Dibatalkan',
 		);
-		return isset($labels[$status]) ? $labels[$status] : 'Perlu dicek';
+		return isset($labels[$status]) ? $labels[$status] : 'Status belum tersedia';
 	}
 }
 
@@ -99,7 +110,7 @@ $summary_cards = array(
 							<option value="">Semua Puskesmas</option>
 							<?php foreach ($puskesmas_options as $option): ?>
 								<option value="<?= html_escape($option->kode_pkm ?? ''); ?>" <?= (($filters['puskesmas'] ?? '') === (string) ($option->kode_pkm ?? '')) ? 'selected' : ''; ?>>
-									<?= html_escape($option->nama_puskesmas ?? $option->kode_pkm ?? '-'); ?>
+									<?= html_escape(doclinc_record_puskesmas_label($option->nama_puskesmas ?? $option->kode_pkm ?? '')); ?>
 								</option>
 							<?php endforeach; ?>
 						</select>
@@ -148,7 +159,7 @@ $summary_cards = array(
 									<td><?= html_escape(doclinc_record_date($row->created_at ?? '')); ?></td>
 									<td><?= html_escape($row->patient_name ?? '-'); ?></td>
 									<td>
-										<div class="font-weight-bold"><?= html_escape($row->puskesmas_name ?? 'Perlu dicek'); ?></div>
+										<div class="font-weight-bold"><?= html_escape(doclinc_record_puskesmas_label($row->puskesmas_name ?? '')); ?></div>
 										<div class="doclinc-meta-text"><?= html_escape($row->puskesmas_code ?? '-'); ?></div>
 									</td>
 									<td><?= html_escape(doclinc_record_short_text($row->diagnosis ?? '-', 64)); ?></td>
@@ -197,6 +208,13 @@ $summary_cards = array(
 			return $('<div>').text(value == null ? '-' : String(value)).html();
 		}
 
+		function puskesmasLabel(value) {
+			var label = String(value || '').trim();
+			return label === '' || label.toUpperCase() === 'DEFAULT' || label.toUpperCase() === 'PUSKESMAS DEFAULT' || label.toUpperCase() === 'PERLU DICEK'
+				? 'Puskesmas belum tersedia'
+				: label;
+		}
+
 		function serviceLabel(mode, visitStatus) {
 			mode = String(mode || '').toLowerCase();
 			visitStatus = String(visitStatus || '').toLowerCase();
@@ -206,17 +224,18 @@ $summary_cards = array(
 			if (mode === 'non_visit') {
 				return 'Tanpa kunjungan';
 			}
-			return 'Perlu dicek';
+			return 'Status belum tersedia';
 		}
 
 		function requestStatusLabel(status) {
 			var labels = {
-				Pending: 'Menunggu',
+				Pending: 'Menunggu konfirmasi Puskesmas',
 				Accepted: 'Diterima',
+				in_service: 'Sedang ditangani',
 				Completed: 'Selesai',
 				Cancelled: 'Dibatalkan'
 			};
-			return labels[status] || 'Perlu dicek';
+			return labels[status] || 'Status belum tersedia';
 		}
 
 		function visitStatusLabel(status) {
@@ -224,10 +243,10 @@ $summary_cards = array(
 				not_started: 'Belum dimulai',
 				en_route: 'Dalam perjalanan',
 				arrived: 'Sudah tiba',
-				in_service: 'Ditangani',
+				in_service: 'Sedang ditangani',
 				completed: 'Selesai'
 			};
-			return status ? (labels[status] || 'Perlu dicek') : '-';
+			return status ? (labels[status] || 'Status belum tersedia') : 'Status belum tersedia';
 		}
 
 		function formatText(value) {
@@ -240,7 +259,7 @@ $summary_cards = array(
 				'<div class="doclinc-record-detail-grid">' +
 				'<div><span>Pasien</span><strong>' + escapeHtml(data.patient_name) + '</strong></div>' +
 				'<div><span>ID permintaan</span><strong>#' + escapeHtml(data.request_id) + '</strong></div>' +
-				'<div><span>Puskesmas</span><strong>' + escapeHtml(data.puskesmas_name) + '</strong></div>' +
+				'<div><span>Puskesmas</span><strong>' + escapeHtml(puskesmasLabel(data.puskesmas_name)) + '</strong></div>' +
 				'<div><span>Status konsultasi</span><strong>' + escapeHtml(requestStatusLabel(data.request_status)) + '</strong></div>' +
 				'<div><span>Jenis layanan</span><strong>' + escapeHtml(serviceLabel(data.consultation_mode, data.visit_status)) + '</strong></div>' +
 				'<div><span>Status kunjungan</span><strong>' + escapeHtml(visitStatusLabel(data.visit_status)) + '</strong></div>' +

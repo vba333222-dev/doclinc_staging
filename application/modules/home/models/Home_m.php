@@ -290,9 +290,9 @@ class Home_m extends MX_Controller
 		}
 		$status = $status !== '' ? $status : 'not_started';
 		$labels = array(
-			'not_started' => 'Kunjungan belum dimulai',
-			'en_route' => 'Nakes menuju lokasi',
-			'arrived' => 'Nakes telah tiba',
+			'not_started' => 'Belum dimulai',
+			'en_route' => 'Dalam perjalanan',
+			'arrived' => 'Sudah tiba',
 			'in_service' => 'Sedang ditangani',
 			'completed' => 'Selesai',
 		);
@@ -309,8 +309,8 @@ class Home_m extends MX_Controller
 
 		$event_labels = array(
 			'request_accepted' => 'Diterima',
-			'visit_started' => 'Nakes menuju lokasi',
-			'visit_arrived' => 'Nakes telah tiba',
+			'visit_started' => 'Dalam perjalanan',
+			'visit_arrived' => 'Sudah tiba',
 			'visit_in_service' => 'Sedang ditangani',
 			'visit_completed' => 'Selesai',
 		);
@@ -345,8 +345,8 @@ class Home_m extends MX_Controller
 		$current_status = isset($request->visit_status) ? $this->warga_normalize_visit_status($request->visit_status) : 'not_started';
 		$status_order = array('not_started' => 0, 'en_route' => 1, 'arrived' => 2, 'in_service' => 3, 'completed' => 4);
 		$fallback_steps = array(
-			array('status' => 'en_route', 'label' => 'Nakes menuju lokasi', 'field' => 'visit_started_at'),
-			array('status' => 'arrived', 'label' => 'Nakes telah tiba', 'field' => 'visit_arrived_at'),
+			array('status' => 'en_route', 'label' => 'Dalam perjalanan', 'field' => 'visit_started_at'),
+			array('status' => 'arrived', 'label' => 'Sudah tiba', 'field' => 'visit_arrived_at'),
 			array('status' => 'in_service', 'label' => 'Sedang ditangani', 'field' => 'visit_in_service_at'),
 			array('status' => 'completed', 'label' => 'Selesai', 'field' => 'visit_completed_at'),
 		);
@@ -397,6 +397,9 @@ class Home_m extends MX_Controller
 		}
 		if ($request_status === 'Accepted') {
 			return 'Diterima';
+		}
+		if ($request_status === 'in_service') {
+			return 'Sedang ditangani';
 		}
 		if ($request_status === 'Completed') {
 			return 'Selesai';

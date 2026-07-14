@@ -1,12 +1,25 @@
 <?php
 $summary = isset($operational_summary) && is_array($operational_summary) ? $operational_summary : array();
+$request_status_labels = array(
+	'Pending' => 'Menunggu konfirmasi Puskesmas',
+	'Accepted' => 'Diterima',
+	'in_service' => 'Sedang ditangani',
+	'Completed' => 'Selesai',
+	'Cancelled' => 'Dibatalkan',
+);
+$puskesmas_display_label = static function ($value) {
+	$value = trim((string) $value);
+	return $value === '' || in_array(strtoupper($value), array('DEFAULT', 'PUSKESMAS DEFAULT', 'LEGACY / BELUM TERKLASIFIKASI'), true)
+		? 'Puskesmas belum tersedia'
+		: $value;
+};
 $cards = array(
 	array('label' => 'Konsultasi hari ini', 'value' => (int) ($summary['today'] ?? 0), 'icon' => 'fa-calendar-day', 'tone' => 'primary'),
-	array('label' => 'Menunggu / Pending', 'value' => (int) ($summary['pending'] ?? 0), 'icon' => 'fa-hourglass-half', 'tone' => 'warning'),
-	array('label' => 'Diterima / Accepted', 'value' => (int) ($summary['accepted'] ?? 0), 'icon' => 'fa-check-circle', 'tone' => 'info'),
-	array('label' => 'Dalam layanan', 'value' => (int) ($summary['in_progress'] ?? 0), 'icon' => 'fa-stethoscope', 'tone' => 'service'),
-	array('label' => 'Selesai / Completed', 'value' => (int) ($summary['completed'] ?? 0), 'icon' => 'fa-clipboard-check', 'tone' => 'success'),
-	array('label' => 'Legacy / Belum terklasifikasi', 'value' => (int) ($summary['legacy'] ?? 0), 'icon' => 'fa-exclamation-triangle', 'tone' => 'legacy'),
+	array('label' => 'Menunggu konfirmasi Puskesmas', 'value' => (int) ($summary['pending'] ?? 0), 'icon' => 'fa-hourglass-half', 'tone' => 'warning'),
+	array('label' => 'Diterima', 'value' => (int) ($summary['accepted'] ?? 0), 'icon' => 'fa-check-circle', 'tone' => 'info'),
+	array('label' => 'Belum selesai', 'value' => (int) ($summary['in_progress'] ?? 0), 'icon' => 'fa-stethoscope', 'tone' => 'service'),
+	array('label' => 'Selesai', 'value' => (int) ($summary['completed'] ?? 0), 'icon' => 'fa-clipboard-check', 'tone' => 'success'),
+	array('label' => 'Perlu ditinjau', 'value' => (int) ($summary['legacy'] ?? 0), 'icon' => 'fa-exclamation-triangle', 'tone' => 'legacy'),
 );
 $distribution = isset($puskesmas_distribution) && is_array($puskesmas_distribution) ? $puskesmas_distribution : array();
 $attention = isset($attention_requests) && is_array($attention_requests) ? $attention_requests : array();
@@ -64,7 +77,7 @@ foreach ($distribution as $row) {
 						<div class="doclinc-distribution-row">
 							<div class="d-flex justify-content-between align-items-start">
 								<div>
-									<div class="font-weight-bold"><?= html_escape($row->puskesmas ?? 'Legacy / Belum terklasifikasi'); ?></div>
+									<div class="font-weight-bold"><?= html_escape($puskesmas_display_label($row->puskesmas ?? '')); ?></div>
 									<div class="doclinc-meta-text"><?= html_escape($row->puskesmas_code ?? '-'); ?></div>
 								</div>
 								<div class="font-weight-bold"><?= number_format($total); ?></div>
@@ -139,7 +152,7 @@ foreach ($distribution as $row) {
 						<div class="doclinc-diagnosis-puskesmas">
 							<div class="d-flex justify-content-between align-items-start">
 								<div>
-									<strong><?= html_escape($row->puskesmas ?? 'Legacy / Belum terklasifikasi'); ?></strong>
+									<strong><?= html_escape($puskesmas_display_label($row->puskesmas ?? '')); ?></strong>
 									<div class="doclinc-meta-text">
 										Top: <?= html_escape($row->top_diagnosis ?? '-'); ?> · <?= number_format((int) ($row->top_diagnosis_total ?? 0)); ?> kasus
 									</div>
@@ -172,9 +185,9 @@ foreach ($distribution as $row) {
 								<div class="d-flex justify-content-between align-items-start">
 									<div>
 										<div class="font-weight-bold">Request #<?= html_escape($row->request_id ?? '-'); ?></div>
-										<div class="doclinc-meta-text"><?= html_escape($row->puskesmas ?? 'Legacy / Belum terklasifikasi'); ?></div>
+										<div class="doclinc-meta-text"><?= html_escape($puskesmas_display_label($row->puskesmas ?? '')); ?></div>
 									</div>
-									<span class="badge badge-light border"><?= html_escape($row->request_status ?? '-'); ?></span>
+									<span class="badge badge-light border"><?= html_escape($request_status_labels[$row->request_status ?? ''] ?? 'Status belum tersedia'); ?></span>
 								</div>
 								<div class="mt-2"><?= html_escape($row->attention_reason ?? 'Perlu dipantau'); ?></div>
 								<div class="doclinc-meta-text mt-1">Dibuat: <?= html_escape($row->created_at_label ?? '-'); ?></div>
@@ -202,7 +215,7 @@ foreach ($distribution as $row) {
 								<div class="d-flex justify-content-between align-items-start">
 									<div>
 										<div class="font-weight-bold"><?= html_escape($row->event_label ?? 'Aktivitas konsultasi diperbarui'); ?></div>
-										<div class="doclinc-meta-text">Request #<?= html_escape($row->request_id ?? '-'); ?> &middot; <?= html_escape($row->puskesmas ?? 'Legacy / Belum terklasifikasi'); ?></div>
+										<div class="doclinc-meta-text">Request #<?= html_escape($row->request_id ?? '-'); ?> &middot; <?= html_escape($puskesmas_display_label($row->puskesmas ?? '')); ?></div>
 									</div>
 									<div class="doclinc-meta-text text-right"><?= html_escape($row->created_at_label ?? '-'); ?></div>
 								</div>

@@ -1265,7 +1265,14 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				container.setAttribute('data-current-status', visitStatus);
 				const labelElement = container.querySelector('.visit-workflow-label');
 				if (labelElement) {
-					labelElement.textContent = label || visitStatus;
+					const visitStatusLabels = {
+						not_started: 'Belum dimulai',
+						en_route: 'Dalam perjalanan',
+						arrived: 'Sudah tiba',
+						in_service: 'Sedang ditangani',
+						completed: 'Selesai'
+					};
+					labelElement.textContent = label || visitStatusLabels[visitStatus] || 'Status belum tersedia';
 				}
 				const nextStatus = nextVisitStatuses[visitStatus] || '';
 				container.querySelectorAll('.visit-status-update').forEach(function(button) {

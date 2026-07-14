@@ -22,15 +22,17 @@ if (!function_exists('doclinc_admin_status_badge')) {
 	{
 		switch ((string) $status) {
 			case 'Pending':
-				return '<span class="badge badge-warning doclinc-status-badge"><i class="fas fa-hourglass-half"></i> Menunggu</span>';
+				return '<span class="badge badge-warning doclinc-status-badge"><i class="fas fa-hourglass-half"></i> Menunggu konfirmasi Puskesmas</span>';
 			case 'Accepted':
 				return '<span class="badge badge-primary doclinc-status-badge"><i class="fas fa-check-circle"></i> Diterima</span>';
+			case 'in_service':
+				return '<span class="badge badge-info doclinc-status-badge"><i class="fas fa-stethoscope"></i> Sedang ditangani</span>';
 			case 'Completed':
 				return '<span class="badge badge-success doclinc-status-badge"><i class="fas fa-check"></i> Selesai</span>';
 			case 'Cancelled':
 				return '<span class="badge badge-danger doclinc-status-badge"><i class="fas fa-times"></i> Dibatalkan</span>';
 			default:
-				return '<span class="badge badge-secondary doclinc-status-badge">Perlu dicek</span>';
+				return '<span class="badge badge-secondary doclinc-status-badge">Status belum tersedia</span>';
 		}
 	}
 }
@@ -40,16 +42,16 @@ if (!function_exists('doclinc_admin_visit_badge')) {
 	{
 		$status = trim((string) $status);
 		if ($status === '') {
-			return '<span class="badge badge-light border doclinc-status-badge">Belum ada kunjungan</span>';
+			return '<span class="badge badge-light border doclinc-status-badge">Status belum tersedia</span>';
 		}
 		$labels = array(
 			'not_started' => 'Belum dimulai',
 			'en_route' => 'Dalam perjalanan',
 			'arrived' => 'Sudah tiba',
-			'in_service' => 'Ditangani',
+			'in_service' => 'Sedang ditangani',
 			'completed' => 'Selesai',
 		);
-		return '<span class="badge badge-info doclinc-status-badge">' . html_escape(isset($labels[$status]) ? $labels[$status] : 'Perlu dicek') . '</span>';
+		return '<span class="badge badge-info doclinc-status-badge">' . html_escape(isset($labels[$status]) ? $labels[$status] : 'Status belum tersedia') . '</span>';
 	}
 }
 
@@ -57,28 +59,38 @@ if (!function_exists('doclinc_admin_event_label')) {
 	function doclinc_admin_event_label($event_type)
 	{
 		$labels = array(
-			'request_created' => 'Konsultasi baru dibuat',
-			'request_accepted' => 'Konsultasi diterima',
-			'request_cancelled' => 'Konsultasi dibatalkan',
+			'request_created' => 'Menunggu konfirmasi Puskesmas',
+			'request_accepted' => 'Diterima',
+			'request_cancelled' => 'Dibatalkan',
 			'pic_assigned' => 'PIC ditugaskan',
 			'pic_changed' => 'PIC diganti',
 			'pic_cleared' => 'PIC dilepas',
-			'visit_started' => 'Kunjungan dimulai',
-			'visit_arrived' => 'PIC tiba di lokasi',
+			'visit_started' => 'Dalam perjalanan',
+			'visit_arrived' => 'Sudah tiba',
 			'visit_in_service' => 'Sedang ditangani',
-			'visit_completed' => 'Kunjungan selesai',
-			'request_completed' => 'Konsultasi selesai',
+			'visit_completed' => 'Selesai',
+			'request_completed' => 'Selesai',
 		);
 		return isset($labels[$event_type]) ? $labels[$event_type] : 'Konsultasi diperbarui';
 	}
 }
+
+$is_legacy_puskesmas = static function ($value) {
+	$value = strtoupper(trim((string) $value));
+
+	return $value === '' || in_array($value, array(
+		'DEFAULT',
+		'PUSKESMAS DEFAULT',
+		'PUSKESMAS BELUM TERSEDIA',
+	), true);
+};
 
 if (!function_exists('doclinc_admin_puskesmas_label')) {
 	function doclinc_admin_puskesmas_label($value)
 	{
 		$value = trim((string) $value);
 		if ($value === '' || strtoupper($value) === 'DEFAULT' || strtoupper($value) === 'PUSKESMAS DEFAULT') {
-			return 'Perlu dicek';
+			return 'Puskesmas belum tersedia';
 		}
 		return $value;
 	}
@@ -91,8 +103,7 @@ foreach ($data_konsultasi as $row) {
 	if (isset($summary[$status])) {
 		$summary[$status]++;
 	}
-	$puskesmas_label = doclinc_admin_puskesmas_label($row->puskesmas ?? '');
-	if ($puskesmas_label === 'Perlu dicek') {
+	if ($is_legacy_puskesmas($row->puskesmas ?? '')) {
 		$summary['legacy']++;
 	}
 	$visit_status = trim((string) ($row->visit_status ?? ''));
@@ -108,11 +119,11 @@ if (!$has_visit_status) {
 }
 $summary_cards = array(
 	array('label' => 'Total konsultasi', 'value' => $summary['total'], 'icon' => 'fa-list-alt', 'tone' => 'primary'),
-	array('label' => 'Menunggu', 'value' => $summary['Pending'], 'icon' => 'fa-hourglass-half', 'tone' => 'warning'),
+	array('label' => 'Menunggu konfirmasi Puskesmas', 'value' => $summary['Pending'], 'icon' => 'fa-hourglass-half', 'tone' => 'warning'),
 	array('label' => 'Diterima', 'value' => $summary['Accepted'], 'icon' => 'fa-check-circle', 'tone' => 'info'),
-	array('label' => 'Ditangani', 'value' => $summary['in_progress'], 'icon' => 'fa-stethoscope', 'tone' => 'service'),
+	array('label' => 'Belum selesai', 'value' => $summary['in_progress'], 'icon' => 'fa-stethoscope', 'tone' => 'service'),
 	array('label' => 'Selesai', 'value' => $summary['Completed'], 'icon' => 'fa-clipboard-check', 'tone' => 'success'),
-	array('label' => 'Perlu dicek', 'value' => $summary['legacy'], 'icon' => 'fa-exclamation-triangle', 'tone' => 'legacy'),
+	array('label' => 'Perlu ditinjau', 'value' => $summary['legacy'], 'icon' => 'fa-exclamation-triangle', 'tone' => 'legacy'),
 );
 ?>
 
@@ -143,7 +154,7 @@ $summary_cards = array(
 					<label class="small font-weight-bold text-muted" for="status">Status</label>
 					<select name="status" id="status" class="form-control">
 						<option value="">Semua</option>
-						<?php foreach (array('Pending' => 'Menunggu', 'Accepted' => 'Diterima', 'Completed' => 'Selesai', 'Cancelled' => 'Dibatalkan') as $status => $status_label): ?>
+						<?php foreach (array('Pending' => 'Menunggu konfirmasi Puskesmas', 'Accepted' => 'Diterima', 'Completed' => 'Selesai', 'Cancelled' => 'Dibatalkan') as $status => $status_label): ?>
 							<option value="<?= html_escape($status); ?>" <?= (($filters['status'] ?? '') === $status) ? 'selected' : ''; ?>><?= html_escape($status_label); ?></option>
 						<?php endforeach; ?>
 					</select>
@@ -157,7 +168,7 @@ $summary_cards = array(
 								<?= html_escape($puskesmas->nama_puskesmas); ?>
 							</option>
 						<?php endforeach; ?>
-						<option value="__legacy__" <?= (($filters['puskesmas'] ?? '') === '__legacy__') ? 'selected' : ''; ?>>Perlu dicek</option>
+						<option value="__legacy__" <?= (($filters['puskesmas'] ?? '') === '__legacy__') ? 'selected' : ''; ?>>Puskesmas belum tersedia</option>
 					</select>
 				</div>
 				<div class="form-group col-md-2">
@@ -208,7 +219,10 @@ $summary_cards = array(
 						<?php foreach ($data_konsultasi as $row): ?>
 							<?php
 							$request_id = isset($row->request_id) ? (int) $row->request_id : 0;
-							$puskesmas_label = doclinc_admin_puskesmas_label($row->puskesmas ?? '');
+							$puskesmas_value = $row->puskesmas ?? '';
+							$puskesmas_label = $is_legacy_puskesmas($puskesmas_value)
+								? 'Puskesmas belum tersedia'
+								: doclinc_admin_puskesmas_label($puskesmas_value);
 							$request_description = (string) ($row->request_description ?? '-');
 							$location = trim((string) ($row->location_detail ?? '')) !== '' ? trim((string) $row->location_detail) : trim((string) ($row->location ?? ''));
 							$date_label = !empty($row->date) && strtotime($row->date) ? date('d M Y', strtotime($row->date)) : '-';
@@ -294,7 +308,10 @@ $summary_cards = array(
 <?php foreach ($data_konsultasi as $row): ?>
 	<?php
 	$request_id = isset($row->request_id) ? (int) $row->request_id : 0;
-	$puskesmas_label = doclinc_admin_puskesmas_label($row->puskesmas ?? '');
+	$puskesmas_value = $row->puskesmas ?? '';
+	$puskesmas_label = $is_legacy_puskesmas($puskesmas_value)
+		? 'Puskesmas belum tersedia'
+		: doclinc_admin_puskesmas_label($puskesmas_value);
 	$location = trim((string) ($row->location_detail ?? '')) !== '' ? trim((string) $row->location_detail) : trim((string) ($row->location ?? ''));
 	$request_events = !empty($row->request_events) && is_array($row->request_events) ? $row->request_events : array();
 	$pic_name = trim((string) ($row->pic_staff_name ?? ''));

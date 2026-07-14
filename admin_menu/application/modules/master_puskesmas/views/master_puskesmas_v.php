@@ -35,8 +35,9 @@
 								<?php
 								$is_default = strtoupper((string) ($row->kode_pkm ?? '')) === 'DEFAULT';
 								$status = (string) ($row->status ?? '');
-								$status_label = $is_default ? 'Legacy / Fallback' : ($status === 'aktif' ? 'Aktif' : 'Nonaktif');
-								$display_name = $is_default ? 'Legacy / Belum terklasifikasi' : ($row->nama_puskesmas ?? '-');
+								$status_labels = array('aktif' => 'Aktif', 'valid' => 'Aktif', 'nonaktif' => 'Nonaktif', 'inactive' => 'Nonaktif');
+								$status_label = $is_default ? 'Perlu ditinjau' : ($status_labels[strtolower($status)] ?? 'Status belum tersedia');
+								$display_name = $is_default ? 'Puskesmas belum tersedia' : ($row->nama_puskesmas ?? 'Puskesmas belum tersedia');
 								$search_text = implode(' ', array($display_name, $row->kode_pkm ?? '', $row->alamat ?? '', $row->latitude ?? '', $row->longitude ?? '', $status_label));
 								?>
 							<div class="doclinc-account-card" data-puskesmas-search="<?= html_escape($search_text); ?>">
