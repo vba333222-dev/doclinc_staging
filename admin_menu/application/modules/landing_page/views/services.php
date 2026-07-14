@@ -50,7 +50,7 @@
                     <a href="<?php echo base_url('landing_page/service_detail/'.$x->id.'/'.$x->service);?>" class="btn btn-primary tooltip-title" title="Lihat detail">
                       <i class="far fa-list-alt fa-fw"></i>
                     </a>
-                    <form action="<?php echo base_url('landing_page/service_delete/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus layanan legacy ini?');">
+                    <form action="<?php echo base_url('landing_page/service_delete/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus layanan? Data yang dihapus tidak dapat dipulihkan.');">
                       <button type="submit" class="btn btn-danger tooltip-title" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
                     </form>
                   </div>
@@ -143,7 +143,7 @@
       // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
       // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
       var modal = $(this);
-      modal.find('.modal-title').text('Edit ' + service);
+      modal.find('.modal-title').text('Ubah layanan');
       modal.find('.modal-body input#idnya').val(idnya);
       modal.find('.modal-body input#service').val(service);
       modal.find('.modal-body textarea#short_desc').val(short_desc);

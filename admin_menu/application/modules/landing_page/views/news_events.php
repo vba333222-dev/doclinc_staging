@@ -112,7 +112,7 @@
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Add New</h5>
+        <h5 class="modal-title" id="exampleModalLabel">Tambah berita</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -163,7 +163,7 @@
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Edit <?= $row->title;?></h5>
+        <h5 class="modal-title" id="exampleModalLabel">Ubah berita</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -258,7 +258,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Hapus <?= $row->title;?></h5>
+        <h5 class="modal-title">Arsipkan berita?</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -267,12 +267,12 @@
         <form action="<?= base_url();?>landing_page/news_events_delete" method="POST">
           <center>
             <div class="form-group">
-                <label>Anda Yakin Akan Menghapus ? </label><br>
+                <label>Berita tidak lagi ditampilkan sebagai berita aktif.</label><br>
                 <img src="<?= base_url('../assets/img/uploads/news/' . rawurlencode($row->thumbnail));?>" class="img-thumbnail shadow-sm" style="height: 150px;">
                 <input type="hidden" class="form-control" name="idnya" value="<?= $row->id;?>">
                 <p><b><?= $row->title; ?></b> - <?= substr($row->content, 157,300);?>...</p>
             </div>
-            <button type="submit" class="btn btn-danger" name="hapus"><i class="fas fa-check-circle"></i> Hapus</button>
+            <button type="submit" class="btn btn-danger" name="hapus"><i class="fas fa-check-circle"></i> Arsipkan</button>
             <button class="btn btn-primary" data-dismiss="modal" aria-label="Batal"><i class="fas fa-times-circle"></i> Batal</button>
           </center>
         </form>

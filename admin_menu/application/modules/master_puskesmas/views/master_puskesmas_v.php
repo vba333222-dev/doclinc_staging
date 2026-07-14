@@ -79,7 +79,7 @@
 									<?php if (($row->status ?? '') === 'aktif'): ?>
 										<form action="<?= site_url('master_puskesmas/disable') ?>" method="post">
 											<input type="hidden" name="kode_pkm" value="<?= html_escape($row->kode_pkm ?? ''); ?>">
-											<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan puskesmas ini?');">
+											<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan Puskesmas? Puskesmas tidak dapat menerima permintaan baru.');">
 												<i class="fas fa-ban"></i> Nonaktifkan
 											</button>
 										</form>
@@ -90,7 +90,7 @@
 									<?php else: ?>
 										<form action="<?= site_url('master_puskesmas/enable') ?>" method="post">
 											<input type="hidden" name="kode_pkm" value="<?= html_escape($row->kode_pkm ?? ''); ?>">
-											<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan puskesmas ini?');">
+											<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan Puskesmas?');">
 												<i class="fas fa-check"></i> Aktifkan
 											</button>
 										</form>
@@ -104,7 +104,7 @@
 								<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
 									<div class="modal-content border-0 shadow-sm">
 										<div class="modal-header bg-info text-white">
-											<h5 class="modal-title"><i class="fas fa-hospital mr-2"></i>Edit Puskesmas</h5>
+											<h5 class="modal-title"><i class="fas fa-hospital mr-2"></i>Ubah Puskesmas</h5>
 											<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup">
 												<span aria-hidden="true">&times;</span>
 											</button>

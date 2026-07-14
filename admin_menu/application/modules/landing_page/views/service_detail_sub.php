@@ -47,7 +47,7 @@
                     <a href="#modalEdit<?= $x->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Ubah">
                       <i class="far fa-edit fa-fw"></i>
                     </a>
-                    <form action="<?php echo base_url('landing_page/service_detail_sub_delete/'.$x->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus paket legacy ini?');">
+                    <form action="<?php echo base_url('landing_page/service_detail_sub_delete/'.$x->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus paket? Data yang dihapus tidak dapat dipulihkan.');">
                       <button type="submit" class="btn btn-danger tooltip-title" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
                     </form>
                   </div>
@@ -67,7 +67,7 @@
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah baru</h5>
+        <h5 class="modal-title" id="exampleModalLabel">Tambah paket</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -98,7 +98,7 @@
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel"><?= html_escape($x->paket ?? '-');?></h5>
+          <h5 class="modal-title" id="exampleModalLabel">Ubah paket</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -171,7 +171,7 @@
                       <a href="#modalEditHarga<?= $row->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Ubah harga">
                         <i class="far fa-edit fa-fw"></i>
                       </a>
-                      <form action="<?php echo base_url('landing_page/service_harga_delete/'.$row->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus investasi legacy ini?');">
+                      <form action="<?php echo base_url('landing_page/service_harga_delete/'.$row->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus investasi? Data yang dihapus tidak dapat dipulihkan.');">
                         <button type="submit" class="btn btn-danger tooltip-title" title="Hapus harga"><i class="far fa-trash-alt fa-fw"></i></button>
                       </form>
                     </div>
@@ -221,7 +221,7 @@
                     <td><?= $no;?></td>
                     <td><?= html_escape($key->nama_alat_tes ?? '-');?></td>
                     <td>
-                      <form action="<?php echo base_url('landing_page/service_harga_detail_delete_alat/'.$key->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus alat test dari paket legacy ini?');">
+                      <form action="<?php echo base_url('landing_page/service_harga_detail_delete_alat/'.$key->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus alat tes? Data yang dihapus tidak dapat dipulihkan.');">
                         <button type="submit" class="btn btn-danger tooltip-title btn-sm" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
                       </form>
                     </td>
@@ -250,7 +250,7 @@
     <div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel"><?= $x->nama_paket;?></h5>
+          <h5 class="modal-title" id="exampleModalLabel">Ubah investasi</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -320,7 +320,7 @@
   <div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah alat test</h5>
+        <h5 class="modal-title" id="exampleModalLabel">Tambah alat tes</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>

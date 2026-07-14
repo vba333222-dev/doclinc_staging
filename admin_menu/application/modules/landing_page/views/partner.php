@@ -45,7 +45,7 @@
                     <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" data-id="<?= $x->id;?>" data-logo="<?= $x->logo;?>" data-alt_name="<?= $x->alt_name;?>" title="Ubah">
                       <i class="far fa-edit fa-fw"></i>
                     </a>                    
-                    <form action="<?php echo base_url('landing_page/partner_delete/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus partner legacy ini?');">
+                    <form action="<?php echo base_url('landing_page/partner_delete/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus mitra? Data yang dihapus tidak dapat dipulihkan.');">
                       <button type="submit" class="btn btn-danger tooltip-title" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
                     </form>
                   </div>
@@ -66,7 +66,7 @@
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel1">Tambah Partner</h5>
+        <h5 class="modal-title" id="exampleModalLabel1">Tambah mitra</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -128,7 +128,7 @@
       // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
       // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
       var modal = $(this);
-      modal.find('.modal-title').text('Edit Partner');
+      modal.find('.modal-title').text('Ubah mitra');
       modal.find('.modal-body input#idnya').val(idnya);
       modal.find('.modal-body input#logo_edit').val(logo);
       modal.find('.modal-body input#alt_name_edit').val(alt_name);

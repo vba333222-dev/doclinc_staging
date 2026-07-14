@@ -46,7 +46,7 @@
                     <a href="<?php echo base_url('landing_page/service_detail_sub/'.$x->id.'/'.$x->title);?>" class="btn btn-primary tooltip-title" title="Lihat detail">
                       <i class="far fa-list-alt fa-fw"></i>
                     </a>
-                    <form action="<?php echo base_url('landing_page/service_detail_delete/'.$x->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus detail layanan legacy ini?');">
+                    <form action="<?php echo base_url('landing_page/service_detail_delete/'.$x->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus detail layanan? Data yang dihapus tidak dapat dipulihkan.');">
                       <button type="submit" class="btn btn-danger hapus tooltip-title" title="Hapus"><i class="far fa-trash-alt fa-fw"></i></button>
                     </form>
                   </div>
@@ -66,7 +66,7 @@
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah baru</h5>
+        <h5 class="modal-title" id="exampleModalLabel">Tambah detail layanan</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -96,7 +96,7 @@
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel"><?= $x->title;?></h5>
+          <h5 class="modal-title" id="exampleModalLabel">Ubah detail layanan</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
             <span aria-hidden="true">&times;</span>
           </button>

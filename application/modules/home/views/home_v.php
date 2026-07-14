@@ -2457,7 +2457,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 			if (!lastPopupTime || (currentTime - lastPopupTime) > 3600000) { // 1 hour = 3600000 ms
 				Swal.fire({
-					title: 'Informasi',
+					title: 'Jam layanan kunjungan',
 					text: 'Jam kunjungan: 08.00–17.00.',
 					icon: 'info',
 					confirmButtonText: 'Tutup'
@@ -2545,8 +2545,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 		$('#btn-logout').click(function(event) {
 			Swal.fire({
-				title: "Keluar?",
-				text: "Keluar dari akun ini?",
+				title: "Keluar dari akun?",
+				text: "Anda perlu masuk kembali.",
 				icon: "warning",
 				showCancelButton: true,
 				confirmButtonText: "Keluar",
@@ -3219,7 +3219,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					if (!['Cilegon', 'Kota Cilegon'].includes(kotaCilegon)) {
 						// buatkan alert yang dengan swal
 						Swal.fire({
-							title: 'Peringatan',
+							title: 'Di luar area layanan',
 							text: 'Konsultasi hanya tersedia di Kota Cilegon.',
 							icon: 'warning',
 							confirmButtonText: 'Tutup'
@@ -3234,7 +3234,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					if (tanggal_loc === null || tanggal_loc === '') {
 						// Tanggal sudah lewat
 						Swal.fire({
-							title: 'Peringatan',
+							title: 'Nakes belum tersedia',
 							text: 'Pilih Nakes lain.',
 							icon: 'warning',
 							confirmButtonText: 'Tutup'
@@ -3246,7 +3246,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						if (jumlah > 100) {
 							// Jika userIdWarga tidak sama dengan userIdPasien
 							Swal.fire({
-								title: 'Peringatan',
+								title: 'Batas permintaan tercapai',
 								text: 'Batas permintaan sudah tercapai.',
 								icon: 'warning',
 								confirmButtonText: 'Tutup'
@@ -3261,7 +3261,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					} else if (uids.includes(userIdToCheck) === true && stats.includes('Completed')) {
 						if (tgl == today) {
 							Swal.fire({
-								title: 'Peringatan',
+								title: 'Konsultasi belum tersedia',
 								text: 'Konsultasi baru belum tersedia hari ini.',
 								icon: 'warning',
 								confirmButtonText: 'Tutup'
@@ -3274,7 +3274,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							if (tgl == today) {
 								// Tidak bisa konsultasi lagi hari ini
 								Swal.fire({
-									title: 'Peringatan',
+									title: 'Konsultasi masih aktif',
 									text: 'Tunggu konsultasi aktif selesai.',
 									icon: 'warning',
 									confirmButtonText: 'Tutup'
@@ -3282,12 +3282,14 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							} else {
 								// Boleh lanjut atau perbarui
 								Swal.fire({
-									title: 'Peringatan',
-									text: 'Anda memiliki konsultasi sebelumnya yang belum selesai pada tanggal ' + tgl + '. Ingin memperbarui tanggal konsultasi?',
+									title: 'Perbarui atau hapus?',
+									text: 'Konsultasi tanggal ' + tgl + ' belum selesai.',
 									icon: 'warning',
+									showDenyButton: true,
 									showCancelButton: true,
-									confirmButtonText: 'Perbarui',
-									cancelButtonText: 'Hapus'
+									confirmButtonText: 'Perbarui permintaan',
+									denyButtonText: 'Hapus',
+									cancelButtonText: 'Batal'
 								}).then((result) => {
 									if (result.isConfirmed) {
 										// Arahkan ke endpoint untuk perbarui (opsional ganti endpoint-nya)
@@ -3308,7 +3310,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												});
 											}
 										});
-									} else if (result.dismiss === Swal.DismissReason.cancel) {
+									} else if (result.isDenied) {
 										// Tetap arahkan ke konsultasi
 										// hapus data request
 										$.ajax({
@@ -3331,7 +3333,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						} else if (uids.includes(userIdToCheck)) {
 							// Jika status masih Pending atau Accepted
 							Swal.fire({
-								title: 'Peringatan',
+								title: 'Konsultasi masih aktif',
 								text: 'Selesaikan konsultasi sebelumnya.',
 								icon: 'warning',
 								confirmButtonText: 'Tutup'

@@ -86,17 +86,17 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 											<form action="<?= site_url('kelola_dokter_nakes/nonaktifkan_user') ?>" method="post" class="d-inline">
 												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
 												<input type="hidden" name="remark_nonaktif" value="<?= html_escape($data->remark ?? ''); ?>">
-												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan akun Puskesmas ini? Akun tidak dihapus dan dapat diaktifkan kembali.');">Nonaktifkan</button>
+												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan akun Puskesmas? Akun tidak dapat digunakan hingga diaktifkan kembali.');">Nonaktifkan</button>
 											</form>
 										<?php else: ?>
 											<form action="<?= site_url('kelola_dokter_nakes/aktifkan_user') ?>" method="post" class="d-inline">
 												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
 												<input type="hidden" name="remark_aktif" value="<?= html_escape($data->remark ?? ''); ?>">
-												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan akun Puskesmas ini?');">Aktifkan</button>
+												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan akun Puskesmas?');">Aktifkan</button>
 											</form>
 											<form action="<?= site_url('kelola_dokter_nakes/destroy_dokter_nakes') ?>" method="post" class="d-inline">
 												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
-												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--danger doclinc-account-danger" onclick="return confirm('Hapus permanen akun ini? Aksi ini tidak dapat dibatalkan.');">Hapus</button>
+												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--danger doclinc-account-danger" onclick="return confirm('Hapus akun Puskesmas? Data yang dihapus tidak dapat dipulihkan.');">Hapus</button>
 											</form>
 										<?php endif; ?>
 									</div>
@@ -108,7 +108,7 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 									<div class="modal-content border-0 shadow-sm">
 										<div class="modal-header bg-info text-white">
 											<h5 class="modal-title" id="editModalLabel<?= (int) $data->userId ?>">
-												<i class="fas fa-hospital-user mr-2"></i>Edit Akun Puskesmas
+												<i class="fas fa-hospital-user mr-2"></i>Ubah akun Puskesmas
 											</h5>
 											<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup">
 												<span aria-hidden="true">&times;</span>
@@ -200,7 +200,7 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 		<div class="modal-content border-0 shadow-sm">
 			<div class="modal-header bg-success text-white">
 				<h5 class="modal-title" id="modalTambahDokterNakesLabel">
-					<i class="fas fa-user-plus mr-2"></i>Tambah Akun Puskesmas
+					<i class="fas fa-user-plus mr-2"></i>Tambah akun Puskesmas
 				</h5>
 				<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup">
 					<span aria-hidden="true">&times;</span>

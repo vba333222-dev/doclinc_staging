@@ -259,13 +259,13 @@ $form_values = array(
 												</a>
 												<?php if (($row->status ?? '') === 'aktif'): ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/deactivate/' . (int) $row->staff_id); ?>" method="post">
-														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan staf ini? Riwayat dan PIC tidak akan dihapus.');">
+														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan staf? Riwayat dan penetapan PIC tetap tersimpan.');">
 															<i class="fas fa-ban"></i> Nonaktifkan
 														</button>
 													</form>
 												<?php else: ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/activate/' . (int) $row->staff_id); ?>" method="post">
-														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan staf ini?');">
+														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan staf?');">
 															<i class="fas fa-check"></i> Aktifkan
 														</button>
 													</form>
@@ -273,7 +273,7 @@ $form_values = array(
 												<?php if ($linked_user_id > 0): ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/unbind_account'); ?>" method="post">
 														<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
-														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--warning" onclick="return confirm('Lepas akun dari staf ini? Akun tidak akan dihapus.');">
+														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--warning" onclick="return confirm('Lepas akun? Akun personal tetap tersimpan.');">
 															<i class="fas fa-unlink"></i> Lepas akun
 														</button>
 													</form>
