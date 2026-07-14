@@ -2700,8 +2700,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 					if (response && response.status === 'success') {
 						Swal.fire({
-							title: 'Berhasil',
-							text: response.message || 'Permintaan berhasil diubah.',
+							title: 'Permintaan diperbarui.',
+							text: response.message || 'Permintaan diperbarui.',
 							icon: 'success',
 							showConfirmButton: false,
 							timer: 1200,
@@ -2763,7 +2763,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						}
 						if (response && response.status === 'success') {
 							Swal.fire({
-								title: 'Berhasil',
+								title: 'Permintaan dibatalkan.',
 								text: response.message || 'Permintaan dibatalkan.',
 								icon: 'success',
 								showConfirmButton: false,
@@ -3800,7 +3800,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							});
 
 							Swal.fire({
-								title: 'Berhasil',
+								title: 'Penilaian disimpan.',
 								text: 'Penilaian disimpan.',
 								icon: 'success',
 								confirmButtonText: 'Lihat riwayat'

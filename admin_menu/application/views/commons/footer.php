@@ -128,7 +128,7 @@
         	});
 			<?php if ($admin_success_message): ?>
 				Swal.fire({
-					title: "Berhasil!",
+					title: "Tindakan selesai.",
 					icon: "success",
 					text: "<?= html_escape($admin_success_message); ?>"
 				});

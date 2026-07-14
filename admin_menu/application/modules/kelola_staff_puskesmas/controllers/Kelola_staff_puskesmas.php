@@ -43,7 +43,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 		}
 
 		if ($this->Kelola_staff_puskesmas_m->insert($data)) {
-			$this->session->set_flashdata('success', 'Data staff Puskesmas berhasil ditambahkan.');
+			$this->session->set_flashdata('success', 'Staf Puskesmas ditambahkan.');
 		} else {
 			$this->session->set_flashdata('error', 'Data staff Puskesmas gagal ditambahkan.');
 		}
@@ -92,7 +92,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 		}
 
 		if ($this->Kelola_staff_puskesmas_m->update($staff_id, $data)) {
-			$this->session->set_flashdata('success', 'Data staff Puskesmas berhasil diperbarui.');
+			$this->session->set_flashdata('success', 'Staf Puskesmas diperbarui.');
 		} else {
 			$this->session->set_flashdata('error', 'Data staff Puskesmas gagal diperbarui.');
 		}
@@ -340,7 +340,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 		}
 
 		if ($this->Kelola_staff_puskesmas_m->set_status($staff_id, $status)) {
-			$this->session->set_flashdata('success', 'Status staff Puskesmas berhasil diperbarui.');
+			$this->session->set_flashdata('success', $status === 'aktif' ? 'Staf diaktifkan.' : 'Staf dinonaktifkan.');
 		} else {
 			$this->session->set_flashdata('error', 'Status staff Puskesmas gagal diperbarui.');
 		}

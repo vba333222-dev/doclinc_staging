@@ -99,8 +99,8 @@
 				success: function(response) {
 					if (response.success) {
 						Swal.fire({
-							title: "Sukses!",
-							text: "Anda berhasil mendaftarkan diri",
+							title: "Akun dibuat.",
+							text: "Silakan masuk menggunakan akun Anda.",
 							icon: "success",
 							showConfirmButton: false,
 							timer: 2000

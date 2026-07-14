@@ -1296,7 +1296,7 @@ if (!function_exists('formatComplaintText')) {
 					}
 					if (response == 1 || (response && response.status === 'success')) {
 						Swal.fire({
-							title: "Berhasil!",
+							title: "Konsultasi selesai.",
 							icon: "success",
 							allowOutsideClick: false, // Prevent closing by clicking outside
 							allowEscapeKey: false, // Prevent closing with the escape key

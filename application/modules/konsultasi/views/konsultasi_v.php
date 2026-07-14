@@ -1008,7 +1008,7 @@ Lama keluhan:
 					}
 
 					Swal.fire({
-						title: "Berhasil!",
+						title: "Permintaan dikirim.",
 						icon: "success",
 						allowOutsideClick: false, // Prevent closing by clicking outside
 						allowEscapeKey: false, // Prevent closing with the escape key
