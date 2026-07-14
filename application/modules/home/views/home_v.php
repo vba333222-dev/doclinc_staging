@@ -1364,7 +1364,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									<div class="d-flex">
 										<p class="fw-bold mb-0 me-auto">Puskesmas Terdekat</p>
 										<div class="end-content">
-											<span class="badge rounded-pill status bg-success">Available</span>
+											<span class="badge rounded-pill status bg-success">Tersedia</span>
 										</div>
 									</div>
 									<p class="mb-0 small">Konsultasi akan diarahkan otomatis ke puskesmas aktif sesuai lokasi Anda.</p>
@@ -1402,7 +1402,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 										<div class="d-flex">
 											<p class="fw-bold mb-0 me-auto"><?= $nama_dokter; ?></p>
 											<div class="end-content">
-												<span class="badge rounded-pill status bg-success">Available</span>
+												<span class="badge rounded-pill status bg-success">Tersedia</span>
 											</div>
 										</div>
 
@@ -1472,7 +1472,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									<div class="d-flex">
 										<p class="fw-bold mb-0 me-auto">AMBULANCE</p>
 										<div class="end-content">
-											<span class="badge rounded-pill bg-success">Available</span>
+											<span class="badge rounded-pill bg-success">Tersedia</span>
 										</div>
 									</div>
 									<p class="mb-0" small>Ambulance Shuttle</p>
@@ -1593,7 +1593,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												<div id="visit-map-<?= html_escape((int) $id_request); ?>" class="doclinc-visit-map mt-2 d-none"></div>
 												<div class="visit-route-card mt-2 d-none" data-visit-route-card="<?= html_escape((int) $id_request); ?>">
 													<div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-														<div class="visit-route-card-title">Nakes menuju lokasi Anda</div>
+												<div class="visit-route-card-title">Dalam perjalanan</div>
 														<span class="visit-route-status" data-visit-route-status="<?= html_escape((int) $id_request); ?>">Menghitung...</span>
 													</div>
 													<div class="visit-route-card-row">
@@ -3663,7 +3663,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				const statusNotif = document.getElementById("statusNotif");
 				if (notif.status === "Nakes Menuju Lokasi" && notif.id_req === request_id) {
 					if (statusNotif) {
-						statusNotif.innerHTML = notif.status;
+						statusNotif.innerHTML = "Dalam perjalanan";
 					}
 					// Tampilkan popup
 					showPopup();

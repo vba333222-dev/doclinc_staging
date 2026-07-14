@@ -47,7 +47,7 @@
 						<?php endif; ?>
 						<?php
 						$this->load->view('partials/nakes_section_header_v', array(
-							'section_title' => !empty($nakes_is_personal) ? 'Tugas Anda' : 'Sedang ditangani',
+							'section_title' => !empty($nakes_is_personal) ? 'Tugas Anda' : 'Diterima',
 							'section_link_label' => 'Lihat',
 							'section_link_target' => '#riwayat_konsul',
 						));

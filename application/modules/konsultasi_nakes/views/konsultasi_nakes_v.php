@@ -739,7 +739,7 @@ if (!function_exists('formatComplaintText')) {
 				<h1>Pemeriksaan Pasien</h1>
 				<p class="consult-subtitle">No. Antrian: <?= html_escape($queue_code) ?></p>
 			</div>
-			<span class="status-badge"><i class="bi bi-check-circle-fill"></i> Accepted</span>
+			<span class="status-badge"><i class="bi bi-check-circle-fill"></i> Diterima</span>
 		</header>
 
 		<main class="content animate__animated animate__fadeInUp animate__faster">

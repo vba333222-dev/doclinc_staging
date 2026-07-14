@@ -14,7 +14,7 @@
 														<span><?= html_escape($received_label); ?></span>
 													</div>
 												</div>
-												<span class="dl-badge">BARU</span>
+												<span class="dl-badge">Menunggu konfirmasi Puskesmas</span>
 											</div>
 										</div>
 										<div id="cekStatus"></div>

@@ -43,7 +43,10 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 							$kode_pkm = trim((string) ($data->remark ?? ''));
 							$nama_pkm = $data->nama_puskesmas ?? ($puskesmas_names[$kode_pkm] ?? '');
 							$puskesmas_status = $data->puskesmas_status ?? '';
-							$is_active = ($data->status ?? '') === 'aktif';
+							$account_status = strtolower(trim((string) ($data->status ?? '')));
+							$is_active = $account_status === 'aktif';
+							$account_status_labels = array('aktif' => 'Aktif', 'valid' => 'Aktif', 'nonaktif' => 'Nonaktif', 'inactive' => 'Nonaktif');
+							$account_status_label = $account_status_labels[$account_status] ?? 'Status belum tersedia';
 							if ($kode_pkm !== '' && $nama_pkm !== '' && $puskesmas_status !== 'nonaktif') {
 								$relationship_note = 'Terhubung ke Puskesmas aktif';
 							} elseif ($kode_pkm !== '' && $puskesmas_status === 'nonaktif') {
@@ -58,14 +61,14 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 										<div class="doclinc-account-card__title"><?= html_escape($data->nama ?? '-'); ?></div>
 									</div>
 									<span class="doclinc-account-card__status <?= $is_active ? 'is-active' : 'is-inactive'; ?>">
-										<?= $is_active ? 'Aktif' : 'Nonaktif'; ?>
+										<?= html_escape($account_status_label); ?>
 									</span>
 								</div>
 
 								<div class="doclinc-account-card__body">
 									<div class="doclinc-account-card__meta">
 										<span>Puskesmas</span>
-										<strong><?= html_escape($nama_pkm !== '' ? $nama_pkm : 'Belum terhubung'); ?></strong>
+										<strong><?= html_escape($nama_pkm !== '' ? $nama_pkm : 'Puskesmas belum tersedia'); ?></strong>
 									</div>
 									<div class="doclinc-account-card__meta">
 										<span>No. Telepon</span>

@@ -180,8 +180,13 @@ $form_values = array(
 										$profession_key = strtolower($profession_label);
 										$profession_label = $profession_labels[$profession_key] ?? $profession_label;
 									}
-									$is_active = ($row->status ?? '') === 'aktif';
-									$linked_account_is_active = ($row->akun_status ?? '') === 'aktif';
+									$staff_status = strtolower(trim((string) ($row->status ?? '')));
+									$account_status_labels = array('aktif' => 'Aktif', 'valid' => 'Aktif', 'nonaktif' => 'Nonaktif', 'inactive' => 'Nonaktif');
+									$staff_status_label = $account_status_labels[$staff_status] ?? 'Status belum tersedia';
+									$is_active = $staff_status === 'aktif';
+									$linked_account_status = strtolower(trim((string) ($row->akun_status ?? '')));
+									$linked_account_status_label = $account_status_labels[$linked_account_status] ?? 'Status belum tersedia';
+									$linked_account_is_active = $linked_account_status === 'aktif';
 									$puskesmas_status = $row->puskesmas_status ?? null;
 									$puskesmas_is_valid = trim($kode_pkm) !== ''
 										&& strtoupper(trim($kode_pkm)) !== 'DEFAULT'
@@ -196,15 +201,15 @@ $form_values = array(
 											<div>
 												<div class="doclinc-account-card__title"><?= html_escape($row->nama ?? '-'); ?></div>
 											</div>
-											<span class="doclinc-account-card__status <?= $is_active ? 'is-active' : 'is-inactive'; ?>">
-												<?= $is_active ? 'Aktif' : 'Nonaktif'; ?>
+										<span class="doclinc-account-card__status <?= $is_active ? 'is-active' : 'is-inactive'; ?>">
+											<?= html_escape($staff_status_label); ?>
 											</span>
 										</div>
 
 										<div class="doclinc-account-card__body">
 											<div class="doclinc-account-card__meta">
 												<span>Puskesmas</span>
-												<strong><?= html_escape($row->nama_puskesmas ?? 'Puskesmas tidak ditemukan'); ?></strong>
+											<strong><?= html_escape($row->nama_puskesmas ?? 'Puskesmas belum tersedia'); ?></strong>
 												<span class="doclinc-code-chip mt-1"><?= html_escape($row->kode_pkm ?? '-'); ?></span>
 											</div>
 											<div class="doclinc-account-card__meta">
@@ -232,7 +237,7 @@ $form_values = array(
 													<small><?= html_escape($row->akun_email); ?></small>
 												<?php endif; ?>
 												<span class="doclinc-status-chip <?= $linked_account_is_active ? 'is-active' : 'is-inactive'; ?> mt-2">
-													<?= $linked_account_is_active ? 'Terhubung — Aktif' : 'Terhubung — Nonaktif'; ?>
+													<?= html_escape($linked_account_status_label); ?>
 												</span>
 												<?php if (!$linked_account_is_active): ?>
 													<small class="text-danger mt-1">Akun belum dapat digunakan untuk login.</small>
@@ -305,7 +310,7 @@ $form_values = array(
 															<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
 															<div class="mb-3">
 																<div class="font-weight-bold"><?= html_escape($row->nama ?? '-'); ?></div>
-																<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? 'Puskesmas tidak ditemukan'); ?></div>
+														<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? 'Puskesmas belum tersedia'); ?></div>
 															</div>
 															<?php if (empty($candidates)): ?>
 																<div class="doclinc-staff-account-empty">Belum ada akun personal yang dapat dihubungkan untuk Puskesmas ini.</div>

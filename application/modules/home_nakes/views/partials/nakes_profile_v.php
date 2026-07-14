@@ -39,9 +39,9 @@ $profile_rows = array(
 							));
 							?>
 							<div class="min-w-0">
-								<span><?= $profile_is_command_center ? 'Akun Puskesmas' : ($profile_is_personal ? 'Akun personal' : 'Akun perlu dicek'); ?></span>
+								<span><?= $profile_is_command_center ? 'Akun Puskesmas' : ($profile_is_personal ? 'Akun personal' : 'Status belum tersedia'); ?></span>
 								<strong><?= html_escape($profile_name); ?></strong>
-								<small><?= $profile_is_command_center ? 'Akun Puskesmas' : ($profile_is_personal ? 'Akun personal' : 'Perlu dicek'); ?></small>
+								<small><?= $profile_is_command_center ? 'Akun Puskesmas' : ($profile_is_personal ? 'Akun personal' : 'Status belum tersedia'); ?></small>
 							</div>
 						</div>
 

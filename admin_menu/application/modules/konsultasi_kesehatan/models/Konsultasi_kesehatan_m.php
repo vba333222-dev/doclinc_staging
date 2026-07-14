@@ -212,8 +212,8 @@ class Konsultasi_kesehatan_m extends MX_Controller
 		$assigned_puskesmas_name_clean_expr = "CASE WHEN UPPER(COALESCE($assigned_puskesmas_name_expr, '')) IN ('DEFAULT', 'PUSKESMAS DEFAULT') THEN NULL ELSE $assigned_puskesmas_name_expr END";
 		$has_puskesmas = $this->db->table_exists('m_puskesmas') && $this->db->field_exists('kode_pkm', 'm_puskesmas') && $this->db->field_exists('nama_puskesmas', 'm_puskesmas');
 		$puskesmas_select = $has_puskesmas
-			? "COALESCE($assigned_puskesmas_name_clean_expr, assigned_puskesmas.nama_puskesmas, $routed_puskesmas_code_expr, 'Perlu dicek') AS puskesmas"
-			: "COALESCE($assigned_puskesmas_name_clean_expr, $routed_puskesmas_code_expr, 'Perlu dicek') AS puskesmas";
+			? "COALESCE($assigned_puskesmas_name_clean_expr, assigned_puskesmas.nama_puskesmas, $routed_puskesmas_code_expr, 'Puskesmas belum tersedia') AS puskesmas"
+			: "COALESCE($assigned_puskesmas_name_clean_expr, $routed_puskesmas_code_expr, 'Puskesmas belum tersedia') AS puskesmas";
 		if ($this->db->table_exists('konsultasi')) {
 			$konsultasi_select = 'konsultasi.diagnosa, konsultasi.saran, konsultasi.kriteria, konsultasi.foto';
 			$konsultasi_join = 'LEFT JOIN konsultasi ON konsultasi.request_id=requests.request_id';

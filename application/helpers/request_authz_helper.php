@@ -1016,14 +1016,14 @@ if (!function_exists('doclinc_visit_status_label')) {
 	{
 		$labels = array(
 			'not_started' => 'Belum dimulai',
-			'en_route' => 'Nakes menuju lokasi',
-			'arrived' => 'Nakes tiba di lokasi',
+			'en_route' => 'Dalam perjalanan',
+			'arrived' => 'Sudah tiba',
 			'in_service' => 'Sedang ditangani',
-			'completed' => 'Kunjungan selesai',
+			'completed' => 'Selesai',
 		);
 
 		$status = doclinc_normalize_visit_status($status);
-		return isset($labels[$status]) ? $labels[$status] : $labels['not_started'];
+		return isset($labels[$status]) ? $labels[$status] : 'Status belum tersedia';
 	}
 }
 

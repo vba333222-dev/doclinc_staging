@@ -139,14 +139,14 @@ class Home_m extends MX_Controller
 	private function event_title($event_type)
 	{
 		$labels = array(
-			'request_created' => 'Konsultasi baru dibuat',
-			'request_accepted' => 'Konsultasi diterima',
-			'request_cancelled' => 'Konsultasi dibatalkan',
-			'visit_started' => 'Kunjungan dimulai',
-			'visit_arrived' => 'Nakes tiba di lokasi',
-			'visit_in_service' => 'Layanan sedang berjalan',
-			'visit_completed' => 'Kunjungan selesai',
-			'request_completed' => 'Konsultasi selesai',
+			'request_created' => 'Menunggu konfirmasi Puskesmas',
+			'request_accepted' => 'Diterima',
+			'request_cancelled' => 'Dibatalkan',
+			'visit_started' => 'Dalam perjalanan',
+			'visit_arrived' => 'Sudah tiba',
+			'visit_in_service' => 'Sedang ditangani',
+			'visit_completed' => 'Selesai',
+			'request_completed' => 'Selesai',
 			'pic_assigned' => 'PIC ditugaskan',
 			'pic_changed' => 'PIC diganti',
 			'pic_cleared' => 'PIC dihapus',
@@ -269,17 +269,17 @@ class Home_m extends MX_Controller
 			? "LEFT JOIN request_staff_assignments pic_assignment ON pic_assignment.request_id = requests.request_id AND pic_assignment.status = 'aktif'"
 			: '';
 		$reason_expr = "CASE
-			WHEN $assigned_code IS NULL THEN 'Belum terklasifikasi ke Puskesmas'
-			WHEN request_status = 'Pending' AND $date_expr IS NOT NULL AND $date_expr < DATE_SUB(NOW(), INTERVAL 1 DAY) THEN 'Pending lebih dari 24 jam'
-			WHEN request_status = 'Pending' THEN 'Menunggu penerimaan'
+			WHEN $assigned_code IS NULL THEN 'Puskesmas belum tersedia'
+			WHEN request_status = 'Pending' AND $date_expr IS NOT NULL AND $date_expr < DATE_SUB(NOW(), INTERVAL 1 DAY) THEN 'Menunggu konfirmasi Puskesmas lebih dari 24 jam'
+			WHEN request_status = 'Pending' THEN 'Menunggu konfirmasi Puskesmas'
 			WHEN request_status = 'Accepted' AND $pic_request_expr IS NULL THEN 'Diterima tanpa PIC aktif'
-			ELSE 'Perlu dipantau'
+			ELSE 'Perlu ditinjau'
 		END";
 		if (!$has_pic_assignment) {
 			$reason_expr = "CASE
-				WHEN $assigned_code IS NULL THEN 'Belum terklasifikasi ke Puskesmas'
-				WHEN request_status = 'Pending' THEN 'Menunggu penerimaan'
-				ELSE 'Perlu dipantau'
+				WHEN $assigned_code IS NULL THEN 'Puskesmas belum tersedia'
+				WHEN request_status = 'Pending' THEN 'Menunggu konfirmasi Puskesmas'
+				ELSE 'Perlu ditinjau'
 			END";
 		}
 

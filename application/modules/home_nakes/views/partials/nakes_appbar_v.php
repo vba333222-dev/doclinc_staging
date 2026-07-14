@@ -5,7 +5,7 @@ $appbar_puskesmas_name = isset($nakes_puskesmas_name) ? trim((string) $nakes_pus
 $appbar_puskesmas_code = isset($nakes_puskesmas_code) ? trim((string) $nakes_puskesmas_code) : '';
 $appbar_account_label = !empty($nakes_is_command_center)
 	? 'Akun Puskesmas'
-	: (!empty($nakes_is_personal) ? 'Akun personal' : 'Akun perlu dicek');
+	: (!empty($nakes_is_personal) ? 'Akun personal' : 'Status belum tersedia');
 $nakes_weak_value = static function ($value) {
 	$value = trim(strip_tags((string) $value));
 	return $value === '' || in_array(strtolower($value), array('n/a', 'na', '-', 'belum ditentukan', 'default'), true);

@@ -21,14 +21,14 @@
 				return 'PIC dilepas';
 			}
 			$event_labels = array(
-				'request_created' => 'Permintaan dibuat',
-				'request_accepted' => 'Permintaan diterima',
-				'request_cancelled' => 'Permintaan dibatalkan',
-				'visit_started' => 'Perjalanan dimulai',
-				'visit_arrived' => 'Tiba di lokasi',
-				'visit_in_service' => 'Mulai ditangani',
-				'visit_completed' => 'Kunjungan selesai',
-				'request_completed' => 'Konsultasi selesai',
+				'request_created' => 'Menunggu konfirmasi Puskesmas',
+				'request_accepted' => 'Diterima',
+				'request_cancelled' => 'Dibatalkan',
+				'visit_started' => 'Dalam perjalanan',
+				'visit_arrived' => 'Sudah tiba',
+				'visit_in_service' => 'Sedang ditangani',
+				'visit_completed' => 'Selesai',
+				'request_completed' => 'Selesai',
 			);
 			if (isset($event_labels[$event_type])) {
 				return $event_labels[$event_type];
@@ -68,7 +68,7 @@
 							<option value="">Pilih staf</option>
 							<?php foreach ($primary_staff_options as $staff_option) : ?>
 								<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= $primary_pic_assignment && (int) $primary_pic_assignment->staff_id === (int) $staff_option->staff_id ? 'selected' : ''; ?> <?= ($staff_option->personal_account_state ?? '') === 'invalid' ? 'disabled' : ''; ?>>
-									<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Akun personal perlu dicek' : 'Belum ada akun personal'); ?>
+									<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Status belum tersedia' : 'Belum ada akun personal'); ?>
 								</option>
 							<?php endforeach; ?>
 						</select>

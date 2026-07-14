@@ -28,15 +28,17 @@
                             $color_status='';
                             foreach ($data_warga->result() as $row):
                                 $no++;
-                                if ($row->status=='aktif') {$color_status='success';}
-                                if ($row->status=='nonaktif') {$color_status='danger';}
+                                $account_status = strtolower(trim((string) ($row->status ?? '')));
+                                $account_status_labels = array('aktif' => 'Aktif', 'valid' => 'Aktif', 'nonaktif' => 'Nonaktif', 'inactive' => 'Nonaktif');
+                                $account_status_label = $account_status_labels[$account_status] ?? 'Status belum tersedia';
+                                $color_status = in_array($account_status, array('aktif', 'valid'), true) ? 'success' : (in_array($account_status, array('nonaktif', 'inactive'), true) ? 'danger' : 'secondary');
 
                           ?>
                             <tr>
                               <td><?= $no;?></td>
                               <td>
                                   <div class="btn-group">
-                                      <button type="button" class="btn btn-<?= html_escape($color_status);?>"><?= html_escape($row->status ?? '-');?></button>
+                                      <button type="button" class="btn btn-<?= html_escape($color_status);?>"><?= html_escape($account_status_label);?></button>
                                       <button type="button" class="btn btn-outline-<?= html_escape($color_status);?> dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <span class="sr-only">Buka menu</span>
                                       </button>

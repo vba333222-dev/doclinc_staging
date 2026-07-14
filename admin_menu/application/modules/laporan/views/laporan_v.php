@@ -78,14 +78,14 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 					<?php foreach ($puskesmas_options as $puskesmas): ?>
 						<option value="<?= html_escape($puskesmas->kode_pkm); ?>"><?= html_escape($puskesmas->nama_puskesmas); ?></option>
 					<?php endforeach; ?>
-					<option value="__legacy__">Perlu dicek</option>
+					<option value="__legacy__">Puskesmas belum tersedia</option>
 				</select>
 			</div>
 			<div class="col-auto mb-2">
 				<label for="status_hari" class="col-form-label">Status</label>
 				<select class="form-control" id="status_hari" name="status">
 					<option value="">Semua status</option>
-					<option value="Pending">Menunggu</option>
+					<option value="Pending">Menunggu konfirmasi Puskesmas</option>
 					<option value="Accepted">Diterima</option>
 					<option value="Completed">Selesai</option>
 					<option value="Cancelled">Dibatalkan</option>
@@ -214,17 +214,17 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		var latestRows = [];
 		var uploadBaseUrl = '<?= base_url('../uploads/'); ?>';
 		var eventLabels = {
-			request_created: 'Konsultasi baru dibuat',
-			request_accepted: 'Konsultasi diterima',
-			request_cancelled: 'Konsultasi dibatalkan',
+			request_created: 'Menunggu konfirmasi Puskesmas',
+			request_accepted: 'Diterima',
+			request_cancelled: 'Dibatalkan',
 			pic_assigned: 'PIC ditugaskan',
 			pic_changed: 'PIC diganti',
 			pic_cleared: 'PIC dihapus',
-			visit_started: 'Kunjungan dimulai',
-			visit_arrived: 'Nakes tiba di lokasi',
+			visit_started: 'Dalam perjalanan',
+			visit_arrived: 'Sudah tiba',
 			visit_in_service: 'Sedang ditangani',
-			visit_completed: 'Kunjungan selesai',
-			request_completed: 'Konsultasi selesai'
+			visit_completed: 'Selesai',
+			request_completed: 'Selesai'
 		};
 
 		function escapeHtml(value) {
@@ -243,17 +243,26 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			return value == null || value === '' ? '-' : String(value);
 		}
 
+		function puskesmasLabel(value) {
+			var label = safeText(value).trim();
+			return label === '-' || label === 'Perlu dicek' || label.toUpperCase() === 'DEFAULT' || label.toUpperCase() === 'PUSKESMAS DEFAULT'
+				? 'Puskesmas belum tersedia'
+				: label;
+		}
+
 		function statusBadge(status) {
 			var labels = {
-				Pending: 'Menunggu',
+				Pending: 'Menunggu konfirmasi Puskesmas',
 				Accepted: 'Diterima',
+				in_service: 'Sedang ditangani',
 				Completed: 'Selesai',
 				Cancelled: 'Dibatalkan'
 			};
-			var safeStatus = escapeHtml(labels[status] || 'Perlu dicek');
+			var safeStatus = escapeHtml(labels[status] || 'Status belum tersedia');
 			var classes = {
 				Pending: 'badge-warning',
 				Accepted: 'badge-primary',
+				in_service: 'badge-info',
 				Completed: 'badge-success',
 				Cancelled: 'badge-danger'
 			};
@@ -268,10 +277,10 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				not_started: 'Belum dimulai',
 				en_route: 'Dalam perjalanan',
 				arrived: 'Sudah tiba',
-				in_service: 'Ditangani',
+				in_service: 'Sedang ditangani',
 				completed: 'Selesai'
 			};
-			return '<span class="badge badge-light border ml-1">' + escapeHtml(labels[visitStatus] || 'Perlu dicek') + '</span>';
+			return '<span class="badge badge-light border ml-1">' + escapeHtml(labels[visitStatus] || 'Status belum tersedia') + '</span>';
 		}
 
 		function latestEventInfo(row) {
@@ -283,7 +292,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				};
 			}
 			return {
-				label: latestEvent.message || eventLabels[latestEvent.event_type] || 'Konsultasi diperbarui',
+				label: eventLabels[latestEvent.event_type] || latestEvent.message || 'Konsultasi diperbarui',
 				time: latestEvent.created_at || ''
 			};
 		}
@@ -311,11 +320,11 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				value: summary.cancelled || 0,
 				icon: 'fa-ban'
 			}, {
-				label: 'Ditangani',
+				label: 'Belum selesai',
 				value: summary.active || 0,
 				icon: 'fa-hourglass-half'
 			}, {
-				label: 'Perlu dicek',
+				label: 'Perlu ditinjau',
 				value: summary.legacy || 0,
 				icon: 'fa-exclamation-triangle'
 			}, {
@@ -348,7 +357,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			html += '</tr></thead><tbody>';
 			$.each(items, function(_, item) {
 				html += '<tr>';
-				html += '<td class="font-weight-bold">' + escapeHtml(item.nama_puskesmas) + '</td>';
+				html += '<td class="font-weight-bold">' + escapeHtml(puskesmasLabel(item.nama_puskesmas)) + '</td>';
 				html += '<td>' + escapeHtml(item.total) + '</td>';
 				html += '<td>' + escapeHtml(item.completed) + '</td>';
 				html += '<td>' + escapeHtml(item.cancelled) + '</td>';
@@ -376,7 +385,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				html += '<tr>';
 				html += '<td><strong>' + escapeHtml(row.tanggal || row.waktu) + '</strong><div class="doclinc-report-meta">' + escapeHtml(row.waktu || '-') + '</div></td>';
 				html += '<td><strong>#' + escapeHtml(row.request_id) + '</strong></td>';
-				html += '<td><strong>' + escapeHtml(row.nama_puskesmas) + '</strong></td>';
+				html += '<td><strong>' + escapeHtml(puskesmasLabel(row.nama_puskesmas)) + '</strong></td>';
 				html += '<td>' + escapeHtml(row.nama_user) + '</td>';
 				html += '<td>' + statusBadge(row.request_status) + visitBadge(row.visit_status) + '</td>';
 				html += '<td>' + picHtml(row) + '</td>';
@@ -447,7 +456,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			var html = '<div id="print-area"><h5 class="font-weight-bold">Jumlah pasien per Puskesmas</h5>';
 			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr><th>No</th><th>Puskesmas</th><th>Jumlah pasien</th></tr></thead><tbody>';
 			$.each(rows, function(i, row) {
-				html += '<tr><td>' + (i + 1) + '</td><td class="font-weight-bold">' + escapeHtml(row.nama_puskesmas) + '</td><td>' + escapeHtml(row.jumlah_pasien) + '</td></tr>';
+				html += '<tr><td>' + (i + 1) + '</td><td class="font-weight-bold">' + escapeHtml(puskesmasLabel(row.nama_puskesmas)) + '</td><td>' + escapeHtml(row.jumlah_pasien) + '</td></tr>';
 			});
 			html += '</tbody></table></div></div>';
 			$hasil.html(html);
@@ -470,7 +479,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 					html += '<tr>';
 					if (idx === 0) {
 						html += '<td rowspan="' + items.length + '">' + (no++) + '</td>';
-						html += '<td rowspan="' + items.length + '" class="font-weight-bold">' + escapeHtml(puskesmas) + '</td>';
+						html += '<td rowspan="' + items.length + '" class="font-weight-bold">' + escapeHtml(puskesmasLabel(puskesmas)) + '</td>';
 					}
 					html += '<td>' + escapeHtml(row.diagnosa) + '</td><td>' + escapeHtml(row.jumlah_diagnosa) + '</td></tr>';
 				});
@@ -512,7 +521,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			body += '<div class="col-lg-6 mb-3"><div class="doclinc-detail-block"><h6>Identitas laporan</h6>';
 			body += '<p><strong>ID permintaan:</strong> #' + escapeHtml(row.request_id) + '</p>';
 			body += '<p><strong>Warga:</strong> ' + escapeHtml(row.nama_user) + '</p>';
-			body += '<p><strong>Puskesmas:</strong> ' + escapeHtml(row.nama_puskesmas) + '</p>';
+			body += '<p><strong>Puskesmas:</strong> ' + escapeHtml(puskesmasLabel(row.nama_puskesmas)) + '</p>';
 			body += '<p><strong>Status:</strong> ' + statusBadge(row.request_status) + visitBadge(row.visit_status) + '</p>';
 			body += '<p class="mb-0"><strong>PIC:</strong><br>' + picHtml(row) + '</p></div></div>';
 			body += '<div class="col-lg-6 mb-3"><div class="doclinc-detail-block"><h6>Aktivitas terakhir</h6>';

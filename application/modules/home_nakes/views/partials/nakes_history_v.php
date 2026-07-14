@@ -98,14 +98,14 @@ $history_event_label = static function ($event) {
 		return 'PIC dilepas';
 	}
 	$event_labels = array(
-		'request_created' => 'Permintaan dibuat',
-		'request_accepted' => 'Permintaan diterima',
-		'request_cancelled' => 'Permintaan dibatalkan',
-		'visit_started' => 'Perjalanan dimulai',
-		'visit_arrived' => 'Tiba di lokasi',
-		'visit_in_service' => 'Mulai ditangani',
-		'visit_completed' => 'Kunjungan selesai',
-		'request_completed' => 'Konsultasi selesai',
+		'request_created' => 'Menunggu konfirmasi Puskesmas',
+		'request_accepted' => 'Diterima',
+		'request_cancelled' => 'Dibatalkan',
+		'visit_started' => 'Dalam perjalanan',
+		'visit_arrived' => 'Sudah tiba',
+		'visit_in_service' => 'Sedang ditangani',
+		'visit_completed' => 'Selesai',
+		'request_completed' => 'Selesai',
 	);
 	if (isset($event_labels[$event_type])) {
 		return $event_labels[$event_type];
@@ -197,7 +197,7 @@ $history_event_time = static function ($event) {
 												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
 												<span>No. Antrian <?= html_escape($queue_code); ?><?= $area_label !== '' ? ' · ' . html_escape($area_label) : ''; ?></span>
 											</div>
-											<span class="dl-status-pill dl-status-pill-active">Aktif</span>
+											<span class="dl-status-pill dl-status-pill-active">Diterima</span>
 										</div>
 										<div class="card-body nk-card-body nk-history-card__body">
 											<div class="dl-history-summary nk-complaint nk-card-section">
@@ -256,7 +256,7 @@ $history_event_time = static function ($event) {
 																<option value="">Pilih staf</option>
 																<?php foreach ($puskesmas_staff_options as $staff_option) : ?>
 																	<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= $pic_assignment && (int) $pic_assignment->staff_id === (int) $staff_option->staff_id ? 'selected' : ''; ?> <?= ($staff_option->personal_account_state ?? '') === 'invalid' ? 'disabled' : ''; ?>>
-																		<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Akun personal perlu dicek' : 'Belum ada akun personal'); ?>
+																			<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Status belum tersedia' : 'Belum ada akun personal'); ?>
 																	</option>
 																<?php endforeach; ?>
 															</select>
