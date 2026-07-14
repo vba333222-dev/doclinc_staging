@@ -16,7 +16,7 @@
         Data FAQ
       </div>
       <div class="card-body">
-        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#modalTambah">+ Tambah FAQ</button>
+        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#modalTambah">Tambah FAQ</button>
         <div class="table-responsive">
           <table class="table table-hover" id="tbl_services">
             <thead>
@@ -42,7 +42,7 @@
                 <td><?= html_escape($x->modify_date ?? '-');?></td>
                 <td>
                   <div class="btn-group btn-group-sm">
-                    <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" data-id="<?= $x->id;?>" data-question="<?= $x->question;?>" data-answer="<?= $x->answer;?>"  title="Edit">
+                    <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" data-id="<?= $x->id;?>" data-question="<?= $x->question;?>" data-answer="<?= $x->answer;?>"  title="Ubah">
                       <i class="far fa-edit fa-fw"></i>
                     </a>
                     <form action="<?php echo base_url('landing_page/delete_faq/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus FAQ legacy ini?');">
@@ -67,7 +67,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Tambah F.A.Q</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div> 
@@ -93,7 +93,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel"></h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>

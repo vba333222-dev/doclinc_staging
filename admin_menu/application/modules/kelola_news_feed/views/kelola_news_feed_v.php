@@ -1,7 +1,7 @@
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
     <h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-newspaper"></i> News & Feed</h1>
     <button type="button" class="btn btn-sm btn-success shadow-sm" data-toggle="modal" data-target="#modalTambah">
-        <i class="fas fa-plus fa-sm text-white-50"></i> Tambah News Feed
+        <i class="fas fa-plus fa-sm text-white-50"></i> Tambah berita
     </button>
 </div>
 <div class="doclinc-helper-note mb-3">
@@ -60,7 +60,7 @@
                             <div class="btn-group">
                               <button type="button" class="btn btn-outline-secondary">Aksi</button>
                               <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="sr-only">Toggle Dropdown</span>
+                                <span class="sr-only">Buka menu</span>
                               </button>
                               <div class="dropdown-menu">
                                   <a class="dropdown-item" href="#modalEdit" data-toggle="modal" data-idfeed="<?= html_escape($row->feedId ?? ''); ?>">
@@ -87,7 +87,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="modalTambahLabel">Tambah News Feed</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -125,7 +125,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="modalEditLabel">Edit News Feed</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -164,7 +164,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="modalDeleteLabel">Nonaktifkan News Feed</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>

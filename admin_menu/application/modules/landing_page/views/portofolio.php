@@ -16,7 +16,7 @@
         Data Portofolio
       </div>
       <div class="card-body">
-        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#modalTambah">+ Tambah Portofolio</button>
+        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#modalTambah">Tambah portofolio</button>
         <div class="table-responsive">
           <table class="table table-hover" id="tbl_portofolio">
             <thead>
@@ -42,7 +42,7 @@
                 <td><?= html_escape($x->status ?? '-');?></td>
                 <td>
                   <div class="btn-group btn-group-sm">
-                    <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" data-id="<?= $x->id;?>" data-title="<?= $x->title;?>" data-description="<?= $x->description;?>" data-status="<?= $x->status;?>" data-pict="<?= $x->pict;?>" title="Edit">
+                    <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal" data-id="<?= $x->id;?>" data-title="<?= $x->title;?>" data-description="<?= $x->description;?>" data-status="<?= $x->status;?>" data-pict="<?= $x->pict;?>" title="Ubah">
                       <i class="far fa-edit fa-fw"></i>
                     </a>           
                     <form action="<?php echo base_url('landing_page/portofolio_delete/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus portofolio legacy ini?');">
@@ -67,7 +67,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Tambah Portofolio</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div> 
@@ -104,7 +104,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel"></h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -131,7 +131,7 @@
               <option value="non-aktif">Non-aktif</option>
             </select>
           </div>
-          <button type="submit" class="btn btn-default-asoka float-right">Update</button>
+          <button type="submit" class="btn btn-default-asoka float-right">Perbarui</button>
         </form>
       </div>
     </div>

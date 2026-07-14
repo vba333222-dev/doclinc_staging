@@ -120,7 +120,7 @@
         					icon: 'error',
         					title: 'Oops!',
         					html: 'Pastikan "Password baru" dan "Konfirmasi password baru" sesuai',
-        					confirmButtonText: 'Yuk ulangi'
+			confirmButtonText: 'Coba lagi'
         				});
         				return false;
         			}

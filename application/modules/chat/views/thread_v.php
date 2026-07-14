@@ -879,7 +879,7 @@ if ($current_role === 'dokter') {
 				<div class="doclinc-call-prejoin" id="doclincCallPrejoin">
 					<p class="doclinc-call-prejoin-title">Panggilan untuk konsultasi aktif</p>
 					<p class="doclinc-call-prejoin-text">Pastikan kamera dan mikrofon perangkat dapat digunakan.</p>
-					<button type="button" class="doclinc-call-join" id="doclincCallJoin">Gabung Sekarang</button>
+					<button type="button" class="doclinc-call-join" id="doclincCallJoin">Gabung sekarang</button>
 				</div>
 				<div class="doclinc-call-controls is-hidden" id="doclincCallControls">
 					<button type="button" class="doclinc-call-control" id="doclincCallMic" title="Mikrofon" aria-label="Mikrofon">
@@ -937,7 +937,7 @@ if ($current_role === 'dokter') {
 			<p class="doclinc-incoming-type" id="doclincIncomingType">Panggilan video</p>
 			<div class="doclinc-incoming-actions">
 				<button type="button" class="doclinc-incoming-action reject" id="doclincIncomingReject">Tolak</button>
-				<button type="button" class="doclinc-incoming-action answer" id="doclincIncomingAnswer">Jawab</button>
+				<button type="button" class="doclinc-incoming-action answer" id="doclincIncomingAnswer">Terima</button>
 			</div>
 		</div>
 	<?php endif; ?>

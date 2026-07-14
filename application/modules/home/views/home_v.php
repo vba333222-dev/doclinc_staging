@@ -2460,7 +2460,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					title: 'Informasi',
 					text: 'Jam kunjungan: 08.00–17.00.',
 					icon: 'info',
-					confirmButtonText: 'OK'
+					confirmButtonText: 'Tutup'
 				}).then(() => {
 					localStorage.setItem('lastPopupTime', currentTime.toString());
 				});
@@ -2549,9 +2549,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				text: "Keluar dari akun ini?",
 				icon: "warning",
 				showCancelButton: true,
-				confirmButtonText: "Ya",
+				confirmButtonText: "Keluar",
 				confirmButtonColor: "#09AD74",
-				cancelButtonText: "Tidak"
+				cancelButtonText: "Batal"
 			}).then((result) => {
 				if (result.isConfirmed) {
 					Swal.fire({
@@ -2739,9 +2739,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				text: 'Permintaan yang dibatalkan tidak dapat dilanjutkan.',
 				icon: 'warning',
 				showCancelButton: true,
-				confirmButtonText: 'Ya, batalkan',
+				confirmButtonText: 'Batalkan',
 				confirmButtonColor: '#dc3545',
-				cancelButtonText: 'Tidak'
+				cancelButtonText: 'Batal'
 			}).then((result) => {
 				if (!result.isConfirmed) {
 					return;
@@ -3302,7 +3302,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 													title: 'Berhasil',
 													text: 'Tanggal konsultasi berhasil diperbarui.',
 													icon: 'success',
-													confirmButtonText: 'OK'
+													confirmButtonText: 'Lihat riwayat'
 												}).then(() => {
 													window.location.href = "<?= base_url('home#riwayat') ?>";
 												});
@@ -3801,7 +3801,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								title: 'Berhasil',
 								text: 'Penilaian disimpan.',
 								icon: 'success',
-								confirmButtonText: 'OK'
+								confirmButtonText: 'Lihat riwayat'
 							}).then(() => {
 								const ratingModal = bootstrap.Modal.getInstance(document.getElementById('ratingModal'));
 								ratingModal.hide();
@@ -3812,7 +3812,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								title: 'Gagal',
 								text: 'Penilaian belum tersimpan.',
 								icon: 'error',
-								confirmButtonText: 'OK'
+								confirmButtonText: 'Tutup'
 							});
 						}
 					},
@@ -3821,7 +3821,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							title: 'Gagal',
 							text: 'Terjadi kesalahan.',
 							icon: 'error',
-							confirmButtonText: 'OK'
+							confirmButtonText: 'Tutup'
 						});
 					}
 				});

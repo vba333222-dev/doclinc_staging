@@ -13,8 +13,8 @@
     <div class="card shadow-sm">
       <div class="card-header font-weight-bold"><?= html_escape($nama_service ?? '-');?></div>
       <div class="card-body">
-        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNew">+ Tambah baru</button>
-        <button class="btn btn-sm btn-default-asoka mb-3 float-right" data-toggle="modal" data-target="#tutor">Contenting Guides</button>
+        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNew">Tambah detail</button>
+        <button class="btn btn-sm btn-default-asoka mb-3 float-right" data-toggle="modal" data-target="#tutor">Lihat panduan</button>
         <div class="table-responsive">
           <table class="table table-hover" id="data_detail">
             <thead>
@@ -40,10 +40,10 @@
                 <td><?= html_escape($x->modify_date ?? '-');?></td>
                 <td>
                   <div class="btn-group btn-group-sm">
-                    <a href="#modalEdit<?= $x->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Edit">
+                    <a href="#modalEdit<?= $x->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Ubah">
                       <i class="far fa-edit fa-fw"></i>
                     </a>
-                    <a href="<?php echo base_url('landing_page/service_detail_sub/'.$x->id.'/'.$x->title);?>" class="btn btn-primary tooltip-title" title="Lebih detail">
+                    <a href="<?php echo base_url('landing_page/service_detail_sub/'.$x->id.'/'.$x->title);?>" class="btn btn-primary tooltip-title" title="Lihat detail">
                       <i class="far fa-list-alt fa-fw"></i>
                     </a>
                     <form action="<?php echo base_url('landing_page/service_detail_delete/'.$x->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus detail layanan legacy ini?');">
@@ -67,7 +67,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Tambah baru</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -97,7 +97,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="exampleModalLabel"><?= $x->title;?></h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>

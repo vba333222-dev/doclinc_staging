@@ -309,7 +309,7 @@ $history_event_time = static function ($event) {
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="en_route" <?= $visit_next_status[$visit_status] === 'en_route' ? '' : 'disabled'; ?>>Mulai perjalanan</button>
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived" <?= $visit_next_status[$visit_status] === 'arrived' ? '' : 'disabled'; ?>>Tiba di lokasi</button>
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="in_service" <?= $visit_next_status[$visit_status] === 'in_service' ? '' : 'disabled'; ?>>Mulai penanganan</button>
-														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="completed" <?= $visit_next_status[$visit_status] === 'completed' ? '' : 'disabled'; ?>>Kunjungan selesai</button>
+														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="completed" <?= $visit_next_status[$visit_status] === 'completed' ? '' : 'disabled'; ?>>Selesaikan kunjungan</button>
 													</div>
 												</div>
 												<div class="small mt-2 visit-workflow-message" data-visit-workflow-message="<?= html_escape((int) $x->request_id); ?>"></div>
@@ -317,14 +317,14 @@ $history_event_time = static function ($event) {
 										</div>
 										<div class="card-footer dl-history-actions">
 											<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id)); ?>" class="btn btn-success shadow-sm rounded-pill dl-history-primary-action">
-												<i class="fas fa-notes-medical me-2"></i> Lanjutkan Tugas
+												<i class="fas fa-notes-medical me-2"></i> Lanjutkan tugas
 											</a>
 											<div class="dl-history-secondary-actions">
 												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
-													<i class="fas fa-comments me-2"></i> Chat
+													<i class="fas fa-comments me-2"></i> Buka chat
 												</a>
 												<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
-													<i class="fas fa-map-marker-alt me-2"></i> Lokasi
+													<i class="fas fa-map-marker-alt me-2"></i> Lihat lokasi
 												</button>
 											</div>
 											<div class="dl-history-secondary-actions">
@@ -441,7 +441,7 @@ $history_event_time = static function ($event) {
 										</div>
 										<div class="card-footer dl-history-actions dl-history-actions-inline">
 											<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-secondary btn-sm rounded-pill">
-												<i class="fas fa-comments me-1"></i> Riwayat Chat
+												<i class="fas fa-comments me-1"></i> Lihat chat
 											</a>
 										</div>
 									</div>

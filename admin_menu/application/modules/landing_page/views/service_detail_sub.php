@@ -13,8 +13,8 @@
     <div class="card shadow-sm">
       <div class="card-header font-weight-bold"><?= html_escape(str_replace('%20', ' ', $nama_title));?></div>
       <div class="card-body">
-        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNewPaket">+ Tambah paket</button>
-        <button class="btn btn-sm btn-default-asoka mb-3 float-right" data-toggle="modal" data-target="#tutor">Contenting Guides</button>
+        <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNewPaket">Tambah paket</button>
+        <button class="btn btn-sm btn-default-asoka mb-3 float-right" data-toggle="modal" data-target="#tutor">Lihat panduan</button>
         <div class="table-responsive">
           <table class="table table-hover" id="data_sub_detail">
             <thead>
@@ -44,7 +44,7 @@
                 <td><?= html_escape($x->modify_date ?? '-');?></td>
                 <td>
                   <div class="btn-group btn-group-sm">
-                    <a href="#modalEdit<?= $x->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Edit">
+                    <a href="#modalEdit<?= $x->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Ubah">
                       <i class="far fa-edit fa-fw"></i>
                     </a>
                     <form action="<?php echo base_url('landing_page/service_detail_sub_delete/'.$x->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus paket legacy ini?');">
@@ -68,7 +68,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Tambah baru</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -99,7 +99,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="exampleModalLabel"><?= html_escape($x->paket ?? '-');?></h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
@@ -125,12 +125,12 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="exampleModalLabel"><?= $x->paket;?></h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
-          <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNewHarga" data-idservicesubdetail="<?= $x->id;?>">+ Tambah investasi</button>
+          <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNewHarga" data-idservicesubdetail="<?= $x->id;?>">Tambah investasi</button>
           <div class="table-responsive">
             <table class="table table-hover">
               <thead>
@@ -168,7 +168,7 @@
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm">
-                      <a href="#modalEditHarga<?= $row->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Edit harga">
+                      <a href="#modalEditHarga<?= $row->id;?>" class="btn btn-info tooltip-title" data-toggle="modal" title="Ubah harga">
                         <i class="far fa-edit fa-fw"></i>
                       </a>
                       <form action="<?php echo base_url('landing_page/service_harga_delete/'.$row->id.'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus investasi legacy ini?');">
@@ -195,12 +195,12 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="exampleModalLabel"><?= html_escape($row->nama_paket ?? '-');?></h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
           <div class="modal-body">
-            <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNewAlat" data-idharga="<?= $row->id;?>">+ Tambah Alat Test</button>
+            <button class="btn btn-sm btn-default-asoka mb-3" data-toggle="modal" data-target="#addNewAlat" data-idharga="<?= $row->id;?>">Tambah alat</button>
             <div class="table-responsive">
               <table class="table table-sm">
                 <thead>
@@ -251,7 +251,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="exampleModalLabel"><?= $x->nama_paket;?></h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
@@ -287,7 +287,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Tambah investasi</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -321,7 +321,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Tambah alat test</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>

@@ -38,7 +38,7 @@
                                   <div class="btn-group">
                                       <button type="button" class="btn btn-<?= html_escape($color_status);?>"><?= html_escape($row->status ?? '-');?></button>
                                       <button type="button" class="btn btn-outline-<?= html_escape($color_status);?> dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <span class="sr-only">Toggle Dropdown</span>
+                                        <span class="sr-only">Buka menu</span>
                                       </button>
                                       <div class="dropdown-menu">
                                         <?php if ($row->status=='aktif'){ ?>
@@ -92,7 +92,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Aktifkan?</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -118,7 +118,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Nonaktifkan?</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>

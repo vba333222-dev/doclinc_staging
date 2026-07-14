@@ -173,7 +173,7 @@ $summary_cards = array(
 					<input type="text" name="keyword" id="keyword" class="form-control" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="ID, warga, Puskesmas">
 				</div>
 				<div class="form-group col-md-1">
-					<button type="submit" class="btn btn-primary btn-block">Filter</button>
+					<button type="submit" class="btn btn-primary btn-block">Terapkan filter</button>
 				</div>
 			</div>
 			<div class="d-flex justify-content-between align-items-center flex-wrap">
@@ -273,7 +273,7 @@ $summary_cards = array(
 								</td>
 								<td>
 									<button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#detailKonsultasi<?= $request_id; ?>">
-										Detail
+										Lihat detail
 									</button>
 								</td>
 							</tr>

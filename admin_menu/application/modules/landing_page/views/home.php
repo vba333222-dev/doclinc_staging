@@ -25,7 +25,7 @@
         ?>
         <small id="taglineHelp" class="form-text text-muted">Current tagline : <?= $tagline;?></small>
       </div>
-      <button type="submit" class="btn btn-default-asoka" id="submit">Update</button>
+      <button type="submit" class="btn btn-default-asoka" id="submit">Perbarui</button>
     </form>
   </div>
 </div>

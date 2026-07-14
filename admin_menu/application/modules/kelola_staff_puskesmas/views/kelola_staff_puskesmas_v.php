@@ -147,7 +147,7 @@ $form_values = array(
 							<input type="text" name="keyword" id="staffFilterKeyword" class="form-control doclinc-account-search" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="Nama, no HP, profesi, SIP">
 						</div>
 						<div class="col-md-2 mb-2">
-							<button type="submit" class="btn btn-info rounded-pill btn-block">Filter</button>
+							<button type="submit" class="btn btn-info rounded-pill btn-block">Terapkan filter</button>
 						</div>
 					</div>
 				</form>
@@ -250,7 +250,7 @@ $form_values = array(
 										<div class="doclinc-account-card__footer">
 											<div class="doclinc-account-card__actions">
 												<a href="<?= site_url('kelola_staff_puskesmas/edit/' . (int) $row->staff_id); ?>" class="btn doclinc-action-btn doclinc-action-btn--primary">
-													<i class="fas fa-edit"></i> Edit
+													<i class="fas fa-edit"></i> Ubah
 												</a>
 												<?php if (($row->status ?? '') === 'aktif'): ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/deactivate/' . (int) $row->staff_id); ?>" method="post">
@@ -269,20 +269,20 @@ $form_values = array(
 													<form action="<?= site_url('kelola_staff_puskesmas/unbind_account'); ?>" method="post">
 														<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
 														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--warning" onclick="return confirm('Lepas akun dari staf ini? Akun tidak akan dihapus.');">
-															<i class="fas fa-unlink"></i> Lepas Akun
+															<i class="fas fa-unlink"></i> Lepas akun
 														</button>
 													</form>
 												<?php else: ?>
 													<button type="button" class="btn doclinc-action-btn doclinc-action-btn--secondary" data-toggle="modal" data-target="#modalBindAccount<?= (int) $staff_id; ?>">
-														<i class="fas fa-link"></i> Hubungkan Akun
+														<i class="fas fa-link"></i> Hubungkan akun
 													</button>
 											<?php if ($can_create_personal_account): ?>
 												<button type="button" class="btn doclinc-action-btn doclinc-action-btn--primary" data-toggle="modal" data-target="#modalCreatePersonalAccount<?= (int) $staff_id; ?>">
-													<i class="fas fa-user-plus"></i> Buat Akun Personal
+													<i class="fas fa-user-plus"></i> Buat akun
 												</button>
 											<?php elseif ($is_active && $linked_user_id < 1 && $puskesmas_is_valid): ?>
 												<button type="button" class="btn doclinc-action-btn doclinc-action-btn--secondary" disabled title="<?= html_escape($creation_block_message); ?>">
-													<i class="fas fa-user-plus"></i> Buat Akun Personal
+													<i class="fas fa-user-plus"></i> Buat akun
 												</button>
 											<?php endif; ?>
 												<?php endif; ?>
@@ -297,7 +297,7 @@ $form_values = array(
 													<form action="<?= site_url('kelola_staff_puskesmas/bind_account'); ?>" method="post">
 														<div class="modal-header">
 															<h5 class="modal-title" id="modalBindAccountLabel<?= (int) $staff_id; ?>">Hubungkan akun personal</h5>
-															<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+															<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
 																<span aria-hidden="true">&times;</span>
 															</button>
 														</div>
@@ -352,7 +352,7 @@ $form_values = array(
 														<form action="<?= site_url('kelola_staff_puskesmas/create_personal_account'); ?>" method="post">
 															<div class="modal-header bg-info text-white">
 																<h5 class="modal-title" id="modalCreatePersonalAccountLabel<?= (int) $staff_id; ?>"><i class="fas fa-user-plus mr-2"></i>Buat akun personal</h5>
-																<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+																<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
 															</div>
 															<div class="modal-body bg-light">
 																<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
