@@ -166,7 +166,7 @@ if (!function_exists('doclinc_livekit_authorized_request')) {
 			return array(true, $request, 'OK');
 		}
 
-		return array(false, $request, 'Akses tidak diizinkan');
+		return array(false, $request, 'Anda tidak memiliki akses.');
 	}
 }
 

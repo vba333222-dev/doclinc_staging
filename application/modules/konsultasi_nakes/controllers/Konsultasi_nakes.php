@@ -151,14 +151,19 @@ class Konsultasi_nakes extends MX_Controller
 		$foto = null;
 
 		if (!$request_id || !$diagnosa || !$saran || !$kriteria) {
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Data tidak lengkap']));
+			$validation_message = !$request_id
+				? 'Permintaan tidak valid.'
+				: (!$diagnosa
+					? 'Masukkan diagnosis.'
+					: (!$saran ? 'Tambahkan saran.' : 'Pilih jenis layanan.'));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => $validation_message]));
 			return;
 		}
 		$access_context = doclinc_nakes_request_access_context($request_id, $identity_context);
 		if (empty($access_context['can_handle'])) {
 			$this->output->set_status_header(403);
 			doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'complete'));
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
 

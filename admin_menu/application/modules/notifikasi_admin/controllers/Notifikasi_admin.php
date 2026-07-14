@@ -43,7 +43,7 @@ class Notifikasi_admin extends MX_Controller
 
 		$user_id = $this->Notifikasi_admin_m->current_admin_user_id();
 		if ($user_id < 1) {
-			return $this->json_response(array('ok' => false, 'message' => 'Unauthorized'), 403);
+			return $this->json_response(array('ok' => false, 'message' => 'Anda tidak memiliki akses.'), 403);
 		}
 
 		$last_seen_event_id = $this->Notifikasi_admin_m->mark_all_read($user_id);
@@ -62,7 +62,7 @@ class Notifikasi_admin extends MX_Controller
 				'ok' => false,
 				'unread_count' => 0,
 				'events' => array(),
-				'message' => 'Unauthorized',
+				'message' => 'Anda tidak memiliki akses.',
 			), 403);
 			return false;
 		}

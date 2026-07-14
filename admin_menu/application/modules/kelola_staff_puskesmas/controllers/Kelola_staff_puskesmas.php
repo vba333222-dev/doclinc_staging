@@ -54,7 +54,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 	{
 		$staff_id = (int) $staff_id;
 		if ($staff_id < 1) {
-			$this->session->set_flashdata('error', 'Data staff tidak valid.');
+			$this->session->set_flashdata('error', 'Pilih staf yang valid.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}
@@ -74,8 +74,13 @@ class Kelola_staff_puskesmas extends MX_Controller
 		}
 
 		$staff_id = (int) $staff_id;
-		if ($staff_id < 1 || !$this->Kelola_staff_puskesmas_m->get_by_id($staff_id)) {
-			$this->session->set_flashdata('error', 'Data staff tidak ditemukan.');
+		if ($staff_id < 1) {
+			$this->session->set_flashdata('error', 'Pilih staf yang valid.');
+			redirect('kelola_staff_puskesmas', 'refresh');
+			return;
+		}
+		if (!$this->Kelola_staff_puskesmas_m->get_by_id($staff_id)) {
+			$this->session->set_flashdata('error', 'Staf tidak ditemukan.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}
@@ -118,7 +123,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$staff_id = (int) $this->input->post('staff_id');
 		$user_id = (int) $this->input->post('user_id');
 		if ($staff_id < 1 || $user_id < 1) {
-			$this->session->set_flashdata('error', 'Data staff atau akun login tidak valid.');
+			$this->session->set_flashdata('error', 'Pilih staf dan akun yang valid.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}
@@ -161,7 +166,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return;
 		}
 		if (!$this->Kelola_staff_puskesmas_m->puskesmas_is_active($staff->kode_pkm ?? '')) {
-			$this->personal_account_flash('Puskesmas staff tidak valid.');
+			$this->personal_account_flash('Puskesmas staf tidak aktif.');
 			return;
 		}
 		$eligibility = $this->Kelola_staff_puskesmas_m->get_personal_account_creation_eligibility($staff);
@@ -170,11 +175,11 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return;
 		}
 		if ($username === '' || strlen($username) < 3 || strlen($username) > 100 || !preg_match('/^[A-Za-z0-9._-]+$/', $username)) {
-			$this->personal_account_flash('Username harus 3-100 karakter dan hanya boleh berisi huruf, angka, titik, garis bawah, atau tanda hubung.');
+			$this->personal_account_flash('Nama pengguna harus 3–100 karakter dan hanya boleh berisi huruf, angka, titik, garis bawah, atau tanda hubung.');
 			return;
 		}
 		if ($email === '' || strlen($email) > 100 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-			$this->personal_account_flash('Email tidak valid.');
+			$this->personal_account_flash('Masukkan email yang valid.');
 			return;
 		}
 		if (strlen($password) < 8) {
@@ -182,7 +187,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return;
 		}
 		if ($password !== $confirm_password) {
-			$this->personal_account_flash('Konfirmasi password tidak cocok.');
+			$this->personal_account_flash('Konfirmasi password tidak sama.');
 			return;
 		}
 		$this->load->helper('password_compat');
@@ -214,7 +219,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 
 		$staff_id = (int) $this->input->post('staff_id');
 		if ($staff_id < 1) {
-			$this->session->set_flashdata('error', 'Data staff tidak valid.');
+			$this->session->set_flashdata('error', 'Pilih staf yang valid.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}
@@ -267,7 +272,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			if ($form_mode === 'edit') {
 				$data['form_staff'] = $this->Kelola_staff_puskesmas_m->get_by_id((int) $staff_id);
 				if (!$data['form_staff']) {
-					$this->session->set_flashdata('error', 'Data staff tidak ditemukan.');
+					$this->session->set_flashdata('error', 'Staf tidak ditemukan.');
 					redirect('kelola_staff_puskesmas', 'refresh');
 					return;
 				}
@@ -282,18 +287,18 @@ class Kelola_staff_puskesmas extends MX_Controller
 	private function validated_payload()
 	{
 		$this->load->library('form_validation');
-		$this->form_validation->set_rules('kode_pkm', 'Puskesmas', 'trim|required');
-		$this->form_validation->set_rules('nama', 'Nama', 'trim|required');
-		$this->form_validation->set_rules('status', 'Status', 'trim|required');
+		$this->form_validation->set_rules('kode_pkm', 'Puskesmas', 'trim|required', array('required' => 'Pilih Puskesmas.'));
+		$this->form_validation->set_rules('nama', 'Nama', 'trim|required', array('required' => 'Nama lengkap wajib diisi.'));
+		$this->form_validation->set_rules('status', 'Status', 'trim|required', array('required' => 'Pilih status staf.'));
 
 		$kode_pkm = trim((string) $this->input->post('kode_pkm', TRUE));
 		$status = trim((string) $this->input->post('status', TRUE));
 		if (!in_array($status, array('aktif', 'nonaktif'), true)) {
-			$this->session->set_flashdata('error', 'Status staff tidak valid.');
+			$this->session->set_flashdata('error', 'Pilih status staf yang valid.');
 			return false;
 		}
 		if (!$this->Kelola_staff_puskesmas_m->puskesmas_is_active($kode_pkm)) {
-			$this->session->set_flashdata('error', 'Puskesmas aktif wajib dipilih.');
+			$this->session->set_flashdata('error', 'Pilih Puskesmas yang aktif.');
 			return false;
 		}
 		if ($this->form_validation->run() === FALSE) {
@@ -323,8 +328,13 @@ class Kelola_staff_puskesmas extends MX_Controller
 		}
 
 		$staff_id = (int) $staff_id;
-		if ($staff_id < 1 || !$this->Kelola_staff_puskesmas_m->get_by_id($staff_id)) {
-			$this->session->set_flashdata('error', 'Data staff tidak ditemukan.');
+		if ($staff_id < 1) {
+			$this->session->set_flashdata('error', 'Pilih staf yang valid.');
+			redirect('kelola_staff_puskesmas', 'refresh');
+			return;
+		}
+		if (!$this->Kelola_staff_puskesmas_m->get_by_id($staff_id)) {
+			$this->session->set_flashdata('error', 'Staf tidak ditemukan.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}

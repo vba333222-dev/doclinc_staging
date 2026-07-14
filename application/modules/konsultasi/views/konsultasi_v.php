@@ -833,7 +833,7 @@ Lama keluhan:
 		document.getElementById('simpanKeluhan').addEventListener('click', function() {
 			const data = document.getElementById('popupKeluhan').value.trim();
 			if (data === '') {
-				alert('Isi keluhan.');
+				alert('Masukkan keluhan.');
 				return;
 			}
 
@@ -887,13 +887,13 @@ Lama keluhan:
 			}
 
 			if (lamaKeluhan === '') {
-				alert('Isi lama keluhan.');
+				alert('Masukkan lama keluhan.');
 				focusStructuredField('ui_lama_keluhan');
 				return false;
 			}
 
 			if (deskripsiKeluhan === '') {
-				alert('Isi detail keluhan.');
+				alert('Masukkan detail keluhan.');
 				focusStructuredField('ui_deskripsi_keluhan');
 				return false;
 			}
@@ -969,10 +969,10 @@ Lama keluhan:
 				alert('Isi data penunjang.');
 				return;
 			} else if (keluhan === '') {
-				alert('Isi keluhan.');
+				alert('Masukkan keluhan.');
 				return;
 			} else if (lat === '' || lng === '') {
-				Swal.fire("Gagal!", "Lokasi pasien belum tersedia. Aktifkan izin lokasi lalu coba lagi.", "error");
+				Swal.fire("Lokasi diperlukan", "Pilih lokasi terlebih dahulu.", "error");
 				return;
 			}
 
@@ -1211,7 +1211,7 @@ Lama keluhan:
 					alert("Lokasi belum tersedia.");
 					break;
 				case error.TIMEOUT:
-					alert("Waktu pengambilan lokasi habis.");
+					alert("Lokasi belum ditemukan. Coba lagi.");
 					break;
 				case error.UNKNOWN_ERROR:
 					alert("Lokasi belum tersedia.");

@@ -14,7 +14,7 @@ class Upload extends CI_Controller
 			$this->output
 				->set_content_type('application/json')
 				->set_status_header(401)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Login diperlukan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Silakan masuk terlebih dahulu.']));
 			return;
 		}
 	}
@@ -68,7 +68,7 @@ class Upload extends CI_Controller
 		if ($this->session->userdata('logged_in') != TRUE) {
 			$this->output
 				->set_status_header(401)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Login diperlukan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Silakan masuk terlebih dahulu.']));
 			return false;
 		}
 
@@ -84,7 +84,7 @@ class Upload extends CI_Controller
 			doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'legacy_chat_upload'));
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Akses tidak diizinkan']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return false;
 		}
 

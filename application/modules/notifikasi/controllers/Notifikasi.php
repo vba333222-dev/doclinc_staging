@@ -21,7 +21,7 @@ class Notifikasi extends MX_Controller
 		if ($this->session->userdata('logged_in') != TRUE) {
 			$this->output
 				->set_status_header(401)
-				->set_output(json_encode(array('status' => 'error', 'message' => 'Login diperlukan')));
+				->set_output(json_encode(array('status' => 'error', 'message' => 'Silakan masuk terlebih dahulu.')));
 			return;
 		}
 
@@ -49,7 +49,7 @@ class Notifikasi extends MX_Controller
 		if ($this->session->userdata('logged_in') != TRUE) {
 			$this->output
 				->set_status_header(401)
-				->set_output(json_encode(array('status' => 'error', 'message' => 'Login diperlukan')));
+				->set_output(json_encode(array('status' => 'error', 'message' => 'Silakan masuk terlebih dahulu.')));
 			return;
 		}
 
@@ -65,7 +65,7 @@ class Notifikasi extends MX_Controller
 		if (!doclinc_mark_notification_read($notification_id, $user_id)) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(array('status' => 'error', 'message' => 'Akses tidak diizinkan')));
+				->set_output(json_encode(array('status' => 'error', 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
 
