@@ -680,7 +680,7 @@ class Home_nakes_m extends MX_Controller
 				'message' => 'Permintaan diterima oleh Puskesmas.',
 				'metadata' => $event_metadata,
 			));
-			return array('status' => 'success', 'message' => 'Permintaan diterima.', 'already_accepted' => false);
+			return array('status' => 'success', 'message' => 'Konsultasi diterima.', 'already_accepted' => false);
 		}
 
 		return array('status' => 'error', 'message' => 'Permintaan tidak dapat diakses.');
@@ -883,7 +883,7 @@ class Home_nakes_m extends MX_Controller
 
 		return array(
 			'status' => 'success',
-			'message' => 'Status kunjungan diperbarui',
+			'message' => 'Status kunjungan diperbarui.',
 			'visit_status' => $visit_status,
 			'visit_status_label' => function_exists('doclinc_visit_status_label') ? doclinc_visit_status_label($visit_status) : $visit_status,
 		);
@@ -1439,7 +1439,7 @@ class Home_nakes_m extends MX_Controller
 				'status' => 'success',
 				'message' => $same_staff_selection
 					? 'PIC tetap sama.'
-					: 'PIC berhasil ditetapkan.',
+					: 'PIC diperbarui.',
 			);
 		} catch (RuntimeException $e) {
 			if ($e->getMessage() !== 'staff_assignment_aborted') {
@@ -1586,7 +1586,7 @@ class Home_nakes_m extends MX_Controller
 			}
 			$transaction_started = false;
 			$committed = true;
-			$result = array('status' => 'success', 'message' => 'PIC berhasil dilepas.');
+			$result = array('status' => 'success', 'message' => 'PIC dilepas.');
 		} catch (RuntimeException $e) {
 			if ($e->getMessage() !== 'staff_unassignment_aborted') {
 				$result = array('status' => 'error', 'message' => 'PIC gagal dilepas.');

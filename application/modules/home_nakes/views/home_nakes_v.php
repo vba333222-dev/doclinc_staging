@@ -650,8 +650,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 								runLegacyAcceptNotification();
 
 								Swal.fire({
-									title: "Berhasil",
-									text: response && response.message ? response.message : "Anda menerima konsultasi",
+									title: "Konsultasi diterima.",
+									text: response && response.message ? response.message : "Konsultasi diterima.",
 									icon: "success",
 									showConfirmButton: false,
 									timer: 800,
@@ -741,8 +741,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						}
 						if (response && response.status === 'success') {
 							Swal.fire({
-								title: 'Berhasil',
-								text: response.message || 'Konsultasi berhasil dibatalkan.',
+								title: 'Permintaan dibatalkan.',
+								text: response.message || 'Permintaan dibatalkan.',
 								icon: 'success',
 								showConfirmButton: false,
 								timer: 1200,

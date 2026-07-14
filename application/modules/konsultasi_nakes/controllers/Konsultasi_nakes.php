@@ -247,7 +247,7 @@ class Konsultasi_nakes extends MX_Controller
 					$doctor_id
 				);
 			}
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Konsultasi berhasil disimpan']));
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Konsultasi selesai.']));
 			return;
 		}
 

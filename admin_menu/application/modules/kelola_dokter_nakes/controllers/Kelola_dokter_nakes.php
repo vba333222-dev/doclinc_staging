@@ -80,7 +80,7 @@ class Kelola_dokter_nakes extends MX_Controller
 
 		$result = $this->Kelola_dokter_nakes_m->create_dokter_nakes($data);
 		if ($result) {
-			$this->session->set_flashdata('success', 'Akun Puskesmas berhasil ditambahkan.');
+			$this->session->set_flashdata('success', 'Akun Puskesmas ditambahkan.');
 			redirect('kelola_dokter_nakes', 'refresh');
 			return;
 		}
@@ -224,7 +224,7 @@ class Kelola_dokter_nakes extends MX_Controller
 		}
 
 		if ($this->Kelola_dokter_nakes_m->destroy_dokter_nakes($id_user)) {
-			$this->session->set_flashdata('success', 'Akun Puskesmas berhasil dihapus permanen.');
+			$this->session->set_flashdata('success', 'Akun Puskesmas dihapus permanen.');
 		} else {
 			$this->session->set_flashdata('error', 'Akun Puskesmas gagal dihapus permanen.');
 		}

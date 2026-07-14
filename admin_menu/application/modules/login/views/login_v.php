@@ -156,8 +156,8 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 							if (result == 1) {
 								Swal.fire({
 									icon: 'success',
-									title: 'Yeay!',
-									html: 'Kamu berhasil login',
+									title: 'Anda sudah masuk.',
+									html: 'Dashboard sedang disiapkan.',
 									showConfirmButton: false,
 									timer: 1500
 								}).then((result) => {

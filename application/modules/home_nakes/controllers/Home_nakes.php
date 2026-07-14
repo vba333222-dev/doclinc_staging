@@ -685,7 +685,7 @@ class Home_nakes extends MX_Controller
 			'status' => 'success',
 			'success' => true,
 			'tracking_active' => true,
-			'message' => 'Lokasi nakes diperbarui',
+			'message' => 'Lokasi Nakes diperbarui.',
 			'location_meta' => array(
 				'accuracy_m' => $accuracy_m,
 				'heading' => $heading,
@@ -845,7 +845,7 @@ class Home_nakes extends MX_Controller
 		// Simpan lewat model
 		if ($this->Home_nakes_m->update_profile($id, $data)) {
 			$this->session->set_userdata($data); // Perbarui session
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Profil berhasil diperbarui']));
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Profil diperbarui.']));
 		} else {
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Gagal memperbarui profil']));
 		}

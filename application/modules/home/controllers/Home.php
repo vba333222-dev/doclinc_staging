@@ -350,7 +350,7 @@ class Home extends MX_Controller
 		);
 
 		if ($this->Home_m->updateRequestById($id, $user_id, $payload)) {
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Permintaan berhasil diubah.']));
+			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Permintaan diperbarui.']));
 			return;
 		}
 

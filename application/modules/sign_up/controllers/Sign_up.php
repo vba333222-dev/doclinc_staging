@@ -39,7 +39,7 @@
                 if ($this->Sign_up_m->save_user($data)) {
                     echo json_encode([
                         'success' => true,
-                        'message' => 'Registrasi berhasil!'
+                        'message' => 'Akun dibuat.'
                     ]);
                 } else {
                     echo json_encode([

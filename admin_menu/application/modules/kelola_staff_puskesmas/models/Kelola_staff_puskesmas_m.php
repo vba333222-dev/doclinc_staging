@@ -430,7 +430,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			$transaction_started = false;
 			$result = array(
 				'status' => 'success',
-				'message' => 'Akun personal dengan username ' . $username . ' berhasil dibuat dan dihubungkan.',
+				'message' => 'Akun personal dibuat dan dihubungkan.',
 			);
 		} catch (RuntimeException $e) {
 			if ($e->getMessage() !== 'personal_account_creation_aborted') {
@@ -552,7 +552,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			->update('puskesmas_staff', array('user_id' => $user_id));
 
 		return $updated
-			? array('status' => 'success', 'message' => 'Akun login personal berhasil dihubungkan.')
+			? array('status' => 'success', 'message' => 'Akun personal dihubungkan.')
 			: array('status' => 'error', 'message' => 'Akun login belum dapat dihubungkan.');
 	}
 
@@ -574,7 +574,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			->update('puskesmas_staff', array('user_id' => null));
 
 		return $updated
-			? array('status' => 'success', 'message' => 'Akun login berhasil dilepas dari staff. Akun tidak dihapus.')
+			? array('status' => 'success', 'message' => 'Akun personal dilepas. Akun tidak dihapus.')
 			: array('status' => 'error', 'message' => 'Akun login belum dapat dilepas.');
 	}
 
