@@ -1244,9 +1244,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					},
 					function(error) {
 						const message = error && error.code === error.PERMISSION_DENIED ?
-							'Izin lokasi ditolak. Aktifkan izin lokasi untuk memperbarui posisi Anda.' :
-							'Lokasi perangkat belum aktif. Coba beberapa saat lagi.';
-						setTextById('nakesVisitRouteStatus', 'Lokasi perangkat belum aktif');
+							'Izinkan akses lokasi di perangkat Anda.' :
+							'Lokasi belum ditemukan. Coba lagi.';
+						setTextById('nakesVisitRouteStatus', 'Lokasi belum ditemukan. Coba lagi.');
 						if (hasLoadedVisitMap(requestId)) {
 							setTrackingStatus(requestId, message, true);
 						} else {
@@ -1298,7 +1298,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				const state = watches[requestId];
 				if (!state && !forceSend) return;
 				if (!position || !position.coords) {
-					setTrackingStatus(requestId, 'Data lokasi perangkat tidak tersedia', true);
+					setTrackingStatus(requestId, 'Lokasi belum ditemukan. Coba lagi.', true);
 					return;
 				}
 
@@ -1370,7 +1370,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 			ns.startNakesVisitTracking = function(requestId) {
 				if (!navigator.geolocation) {
-					setTrackingStatus(requestId, 'Lokasi perangkat belum aktif', true);
+					setTrackingStatus(requestId, 'Fitur lokasi tidak tersedia di perangkat ini.', true);
 					return;
 				}
 
@@ -1385,7 +1385,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						postVisitLocation(requestId, position);
 					},
 					function(error) {
-						const message = error && error.code === 1 ? 'Aktifkan lokasi perangkat untuk memperbarui posisi Anda' : 'Lokasi perangkat belum aktif';
+						const message = error && error.code === 1 ? 'Izinkan akses lokasi di perangkat Anda.' : 'Lokasi belum ditemukan. Coba lagi.';
 						setTrackingStatus(requestId, message, true);
 						stopTracking(requestId);
 					}, {
@@ -1571,7 +1571,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 				navigator.geolocation.watchPosition(updateLocation, showError);
 			} else {
-				alert("Fitur lokasi tidak tersedia di browser ini.");
+				alert("Fitur lokasi tidak tersedia di perangkat ini.");
 			}
 
 			document.querySelectorAll(".lihat-map").forEach(button => {
@@ -1755,8 +1755,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				// 	break;
 				case error.POSITION_UNAVAILABLE:
 					Swal.fire({
-						title: "Lokasi tidak tersedia",
-						text: "Lokasi tidak tersedia.",
+						title: "Lokasi belum ditemukan",
+						text: "Lokasi belum ditemukan. Coba lagi.",
 						icon: "error",
 						confirmButtonText: "Tutup"
 					});

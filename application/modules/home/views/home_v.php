@@ -2894,7 +2894,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}
 			const lat = location && formatCoordinate(location.lat);
 			const lng = location && formatCoordinate(location.lng);
-			coordinateEl.textContent = lat && lng ? 'Lat ' + lat + ' · Lng ' + lng : 'Lokasi belum aktif';
+			coordinateEl.textContent = lat && lng ? 'Lat ' + lat + ' · Lng ' + lng : 'Lokasi belum ditemukan. Coba lagi.';
 		}
 
 		function setLocationFields(location) {
@@ -2998,8 +2998,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				navigator.geolocation.watchPosition(updateLocation, showError);
 			} else {
 				Swal.fire({
-					title: "Gagal",
-					text: "Lokasi tidak didukung perangkat ini.",
+					title: "Lokasi belum tersedia",
+					text: "Fitur lokasi tidak tersedia di perangkat ini.",
 					icon: "error",
 					confirmButtonText: "Tutup"
 				});
@@ -3149,15 +3149,15 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				// 	alert("User denied the request for Geolocation.");
 				// 	break;
 				case error.POSITION_UNAVAILABLE:
-					setLocationText('', '');
+					setLocationText('Lokasi belum ditemukan. Coba lagi.', 'Lokasi belum ditemukan. Coba lagi.');
 					setHeaderCoordinate(null);
 					break;
 				case error.TIMEOUT:
-					setLocationText('', '');
+					setLocationText('Lokasi belum ditemukan. Coba lagi.', 'Lokasi belum ditemukan. Coba lagi.');
 					setHeaderCoordinate(null);
 					break;
 				case error.UNKNOWN_ERROR:
-					setLocationText('', '');
+					setLocationText('Lokasi belum ditemukan. Coba lagi.', 'Lokasi belum ditemukan. Coba lagi.');
 					setHeaderCoordinate(null);
 					break;
 			}
