@@ -1344,7 +1344,7 @@ if ($current_role === 'dokter') {
 				function createLocalTrack(kind) {
 					const LiveKit = sdk();
 					if (!LiveKit) {
-						return Promise.reject(new Error('SDK panggilan belum tersedia'));
+						return Promise.reject(new Error('Layanan panggilan belum tersedia. Coba lagi nanti.'));
 					}
 					if (kind === 'audio') {
 						return LiveKit.createLocalAudioTrack();
@@ -1420,7 +1420,7 @@ if ($current_role === 'dokter') {
 							if (elements.mic) {
 								elements.mic.classList.add('is-off');
 							}
-							setStatus('Mikrofon tidak tersedia');
+							setStatus('Mikrofon tidak tersedia di perangkat ini.');
 						});
 					}).then(function() {
 						if (state.mode !== 'video') {
@@ -1440,7 +1440,7 @@ if ($current_role === 'dokter') {
 								elements.camera.classList.add('is-off');
 							}
 							showLocalPlaceholder('Kamera nonaktif');
-							setStatus('Kamera tidak tersedia, panggilan suara aktif');
+							setStatus('Kamera tidak tersedia. Panggilan suara tetap aktif.');
 						});
 					});
 				}
@@ -1452,7 +1452,7 @@ if ($current_role === 'dokter') {
 					}
 					const LiveKit = sdk();
 					if (!LiveKit || !LiveKit.Room) {
-						setStatus('SDK panggilan belum tersedia', true);
+						setStatus('Layanan panggilan belum tersedia. Coba lagi nanti.', true);
 						return;
 					}
 					if (!requestId) {
@@ -1477,7 +1477,7 @@ if ($current_role === 'dokter') {
 						}
 						return connectWithPayload(response, canStartCall ? 'Memanggil pasien...' : 'Menunggu lawan bicara bergabung');
 					}).catch(function(error) {
-						cleanupCall(error && error.message ? error.message : 'Gagal tersambung');
+						cleanupCall('Panggilan belum dapat tersambung. Coba lagi.');
 					});
 				}
 
@@ -1522,7 +1522,7 @@ if ($current_role === 'dokter') {
 						}
 						return publishTrack(newTrack);
 					}).catch(function() {
-						setStatus(kind === 'audio' ? 'Mikrofon tidak tersedia' : 'Kamera tidak tersedia', true);
+						setStatus(kind === 'audio' ? 'Mikrofon tidak tersedia di perangkat ini.' : 'Kamera tidak tersedia di perangkat ini.', true);
 					});
 				}
 
@@ -1545,7 +1545,7 @@ if ($current_role === 'dokter') {
 						showLocalPreview(track);
 						return publishTrack(track);
 					}).catch(function() {
-						setStatus('Tidak dapat mengganti kamera', true);
+						setStatus('Kamera belum dapat diganti. Coba lagi.', true);
 					});
 				}
 
@@ -1847,7 +1847,7 @@ if ($current_role === 'dokter') {
 				})
 				.catch(function() {
 					if (!hasLoaded) {
-						document.getElementById('chatMessages').innerHTML = '<div class="chat-error">Chat tidak tersedia.</div>';
+						document.getElementById('chatMessages').innerHTML = '<div class="chat-error">Chat belum dapat dimuat. Coba lagi.</div>';
 						hasLoaded = true;
 					}
 				});

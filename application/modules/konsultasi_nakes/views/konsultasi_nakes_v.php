@@ -1336,7 +1336,7 @@ if (!function_exists('formatComplaintText')) {
 					}
 				},
 				error: function(xhr, status, error) {
-					let message = "Terjadi kesalahan AJAX";
+					let message = "Koneksi bermasalah. Coba lagi.";
 					if (xhr.responseText) {
 						try {
 							const response = JSON.parse(xhr.responseText);
