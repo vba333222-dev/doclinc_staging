@@ -61,7 +61,7 @@
                 $this->Kelola_newsfeed_m->insert_news($data);
                 $this->session->set_flashdata('success', 'Anda berhasil menambah data.');
             } else {
-                $this->session->set_flashdata('error', strip_tags($this->upload->display_errors('', '')));
+                $this->session->set_flashdata('error', 'Gambar berita belum dapat diunggah. Periksa file dan coba lagi.');
             }
 			redirect('kelola_news_feed','refresh');
         }
@@ -87,7 +87,7 @@
                 if ($this->upload->do_upload('gambar')) {
                     $gambar = $this->upload->data('file_name');
                 } else {
-                    $this->session->set_flashdata('error', strip_tags($this->upload->display_errors('', '')));
+                    $this->session->set_flashdata('error', 'Gambar berita belum dapat diunggah. Periksa file dan coba lagi.');
                     redirect('kelola_news_feed','refresh');
                 }
             }

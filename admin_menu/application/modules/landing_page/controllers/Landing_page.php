@@ -56,7 +56,7 @@
 			$this->load->library('upload');
 			$this->upload->initialize($config);
 			if (!$this->upload->do_upload($field)) {
-				$this->session->set_flashdata('info', '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert">' . html_escape(strip_tags($this->upload->display_errors('', ''))) . '</div>');
+				$this->session->set_flashdata('info', '<div class="alert alert-danger border-danger shadow-sm mb-0" role="alert">Gambar belum dapat diunggah. Periksa file dan coba lagi.</div>');
 				return false;
 			}
 			return $this->upload->data('file_name');
