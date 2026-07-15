@@ -389,20 +389,32 @@ class Home extends MX_Controller
 		if (!$this->require_post_json()) {
 			return;
 		}
-		$id = (int) $this->input->post('requestId');
-		if ($id < 1 || !doclinc_can_view_request($id, $this->session->userdata('id'), 'warga')) {
-			doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_delete'));
-			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
-			return;
-		}
-		if ($this->Home_m->deleteRequestById($id)) {
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Permintaan dihapus.']));
-			return;
+
+		// Legacy endpoint retained temporarily to reject obsolete hard-delete clients.
+		$raw_request_id = $this->input->post('requestId');
+		$validated_request_id = is_string($raw_request_id) && preg_match('/^[0-9]+$/D', $raw_request_id) === 1
+			? filter_var($raw_request_id, FILTER_VALIDATE_INT, array('options' => array('min_range' => 1)))
+			: false;
+		$request_id = $validated_request_id !== false
+			? $validated_request_id
+			: 0;
+
+		try {
+			doclinc_log_request_event('deprecated_request_delete_attempt', $request_id, array(
+				'role' => (string) $this->session->userdata('role'),
+				'result' => 'rejected',
+				'reason' => 'endpoint_retired',
+			));
+		} catch (Throwable $exception) {
+			log_message('error', 'Failed to audit deprecated request delete endpoint call.');
 		}
 
-		doclinc_log_request_event('unauthorized_request_update', $id, array('target' => 'warga_delete'));
-		$this->output->set_status_header(403);
-		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
+		$this->output
+			->set_status_header(410)
+			->set_output(json_encode([
+				'status' => 'error',
+				'message' => 'Penghapusan permanen tidak tersedia. Batalkan permintaan melalui menu pembatalan.',
+			]));
 	}
 
 	public function cancel_request()
