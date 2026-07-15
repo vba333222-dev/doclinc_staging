@@ -251,7 +251,7 @@ class Konsultasi_nakes extends MX_Controller
 			return;
 		}
 
-		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Konsultasi gagal disimpan']));
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Konsultasi belum dapat diselesaikan.']));
 	}
 
 

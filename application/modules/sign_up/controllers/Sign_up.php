@@ -44,7 +44,7 @@
                 } else {
                     echo json_encode([
                         'success' => false,
-                        'message' => 'Registrasi gagal, coba lagi nanti.'
+                        'message' => 'Akun belum dapat dibuat. Coba lagi.'
                     ]);
                 }
             }

@@ -296,7 +296,7 @@ class Home_nakes extends MX_Controller
 		}
 
 		$result = $this->Home_nakes_m->assign_staff_to_request($request_id, $staff_id, $puskesmas_code, $user_id, $note, $identity_context);
-		$message = !empty($result['message']) ? $result['message'] : 'PIC gagal ditetapkan.';
+		$message = !empty($result['message']) ? $result['message'] : 'Gagal memperbarui PIC.';
 		$this->session->set_flashdata(
 			isset($result['status']) && $result['status'] === 'success' ? 'staff_assignment_success' : 'staff_assignment_error',
 			$message
@@ -329,7 +329,7 @@ class Home_nakes extends MX_Controller
 		}
 
 		$result = $this->Home_nakes_m->clear_staff_assignment($request_id, $puskesmas_code, $user_id, $identity_context);
-		$message = !empty($result['message']) ? $result['message'] : 'PIC gagal dilepas.';
+		$message = !empty($result['message']) ? $result['message'] : 'Gagal melepas PIC.';
 		$this->session->set_flashdata(
 			isset($result['status']) && $result['status'] === 'success' ? 'staff_assignment_success' : 'staff_assignment_error',
 			$message
@@ -675,7 +675,7 @@ class Home_nakes extends MX_Controller
 		if (!$this->Home_nakes_m->update_visit_location($request_id, $user_id, (float) $latitude, (float) $longitude, $identity_context)) {
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Lokasi nakes tidak dapat diperbarui']));
+				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Lokasi belum dapat diperbarui.']));
 			return;
 		}
 
@@ -847,7 +847,7 @@ class Home_nakes extends MX_Controller
 			$this->session->set_userdata($data); // Perbarui session
 			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Profil diperbarui.']));
 		} else {
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Gagal memperbarui profil']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Gagal memperbarui profil.']));
 		}
 	}
 
