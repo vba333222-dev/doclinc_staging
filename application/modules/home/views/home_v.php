@@ -1303,7 +1303,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												data-location="<?= html_escape(isset($dlCurrentRequest->location) ? $dlCurrentRequest->location : ''); ?>"
 												data-lat="<?= html_escape(isset($dlCurrentRequest->patient_latitude) && $dlCurrentRequest->patient_latitude !== null ? $dlCurrentRequest->patient_latitude : (isset($dlCurrentRequest->lattitude) ? $dlCurrentRequest->lattitude : '')); ?>"
 												data-lng="<?= html_escape(isset($dlCurrentRequest->patient_longitude) && $dlCurrentRequest->patient_longitude !== null ? $dlCurrentRequest->patient_longitude : (isset($dlCurrentRequest->longitude) ? $dlCurrentRequest->longitude : '')); ?>">
-												<i class="fas fa-edit me-1"></i> Ubah permintaan
+												<i class="fas fa-edit me-1"></i> Tinjau permintaan
 											</button>
 											<button type="button" class="btn btn-sm btn-outline-danger rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $dlCurrentRequest->request_id); ?>">
 												<i class="fas fa-times-circle me-1"></i> Batalkan
@@ -1621,7 +1621,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 													data-location="<?= html_escape(isset($data->location) ? $data->location : ''); ?>"
 													data-lat="<?= html_escape(isset($data->patient_latitude) && $data->patient_latitude !== null ? $data->patient_latitude : (isset($data->lattitude) ? $data->lattitude : '')); ?>"
 													data-lng="<?= html_escape(isset($data->patient_longitude) && $data->patient_longitude !== null ? $data->patient_longitude : (isset($data->longitude) ? $data->longitude : '')); ?>">
-													<i class="fas fa-edit me-1"></i> Ubah permintaan
+													<i class="fas fa-edit me-1"></i> Tinjau permintaan
 												</button>
 												<button type="button" class="btn btn-outline-danger btn-sm rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $id_request); ?>">
 													<i class="fas fa-times-circle me-1"></i> Batalkan
@@ -3190,12 +3190,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			cards.forEach(card => {
 				card.addEventListener('click', function() {
 					const userIdWarga = <?= $this->session->userdata('id'); ?>;
-					const userIdPasien = card.getAttribute('data-userIdPasien');
-					const status = card.getAttribute('data-status');
-					const tanggal = card.getAttribute('data-tanggal');
 					const tanggal_loc = card.getAttribute('data-tanggal_loc');
 					const link = card.getAttribute('data-link');
-					const link_riwayat = "<?= base_url('home#riwayat') ?>";
 
 					const jumlah = document.getElementById('jumlah').value;
 					// const uid = document.getElementById('uid').value;
@@ -3210,8 +3206,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					const uids = <?= json_encode(array_column($getAllRequestPendingAccept->result_array(), 'user_id')) ?>;
 					const tgl = <?= json_encode(array_column($getAllRequestPendingAccept->result_array(), 'date')) ?>;
 					const stats = <?= json_encode(array_column($getAllRequestPendingAccept->result_array(), 'request_status')) ?>;
-					const reqId = <?= json_encode(array_column($getAllRequestPendingAccept->result_array(), 'request_id')) ?>;
-					const reqIds = String(reqId);
 
 					const userIdToCheck = String(userIdWarga);
 
@@ -3269,76 +3263,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						} else {
 							window.location.href = link;
 						}
-					} else if (String(userIdWarga) === userIdToCheck) {
-						if (stats == 'Pending' || stats == 'Accepted') {
-							if (tgl == today) {
-								// Tidak bisa konsultasi lagi hari ini
-								Swal.fire({
-									title: 'Konsultasi masih aktif',
-									text: 'Tunggu konsultasi aktif selesai.',
-									icon: 'warning',
-									confirmButtonText: 'Tutup'
-								});
-							} else {
-								// Boleh lanjut atau perbarui
-								Swal.fire({
-									title: 'Perbarui atau hapus?',
-									text: 'Konsultasi tanggal ' + tgl + ' belum selesai.',
-									icon: 'warning',
-									showDenyButton: true,
-									showCancelButton: true,
-									confirmButtonText: 'Perbarui permintaan',
-									denyButtonText: 'Hapus',
-									cancelButtonText: 'Batal'
-								}).then((result) => {
-									if (result.isConfirmed) {
-										// Arahkan ke endpoint untuk perbarui (opsional ganti endpoint-nya)
-										$.ajax({
-											url: '<?= base_url('home/updaterequestbyid') ?>',
-											type: 'POST',
-											data: {
-												requestId: reqIds
-											},
-											success: function(response) {
-												Swal.fire({
-													title: 'Berhasil',
-													text: 'Tanggal konsultasi berhasil diperbarui.',
-													icon: 'success',
-													confirmButtonText: 'Lihat riwayat'
-												}).then(() => {
-													window.location.href = "<?= base_url('home#riwayat') ?>";
-												});
-											}
-										});
-									} else if (result.isDenied) {
-										// Tetap arahkan ke konsultasi
-										// hapus data request
-										$.ajax({
-											url: '<?= base_url('home/deleterequestbyid') ?>',
-											type: 'POST',
-											data: {
-												requestId: reqIds
-											},
-											success: function(response) {
-											}
-										});
-
-										window.location.href = link;
-									}
-								});
-							}
-						} else if (stats.includes('Completed')) {
-							// Status aman, lanjut ke konsultasi
-							window.location.href = link;
-						} else if (uids.includes(userIdToCheck)) {
-							// Jika status masih Pending atau Accepted
-							Swal.fire({
-								title: 'Konsultasi masih aktif',
-								text: 'Selesaikan konsultasi sebelumnya.',
-								icon: 'warning',
-								confirmButtonText: 'Tutup'
-							});
-						}
+					} else {
+						window.location.href = link;
 					}
 				});
 			});
