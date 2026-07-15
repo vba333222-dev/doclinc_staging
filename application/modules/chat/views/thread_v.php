@@ -1876,6 +1876,22 @@ if ($current_role === 'dokter') {
 
 		const chatForm = document.getElementById('chatForm');
 		if (chatForm && canSend) {
+			function showChatSendError(message) {
+				const list = document.getElementById('chatMessages');
+				if (!list) {
+					return;
+				}
+				let errorElement = document.getElementById('chatSendError');
+				if (!errorElement) {
+					errorElement = document.createElement('div');
+					errorElement.id = 'chatSendError';
+					errorElement.className = 'chat-error';
+					list.appendChild(errorElement);
+				}
+				errorElement.textContent = message || 'Pesan belum terkirim. Coba lagi.';
+				list.scrollTop = list.scrollHeight;
+			}
+
 			chatForm.addEventListener('submit', function(event) {
 				event.preventDefault();
 				const input = document.getElementById('messageText');
@@ -1898,13 +1914,34 @@ if ($current_role === 'dokter') {
 						credentials: 'same-origin'
 					})
 					.then(function(response) {
-						return response.json();
+						return response.json().then(function(data) {
+							return {
+								ok: response.ok,
+								data: data
+							};
+						}).catch(function() {
+							return {
+								ok: response.ok,
+								data: null
+							};
+						});
 					})
-					.then(function(data) {
-						if (data && data.status === 'success' && data.message) {
+					.then(function(result) {
+						const data = result.data;
+						if (result.ok && data && data.status === 'success' && data.message) {
+							const previousError = document.getElementById('chatSendError');
+							if (previousError) {
+								previousError.remove();
+							}
 							input.value = '';
 							appendMessage(data.message);
+							return;
 						}
+						const backendMessage = data && data.status === 'error' && typeof data.message === 'string' ? data.message.trim() : '';
+						showChatSendError(backendMessage || 'Pesan belum terkirim. Coba lagi.');
+					})
+					.catch(function() {
+						showChatSendError('Pesan belum terkirim. Coba lagi.');
 					})
 					.finally(function() {
 						if (sendButton) {
