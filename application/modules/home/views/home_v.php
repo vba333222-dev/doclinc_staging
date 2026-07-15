@@ -3276,6 +3276,36 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		const notificationListJsonUrl = <?= json_encode(base_url('notifikasi/list_json')); ?>;
 		const notificationMarkReadUrl = <?= json_encode(base_url('notifikasi/mark_read')); ?>;
 		const notificationPollIntervalMs = 30000;
+		const notificationMarkReadInFlight = new Set();
+
+		function getNotificationOpenErrorElement() {
+			let errorElement = document.getElementById('notificationOpenError');
+			if (errorElement) {
+				return errorElement;
+			}
+
+			const notificationList = document.getElementById('notificationList');
+			if (!notificationList || !notificationList.parentNode) {
+				return null;
+			}
+
+			errorElement = document.createElement('div');
+			errorElement.id = 'notificationOpenError';
+			errorElement.className = 'alert alert-danger py-2 px-3 mb-2 small';
+			errorElement.setAttribute('role', 'alert');
+			errorElement.hidden = true;
+			notificationList.parentNode.insertBefore(errorElement, notificationList);
+			return errorElement;
+		}
+
+		function setNotificationOpenError(message) {
+			const errorElement = getNotificationOpenErrorElement();
+			if (!errorElement) {
+				return;
+			}
+			errorElement.textContent = message || '';
+			errorElement.hidden = !message;
+		}
 
 		function getNotificationBadge() {
 			return Array.prototype.slice.call(document.querySelectorAll('#badgeNotif, #badgeNotifs'));
@@ -3330,8 +3360,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			content.appendChild(timestamp);
 
 			notificationItem.appendChild(content);
-			notificationItem.addEventListener('click', function() {
-				markNotificationRead(item);
+			notificationItem.addEventListener('click', function(event) {
+				event.preventDefault();
+				markNotificationRead(item, notificationItem);
 			});
 
 			return notificationItem;
@@ -3390,11 +3421,17 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			});
 		}
 
-		function markNotificationRead(notification) {
+		function markNotificationRead(notification, notificationElement) {
 			const notificationId = notification && notification.notification_id ? notification.notification_id : notification;
 			const actionUrl = notification && notification.action_url ? notification.action_url : '';
-			if (!notificationId) {
+			const notificationKey = notificationId === null || typeof notificationId === 'undefined' ? '' : String(notificationId).trim();
+			const isValidNotificationId = (typeof notificationId === 'string' || typeof notificationId === 'number') && /^[1-9]\d*$/.test(notificationKey);
+			if (!isValidNotificationId || notificationMarkReadInFlight.has(notificationKey)) {
 				return;
+			}
+			notificationMarkReadInFlight.add(notificationKey);
+			if (notificationElement) {
+				notificationElement.setAttribute('aria-busy', 'true');
 			}
 			const formData = new FormData();
 			formData.append('notification_id', notificationId);
@@ -3404,12 +3441,32 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					credentials: 'same-origin'
 				})
 				.then(function(response) {
-					if (response.ok) {
+					return response.json().then(function(body) {
+						const isObject = body && typeof body === 'object' && !Array.isArray(body);
+						if (!response.ok || !isObject || body.status !== 'success') {
+							const failure = new Error('notification_mark_read_failed');
+							if (isObject && typeof body.message === 'string' && body.message.trim()) {
+								failure.safeMessage = body.message.trim();
+							}
+							throw failure;
+						}
+
+						setNotificationOpenError('');
 						if (actionUrl) {
 							window.location.href = actionUrl;
 							return;
 						}
 						loadDatabaseNotifications();
+					});
+				})
+				.catch(function(error) {
+					const safeMessage = error && typeof error.safeMessage === 'string' && error.safeMessage.trim() ? error.safeMessage.trim() : '';
+					setNotificationOpenError(safeMessage || 'Notifikasi belum dapat dibuka. Coba lagi.');
+				})
+				.finally(function() {
+					notificationMarkReadInFlight.delete(notificationKey);
+					if (notificationElement) {
+						notificationElement.removeAttribute('aria-busy');
 					}
 				});
 		}

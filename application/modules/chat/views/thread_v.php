@@ -1818,6 +1818,8 @@ if ($current_role === 'dokter') {
 		const markReadUrl = <?= json_encode(base_url('chat/mark_read')); ?>;
 		let lastMessageId = 0;
 		let hasLoaded = false;
+		let markReadInFlight = false;
+		let markReadStopped = false;
 
 		function formatDate(value) {
 			if (!value) {
@@ -1929,13 +1931,32 @@ if ($current_role === 'dokter') {
 		}
 
 		function markRead() {
+			if (markReadStopped || markReadInFlight) {
+				return;
+			}
+			markReadInFlight = true;
 			const formData = new FormData();
 			formData.append('request_id', requestId);
 			fetch(markReadUrl, {
 				method: 'POST',
 				body: formData,
 				credentials: 'same-origin'
-			});
+			})
+				.then(function(response) {
+					if (response.status === 401 || response.status === 403) {
+						markReadStopped = true;
+					}
+					return response.json().then(function(body) {
+						const isObject = body && typeof body === 'object' && !Array.isArray(body);
+						if (!response.ok || !isObject || body.status !== 'success') {
+							throw new Error('chat_mark_read_failed');
+						}
+					});
+				})
+				.catch(function() {})
+				.finally(function() {
+					markReadInFlight = false;
+				});
 		}
 
 		document.addEventListener('DOMContentLoaded', function() {
