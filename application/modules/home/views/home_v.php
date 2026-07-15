@@ -2951,7 +2951,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				})
 				.then(data => {
 					const feature = data.features && data.features.length ? data.features[0] : null;
-					setLocationText(feature ? feature.place_name : '', getMapboxCity(feature));
+					setLocationText(feature ? feature.place_name : 'Alamat belum ditemukan.', getMapboxCity(feature));
 				})
 				.catch(() => {
 					setLocationText(location.lat + ', ' + location.lng, '');
@@ -3135,10 +3135,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							components.find(c => c.types.includes("administrative_area_level_2"));
 						document.getElementById('kota').textContent = city ? city.long_name : "Tidak ditemukan";
 					} else {
-						setLocationText('', '');
+						setLocationText('Alamat belum ditemukan.', '');
 					}
 				} else {
-					setLocationText('', '');
+					setLocationText('Alamat belum ditemukan.', '');
 				}
 			});
 		}

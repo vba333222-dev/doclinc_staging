@@ -1228,7 +1228,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						if (fallbackPatientLocation) {
 							renderVisitMap(requestId, {}, fallbackPatientLocation);
 						} else {
-							setMapStatus(response.message || 'Data lokasi tidak dapat dimuat', true);
+							setMapStatus(response.message || 'Data peta belum dapat dimuat. Coba lagi.', true);
 						}
 					}
 				});
@@ -1743,7 +1743,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				if (status === google.maps.DirectionsStatus.OK) {
 					directionsRenderer.setDirections(result);
 				} else {
-					alert("Gagal mendapatkan rute: " + status);
+					alert("Rute belum dapat dibuat. Coba lagi.");
 				}
 			});
 		}
