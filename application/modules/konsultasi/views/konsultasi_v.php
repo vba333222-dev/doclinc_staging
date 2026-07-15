@@ -1194,10 +1194,10 @@ Lama keluhan:
 					if (results[0]) {
 						document.getElementById("address").value = results[0].formatted_address;
 					} else {
-						document.getElementById("address").value = "No results found";
+						document.getElementById("address").value = "Alamat belum ditemukan.";
 					}
 				} else {
-					document.getElementById("address").value = "Geocoder failed due to: " + status;
+					document.getElementById("address").value = "Alamat belum ditemukan.";
 				}
 			});
 		}
