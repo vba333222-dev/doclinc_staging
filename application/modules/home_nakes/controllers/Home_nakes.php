@@ -836,7 +836,7 @@ class Home_nakes extends MX_Controller
 				$uploadData = $this->upload->data();
 				$data['foto'] = $uploadData['file_name'];
 			} else {
-				$response['message'] = $this->upload->display_errors('', '');
+				$response['message'] = 'Foto profil belum dapat diunggah. Periksa file dan coba lagi.';
 				$this->output->set_output(json_encode($response));
 				return;
 			}
