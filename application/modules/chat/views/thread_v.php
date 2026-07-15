@@ -971,7 +971,9 @@ if ($current_role === 'dokter') {
 					incomingPollTimer: null,
 					statusPollTimer: null,
 					statusPollMs: 3000,
-					incomingFailures: 0
+					incomingFailures: 0,
+					incomingPollSequence: 0,
+					incomingRejecting: false
 				};
 				const elements = {};
 
@@ -1183,7 +1185,7 @@ if ($current_role === 'dokter') {
 					if (canStartCall && callId) {
 						postForm(endCallUrl, {
 							call_id: callId
-						}).finally(function() {
+						}).catch(function() {}).finally(function() {
 							endLocalCall('Panggilan berakhir');
 						});
 						return;
@@ -1284,9 +1286,28 @@ if ($current_role === 'dokter') {
 							'X-Requested-With': 'XMLHttpRequest'
 						}
 					}).then(function(response) {
-						return response.json().catch(function() {
-							return {};
+						return response.json().then(function(payload) {
+							if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+								const invalidResponseError = new Error('invalid_response');
+								invalidResponseError.httpStatus = response.status;
+								throw invalidResponseError;
+							}
+							if (!response.ok) {
+								const httpError = new Error('http_failure');
+								httpError.httpStatus = response.status;
+								if (typeof payload.message === 'string' && payload.message.trim()) {
+									httpError.safeMessage = payload.message.trim();
+								}
+								throw httpError;
+							}
+							return payload;
+						}, function() {
+							const invalidResponseError = new Error('invalid_response');
+							invalidResponseError.httpStatus = response.status;
+							throw invalidResponseError;
 						});
+					}, function() {
+						throw new Error('network_failure');
 					});
 				}
 
@@ -1324,7 +1345,11 @@ if ($current_role === 'dokter') {
 								const message = response.message && response.message !== 'Status panggilan' ? response.message : terminalCallMessage(response.status);
 								endLocalCall(message);
 							}
-						}).catch(function() {});
+						}).catch(function(error) {
+							if (error && [401, 403, 404, 405].indexOf(error.httpStatus) !== -1) {
+								stopStatusPolling();
+							}
+						});
 					}, state.statusPollMs);
 				}
 
@@ -1576,13 +1601,30 @@ if ($current_role === 'dokter') {
 					if (elements.incomingType) {
 						elements.incomingType.textContent = callTypeLabel(call.call_type);
 					}
+					if (!state.incomingRejecting) {
+						setIncomingActionsDisabled(false);
+					}
 					elements.incoming.classList.remove('is-hidden');
 				}
 
+				function setIncomingActionsDisabled(disabled) {
+					if (elements.incomingAnswer) {
+						elements.incomingAnswer.disabled = !!disabled;
+					}
+					if (elements.incomingReject) {
+						elements.incomingReject.disabled = !!disabled;
+					}
+				}
+
+				function isCurrentIncomingCall(callId) {
+					return !!(state.incomingCall && String(state.incomingCall.call_id) === String(callId));
+				}
+
 				function pollIncomingCall() {
-					if (!canReceiveCall || state.room || state.connecting) {
+					if (!canReceiveCall || state.room || state.connecting || state.incomingRejecting) {
 						return;
 					}
+					const pollSequence = ++state.incomingPollSequence;
 					const url = incomingCallUrl + '?request_id=' + encodeURIComponent(requestId);
 					fetch(url, {
 						credentials: 'same-origin',
@@ -1594,6 +1636,9 @@ if ($current_role === 'dokter') {
 							return {};
 						});
 					}).then(function(response) {
+						if (pollSequence !== state.incomingPollSequence || state.incomingRejecting) {
+							return;
+						}
 						state.incomingFailures = 0;
 						if (response && response.success && response.has_incoming) {
 							showIncomingCall(response);
@@ -1604,6 +1649,9 @@ if ($current_role === 'dokter') {
 							}
 						}
 					}).catch(function() {
+						if (pollSequence !== state.incomingPollSequence || state.incomingRejecting) {
+							return;
+						}
 						state.incomingFailures += 1;
 						if (state.incomingFailures >= 5) {
 							stopIncomingPolling();
@@ -1632,7 +1680,7 @@ if ($current_role === 'dokter') {
 
 				function answerIncomingCall() {
 					const call = state.incomingCall;
-					if (!call || !call.call_id) {
+					if (state.incomingRejecting || !call || !call.call_id) {
 						return;
 					}
 					hideIncomingCall();
@@ -1654,18 +1702,45 @@ if ($current_role === 'dokter') {
 				}
 
 				function rejectIncomingCall() {
-					const callId = state.incomingCall && state.incomingCall.call_id ? state.incomingCall.call_id : state.callId;
-					hideIncomingCall();
-					if (!callId) {
+					const call = state.incomingCall;
+					if (state.incomingRejecting || !call || !call.call_id) {
 						return;
 					}
+					const callId = call.call_id;
+					state.incomingPollSequence += 1;
+					state.incomingRejecting = true;
+					setIncomingActionsDisabled(true);
 					postForm(rejectCallUrl, {
 						call_id: callId
 					}).then(function(response) {
-						if (response && response.message) {
-							setStatus(response.message, !!response.expired);
+						const safeMessage = response && typeof response.message === 'string' ? response.message.trim() : '';
+						if (!response || response.success !== true) {
+							if (isCurrentIncomingCall(callId)) {
+								elements.incoming.classList.remove('is-hidden');
+								setStatus(safeMessage || 'Panggilan belum dapat ditolak. Coba lagi.', true);
+							}
+							return;
 						}
-					}).catch(function() {});
+						if (isCurrentIncomingCall(callId)) {
+							hideIncomingCall();
+							setStatus(safeMessage || 'Panggilan ditolak');
+						}
+					}).catch(function(error) {
+						if (!isCurrentIncomingCall(callId)) {
+							return;
+						}
+						const safeMessage = error && typeof error.safeMessage === 'string' ? error.safeMessage.trim() : '';
+						if (error && [404, 409].indexOf(error.httpStatus) !== -1) {
+							hideIncomingCall();
+							setStatus(safeMessage || 'Panggilan tidak tersedia.', true);
+							return;
+						}
+						elements.incoming.classList.remove('is-hidden');
+						setStatus(safeMessage || 'Panggilan belum dapat ditolak. Coba lagi.', true);
+					}).finally(function() {
+						state.incomingRejecting = false;
+						setIncomingActionsDisabled(false);
+					});
 				}
 
 				document.addEventListener('DOMContentLoaded', function() {

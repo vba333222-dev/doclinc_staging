@@ -150,6 +150,10 @@ class Home extends MX_Controller
 	public function reject_livekit_call()
 	{
 		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output->set_status_header(405)->set_output(json_encode(array('success' => false, 'message' => 'Metode permintaan tidak didukung.')));
+			return;
+		}
 		if ($this->session->userdata('role') !== 'warga') {
 			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
@@ -174,15 +178,31 @@ class Home extends MX_Controller
 			return;
 		}
 		if ($call->status !== 'ringing') {
-			$message = $call->status === 'missed' ? 'Panggilan tidak terjawab.' : 'Panggilan sudah tidak berdering';
-			$payload = $this->Call_session_m->status_payload($call, $message, $call->status === 'missed');
-			$payload['success'] = false;
-			$this->output->set_status_header(409)->set_output(json_encode($payload));
+			$this->respond_reject_livekit_conflict($call);
 			return;
 		}
 
-		$this->Call_session_m->reject($call_id);
-		$this->output->set_output(json_encode(array('success' => true, 'call_id' => $call_id, 'status' => 'rejected', 'message' => 'Panggilan ditolak')));
+		$rejected = $this->Call_session_m->reject($call_id);
+		if ($rejected === true) {
+			$this->output->set_output(json_encode(array('success' => true, 'call_id' => $call_id, 'status' => 'rejected', 'message' => 'Panggilan ditolak')));
+			return;
+		}
+
+		$reconciled_call = $this->Call_session_m->get_by_id($call_id);
+		if ($reconciled_call && $reconciled_call->status !== 'ringing') {
+			$this->respond_reject_livekit_conflict($reconciled_call);
+			return;
+		}
+
+		$this->output->set_status_header(500)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan belum dapat ditolak. Coba lagi.')));
+	}
+
+	private function respond_reject_livekit_conflict($call)
+	{
+		$message = $call->status === 'missed' ? 'Panggilan tidak terjawab.' : 'Panggilan sudah tidak berdering';
+		$payload = $this->Call_session_m->status_payload($call, $message, $call->status === 'missed');
+		$payload['success'] = false;
+		$this->output->set_status_header(409)->set_output(json_encode($payload));
 	}
 
 	public function livekit_call_status()
