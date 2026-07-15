@@ -142,9 +142,12 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 		$(document).ready(function() {
 			$('#email').focus();
 			$('#login').click(function(event) {
+				const loginButton = $(this);
+				const originalButtonContent = loginButton.html();
 				var email = $('#email').val();
 				var password = $('#password').val();
 				if (email != '' && password != '') {
+					loginButton.prop('disabled', true);
 					$.ajax({
 						type: "POST",
 						url: "<?php echo site_url('login/ceklogin'); ?>",
@@ -165,7 +168,8 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 										window.location.reload(result);
 									}
 								});
-							} else {
+							} else if (result == 0) {
+								loginButton.prop('disabled', false).html(originalButtonContent);
 								Swal.fire({
 									icon: 'error',
 									title: 'Tidak dapat masuk',
@@ -173,7 +177,24 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 									showConfirmButton: false,
 									timer: 2500
 								});
+							} else {
+								loginButton.prop('disabled', false).html(originalButtonContent);
+								Swal.fire({
+									icon: 'error',
+									title: 'Masuk belum berhasil',
+									text: 'Terjadi kesalahan. Coba lagi.',
+									confirmButtonText: 'Tutup'
+								});
 							}
+						},
+						error: function() {
+							loginButton.prop('disabled', false).html(originalButtonContent);
+							Swal.fire({
+								icon: 'error',
+								title: 'Masuk belum berhasil',
+								text: 'Terjadi kesalahan. Coba lagi.',
+								confirmButtonText: 'Tutup'
+							});
 						}
 					});
 				} else {

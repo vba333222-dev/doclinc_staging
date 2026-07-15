@@ -61,6 +61,8 @@
 
 		document.getElementById('loginForm').addEventListener('submit', function(event) {
 			event.preventDefault(); // Mencegah form dikirim secara default
+			const loginButton = this.querySelector('button[type="submit"]');
+			const originalButtonContent = loginButton ? loginButton.innerHTML : '';
 
 			// Ambil nilai dari input username dan password
 			var username = document.getElementById('username').value;
@@ -68,6 +70,9 @@
 			var location = document.getElementById('address').value;
 			var lattitude = document.getElementById('latitude').value;
 			var longitude = document.getElementById('longitude').value;
+			if (loginButton) {
+				loginButton.disabled = true;
+			}
 			$.ajax({
 				url: '<?= site_url('login/auth'); ?>',
 				type: 'POST',
@@ -81,20 +86,46 @@
 				success: function(result) {
 					// 	if (result == 'OK') {
 					if (result == '1') {
-						$('button[type="submit"]').attr("disabled", true);
-						$('button[type="submit"]').html('<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>' +
-							'<span role="status"> Loading...</span>');
+						if (loginButton) {
+							loginButton.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>' +
+								'<span role="status"> Loading...</span>';
+						}
 						setTimeout(function() {
 							// 			window.location.href = 'home';
 							window.location.reload(result);
 						}, 1000); // Delay 1 detik setelah alert sebelum ke loading
-					} else {
+					} else if (result == '0') {
+						if (loginButton) {
+							loginButton.disabled = false;
+							loginButton.innerHTML = originalButtonContent;
+						}
 						Swal.fire({
 							title: "Gagal!",
 							text: "Nama pengguna atau password salah.",
 							icon: "error"
 						});
+					} else {
+						if (loginButton) {
+							loginButton.disabled = false;
+							loginButton.innerHTML = originalButtonContent;
+						}
+						Swal.fire({
+							title: "Masuk belum berhasil",
+							text: "Terjadi kesalahan. Coba lagi.",
+							icon: "error"
+						});
 					}
+				},
+				error: function() {
+					if (loginButton) {
+						loginButton.disabled = false;
+						loginButton.innerHTML = originalButtonContent;
+					}
+					Swal.fire({
+						title: "Masuk belum berhasil",
+						text: "Terjadi kesalahan. Coba lagi.",
+						icon: "error"
+					});
 				}
 			});
 		});
