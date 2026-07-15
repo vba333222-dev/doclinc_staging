@@ -569,8 +569,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 									} catch (e) {}
 								}
 								if (!(response == 1 || response === true || (response && response.status === 'success'))) {
-									const message = response && response.message ? response.message : 'Permintaan gagal diterima.';
-									Swal.fire("Gagal", message, "error");
+									const message = response && response.message ? response.message : 'Terjadi kesalahan. Coba lagi.';
+									Swal.fire("Konsultasi belum diterima", message, "error");
 									$(acceptButton).prop('disabled', false).removeClass('disabled');
 									return;
 								}
@@ -662,7 +662,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 								}, 300);
 							},
 							error: function() {
-								Swal.fire("Gagal", "Permintaan gagal diterima.", "error");
+								Swal.fire("Konsultasi belum diterima", "Terjadi kesalahan. Coba lagi.", "error");
 								$(acceptButton).prop('disabled', false).removeClass('disabled');
 							}
 						});
@@ -754,12 +754,12 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						}
 
 						button.prop('disabled', false).removeClass('disabled');
-						Swal.fire('Gagal', response && response.message ? response.message : 'Konsultasi tidak dapat dibatalkan.', 'error');
+						Swal.fire('Permintaan belum dibatalkan', response && response.message ? response.message : 'Terjadi kesalahan. Coba lagi.', 'error');
 					},
 					error: function(xhr) {
 						button.prop('disabled', false).removeClass('disabled');
 						const response = xhr.responseJSON || {};
-						Swal.fire('Gagal', response.message || 'Konsultasi tidak dapat dibatalkan.', 'error');
+						Swal.fire('Permintaan belum dibatalkan', response.message || 'Terjadi kesalahan. Coba lagi.', 'error');
 					}
 				});
 			});
@@ -1496,12 +1496,12 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						}
 
 						button.prop('disabled', false);
-						setVisitWorkflowMessage(requestId, response && response.message ? response.message : 'Status kunjungan tidak dapat diperbarui', true);
+						setVisitWorkflowMessage(requestId, response && response.message ? response.message : 'Terjadi kesalahan. Coba lagi.', true);
 					},
 					error: function(xhr) {
 						const response = xhr.responseJSON || {};
 						button.prop('disabled', false);
-						setVisitWorkflowMessage(requestId, response.message || 'Status kunjungan tidak dapat diperbarui', true);
+						setVisitWorkflowMessage(requestId, response.message || 'Terjadi kesalahan. Coba lagi.', true);
 					}
 				});
 			});
@@ -2132,11 +2132,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						// Misalnya reload data user:
 						location.reload();
 					} else {
-						alert("Gagal menyimpan: " + result.message);
+						alert("Profil belum diperbarui. " + result.message);
 					}
 				})
 				.catch(error => {
-					alert("Terjadi kesalahan saat menyimpan.");
+					alert("Profil belum diperbarui. Terjadi kesalahan. Coba lagi.");
 				});
 		});
 	</script>

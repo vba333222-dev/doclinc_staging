@@ -1330,13 +1330,13 @@ if (!function_exists('formatComplaintText')) {
 							})
 						});
 					} else {
-						const message = response && response.message ? response.message : "Konsultasi gagal disimpan";
-						Swal.fire("Gagal!", message, "error");
+						const message = response && response.message ? response.message : "Terjadi kesalahan. Coba lagi.";
+						Swal.fire("Konsultasi belum diselesaikan", message, "error");
 						$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan konsultasi');
 					}
 				},
 				error: function(xhr, status, error) {
-					let message = "Koneksi bermasalah. Coba lagi.";
+					let message = "Terjadi kesalahan. Coba lagi.";
 					if (xhr.responseText) {
 						try {
 							const response = JSON.parse(xhr.responseText);
@@ -1345,7 +1345,7 @@ if (!function_exists('formatComplaintText')) {
 							}
 						} catch (e) {}
 					}
-					Swal.fire("Gagal!", message, "error");
+					Swal.fire("Konsultasi belum diselesaikan", message, "error");
 					$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan konsultasi');
 				}
 			});
