@@ -83,7 +83,7 @@ class Notification extends CI_Controller
 			$this->output
 				->set_status_header(503)
 				->set_content_type('application/json')
-				->set_output(json_encode(['status' => 'error', 'message' => 'Firebase dependency missing']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Layanan notifikasi belum tersedia.']));
 			return;
 		}
 
@@ -110,7 +110,7 @@ class Notification extends CI_Controller
 			$this->output
 				->set_status_header(502)
 				->set_content_type('application/json')
-				->set_output(json_encode(['status' => 'error', 'message' => 'Firebase send failed']));
+				->set_output(json_encode(['status' => 'error', 'message' => 'Notifikasi belum dapat dikirim. Coba lagi nanti.']));
 		}
 	}
 

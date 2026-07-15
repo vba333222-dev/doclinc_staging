@@ -20,7 +20,7 @@ class Login extends MX_Controller
 			} elseif ($role == 'admin') {
 				redirect('/home_admin');
 			} else {
-				echo 'Error: User role not recognized';
+				echo 'Akun tidak dapat diproses.';
 			}
 		} else {
 			$this->load->view('login_v');
