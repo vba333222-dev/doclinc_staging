@@ -82,7 +82,7 @@ class Chat extends MX_Controller
 		if (!$message) {
 			$this->output
 				->set_status_header(400)
-				->set_output(json_encode(array('status' => 'error', 'message' => 'Pesan tidak dapat dikirim')));
+				->set_output(json_encode(array('status' => 'error', 'message' => 'Pesan belum dapat dikirim.')));
 			return;
 		}
 
@@ -138,7 +138,7 @@ class Chat extends MX_Controller
 				@unlink($data['full_path']);
 				$this->output
 					->set_status_header(400)
-					->set_output(json_encode(['status' => 'error', 'message' => 'Gambar tidak dapat dikirim']));
+					->set_output(json_encode(['status' => 'error', 'message' => 'Gambar belum dapat dikirim.']));
 				return;
 			}
 

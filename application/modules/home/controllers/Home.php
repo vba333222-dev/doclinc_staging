@@ -666,7 +666,7 @@ class Home extends MX_Controller
 		if ($result) {
 			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Penilaian dikirim.']));
 		} else {
-			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Penilaian belum terkirim.']));
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Penilaian belum dapat disimpan.']));
 		}
 	}
 

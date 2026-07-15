@@ -46,7 +46,7 @@ class Upload extends CI_Controller
 				@unlink($data['full_path']);
 				$this->output
 					->set_status_header(400)
-					->set_output(json_encode(['status' => 'error', 'message' => 'Gambar tidak dapat dikirim']));
+					->set_output(json_encode(['status' => 'error', 'message' => 'Gambar belum dapat dikirim.']));
 				return;
 			}
 
