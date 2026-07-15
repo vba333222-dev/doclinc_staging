@@ -1001,9 +1001,9 @@ Lama keluhan:
 						} catch (e) {}
 					}
 					if (!(response == 1 || (response && response.status === 'success'))) {
-						const message = response && response.message ? response.message : 'Konsultasi gagal dikirim.';
+						const message = response && response.message ? response.message : 'Terjadi kesalahan. Coba lagi.';
 						$('#save_konsul').prop('disabled', false).text('Kirim');
-						Swal.fire("Gagal!", message, "error");
+						Swal.fire("Permintaan belum terkirim", message, "error");
 						return;
 					}
 
@@ -1063,7 +1063,7 @@ Lama keluhan:
 				error: function() {
 					// Jika terjadi error, munculkan kembali tombol kirim
 					$('#save_konsul').prop('disabled', false).text('Kirim');
-					alert('Terjadi kesalahan saat mengirim data. Silakan coba lagi.');
+					alert('Permintaan belum terkirim. Terjadi kesalahan. Coba lagi.');
 				}
 			});
 

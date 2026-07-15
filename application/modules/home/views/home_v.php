@@ -2713,12 +2713,12 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					}
 
 					submitButton.prop('disabled', false).removeClass('disabled');
-					Swal.fire('Gagal', response && response.message ? response.message : 'Permintaan belum dapat diubah.', 'error');
+					Swal.fire('Permintaan belum diperbarui', response && response.message ? response.message : 'Terjadi kesalahan. Coba lagi.', 'error');
 				},
 				error: function(xhr) {
 					submitButton.prop('disabled', false).removeClass('disabled');
 					const response = xhr.responseJSON || {};
-					Swal.fire('Gagal', response.message || 'Permintaan ini tidak dapat diubah.', 'error');
+					Swal.fire('Permintaan belum diperbarui', response.message || 'Terjadi kesalahan. Coba lagi.', 'error');
 				}
 			});
 		});
@@ -2776,12 +2776,12 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						}
 
 						button.prop('disabled', false).removeClass('disabled');
-						Swal.fire('Gagal', response && response.message ? response.message : 'Permintaan tidak dapat dibatalkan.', 'error');
+						Swal.fire('Permintaan belum dibatalkan', response && response.message ? response.message : 'Terjadi kesalahan. Coba lagi.', 'error');
 					},
 					error: function(xhr) {
 						button.prop('disabled', false).removeClass('disabled');
 						const response = xhr.responseJSON || {};
-						Swal.fire('Gagal', response.message || 'Permintaan tidak dapat dibatalkan.', 'error');
+						Swal.fire('Permintaan belum dibatalkan', response.message || 'Terjadi kesalahan. Coba lagi.', 'error');
 					}
 				});
 			});
@@ -3737,8 +3737,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							});
 						} else {
 							Swal.fire({
-								title: 'Gagal',
-								text: 'Penilaian belum tersimpan.',
+								title: 'Penilaian belum tersimpan',
+								text: 'Terjadi kesalahan. Coba lagi.',
 								icon: 'error',
 								confirmButtonText: 'Tutup'
 							});
@@ -3746,8 +3746,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					},
 					error: function(xhr, status, error) {
 						Swal.fire({
-							title: 'Gagal',
-							text: 'Terjadi kesalahan.',
+							title: 'Penilaian belum tersimpan',
+							text: 'Terjadi kesalahan. Coba lagi.',
 							icon: 'error',
 							confirmButtonText: 'Tutup'
 						});

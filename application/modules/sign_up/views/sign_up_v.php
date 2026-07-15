@@ -110,7 +110,7 @@
 						}, 2000);
 					} else {
 						Swal.fire({
-							title: "Gagal!",
+							title: "Akun belum dibuat",
 							text: response.message,
 							icon: "error",
 							showConfirmButton: true
@@ -119,8 +119,8 @@
 				},
 				error: function(xhr, status, error) {
 					Swal.fire({
-						title: "Error!",
-						text: "Terjadi kesalahan pada server",
+						title: "Akun belum dibuat",
+						text: "Terjadi kesalahan. Coba lagi.",
 						icon: "error",
 						showConfirmButton: true
 					});
