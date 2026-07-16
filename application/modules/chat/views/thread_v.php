@@ -324,6 +324,17 @@ if ($current_role === 'dokter') {
 			color: #b42318;
 		}
 
+		.chat-image-feedback {
+			margin: 8px 4px 0;
+			text-align: center;
+			font-size: 12px;
+			color: #6c757d;
+		}
+
+		.chat-image-feedback.is-error {
+			color: #b42318;
+		}
+
 		.chat-readonly {
 			margin: 0;
 			padding: 12px;
@@ -847,6 +858,7 @@ if ($current_role === 'dokter') {
 						<img src="<?= html_escape($asset_base . 'icon-chat-send.svg'); ?>" alt="">
 					</button>
 				</div>
+				<div class="chat-image-feedback" id="chatImageFeedback" role="status" aria-live="polite" hidden></div>
 			<?php else : ?>
 				<div class="chat-readonly"><?= html_escape($readonly_message); ?></div>
 			<?php endif; ?>
@@ -2050,67 +2062,445 @@ if ($current_role === 'dokter') {
 			const imageButton = document.getElementById('imageButton');
 			const attachmentButton = document.getElementById('attachmentButton');
 			if (imageButton && imageInput) {
+				const chatImageFeedback = document.getElementById('chatImageFeedback');
+				const chatImageAllowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+				const chatImageMaxRawSize = 15 * 1024 * 1024;
+				const chatImageTargetSize = Math.floor(1.5 * 1024 * 1024);
+				const chatImageBackendMaxSize = 4 * 1024 * 1024;
+				const chatImageMaxLongestSide = 1600;
+				const chatImageMaxDecodedPixels = 40000000;
+				const chatImageQualities = [0.82, 0.75, 0.68, 0.60];
+				const chatImageLongestSides = [1600, 1440, 1280, 1024, 960];
+				let chatImageProcessSequence = 0;
+				let chatImageUploadInFlight = false;
+				let chatImageRequestInFlight = false;
+				let chatImageButtonStates = null;
+
+				function isCurrentChatImageSelection(sequence, file) {
+					return sequence === chatImageProcessSequence &&
+						imageInput.files &&
+						imageInput.files.length > 0 &&
+						imageInput.files[0] === file;
+				}
+
+				function setChatImageFeedback(message, isError, sequence, file) {
+					if (!chatImageFeedback || !isCurrentChatImageSelection(sequence, file)) {
+						return;
+					}
+					chatImageFeedback.textContent = message || '';
+					chatImageFeedback.hidden = !message;
+					chatImageFeedback.classList.toggle('is-error', Boolean(isError));
+					chatImageFeedback.setAttribute('role', isError ? 'alert' : 'status');
+				}
+
+				function clearChatImageFeedback() {
+					if (!chatImageFeedback) {
+						return;
+					}
+					chatImageFeedback.textContent = '';
+					chatImageFeedback.hidden = true;
+					chatImageFeedback.classList.remove('is-error');
+					chatImageFeedback.setAttribute('role', 'status');
+				}
+
+				function lockChatImageButtons() {
+					if (!chatImageButtonStates) {
+						chatImageButtonStates = {
+							image: imageButton.disabled,
+							attachment: attachmentButton ? attachmentButton.disabled : false
+						};
+					}
+					chatImageUploadInFlight = true;
+					imageButton.disabled = true;
+					if (attachmentButton) {
+						attachmentButton.disabled = true;
+					}
+				}
+
+				function restoreChatImageButtons() {
+					if (chatImageButtonStates) {
+						imageButton.disabled = chatImageButtonStates.image;
+						if (attachmentButton) {
+							attachmentButton.disabled = chatImageButtonStates.attachment;
+						}
+					}
+					chatImageButtonStates = null;
+					chatImageUploadInFlight = false;
+				}
+
+				function chatImageExtensionForType(type) {
+					if (type === 'image/png') {
+						return 'png';
+					}
+					if (type === 'image/webp') {
+						return 'webp';
+					}
+					return 'jpg';
+				}
+
+				function chatImageSafeRequestId() {
+					const value = String(requestId == null ? '' : requestId).replace(/[^A-Za-z0-9_-]/g, '');
+					return value || 'request';
+				}
+
+				function chatImageFallbackFilename(type, timestamp) {
+					return 'chat-foto-' + chatImageSafeRequestId() + '-' + timestamp + '.' + chatImageExtensionForType(type);
+				}
+
+				function chatImageOriginalFilename(file, timestamp) {
+					const expectedExtensions = file.type === 'image/jpeg' ? ['jpg', 'jpeg'] : [chatImageExtensionForType(file.type)];
+					const rawBasename = String(file.name || '').split(/[\\/]/).pop().trim();
+					const extensionMatch = rawBasename.match(/\.([^.]+)$/);
+					const extension = extensionMatch ? extensionMatch[1].toLowerCase() : '';
+					const basenameStem = extensionMatch ? rawBasename.slice(0, -extensionMatch[0].length) : rawBasename;
+					let safeBasename = rawBasename.replace(/[^A-Za-z0-9._-]+/g, '_');
+					if (safeBasename.length > 140) {
+						const safeExtension = chatImageExtensionForType(file.type);
+						safeBasename = safeBasename.slice(0, 130) + '.' + safeExtension;
+					}
+					if (!safeBasename || safeBasename === '.' || safeBasename === '..' ||
+						!basenameStem || expectedExtensions.indexOf(extension) === -1) {
+						return chatImageFallbackFilename(file.type, timestamp);
+					}
+					return safeBasename;
+				}
+
+				function isChatImageOriginalExtensionCompatible(file) {
+					const rawBasename = String(file.name || '').split(/[\\/]/).pop().trim();
+					if (!rawBasename || rawBasename === '.' || rawBasename === '..') {
+						return true;
+					}
+					const extensionMatch = rawBasename.match(/\.([^.]+)$/);
+					if (!extensionMatch) {
+						return false;
+					}
+					const extension = extensionMatch[1].toLowerCase();
+					if (file.type === 'image/jpeg') {
+						return extension === 'jpg' || extension === 'jpeg';
+					}
+					return extension === chatImageExtensionForType(file.type);
+				}
+
+				function createChatDecodedSource(source, width, height, cleanup) {
+					const naturalWidth = Number(width);
+					const naturalHeight = Number(height);
+					if (!Number.isFinite(naturalWidth) || !Number.isFinite(naturalHeight) ||
+						naturalWidth <= 0 || naturalHeight <= 0 ||
+						naturalWidth > chatImageMaxDecodedPixels / naturalHeight) {
+						cleanup();
+						throw new Error('chat_image_dimensions_invalid');
+					}
+					return {
+						source: source,
+						width: naturalWidth,
+						height: naturalHeight,
+						cleanup: cleanup
+					};
+				}
+
+				function decodeChatImageWithElement(file) {
+					return new Promise(function(resolve, reject) {
+						let objectUrl = '';
+						let image = new Image();
+						let cleaned = false;
+
+						function cleanup() {
+							if (cleaned) {
+								return;
+							}
+							cleaned = true;
+							if (image) {
+								image.onload = null;
+								image.onerror = null;
+								image.src = '';
+							}
+							if (objectUrl) {
+								URL.revokeObjectURL(objectUrl);
+								objectUrl = '';
+							}
+						}
+
+						try {
+							objectUrl = URL.createObjectURL(file);
+						} catch (error) {
+							cleanup();
+							reject(new Error('chat_image_decode_failed'));
+							return;
+						}
+
+						image.onload = function() {
+							image.onload = null;
+							image.onerror = null;
+							try {
+								resolve(createChatDecodedSource(image, image.naturalWidth, image.naturalHeight, cleanup));
+							} catch (error) {
+								reject(error);
+							}
+						};
+						image.onerror = function() {
+							cleanup();
+							reject(new Error('chat_image_decode_failed'));
+						};
+						image.src = objectUrl;
+					});
+				}
+
+				async function decodeChatImage(file) {
+					if (typeof createImageBitmap === 'function') {
+						let bitmap = null;
+						try {
+							bitmap = await createImageBitmap(file, {
+								imageOrientation: 'from-image'
+							});
+						} catch (error) {
+							try {
+								bitmap = await createImageBitmap(file);
+							} catch (fallbackError) {
+								bitmap = null;
+							}
+						}
+						if (bitmap) {
+							const cleanup = function() {
+								if (bitmap && typeof bitmap.close === 'function') {
+									bitmap.close();
+								}
+								bitmap = null;
+							};
+							return createChatDecodedSource(bitmap, bitmap.width, bitmap.height, cleanup);
+						}
+					}
+					return decodeChatImageWithElement(file);
+				}
+
+				function chatImageCanvasDimensions(width, height, longestSide) {
+					const scale = Math.min(1, longestSide / Math.max(width, height));
+					return {
+						width: Math.max(1, Math.round(width * scale)),
+						height: Math.max(1, Math.round(height * scale))
+					};
+				}
+
+				function chatImageCanvasToBlob(canvas, quality) {
+					return new Promise(function(resolve, reject) {
+						try {
+							canvas.toBlob(function(blob) {
+								if (!blob || blob.size <= 0 || blob.type !== 'image/jpeg') {
+									reject(new Error('chat_image_encode_failed'));
+									return;
+								}
+								resolve(blob);
+							}, 'image/jpeg', quality);
+						} catch (error) {
+							reject(new Error('chat_image_encode_failed'));
+						}
+					});
+				}
+
+				async function compressChatImage(decoded) {
+					const renderedDimensions = {};
+					for (let sideIndex = 0; sideIndex < chatImageLongestSides.length; sideIndex += 1) {
+						const dimensions = chatImageCanvasDimensions(
+							decoded.width,
+							decoded.height,
+							chatImageLongestSides[sideIndex]
+						);
+						const dimensionKey = dimensions.width + 'x' + dimensions.height;
+						if (renderedDimensions[dimensionKey]) {
+							continue;
+						}
+						renderedDimensions[dimensionKey] = true;
+
+						const canvas = document.createElement('canvas');
+						canvas.width = dimensions.width;
+						canvas.height = dimensions.height;
+						const context = canvas.getContext('2d');
+						if (!context) {
+							canvas.width = 0;
+							canvas.height = 0;
+							throw new Error('chat_image_canvas_failed');
+						}
+
+						try {
+							context.fillStyle = '#ffffff';
+							context.fillRect(0, 0, dimensions.width, dimensions.height);
+							context.drawImage(decoded.source, 0, 0, dimensions.width, dimensions.height);
+							for (let qualityIndex = 0; qualityIndex < chatImageQualities.length; qualityIndex += 1) {
+								const candidate = await chatImageCanvasToBlob(canvas, chatImageQualities[qualityIndex]);
+								if (candidate.size <= chatImageTargetSize) {
+									return candidate;
+								}
+							}
+						} finally {
+							canvas.width = 0;
+							canvas.height = 0;
+						}
+					}
+					throw new Error('chat_image_target_not_reached');
+				}
+
+				async function prepareChatImage(file, timestamp) {
+					let decoded = null;
+					try {
+						decoded = await decodeChatImage(file);
+						const longestSide = Math.max(decoded.width, decoded.height);
+						if (file.size > 0 &&
+							file.size <= chatImageTargetSize &&
+							longestSide <= chatImageMaxLongestSide &&
+							isChatImageOriginalExtensionCompatible(file)) {
+							return {
+								blob: file,
+								filename: chatImageOriginalFilename(file, timestamp),
+								compressed: false
+							};
+						}
+
+						const compressedBlob = await compressChatImage(decoded);
+						return {
+							blob: compressedBlob,
+							filename: 'chat-foto-' + chatImageSafeRequestId() + '-' + timestamp + '.jpg',
+							compressed: true
+						};
+					} finally {
+						if (decoded) {
+							decoded.cleanup();
+						}
+					}
+				}
+
+				async function uploadChatImage(preparedImage) {
+					const formData = new FormData();
+					formData.append('request_id', requestId);
+					formData.append('foto', preparedImage.blob, preparedImage.filename);
+					const response = await fetch(imageUploadUrl, {
+						method: 'POST',
+						body: formData,
+						credentials: 'same-origin'
+					});
+
+					let data = null;
+					try {
+						data = await response.json();
+					} catch (error) {
+						data = null;
+					}
+					const isObject = data && typeof data === 'object' && !Array.isArray(data);
+					const safeMessage = isObject && typeof data.message === 'string' ? data.message.trim() : '';
+					const isSuccess = response.ok &&
+						isObject &&
+						data.status === 'success' &&
+						data.message &&
+						typeof data.message === 'object' &&
+						!Array.isArray(data.message);
+					return {
+						success: Boolean(isSuccess),
+						message: isSuccess ? data.message : null,
+						errorMessage: safeMessage
+					};
+				}
+
 				imageButton.addEventListener('click', function() {
+					if (chatImageUploadInFlight) {
+						return;
+					}
 					imageInput.click();
 				});
 
 				if (attachmentButton) {
 					attachmentButton.addEventListener('click', function() {
+						if (chatImageUploadInFlight) {
+							return;
+						}
 						imageInput.click();
 					});
 				}
 
-				imageInput.addEventListener('change', function() {
+				imageInput.addEventListener('change', async function() {
+					const sequence = ++chatImageProcessSequence;
 					const file = imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
 					if (!file) {
+						clearChatImageFeedback();
+						restoreChatImageButtons();
 						return;
 					}
 
-					const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-					if (allowedTypes.indexOf(file.type) === -1) {
-						alert('Format gambar tidak didukung.');
-						imageInput.value = '';
-						return;
-					}
+					lockChatImageButtons();
+					setChatImageFeedback('Memproses foto...', false, sequence, file);
+					let failureStage = 'processing';
+					try {
+						if (chatImageAllowedTypes.indexOf(file.type) === -1) {
+							setChatImageFeedback('Format foto tidak didukung.', true, sequence, file);
+							return;
+						}
+						if (file.size <= 0) {
+							setChatImageFeedback('Foto belum dapat diproses. Coba lagi.', true, sequence, file);
+							return;
+						}
+						if (file.size > chatImageMaxRawSize) {
+							setChatImageFeedback('Ukuran foto terlalu besar.', true, sequence, file);
+							return;
+						}
 
-					if (file.size > 4 * 1024 * 1024) {
-						alert('Ukuran gambar maksimal 4 MB.');
-						imageInput.value = '';
-						return;
-					}
+						const preparedImage = await prepareChatImage(file, Date.now());
+						if (!isCurrentChatImageSelection(sequence, file)) {
+							return;
+						}
+						if (!preparedImage.blob ||
+							preparedImage.blob.size <= 0 ||
+							preparedImage.blob.size > chatImageBackendMaxSize ||
+							(preparedImage.compressed && preparedImage.blob.size > chatImageTargetSize) ||
+							chatImageAllowedTypes.indexOf(preparedImage.blob.type) === -1 ||
+							!preparedImage.filename ||
+							!preparedImage.filename.trim()) {
+							setChatImageFeedback('Foto belum dapat diproses. Coba lagi.', true, sequence, file);
+							return;
+						}
+						if (!isCurrentChatImageSelection(sequence, file)) {
+							return;
+						}
 
-					imageButton.disabled = true;
-					if (attachmentButton) {
-						attachmentButton.disabled = true;
-					}
-					const formData = new FormData();
-					formData.append('request_id', requestId);
-					formData.append('foto', file);
-					fetch(imageUploadUrl, {
-							method: 'POST',
-							body: formData,
-							credentials: 'same-origin'
-						})
-						.then(function(response) {
-							return response.json();
-						})
-						.then(function(data) {
-							if (data && data.status === 'success' && data.message) {
-								appendMessage(data.message);
-							} else {
-								alert(data && data.message ? data.message : 'Gambar tidak dapat dikirim.');
-							}
-						})
-						.catch(function() {
-							alert('Gambar tidak dapat dikirim.');
-						})
-						.finally(function() {
-							imageButton.disabled = false;
-							if (attachmentButton) {
-								attachmentButton.disabled = false;
-							}
+						setChatImageFeedback('Mengirim foto...', false, sequence, file);
+						failureStage = 'upload';
+						if (!isCurrentChatImageSelection(sequence, file)) {
+							return;
+						}
+						if (chatImageRequestInFlight) {
+							setChatImageFeedback('Gambar tidak dapat dikirim.', true, sequence, file);
+							return;
+						}
+						chatImageRequestInFlight = true;
+						let result = null;
+						try {
+							result = await uploadChatImage(preparedImage);
+						} finally {
+							chatImageRequestInFlight = false;
+						}
+						if (!isCurrentChatImageSelection(sequence, file)) {
+							return;
+						}
+						if (!result.success) {
+							setChatImageFeedback(result.errorMessage || 'Gambar tidak dapat dikirim.', true, sequence, file);
+							return;
+						}
+
+						appendMessage(result.message);
+						clearChatImageFeedback();
+					} catch (error) {
+						if (isCurrentChatImageSelection(sequence, file)) {
+							setChatImageFeedback(
+								failureStage === 'processing' ?
+									'Foto belum dapat diproses. Coba lagi.' :
+									'Gambar tidak dapat dikirim.',
+								true,
+								sequence,
+								file
+							);
+						}
+					} finally {
+						if (isCurrentChatImageSelection(sequence, file)) {
 							imageInput.value = '';
-						});
+							restoreChatImageButtons();
+						}
+					}
 				});
 			}
 		}
