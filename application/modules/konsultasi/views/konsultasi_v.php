@@ -595,13 +595,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							<span class="consult-upload-text">Pilih file <strong>Foto</strong></span>
 							<input type="file" id="file" name="foto" accept="image/*">
 						</label>
-						<input type="hidden" id="fileName" name="foto" class="form-control" readonly>
+						<input type="hidden" id="fileName" class="form-control" readonly>
 						<button type="button" onclick="window.flutter_inappwebview.callHandler('takePhoto')" hidden>
 							Ambil foto
 						</button>
 						<div id="previewContainer" class="consult-preview d-none">
 							<img id="preview" src="" alt="Preview Foto">
 						</div>
+						<div id="photoPreviewFeedback" class="small text-danger d-none" role="alert"></div>
 
 						<label class="consult-upload-box" for="file_video">
 							<img src="<?= html_escape($ui_asset_base . 'icon-upload.svg'); ?>" alt="">
@@ -611,6 +612,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						<div id="previewVideoContainer" class="consult-preview d-none">
 							<video id="previewVideo" controls></video>
 						</div>
+						<div id="videoPreviewFeedback" class="small text-danger d-none" role="alert"></div>
 					</div>
 				</section>
 
@@ -782,15 +784,67 @@ Lama keluhan:
 
 	<!-- buatkan javascript untuk preview file yang diupload diatas -->
 	<script>
+		function isCurrentSelectedFile(input, file) {
+			return !!(input && input.files && input.files[0] === file);
+		}
+
+		function setPhotoPreviewFeedback(message) {
+			const feedback = document.getElementById('photoPreviewFeedback');
+			if (!feedback) {
+				return;
+			}
+
+			feedback.textContent = message || '';
+			feedback.classList.toggle('d-none', !message);
+		}
+
+		function setVideoPreviewFeedback(message) {
+			const feedback = document.getElementById('videoPreviewFeedback');
+			if (!feedback) {
+				return;
+			}
+
+			feedback.textContent = message || '';
+			feedback.classList.toggle('d-none', !message);
+		}
+
 		$(document).ready(function() {
 			$('#file').change(function() {
-				$('#preview').addClass('d-block');
-				$('#preview').removeClass('d-none');
-				var file = this.files[0];
+				const input = this;
+				const file = input.files && input.files[0];
+				const preview = document.getElementById('preview');
+
+				if (!file) {
+					preview.removeAttribute('src');
+					preview.classList.remove('d-block');
+					preview.classList.add('d-none');
+					setPhotoPreviewFeedback('');
+					return;
+				}
+
+				const fileCameraSequence = cameraCaptureSequence;
 				var reader = new FileReader();
 				reader.onload = function(e) {
-					$('#preview').attr('src', e.target.result);
+					if (!isCurrentSelectedFile(input, file) || fileCameraSequence !== cameraCaptureSequence) {
+						return;
+					}
+
+					preview.src = e.target.result;
+					preview.classList.add('d-block');
+					preview.classList.remove('d-none');
+					setPhotoPreviewFeedback('');
 				};
+				reader.onerror = function() {
+					if (!isCurrentSelectedFile(input, file) || fileCameraSequence !== cameraCaptureSequence) {
+						return;
+					}
+
+					preview.removeAttribute('src');
+					preview.classList.remove('d-block');
+					preview.classList.add('d-none');
+					setPhotoPreviewFeedback('Gambar belum dapat dimuat. Coba lagi.');
+				};
+				reader.onabort = reader.onerror;
 				reader.readAsDataURL(file);
 			});
 		});
@@ -979,7 +1033,8 @@ Lama keluhan:
 			var formData = new FormData(document.getElementById('form_konsul'));
 
 			// Tambahkan foto dari kamera jika tersedia
-			if (photoBlob) {
+			if (isValidCameraPhoto(photoBlob, photoFileName)) {
+				formData.delete('foto');
 				formData.append('foto', photoBlob, photoFileName);
 			}
 
@@ -1233,26 +1288,103 @@ Lama keluhan:
 	<script>
 		let photoBlob = null;
 		let photoFileName = '';
+		let cameraCaptureSequence = 0;
+
+		function isValidCameraPhoto(blob, fileName) {
+			return blob instanceof Blob &&
+				blob.size > 0 &&
+				(!blob.type || /^image\//i.test(blob.type)) &&
+				typeof fileName === 'string' &&
+				fileName.trim() !== '' &&
+				(!(blob instanceof File) || blob.name === fileName);
+		}
+
+		function cameraFileExtension(mimeType) {
+			const normalizedType = typeof mimeType === 'string' ? mimeType.toLowerCase() : '';
+			if (normalizedType === 'image/png') {
+				return 'png';
+			}
+			if (normalizedType === 'image/webp') {
+				return 'webp';
+			}
+
+			return 'jpg';
+		}
 
 		function onImageCaptured(dataUrl, fileName) {
 			const preview = document.getElementById('preview');
 			const container = document.getElementById('previewContainer');
 			const nameElement = document.getElementById('fileName');
+			const cameraSequence = ++cameraCaptureSequence;
+			const fileInput = document.getElementById('file');
+			const nativeFileName = typeof fileName === 'string' ? fileName.trim() : '';
+			const nativeBaseName = nativeFileName.split(/[\\/]/).pop().trim();
+			const capturedFileName = nativeBaseName === '.' || nativeBaseName === '..' ? '' : nativeBaseName;
 
-			preview.src = dataUrl;
-			container.classList.remove('d-none');
-			nameElement.value = fileName;
-			nameElement.classList.remove('d-none');
+			if (fileInput) {
+				fileInput.value = '';
+			}
 
-			photoFileName = fileName;
+			photoBlob = null;
+			photoFileName = '';
+			preview.removeAttribute('src');
+			preview.classList.remove('d-block');
+			preview.classList.add('d-none');
+			container.classList.add('d-none');
+			nameElement.value = '';
+			setPhotoPreviewFeedback('');
+
+			if (typeof dataUrl !== 'string' || dataUrl.trim() === '') {
+				setPhotoPreviewFeedback('Foto belum dapat diproses. Coba lagi.');
+				return;
+			}
 
 			// Ubah dataURL ke blob
 			fetch(dataUrl)
-				.then(res => res.blob())
+				.then(response => {
+					if (!response.ok) {
+						throw new Error('camera_conversion_failed');
+					}
+					return response.blob();
+				})
 				.then(blob => {
-					photoBlob = new File([blob], fileName, {
+					if (!blob || blob.size <= 0 || (blob.type && !/^image\//i.test(blob.type))) {
+						throw new Error('camera_conversion_failed');
+					}
+
+					const finalFileName = capturedFileName || (
+						'foto-kamera-' + Date.now() + '-' + cameraSequence + '.' + cameraFileExtension(blob.type)
+					);
+					const convertedPhoto = new File([blob], finalFileName, {
 						type: blob.type
 					});
+					if (cameraSequence !== cameraCaptureSequence) {
+						return;
+					}
+
+					photoBlob = convertedPhoto;
+					photoFileName = finalFileName;
+					preview.src = dataUrl;
+					preview.classList.add('d-block');
+					preview.classList.remove('d-none');
+					container.classList.remove('d-none');
+					nameElement.value = finalFileName;
+					nameElement.classList.remove('d-none');
+					setPhotoPreviewFeedback('');
+				})
+				.catch(function() {
+					if (cameraSequence !== cameraCaptureSequence) {
+						return;
+					}
+
+					photoBlob = null;
+					photoFileName = '';
+					preview.removeAttribute('src');
+					preview.classList.remove('d-block');
+					preview.classList.add('d-none');
+					container.classList.add('d-none');
+					nameElement.value = '';
+					setPhotoPreviewFeedback('Foto belum dapat diproses. Coba lagi.');
 				});
 		}
 	</script>
@@ -1260,32 +1392,85 @@ Lama keluhan:
 	<!-- preview foto dan video -->
 	<script>
 		document.getElementById('file').addEventListener('change', function(event) {
+			const input = event.target;
 			const preview = document.getElementById('preview');
 			const container = document.getElementById('previewContainer');
-			const file = event.target.files[0];
+			const nameElement = document.getElementById('fileName');
+			const file = input.files && input.files[0];
+			const fileCameraSequence = ++cameraCaptureSequence;
+
+			photoBlob = null;
+			photoFileName = '';
+			nameElement.value = '';
+			preview.removeAttribute('src');
+			preview.classList.remove('d-block');
+			preview.classList.add('d-none');
+			container.classList.add('d-none');
 
 			if (file) {
 				const reader = new FileReader();
 				reader.onload = function(e) {
+					if (!isCurrentSelectedFile(input, file) || fileCameraSequence !== cameraCaptureSequence) {
+						return;
+					}
+
 					preview.src = e.target.result;
+					preview.classList.add('d-block');
+					preview.classList.remove('d-none');
 					container.classList.remove('d-none');
+					setPhotoPreviewFeedback('');
 				};
+				reader.onerror = function() {
+					if (!isCurrentSelectedFile(input, file) || fileCameraSequence !== cameraCaptureSequence) {
+						return;
+					}
+
+					preview.removeAttribute('src');
+					preview.classList.remove('d-block');
+					preview.classList.add('d-none');
+					container.classList.add('d-none');
+					setPhotoPreviewFeedback('Gambar belum dapat dimuat. Coba lagi.');
+				};
+				reader.onabort = reader.onerror;
 				reader.readAsDataURL(file);
+			} else {
+				setPhotoPreviewFeedback('');
 			}
 		});
 
 		document.getElementById('file_video').addEventListener('change', function(event) {
+			const input = event.target;
 			const preview = document.getElementById('previewVideo');
 			const container = document.getElementById('previewVideoContainer');
-			const file = event.target.files[0];
+			const file = input.files && input.files[0];
+
+			preview.removeAttribute('src');
+			container.classList.add('d-none');
 
 			if (file) {
 				const reader = new FileReader();
 				reader.onload = function(e) {
+					if (!isCurrentSelectedFile(input, file)) {
+						return;
+					}
+
 					preview.src = e.target.result;
 					container.classList.remove('d-none');
+					setVideoPreviewFeedback('');
 				};
+				reader.onerror = function() {
+					if (!isCurrentSelectedFile(input, file)) {
+						return;
+					}
+
+					preview.removeAttribute('src');
+					container.classList.add('d-none');
+					setVideoPreviewFeedback('Berkas belum dapat dibaca. Coba lagi.');
+				};
+				reader.onabort = reader.onerror;
 				reader.readAsDataURL(file);
+			} else {
+				setVideoPreviewFeedback('');
 			}
 		});
 	</script>

@@ -937,6 +937,7 @@ if (!function_exists('formatComplaintText')) {
 						<label for="file"><i class="bi bi-camera"></i> Foto Kunjungan</label>
 						<img id="preview-image" src="#" alt="Preview Foto" style="display:none;" class="img-thumbnail" />
 					</div>
+					<div id="clinicalAttachmentFeedback" class="small text-danger d-none" role="alert"></div>
 					<p class="optional-note">Opsional sesuai kebutuhan dokumentasi kunjungan.</p>
 				</div>
 			</fieldset>
@@ -1220,6 +1221,7 @@ if (!function_exists('formatComplaintText')) {
 				$('#visitDocumentationField').addClass('d-none');
 				$('#file').val('');
 				$('#preview-image').hide().attr('src', '#');
+				setClinicalAttachmentFeedback('');
 			}
 		}
 
@@ -1354,18 +1356,46 @@ if (!function_exists('formatComplaintText')) {
 
 	<!-- preview image -->
 	<script>
+		function setClinicalAttachmentFeedback(message) {
+			const feedback = document.getElementById('clinicalAttachmentFeedback');
+			if (!feedback) {
+				return;
+			}
+
+			feedback.textContent = message || '';
+			feedback.classList.toggle('d-none', !message);
+		}
+
 		$('#file').change(function() {
-			const file = this.files[0];
+			const input = this;
+			const file = input.files && input.files[0];
+
+			$('#preview-image').hide().attr('src', '#');
+
 			if (file) {
 				let reader = new FileReader();
 				reader.onload = function(e) {
+					if (!input.files || input.files[0] !== file) {
+						return;
+					}
+
 					$('#preview-image')
 						.attr('src', e.target.result)
 						.show();
+					setClinicalAttachmentFeedback('');
 				};
+				reader.onerror = function() {
+					if (!input.files || input.files[0] !== file) {
+						return;
+					}
+
+					$('#preview-image').hide().attr('src', '#');
+					setClinicalAttachmentFeedback('Gambar belum dapat dimuat. Coba lagi.');
+				};
+				reader.onabort = reader.onerror;
 				reader.readAsDataURL(file);
 			} else {
-				$('#preview-image').hide();
+				setClinicalAttachmentFeedback('');
 			}
 		});
 	</script>
