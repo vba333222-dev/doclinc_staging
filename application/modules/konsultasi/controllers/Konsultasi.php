@@ -92,6 +92,15 @@ class Konsultasi extends MX_Controller
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Selesaikan atau batalkan konsultasi aktif terlebih dahulu.']));
 			return;
 		}
+		if ($this->has_supplied_request_media()) {
+			$this->output
+				->set_status_header(422)
+				->set_output(json_encode([
+					'status' => 'error',
+					'message' => 'Lampiran tidak didukung pada permintaan konsultasi.',
+				]));
+			return;
+		}
 		if (!$has_patient_location) {
 			$location_message = $has_missing_patient_location
 				? 'Pilih lokasi terlebih dahulu.'
@@ -136,46 +145,6 @@ class Konsultasi extends MX_Controller
 			log_message('error', 'Konsultasi warga gagal: keluhan kosong. user_id=' . $id_user . ' puskesmas_code=' . $assigned_puskesmas_code);
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Masukkan keluhan.']));
 			return;
-		}
-
-		$config['upload_path'] = './uploads/';
-		$config['max_size'] = 10240; // 10MB
-		$config['encrypt_name'] = TRUE;
-		$config['detect_mime'] = TRUE;
-		$config['mod_mime_fix'] = TRUE;
-		$config['remove_spaces'] = TRUE;
-		$this->load->library('upload');
-
-		if (!empty($_FILES['foto']['name'])) {
-			$config['allowed_types'] = 'jpg|jpeg|png';
-			$this->upload->initialize($config);
-			if ($this->upload->do_upload('foto')) {
-				$foto = $this->upload->data('file_name');
-			} else {
-				$this->output
-					->set_status_header(400)
-					->set_output(json_encode(array(
-						'status' => 'error',
-						'message' => $this->consultation_upload_error_message('foto'),
-					)));
-				return;
-			}
-		}
-
-		if (!empty($_FILES['video']['name'])) {
-			$config['allowed_types'] = 'mp4|mov';
-			$this->upload->initialize($config);
-			if ($this->upload->do_upload('video')) {
-				$video = $this->upload->data('file_name');
-			} else {
-				$this->output
-					->set_status_header(400)
-					->set_output(json_encode(array(
-						'status' => 'error',
-						'message' => $this->consultation_upload_error_message('video'),
-					)));
-				return;
-			}
 		}
 
 		$keluhan = $this->encryption->encrypt($keluhan);
@@ -352,12 +321,27 @@ class Konsultasi extends MX_Controller
 		return is_numeric($value) && (float) $value >= -180 && (float) $value <= 180;
 	}
 
-	private function consultation_upload_error_message($field)
+	private function has_supplied_request_media()
 	{
-		if ($field === 'video') {
-			return 'Gunakan video MP4 atau MOV maksimal 10 MB.';
+		foreach (array('foto', 'video') as $field) {
+			if (!array_key_exists($field, $_FILES)) {
+				continue;
+			}
+
+			$upload = $_FILES[$field];
+			if (!is_array($upload) || !array_key_exists('error', $upload)) {
+				return true;
+			}
+
+			$error = $upload['error'];
+			if (is_array($error)) {
+				return true;
+			}
+			if ($error !== UPLOAD_ERR_NO_FILE && $error !== (string) UPLOAD_ERR_NO_FILE) {
+				return true;
+			}
 		}
 
-		return 'Gunakan foto JPG atau PNG maksimal 10 MB.';
+		return false;
 	}
 }
