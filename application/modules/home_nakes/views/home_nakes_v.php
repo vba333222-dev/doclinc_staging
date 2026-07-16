@@ -176,6 +176,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 								<input type="file" id="uploadFoto" name="foto" accept="image/*" class="d-none" onchange="previewImage(event)">
 							</label>
 							<small>Klik untuk mengubah foto</small>
+							<div id="profileImageFeedback" class="small text-danger mt-2 d-none" role="alert"></div>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
 							<input type="text" class="form-control" id="nama_lengkap_edit" name="nama_lengkap" value="<?= $this->session->userdata('nama'); ?>" placeholder="Nama Lengkap">
@@ -2155,45 +2156,130 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 	<!-- upload dan preview foto atau gambar -->
 	<script>
+		function setProfileImageFeedback(message) {
+			const feedback = document.getElementById('profileImageFeedback');
+			if (!feedback) {
+				return;
+			}
+
+			feedback.textContent = message || '';
+			feedback.classList.toggle('d-none', !message);
+		}
+
 		function previewImage(event) {
 			const input = event.target;
+			const file = input.files && input.files[0];
+
+			if (!file) {
+				setProfileImageFeedback('');
+				return;
+			}
+
 			const reader = new FileReader();
 
 			reader.onload = function() {
+				if (!input.files || input.files[0] !== file) {
+					return;
+				}
+
 				const preview = document.getElementById('previewFoto');
 				preview.src = reader.result;
+				setProfileImageFeedback('');
 			};
+			reader.onerror = function() {
+				if (!input.files || input.files[0] !== file) {
+					return;
+				}
 
-			if (input.files && input.files[0]) {
-				reader.readAsDataURL(input.files[0]);
-			}
+				setProfileImageFeedback('Gambar belum dapat dimuat. Coba lagi.');
+			};
+			reader.onabort = reader.onerror;
+			reader.readAsDataURL(file);
 		}
 	</script>
 
 	<!-- edit profile -->
 	<script>
+		let profileUpdateInFlight = false;
+
 		document.getElementById('formEditProfile').addEventListener('submit', function(e) {
 			e.preventDefault(); // Cegah form submit biasa
 
-			let form = document.getElementById('formEditProfile');
-			let formData = new FormData(form); // Ambil semua input termasuk file
+			if (profileUpdateInFlight) {
+				return;
+			}
+
+			const form = document.getElementById('formEditProfile');
+			if (!form.checkValidity()) {
+				form.reportValidity();
+				return;
+			}
+
+			const submitButton = form.querySelector('button[type="submit"]');
+			const originalButtonDisabled = submitButton ? submitButton.disabled : false;
+			const originalButtonContent = submitButton ? submitButton.innerHTML : '';
+			const formData = new FormData(form); // Ambil semua input termasuk file
+			let profileUpdateSucceeded = false;
+			const restoreProfileSubmit = function() {
+				profileUpdateInFlight = false;
+				if (submitButton) {
+					submitButton.innerHTML = originalButtonContent;
+					submitButton.disabled = originalButtonDisabled;
+				}
+			};
+
+			profileUpdateInFlight = true;
+			if (submitButton) {
+				submitButton.disabled = true;
+			}
 
 			fetch("<?= base_url('home_nakes/updateprofile') ?>", {
 					method: "POST",
 					body: formData
 				})
-				.then(response => response.json())
+				.then(response => {
+					return response.json().then(result => {
+						const isResultObject = result !== null &&
+							typeof result === 'object' &&
+							!Array.isArray(result);
+						if (!isResultObject) {
+							return Promise.reject({});
+						}
+
+						if (!response.ok) {
+							return Promise.reject({
+								safeMessage: result && typeof result.message === 'string' ? result.message.trim() : ''
+							});
+						}
+
+						return result;
+					});
+				})
 				.then(result => {
 					if (result.status === 'success') {
+						profileUpdateSucceeded = true;
 						alert("Profil berhasil diperbarui!");
 						// Misalnya reload data user:
 						location.reload();
 					} else {
-						alert("Profil belum diperbarui. " + result.message);
+						const safeMessage = typeof result.message === 'string' && result.message.trim() ?
+							result.message.trim() :
+							"Terjadi kesalahan. Coba lagi.";
+						alert("Profil belum diperbarui. " + safeMessage);
 					}
 				})
-				.catch(error => {
-					alert("Profil belum diperbarui. Terjadi kesalahan. Coba lagi.");
+				.catch(failure => {
+					const safeMessage = failure && typeof failure.safeMessage === 'string' && failure.safeMessage ?
+						failure.safeMessage :
+						"Terjadi kesalahan. Coba lagi.";
+					alert("Profil belum diperbarui. " + safeMessage);
+				})
+				.finally(() => {
+					if (profileUpdateSucceeded) {
+						return;
+					}
+
+					restoreProfileSubmit();
 				});
 		});
 	</script>
