@@ -988,6 +988,9 @@ if ($current_role === 'dokter') {
 					incomingRejecting: false
 				};
 				const elements = {};
+				const remoteTrackRegistry = new Map();
+				const remoteTrackFallbackKeys = new WeakMap();
+				let remoteTrackFallbackSequence = 0;
 
 				function byId(id) {
 					return document.getElementById(id);
@@ -1120,7 +1123,7 @@ if ($current_role === 'dokter') {
 					if (!elements.empty || !elements.remote) {
 						return;
 					}
-					elements.empty.classList.toggle('is-hidden', !!elements.remote.querySelector('video'));
+					elements.empty.classList.toggle('is-hidden', hasRegisteredRemoteVideo());
 				}
 
 				function stopLocalTracks() {
@@ -1150,12 +1153,7 @@ if ($current_role === 'dokter') {
 					stopLocalTracks();
 					stopElapsedTimer();
 					stopStatusPolling();
-					if (elements.remote) {
-						Array.prototype.slice.call(elements.remote.querySelectorAll('video,audio')).forEach(function(node) {
-							node.remove();
-						});
-					}
-					updateEmptyState();
+					clearRemoteTracks();
 					setCallActive(false);
 					setStatus(message || 'Panggilan berakhir');
 					updateFloatingCall();
@@ -1205,81 +1203,341 @@ if ($current_role === 'dokter') {
 					endLocalCall('Panggilan berakhir');
 				}
 
+				function normalizeMediaNodes(value) {
+					let candidates = [];
+					if (value && value.nodeType === 1) {
+						candidates = [value];
+					} else if (value && typeof Symbol !== 'undefined' && value[Symbol.iterator]) {
+						candidates = Array.from(value);
+					} else if (value && typeof value.length === 'number') {
+						candidates = Array.prototype.slice.call(value);
+					}
+					return candidates.filter(function(node, index) {
+						if (!node || node.nodeType !== 1 || ['VIDEO', 'AUDIO'].indexOf(node.tagName) === -1) {
+							return false;
+						}
+						return candidates.indexOf(node) === index;
+					});
+				}
+
+				function remoteParticipantKey(participant) {
+					if (participant && participant.identity != null && String(participant.identity)) {
+						return 'identity:' + String(participant.identity);
+					}
+					if (participant && participant.sid != null && String(participant.sid)) {
+						return 'sid:' + String(participant.sid);
+					}
+					return 'participant:unknown';
+				}
+
+				function remotePublicationSid(publication) {
+					if (publication && publication.trackSid != null && String(publication.trackSid)) {
+						return String(publication.trackSid);
+					}
+					if (publication && publication.sid != null && String(publication.sid)) {
+						return String(publication.sid);
+					}
+					return '';
+				}
+
+				function remoteTrackKey(track, publication, participant) {
+					const publicationSid = remotePublicationSid(publication);
+					if (publicationSid) {
+						return 'publication:' + publicationSid;
+					}
+					if (track && track.sid != null && String(track.sid)) {
+						return 'track:' + String(track.sid);
+					}
+					const participantKey = encodeURIComponent(remoteParticipantKey(participant));
+					const kind = encodeURIComponent(String((publication && publication.kind) || (track && track.kind) || 'unknown'));
+					const source = encodeURIComponent(String((publication && publication.source) || (track && track.source) || 'unknown'));
+					const mediaTrackId = track && track.mediaStreamTrack && track.mediaStreamTrack.id ? String(track.mediaStreamTrack.id) : '';
+					if (mediaTrackId) {
+						return 'media:' + participantKey + ':' + kind + ':' + source + ':' + encodeURIComponent(mediaTrackId);
+					}
+					const fallbackObject = publication && typeof publication === 'object' ? publication : track;
+					if (fallbackObject && typeof fallbackObject === 'object') {
+						if (!remoteTrackFallbackKeys.has(fallbackObject)) {
+							remoteTrackFallbackSequence += 1;
+							remoteTrackFallbackKeys.set(fallbackObject, 'object-' + remoteTrackFallbackSequence);
+						}
+						return 'fallback:' + participantKey + ':' + kind + ':' + source + ':' + remoteTrackFallbackKeys.get(fallbackObject);
+					}
+					remoteTrackFallbackSequence += 1;
+					return 'fallback:' + participantKey + ':' + kind + ':' + source + ':value-' + remoteTrackFallbackSequence;
+				}
+
+				function isRemoteMediaNodeAttached(node) {
+					return !!(node && elements.remote && node.parentNode && elements.remote.contains(node));
+				}
+
+				function removeRemoteMediaNode(node) {
+					if (!node || node.nodeType !== 1) {
+						return;
+					}
+					if (elements.local && elements.local.contains(node)) {
+						return;
+					}
+					if (node.parentNode) {
+						node.parentNode.removeChild(node);
+					}
+				}
+
+				function remoteEntryIsAttached(entry) {
+					return !!(entry && entry.nodes && entry.nodes.length && entry.nodes.every(isRemoteMediaNodeAttached));
+				}
+
+				function hasRegisteredRemoteVideo() {
+					let hasVideo = false;
+					remoteTrackRegistry.forEach(function(entry) {
+						if (hasVideo || !entry || !entry.nodes) {
+							return;
+						}
+						hasVideo = entry.nodes.some(function(node) {
+							return node && node.tagName === 'VIDEO' && isRemoteMediaNodeAttached(node);
+						});
+					});
+					return hasVideo;
+				}
+
+				function findRemoteTrackEntry(track, publication, participant) {
+					const expectedKey = remoteTrackKey(track, publication, participant);
+					if (remoteTrackRegistry.has(expectedKey)) {
+						return {
+							key: expectedKey,
+							entry: remoteTrackRegistry.get(expectedKey)
+						};
+					}
+					const publicationSid = remotePublicationSid(publication);
+					const participantKey = remoteParticipantKey(participant);
+					const hasStableParticipantKey = participantKey !== 'participant:unknown';
+					let match = null;
+					remoteTrackRegistry.forEach(function(entry, key) {
+						if (match || !entry) {
+							return;
+						}
+						const sameParticipant = !participant || entry.participant === participant ||
+							(hasStableParticipantKey && entry.participantKey === participantKey);
+						if (sameParticipant && (
+							(entry.track && entry.track === track) ||
+							(entry.publication && entry.publication === publication) ||
+							(publicationSid && entry.publicationSid === publicationSid)
+						)) {
+							match = {
+								key: key,
+								entry: entry
+							};
+						}
+					});
+					return match;
+				}
+
+				function detachRemoteEntry(entry) {
+					if (!entry) {
+						return;
+					}
+					(entry.nodes || []).forEach(function(node) {
+						if (entry.track && typeof entry.track.detach === 'function') {
+							try {
+								normalizeMediaNodes(entry.track.detach(node)).forEach(removeRemoteMediaNode);
+							} catch (error) {}
+						}
+						removeRemoteMediaNode(node);
+					});
+				}
+
+				function removeRemoteTrackEntry(key, entry) {
+					if (key && remoteTrackRegistry.get(key) === entry) {
+						remoteTrackRegistry.delete(key);
+					}
+					detachRemoteEntry(entry);
+				}
+
 				function attachTrack(track, container) {
 					if (!track || !container || typeof track.attach !== 'function') {
 						return;
 					}
-					const element = track.attach();
-					if (!element) {
-						return;
-					}
-					element.autoplay = true;
-					element.playsInline = true;
-					container.appendChild(element);
+					normalizeMediaNodes(track.attach()).forEach(function(element) {
+						element.autoplay = true;
+						element.playsInline = true;
+						if (!container.contains(element)) {
+							container.appendChild(element);
+						}
+					});
 					updateEmptyState();
 				}
 
-				function detachTrack(track) {
-					if (!track || typeof track.detach !== 'function') {
-						return;
+				function attachRemoteTrack(track, publication, participant) {
+					if (!track || !elements.remote || typeof track.attach !== 'function' ||
+						track.isLocal === true || (participant && participant.isLocal === true)) {
+						return null;
 					}
-					track.detach().forEach(function(element) {
-						if (element && element.parentNode) {
-							element.parentNode.removeChild(element);
+					const existingMatch = findRemoteTrackEntry(track, publication, participant);
+					if (existingMatch && existingMatch.entry.track === track && remoteEntryIsAttached(existingMatch.entry)) {
+						return existingMatch.entry;
+					}
+					if (existingMatch) {
+						removeRemoteTrackEntry(existingMatch.key, existingMatch.entry);
+					}
+
+					const key = remoteTrackKey(track, publication, participant);
+					let attachedNodes = [];
+					try {
+						attachedNodes = normalizeMediaNodes(track.attach());
+					} catch (error) {
+						updateEmptyState();
+						return null;
+					}
+					const storedNodes = [];
+					attachedNodes.forEach(function(node) {
+						if (elements.local && elements.local.contains(node)) {
+							return;
+						}
+						node.autoplay = true;
+						node.playsInline = true;
+						if (!elements.remote.contains(node)) {
+							elements.remote.appendChild(node);
+						}
+						if (elements.remote.contains(node) && storedNodes.indexOf(node) === -1) {
+							storedNodes.push(node);
 						}
 					});
+					if (!storedNodes.length) {
+						updateEmptyState();
+						return null;
+					}
+
+					const entry = {
+						key: key,
+						participantKey: remoteParticipantKey(participant),
+						participant: participant || null,
+						kind: String((publication && publication.kind) || track.kind || ''),
+						track: track,
+						trackSid: track.sid != null ? String(track.sid) : '',
+						publication: publication || null,
+						publicationSid: remotePublicationSid(publication),
+						nodes: storedNodes
+					};
+					remoteTrackRegistry.set(key, entry);
+					updateEmptyState();
+					return entry;
+				}
+
+				function detachRemoteTrack(track, publication, participant) {
+					const match = findRemoteTrackEntry(track, publication, participant);
+					if (!match) {
+						updateEmptyState();
+						return;
+					}
+					removeRemoteTrackEntry(match.key, match.entry);
+					updateEmptyState();
+				}
+
+				function clearRemoteParticipant(participant) {
+					const participantKey = remoteParticipantKey(participant);
+					const hasStableParticipantKey = participantKey !== 'participant:unknown';
+					const entriesToRemove = [];
+					remoteTrackRegistry.forEach(function(entry, key) {
+						if (entry && (entry.participant === participant ||
+							(hasStableParticipantKey && entry.participantKey === participantKey))) {
+							entriesToRemove.push({
+								key: key,
+								entry: entry
+							});
+						}
+					});
+					entriesToRemove.forEach(function(item) {
+						removeRemoteTrackEntry(item.key, item.entry);
+					});
+					updateEmptyState();
+				}
+
+				function clearRemoteTracks() {
+					const entriesToRemove = [];
+					remoteTrackRegistry.forEach(function(entry, key) {
+						entriesToRemove.push({
+							key: key,
+							entry: entry
+						});
+					});
+					entriesToRemove.forEach(function(item) {
+						removeRemoteTrackEntry(item.key, item.entry);
+					});
+					remoteTrackRegistry.clear();
+					if (elements.remote) {
+						Array.prototype.slice.call(elements.remote.querySelectorAll('video,audio')).forEach(removeRemoteMediaNode);
+					}
 					updateEmptyState();
 				}
 
 				function wireRoom(room) {
 					const LiveKit = sdk();
 					const events = LiveKit && LiveKit.RoomEvent ? LiveKit.RoomEvent : {};
-					room.on(events.TrackSubscribed || 'trackSubscribed', function(track) {
-						attachTrack(track, elements.remote);
+					room.on(events.TrackSubscribed || 'trackSubscribed', function(track, publication, participant) {
+						if (state.room !== room) {
+							return;
+						}
+						attachRemoteTrack(track, publication, participant);
 					});
-					room.on(events.TrackUnsubscribed || 'trackUnsubscribed', detachTrack);
-					room.on(events.ParticipantConnected || 'participantConnected', function() {
+					room.on(events.TrackUnsubscribed || 'trackUnsubscribed', function(track, publication, participant) {
+						if (state.room !== room) {
+							return;
+						}
+						detachRemoteTrack(track, publication, participant);
+					});
+					room.on(events.ParticipantConnected || 'participantConnected', function(participant) {
+						if (state.room !== room) {
+							return;
+						}
 						setStatus('Terhubung');
 					});
-					room.on(events.ParticipantDisconnected || 'participantDisconnected', function() {
+					room.on(events.ParticipantDisconnected || 'participantDisconnected', function(participant) {
+						if (state.room !== room) {
+							return;
+						}
+						clearRemoteParticipant(participant);
 						setStatus('Menunggu lawan bicara bergabung');
-						updateEmptyState();
 					});
 					room.on(events.Disconnected || 'disconnected', function() {
+						if (state.room !== room) {
+							return;
+						}
 						state.room = null;
 						state.connecting = false;
 						state.minimized = false;
 						stopLocalTracks();
-						if (elements.remote) {
-							Array.prototype.slice.call(elements.remote.querySelectorAll('video,audio')).forEach(function(node) {
-								node.remove();
-							});
-						}
-						updateEmptyState();
+						clearRemoteTracks();
 						setStatus('Panggilan terputus');
 						setCallActive(false);
 						stopElapsedTimer();
 						updateFloatingCall();
 					});
 					room.on(events.Reconnecting || 'reconnecting', function() {
+						if (state.room !== room) {
+							return;
+						}
 						setStatus('Menyambungkan ulang...');
 					});
 					room.on(events.Reconnected || 'reconnected', function() {
+						if (state.room !== room) {
+							return;
+						}
+						publishExistingParticipants(room);
 						setStatus('Terhubung kembali');
 					});
 				}
 
 				function publishExistingParticipants(room) {
-					if (!room || !room.remoteParticipants) {
+					if (!room || state.room !== room || !room.remoteParticipants) {
 						return;
 					}
 					room.remoteParticipants.forEach(function(participant) {
-						if (!participant || !participant.trackPublications) {
+						if (!participant || participant.isLocal === true || !participant.trackPublications) {
 							return;
 						}
 						participant.trackPublications.forEach(function(publication) {
-							if (publication && publication.track) {
-								attachTrack(publication.track, elements.remote);
+							if (publication && publication.isSubscribed === true && publication.track) {
+								attachRemoteTrack(publication.track, publication, participant);
 							}
 						});
 					});
