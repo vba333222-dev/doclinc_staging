@@ -463,19 +463,31 @@ class ClinicalSchemaTestRunner
 	private $failed = 0;
 	private $skipped = 0;
 	private $results = array();
+	private $integrationEnvironment = array();
 
 	public function __construct()
 	{
 		$this->root = dirname(__DIR__);
 		$this->migrationRoot = $this->root . DIRECTORY_SEPARATOR . 'migrations';
 		$this->config = require $this->root . DIRECTORY_SEPARATOR . 'config.php';
+		foreach ($this->config['connection_environment_variables'] as $name) {
+			$this->integrationEnvironment[$name] = getenv($name);
+		}
 	}
 
 	public function run($integration)
 	{
-		$this->runUnitTests();
-		if ($integration) {
-			$this->runIntegrationTests();
+		try {
+			$this->runUnitTests();
+			if ($integration) {
+				$this->restoreIntegrationEnvironment();
+				$this->runIntegrationTests();
+			} else {
+				$this->skip('I01_disposable_database_name_gate','disposable_integration_not_requested');
+				$this->skip('I02_disposable_mariadb_privilege_preflight','disposable_integration_not_requested');
+			}
+		} finally {
+			$this->restoreIntegrationEnvironment();
 		}
 		foreach ($this->results as $result) {
 			echo $result . PHP_EOL;
@@ -507,9 +519,10 @@ class ClinicalSchemaTestRunner
 		$this->test('12_runtime_application_username_rejected', function () {
 			$names = $this->config['connection_environment_variables'];
 			$values = array($names['host'] => '127.0.0.1', $names['port'] => '1', $names['database'] => 'clinical_schema_unit', $names['user'] => $this->config['hard_rejected_database_users'][0], $names['password'] => 'temporary-unit-value', $names['allowed_users'] => $this->config['hard_rejected_database_users'][0]);
-			foreach ($values as $name => $value) { putenv($name . '=' . $value); }
+			$previous = array();
+			foreach ($values as $name => $value) { $previous[$name]=getenv($name);putenv($name . '=' . $value); }
 			try { $this->expectCode(function () { ClinicalSchemaConnection::fromEnvironment($this->config, 'clinical_schema_unit', '10.11.0', true); }, 'runtime_database_user_rejected'); }
-			finally { foreach ($values as $name => $unused) { putenv($name); } }
+			finally { foreach ($previous as $name => $value) { if($value===false){putenv($name);}else{putenv($name.'='.$value);} } }
 		});
 
 		$this->fixtureTest('13_descriptor_root_object', function ($root) { file_put_contents($root . '/00000000000000_clinical_schema_ledger.json', '[]'); }, 'descriptor_root_not_object');
@@ -685,12 +698,30 @@ class ClinicalSchemaTestRunner
 		$this->test('163_wrong_grantee_fails_production_method',function()use($required){$connection=$this->schemaPrivilegeConnection('doclink_clinical_schema_test','doclink\\_clinical\\_schema\\_test',$required,"'other_user'@'%'");$this->expectCode(function()use($connection,$required){$connection->verifyPrivileges($required);},'database_privileges_insufficient');});
 		$this->test('164_production_privilege_query_like_escape_shape',function()use($required){$connection=$this->schemaPrivilegeConnection('doclink_clinical_schema_test','doclink\\_clinical\\_schema\\_test',$required);$connection->verifyPrivileges($required);$surface=implode("\n",$connection->queryLog);$this->assertTrue(preg_match('/TABLE_SCHEMA\\s*=\\s*DATABASE\\(\\)/i',$surface)!==1);$this->assertTrue(strpos($surface,"DATABASE() LIKE TABLE_SCHEMA ESCAPE '\\\\'")!==false);$this->assertTrue(strpos($surface,'GRANTEE=CONCAT(QUOTE(LEFT(CURRENT_USER()')!==false);$this->assertTrue(strpos($surface,'doclink_clinical_schema_test')===false);});
 		$this->test('165_privilege_metadata_sources_remain_safe',function()use($required){$connection=new PrivilegeMetadataTestConnection();$connection->globalGrantRows=$this->privilegeGrantRows($required,$connection->currentGrantee);$connection->verifyPrivileges($required);$surface=implode("\n",$connection->queryLog);$this->assertTrue(strpos($surface,'information_schema.USER_PRIVILEGES')!==false);$this->assertTrue(strpos($surface,'information_schema.SCHEMA_PRIVILEGES')!==false);$this->assertTrue(stripos($surface,'SHOW GRANTS')===false);$this->assertTrue(stripos($surface,'mysql.db')===false);$this->assertTrue(strpos($surface,'TABLE_PRIVILEGES')===false);$this->assertTrue(strpos($surface,'COLUMN_PRIVILEGES')===false);});
+
+		$this->test('166_php_null_default_normalizes_to_null',function(){$this->assertSame(null,$this->normalizeDefaultForTest(null));});
+		$this->test('167_unquoted_uppercase_null_default_normalizes_to_null',function(){$this->assertSame(null,$this->normalizeDefaultForTest('NULL'));});
+		$this->test('168_unquoted_lowercase_null_default_normalizes_to_null',function(){$this->assertSame(null,$this->normalizeDefaultForTest('null'));});
+		$this->test('169_unquoted_mixed_case_null_default_normalizes_to_null',function(){$this->assertSame(null,$this->normalizeDefaultForTest('NuLl'));});
+		$this->test('170_quoted_uppercase_null_default_remains_string',function(){$this->assertSame('NULL',$this->normalizeDefaultForTest("'NULL'"));});
+		$this->test('171_quoted_lowercase_null_default_remains_string',function(){$this->assertSame('null',$this->normalizeDefaultForTest("'null'"));});
+		$this->test('172_quoted_state_default_remains_string',function(){$this->assertSame('applying',$this->normalizeDefaultForTest("'applying'"));});
+		$this->test('173_quoted_default_preserves_case',function(){$this->assertSame('MiXeD',$this->normalizeDefaultForTest("'MiXeD'"));});
+		$this->test('174_quoted_default_decodes_doubled_quotes',function(){$this->assertSame("O'Brien",$this->normalizeDefaultForTest("'O''Brien'"));});
+		$this->test('175_current_timestamp_default_normalizes_case',function(){$this->assertSame('current_timestamp',$this->normalizeDefaultForTest('CURRENT_TIMESTAMP'));});
+		$this->test('176_current_timestamp_precision_default_normalizes_case',function(){$this->assertSame('current_timestamp(6)',$this->normalizeDefaultForTest('CURRENT_TIMESTAMP(6)'));});
+		$this->test('177_ledger_expected_schema_unchanged_by_inspection',function()use($loader,$ledger,$foundation){$expected=$ledger['steps'][0]['expected_schema'];$before=$expected;$fake=$this->fakeApplied($ledger,$foundation);$m=new ClinicalSchemaMigrator($loader,$fake,$this->config);$m->inspectExpectedSchema($expected);$this->assertSame($before,$expected);});
+		$this->test('178_mariadb_string_null_metadata_matches_ledger_schema',function()use($loader,$ledger,$foundation){$fake=$this->fakeApplied($ledger,$foundation);foreach($fake->schemas[$this->config['ledger_table']]['columns'] as &$column){if(in_array($column['name'],array('applied_at','failed_at','error_code','error_summary'),true)){$column['default']='NULL';}}unset($column);$m=new ClinicalSchemaMigrator($loader,$fake,$this->config);$result=$m->inspectExpectedSchema($ledger['steps'][0]['expected_schema']);$this->assertSame(true,$result['matches']);$this->assertSame(array(),$result['differences']);});
+		$this->test('179_quoted_null_string_does_not_match_sql_null',function()use($loader,$ledger,$foundation){$fake=$this->fakeApplied($ledger,$foundation);foreach($fake->schemas[$this->config['ledger_table']]['columns'] as &$column){if($column['name']==='applied_at'){$column['default']="'NULL'";}}unset($column);$m=new ClinicalSchemaMigrator($loader,$fake,$this->config);$result=$m->inspectExpectedSchema($ledger['steps'][0]['expected_schema']);$this->assertSame(false,$result['matches']);$this->assertTrue(in_array('columns',$result['differences'],true));});
+		$this->test('180_real_default_mismatch_remains_columns_difference',function()use($loader,$ledger,$foundation){$fake=$this->fakeApplied($ledger,$foundation);foreach($fake->schemas[$this->config['ledger_table']]['columns'] as &$column){if($column['name']==='state'){$column['default']="'unexpected'";}}unset($column);$m=new ClinicalSchemaMigrator($loader,$fake,$this->config);$result=$m->inspectExpectedSchema($ledger['steps'][0]['expected_schema']);$this->assertSame(false,$result['matches']);$this->assertTrue(in_array('columns',$result['differences'],true));});
+		$this->test('181_integration_environment_snapshot_restores_original',function(){$name=$this->config['connection_environment_variables']['host'];$expected=$this->integrationEnvironment[$name];putenv($name.'=temporary-environment-mutation');$this->restoreIntegrationEnvironment();$this->assertSame($expected,getenv($name));});
+		$this->test('182_quoted_current_timestamp_remains_literal_case',function(){$this->assertSame('CURRENT_TIMESTAMP',$this->normalizeDefaultForTest("'CURRENT_TIMESTAMP'"));});
 	}
 
 	private function runIntegrationTests()
 	{
 		$names = $this->config['connection_environment_variables'];
-		$requiredNames = array($names['host'],$names['database'],$names['user'],$names['password'],$names['allowed_users']);
+		$requiredNames = array_values($names);
 		foreach ($requiredNames as $requiredName) {
 			$value = getenv($requiredName);
 			if (!is_string($value) || $value === '') {
@@ -699,9 +730,9 @@ class ClinicalSchemaTestRunner
 				return;
 			}
 		}
-		$database = getenv('DOCLINK_CLINICAL_SCHEMA_DB_NAME');
-		$user = getenv('DOCLINK_CLINICAL_SCHEMA_DB_USER');
-		$safeDatabase = is_string($database) && strpos($database,'doclink_clinical_schema_test_')===0 && strpos($database,'_')!==false;
+		$database = getenv($names['database']);
+		$user = getenv($names['user']);
+		$safeDatabase = is_string($database) && strcasecmp($database,'doclinc-staging')!==0 && strpos($database,'doclink_clinical_schema_test_')===0 && strpos($database,'_')!==false;
 		$safeUser = is_string($user) && !in_array(strtolower($user),array_map('strtolower',$this->config['hard_rejected_database_users']),true);
 		$this->test('I01_disposable_database_name_gate', function () use ($safeDatabase,$safeUser) {
 			$this->assertTrue($safeDatabase && $safeUser);
@@ -710,12 +741,27 @@ class ClinicalSchemaTestRunner
 			$this->skip('I02_disposable_mariadb_privilege_preflight','disposable_identity_gate_failed');
 			return;
 		}
-		$this->test('I02_disposable_mariadb_privilege_preflight', function () {
-			$database=getenv('DOCLINK_CLINICAL_SCHEMA_DB_NAME');
+		$this->test('I02_disposable_mariadb_privilege_preflight', function () use ($database) {
 			$config=$this->config;
 			$connection=ClinicalSchemaConnection::fromEnvironment($config,$database,'10.11.0',true);
-			$connection->close();
+			try {
+				$this->assertSame($database,$connection->getDatabaseName());
+				$this->assertTrue(version_compare($connection->getServerVersion(),'10.11.0','>='));
+			} finally {
+				$connection->close();
+			}
 		});
+	}
+
+	private function restoreIntegrationEnvironment()
+	{
+		foreach ($this->integrationEnvironment as $name => $value) {
+			if ($value === false) {
+				putenv($name);
+			} else {
+				putenv($name . '=' . $value);
+			}
+		}
 	}
 
 	private function schemaPrivilegeConnection($database, $pattern, array $privileges, $grantee = null)
@@ -878,6 +924,15 @@ class ClinicalSchemaTestRunner
 		$method=new ReflectionMethod('ClinicalSchemaMigrator','normalizeCheck');
 		$method->setAccessible(true);
 		return $method->invoke($migrator,$expression);
+	}
+
+	private function normalizeDefaultForTest($value)
+	{
+		$class=new ReflectionClass('ClinicalSchemaMigrator');
+		$migrator=$class->newInstanceWithoutConstructor();
+		$method=new ReflectionMethod('ClinicalSchemaMigrator','normalizeDefault');
+		$method->setAccessible(true);
+		return $method->invoke($migrator,$value);
 	}
 
 	private function assertStatusReadOnly(FakeClinicalSchemaConnection $fake)
