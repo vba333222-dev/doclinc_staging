@@ -714,9 +714,11 @@ class ClinicalSchemaMigrator
 			return null;
 		}
 		$value = trim((string) $value);
-		if (strlen($value) >= 2 && $value[0] === "'" && substr($value, -1) === "'") {
-			$value = substr($value, 1, -1);
-			$value = str_replace("''", "'", $value);
+		if (preg_match("/^'(?:''|[^'])*'$/s", $value) === 1) {
+			return str_replace("''", "'", substr($value, 1, -1));
+		}
+		if (strcasecmp($value, 'NULL') === 0) {
+			return null;
 		}
 		if (preg_match('/^current_timestamp(?:\([0-9]+\))?$/i', $value) === 1) {
 			return strtolower($value);
