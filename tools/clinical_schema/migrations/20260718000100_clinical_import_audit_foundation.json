@@ -1,0 +1,137 @@
+{
+  "migration_id": "20260718000100_clinical_import_audit_foundation",
+  "migration_name": "Clinical master import audit foundation",
+  "description": "Create schema-only import batch and item audit tables without importing package records or enabling runtime features.",
+  "minimum_mariadb_version": "10.11.0",
+  "schema_only": true,
+  "imports_package_data": false,
+  "enables_runtime": false,
+  "expected_created_tables": [
+    "clinical_master_import_batches",
+    "clinical_master_import_items"
+  ],
+  "steps": [
+    {
+      "step_id": "001_create_clinical_master_import_batches",
+      "type": "create_table",
+      "sql_file": "sql/20260718000100/001_create_clinical_master_import_batches.sql",
+      "expected_schema": {
+        "table_name": "clinical_master_import_batches",
+        "engine": "InnoDB",
+        "default_charset": "utf8mb4",
+        "default_collation": "utf8mb4_general_ci",
+        "columns": [
+          {"name":"import_batch_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"auto_increment","character_set":null,"collation":null},
+          {"name":"schema_migration_id","column_type":"varchar(128)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"package_id","column_type":"varchar(128)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"package_version","column_type":"varchar(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"root_manifest_sha256","column_type":"char(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"structural_validation_result","column_type":"varchar(16)","nullable":false,"default":"not_run","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"package_governance_status","column_type":"varchar(20)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"production_ready","column_type":"tinyint(3) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"package_runtime_enabled","column_type":"tinyint(3) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"source_location_identifier","column_type":"varchar(255)","nullable":false,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_bin"},
+          {"name":"import_mode","column_type":"varchar(24)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"initiated_by_user_id","column_type":"int(11)","nullable":true,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"initiator_identity","column_type":"varchar(128)","nullable":false,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_general_ci"},
+          {"name":"importer_version","column_type":"varchar(32)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"status","column_type":"varchar(24)","nullable":false,"default":"planned","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"attempt_count","column_type":"int(10) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"declared_dataset_count","column_type":"int(10) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"processed_dataset_count","column_type":"int(10) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"declared_record_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"processed_record_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"inserted_record_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"updated_record_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"skipped_record_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"failed_record_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"error_count","column_type":"int(10) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"warning_count","column_type":"int(10) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"metadata_json","column_type":"longtext","nullable":true,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_bin"},
+          {"name":"started_at","column_type":"datetime(6)","nullable":true,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"completed_at","column_type":"datetime(6)","nullable":true,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"created_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"","character_set":null,"collation":null},
+          {"name":"updated_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"on update current_timestamp(6)","character_set":null,"collation":null}
+        ],
+        "primary_key": ["import_batch_id"],
+        "unique_indexes": [
+          {"name":"uq_clinical_import_batch_package","columns":["package_id","package_version","root_manifest_sha256"]}
+        ],
+        "indexes": [
+          {"name":"idx_clinical_import_batch_initiator_created","columns":["initiated_by_user_id","created_at"]},
+          {"name":"idx_clinical_import_batch_package_version","columns":["package_id","package_version"]},
+          {"name":"idx_clinical_import_batch_schema_migration","columns":["schema_migration_id"]},
+          {"name":"idx_clinical_import_batch_status_created","columns":["status","created_at"]}
+        ],
+        "foreign_keys": [
+          {"name":"fk_clinical_import_batch_schema_migration","columns":["schema_migration_id"],"referenced_table":"clinical_schema_migrations","referenced_columns":["migration_id"],"on_update":"RESTRICT","on_delete":"RESTRICT"}
+        ],
+        "check_constraints": [
+          {"name":"chk_clinical_import_batch_booleans","expression":"production_ready IN (0,1) AND package_runtime_enabled IN (0,1)"},
+          {"name":"chk_clinical_import_batch_dataset_counts","expression":"processed_dataset_count <= declared_dataset_count"},
+          {"name":"chk_clinical_import_batch_governance","expression":"package_governance_status IN ('draft','in_review','approved','rejected','retired')"},
+          {"name":"chk_clinical_import_batch_metadata_json","expression":"metadata_json IS NULL OR JSON_VALID(metadata_json) = 1"},
+          {"name":"chk_clinical_import_batch_mode","expression":"import_mode IN ('validate_only','insert_only','reconcile')"},
+          {"name":"chk_clinical_import_batch_record_counts","expression":"processed_record_count <= declared_record_count AND processed_record_count = inserted_record_count + updated_record_count + skipped_record_count + failed_record_count"},
+          {"name":"chk_clinical_import_batch_sha256","expression":"root_manifest_sha256 REGEXP '^[0-9a-f]{64}$'"},
+          {"name":"chk_clinical_import_batch_status","expression":"status IN ('planned','validating','running','completed','failed','cancelled')"},
+          {"name":"chk_clinical_import_batch_terminal_at","expression":"status NOT IN ('completed','failed','cancelled') OR completed_at IS NOT NULL"},
+          {"name":"chk_clinical_import_batch_validation","expression":"structural_validation_result IN ('not_run','pass','fail','error')"}
+        ]
+      }
+    },
+    {
+      "step_id": "002_create_clinical_master_import_items",
+      "type": "create_table",
+      "sql_file": "sql/20260718000100/002_create_clinical_master_import_items.sql",
+      "expected_schema": {
+        "table_name": "clinical_master_import_items",
+        "engine": "InnoDB",
+        "default_charset": "utf8mb4",
+        "default_collation": "utf8mb4_general_ci",
+        "columns": [
+          {"name":"import_item_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"auto_increment","character_set":null,"collation":null},
+          {"name":"import_batch_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"dataset_id","column_type":"varchar(128)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"dataset_version","column_type":"varchar(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"dataset_sha256","column_type":"char(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"declared_record_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"processed_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"inserted_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"updated_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"skipped_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"failed_count","column_type":"bigint(20) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"canonical_governance_status","column_type":"varchar(20)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"source_runtime_enabled","column_type":"tinyint(3) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"status","column_type":"varchar(24)","nullable":false,"default":"pending","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"attempt_count","column_type":"int(10) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"error_code","column_type":"varchar(64)","nullable":true,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"error_summary","column_type":"varchar(1000)","nullable":true,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_general_ci"},
+          {"name":"started_at","column_type":"datetime(6)","nullable":true,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"completed_at","column_type":"datetime(6)","nullable":true,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"created_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"","character_set":null,"collation":null},
+          {"name":"updated_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"on update current_timestamp(6)","character_set":null,"collation":null}
+        ],
+        "primary_key": ["import_item_id"],
+        "unique_indexes": [
+          {"name":"uq_clinical_import_item_batch_dataset","columns":["import_batch_id","dataset_id"]}
+        ],
+        "indexes": [
+          {"name":"idx_clinical_import_item_batch_status","columns":["import_batch_id","status"]},
+          {"name":"idx_clinical_import_item_dataset_checksum","columns":["dataset_id","dataset_sha256"]}
+        ],
+        "foreign_keys": [
+          {"name":"fk_clinical_import_item_batch","columns":["import_batch_id"],"referenced_table":"clinical_master_import_batches","referenced_columns":["import_batch_id"],"on_update":"RESTRICT","on_delete":"RESTRICT"}
+        ],
+        "check_constraints": [
+          {"name":"chk_clinical_import_item_counts","expression":"processed_count <= declared_record_count AND processed_count = inserted_count + updated_count + skipped_count + failed_count"},
+          {"name":"chk_clinical_import_item_governance","expression":"canonical_governance_status IN ('draft','in_review','approved','rejected','retired')"},
+          {"name":"chk_clinical_import_item_runtime_boolean","expression":"source_runtime_enabled IN (0,1)"},
+          {"name":"chk_clinical_import_item_sha256","expression":"dataset_sha256 REGEXP '^[0-9a-f]{64}$'"},
+          {"name":"chk_clinical_import_item_status","expression":"status IN ('pending','running','completed','failed','skipped')"},
+          {"name":"chk_clinical_import_item_terminal_at","expression":"status NOT IN ('completed','failed','skipped') OR completed_at IS NOT NULL"}
+        ]
+      }
+    }
+  ]
+}
