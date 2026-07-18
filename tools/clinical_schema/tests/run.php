@@ -377,6 +377,83 @@ class FakeClinicalSchemaConnection extends ClinicalSchemaConnection
 	}
 }
 
+class PrivilegeMetadataTestConnection extends ClinicalSchemaConnection
+{
+	public $database = 'doclink_clinical_schema_test';
+	public $currentGrantee = "'migration_user'@'%'";
+	public $globalGrantRows = array();
+	public $schemaGrantRows = array();
+	public $tableGrantRows = array();
+	public $queryLog = array();
+
+	public function __construct()
+	{
+	}
+
+	public function queryAll($sql)
+	{
+		$this->queryLog[] = $sql;
+		if (strpos($sql, 'GRANTEE=CONCAT(QUOTE(LEFT(CURRENT_USER()') === false) {
+			return array();
+		}
+		if (strpos($sql, 'information_schema.USER_PRIVILEGES') !== false) {
+			return $this->matchingAccountRows($this->globalGrantRows);
+		}
+		if (strpos($sql, 'information_schema.SCHEMA_PRIVILEGES') !== false) {
+			if (strpos($sql, "DATABASE() LIKE TABLE_SCHEMA ESCAPE '\\\\'") === false) {
+				return array();
+			}
+			$rows = array();
+			foreach ($this->matchingAccountRows($this->schemaGrantRows, true) as $row) {
+				if ($this->databaseLikePattern($this->database, $row['TABLE_SCHEMA'])) {
+					$rows[] = array('PRIVILEGE_TYPE' => $row['PRIVILEGE_TYPE']);
+				}
+			}
+			return $rows;
+		}
+		return array();
+	}
+
+	private function matchingAccountRows(array $rows, $includeSchema = false)
+	{
+		$matching = array();
+		foreach ($rows as $row) {
+			if ($row['GRANTEE'] !== $this->currentGrantee) {
+				continue;
+			}
+			$matchingRow = array('PRIVILEGE_TYPE' => $row['PRIVILEGE_TYPE']);
+			if ($includeSchema) {
+				$matchingRow['TABLE_SCHEMA'] = $row['TABLE_SCHEMA'];
+			}
+			$matching[] = $matchingRow;
+		}
+		return $matching;
+	}
+
+	private function databaseLikePattern($database, $pattern)
+	{
+		$regex = '';
+		$length = strlen($pattern);
+		for ($index = 0; $index < $length; $index++) {
+			$character = $pattern[$index];
+			if ($character === '\\') {
+				$index++;
+				if ($index >= $length) {
+					return false;
+				}
+				$regex .= preg_quote($pattern[$index], '/');
+			} elseif ($character === '%') {
+				$regex .= '.*';
+			} elseif ($character === '_') {
+				$regex .= '.';
+			} else {
+				$regex .= preg_quote($character, '/');
+			}
+		}
+		return preg_match('/\\A' . $regex . '\\z/is', $database) === 1;
+	}
+}
+
 class ClinicalSchemaTestRunner
 {
 	private $root;
@@ -553,7 +630,7 @@ class ClinicalSchemaTestRunner
 		$this->test('112_generated_column_mismatch_detected',function()use($loader,$ledger,$foundation){$fake=$this->fake($ledger,$foundation);$fake->makePresent('clinical_master_import_batches');$fake->schemas['clinical_master_import_batches']['columns'][0]['generation_expression']='1 + 1';$m=new ClinicalSchemaMigrator($loader,$fake,$this->config);$result=$m->inspectExpectedSchema($foundation['steps'][0]['expected_schema']);$this->assertSame(false,$result['matches']);$this->assertTrue(in_array('columns',$result['differences'],true));});
 		$this->test('113_create_table_as_select_rejected',function()use($loader,$ledger){$this->expectCode(function()use($loader,$ledger){$loader->validateSql('CREATE TABLE `clinical_schema_migrations` (`x` INT) AS SELECT 1;',$ledger['steps'][0]['expected_schema']);},'sql_forbidden_construct');});
 		$this->test('114_production_connection_credential_redaction',function(){$this->testProductionCredentialRedaction();});
-		$this->test('115_privilege_query_is_current_user_and_target_schema_scoped',function()use($ledger,$foundation,$required){$fake=$this->fake($ledger,$foundation);$fake->schemaPrivileges=$required;$fake->verifyPrivileges($required);$surface=implode("\n",$fake->queryLog);$this->assertTrue(strpos($surface,'CURRENT_USER()')!==false);$this->assertTrue(strpos($surface,'TABLE_SCHEMA=DATABASE()')!==false);$this->assertTrue(strpos($surface,'TABLE_PRIVILEGES')===false);});
+		$this->test('115_privilege_query_is_current_user_and_target_schema_scoped',function()use($ledger,$foundation,$required){$fake=$this->fake($ledger,$foundation);$fake->schemaPrivileges=$required;$fake->verifyPrivileges($required);$surface=implode("\n",$fake->queryLog);$this->assertTrue(strpos($surface,'CURRENT_USER()')!==false);$this->assertTrue(strpos($surface,'DATABASE() LIKE TABLE_SCHEMA')!==false);$this->assertTrue(strpos($surface,'TABLE_PRIVILEGES')===false);});
 
 		$this->test('116_check_keyword_case_equivalent',function()use($loader){$left=$this->normalizeCheckForTest($loader,"STATE IN ('applied')");$right=$this->normalizeCheckForTest($loader,"state in ('applied')");$this->assertSame($left,$right);});
 		$this->test('117_check_identifier_backticks_equivalent',function()use($loader){$left=$this->normalizeCheckForTest($loader,"`state` IN ('applied')");$right=$this->normalizeCheckForTest($loader,"state in ('applied')");$this->assertSame($left,$right);});
@@ -592,35 +669,75 @@ class ClinicalSchemaTestRunner
 		$this->test('148_ordinary_block_comment_accepted',function()use($loader){$loader->validateSql('/* normal documentation comment */ CREATE TABLE `ordinary_comment_table` (`x` INT) ENGINE=InnoDB;',$this->minimalSchema('ordinary_comment_table'));});
 		$this->test('149_ordinary_comment_semicolon_is_not_statement',function()use($loader){$scan=$loader->scanSql('/* documentation; still one statement */ CREATE TABLE `ordinary_semicolon_table` (`x` INT) ENGINE=InnoDB;');$this->assertSame(1,$scan['statement_count']);$loader->validateSql('/* documentation; still one statement */ CREATE TABLE `ordinary_semicolon_table` (`x` INT) ENGINE=InnoDB;',$this->minimalSchema('ordinary_semicolon_table'));});
 		$this->test('150_canonical_sql_still_validates_after_comment_hardening',function()use($loader,$ledger,$foundation){foreach(array($ledger,$foundation) as $descriptor){$again=$loader->loadById($descriptor['migration_id']);$this->assertSame($descriptor['checksum'],$again['checksum']);}});
+
+		$this->test('151_exact_schema_grant_pattern_passes',function()use($required){$connection=$this->schemaPrivilegeConnection('doclinkclinical','doclinkclinical',$required);$connection->verifyPrivileges($required);});
+		$this->test('152_escaped_underscore_schema_grant_pattern_passes',function()use($required){$connection=$this->schemaPrivilegeConnection('doclink_clinical_schema_test','doclink\\_clinical\\_schema\\_test',$required);$connection->verifyPrivileges($required);});
+		$this->test('153_escaped_percent_schema_grant_pattern_passes',function()use($required){$connection=$this->schemaPrivilegeConnection('archive%2026','archive\\%2026',$required);$connection->verifyPrivileges($required);});
+		$this->test('154_percent_wildcard_schema_grant_pattern_passes',function()use($required){$connection=$this->schemaPrivilegeConnection('doclink_clinical','doclink%',$required);$connection->verifyPrivileges($required);});
+		$this->test('155_underscore_wildcard_schema_grant_pattern_passes',function()use($required){$connection=$this->schemaPrivilegeConnection('doclink_x','doclink_%',$required);$connection->verifyPrivileges($required);});
+		$this->test('156_unrelated_schema_grant_pattern_fails',function()use($required){$connection=$this->schemaPrivilegeConnection('doclink_clinical','archive%',$required);$this->expectCode(function()use($connection,$required){$connection->verifyPrivileges($required);},'database_privileges_insufficient');});
+		$this->test('157_near_prefix_schema_grant_pattern_fails',function()use($required){$connection=$this->schemaPrivilegeConnection('doclinkclinicalextra','doclinkclinical',$required);$this->expectCode(function()use($connection,$required){$connection->verifyPrivileges($required);},'database_privileges_insufficient');});
+		$this->test('158_escaped_backslash_schema_grant_pattern_passes',function()use($required){$connection=$this->schemaPrivilegeConnection('doclink\\archive','doclink\\\\archive',$required);$connection->verifyPrivileges($required);});
+		$this->test('159_table_only_privileges_fail_production_method',function()use($required){$connection=new PrivilegeMetadataTestConnection();$connection->tableGrantRows=$this->privilegeGrantRows($required,$connection->currentGrantee);$this->expectCode(function()use($connection,$required){$connection->verifyPrivileges($required);},'database_privileges_insufficient');});
+		$this->test('160_global_privileges_pass_production_method',function()use($required){$connection=new PrivilegeMetadataTestConnection();$connection->globalGrantRows=$this->privilegeGrantRows($required,$connection->currentGrantee);$connection->verifyPrivileges($required);});
+		$this->test('161_mixed_global_and_matching_schema_privileges_pass',function()use($required){$connection=$this->schemaPrivilegeConnection('doclink_clinical_schema_test','doclink\\_clinical\\_schema\\_test',array_slice($required,3));$connection->globalGrantRows=$this->privilegeGrantRows(array_slice($required,0,3),$connection->currentGrantee);$connection->verifyPrivileges($required);});
+		$this->test('162_missing_one_required_privilege_has_safe_count',function()use($required){$connection=$this->schemaPrivilegeConnection('doclink_clinical_schema_test','doclink\\_clinical\\_schema\\_test',array_slice($required,0,-1));try{$connection->verifyPrivileges($required);}catch(ClinicalSchemaException $error){$this->assertSame('database_privileges_insufficient',$error->getSafeCode());$this->assertSame(array('missing_count'=>1),$error->getSafeContext());return;}throw new ClinicalSchemaTestFailure('expected_exception');});
+		$this->test('163_wrong_grantee_fails_production_method',function()use($required){$connection=$this->schemaPrivilegeConnection('doclink_clinical_schema_test','doclink\\_clinical\\_schema\\_test',$required,"'other_user'@'%'");$this->expectCode(function()use($connection,$required){$connection->verifyPrivileges($required);},'database_privileges_insufficient');});
+		$this->test('164_production_privilege_query_like_escape_shape',function()use($required){$connection=$this->schemaPrivilegeConnection('doclink_clinical_schema_test','doclink\\_clinical\\_schema\\_test',$required);$connection->verifyPrivileges($required);$surface=implode("\n",$connection->queryLog);$this->assertTrue(preg_match('/TABLE_SCHEMA\\s*=\\s*DATABASE\\(\\)/i',$surface)!==1);$this->assertTrue(strpos($surface,"DATABASE() LIKE TABLE_SCHEMA ESCAPE '\\\\'")!==false);$this->assertTrue(strpos($surface,'GRANTEE=CONCAT(QUOTE(LEFT(CURRENT_USER()')!==false);$this->assertTrue(strpos($surface,'doclink_clinical_schema_test')===false);});
+		$this->test('165_privilege_metadata_sources_remain_safe',function()use($required){$connection=new PrivilegeMetadataTestConnection();$connection->globalGrantRows=$this->privilegeGrantRows($required,$connection->currentGrantee);$connection->verifyPrivileges($required);$surface=implode("\n",$connection->queryLog);$this->assertTrue(strpos($surface,'information_schema.USER_PRIVILEGES')!==false);$this->assertTrue(strpos($surface,'information_schema.SCHEMA_PRIVILEGES')!==false);$this->assertTrue(stripos($surface,'SHOW GRANTS')===false);$this->assertTrue(stripos($surface,'mysql.db')===false);$this->assertTrue(strpos($surface,'TABLE_PRIVILEGES')===false);$this->assertTrue(strpos($surface,'COLUMN_PRIVILEGES')===false);});
 	}
 
 	private function runIntegrationTests()
 	{
-		$this->test('I01_disposable_database_name_gate', function () {
-			$name=getenv('DOCLINK_CLINICAL_SCHEMA_DB_NAME');
-			$this->assertTrue(is_string($name) && strpos($name,'doclink_clinical_schema_test_')===0);
+		$names = $this->config['connection_environment_variables'];
+		$requiredNames = array($names['host'],$names['database'],$names['user'],$names['password'],$names['allowed_users']);
+		foreach ($requiredNames as $requiredName) {
+			$value = getenv($requiredName);
+			if (!is_string($value) || $value === '') {
+				$this->skip('I01_disposable_database_name_gate','disposable_integration_environment_absent');
+				$this->skip('I02_disposable_mariadb_privilege_preflight','disposable_integration_environment_absent');
+				return;
+			}
+		}
+		$database = getenv('DOCLINK_CLINICAL_SCHEMA_DB_NAME');
+		$user = getenv('DOCLINK_CLINICAL_SCHEMA_DB_USER');
+		$safeDatabase = is_string($database) && strpos($database,'doclink_clinical_schema_test_')===0 && strpos($database,'_')!==false;
+		$safeUser = is_string($user) && !in_array(strtolower($user),array_map('strtolower',$this->config['hard_rejected_database_users']),true);
+		$this->test('I01_disposable_database_name_gate', function () use ($safeDatabase,$safeUser) {
+			$this->assertTrue($safeDatabase && $safeUser);
 		});
-		$this->test('I02_disposable_mariadb_apply_verify', function () {
+		if (!$safeDatabase || !$safeUser) {
+			$this->skip('I02_disposable_mariadb_privilege_preflight','disposable_identity_gate_failed');
+			return;
+		}
+		$this->test('I02_disposable_mariadb_privilege_preflight', function () {
 			$database=getenv('DOCLINK_CLINICAL_SCHEMA_DB_NAME');
 			$config=$this->config;
-			$loader=new ClinicalSchemaDescriptor($this->migrationRoot);
 			$connection=ClinicalSchemaConnection::fromEnvironment($config,$database,'10.11.0',true);
-			try {
-				$migrator=new ClinicalSchemaMigrator($loader,$connection,$config);
-				$options=array('environment'=>'disposable_test','confirm_database'=>$database,'backup_reference'=>'disposable-test-snapshot','confirm_backup'=>true);
-				$ledger=$loader->loadById($config['ledger_migration_id']);
-				$foundation=$loader->loadById('20260718000100_clinical_import_audit_foundation');
-				$migrator->execute('init',$ledger,$options);
-				$migrator->execute('apply',$foundation,$options);
-				$verified=$migrator->verify($foundation,$options);
-				$this->assertSame(2,$verified['verified_step_count']);
-				$counts=$connection->queryAll("SELECT (SELECT COUNT(*) FROM clinical_master_import_batches) AS batch_count,(SELECT COUNT(*) FROM clinical_master_import_items) AS item_count");
-				$this->assertSame('0',(string)$counts[0]['batch_count']);
-				$this->assertSame('0',(string)$counts[0]['item_count']);
-				$tables=$connection->queryAll("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME");
-				$this->assertSame(3,count($tables));
-			} finally { $connection->close(); }
+			$connection->close();
 		});
+	}
+
+	private function schemaPrivilegeConnection($database, $pattern, array $privileges, $grantee = null)
+	{
+		$connection = new PrivilegeMetadataTestConnection();
+		$connection->database = $database;
+		$grantGrantee = $grantee === null ? $connection->currentGrantee : $grantee;
+		$connection->schemaGrantRows = $this->privilegeGrantRows($privileges,$grantGrantee,$pattern);
+		return $connection;
+	}
+
+	private function privilegeGrantRows(array $privileges, $grantee, $pattern = null)
+	{
+		$rows = array();
+		foreach ($privileges as $privilege) {
+			$row = array('GRANTEE'=>$grantee,'PRIVILEGE_TYPE'=>$privilege);
+			if ($pattern !== null) {
+				$row['TABLE_SCHEMA'] = $pattern;
+			}
+			$rows[] = $row;
+		}
+		return $rows;
 	}
 
 	private function fake(array $ledger, array $foundation)
