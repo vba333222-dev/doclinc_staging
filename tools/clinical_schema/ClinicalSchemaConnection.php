@@ -135,7 +135,7 @@ class ClinicalSchemaConnection
 			'SELECT PRIVILEGE_TYPE FROM information_schema.USER_PRIVILEGES WHERE GRANTEE=' . $granteeExpression
 		);
 		$schemaRows = $this->queryAll(
-			'SELECT PRIVILEGE_TYPE FROM information_schema.SCHEMA_PRIVILEGES WHERE GRANTEE=' . $granteeExpression . ' AND TABLE_SCHEMA=DATABASE()'
+			"SELECT PRIVILEGE_TYPE FROM information_schema.SCHEMA_PRIVILEGES WHERE GRANTEE=" . $granteeExpression . " AND DATABASE() LIKE TABLE_SCHEMA ESCAPE '\\\\'"
 		);
 		$effective = array();
 		foreach (array_merge($globalRows, $schemaRows) as $row) {
