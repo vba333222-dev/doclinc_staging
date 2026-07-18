@@ -1,0 +1,62 @@
+{
+  "migration_id": "00000000000000_clinical_schema_ledger",
+  "migration_name": "Clinical schema migration ledger",
+  "description": "Bootstrap the standalone DocLink clinical schema migration ledger.",
+  "minimum_mariadb_version": "10.11.0",
+  "schema_only": true,
+  "imports_package_data": false,
+  "enables_runtime": false,
+  "expected_created_tables": [
+    "clinical_schema_migrations"
+  ],
+  "steps": [
+    {
+      "step_id": "001_create_clinical_schema_migrations",
+      "type": "create_table",
+      "sql_file": "sql/00000000000000/001_create_clinical_schema_migrations.sql",
+      "expected_schema": {
+        "table_name": "clinical_schema_migrations",
+        "engine": "InnoDB",
+        "default_charset": "utf8mb4",
+        "default_collation": "utf8mb4_general_ci",
+        "columns": [
+          {"name":"migration_id","column_type":"varchar(128)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"migration_name","column_type":"varchar(191)","nullable":false,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_general_ci"},
+          {"name":"migration_checksum","column_type":"char(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"state","column_type":"varchar(20)","nullable":false,"default":"applying","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"attempt_count","column_type":"int(10) unsigned","nullable":false,"default":"1","extra":"","character_set":null,"collation":null},
+          {"name":"statement_count","column_type":"smallint(5) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"last_completed_step","column_type":"smallint(5) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"execution_environment","column_type":"varchar(32)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"target_database","column_type":"varchar(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"server_version","column_type":"varchar(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"tool_version","column_type":"varchar(32)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"executor_identity","column_type":"varchar(128)","nullable":false,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_general_ci"},
+          {"name":"backup_reference","column_type":"varchar(191)","nullable":false,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_bin"},
+          {"name":"started_at","column_type":"datetime(6)","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"applied_at","column_type":"datetime(6)","nullable":true,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"failed_at","column_type":"datetime(6)","nullable":true,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"error_code","column_type":"varchar(64)","nullable":true,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"error_summary","column_type":"varchar(1000)","nullable":true,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_general_ci"},
+          {"name":"created_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"","character_set":null,"collation":null},
+          {"name":"updated_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"on update current_timestamp(6)","character_set":null,"collation":null}
+        ],
+        "primary_key": ["migration_id"],
+        "unique_indexes": [
+          {"name":"uq_clinical_schema_migration_checksum","columns":["migration_checksum"]}
+        ],
+        "indexes": [
+          {"name":"idx_clinical_schema_state_updated","columns":["state","updated_at"]}
+        ],
+        "foreign_keys": [],
+        "check_constraints": [
+          {"name":"chk_clinical_schema_applied_at","expression":"state <> 'applied' OR applied_at IS NOT NULL"},
+          {"name":"chk_clinical_schema_checksum","expression":"migration_checksum REGEXP '^[0-9a-f]{64}$'"},
+          {"name":"chk_clinical_schema_failed_at","expression":"state <> 'failed' OR failed_at IS NOT NULL"},
+          {"name":"chk_clinical_schema_state","expression":"state IN ('applying','applied','failed','rolling_back','rolled_back')"},
+          {"name":"chk_clinical_schema_step","expression":"last_completed_step <= statement_count"}
+        ]
+      }
+    }
+  ]
+}
