@@ -637,6 +637,7 @@ class ClinicalSchemaMigrator
 				'expression' => $this->normalizeCheck((string) $check['CHECK_CLAUSE']),
 			);
 		}
+		usort($actual['check_constraints'], array($this, 'compareNamedDefinition'));
 
 		$normalizedExpected = $this->normalizeExpectedSchema($expected);
 		$differences = $this->schemaDifferences($normalizedExpected, $actual);

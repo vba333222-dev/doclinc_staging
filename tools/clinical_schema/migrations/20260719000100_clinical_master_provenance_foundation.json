@@ -1,0 +1,260 @@
+{
+  "migration_id": "20260719000100_clinical_master_provenance_foundation",
+  "migration_name": "Clinical master provenance and governance foundation",
+  "description": "Create schema-only package and dataset provenance, governance capability, and source-field contract tables without reading or importing package records or enabling runtime features.",
+  "minimum_mariadb_version": "10.11.0",
+  "schema_only": true,
+  "imports_package_data": false,
+  "enables_runtime": false,
+  "expected_created_tables": [
+    "clinical_master_packages",
+    "clinical_master_datasets",
+    "clinical_master_package_capabilities",
+    "clinical_master_dataset_capabilities",
+    "clinical_master_dataset_field_contracts"
+  ],
+  "steps": [
+    {
+      "step_id": "001_create_clinical_master_packages",
+      "type": "create_table",
+      "sql_file": "sql/20260719000100/001_create_clinical_master_packages.sql",
+      "expected_schema": {
+        "table_name": "clinical_master_packages",
+        "engine": "InnoDB",
+        "default_charset": "utf8mb4",
+        "default_collation": "utf8mb4_general_ci",
+        "columns": [
+          {"name":"clinical_master_package_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"auto_increment","character_set":null,"collation":null},
+          {"name":"package_key","column_type":"varchar(128)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"package_version","column_type":"varchar(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"manifest_checksum","column_type":"char(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"manifest_schema_version","column_type":"varchar(32)","nullable":true,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"source_status","column_type":"varchar(24)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"governance_status","column_type":"varchar(24)","nullable":false,"default":"unreviewed","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"production_ready","column_type":"tinyint(3) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"source_runtime_enabled","column_type":"tinyint(3) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"license_disposition","column_type":"varchar(24)","nullable":false,"default":"not_declared","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"declared_dataset_count","column_type":"smallint(5) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"observed_dataset_count","column_type":"smallint(5) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"declared_record_count","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"observed_record_count","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"source_reference","column_type":"varchar(255)","nullable":true,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_bin"},
+          {"name":"first_seen_at","column_type":"datetime(6)","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"last_seen_at","column_type":"datetime(6)","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"created_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"","character_set":null,"collation":null},
+          {"name":"updated_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"on update current_timestamp(6)","character_set":null,"collation":null}
+        ],
+        "primary_key": ["clinical_master_package_id"],
+        "unique_indexes": [
+          {"name":"uq_clinical_master_package_key_version","columns":["package_key","package_version"]}
+        ],
+        "indexes": [
+          {"name":"idx_clinical_master_package_checksum","columns":["manifest_checksum"]},
+          {"name":"idx_clinical_master_package_governance","columns":["governance_status"]},
+          {"name":"idx_clinical_master_package_license","columns":["license_disposition"]}
+        ],
+        "foreign_keys": [],
+        "check_constraints": [
+          {"name":"chk_clinical_master_package_checksum","expression":"manifest_checksum REGEXP '^[0-9a-f]{64}$'"},
+          {"name":"chk_clinical_master_package_source_status","expression":"source_status IN ('draft','in_review','approved','rejected','retired')"},
+          {"name":"chk_clinical_master_package_governance","expression":"governance_status IN ('unreviewed','in_review','approved','rejected','retired')"},
+          {"name":"chk_clinical_master_package_license","expression":"license_disposition IN ('not_declared','review_required','cleared','restricted','rejected')"},
+          {"name":"chk_clinical_master_package_booleans","expression":"production_ready IN (0,1) AND source_runtime_enabled IN (0,1)"},
+          {"name":"chk_clinical_master_package_seen_at","expression":"last_seen_at >= first_seen_at"},
+          {"name":"chk_clinical_master_package_source_reference","expression":"source_reference IS NULL OR source_reference <> '' AND LEFT(source_reference,1) <> '/' AND LEFT(source_reference,1) <> CONVERT(CHAR(92) USING utf8mb4) AND !(source_reference REGEXP '^[A-Za-z]:')"}
+        ]
+      }
+    },
+    {
+      "step_id": "002_create_clinical_master_datasets",
+      "type": "create_table",
+      "sql_file": "sql/20260719000100/002_create_clinical_master_datasets.sql",
+      "expected_schema": {
+        "table_name": "clinical_master_datasets",
+        "engine": "InnoDB",
+        "default_charset": "utf8mb4",
+        "default_collation": "utf8mb4_general_ci",
+        "columns": [
+          {"name":"clinical_master_dataset_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"auto_increment","character_set":null,"collation":null},
+          {"name":"clinical_master_package_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"dataset_key","column_type":"varchar(128)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"source_file","column_type":"varchar(255)","nullable":false,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_bin"},
+          {"name":"dataset_version","column_type":"varchar(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"dataset_checksum","column_type":"char(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"domain_key","column_type":"varchar(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"entity_key","column_type":"varchar(64)","nullable":true,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"source_governance_status","column_type":"varchar(48)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"governance_status","column_type":"varchar(24)","nullable":false,"default":"unreviewed","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"source_runtime_enabled","column_type":"tinyint(3) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"license_disposition","column_type":"varchar(24)","nullable":false,"default":"not_declared","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"declared_record_count","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"observed_record_count","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"seed_order","column_type":"smallint(5) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"natural_key_contract","column_type":"varchar(255)","nullable":true,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_bin"},
+          {"name":"hierarchy_mode","column_type":"varchar(16)","nullable":false,"default":"none","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"created_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"","character_set":null,"collation":null},
+          {"name":"updated_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"on update current_timestamp(6)","character_set":null,"collation":null}
+        ],
+        "primary_key": ["clinical_master_dataset_id"],
+        "unique_indexes": [
+          {"name":"uq_clinical_master_dataset_package_key","columns":["clinical_master_package_id","dataset_key"]},
+          {"name":"uq_clinical_master_dataset_package_seed","columns":["clinical_master_package_id","seed_order"]}
+        ],
+        "indexes": [
+          {"name":"idx_clinical_master_dataset_governance","columns":["governance_status"]},
+          {"name":"idx_clinical_master_dataset_license","columns":["license_disposition"]},
+          {"name":"idx_clinical_master_dataset_domain","columns":["domain_key"]},
+          {"name":"idx_clinical_master_dataset_checksum","columns":["dataset_checksum"]}
+        ],
+        "foreign_keys": [
+          {"name":"fk_clinical_master_dataset_package","columns":["clinical_master_package_id"],"referenced_table":"clinical_master_packages","referenced_columns":["clinical_master_package_id"],"on_update":"RESTRICT","on_delete":"RESTRICT"}
+        ],
+        "check_constraints": [
+          {"name":"chk_clinical_master_dataset_checksum","expression":"dataset_checksum REGEXP '^[0-9a-f]{64}$'"},
+          {"name":"chk_clinical_master_dataset_governance","expression":"governance_status IN ('unreviewed','in_review','approved','rejected','retired')"},
+          {"name":"chk_clinical_master_dataset_license","expression":"license_disposition IN ('not_declared','review_required','cleared','restricted','rejected')"},
+          {"name":"chk_clinical_master_dataset_runtime","expression":"source_runtime_enabled IN (0,1)"},
+          {"name":"chk_clinical_master_dataset_hierarchy","expression":"hierarchy_mode IN ('none','tree','dag','self_parent')"},
+          {"name":"chk_clinical_master_dataset_source_file","expression":"source_file <> '' AND OCTET_LENGTH(source_file) = OCTET_LENGTH(TRIM(source_file)) AND !(source_file REGEXP '[[:cntrl:]]') AND LEFT(source_file,1) <> '/' AND LOCATE(CONVERT(CHAR(92) USING utf8mb4),source_file) = 0 AND !(source_file REGEXP '^[A-Za-z][A-Za-z0-9+.-]*:') AND source_file <> '.' AND source_file <> '..' AND source_file NOT LIKE '../%' AND source_file NOT LIKE '%/../%' AND source_file NOT LIKE '%/..'"}
+        ]
+      }
+    },
+    {
+      "step_id": "003_create_clinical_master_package_capabilities",
+      "type": "create_table",
+      "sql_file": "sql/20260719000100/003_create_clinical_master_package_capabilities.sql",
+      "expected_schema": {
+        "table_name": "clinical_master_package_capabilities",
+        "engine": "InnoDB",
+        "default_charset": "utf8mb4",
+        "default_collation": "utf8mb4_general_ci",
+        "columns": [
+          {"name":"clinical_master_package_capability_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"auto_increment","character_set":null,"collation":null},
+          {"name":"clinical_master_package_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"capability","column_type":"varchar(32)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"decision_status","column_type":"varchar(16)","nullable":false,"default":"pending","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"decision_reason","column_type":"varchar(1000)","nullable":true,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_general_ci"},
+          {"name":"decision_actor","column_type":"varchar(128)","nullable":true,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_bin"},
+          {"name":"decided_at","column_type":"datetime(6)","nullable":true,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"created_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"","character_set":null,"collation":null},
+          {"name":"updated_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"on update current_timestamp(6)","character_set":null,"collation":null}
+        ],
+        "primary_key": ["clinical_master_package_capability_id"],
+        "unique_indexes": [
+          {"name":"uq_clinical_master_package_capability","columns":["clinical_master_package_id","capability"]}
+        ],
+        "indexes": [
+          {"name":"idx_clinical_master_package_cap_subject","columns":["clinical_master_package_id"]},
+          {"name":"idx_clinical_master_package_capability","columns":["capability"]},
+          {"name":"idx_clinical_master_package_cap_decision","columns":["decision_status"]},
+          {"name":"idx_clinical_master_package_cap_decided","columns":["decided_at"]}
+        ],
+        "foreign_keys": [
+          {"name":"fk_clinical_master_package_cap_package","columns":["clinical_master_package_id"],"referenced_table":"clinical_master_packages","referenced_columns":["clinical_master_package_id"],"on_update":"RESTRICT","on_delete":"RESTRICT"}
+        ],
+        "check_constraints": [
+          {"name":"chk_clinical_master_package_capability","expression":"capability IN ('audit_import','canonical_storage','redistribution','production_deployment','runtime_reference','clinical_selection','prescribing','decision_support')"},
+          {"name":"chk_clinical_master_package_cap_decision","expression":"decision_status IN ('blocked','pending','approved','revoked')"},
+          {"name":"chk_clinical_master_package_cap_actor","expression":"decision_status NOT IN ('approved','revoked') OR decision_actor IS NOT NULL AND decision_actor <> '' AND decided_at IS NOT NULL"}
+        ]
+      }
+    },
+    {
+      "step_id": "004_create_clinical_master_dataset_capabilities",
+      "type": "create_table",
+      "sql_file": "sql/20260719000100/004_create_clinical_master_dataset_capabilities.sql",
+      "expected_schema": {
+        "table_name": "clinical_master_dataset_capabilities",
+        "engine": "InnoDB",
+        "default_charset": "utf8mb4",
+        "default_collation": "utf8mb4_general_ci",
+        "columns": [
+          {"name":"clinical_master_dataset_capability_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"auto_increment","character_set":null,"collation":null},
+          {"name":"clinical_master_dataset_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"capability","column_type":"varchar(32)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"decision_status","column_type":"varchar(16)","nullable":false,"default":"pending","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"decision_reason","column_type":"varchar(1000)","nullable":true,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_general_ci"},
+          {"name":"decision_actor","column_type":"varchar(128)","nullable":true,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_bin"},
+          {"name":"decided_at","column_type":"datetime(6)","nullable":true,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"created_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"","character_set":null,"collation":null},
+          {"name":"updated_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"on update current_timestamp(6)","character_set":null,"collation":null}
+        ],
+        "primary_key": ["clinical_master_dataset_capability_id"],
+        "unique_indexes": [
+          {"name":"uq_clinical_master_dataset_capability","columns":["clinical_master_dataset_id","capability"]}
+        ],
+        "indexes": [
+          {"name":"idx_clinical_master_dataset_cap_subject","columns":["clinical_master_dataset_id"]},
+          {"name":"idx_clinical_master_dataset_capability","columns":["capability"]},
+          {"name":"idx_clinical_master_dataset_cap_decision","columns":["decision_status"]},
+          {"name":"idx_clinical_master_dataset_cap_decided","columns":["decided_at"]}
+        ],
+        "foreign_keys": [
+          {"name":"fk_clinical_master_dataset_cap_dataset","columns":["clinical_master_dataset_id"],"referenced_table":"clinical_master_datasets","referenced_columns":["clinical_master_dataset_id"],"on_update":"RESTRICT","on_delete":"RESTRICT"}
+        ],
+        "check_constraints": [
+          {"name":"chk_clinical_master_dataset_capability","expression":"capability IN ('audit_import','canonical_storage','redistribution','production_deployment','runtime_reference','clinical_selection','prescribing','decision_support')"},
+          {"name":"chk_clinical_master_dataset_cap_decision","expression":"decision_status IN ('blocked','pending','approved','revoked')"},
+          {"name":"chk_clinical_master_dataset_cap_actor","expression":"decision_status NOT IN ('approved','revoked') OR decision_actor IS NOT NULL AND decision_actor <> '' AND decided_at IS NOT NULL"}
+        ]
+      }
+    },
+    {
+      "step_id": "005_create_clinical_master_dataset_field_contracts",
+      "type": "create_table",
+      "sql_file": "sql/20260719000100/005_create_clinical_master_dataset_field_contracts.sql",
+      "expected_schema": {
+        "table_name": "clinical_master_dataset_field_contracts",
+        "engine": "InnoDB",
+        "default_charset": "utf8mb4",
+        "default_collation": "utf8mb4_general_ci",
+        "columns": [
+          {"name":"clinical_master_dataset_field_contract_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"auto_increment","character_set":null,"collation":null},
+          {"name":"clinical_master_dataset_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"source_field","column_type":"varchar(128)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"source_json_type","column_type":"varchar(16)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"cardinality","column_type":"varchar(16)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"required_flag","column_type":"tinyint(3) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"nullable_flag","column_type":"tinyint(3) unsigned","nullable":false,"default":"0","extra":"","character_set":null,"collation":null},
+          {"name":"identity_role","column_type":"varchar(32)","nullable":false,"default":"none","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"target_domain","column_type":"varchar(64)","nullable":true,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"target_entity","column_type":"varchar(128)","nullable":true,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"target_attribute","column_type":"varchar(128)","nullable":true,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"transform_policy","column_type":"varchar(32)","nullable":false,"default":"blocked","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"contract_status","column_type":"varchar(24)","nullable":false,"default":"draft","extra":"","character_set":"ascii","collation":"ascii_bin"},
+          {"name":"review_reason","column_type":"varchar(1000)","nullable":true,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_general_ci"},
+          {"name":"decision_actor","column_type":"varchar(128)","nullable":true,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_bin"},
+          {"name":"decided_at","column_type":"datetime(6)","nullable":true,"default":null,"extra":"","character_set":null,"collation":null},
+          {"name":"created_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"","character_set":null,"collation":null},
+          {"name":"updated_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"on update current_timestamp(6)","character_set":null,"collation":null}
+        ],
+        "primary_key": ["clinical_master_dataset_field_contract_id"],
+        "unique_indexes": [
+          {"name":"uq_clinical_master_field_contract_dataset_field","columns":["clinical_master_dataset_id","source_field"]}
+        ],
+        "indexes": [
+          {"name":"idx_clinical_master_field_contract_dataset","columns":["clinical_master_dataset_id"]},
+          {"name":"idx_clinical_master_field_contract_status","columns":["contract_status"]},
+          {"name":"idx_clinical_master_field_contract_identity","columns":["identity_role"]},
+          {"name":"idx_clinical_master_field_contract_target","columns":["target_domain","target_entity"]}
+        ],
+        "foreign_keys": [
+          {"name":"fk_clinical_master_field_contract_dataset","columns":["clinical_master_dataset_id"],"referenced_table":"clinical_master_datasets","referenced_columns":["clinical_master_dataset_id"],"on_update":"RESTRICT","on_delete":"RESTRICT"}
+        ],
+        "check_constraints": [
+          {"name":"chk_clinical_master_field_contract_json_type","expression":"source_json_type IN ('string','integer','number','boolean','object','array','null','mixed')"},
+          {"name":"chk_clinical_master_field_contract_cardinality","expression":"cardinality IN ('scalar','array')"},
+          {"name":"chk_clinical_master_field_contract_booleans","expression":"required_flag IN (0,1) AND nullable_flag IN (0,1)"},
+          {"name":"chk_clinical_master_field_contract_identity","expression":"identity_role IN ('none','primary_code','natural_key_component','parent_reference','label','provenance')"},
+          {"name":"chk_clinical_master_field_contract_transform","expression":"transform_policy IN ('identity','trim_only','unicode_nfc','lookup_fk','array_expand','manual_review','blocked')"},
+          {"name":"chk_clinical_master_field_contract_status","expression":"contract_status IN ('draft','in_review','approved','rejected','retired')"},
+          {"name":"chk_clinical_master_field_contract_approval","expression":"contract_status <> 'approved' OR decision_actor IS NOT NULL AND decision_actor <> '' AND decided_at IS NOT NULL AND transform_policy <> 'blocked'"},
+          {"name":"chk_clinical_master_field_contract_source_field","expression":"source_field REGEXP '^[A-Za-z_][A-Za-z0-9_]*$'"},
+          {"name":"chk_clinical_master_field_contract_target_domain","expression":"target_domain IS NULL OR target_domain REGEXP '^[a-z][a-z0-9_]*$'"},
+          {"name":"chk_clinical_master_field_contract_target_entity","expression":"target_entity IS NULL OR target_entity REGEXP '^[a-z][a-z0-9_]*$'"},
+          {"name":"chk_clinical_master_field_contract_target_attribute","expression":"target_attribute IS NULL OR target_attribute REGEXP '^[a-z][a-z0-9_]*$'"}
+        ]
+      }
+    }
+  ]
+}

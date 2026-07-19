@@ -1,0 +1,21 @@
+CREATE TABLE `clinical_master_package_capabilities` (
+  `clinical_master_package_capability_id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `clinical_master_package_id` BIGINT UNSIGNED NOT NULL,
+  `capability` VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `decision_status` VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'pending',
+  `decision_reason` VARCHAR(1000) NULL,
+  `decision_actor` VARCHAR(128) COLLATE utf8mb4_bin NULL,
+  `decided_at` DATETIME(6) NULL,
+  `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`clinical_master_package_capability_id`),
+  UNIQUE KEY `uq_clinical_master_package_capability` (`clinical_master_package_id`, `capability`),
+  KEY `idx_clinical_master_package_cap_subject` (`clinical_master_package_id`),
+  KEY `idx_clinical_master_package_capability` (`capability`),
+  KEY `idx_clinical_master_package_cap_decision` (`decision_status`),
+  KEY `idx_clinical_master_package_cap_decided` (`decided_at`),
+  CONSTRAINT `fk_clinical_master_package_cap_package` FOREIGN KEY (`clinical_master_package_id`) REFERENCES `clinical_master_packages` (`clinical_master_package_id`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+  CONSTRAINT `chk_clinical_master_package_capability` CHECK (`capability` IN ('audit_import','canonical_storage','redistribution','production_deployment','runtime_reference','clinical_selection','prescribing','decision_support')),
+  CONSTRAINT `chk_clinical_master_package_cap_decision` CHECK (`decision_status` IN ('blocked','pending','approved','revoked')),
+  CONSTRAINT `chk_clinical_master_package_cap_actor` CHECK (`decision_status` NOT IN ('approved','revoked') OR `decision_actor` IS NOT NULL AND `decision_actor` <> '' AND `decided_at` IS NOT NULL)
+) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_general_ci;
