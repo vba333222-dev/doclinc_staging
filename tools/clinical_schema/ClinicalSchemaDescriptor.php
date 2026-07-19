@@ -193,11 +193,22 @@ class ClinicalSchemaDescriptor
 		}
 
 		$columnNames = array();
+		$usesGenerationExpressions = false;
+		foreach ($schema['columns'] as $column) {
+			if (is_array($column) && array_key_exists('generation_expression', $column)) {
+				$usesGenerationExpressions = true;
+				break;
+			}
+		}
 		foreach ($schema['columns'] as $index => $column) {
 			if (!isset($typed->columns[$index]) || !is_object($typed->columns[$index]) || !is_array($column)) {
 				throw new ClinicalSchemaException('expected_column_not_object', 'Expected columns must be objects.');
 			}
-			$this->assertExactFields($column, array('name', 'column_type', 'nullable', 'default', 'extra', 'character_set', 'collation'), 'expected_column');
+			$columnFields = array('name', 'column_type', 'nullable', 'default', 'extra', 'character_set', 'collation');
+			if ($usesGenerationExpressions) {
+				$columnFields[] = 'generation_expression';
+			}
+			$this->assertExactFields($column, $columnFields, 'expected_column');
 			$this->assertNonEmptyString($column, 'name', 'expected_column');
 			$this->assertNonEmptyString($column, 'column_type', 'expected_column');
 			if (preg_match('/^[a-z][a-z0-9_]{0,63}$/', $column['name']) !== 1 || isset($columnNames[$column['name']])) {
@@ -206,6 +217,9 @@ class ClinicalSchemaDescriptor
 			$columnNames[$column['name']] = true;
 			if (!is_bool($column['nullable']) || (!is_null($column['default']) && !is_string($column['default'])) || !is_string($column['extra'])) {
 				throw new ClinicalSchemaException('expected_column_value_invalid', 'Expected column metadata has an invalid type.', array('column' => $column['name']));
+			}
+			if ($usesGenerationExpressions && !is_string($column['generation_expression'])) {
+				throw new ClinicalSchemaException('expected_column_generation_expression_invalid', 'Expected generation expression must be a string.', array('column' => $column['name']));
 			}
 			foreach (array('character_set', 'collation') as $field) {
 				if (!is_null($column[$field]) && !is_string($column[$field])) {
@@ -388,7 +402,26 @@ class ClinicalSchemaDescriptor
 		if (preg_match($forbidden, $keywordSurface) === 1) {
 			throw new ClinicalSchemaException('sql_forbidden_construct', 'SQL step contains a prohibited construct.');
 		}
-		$unrepresentedOptions = '/(?:\b(?:PARTITION\s+BY|DATA\s+DIRECTORY|INDEX\s+DIRECTORY|TABLESPACE|COMMENT|ROW_FORMAT|KEY_BLOCK_SIZE|COMPRESSION|PAGE_COMPRESSED|PAGE_COMPRESSION_LEVEL|ENCRYPTION|WITH\s+SYSTEM\s+VERSIONING|GENERATED\s+ALWAYS)\b|\bAUTO_INCREMENT\s*=)/i';
+		$expectedGeneratedColumns = 0;
+		foreach ($expectedSchema['columns'] as $column) {
+			if (isset($column['generation_expression']) && trim($column['generation_expression']) !== '') {
+				$expectedGeneratedColumns++;
+			}
+		}
+		$generatedClauseCount = preg_match_all('/\bGENERATED\s+ALWAYS\b/i', $scan['keyword_surface'], $generatedMatches);
+		$persistentCount = preg_match_all('/\bPERSISTENT\b/i', $scan['keyword_surface'], $persistentMatches);
+		$virtualCount = preg_match_all('/\bVIRTUAL\b/i', $scan['keyword_surface'], $virtualMatches);
+		if ($virtualCount > 0) {
+			throw new ClinicalSchemaException('sql_generated_column_virtual_rejected', 'VIRTUAL generated columns are prohibited.');
+		}
+		if ($generatedClauseCount !== $expectedGeneratedColumns) {
+			throw new ClinicalSchemaException('sql_generated_column_count_mismatch', 'Generated column clauses do not match expected metadata.');
+		}
+		if ($persistentCount !== $expectedGeneratedColumns) {
+			throw new ClinicalSchemaException('sql_generated_column_persistent_count_mismatch', 'Every represented generated column must be explicitly PERSISTENT.');
+		}
+
+		$unrepresentedOptions = '/(?:\b(?:PARTITION\s+BY|DATA\s+DIRECTORY|INDEX\s+DIRECTORY|TABLESPACE|COMMENT|ROW_FORMAT|KEY_BLOCK_SIZE|COMPRESSION|PAGE_COMPRESSED|PAGE_COMPRESSION_LEVEL|ENCRYPTION|WITH\s+SYSTEM\s+VERSIONING)\b|\bAUTO_INCREMENT\s*=)/i';
 		if (preg_match($unrepresentedOptions, $scan['keyword_surface']) === 1) {
 			throw new ClinicalSchemaException('sql_unrepresented_table_option', 'SQL step contains an unrepresented table or column option.');
 		}

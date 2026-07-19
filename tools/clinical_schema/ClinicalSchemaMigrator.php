@@ -560,7 +560,7 @@ class ClinicalSchemaMigrator
 				'character_set' => $column['CHARACTER_SET_NAME'] === null ? null : (string) $column['CHARACTER_SET_NAME'],
 				'collation' => $column['COLLATION_NAME'] === null ? null : (string) $column['COLLATION_NAME'],
 				'comment' => (string) $column['COLUMN_COMMENT'],
-				'generation_expression' => trim((string) $column['GENERATION_EXPRESSION']),
+				'generation_expression' => $this->normalizeGenerationExpression((string) $column['GENERATION_EXPRESSION']),
 			);
 		}
 
@@ -648,11 +648,13 @@ class ClinicalSchemaMigrator
 	{
 		$normalized = $expected;
 		foreach ($normalized['columns'] as $index => $column) {
+			$generationExpression = array_key_exists('generation_expression', $column) ? $column['generation_expression'] : '';
+			unset($normalized['columns'][$index]['generation_expression']);
 			$normalized['columns'][$index]['column_type'] = strtolower($column['column_type']);
 			$normalized['columns'][$index]['default'] = $this->normalizeDefault($column['default']);
 			$normalized['columns'][$index]['extra'] = $this->normalizeExtra($column['extra']);
 			$normalized['columns'][$index]['comment'] = '';
-			$normalized['columns'][$index]['generation_expression'] = '';
+			$normalized['columns'][$index]['generation_expression'] = $this->normalizeGenerationExpression($generationExpression);
 		}
 		foreach ($normalized['check_constraints'] as $index => $check) {
 			$normalized['check_constraints'][$index]['expression'] = $this->normalizeCheck($check['expression']);
@@ -732,6 +734,11 @@ class ClinicalSchemaMigrator
 		$value = strtolower(trim(preg_replace('/\s+/', ' ', (string) $value)));
 		$value = trim(str_replace('default_generated', '', $value));
 		return trim(preg_replace('/\s+/', ' ', $value));
+	}
+
+	private function normalizeGenerationExpression($value)
+	{
+		return $this->normalizeCheck((string) $value);
 	}
 
 	private function normalizeCheck($value)
