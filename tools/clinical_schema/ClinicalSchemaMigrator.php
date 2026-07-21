@@ -15,6 +15,7 @@ class ClinicalSchemaMigrator
 
 	public function plan(array $descriptor)
 	{
+		$this->validatedCatalog();
 		if ($descriptor['migration_id'] === $this->config['ledger_migration_id']) {
 			$this->assertLedgerDescriptorShape($descriptor);
 		}
@@ -24,6 +25,7 @@ class ClinicalSchemaMigrator
 			'checksum' => $descriptor['checksum'],
 			'step_count' => count($descriptor['steps']),
 			'created_tables' => $descriptor['expected_created_tables'],
+			'modified_tables' => $descriptor['expected_modified_tables'],
 			'schema_only' => true,
 			'imports_package_data' => false,
 			'enables_runtime' => false,
@@ -116,11 +118,13 @@ class ClinicalSchemaMigrator
 			throw new ClinicalSchemaException('migration_not_applied', 'Migration is not in the applied state.', array('state' => (string) $row['state']));
 		}
 		$this->assertAppliedCompletion($row, $descriptor);
+		$catalog = $this->validatedCatalog($options, true);
 		$verified = 0;
-		foreach ($descriptor['steps'] as $step) {
-			$inspection = $this->inspectExpectedSchema($step['expected_schema']);
+		foreach ($this->descriptorTables($descriptor) as $table) {
+			$effective = $this->resolveEffectiveSchema($table, $catalog, $options);
+			$inspection = $this->inspectExpectedSchema($effective['schema']);
 			if (!$inspection['exists'] || !$inspection['matches']) {
-				throw new ClinicalSchemaException('migration_schema_mismatch', 'Applied migration schema fingerprint does not match.', array('table_name' => $step['expected_schema']['table_name'], 'difference_count' => count($inspection['differences'])));
+				throw new ClinicalSchemaException('migration_schema_mismatch', 'Applied migration effective schema fingerprint does not match.', array('table_name' => $table, 'difference_count' => count($inspection['differences']), 'effective_migration_id' => $effective['migration_id']));
 			}
 			$verified++;
 		}
@@ -237,6 +241,9 @@ class ClinicalSchemaMigrator
 			throw new ClinicalSchemaException('ledger_not_ready', 'Clinical migration ledger must be initialized and valid.');
 		}
 		$this->assertLedgerBootstrapReady($ledgerDescriptor, $options);
+		if ($descriptor['steps'][0]['type'] !== 'create_table') {
+			return $this->applyMutationMigration($command, $descriptor, $options);
+		}
 		$this->assertChecksumUnique($descriptor);
 		$row = $this->ledgerRow($descriptor['migration_id']);
 		if ($row) {
@@ -247,7 +254,7 @@ class ClinicalSchemaMigrator
 				throw new ClinicalSchemaException('resume_applied_rejected', 'Applied migration cannot be resumed.');
 			}
 			$this->assertAppliedCompletion($row, $descriptor);
-			$this->verifyDescriptorTables($descriptor, 'applied_migration_schema_drift');
+			$this->verifyDescriptorEffectiveTables($descriptor, $options, 'applied_migration_schema_drift');
 			return array('state' => 'applied', 'step_count' => count($descriptor['steps']), 'ddl_executed' => false, 'already_applied' => true);
 		}
 		if ($command === 'apply' && $row) {
@@ -338,6 +345,162 @@ class ClinicalSchemaMigrator
 				$this->markFailed($descriptor['migration_id'], $exception);
 			}
 			throw $exception;
+		}
+	}
+
+	private function applyMutationMigration($command, array $descriptor, array $options)
+	{
+		$catalog = $this->validatedCatalog($options, true);
+		$this->assertRequiredAppliedMigrations($descriptor, $catalog, $options);
+		$this->assertChecksumUnique($descriptor);
+		$row = $this->ledgerRow($descriptor['migration_id']);
+		if ($row) {
+			$this->assertExistingMigrationIdentity($row, $descriptor, $options, $command === 'resume');
+		}
+		if ($row && (string) $row['state'] === 'applied') {
+			if ($command === 'resume') {
+				throw new ClinicalSchemaException('resume_applied_rejected', 'Applied migration cannot be resumed.');
+			}
+			$this->assertAppliedCompletion($row, $descriptor);
+			$this->verifyDescriptorEffectiveTables($descriptor, $options, 'applied_migration_schema_drift', $catalog);
+			return array(
+				'state' => 'applied', 'step_count' => count($descriptor['steps']), 'ddl_executed' => false,
+				'already_applied' => true, 'created_tables' => array(), 'modified_tables' => $descriptor['expected_modified_tables'],
+			);
+		}
+		if ($command === 'apply' && $row) {
+			throw new ClinicalSchemaException('migration_requires_resume', 'Interrupted or failed migration requires resume.', array('state' => (string) $row['state']));
+		}
+		if ($command === 'resume' && (!$row || !in_array((string) $row['state'], array('applying', 'failed'), true))) {
+			throw new ClinicalSchemaException('migration_not_resumable', 'Mutation migration is not in a resumable state.');
+		}
+
+		$actualStates = array();
+		foreach ($descriptor['steps'] as $index => $step) {
+			$predecessor = $this->nodeKey($step['schema_lineage']['predecessor_migration_id'], $step['schema_lineage']['predecessor_step_id']);
+			$effective = $this->resolveEffectiveSchema($step['table_name'], $catalog, $options, $descriptor['migration_id']);
+			if ($effective['node_key'] !== $predecessor) {
+				throw new ClinicalSchemaException('mutation_predecessor_not_effective', 'Mutation predecessor is not the latest applied effective schema.', array('table_name' => $step['table_name']));
+			}
+			$before = $this->inspectExpectedSchema($step['expected_before_schema']);
+			$after = $this->inspectExpectedSchema($step['expected_after_schema']);
+			$completed = $row ? (int) $row['last_completed_step'] : 0;
+			if ($index + 1 <= $completed) {
+				if (!$after['exists'] || !$after['matches']) {
+					throw new ClinicalSchemaException('completed_step_schema_mismatch', 'Previously completed mutation step no longer matches its after-schema.', array('step_id' => $step['step_id']));
+				}
+				$actualStates[$index] = 'after';
+			} elseif ($after['exists'] && $after['matches']) {
+				if (!$row) {
+					throw new ClinicalSchemaException('unledgered_schema_mutation', 'Expected-after schema exists without a migration ledger attempt.', array('table_name' => $step['table_name']));
+				}
+				$actualStates[$index] = 'after';
+			} elseif ($before['exists'] && $before['matches']) {
+				$actualStates[$index] = 'before';
+			} else {
+				throw new ClinicalSchemaException('mutation_schema_state_unknown', 'Mutation target matches neither exact before nor exact after schema.', array('table_name' => $step['table_name']));
+			}
+		}
+		$this->assertEmptyTablePreconditions($descriptor);
+
+		$now = $this->now();
+		$attemptStarted = false;
+		try {
+			if (!$row) {
+				$this->ledgerTransaction(function () use ($descriptor, $options, $now) {
+					$affected = $this->connection->executePrepared(
+						"INSERT INTO `clinical_schema_migrations` (migration_id,migration_name,migration_checksum,state,attempt_count,statement_count,last_completed_step,execution_environment,target_database,server_version,tool_version,executor_identity,backup_reference,started_at,applied_at,failed_at,error_code,error_summary,created_at,updated_at) VALUES (?,?,?,'applying',1,?,0,?,?,?,?,?,?,?,NULL,NULL,NULL,NULL,?,?)",
+						'sssisssssssss',
+						array(
+							$descriptor['migration_id'], $descriptor['migration_name'], $descriptor['checksum'], count($descriptor['steps']),
+							$options['environment'], $options['confirm_database'], $this->connection->getServerVersion(),
+							$this->config['tool_version'], $this->connection->getExecutorIdentityHash(), $options['backup_reference'],
+							$now, $now, $now,
+						)
+					);
+					$this->requireOneAffected($affected, 'migration_insert');
+				});
+				$lastCompleted = 0;
+			} else {
+				$lastCompleted = (int) $row['last_completed_step'];
+				$priorState = (string) $row['state'];
+				$this->ledgerTransaction(function () use ($descriptor, $now, $priorState) {
+					$affected = $this->connection->executePrepared(
+						"UPDATE `clinical_schema_migrations` SET state='applying', attempt_count=attempt_count+1, failed_at=NULL, error_code=NULL, error_summary=NULL, updated_at=? WHERE migration_id=? AND state=?",
+						'sss', array($now, $descriptor['migration_id'], $priorState)
+					);
+					$this->requireOneAffected($affected, 'resume_transition');
+				});
+			}
+			$attemptStarted = true;
+			$ddlExecuted = false;
+			foreach ($descriptor['steps'] as $index => $step) {
+				$stepNumber = $index + 1;
+				if ($stepNumber <= $lastCompleted) {
+					continue;
+				}
+				if ($actualStates[$index] === 'before') {
+					$this->connection->executeDdl($step['sql_bytes']);
+					$ddlExecuted = true;
+				}
+				$post = $this->inspectExpectedSchema($step['expected_after_schema']);
+				if (!$post['exists'] || !$post['matches']) {
+					throw new ClinicalSchemaException('migration_step_verification_failed', 'Mutation step failed exact after-schema verification.', array('step_id' => $step['step_id'], 'difference_count' => count($post['differences'])));
+				}
+				$this->ledgerTransaction(function () use ($stepNumber, $descriptor) {
+					$affected = $this->connection->executePrepared(
+						"UPDATE `clinical_schema_migrations` SET last_completed_step=?, updated_at=? WHERE migration_id=? AND state='applying'",
+						'iss', array($stepNumber, $this->now(), $descriptor['migration_id'])
+					);
+					$this->requireOneAffected($affected, 'checkpoint_update');
+				});
+			}
+			$appliedAt = $this->now();
+			$this->ledgerTransaction(function () use ($appliedAt, $descriptor) {
+				$affected = $this->connection->executePrepared(
+					"UPDATE `clinical_schema_migrations` SET state='applied', last_completed_step=statement_count, applied_at=?, failed_at=NULL, error_code=NULL, error_summary=NULL, updated_at=? WHERE migration_id=?",
+					'sss', array($appliedAt, $appliedAt, $descriptor['migration_id'])
+				);
+				$this->requireOneAffected($affected, 'final_applied_transition');
+			});
+			return array(
+				'state' => 'applied', 'step_count' => count($descriptor['steps']), 'ddl_executed' => $ddlExecuted,
+				'already_applied' => false, 'created_tables' => array(), 'modified_tables' => $descriptor['expected_modified_tables'],
+			);
+		} catch (Throwable $exception) {
+			if ($attemptStarted) {
+				$this->markFailed($descriptor['migration_id'], $exception);
+			}
+			throw $exception;
+		}
+	}
+
+	private function assertRequiredAppliedMigrations(array $descriptor, array $catalog, array $options)
+	{
+		foreach ($descriptor['required_applied_migrations'] as $dependency) {
+			$id = $dependency['migration_id'];
+			if (!isset($catalog['descriptors'][$id]) || !hash_equals($dependency['checksum'], $catalog['descriptors'][$id]['checksum'])) {
+				throw new ClinicalSchemaException('migration_dependency_source_mismatch', 'Required migration source is missing or has the wrong checksum.', array('migration_id' => $id));
+			}
+			$row = $this->ledgerRow($id);
+			if (!$row) {
+				throw new ClinicalSchemaException('migration_dependency_missing', 'Required migration is not recorded.', array('migration_id' => $id));
+			}
+			$this->assertExistingMigrationIdentity($row, $catalog['descriptors'][$id], $options, false);
+			if ((string) $row['state'] !== 'applied') {
+				throw new ClinicalSchemaException('migration_dependency_not_applied', 'Required migration is not applied.', array('migration_id' => $id, 'state' => (string) $row['state']));
+			}
+			$this->assertAppliedCompletion($row, $catalog['descriptors'][$id]);
+		}
+	}
+
+	private function assertEmptyTablePreconditions(array $descriptor)
+	{
+		foreach ($descriptor['preconditions']['tables_must_be_empty'] as $table) {
+			$rows = $this->connection->queryAll("SELECT 1 AS row_exists FROM `" . $table . "` LIMIT 1");
+			if (count($rows) > 0) {
+				throw new ClinicalSchemaException('migration_precondition_failed', 'Required table is not empty.', array('table_name' => $table, 'ddl_executed' => false, 'ledger_row_created' => false));
+			}
 		}
 	}
 
@@ -440,6 +603,164 @@ class ClinicalSchemaMigrator
 		$stepCount = count($descriptor['steps']);
 		if ((int) $row['statement_count'] !== $stepCount || (int) $row['last_completed_step'] !== $stepCount) {
 			throw new ClinicalSchemaException('applied_migration_incomplete', 'Applied migration ledger completion does not match its descriptor.');
+		}
+	}
+
+	private function validatedCatalog(?array $options = null, $checkLedgerSources = false)
+	{
+		$descriptors = $this->descriptorLoader->loadCatalog();
+		$nodes = array();
+		$origins = array();
+		$successors = array();
+		$stepOrders = array();
+		foreach ($descriptors as $migrationId => $descriptor) {
+			foreach ($descriptor['required_applied_migrations'] as $dependency) {
+				$id = $dependency['migration_id'];
+				if (!isset($descriptors[$id]) || !hash_equals($dependency['checksum'], $descriptors[$id]['checksum'])) {
+					throw new ClinicalSchemaException('migration_dependency_source_mismatch', 'Required migration descriptor is missing or does not match its declared checksum.', array('migration_id' => $id));
+				}
+			}
+			foreach ($descriptor['steps'] as $index => $step) {
+				$key = $this->nodeKey($migrationId, $step['step_id']);
+				$table = $step['type'] === 'create_table' ? $step['expected_schema']['table_name'] : $step['table_name'];
+				$nodes[$key] = array(
+					'key' => $key, 'migration_id' => $migrationId, 'step_id' => $step['step_id'],
+					'step_index' => $index, 'table_name' => $table, 'type' => $step['type'],
+					'before_schema' => $step['type'] === 'create_table' ? null : $step['expected_before_schema'],
+					'after_schema' => $step['type'] === 'create_table' ? $step['expected_schema'] : $step['expected_after_schema'],
+					'predecessor' => $step['type'] === 'create_table' ? null : $this->nodeKey($step['schema_lineage']['predecessor_migration_id'], $step['schema_lineage']['predecessor_step_id']),
+				);
+				$stepOrders[$key] = array($migrationId, $index);
+				if ($step['type'] === 'create_table') {
+					if (isset($origins[$table])) {
+						throw new ClinicalSchemaException('schema_lineage_origin_duplicate', 'A table has more than one create-table origin.', array('table_name' => $table));
+					}
+					$origins[$table] = $key;
+				}
+			}
+		}
+		foreach ($nodes as $key => $node) {
+			if ($node['type'] === 'create_table') {
+				continue;
+			}
+			$predecessor = $node['predecessor'];
+			if (!isset($nodes[$predecessor])) {
+				throw new ClinicalSchemaException('schema_lineage_predecessor_unknown', 'Mutation lineage predecessor is unknown.', array('step_id' => $node['step_id']));
+			}
+			if ($nodes[$predecessor]['table_name'] !== $node['table_name']) {
+				throw new ClinicalSchemaException('schema_lineage_table_mismatch', 'Mutation lineage predecessor addresses a different table.');
+			}
+			$previousOrder = $stepOrders[$predecessor];
+			$currentOrder = $stepOrders[$key];
+			if ($previousOrder[0] > $currentOrder[0] || ($previousOrder[0] === $currentOrder[0] && $previousOrder[1] >= $currentOrder[1])) {
+				throw new ClinicalSchemaException('schema_lineage_order_invalid', 'Mutation lineage must move strictly forward.');
+			}
+			if (isset($successors[$predecessor])) {
+				throw new ClinicalSchemaException('schema_lineage_fork', 'Schema lineage may not fork.', array('predecessor' => $predecessor));
+			}
+			if ($this->normalizeExpectedSchema($nodes[$predecessor]['after_schema']) !== $this->normalizeExpectedSchema($node['before_schema'])) {
+				throw new ClinicalSchemaException('schema_lineage_before_mismatch', 'Mutation before-schema does not equal predecessor after-schema.');
+			}
+			$successors[$predecessor] = $key;
+		}
+		foreach ($nodes as $key => $node) {
+			$seen = array();
+			$current = $key;
+			while (isset($successors[$current])) {
+				if (isset($seen[$current])) {
+					throw new ClinicalSchemaException('schema_lineage_cycle', 'Schema lineage contains a cycle.');
+				}
+				$seen[$current] = true;
+				$current = $successors[$current];
+			}
+		}
+		$catalog = array('descriptors' => $descriptors, 'nodes' => $nodes, 'origins' => $origins, 'successors' => $successors);
+		if ($checkLedgerSources && $this->connection !== null) {
+			$rows = $this->connection->queryAll("SELECT migration_id,migration_name,migration_checksum,state,attempt_count,statement_count,last_completed_step,execution_environment,target_database,server_version,tool_version,executor_identity,backup_reference,started_at,applied_at,failed_at FROM `clinical_schema_migrations` ORDER BY migration_id");
+			foreach ($rows as $row) {
+				$id = isset($row['migration_id']) ? (string) $row['migration_id'] : '';
+				if (!isset($descriptors[$id])) {
+					throw new ClinicalSchemaException('applied_migration_descriptor_missing', 'Recorded migration source descriptor is unavailable.', array('migration_id' => $id));
+				}
+			}
+		}
+		return $catalog;
+	}
+
+	private function resolveEffectiveSchema($table, array $catalog, array $options, $excludedMigrationId = null)
+	{
+		if (!isset($catalog['origins'][$table])) {
+			throw new ClinicalSchemaException('schema_lineage_origin_missing', 'Table has no create-table lineage origin.', array('table_name' => $table));
+		}
+		$currentKey = $catalog['origins'][$table];
+		$current = $catalog['nodes'][$currentKey];
+		$originDescriptor = $catalog['descriptors'][$current['migration_id']];
+		$originRow = $this->ledgerRow($current['migration_id']);
+		if (!$originRow) {
+			throw new ClinicalSchemaException('schema_lineage_origin_not_applied', 'Table origin migration is not recorded.', array('table_name' => $table));
+		}
+		$this->assertExistingMigrationIdentity($originRow, $originDescriptor, $options, false);
+		if ((string) $originRow['state'] !== 'applied') {
+			throw new ClinicalSchemaException('schema_lineage_origin_not_applied', 'Table origin migration is not applied.', array('table_name' => $table));
+		}
+		$this->assertAppliedCompletion($originRow, $originDescriptor);
+		while (isset($catalog['successors'][$currentKey])) {
+			$nextKey = $catalog['successors'][$currentKey];
+			$next = $catalog['nodes'][$nextKey];
+			if ($next['migration_id'] === $excludedMigrationId) {
+				break;
+			}
+			$row = $this->ledgerRow($next['migration_id']);
+			if (!$row) {
+				$descendantKey = $nextKey;
+				while (isset($catalog['successors'][$descendantKey])) {
+					$descendantKey = $catalog['successors'][$descendantKey];
+					$descendant = $catalog['nodes'][$descendantKey];
+					if ($this->ledgerRow($descendant['migration_id'])) {
+						throw new ClinicalSchemaException('schema_lineage_applied_descendant_without_predecessor', 'A mutation descendant is recorded without its predecessor.');
+					}
+				}
+				break;
+			}
+			$nextDescriptor = $catalog['descriptors'][$next['migration_id']];
+			$this->assertExistingMigrationIdentity($row, $nextDescriptor, $options, false);
+			if ((string) $row['state'] !== 'applied') {
+				throw new ClinicalSchemaException('schema_lineage_mutation_incomplete', 'Relevant mutation migration is not completely applied.', array('migration_id' => $next['migration_id'], 'state' => (string) $row['state']));
+			}
+			$this->assertAppliedCompletion($row, $nextDescriptor);
+			$currentKey = $nextKey;
+			$current = $next;
+		}
+		return array(
+			'schema' => $current['after_schema'], 'node_key' => $currentKey,
+			'migration_id' => $current['migration_id'], 'step_id' => $current['step_id'],
+		);
+	}
+
+	private function descriptorTables(array $descriptor)
+	{
+		return count($descriptor['expected_modified_tables']) > 0
+			? $descriptor['expected_modified_tables']
+			: $descriptor['expected_created_tables'];
+	}
+
+	private function nodeKey($migrationId, $stepId)
+	{
+		return (string) $migrationId . '::' . (string) $stepId;
+	}
+
+	private function verifyDescriptorEffectiveTables(array $descriptor, array $options, $errorCode, ?array $catalog = null)
+	{
+		$catalog = $catalog === null ? $this->validatedCatalog($options, true) : $catalog;
+		foreach ($this->descriptorTables($descriptor) as $table) {
+			$effective = $this->resolveEffectiveSchema($table, $catalog, $options);
+			$inspection = $this->inspectExpectedSchema($effective['schema']);
+			if (!$inspection['exists'] || !$inspection['matches']) {
+				throw new ClinicalSchemaException($errorCode, 'Migration effective schema fingerprint does not match.', array(
+					'table_name' => $table, 'difference_count' => count($inspection['differences']),
+					'effective_migration_id' => $effective['migration_id'], 'effective_step_id' => $effective['step_id'],
+				));
+			}
 		}
 	}
 

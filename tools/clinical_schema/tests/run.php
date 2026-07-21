@@ -26,6 +26,9 @@ class FakeClinicalSchemaConnection extends ClinicalSchemaConnection
 	public $tablePrivileges = array();
 	public $queryLog = array();
 	public $ddlCount = 0;
+	public $rowCounts = array();
+	public $mutationAfterSchemas = array();
+	public $throwAfterDdl = false;
 	public $ledgerWriteCount = 0;
 	public $lockAcquireCount = 0;
 	public $failDdl = false;
@@ -42,7 +45,12 @@ class FakeClinicalSchemaConnection extends ClinicalSchemaConnection
 	public function addDescriptorSchemas(array $descriptor)
 	{
 		foreach ($descriptor['steps'] as $step) {
-			$this->schemas[$step['expected_schema']['table_name']] = $step['expected_schema'];
+			if ($step['type'] === 'create_table') {
+				$this->schemas[$step['expected_schema']['table_name']] = $step['expected_schema'];
+			} else {
+				$this->schemas[$step['table_name']] = $step['expected_before_schema'];
+				$this->mutationAfterSchemas[$step['table_name']] = $step['expected_after_schema'];
+			}
 		}
 	}
 
@@ -84,6 +92,14 @@ class FakeClinicalSchemaConnection extends ClinicalSchemaConnection
 	public function queryAll($sql)
 	{
 		$this->queryLog[] = $sql;
+		if (preg_match('/^SELECT 1 AS row_exists FROM `([a-z0-9_]+)` LIMIT 1$/', $sql, $match) === 1) {
+			return !empty($this->rowCounts[$match[1]]) ? array(array('row_exists' => 1)) : array();
+		}
+		if (strpos($sql, 'FROM `clinical_schema_migrations` ORDER BY migration_id') !== false) {
+			$rows = array_values($this->ledger);
+			usort($rows, function ($left, $right) { return strcmp($left['migration_id'], $right['migration_id']); });
+			return $rows;
+		}
 		if (strpos($sql, 'SELECT VERSION()') !== false) {
 			if ($this->serverProduct === 'MariaDB') {
 				return array(array('server_version' => $this->serverVersion . '-MariaDB', 'version_comment' => 'MariaDB Server'));
@@ -254,10 +270,18 @@ class FakeClinicalSchemaConnection extends ClinicalSchemaConnection
 		if ($this->failDdl) {
 			throw new ClinicalSchemaException('ddl_step_failed');
 		}
-		if (preg_match('/CREATE\s+TABLE\s+`([a-z0-9_]+)`/i', $sql, $match) !== 1 || !isset($this->schemas[$match[1]])) {
+		if (preg_match('/CREATE\s+TABLE\s+`([a-z0-9_]+)`/i', $sql, $match) === 1 && isset($this->schemas[$match[1]])) {
+			$this->present[$match[1]] = true;
+		} elseif (preg_match('/ALTER\s+TABLE\s+`([a-z0-9_]+)`/i', $sql, $match) === 1 && isset($this->mutationAfterSchemas[$match[1]])) {
+			$this->schemas[$match[1]] = $this->mutationAfterSchemas[$match[1]];
+			$this->present[$match[1]] = true;
+		} else {
 			throw new ClinicalSchemaException('fake_ddl_unknown_table');
 		}
-		$this->present[$match[1]] = true;
+		if ($this->throwAfterDdl) {
+			$this->throwAfterDdl = false;
+			throw new ClinicalSchemaException('simulated_interrupt_after_ddl');
+		}
 	}
 
 	public function executePrepared($sql, $types, array $parameters)
@@ -517,6 +541,7 @@ class ClinicalSchemaTestRunner
 		$foundation = $loader->loadById('20260718000100_clinical_import_audit_foundation');
 		$provenance = $loader->loadById('20260719000100_clinical_master_provenance_foundation');
 		$reference = $loader->loadById('20260720000100_clinical_record_reference_foundation');
+		$prerequisite = $loader->loadById('20260721000100_clinical_package_registration_prerequisites');
 
 		$this->test('01_non_cli_rejection', function () { $this->expectCode(function () { ClinicalSchemaCli::assertCli('cgi-fcgi'); }, 'cli_only'); });
 		$this->test('02_unknown_command', function () { $this->expectCode(function () { ClinicalSchemaCli::parse(array('tool', 'unknown')); }, 'invalid_command'); });
@@ -844,9 +869,59 @@ class ClinicalSchemaTestRunner
 		$this->test('289_replacement_self_is_service_enforced',function(){$this->assertSame(true,$this->replacementSelfPolicyAccepts(41,null));$this->assertSame(true,$this->replacementSelfPolicyAccepts(41,42));$this->assertSame(false,$this->replacementSelfPolicyAccepts(41,41));});
 		$this->test('290_no_replacement_trigger_or_generated_helper',function()use($reference){$sql=$reference['steps'][2]['sql_bytes'];$this->assertTrue(preg_match('/\b(?:TRIGGER|PROCEDURE|GENERATED\s+ALWAYS)\b/i',$sql)!==1);$names=array_column($reference['steps'][2]['expected_schema']['columns'],'name');foreach($names as $name){$this->assertTrue(strpos($name,'replacement_self')===false);}});
 		$this->test('291_sql_003_only_removed_incompatible_check',function()use($reference){$sql=$reference['steps'][2]['sql_bytes'];$state="  CONSTRAINT `chk_clinical_reference_term_replacement_state` CHECK (`replacement_term_id` IS NULL OR `is_current` = 0),";$removed="  CONSTRAINT `chk_clinical_reference_term_replacement_self` CHECK (`replacement_term_id` IS NULL OR `replacement_term_id` <> `clinical_reference_term_id`),\n";$this->assertSame(1,substr_count($sql,$state));$restored=str_replace($state,$removed.$state,$sql);$this->assertSame('68010948134e63953246881f6455b3c79c31eb51d227ddc7347a8644a36ed654',hash('sha256',$restored));});
-		$this->test('292_pass_2c1b1_framework_is_byte_identical',function(){$expected=array('ClinicalSchemaDescriptor.php'=>'707b530172f3d4ed525dfc03c1d4b45e32e1a3b1a1ee3643a50cc4c83b6877de','ClinicalSchemaMigrator.php'=>'bed53c26687551de19f8ffea83bf8643accc983cb97fa87ed4f0d3316f58ed40');foreach($expected as $file=>$hash){$this->assertSame($hash,hash_file('sha256',$this->root.'/'.$file));}});
+		$this->test('292_framework_extension_preserves_protected_php_files',function(){$expected=array('ClinicalSchemaConnection.php'=>'308e451862f3a14df6e449594a019179c2d29d569287294598108c5b6fa60629','ClinicalSchemaCli.php'=>'5729d316028f01c7d6e21ca958a2cdc2af50a17214eef96876994729f6cad533','ClinicalSchemaReporter.php'=>'ea83396fe9925b1c98be0517996c2341c1f19173e78a1253c689e0666939a403','ClinicalSchemaException.php'=>'ae478221989c37781f8adc17ab7604a4c1a1e4053b991d4887d064c6cc746ea7','clinical_schema.php'=>'90e5c8167ed1456f0368849761c8d2a56db809a4b97fc9c2abadaad17371cd65','config.php'=>'713478bd9a896412d029808f8216447ea0fda5b989d26132639acd332bc23494');foreach($expected as $file=>$hash){$this->assertSame($hash,hash_file('sha256',$this->root.'/'.$file));}});
 		$this->test('293_pass_2c1b1_r2_sql_is_byte_identical',function(){$expected=array('migrations/sql/20260720000100/001_create_clinical_master_record_revisions.sql'=>'e830125e107eaab5c7d1b795b7f1c6b3d97aebac25df6b78203a0ebace7ff959','migrations/sql/20260720000100/002_create_clinical_reference_term_types.sql'=>'cb02898c2c1d5a9eadf6ef889c3eb0fdd6b5aa471dc7d92fe66453787534273e','migrations/sql/20260720000100/003_create_clinical_reference_terms.sql'=>'8422a63dea728d34177b0cf8c73e14e85cac09ad3da03a1de40246220935fae0','migrations/sql/20260720000100/004_create_clinical_reference_term_labels.sql'=>'df7dca5a9cb8a0d4993068c4c1591ab6435bfe9570c2c8fee742aeb559bce0ad','migrations/sql/20260720000100/005_create_clinical_reference_term_sources.sql'=>'65c22e05b972688f99b0977462493899d7e792edb1e20c0906a9f23291ac6582');foreach($expected as $file=>$hash){$this->assertSame($hash,hash_file('sha256',$this->root.'/'.$file));}});
 		$this->test('294_sql_005_remains_explicit_persistent',function()use($reference){$sql=$reference['steps'][4]['sql_bytes'];$this->assertSame(1,preg_match('/GENERATED\s+ALWAYS\s+AS\s*\(.*?\)\s+PERSISTENT/s',$sql));$this->assertSame(1,substr_count($sql,'GENERATED ALWAYS AS'));$this->assertSame(1,preg_match('/\bPERSISTENT\b/',$sql));$this->assertTrue(preg_match('/\bVIRTUAL\b/i',$sql)!==1);});
+		$this->test('295_prerequisite_identity_and_scope',function()use($prerequisite){$this->assertSame('20260721000100_clinical_package_registration_prerequisites',$prerequisite['migration_id']);$this->assertSame('Clinical package registration checksum provenance and source status prerequisites',$prerequisite['migration_name']);$this->assertSame(array(),$prerequisite['expected_created_tables']);$this->assertSame(array('clinical_master_packages','clinical_master_datasets'),$prerequisite['expected_modified_tables']);$this->assertSame(2,count($prerequisite['steps']));$this->assertSame(array('add_columns','modify_column'),array_column($prerequisite['steps'],'type'));});
+		$this->test('296_legacy_descriptor_defaults_are_backward_compatible',function()use($ledger,$foundation,$provenance,$reference){foreach(array($ledger,$foundation,$provenance,$reference) as $descriptor){$this->assertSame(array(),$descriptor['expected_modified_tables']);$this->assertSame(array(),$descriptor['required_applied_migrations']);$this->assertSame(array('tables_must_be_empty'=>array()),$descriptor['preconditions']);}});
+		$this->test('297_required_dependencies_and_preconditions_are_exact',function()use($prerequisite){$expected=array('00000000000000_clinical_schema_ledger','20260718000100_clinical_import_audit_foundation','20260719000100_clinical_master_provenance_foundation','20260720000100_clinical_record_reference_foundation');$this->assertSame($expected,array_column($prerequisite['required_applied_migrations'],'migration_id'));$this->assertSame(array('clinical_master_packages','clinical_master_datasets','clinical_master_package_capabilities','clinical_master_dataset_capabilities','clinical_master_dataset_field_contracts'),$prerequisite['preconditions']['tables_must_be_empty']);});
+		$this->test('298_mutation_plan_reports_created_and_modified_tables',function()use($loader,$prerequisite){$plan=(new ClinicalSchemaMigrator($loader,null,$this->config))->plan($prerequisite);$this->assertSame(array(),$plan['created_tables']);$this->assertSame(array('clinical_master_packages','clinical_master_datasets'),$plan['modified_tables']);$this->assertSame(2,$plan['step_count']);$this->assertSame(false,$plan['ddl_executed']);});
+		$this->test('299_linear_lineage_predecessors_are_exact',function()use($loader,$prerequisite){(new ClinicalSchemaMigrator($loader,null,$this->config))->plan($prerequisite);$this->assertSame(array('predecessor_migration_id'=>'20260719000100_clinical_master_provenance_foundation','predecessor_step_id'=>'001_create_clinical_master_packages'),$prerequisite['steps'][0]['schema_lineage']);$this->assertSame('002_create_clinical_master_datasets',$prerequisite['steps'][1]['schema_lineage']['predecessor_step_id']);});
+		$this->test('300_fresh_mutation_apply_is_exact_and_atomic_in_ledger',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);$result=(new ClinicalSchemaMigrator($loader,$fake,$this->config))->execute('apply',$prerequisite,$this->writeOptions());$this->assertSame('applied',$result['state']);$this->assertSame(2,$fake->ddlCount);$this->assertSame(2,$fake->ledger[$prerequisite['migration_id']]['last_completed_step']);$this->assertSame($prerequisite['steps'][0]['expected_after_schema'],$fake->schemas['clinical_master_packages']);$this->assertSame($prerequisite['steps'][1]['expected_after_schema'],$fake->schemas['clinical_master_datasets']);});
+		$this->test('301_future_unapplied_mutation_does_not_change_provenance_verification',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);$result=(new ClinicalSchemaMigrator($loader,$fake,$this->config))->verify($provenance,$this->writeOptions());$this->assertSame(5,$result['verified_step_count']);});
+		$this->test('302_applied_mutation_resolves_provenance_after_schemas',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteApplied($ledger,$foundation,$provenance,$reference,$prerequisite);$result=(new ClinicalSchemaMigrator($loader,$fake,$this->config))->verify($provenance,$this->writeOptions());$this->assertSame(5,$result['verified_step_count']);});
+		$this->test('303_prerequisite_and_all_historical_verifications_pass',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteApplied($ledger,$foundation,$provenance,$reference,$prerequisite);$m=new ClinicalSchemaMigrator($loader,$fake,$this->config);foreach(array($ledger,$foundation,$provenance,$reference,$prerequisite) as $descriptor){$result=$m->verify($descriptor,$this->writeOptions());$this->assertSame('applied',$result['state']);}});
+		$this->test('304_required_dependency_missing_fails_before_ledger_insert',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);unset($fake->ledger[$reference['migration_id']]);$before=$fake->ledgerWriteCount;$this->expectCode(function()use($loader,$fake,$prerequisite){(new ClinicalSchemaMigrator($loader,$fake,$this->config))->execute('apply',$prerequisite,$this->writeOptions());},'migration_dependency_missing');$this->assertSame($before,$fake->ledgerWriteCount);$this->assertTrue(!isset($fake->ledger[$prerequisite['migration_id']]));});
+		$this->test('305_dependency_checksum_mismatch_fails_before_ledger_insert',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);$fake->ledger[$reference['migration_id']]['migration_checksum']=str_repeat('0',64);$before=$fake->ledgerWriteCount;$this->expectCode(function()use($loader,$fake,$prerequisite){(new ClinicalSchemaMigrator($loader,$fake,$this->config))->execute('apply',$prerequisite,$this->writeOptions());},'applied_checksum_mismatch');$this->assertSame($before,$fake->ledgerWriteCount);});
+		$this->test('306_nonempty_precondition_creates_no_ledger_attempt',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);$fake->rowCounts['clinical_master_datasets']=1;$before=$fake->ledgerWriteCount;$this->expectCode(function()use($loader,$fake,$prerequisite){(new ClinicalSchemaMigrator($loader,$fake,$this->config))->execute('apply',$prerequisite,$this->writeOptions());},'migration_precondition_failed');$this->assertSame($before,$fake->ledgerWriteCount);$this->assertSame(0,$fake->ddlCount);$this->assertTrue(!isset($fake->ledger[$prerequisite['migration_id']]));});
+		$this->test('307_all_empty_preconditions_are_queried',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);(new ClinicalSchemaMigrator($loader,$fake,$this->config))->execute('apply',$prerequisite,$this->writeOptions());$queries=implode("\n",$fake->queryLog);foreach($prerequisite['preconditions']['tables_must_be_empty'] as $table){$this->assertTrue(strpos($queries,'FROM `'.$table.'` LIMIT 1')!==false);}});
+		$this->test('308_unledgered_expected_after_schema_is_rejected',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);$fake->schemas['clinical_master_packages']=$prerequisite['steps'][0]['expected_after_schema'];$this->expectCode(function()use($loader,$fake,$prerequisite){(new ClinicalSchemaMigrator($loader,$fake,$this->config))->execute('apply',$prerequisite,$this->writeOptions());},'unledgered_schema_mutation');$this->assertSame(0,$fake->ddlCount);});
+		$this->test('309_interrupted_after_ddl_before_checkpoint_recovers_without_duplicate_ddl',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);$fake->throwAfterDdl=true;$m=new ClinicalSchemaMigrator($loader,$fake,$this->config);$this->expectCode(function()use($m,$prerequisite){$m->execute('apply',$prerequisite,$this->writeOptions());},'simulated_interrupt_after_ddl');$this->assertSame('failed',$fake->ledger[$prerequisite['migration_id']]['state']);$result=$m->execute('resume',$prerequisite,$this->writeOptions());$this->assertSame('applied',$result['state']);$this->assertSame(2,$fake->ddlCount);});
+		$this->test('310_completed_checkpoint_wrong_schema_fails_closed',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);$fake->ledger[$prerequisite['migration_id']]=$this->ledgerRow($prerequisite,'failed',1);$this->expectCode(function()use($loader,$fake,$prerequisite){(new ClinicalSchemaMigrator($loader,$fake,$this->config))->execute('resume',$prerequisite,$this->writeOptions());},'completed_step_schema_mismatch');});
+		$this->test('311_applied_reapply_is_zero_ddl',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteApplied($ledger,$foundation,$provenance,$reference,$prerequisite);$result=(new ClinicalSchemaMigrator($loader,$fake,$this->config))->execute('apply',$prerequisite,$this->writeOptions());$this->assertSame(true,$result['already_applied']);$this->assertSame(0,$fake->ddlCount);});
+		$this->test('312_relevant_failed_mutation_blocks_historical_verify',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);$fake->ledger[$prerequisite['migration_id']]=$this->ledgerRow($prerequisite,'failed',0);$this->expectCode(function()use($loader,$fake,$provenance){(new ClinicalSchemaMigrator($loader,$fake,$this->config))->verify($provenance,$this->writeOptions());},'schema_lineage_mutation_incomplete');});
+		$this->test('313_relevant_checksum_mismatch_blocks_historical_verify',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteApplied($ledger,$foundation,$provenance,$reference,$prerequisite);$fake->ledger[$prerequisite['migration_id']]['migration_checksum']=str_repeat('0',64);$this->expectCode(function()use($loader,$fake,$provenance){(new ClinicalSchemaMigrator($loader,$fake,$this->config))->verify($provenance,$this->writeOptions());},'applied_checksum_mismatch');});
+		$this->test('314_extra_column_drift_is_not_relaxed',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteApplied($ledger,$foundation,$provenance,$reference,$prerequisite);$fake->schemas['clinical_master_packages']['columns'][]=array('name'=>'unexpected','column_type'=>'int(11)','nullable'=>true,'default'=>null,'extra'=>'','character_set'=>null,'collation'=>null);$this->expectCode(function()use($loader,$fake,$provenance){(new ClinicalSchemaMigrator($loader,$fake,$this->config))->verify($provenance,$this->writeOptions());},'migration_schema_mismatch');});
+		$this->test('315_package_column_order_checks_and_no_index_are_exact',function()use($prerequisite){$schema=$prerequisite['steps'][0]['expected_after_schema'];$names=array_column($schema['columns'],'name');$manifest=array_search('manifest_checksum',$names,true);$this->assertSame(array('manifest_checksum','package_checksum','package_checksum_profile','manifest_schema_version'),array_slice($names,$manifest,4));foreach(array_merge($schema['unique_indexes'],$schema['indexes']) as $index){$this->assertTrue(!in_array('package_checksum',$index['columns'],true));$this->assertTrue(!in_array('package_checksum_profile',$index['columns'],true));}$this->assertSame("package_checksum REGEXP '^[0-9a-f]{64}$'",$this->checkExpression($schema,'chk_clinical_master_package_semantic_checksum'));$this->assertSame("package_checksum_profile = 'doclink-package-jcs-v1'",$this->checkExpression($schema,'chk_clinical_master_package_checksum_profile'));});
+		$this->test('316_dataset_delta_is_only_varchar_48_to_128',function()use($prerequisite){$before=$prerequisite['steps'][1]['expected_before_schema'];$after=$prerequisite['steps'][1]['expected_after_schema'];$changed=array();foreach($before['columns'] as $index=>$column){if($column!==$after['columns'][$index]){$changed[]=$column['name'];$this->assertSame('varchar(48)',$column['column_type']);$this->assertSame('varchar(128)',$after['columns'][$index]['column_type']);$copy=$after['columns'][$index];$copy['column_type']=$column['column_type'];$this->assertSame($column,$copy);}}$this->assertSame(array('source_governance_status'),$changed);foreach(array('primary_key','unique_indexes','indexes','foreign_keys','check_constraints') as $field){$this->assertSame($before[$field],$after[$field]);}});
+		$this->test('317_mutation_sql_is_schema_only_and_package_independent',function()use($prerequisite){$source=$this->migrationSource($prerequisite);$surface=preg_replace('/\bON\s+(?:UPDATE|DELETE)\b/i','ON ACTION',$source);$this->assertSame(2,preg_match_all('/\bALTER\s+TABLE\b/i',$source,$matches));$this->assertTrue(preg_match('/\b(?:INSERT|UPDATE|DELETE|REPLACE|LOAD\s+DATA|CREATE\s+TABLE|CASCADE|TRIGGER|PROCEDURE)\b/i',$surface)!==1);$this->assertTrue(stripos($source,'database/master_data')===false&&stripos($source,'00_manifest.json')===false);});
+		$this->test('318_new_migration_checksum_is_deterministic',function()use($loader,$prerequisite){$again=$loader->loadById($prerequisite['migration_id']);$this->assertSame($prerequisite['checksum'],$again['checksum']);$this->assertSame(64,strlen($prerequisite['checksum']));});
+		$this->fixtureTest('319_unknown_mutation_field_rejected',function($root){$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json){$json['steps'][0]['unknown']=true;});},'step_unknown_field','20260721000100_clinical_package_registration_prerequisites');
+		$this->fixtureTest('320_unsupported_mutation_type_rejected',function($root){$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json){$json['steps'][0]['type']='alter_table';});},'descriptor_step_type_unknown','20260721000100_clinical_package_registration_prerequisites');
+		$this->fixtureTest('321_expected_modified_membership_is_exact',function($root){$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json){array_pop($json['expected_modified_tables']);});},'descriptor_expected_modified_tables_mismatch','20260721000100_clinical_package_registration_prerequisites');
+		$this->fixtureTest('322_created_modified_overlap_rejected',function($root){$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json){$json['expected_created_tables'][]='clinical_master_packages';});},'descriptor_table_membership_overlap','20260721000100_clinical_package_registration_prerequisites');
+		$this->catalogFixtureTest('323_unknown_predecessor_migration_rejected',function($root){$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json){$json['steps'][0]['schema_lineage']['predecessor_migration_id']='20260717000100_unknown';});},'schema_lineage_predecessor_unknown');
+		$this->catalogFixtureTest('324_unknown_predecessor_step_rejected',function($root){$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json){$json['steps'][0]['schema_lineage']['predecessor_step_id']='999_unknown';});},'schema_lineage_predecessor_unknown');
+		$this->catalogFixtureTest('325_wrong_predecessor_table_rejected',function($root){$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json){$json['steps'][0]['schema_lineage']['predecessor_step_id']='002_create_clinical_master_datasets';});},'schema_lineage_table_mismatch');
+		$this->fixtureTest('326_same_order_predecessor_rejected',function($root){$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json){$json['steps'][0]['schema_lineage']=array('predecessor_migration_id'=>$json['migration_id'],'predecessor_step_id'=>$json['steps'][0]['step_id']);});},'schema_lineage_order_invalid','20260721000100_clinical_package_registration_prerequisites');
+		$this->catalogFixtureTest('327_before_schema_must_equal_predecessor',function($root){$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json){foreach(array('expected_before_schema','expected_after_schema') as $field){$json['steps'][0][$field]['columns'][0]['column_type']='bigint(19) unsigned';}});},'schema_lineage_before_mismatch');
+		$this->fixtureTest('328_add_columns_extra_clause_rejected',function($root){$path=$root.'/sql/20260721000100/001_add_clinical_master_package_checksum_provenance.sql';$sql=file_get_contents($path);$sql=str_replace('  ADD CONSTRAINT `chk_clinical_master_package_semantic_checksum`','  ADD COLUMN `undeclared` INT NOT NULL AFTER `package_checksum_profile`,'."\n".'  ADD CONSTRAINT `chk_clinical_master_package_semantic_checksum`',$sql);file_put_contents($path,$sql);},'sql_add_columns_clause_count_mismatch','20260721000100_clinical_package_registration_prerequisites');
+		$this->fixtureTest('329_add_columns_missing_check_rejected',function($root){$path=$root.'/sql/20260721000100/001_add_clinical_master_package_checksum_provenance.sql';$sql=file_get_contents($path);$sql=preg_replace('/,\s*ADD CONSTRAINT `chk_clinical_master_package_checksum_profile` CHECK \([^;]+\);/s',';',$sql);file_put_contents($path,$sql);},'sql_add_columns_clause_count_mismatch','20260721000100_clinical_package_registration_prerequisites');
+		$this->fixtureTest('330_add_columns_index_rejected',function($root){$path=$root.'/sql/20260721000100/001_add_clinical_master_package_checksum_provenance.sql';$sql=file_get_contents($path);$sql=str_replace('ADD CONSTRAINT `chk_clinical_master_package_checksum_profile` CHECK (`package_checksum_profile` = \'doclink-package-jcs-v1\')','ADD INDEX `idx_bad` (`package_checksum`)',$sql);file_put_contents($path,$sql);},'sql_add_check_shape_invalid','20260721000100_clinical_package_registration_prerequisites');
+		$this->fixtureTest('331_modify_column_wrong_type_rejected',function($root){$path=$root.'/sql/20260721000100/002_widen_clinical_master_dataset_source_governance_status.sql';file_put_contents($path,str_replace('VARCHAR(128)','VARCHAR(96)',file_get_contents($path)));},'sql_modify_column_definition_mismatch','20260721000100_clinical_package_registration_prerequisites');
+		$this->fixtureTest('332_modify_column_position_rejected',function($root){$path=$root.'/sql/20260721000100/002_widen_clinical_master_dataset_source_governance_status.sql';file_put_contents($path,str_replace(' NOT NULL;',' NOT NULL AFTER `entity_key`;',file_get_contents($path)));},'sql_modify_column_shape_invalid','20260721000100_clinical_package_registration_prerequisites');
+		$this->fixtureTest('333_mixed_create_and_mutation_steps_rejected',function($root){$ledger=json_decode(file_get_contents($root.'/00000000000000_clinical_schema_ledger.json'),true);$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json)use($ledger){$json['steps'][0]=$ledger['steps'][0];$json['expected_created_tables']=array('clinical_schema_migrations');$json['expected_modified_tables']=array('clinical_master_datasets');});},'descriptor_mixed_step_families','20260721000100_clinical_package_registration_prerequisites');
+		$this->fixtureTest('334_duplicate_mutation_target_rejected',function($root){$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json){$copy=$json['steps'][0];$copy['step_id']='003_duplicate_package_mutation';$json['steps'][]=$copy;});},'descriptor_table_duplicate','20260721000100_clinical_package_registration_prerequisites');
+		$this->test('335_forked_lineage_rejected',function()use($prerequisite){$root=$this->fixture();try{$this->addFutureDatasetMutationDescriptor($root,true);$loader=new ClinicalSchemaDescriptor($root);$descriptor=$loader->loadById($prerequisite['migration_id']);$this->expectCode(function()use($loader,$descriptor){(new ClinicalSchemaMigrator($loader,null,$this->config))->plan($descriptor);},'schema_lineage_fork');}finally{$this->removeTree($root);}});
+		$this->test('336_applied_descendant_without_applied_predecessor_fails',function()use($ledger,$foundation,$provenance,$reference,$prerequisite){$root=$this->fixture();try{$futureId=$this->addFutureDatasetMutationDescriptor($root,false);$loader=new ClinicalSchemaDescriptor($root);$localPrerequisite=$loader->loadById($prerequisite['migration_id']);$future=$loader->loadById($futureId);$fake=$this->fakePrerequisiteBase($loader->loadById($ledger['migration_id']),$loader->loadById($foundation['migration_id']),$loader->loadById($provenance['migration_id']),$loader->loadById($reference['migration_id']),$localPrerequisite);$fake->addDescriptorSchemas($future);$fake->ledger[$futureId]=$this->ledgerRow($future,'applied',1);$this->expectCode(function()use($loader,$fake,$provenance){$local=$loader->loadById($provenance['migration_id']);(new ClinicalSchemaMigrator($loader,$fake,$this->config))->verify($local,$this->writeOptions());},'schema_lineage_applied_descendant_without_predecessor');}finally{$this->removeTree($root);}});
+		$this->test('337_missing_descriptor_for_recorded_migration_fails_closed',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);$fake->ledger['20260722000100_missing_descriptor']=array('migration_id'=>'20260722000100_missing_descriptor');$this->expectCode(function()use($loader,$fake,$provenance){(new ClinicalSchemaMigrator($loader,$fake,$this->config))->verify($provenance,$this->writeOptions());},'applied_migration_descriptor_missing');});
+		$this->test('338_all_nonapplied_relevant_states_block_verification',function()use($loader,$ledger,$foundation,$provenance,$reference,$prerequisite){foreach(array('applying','failed','rolling_back','rolled_back') as $state){$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);$fake->ledger[$prerequisite['migration_id']]=$this->ledgerRow($prerequisite,$state,0);$this->expectCode(function()use($loader,$fake,$provenance){(new ClinicalSchemaMigrator($loader,$fake,$this->config))->verify($provenance,$this->writeOptions());},'schema_lineage_mutation_incomplete');}});
+		$this->catalogFixtureTest('339_dependency_source_checksum_mismatch_rejected',function($root){$this->mutateJson($root,'20260721000100_clinical_package_registration_prerequisites',function(&$json){$json['required_applied_migrations'][0]['checksum']=str_repeat('0',64);});},'migration_dependency_source_mismatch');
+		$this->fixtureTest('340_add_column_default_rejected',function($root){$path=$root.'/sql/20260721000100/001_add_clinical_master_package_checksum_provenance.sql';file_put_contents($path,str_replace('NOT NULL AFTER `manifest_checksum`','NOT NULL DEFAULT \'x\' AFTER `manifest_checksum`',file_get_contents($path)));},'sql_add_column_definition_mismatch','20260721000100_clinical_package_registration_prerequisites');
+		$this->fixtureTest('341_generated_add_column_rejected',function($root){$path=$root.'/sql/20260721000100/001_add_clinical_master_package_checksum_provenance.sql';file_put_contents($path,str_replace('CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL','CHAR(64) GENERATED ALWAYS AS (\'x\') PERSISTENT',file_get_contents($path)));},'sql_mutation_forbidden_construct','20260721000100_clinical_package_registration_prerequisites');
+		$this->test('342_modify_column_metadata_variants_are_rejected',function(){foreach(array(array('CHARACTER SET ascii','CHARACTER SET utf8mb4'),array('COLLATE ascii_bin','COLLATE ascii_general_ci'),array('NOT NULL','NULL'),array('NOT NULL','NOT NULL DEFAULT \'draft\''),array('NOT NULL','NOT NULL COMMENT \'bad\'')) as $replacement){$root=$this->fixture();try{$path=$root.'/sql/20260721000100/002_widen_clinical_master_dataset_source_governance_status.sql';file_put_contents($path,str_replace($replacement[0],$replacement[1],file_get_contents($path)));$loader=new ClinicalSchemaDescriptor($root);$this->expectCode(function()use($loader){$loader->loadById('20260721000100_clinical_package_registration_prerequisites');},'sql_modify_column_definition_mismatch');}finally{$this->removeTree($root);}}});
+		$this->test('343_forbidden_mutation_constructs_are_rejected',function(){foreach(array(' DROP COLUMN `source_governance_status`',' CHANGE COLUMN `source_governance_status` `x` VARCHAR(128)',' RENAME COLUMN `source_governance_status` TO `x`',' PARTITION BY HASH (`clinical_master_dataset_id`)',' TABLESPACE `bad`',' CASCADE','; DELETE FROM `clinical_master_datasets`',' /*!99999 DROP COLUMN `x` */') as $suffix){$root=$this->fixture();try{$path=$root.'/sql/20260721000100/002_widen_clinical_master_dataset_source_governance_status.sql';$sql=rtrim(file_get_contents($path));$sql=rtrim($sql,';').$suffix.';';file_put_contents($path,$sql);$loader=new ClinicalSchemaDescriptor($root);try{$loader->loadById('20260721000100_clinical_package_registration_prerequisites');throw new ClinicalSchemaTestFailure('forbidden_mutation_accepted');}catch(ClinicalSchemaException $expected){}}finally{$this->removeTree($root);}}});
+		$this->test('344_all_preexisting_migration_sources_remain_byte_identical',function(){$expected=array('migrations/20260720000100_clinical_record_reference_foundation.json'=>'2c6f70c7763f35decac36c33cca7ec765f9128b4e3528aa9981a1bdd4ce5a7eb','migrations/sql/20260720000100/001_create_clinical_master_record_revisions.sql'=>'e830125e107eaab5c7d1b795b7f1c6b3d97aebac25df6b78203a0ebace7ff959','migrations/sql/20260720000100/002_create_clinical_reference_term_types.sql'=>'cb02898c2c1d5a9eadf6ef889c3eb0fdd6b5aa471dc7d92fe66453787534273e','migrations/sql/20260720000100/003_create_clinical_reference_terms.sql'=>'8422a63dea728d34177b0cf8c73e14e85cac09ad3da03a1de40246220935fae0','migrations/sql/20260720000100/004_create_clinical_reference_term_labels.sql'=>'df7dca5a9cb8a0d4993068c4c1591ab6435bfe9570c2c8fee742aeb559bce0ad','migrations/sql/20260720000100/005_create_clinical_reference_term_sources.sql'=>'65c22e05b972688f99b0977462493899d7e792edb1e20c0906a9f23291ac6582');foreach($expected as $file=>$hash){$this->assertSame($hash,hash_file('sha256',$this->root.'/'.$file));}});
 	}
 
 	private function runIntegrationTests()
@@ -935,6 +1010,22 @@ class ClinicalSchemaTestRunner
 		$fake=$this->fake($ledger,$foundation);foreach(array_merge($ledger['expected_created_tables'],$foundation['expected_created_tables']) as $table){$fake->makePresent($table);} $fake->ledger[$ledger['migration_id']]=$this->ledgerRow($ledger,'applied',1);$fake->ledger[$foundation['migration_id']]=$this->ledgerRow($foundation,'applied',2);return $fake;
 	}
 
+	private function fakePrerequisiteBase(array $ledger, array $foundation, array $provenance, array $reference, array $prerequisite)
+	{
+		$fake=new FakeClinicalSchemaConnection();
+		foreach(array($ledger,$foundation,$provenance,$reference,$prerequisite) as $descriptor){$fake->addDescriptorSchemas($descriptor);}
+		foreach(array($ledger,$foundation,$provenance,$reference) as $descriptor){foreach($descriptor['expected_created_tables'] as $table){$fake->makePresent($table);}$fake->ledger[$descriptor['migration_id']]=$this->ledgerRow($descriptor,'applied',count($descriptor['steps']));}
+		return $fake;
+	}
+
+	private function fakePrerequisiteApplied(array $ledger, array $foundation, array $provenance, array $reference, array $prerequisite)
+	{
+		$fake=$this->fakePrerequisiteBase($ledger,$foundation,$provenance,$reference,$prerequisite);
+		foreach($prerequisite['steps'] as $step){$fake->schemas[$step['table_name']]=$step['expected_after_schema'];$fake->makePresent($step['table_name']);}
+		$fake->ledger[$prerequisite['migration_id']]=$this->ledgerRow($prerequisite,'applied',count($prerequisite['steps']));
+		return $fake;
+	}
+
 	private function ledgerRow(array $descriptor,$state,$completed)
 	{
 		return array(
@@ -991,6 +1082,43 @@ class ClinicalSchemaTestRunner
 	private function fixtureTest($name,callable $mutation,$expectedCode,$migrationId=null)
 	{
 		$this->test($name,function()use($mutation,$expectedCode,$migrationId){$root=$this->fixture();try{$mutation($root);$loader=new ClinicalSchemaDescriptor($root);$id=$migrationId?:$this->config['ledger_migration_id'];$this->expectCode(function()use($loader,$id){$loader->loadById($id);},$expectedCode);}finally{$this->removeTree($root);}});
+	}
+
+	private function catalogFixtureTest($name, callable $mutation, $expectedCode)
+	{
+		$this->test($name,function()use($mutation,$expectedCode){$root=$this->fixture();try{$mutation($root);$loader=new ClinicalSchemaDescriptor($root);$descriptor=$loader->loadById('20260721000100_clinical_package_registration_prerequisites');$migrator=new ClinicalSchemaMigrator($loader,null,$this->config);$this->expectCode(function()use($migrator,$descriptor){$migrator->plan($descriptor);},$expectedCode);}finally{$this->removeTree($root);}});
+	}
+
+	private function addFutureDatasetMutationDescriptor($root, $fork)
+	{
+		$sourceId='20260721000100_clinical_package_registration_prerequisites';
+		$futureId='20260722000100_test_dataset_mutation';
+		$json=json_decode(file_get_contents($root.'/'.$sourceId.'.json'),true);
+		$json['migration_id']=$futureId;
+		$json['migration_name']='Test future dataset mutation';
+		$json['description']='Test-only future mutation fixture.';
+		$json['expected_created_tables']=array();
+		$json['expected_modified_tables']=array('clinical_master_datasets');
+		$json['required_applied_migrations']=array();
+		$json['preconditions']=array('tables_must_be_empty'=>array());
+		$step=$json['steps'][1];
+		$step['step_id']='001_test_future_dataset_mutation';
+		$step['sql_file']='sql/'.$futureId.'/001_test_future_dataset_mutation.sql';
+		if ($fork) {
+			$step['schema_lineage']=array('predecessor_migration_id'=>'20260719000100_clinical_master_provenance_foundation','predecessor_step_id'=>'002_create_clinical_master_datasets');
+			$sql="ALTER TABLE `clinical_master_datasets`\n  MODIFY COLUMN `source_governance_status` VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL;\n";
+		} else {
+			$step['schema_lineage']=array('predecessor_migration_id'=>$sourceId,'predecessor_step_id'=>'002_widen_clinical_master_dataset_source_governance_status');
+			$step['expected_before_schema']=$step['expected_after_schema'];
+			foreach($step['expected_after_schema']['columns'] as &$column){if($column['name']==='source_governance_status'){$column['column_type']='varchar(160)';}}unset($column);
+			$sql="ALTER TABLE `clinical_master_datasets`\n  MODIFY COLUMN `source_governance_status` VARCHAR(160) CHARACTER SET ascii COLLATE ascii_bin NOT NULL;\n";
+		}
+		$json['steps']=array($step);
+		$directory=$root.'/sql/'.$futureId;
+		mkdir($directory,0700,true);
+		file_put_contents($directory.'/001_test_future_dataset_mutation.sql',$sql);
+		file_put_contents($root.'/'.$futureId.'.json',json_encode($json,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES)."\n");
+		return $futureId;
 	}
 
 	private function testSymlinkEscape()
