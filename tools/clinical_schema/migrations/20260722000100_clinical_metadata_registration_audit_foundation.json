@@ -1,0 +1,103 @@
+{
+  "migration_id": "20260722000100_clinical_metadata_registration_audit_foundation",
+  "migration_name": "Clinical metadata registration audit foundation",
+  "description": "Create one append-only audit table for final controlled clinical metadata-registration apply outcomes without representing canonical record imports, schema migration events, application runtime activity, patient activity, or clinical record content.",
+  "minimum_mariadb_version": "10.11.0",
+  "schema_only": true,
+  "imports_package_data": false,
+  "enables_runtime": false,
+  "expected_created_tables": [
+    "clinical_master_metadata_registration_events"
+  ],
+  "expected_modified_tables": [],
+  "required_applied_migrations": [
+    {
+      "migration_id": "00000000000000_clinical_schema_ledger",
+      "checksum": "12a2124722792ce2ec1b6635fc668240d79933889f9dc7f0745928d1dd7a7eab"
+    },
+    {
+      "migration_id": "20260718000100_clinical_import_audit_foundation",
+      "checksum": "e72ef7daaecc09497d13df3f85f714e90a4d981599a2126d099e331a40c6e21e"
+    },
+    {
+      "migration_id": "20260719000100_clinical_master_provenance_foundation",
+      "checksum": "7ac4879576ae4c5e6df4d45395f5f5c3ca0bd78f06f9865c971cdab911b0e534"
+    },
+    {
+      "migration_id": "20260720000100_clinical_record_reference_foundation",
+      "checksum": "e0a751c863af967bc313f9bdb3e79794c0ec16cfa9876ae9df4e6c6d2b41820d"
+    },
+    {
+      "migration_id": "20260721000100_clinical_package_registration_prerequisites",
+      "checksum": "487227619f3824184612cd35f889bcffe7f91f8505e3166f8f9d444144647bb8"
+    }
+  ],
+  "preconditions": {
+    "tables_must_be_empty": []
+  },
+  "steps": [
+    {
+      "step_id": "001_create_clinical_master_metadata_registration_events",
+      "type": "create_table",
+      "sql_file": "sql/20260722000100/001_create_clinical_master_metadata_registration_events.sql",
+      "expected_schema": {
+        "table_name": "clinical_master_metadata_registration_events",
+        "engine": "InnoDB",
+        "default_charset": "utf8mb4",
+        "default_collation": "utf8mb4_general_ci",
+        "columns": [
+          {"name":"metadata_registration_event_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"auto_increment","character_set":null,"collation":null,"generation_expression":""},
+          {"name":"operation_type","column_type":"varchar(32)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"execution_mode","column_type":"varchar(16)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"registration_reference","column_type":"varchar(191)","nullable":false,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_bin","generation_expression":""},
+          {"name":"package_key","column_type":"varchar(128)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"package_version","column_type":"varchar(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"package_checksum","column_type":"char(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"package_checksum_profile","column_type":"varchar(32)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"package_snapshot_sha256","column_type":"char(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"metadata_entity_count","column_type":"smallint(5) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null,"generation_expression":""},
+          {"name":"metadata_rows_planned","column_type":"smallint(5) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null,"generation_expression":""},
+          {"name":"metadata_rows_inserted","column_type":"smallint(5) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null,"generation_expression":""},
+          {"name":"state_before","column_type":"varchar(24)","nullable":true,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"state_after","column_type":"varchar(24)","nullable":true,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"result","column_type":"varchar(32)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"idempotent_noop","column_type":"tinyint(3) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null,"generation_expression":""},
+          {"name":"metadata_transaction_committed","column_type":"tinyint(3) unsigned","nullable":false,"default":null,"extra":"","character_set":null,"collation":null,"generation_expression":""},
+          {"name":"safe_failure_code","column_type":"varchar(64)","nullable":true,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"occurred_at","column_type":"datetime(6)","nullable":false,"default":"current_timestamp(6)","extra":"","character_set":null,"collation":null,"generation_expression":""}
+        ],
+        "primary_key": [
+          "metadata_registration_event_id"
+        ],
+        "unique_indexes": [],
+        "indexes": [
+          {"name":"idx_clinical_metadata_registration_reference","columns":["registration_reference"]},
+          {"name":"idx_clinical_metadata_registration_package","columns":["package_key","package_version","package_checksum"]},
+          {"name":"idx_clinical_metadata_registration_snapshot","columns":["package_snapshot_sha256"]},
+          {"name":"idx_clinical_metadata_registration_occurred","columns":["occurred_at"]},
+          {"name":"idx_clinical_metadata_registration_result_occurred","columns":["result","occurred_at"]}
+        ],
+        "foreign_keys": [],
+        "check_constraints": [
+          {"name":"chk_clinical_metadata_registration_operation","expression":"operation_type = 'metadata_registration'"},
+          {"name":"chk_clinical_metadata_registration_execution_mode","expression":"execution_mode = 'apply'"},
+          {"name":"chk_clinical_metadata_registration_checksum","expression":"package_checksum REGEXP '^[0-9a-f]{64}$'"},
+          {"name":"chk_clinical_metadata_registration_snapshot","expression":"package_snapshot_sha256 REGEXP '^[0-9a-f]{64}$'"},
+          {"name":"chk_clinical_metadata_registration_checksum_profile","expression":"package_checksum_profile = 'doclink-package-jcs-v1'"},
+          {"name":"chk_clinical_metadata_registration_entity_count","expression":"metadata_entity_count > 0"},
+          {"name":"chk_clinical_metadata_registration_rows_planned","expression":"metadata_rows_planned = metadata_entity_count"},
+          {"name":"chk_clinical_metadata_registration_rows_inserted","expression":"metadata_rows_inserted = 0 OR metadata_rows_inserted = metadata_entity_count"},
+          {"name":"chk_clinical_metadata_registration_noop_boolean","expression":"idempotent_noop IN (0,1)"},
+          {"name":"chk_clinical_metadata_registration_committed_boolean","expression":"metadata_transaction_committed IN (0,1)"},
+          {"name":"chk_clinical_metadata_registration_state_before","expression":"state_before IS NULL OR state_before IN ('new','exact_match','conflict')"},
+          {"name":"chk_clinical_metadata_registration_state_after","expression":"state_after IS NULL OR state_after IN ('exact_match','conflict')"},
+          {"name":"chk_clinical_metadata_registration_result","expression":"result IN ('committed','idempotent_noop','rejected','rolled_back')"},
+          {"name":"chk_clinical_metadata_registration_result_consistency","expression":"result = 'committed' AND state_before = 'new' AND state_after = 'exact_match' AND metadata_rows_inserted = metadata_entity_count AND idempotent_noop = 0 AND metadata_transaction_committed = 1 AND safe_failure_code IS NULL OR result = 'idempotent_noop' AND state_before = 'exact_match' AND state_after = 'exact_match' AND metadata_rows_inserted = 0 AND idempotent_noop = 1 AND metadata_transaction_committed = 1 AND safe_failure_code IS NULL OR result = 'rejected' AND metadata_rows_inserted = 0 AND idempotent_noop = 0 AND metadata_transaction_committed = 0 AND safe_failure_code IS NOT NULL OR result = 'rolled_back' AND metadata_rows_inserted = 0 AND idempotent_noop = 0 AND metadata_transaction_committed = 0 AND safe_failure_code IS NOT NULL"},
+          {"name":"chk_clinical_metadata_registration_reference","expression":"TRIM(registration_reference) <> '' AND !(registration_reference REGEXP '[[:cntrl:]]')"},
+          {"name":"chk_clinical_metadata_registration_package_identity","expression":"TRIM(package_key) <> '' AND TRIM(package_version) <> ''"},
+          {"name":"chk_clinical_metadata_registration_failure_code","expression":"safe_failure_code IS NULL OR safe_failure_code REGEXP '^[a-z0-9_]+$'"}
+        ]
+      }
+    }
+  ]
+}
