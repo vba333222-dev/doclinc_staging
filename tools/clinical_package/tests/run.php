@@ -11,6 +11,9 @@ require_once dirname(__DIR__) . '/ClinicalRegistrationContractValidator.php';
 require_once dirname(__DIR__) . '/ClinicalRegistrationModelBuilder.php';
 require_once dirname(__DIR__) . '/ClinicalRegistrationStateRepository.php';
 require_once dirname(__DIR__) . '/ClinicalRegistrationPlanner.php';
+require_once dirname(__DIR__) . '/ClinicalRegistrationWritePrivilegeValidator.php';
+require_once dirname(__DIR__) . '/ClinicalRegistrationWriteRepository.php';
+require_once dirname(__DIR__) . '/ClinicalRegistrationWriter.php';
 require_once dirname(__DIR__) . '/ClinicalPackageReporter.php';
 
 class ClinicalPackageTestSkip extends RuntimeException {}
@@ -21,6 +24,53 @@ class FakeClinicalRegistrationStateRepository implements ClinicalRegistrationSta
 	public function __construct(array $graph) { $this->graph = $graph; }
 	public function fetchGraph($packageKey, $packageVersion, $packageChecksum) { return $this->graph; }
 	public function close() {}
+}
+
+class FakeClinicalRegistrationWriteRepository implements ClinicalRegistrationWriteRepository
+{
+	public $graph;
+	public $audits = array();
+	public $operations = array();
+	public $failAudit = false;
+	public $failRelease = false;
+	public $connectionClosed = false;
+	public $graphOnLock = null;
+	private $workingGraph;
+	private $workingAudits;
+	private $database;
+	private $nextPackageId = 1;
+	private $nextDatasetId = 1;
+	private $datasetKeys = array();
+	private $inTransaction = false;
+	private $lock = null;
+
+	public function __construct(array $graph, $database = 'clinical_test')
+	{
+		$this->graph = $graph;
+		$this->database = $database;
+		foreach ($graph['package_identity_rows'] as $row) if (isset($row['clinical_master_package_id'])) $this->nextPackageId = max($this->nextPackageId, (int) $row['clinical_master_package_id'] + 1);
+		foreach ($graph['datasets'] as $row) {
+			if (isset($row['clinical_master_dataset_id'])) {
+				$this->nextDatasetId = max($this->nextDatasetId, (int) $row['clinical_master_dataset_id'] + 1);
+				$this->datasetKeys[(string) $row['clinical_master_dataset_id']] = $row['dataset_key'];
+			}
+		}
+	}
+	public function databaseName() { return $this->database; }
+	public function fetchGraph($packageKey, $packageVersion, $packageChecksum) { return $this->inTransaction ? $this->workingGraph : $this->graph; }
+	public function acquireLock($lockName, $timeoutSeconds) { if($this->lock!==null)throw new ClinicalPackageException('registration_lock_timeout','lock');$this->lock=$lockName;if($this->graphOnLock!==null)$this->graph=$this->graphOnLock;$this->operations[]='lock'; }
+	public function releaseLock($lockName) { $this->operations[]='unlock_attempt';if($this->failRelease)throw new ClinicalPackageException('registration_lock_release_failed','lock release');$this->lock=null;$this->operations[]='unlock'; }
+	public function begin() { if($this->inTransaction)throw new ClinicalPackageException('registration_transaction_failed','transaction');$this->workingGraph=$this->graph;$this->workingAudits=$this->audits;$this->inTransaction=true;$this->operations[]='begin'; }
+	public function commit() { if(!$this->inTransaction)throw new ClinicalPackageException('registration_transaction_failed','transaction');$this->graph=$this->workingGraph;$this->audits=$this->workingAudits;$this->inTransaction=false;$this->operations[]='commit'; }
+	public function rollback() { if($this->inTransaction){$this->inTransaction=false;$this->operations[]='rollback';} }
+	public function insertPackage(array $row,$observedAt) { $id=(string)$this->nextPackageId++;$actual=$row;$actual['clinical_master_package_id']=$id;$this->workingGraph['package_identity_rows'][]=$actual;$this->workingGraph['package_checksum_rows'][]=array('clinical_master_package_id'=>$id,'package_key'=>$row['package_key'],'package_version'=>$row['package_version']);$this->operations[]='package';return $id; }
+	public function insertPackageCapability($packageId,array $row) { $this->workingGraph['package_capabilities'][]=$row;$this->operations[]='package_capability'; }
+	public function insertDataset($packageId,array $row) { $id=(string)$this->nextDatasetId++;$actual=$row;$actual['clinical_master_dataset_id']=$id;$this->workingGraph['datasets'][]=$actual;$this->datasetKeys[$id]=$row['dataset_key'];$this->operations[]='dataset';return $id; }
+	public function insertDatasetCapability($datasetId,array $row) { $this->workingGraph['dataset_capabilities'][]=array('dataset_key'=>$this->datasetKeys[(string)$datasetId])+$row;$this->operations[]='dataset_capability'; }
+	public function insertFieldContract($datasetId,array $row) { $this->workingGraph['field_contracts'][]=array('dataset_key'=>$this->datasetKeys[(string)$datasetId])+$row;$this->operations[]='field_contract'; }
+	public function insertAudit(array $row) { if($this->failAudit)throw new ClinicalPackageException('metadata_audit_insert_failed','audit');$this->workingAudits[]=$row;$this->operations[]='audit'; }
+	public function close() { if($this->inTransaction)$this->rollback();$this->lock=null;$this->connectionClosed=true;$this->operations[]='close'; }
+	public function lockOwned() { return $this->lock!==null; }
 }
 
 class ClinicalPackageTests
@@ -70,10 +120,18 @@ class ClinicalPackageTests
 		$this->fixtureRoot = $this->fixtureParent . DIRECTORY_SEPARATOR . 'v1-copy';
 		if (!mkdir($this->fixtureParent, 0700, true)) throw new RuntimeException('fixture_parent_create_failed');
 		$this->copyTree($this->acceptedRoot, $this->fixtureRoot);
-		$names = array_merge(array($this->config['allowed_roots_environment']), array_values($this->config['database_environment_variables']));
+		$names = array_merge(
+			array($this->config['allowed_roots_environment'],$this->config['metadata_write_enabled_environment'],$this->config['metadata_write_lock_timeout_environment']),
+			array_values($this->config['database_environment_variables']),
+			array_values($this->config['write_database_environment_variables'])
+		);
+		$names = array_values(array_unique($names));
 		foreach ($names as $name) $this->environment[$name] = getenv($name);
 		putenv($this->config['allowed_roots_environment'] . '=' . $this->acceptedParent);
 		foreach ($this->config['database_environment_variables'] as $name) putenv($name);
+		foreach ($this->config['write_database_environment_variables'] as $name) putenv($name);
+		putenv($this->config['metadata_write_enabled_environment']);
+		putenv($this->config['metadata_write_lock_timeout_environment']);
 		$this->loader = $this->makeLoader();
 		$this->contractValidator = new ClinicalRegistrationContractValidator();
 		$this->builder = new ClinicalRegistrationModelBuilder(new ClinicalPackageChecksumBuilder(new JcsCanonicalizer()), new JcsCanonicalizer(), $this->contractValidator);
@@ -421,6 +479,225 @@ class ClinicalPackageTests
 			foreach($invalid as$value)$this->expectCode(function()use($value){$this->validateContractValue('package','source_reference',$value);},'registration_contract_package_source_reference_invalid');
 		});
 		$this->test('128_source_reference_accepted_value_and_null_preserved', function () { $this->validateContractValue('package','source_reference','00_manifest.json');$this->validateContractValue('package','source_reference',null);$this->same('00_manifest.json',$this->model['package']['persisted']['source_reference']); });
+
+		$this->test('129_register_metadata_cli_defaults_to_dry_run', function () {
+			$parsed=ClinicalPackageCli::parse(array('clinical_package.php','register-metadata','--package-root='.$this->acceptedRoot,'--format=json'));
+			$this->same(false,$parsed['options']['apply']);$this->same(null,$parsed['options']['registration_reference']);
+			$this->expectCode(function(){ClinicalPackageCli::parse(array('clinical_package.php','register-metadata','--package-root='.$this->acceptedRoot,'--apply=true'));},'malformed_option');
+		});
+		$this->test('130_apply_requires_write_enabled_environment', function () {
+			$options=$this->writerOptions(true);putenv($this->config['write_database_environment_variables']['database'].'=clinical_test');
+			try{$this->expectCode(function()use($options){ClinicalRegistrationWriter::assertPreConnectionApplyGates($this->model,$options,$this->config);},'metadata_write_disabled');}
+			finally{putenv($this->config['write_database_environment_variables']['database']);}
+		});
+		$this->test('131_apply_confirmation_gates_fail_closed', function () {
+			$options=$this->writerOptions(true);
+			putenv($this->config['metadata_write_enabled_environment'].'=true');putenv($this->config['write_database_environment_variables']['database'].'=clinical_test');
+			try{
+				foreach(array(
+					array('confirm_database','wrong','database_confirmation_mismatch'),
+					array('confirm_package_checksum',str_repeat('0',64),'package_checksum_confirmation_mismatch'),
+					array('confirm_package_snapshot',str_repeat('0',64),'package_snapshot_confirmation_mismatch'),
+					array('confirm_metadata_entity_count','889','metadata_entity_count_confirmation_mismatch'),
+					array('registration_reference','bad/reference','registration_reference_invalid'),
+				)as$case){$changed=$options;$changed[$case[0]]=$case[1];$this->expectCode(function()use($changed){ClinicalRegistrationWriter::assertPreConnectionApplyGates($this->model,$changed,$this->config);},$case[2]);}
+				$missing=$options;$missing['registration_reference']=null;$this->expectCode(function()use($missing){ClinicalRegistrationWriter::assertPreConnectionApplyGates($this->model,$missing,$this->config);},'apply_confirmation_missing');
+			}finally{putenv($this->config['metadata_write_enabled_environment']);putenv($this->config['write_database_environment_variables']['database']);}
+		});
+		$this->test('132_dry_run_performs_zero_writes', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$result=$this->makeWriter($repo)->execute($this->model,function(){return $this->model;},$this->writerOptions(false),10);
+			$this->same('new',$result['registration_result']);$this->same(890,$result['planned_metadata_rows']);$this->same(0,$result['existing_metadata_rows']);$this->same(false,$result['write_executed']);$this->same(array(),$repo->operations);$this->same(array(),$repo->audits);
+		});
+		$this->test('133_new_registration_writes_exact_graph_and_committed_audit', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$result=$this->makeWriter($repo)->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);
+			$this->same('committed',$result['registration_result']);$this->same(890,$result['metadata_rows_written']);$this->same(1,$result['audit_rows_written']);$this->same(true,$result['transaction_committed']);
+			$this->same(array(1,47,8,376,458),$this->graphCounts($repo->graph));$this->same(1,count($repo->audits));$this->same('committed',$repo->audits[0]['result']);$this->same(890,$repo->audits[0]['metadata_rows_inserted']);
+		});
+		$this->test('134_exact_match_is_idempotent_metadata_noop', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->exactGraph());$result=$this->makeWriter($repo)->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);
+			$this->same('idempotent_noop',$result['registration_result']);$this->same(0,$result['metadata_rows_written']);$this->same(1,$result['audit_rows_written']);$this->same(array(1,47,8,376,458),$this->graphCounts($repo->graph));$this->same('idempotent_noop',$repo->audits[0]['result']);
+		});
+		$this->test('135_package_level_conflict_rejected_without_metadata_mutation', function () { $g=$this->exactGraph();$g['package_identity_rows'][0]['source_status']='approved';$this->assertWriterConflict($g); });
+		$this->test('136_dataset_level_conflict_rejected_without_metadata_mutation', function () { $g=$this->exactGraph();$g['datasets'][0]['domain_key']='conflict';$this->assertWriterConflict($g); });
+		$this->test('137_capability_level_conflict_rejected_without_metadata_mutation', function () { $g=$this->exactGraph();$g['dataset_capabilities'][0]['decision_status']='pending';$this->assertWriterConflict($g); });
+		$this->test('138_field_contract_level_conflict_rejected_without_metadata_mutation', function () { $g=$this->exactGraph();$g['field_contracts'][0]['contract_status']='rejected';$this->assertWriterConflict($g); });
+		$this->test('139_duplicate_logical_identity_is_conflict', function () { $g=$this->exactGraph();$g['datasets'][]=$g['datasets'][0];$this->assertWriterConflict($g); });
+		$this->test('140_failure_in_each_entity_phase_rolls_back_all_metadata', function () {
+			foreach(array('after_package','after_package_capabilities','after_datasets','after_dataset_capabilities','after_field_contracts')as$point){
+				$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$writer=$this->makeWriter($repo,function($actual)use($point){if($actual===$point)throw new RuntimeException('injected');});
+				try{$writer->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);throw new RuntimeException('injection not reached');}
+				catch(ClinicalPackageException $e){$this->same('registration_transaction_failed',$e->getSafeCode());}
+				$this->same(array(0,0,0,0,0),$this->graphCounts($repo->graph));$this->same(1,count($repo->audits));$this->same('rolled_back',$repo->audits[0]['result']);
+			}
+		});
+		$this->test('141_mid_write_failure_leaves_zero_partial_rows', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$writer=$this->makeWriter($repo,function($point){if($point==='field_contract_midpoint')throw new RuntimeException('injected');});
+			try{$writer->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);}catch(ClinicalPackageException $e){$this->same('registration_transaction_failed',$e->getSafeCode());}
+			$this->same(array(0,0,0,0,0),$this->graphCounts($repo->graph));$this->same('rolled_back',$repo->audits[0]['result']);
+		});
+		$this->test('142_failed_rollback_audit_preserves_primary_error', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$repo->failAudit=true;$writer=$this->makeWriter($repo,function($point){if($point==='after_package')throw new RuntimeException('injected');});
+			try{$writer->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);throw new RuntimeException('failure expected');}
+			catch(ClinicalPackageException $e){$this->same('registration_transaction_failed',$e->getSafeCode());$this->same('metadata_rollback_audit_failed',$e->getSafeContext()['secondary_error']);}
+			$this->same(array(0,0,0,0,0),$this->graphCounts($repo->graph));$this->same(0,count($repo->audits));
+		});
+		$this->test('143_writer_privilege_allowlist_accepts_exact_authority', function () { $this->same(true,ClinicalRegistrationWritePrivilegeValidator::assertEvidence($this->writerPrivilegeEvidence())); });
+		$this->test('144_invalid_privilege_set_is_rejected_before_audit', function () {
+			$e=$this->writerPrivilegeEvidence();$e['privileges'][]=array('privilege_surface'=>'table','table_schema'=>'clinical_test','table_name'=>'clinical_master_packages','column_name'=>null,'privilege_type'=>'UPDATE','is_grantable'=>'NO');
+			$this->expectCode(function()use($e){ClinicalRegistrationWritePrivilegeValidator::assertEvidence($e);},'database_writer_privilege_rejected');
+		});
+		$this->test('145_active_role_and_grant_option_rejected', function () {
+			$e=$this->writerPrivilegeEvidence();$e['active_roles'][]=array('role_name'=>'writer_role');$this->expectCode(function()use($e){ClinicalRegistrationWritePrivilegeValidator::assertEvidence($e);},'database_active_role_rejected');
+			$e=$this->writerPrivilegeEvidence();$e['privileges'][1]['is_grantable']='YES';$this->expectCode(function()use($e){ClinicalRegistrationWritePrivilegeValidator::assertEvidence($e);},'database_writer_privilege_rejected');
+			$e=$this->writerPrivilegeEvidence();$e['grant_statements'][]=$e['grant_statements'][0];$this->expectCode(function()use($e){ClinicalRegistrationWritePrivilegeValidator::assertEvidence($e);},'database_privilege_metadata_unavailable');
+		});
+		$this->test('146_missing_select_or_insert_privilege_rejected', function () {
+			foreach(array('SELECT','INSERT')as$missing){$e=$this->writerPrivilegeEvidence();foreach($e['privileges']as$i=>$row)if($row['table_name']==='clinical_master_packages'&&$row['privilege_type']===$missing){unset($e['privileges'][$i]);break;}$this->expectCode(function()use($e){ClinicalRegistrationWritePrivilegeValidator::assertEvidence($e);},$missing==='SELECT'?'database_select_privilege_missing':'database_insert_privilege_missing');}
+		});
+		$this->test('147_runtime_database_account_remains_hard_rejected', function () { $this->same(true,in_array('doclinc-staging-user',$this->config['hard_rejected_database_users'],true));$this->contains('doclinc-staging-user',file_get_contents(dirname(__DIR__).'/ClinicalRegistrationWriteRepository.php')); });
+		$this->test('148_invalid_package_pin_and_checksum_perform_zero_writes', function () {
+			$model=$this->model;$model['package_checksum']=str_repeat('0',64);$model['package']['persisted']['package_checksum']=$model['package_checksum'];$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());
+			$this->expectCode(function()use($model,$repo){$this->makeWriter($repo)->execute($model,function()use($model){return $model;},$this->writerOptions(true),10);},'metadata_package_pin_mismatch');$this->same(array(),$repo->operations);
+		});
+		$this->test('149_wrong_metadata_total_and_reordered_shape_rejected', function () {
+			$model=$this->model;$model['counts']['field_contracts']=457;$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$this->expectCode(function()use($model,$repo){$this->makeWriter($repo)->execute($model,function()use($model){return $model;},$this->writerOptions(true),10);},'metadata_entity_count_invalid');
+			$model=array_reverse($this->model,true);$this->expectCode(function()use($model,$repo){$this->makeWriter($repo)->execute($model,function()use($model){return $model;},$this->writerOptions(true),10);},'metadata_plan_shape_invalid');
+			$model=$this->model;$model['datasets'][0]['persisted']['unexpected']='x';$this->expectCode(function()use($model,$repo){$this->makeWriter($repo)->execute($model,function()use($model){return $model;},$this->writerOptions(true),10);},'metadata_plan_shape_invalid');
+		});
+		$this->test('150_audit_result_columns_are_consistent', function () {
+			$new=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$this->makeWriter($new)->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);$a=$new->audits[0];$this->same(array('new','exact_match','committed',890,0,1,null),array($a['state_before'],$a['state_after'],$a['result'],$a['metadata_rows_inserted'],$a['idempotent_noop'],$a['metadata_transaction_committed'],$a['safe_failure_code']));
+			$exact=new FakeClinicalRegistrationWriteRepository($this->exactGraph());$this->makeWriter($exact)->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);$a=$exact->audits[0];$this->same(array('exact_match','exact_match','idempotent_noop',0,1,1,null),array($a['state_before'],$a['state_after'],$a['result'],$a['metadata_rows_inserted'],$a['idempotent_noop'],$a['metadata_transaction_committed'],$a['safe_failure_code']));
+		});
+		$this->test('151_retry_after_rolled_back_attempt_commits', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$failed=$this->makeWriter($repo,function($point){if($point==='dataset_midpoint')throw new RuntimeException('injected');});try{$failed->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);}catch(ClinicalPackageException $ignored){}
+			$result=$this->makeWriter($repo)->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);$this->same('committed',$result['registration_result']);$this->same(array(1,47,8,376,458),$this->graphCounts($repo->graph));$this->same(array('rolled_back','committed'),array_column($repo->audits,'result'));
+		});
+		$this->test('152_package_change_before_commit_rolls_back', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$calls=0;$changed=$this->model;$changed['package_snapshot_sha256']=str_repeat('0',64);
+			$callback=function()use(&$calls,$changed){$calls++;return $calls>=3?$changed:$this->model;};
+			try{$this->makeWriter($repo)->execute($this->model,$callback,$this->writerOptions(true),10);}catch(ClinicalPackageException $e){$this->same('package_changed_during_registration',$e->getSafeCode());}
+			$this->same(array(0,0,0,0,0),$this->graphCounts($repo->graph));$this->same('rolled_back',$repo->audits[0]['result']);
+		});
+		$this->test('153_insert_sql_is_prepared_explicit_and_metadata_only', function () {
+			$source=file_get_contents(dirname(__DIR__).'/ClinicalRegistrationWriteRepository.php');
+			foreach(array('INSERT INTO clinical_master_packages (','INSERT INTO clinical_master_package_capabilities (','INSERT INTO clinical_master_datasets (','INSERT INTO clinical_master_dataset_capabilities (','INSERT INTO clinical_master_dataset_field_contracts (','INSERT INTO clinical_master_metadata_registration_events (')as$sql)$this->contains($sql,$source);
+			$this->same(false,strpos($source,"query('INSERT")!==false);$this->contains('prepare($sql)',$source);$this->contains('bind_param',$source);$this->same(false,strpos($source,'INSERT IGNORE')!==false);$this->same(false,strpos($source,'ON DUPLICATE KEY')!==false);$this->same(false,strpos($source,'REPLACE INTO')!==false);
+			$auditSql=substr($source,strpos($source,'INSERT INTO clinical_master_metadata_registration_events'),700);$this->same(false,strpos($auditSql,'metadata_registration_event_id')!==false);$this->same(false,strpos($auditSql,'occurred_at')!==false);
+		});
+		$this->test('154_package_files_remain_byte_for_byte_unchanged', function () { $before=$this->treeDigest($this->acceptedRoot);$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$this->makeWriter($repo)->execute($this->model,function(){return $this->model;},$this->writerOptions(false),10);$this->same($before,$this->treeDigest($this->acceptedRoot)); });
+		$this->test('155_apply_existing_rows_are_recomputed_inside_lock', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$repo->graphOnLock=$this->exactGraph();
+			$result=$this->makeWriter($repo)->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);
+			$this->same('idempotent_noop',$result['registration_result']);$this->same(890,$result['existing_metadata_rows']);$this->same(0,$result['metadata_rows_written']);
+		});
+		$this->test('156_multiple_conflicts_report_exact_entity_count', function () {
+			$graph=$this->exactGraph();
+			$graph['package_identity_rows'][0]['source_status']='approved';
+			$graph['datasets'][0]['domain_key']='conflict';
+			$graph['dataset_capabilities'][0]['decision_status']='pending';
+			$graph['field_contracts'][0]['contract_status']='rejected';
+			$repo=new FakeClinicalRegistrationWriteRepository($graph);
+			try{$this->makeWriter($repo)->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);throw new RuntimeException('conflict expected');}
+			catch(ClinicalPackageException $e){$this->same('registration_state_conflict',$e->getSafeCode());$this->same(4,$e->getSafeContext()['conflict_count']);}
+			$this->same('rejected',$repo->audits[0]['result']);
+		});
+		$this->test('157_lock_release_failure_preserves_committed_outcome', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$repo->failRelease=true;
+			$result=$this->makeWriter($repo)->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);
+			$this->same('committed',$result['registration_result']);$this->same(890,$result['metadata_rows_written']);$this->same(1,$result['audit_rows_written']);$this->same(true,$result['transaction_committed']);
+			$this->same('connection_closed',$result['lock_cleanup_status']);$this->same('registration_lock_release_unconfirmed',$result['cleanup_warning']);
+			$this->same(array(1,47,8,376,458),$this->graphCounts($repo->graph));$this->same('committed',$repo->audits[0]['result']);$this->same(true,$repo->connectionClosed);$this->same(false,$repo->lockOwned());
+		});
+		$this->test('158_lock_release_failure_preserves_idempotent_outcome', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->exactGraph());$repo->failRelease=true;
+			$result=$this->makeWriter($repo)->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);
+			$this->same('idempotent_noop',$result['registration_result']);$this->same(890,$result['existing_metadata_rows']);$this->same(0,$result['metadata_rows_written']);$this->same(1,$result['audit_rows_written']);
+			$this->same('connection_closed',$result['lock_cleanup_status']);$this->same('idempotent_noop',$repo->audits[0]['result']);$this->same(false,$repo->lockOwned());
+		});
+		$this->test('159_lock_release_failure_preserves_rejected_primary_error', function () {
+			$graph=$this->exactGraph();$graph['datasets'][0]['domain_key']='conflict';$repo=new FakeClinicalRegistrationWriteRepository($graph);$repo->failRelease=true;
+			try{$this->makeWriter($repo)->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);throw new RuntimeException('conflict expected');}
+			catch(ClinicalPackageException $e){$this->same('registration_state_conflict',$e->getSafeCode());$this->same('registration_lock_release_unconfirmed',$e->getSafeContext()['secondary_error']);$this->same('connection_closed',$e->getSafeContext()['lock_cleanup_status']);}
+			$this->same('rejected',$repo->audits[0]['result']);$this->same(true,$repo->connectionClosed);$this->same(false,$repo->lockOwned());
+		});
+		$this->test('160_lock_release_failure_preserves_rolled_back_primary_error', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$repo->failRelease=true;
+			$writer=$this->makeWriter($repo,function($point){if($point==='after_package')throw new RuntimeException('injected');});
+			try{$writer->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);throw new RuntimeException('failure expected');}
+			catch(ClinicalPackageException $e){$this->same('registration_transaction_failed',$e->getSafeCode());$this->same('registration_lock_release_unconfirmed',$e->getSafeContext()['secondary_error']);$this->same('connection_closed',$e->getSafeContext()['lock_cleanup_status']);}
+			$this->same(array(0,0,0,0,0),$this->graphCounts($repo->graph));$this->same('rolled_back',$repo->audits[0]['result']);$this->same(false,$repo->lockOwned());
+		});
+		$this->test('161_precomparison_revalidation_failure_audits_unknown_state', function () {
+			$repo=new FakeClinicalRegistrationWriteRepository($this->emptyGraph());$calls=0;
+			$callback=function()use(&$calls){$calls++;if($calls===2)throw new ClinicalPackageException('package_revalidation_failed','revalidation');return $this->model;};
+			try{$this->makeWriter($repo)->execute($this->model,$callback,$this->writerOptions(true),10);throw new RuntimeException('failure expected');}
+			catch(ClinicalPackageException $e){$this->same('package_revalidation_failed',$e->getSafeCode());}
+			$this->same('rolled_back',$repo->audits[0]['result']);$this->same(null,$repo->audits[0]['state_before']);$this->same(null,$repo->audits[0]['state_after']);
+		});
+		$this->test('162_exact_match_final_revalidation_change_rolls_back_noop', function () {
+			$graph=$this->exactGraph();$before=hash('sha256',serialize($graph));$repo=new FakeClinicalRegistrationWriteRepository($graph);$calls=0;
+			$changed=$this->model;$changed['package']['persisted']['source_status']='reviewed';
+			$callback=function()use(&$calls,$changed){$calls++;return $calls===3?$changed:$this->model;};
+			try{$this->makeWriter($repo)->execute($this->model,$callback,$this->writerOptions(true),10);throw new RuntimeException('failure expected');}
+			catch(ClinicalPackageException $e){
+				$this->same('package_changed_during_registration',$e->getSafeCode());$this->same(890,$e->getSafeContext()['existing_metadata_rows']);$this->same(0,$e->getSafeContext()['conflict_count']);
+			}
+			$this->same(3,$calls);$this->same($before,hash('sha256',serialize($repo->graph)));$this->same(array(1,47,8,376,458),$this->graphCounts($repo->graph));
+			$this->same(1,count($repo->audits));$audit=$repo->audits[0];
+			$this->same(array('exact_match',null,'rolled_back',0,0,'package_changed_during_registration'),array($audit['state_before'],$audit['state_after'],$audit['result'],$audit['metadata_rows_inserted'],$audit['metadata_transaction_committed'],$audit['safe_failure_code']));
+			$this->same(0,count(array_filter($repo->audits,function($row){return $row['result']==='idempotent_noop';})));$this->same(false,$repo->lockOwned());$this->same('unlock',end($repo->operations));
+		});
+	}
+
+	private function makeWriter(FakeClinicalRegistrationWriteRepository $repository,$injector=null)
+	{
+		return new ClinicalRegistrationWriter($repository,new ClinicalRegistrationPlanner(),$this->config['metadata_registration_pins'],$injector);
+	}
+
+	private function writerOptions($apply)
+	{
+		return array(
+			'apply'=>$apply,
+			'confirm_database'=>'clinical_test',
+			'confirm_package_checksum'=>$this->model['package_checksum'],
+			'confirm_package_snapshot'=>$this->model['package_snapshot_sha256'],
+			'confirm_metadata_entity_count'=>'890',
+			'registration_reference'=>'pass-2c1d1-i2-test',
+		);
+	}
+
+	private function graphCounts(array $graph)
+	{
+		return array(count($graph['package_identity_rows']),count($graph['datasets']),count($graph['package_capabilities']),count($graph['dataset_capabilities']),count($graph['field_contracts']));
+	}
+
+	private function assertWriterConflict(array $graph)
+	{
+		$before=hash('sha256',serialize($graph));$repo=new FakeClinicalRegistrationWriteRepository($graph);
+		try{$this->makeWriter($repo)->execute($this->model,function(){return $this->model;},$this->writerOptions(true),10);throw new RuntimeException('conflict expected');}
+		catch(ClinicalPackageException $e){$this->same('registration_state_conflict',$e->getSafeCode());}
+		$this->same($before,hash('sha256',serialize($repo->graph)));$this->same(1,count($repo->audits));$this->same('rejected',$repo->audits[0]['result']);$this->same(0,$repo->audits[0]['metadata_rows_inserted']);
+	}
+
+	private function writerPrivilegeEvidence()
+	{
+		$tables=array('clinical_master_packages','clinical_master_package_capabilities','clinical_master_datasets','clinical_master_dataset_capabilities','clinical_master_dataset_field_contracts');
+		$privileges=array(array('privilege_surface'=>'global','table_schema'=>null,'table_name'=>null,'column_name'=>null,'privilege_type'=>'USAGE','is_grantable'=>'NO'));
+		$grants=array("GRANT USAGE ON *.* TO `writer`@`%` IDENTIFIED BY PASSWORD '*0123456789ABCDEF0123456789ABCDEF01234567'");
+		foreach($tables as$table){
+			foreach(array('SELECT','INSERT')as$privilege)$privileges[]=array('privilege_surface'=>'table','table_schema'=>'clinical_test','table_name'=>$table,'column_name'=>null,'privilege_type'=>$privilege,'is_grantable'=>'NO');
+			$grants[]="GRANT SELECT, INSERT ON `clinical_test`.`$table` TO `writer`@`%`";
+		}
+		$privileges[]=array('privilege_surface'=>'table','table_schema'=>'clinical_test','table_name'=>'clinical_master_metadata_registration_events','column_name'=>null,'privilege_type'=>'INSERT','is_grantable'=>'NO');
+		$grants[]="GRANT INSERT ON `clinical_test`.`clinical_master_metadata_registration_events` TO `writer`@`%`";
+		return array('configured_user'=>'writer','authenticated_user'=>'writer@localhost','current_user'=>'writer@%','current_role'=>null,'database_name'=>'clinical_test','privileges'=>$privileges,'active_roles'=>array(),'applicable_roles'=>array(),'grant_statements'=>$grants);
+	}
+
+	private function treeDigest($root)
+	{
+		$files=array();$iterator=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root,FilesystemIterator::SKIP_DOTS));
+		foreach($iterator as$file)if($file->isFile()){$relative=str_replace('\\','/',substr($file->getPathname(),strlen($root)+1));$files[$relative]=hash_file('sha256',$file->getPathname());}
+		ksort($files,SORT_STRING);return hash('sha256',json_encode($files,JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
 	}
 
 	private function makeLoader()

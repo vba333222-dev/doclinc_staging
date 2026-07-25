@@ -34,7 +34,8 @@ try {
 	$dependencies = array(
 		'ClinicalPackageException.php','ClinicalPackageCli.php','ClinicalPackagePathPolicy.php','StrictJsonDecoder.php','JcsCanonicalizer.php',
 		'ClinicalPackageChecksumBuilder.php','ClinicalPackageLoader.php','ClinicalRegistrationContractValidator.php','ClinicalRegistrationModelBuilder.php',
-		'ClinicalRegistrationStateRepository.php','ClinicalRegistrationPlanner.php','ClinicalPackageReporter.php','config.php',
+		'ClinicalRegistrationStateRepository.php','ClinicalRegistrationPlanner.php','ClinicalRegistrationWritePrivilegeValidator.php',
+		'ClinicalRegistrationWriteRepository.php','ClinicalRegistrationWriter.php','ClinicalPackageReporter.php','config.php',
 	);
 	foreach ($dependencies as $dependency) {
 		$path = __DIR__ . DIRECTORY_SEPARATOR . $dependency;
@@ -63,7 +64,7 @@ try {
 	$model = $builder->build($evidence);
 	if ($command === 'inspect') {
 		$report = ClinicalPackageReporter::success($command, $model);
-	} else {
+	} elseif ($command === 'plan-registration') {
 		$planner = new ClinicalRegistrationPlanner();
 		$environmentNames = array_values($config['database_environment_variables']);
 		if (MysqliClinicalRegistrationStateRepository::requested($environmentNames)) {
@@ -73,6 +74,19 @@ try {
 			$comparison = $planner->offline($model);
 		}
 		$report = ClinicalPackageReporter::success($command, $model, $comparison);
+	} else {
+		ClinicalRegistrationWriter::assertPreConnectionApplyGates($model, $parsed['options'], $config);
+		$repository = MysqliClinicalRegistrationWriteRepository::fromEnvironment($config);
+		$planner = new ClinicalRegistrationPlanner();
+		$writer = new ClinicalRegistrationWriter($repository, $planner, $config['metadata_registration_pins']);
+		$revalidate = function () use ($loader, $builder, $parsed) {
+			return $builder->build($loader->load($parsed['options']['package_root']));
+		};
+		$timeoutValue = getenv($config['metadata_write_lock_timeout_environment']);
+		$timeout = $timeoutValue === false || $timeoutValue === '' ? 10 : $timeoutValue;
+		$result = $writer->execute($model, $revalidate, $parsed['options'], $timeout);
+		$result['registration_reference'] = $parsed['options']['registration_reference'];
+		$report = ClinicalPackageReporter::success($command, $model, $result);
 	}
 } catch (Throwable $exception) {
 	$code = $bootstrapFailureCode !== null ? $bootstrapFailureCode : ($exception instanceof ClinicalPackageException ? $exception->getSafeCode() : 'internal_execution_failure');
