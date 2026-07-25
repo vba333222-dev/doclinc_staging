@@ -2,7 +2,7 @@
 
 class ClinicalPackageCli
 {
-	private static $commands = array('inspect', 'plan-registration');
+	private static $commands = array('inspect', 'plan-registration', 'register-metadata');
 
 	public static function discoverFailureFormat(array $argv)
 	{
@@ -26,15 +26,35 @@ class ClinicalPackageCli
 		if (!in_array($command, self::$commands, true)) {
 			throw new ClinicalPackageException('invalid_command', 'Unknown or missing clinical package command.');
 		}
-		$options = array('package_root' => null, 'format' => 'text');
+		$options = array(
+			'package_root' => null,
+			'format' => 'text',
+			'apply' => false,
+			'confirm_database' => null,
+			'confirm_package_checksum' => null,
+			'confirm_package_snapshot' => null,
+			'confirm_metadata_entity_count' => null,
+			'registration_reference' => null,
+		);
 		$seen = array();
 		for ($index = 2; $index < count($argv); $index++) {
 			$argument = (string) $argv[$index];
+			if ($argument === '--apply') {
+				if ($command !== 'register-metadata') throw new ClinicalPackageException('unknown_option', 'Unsupported clinical package option.', array('option' => 'apply'));
+				if (isset($seen['apply'])) throw new ClinicalPackageException('duplicate_option', 'Duplicate clinical package option.', array('option' => 'apply'));
+				$seen['apply'] = true;
+				$options['apply'] = true;
+				continue;
+			}
 			if (preg_match('/^--([a-z][a-z0-9-]*)=(.*)$/s', $argument, $match) !== 1 || $match[2] === '') {
 				throw new ClinicalPackageException('malformed_option', 'CLI options require a non-empty value.');
 			}
 			$key = str_replace('-', '_', $match[1]);
 			if (!array_key_exists($key, $options)) {
+				throw new ClinicalPackageException('unknown_option', 'Unsupported clinical package option.', array('option' => $match[1]));
+			}
+			if ($key === 'apply') throw new ClinicalPackageException('malformed_option', 'The apply gate must be provided as an exact flag.');
+			if ($command !== 'register-metadata' && !in_array($key, array('package_root','format'), true)) {
 				throw new ClinicalPackageException('unknown_option', 'Unsupported clinical package option.', array('option' => $match[1]));
 			}
 			if (isset($seen[$key])) {
@@ -51,6 +71,10 @@ class ClinicalPackageCli
 		}
 		if (preg_match('/[\x00-\x1F\x7F]/', $options['package_root']) === 1 || trim($options['package_root']) !== $options['package_root']) {
 			throw new ClinicalPackageException('invalid_package_root', 'Package root contains unsafe characters.');
+		}
+		if ($command === 'register-metadata' && $options['registration_reference'] !== null
+			&& preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,190}$/D', $options['registration_reference']) !== 1) {
+			throw new ClinicalPackageException('registration_reference_invalid', 'Registration reference is invalid.');
 		}
 		return array('command' => $command, 'options' => $options);
 	}
