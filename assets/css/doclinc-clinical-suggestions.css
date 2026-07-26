@@ -1,0 +1,42 @@
+.clinical-suggestion-anchor {
+	position: relative;
+}
+
+.clinical-suggestion-list {
+	position: absolute;
+	z-index: 1080;
+	left: 0;
+	right: 0;
+	margin-top: 4px;
+	max-height: 280px;
+	overflow-y: auto;
+	background: #fff;
+	border: 1px solid #cdd8d2;
+	border-radius: 10px;
+	box-shadow: 0 10px 28px rgba(22, 55, 38, .16);
+}
+
+.clinical-suggestion-option {
+	display: flex;
+	width: 100%;
+	min-height: 46px;
+	padding: 9px 12px;
+	border: 0;
+	border-bottom: 1px solid #edf1ef;
+	background: #fff;
+	color: #1f2a24;
+	text-align: left;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.clinical-suggestion-option:last-child { border-bottom: 0; }
+.clinical-suggestion-option:hover,
+.clinical-suggestion-option.is-active { background: #e8f7f0; }
+.clinical-suggestion-option small { color: #66756d; font-size: 11px; }
+.clinical-suggestion-message { padding: 10px 12px; color: #66756d; font-size: 12px; }
+
+@media (max-width: 576px) {
+	.clinical-suggestion-list { max-height: 220px; }
+	.clinical-suggestion-option { min-height: 52px; }
+}

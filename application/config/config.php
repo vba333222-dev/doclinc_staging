@@ -607,3 +607,23 @@ if ($livekit_token_ttl_env === false || $livekit_token_ttl_env === '') {
 $config['livekit_token_ttl_seconds'] = is_numeric($livekit_token_ttl_env) ? (int) $livekit_token_ttl_env : 3600;
 
 $config['api_access_token'] = getenv('API_ACCESS_TOKEN') ?: '';
+
+$clinical_suggestions_enabled_env = getenv('DOCLINC_CLINICAL_SUGGESTIONS_ENABLED');
+if ($clinical_suggestions_enabled_env === false || $clinical_suggestions_enabled_env === '') {
+	$clinical_suggestions_enabled_env = isset($_SERVER['DOCLINC_CLINICAL_SUGGESTIONS_ENABLED'])
+		? $_SERVER['DOCLINC_CLINICAL_SUGGESTIONS_ENABLED']
+		: false;
+}
+$clinical_suggestions_environment_env = getenv('DOCLINC_CLINICAL_SUGGESTIONS_ENVIRONMENT');
+if ($clinical_suggestions_environment_env === false || $clinical_suggestions_environment_env === '') {
+	$clinical_suggestions_environment_env = isset($_SERVER['DOCLINC_CLINICAL_SUGGESTIONS_ENVIRONMENT'])
+		? $_SERVER['DOCLINC_CLINICAL_SUGGESTIONS_ENVIRONMENT']
+		: '';
+}
+require_once APPPATH . 'libraries/Clinical_suggestion_feature.php';
+$clinical_suggestions_feature = Clinical_suggestion_feature::resolve(
+	$clinical_suggestions_enabled_env,
+	$clinical_suggestions_environment_env
+);
+$config['clinical_suggestions_environment'] = $clinical_suggestions_feature['environment'];
+$config['clinical_suggestions_enabled'] = $clinical_suggestions_feature['enabled'];

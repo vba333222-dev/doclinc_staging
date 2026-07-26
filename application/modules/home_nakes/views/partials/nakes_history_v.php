@@ -370,6 +370,7 @@ $history_event_time = static function ($event) {
 										$riwayat = '';
 									}
 									$diagnosa = !empty($x->diagnosa) ? $x->diagnosa : (!empty($x->diagnosis) ? $x->diagnosis : '');
+									$anamnesis = isset($x->anamnesis) ? trim((string) $x->anamnesis) : '';
 									$saran = !empty($x->saran) ? $x->saran : (!empty($x->recommendations) ? $x->recommendations : '');
 									$treatment = !empty($x->treatment) ? $x->treatment : '';
 									$completed_source = !$history_is_weak_value($diagnosa) ? $diagnosa : (!$history_is_weak_value($treatment) ? $treatment : (!$history_is_weak_value($saran) ? $saran : ''));
@@ -417,6 +418,9 @@ $history_event_time = static function ($event) {
 												<?php endif; ?>
 												<?php if ($completed_preview !== '') : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Hasil</span><strong class="nk-info-value"><?= html_escape($completed_preview); ?></strong></div>
+												<?php endif; ?>
+												<?php if ($anamnesis !== '') : ?>
+													<div class="nk-info-row"><span class="nk-info-label">Anamnesis</span><strong class="nk-info-value"><?= nl2br(html_escape($anamnesis), false); ?></strong></div>
 												<?php endif; ?>
 											</div>
 											<?php if ($can_coordinate_staff && !empty($request_events)) : ?>

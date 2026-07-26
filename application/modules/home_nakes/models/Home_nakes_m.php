@@ -268,6 +268,7 @@ class Home_nakes_m extends MX_Controller
 				->select('medicalrecords.created_at AS result_created_at')
 				->join('(SELECT request_id, MAX(record_id) AS record_id FROM medicalrecords GROUP BY request_id) latest_medicalrecords', 'latest_medicalrecords.request_id = requests.request_id', 'left', false)
 				->join('medicalrecords', 'medicalrecords.record_id = latest_medicalrecords.record_id', 'left');
+			$this->db->select($this->db->field_exists('anamnesis', 'medicalrecords') ? 'medicalrecords.anamnesis AS anamnesis' : 'NULL AS anamnesis', false);
 			return;
 		}
 
@@ -537,6 +538,7 @@ class Home_nakes_m extends MX_Controller
 				->select('medicalrecords.created_at AS result_created_at')
 				->join('(SELECT request_id, MAX(record_id) AS record_id FROM medicalrecords GROUP BY request_id) latest_medicalrecords', 'latest_medicalrecords.request_id = requests.request_id', 'left', FALSE)
 				->join('medicalrecords', 'medicalrecords.record_id = latest_medicalrecords.record_id', 'left');
+			$this->db->select($this->db->field_exists('anamnesis', 'medicalrecords') ? 'medicalrecords.anamnesis AS anamnesis' : 'NULL AS anamnesis', FALSE);
 		} else {
 			if ($this->db->table_exists('konsultasi')) {
 				$this->db
@@ -555,6 +557,7 @@ class Home_nakes_m extends MX_Controller
 					->select('NULL AS treatment', FALSE)
 					->select('NULL AS recommendations', FALSE);
 			}
+			$this->db->select('NULL AS anamnesis', FALSE);
 		}
 
 		$this->db->where('requests.request_status', 'Completed');

@@ -3,6 +3,8 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
+$clinical_suggestions_enabled = (bool) $this->config->item('clinical_suggestions_enabled');
+$clinical_suggestions_endpoint = base_url('clinical-suggestions');
 
 function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode, $apiKey, $mapProvider)
 {
@@ -89,6 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
+	<?php if ($clinical_suggestions_enabled) : ?>
+		<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-clinical-suggestions.css')); ?>">
+	<?php endif; ?>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" integrity="sha512-tS3S5qG0BlhnQROyJXvNjeEM4UpMXHrQfTGmbQ1gKmelCxlSEBUaxhRBj/EFTzpbP4RVSrpEikbmdJobCvhE3g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css" integrity="sha512-sMXtMNL1zRzolHYKEujM2AqCLUR9F2C4/05cdbxjjLSRvMQIciEPCQZo++nk7go3BtSuK9kfa/s+a4f4i5pLkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<style>
@@ -484,6 +489,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					<div class="consult-input-stack">
 						<div class="consult-field-group">
 							<label class="consult-field-label" for="ui_gejala_keluhan_utama">Keluhan utama</label>
+							<?php if ($clinical_suggestions_enabled) : ?>
+							<input type="text" id="ui_gejala_keluhan_utama" name="gejala_utama" class="consult-field form-control"
+								placeholder="Ketik keluhan, minimal 2 karakter" data-clinical-suggestion
+								data-clinical-suggestion-type="complaint"
+								data-clinical-suggestion-endpoint="<?= html_escape($clinical_suggestions_endpoint); ?>">
+							<?php else : ?>
 							<select id="ui_gejala_keluhan_utama" name="gejala_utama" class="consult-field form-control">
 								<option value="">Pilih keluhan</option>
 								<?php foreach ($master_gejala_keluhan_options as $option): ?>
@@ -492,6 +503,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 									<option value="<?= html_escape($option_name); ?>"><?= html_escape($option_name); ?></option>
 								<?php endforeach; ?>
 							</select>
+							<?php endif; ?>
 						</div>
 						<div class="consult-field-group">
 							<label class="consult-field-label" for="ui_keluhan_utama">Detail keluhan singkat</label>
@@ -1132,6 +1144,9 @@ Lama keluhan:
 			};
 		</script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-incoming-watcher.js')); ?>"></script>
+	<?php endif; ?>
+	<?php if ($clinical_suggestions_enabled) : ?>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-suggestions.js')); ?>"></script>
 	<?php endif; ?>
 
 </body>

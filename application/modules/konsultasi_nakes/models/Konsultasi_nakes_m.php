@@ -145,7 +145,7 @@ class Konsultasi_nakes_m extends MX_Controller
 	// 					 create_user = '$user'");
 	// }
 
-	public function save_konsultasi_nakes($request_id, $diagnosa, $saran, $kriteria, $rujukan, $file_path, $terapi, $doctor_id = null, $identity_context = null)
+	public function save_konsultasi_nakes($request_id, $diagnosa, $saran, $kriteria, $rujukan, $file_path, $terapi, $doctor_id = null, $identity_context = null, $anamnesis = null, $write_anamnesis = false)
 	{
 		$date = date('Y-m-d H:i:s');
 		$user = $doctor_id ?: $this->session->userdata('id');
@@ -169,6 +169,14 @@ class Konsultasi_nakes_m extends MX_Controller
 			? doclinc_nakes_request_access_context($request_id, $database_identity)
 			: null;
 		if (!$request || empty($access_context['can_handle']) || (string) $request->request_status !== 'Accepted') {
+			$this->db->trans_rollback();
+			return false;
+		}
+		if ($write_anamnesis
+			&& (!$this->db->table_exists('medicalrecords')
+				|| !$this->db->field_exists('record_id', 'medicalrecords')
+				|| !$this->db->field_exists('request_id', 'medicalrecords')
+				|| !$this->db->field_exists('anamnesis', 'medicalrecords'))) {
 			$this->db->trans_rollback();
 			return false;
 		}
@@ -223,12 +231,32 @@ class Konsultasi_nakes_m extends MX_Controller
 				'created_at' => $date
 			];
 
-			$existing = $this->db->get_where('medicalrecords', ['request_id' => $request_id])->row();
-			if ($existing) {
-				$this->db->where('request_id', $request_id);
-				$this->db->update('medicalrecords', $record);
+			if ($write_anamnesis) {
+				$existing = $this->db->query(
+					'SELECT * FROM ' . $this->db->dbprefix('medicalrecords') . ' WHERE request_id = ? ORDER BY record_id DESC LIMIT 1 FOR UPDATE',
+					array($request_id)
+				)->row();
+				if ($anamnesis !== null || !$existing) {
+					$record['anamnesis'] = $anamnesis;
+				}
 			} else {
-				$this->db->insert('medicalrecords', $record);
+				$existing = $this->db->get_where('medicalrecords', ['request_id' => $request_id])->row();
+			}
+			if ($existing) {
+				if ($write_anamnesis) {
+					$this->db->where('record_id', (int) $existing->record_id);
+				} else {
+					$this->db->where('request_id', $request_id);
+				}
+				if (!$this->db->update('medicalrecords', $record)) {
+					$this->db->trans_rollback();
+					return false;
+				}
+			} else {
+				if (!$this->db->insert('medicalrecords', $record)) {
+					$this->db->trans_rollback();
+					return false;
+				}
 			}
 		}
 
