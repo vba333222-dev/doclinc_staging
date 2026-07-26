@@ -9,7 +9,7 @@ Tool ini hanya untuk reset staging yang telah direview. Mode default adalah insp
 - Password awal tidak pernah ditulis ke output atau file. Hash dibuat di dalam transaksi apply.
 - Apply membutuhkan database `doclinc-staging`, backup terverifikasi, aktor admin aktif, reference unik, named lock, dan seluruh confirmation.
 - Reset memakai `DELETE` child-before-parent dalam satu transaksi `SERIALIZABLE`; tidak memakai `TRUNCATE`, `FOREIGN_KEY_CHECKS`, atau reset `AUTO_INCREMENT`.
-- Seluruh 353 audit pengujian lama dihapus di dalam transaksi reset yang sama; post-state wajib `audit_logs=0`.
+- Seluruh 354 audit pengujian lama dihapus di dalam transaksi reset yang sama; post-state wajib `audit_logs=0`.
 - File upload tidak dihapus. Output hanya memberi jumlah kandidat orphan, tanpa nama file.
 
 ## Source placement di Debian 12
@@ -93,7 +93,7 @@ Environment proses reset/import yang wajib adalah `DOCLINC_NAKES_RESET_WRITE_ENA
 6. Provision akun reset/import sementara dengan grant table-level yang direview: `SELECT` untuk tabel yang diaudit; `DELETE` hanya untuk tabel reset; `INSERT` hanya untuk `users` dan `puskesmas_staff`. `locations`, `rating`, dan `puskesmas` adalah compatibility table optional: berikan `SELECT, DELETE` hanya jika tabel tersebut benar-benar ada saat preflight. Grant untuk optional table yang tidak ada ditolak. Jangan grant `UPDATE`, DDL, global privilege, atau `GRANT OPTION`.
 7. Buat reference unik, misalnya `uat-nakes-reset-$(date -u +%Y%m%dT%H%M%SZ)-<CHANGE_ID_LOWERCASE>`, lalu catat nilai final di change record privat.
 8. Export environment database, allowed user, allowed source root/UID/GID, dan password hanya pada shell proses operasional. Jangan menulisnya ke profile, `.env`, PHP-FPM, systemd, atau repository.
-9. Jalankan `inspect-source`, lalu `plan-reset-import`. Review semua count, inference aggregate, rencana penghapusan tepat 353 audit dummy, command-center whitelist, upload orphan count, dan `write_executed=false`.
+9. Jalankan `inspect-source`, lalu `plan-reset-import`. Review semua count, inference aggregate, rencana penghapusan tepat 354 audit dummy, command-center whitelist, upload orphan count, dan `write_executed=false`.
 10. Jalankan `apply-reset-import --apply` dengan seluruh confirmation yang tercantum pada help/contract tool, termasuk reference unik dan actor admin aktif.
 11. Jalankan ulang reconciliation read-only dan cocokkan semua post-count yang dilaporkan tool, termasuk sembilan distribusi staff, notification transaksi nol, clinical suggestion `1/11450/701`, enam clinical migration, dan tiga feed.
 12. Nonaktifkan atau hapus akun database reset/import sementara. Aktifkan `DOCLINC_FIRST_LOGIN_PASSWORD_CHANGE_ENABLED=on` dan `DOCLINC_FIRST_LOGIN_PASSWORD_CHANGE_ENVIRONMENT=staging` hanya setelah reconciliation lulus, lalu reload konfigurasi runtime secara terkontrol dan akhiri maintenance mode.

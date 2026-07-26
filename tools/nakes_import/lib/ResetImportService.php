@@ -8,7 +8,7 @@ class DoclincResetImportService
 	private const REAL_CODES = array('10280201', '10280101', '10280501', '2241001', '10280301', '10280402', '10280701', '10280401', '10280601');
 	private const OPTIONAL_COMPATIBILITY_TABLES = array('locations', 'rating', 'puskesmas');
 	private const PRE_COUNTS = array(
-		'admin_notification_reads' => 0, 'audit_logs' => 353, 'call_sessions' => 12,
+		'admin_notification_reads' => 0, 'audit_logs' => 354, 'call_sessions' => 12,
 		'consultation_messages' => 39, 'feeds' => 3, 'konsultasi' => 18,
 		'medicalrecords' => 19, 'm_dokter' => 8, 'm_puskesmas' => 10,
 		'notifications' => 104, 'puskesmas_staff' => 8, 'requests' => 37,
