@@ -6,6 +6,7 @@ require_once __DIR__ . '/NakesSource.php';
 class DoclincResetImportService
 {
 	private const REAL_CODES = array('10280201', '10280101', '10280501', '2241001', '10280301', '10280402', '10280701', '10280401', '10280601');
+	private const OPTIONAL_COMPATIBILITY_TABLES = array('locations', 'rating', 'puskesmas');
 	private const PRE_COUNTS = array(
 		'admin_notification_reads' => 0, 'audit_logs' => 353, 'call_sessions' => 12,
 		'consultation_messages' => 39, 'feeds' => 3, 'konsultasi' => 18,
@@ -115,7 +116,7 @@ class DoclincResetImportService
 
 	private function validateState(array $source, $actorAdminId = null)
 	{
-		$this->assertSchema();
+		$optionalTables = $this->assertSchema();
 		$this->assertPreCounts();
 		$this->assertRelationshipInventory();
 		$command = $this->canonicalCommandCenters();
@@ -135,18 +136,21 @@ class DoclincResetImportService
 			'clinical_counts' => $this->clinicalCounts(),
 			'upload_reference_count' => $this->uploadReferenceCount($deletedIds),
 			'max_command_center_id' => max($commandIds),
+			'optional_tables' => $optionalTables,
 		);
 	}
 
 	private function assertSchema()
 	{
 		$required = array_keys(self::PRE_COUNTS);
-		$required = array_merge($required, array('locations', 'clinical_suggestion_import_batches', 'clinical_suggestion_terms', 'clinical_suggestion_aliases', 'clinical_schema_migrations'));
+		$required = array_merge($required, array('clinical_suggestion_import_batches', 'clinical_suggestion_terms', 'clinical_suggestion_aliases', 'clinical_schema_migrations'));
 		foreach ($required as $table) {
 			$row = $this->table($table);
 			if (!$row || strtoupper((string) $row['ENGINE']) !== 'INNODB') throw new NakesImportException('required_innodb_table_missing');
 		}
-		foreach(array('rating','puskesmas')as $optional){$row=$this->table($optional);if($row&&strtoupper((string)$row['ENGINE'])!=='INNODB')throw new NakesImportException('required_innodb_table_missing');}
+		$optionalTables = $this->optionalCompatibilityTables();
+		foreach($optionalTables as $row)if($row&&strtoupper((string)$row['ENGINE'])!=='INNODB')throw new NakesImportException('required_innodb_table_missing');
+		if($optionalTables['locations']&&!$this->column('locations','id_user'))throw new NakesImportException('required_schema_column_missing');
 		$columns = array(
 			'users' => array('userId','nama','email','username','password','role','status','remark','no_hp','must_change_password','password_changed_at'),
 			'puskesmas_staff' => array('staff_id','kode_pkm','nama','no_hp','profesi','penugasan','nomor_sip','user_id','status','created_at','updated_at','created_by_user_id'),
@@ -168,6 +172,7 @@ class DoclincResetImportService
 				throw new NakesImportException('foundation_schema_signature_mismatch');
 			}
 		}
+		return $optionalTables;
 	}
 
 	private function assertPreCounts()
@@ -232,16 +237,16 @@ class DoclincResetImportService
 		$this->db->query('DELETE FROM notifications');
 		$this->db->query('DELETE FROM request_events');
 		$this->db->query('DELETE FROM request_staff_assignments');
-		if ($this->table('rating')) $this->db->query('DELETE FROM rating');
+		if ($state['optional_tables']['rating']) $this->db->query('DELETE FROM rating');
 		$this->db->query('DELETE FROM terapi');
 		$this->db->query('DELETE FROM konsultasi');
 		$this->db->query('DELETE FROM medicalrecords');
 		$this->db->query('DELETE FROM requests');
-		$this->deleteIds('locations', 'id_user', $state['deleted_user_ids']);
+		if ($state['optional_tables']['locations']) $this->deleteIds('locations', 'id_user', $state['deleted_user_ids']);
 		$this->db->query('DELETE FROM puskesmas_staff');
 		$this->db->query('DELETE FROM m_dokter');
 		$this->deleteIds('users', 'userId', $state['deleted_user_ids']);
-		if ($this->table('puskesmas') && $this->column('puskesmas', 'kode_pkm')) $this->db->query("DELETE FROM puskesmas WHERE UPPER(TRIM(kode_pkm))='DEFAULT'");
+		if ($state['optional_tables']['puskesmas'] && $this->column('puskesmas', 'kode_pkm')) $this->db->query("DELETE FROM puskesmas WHERE UPPER(TRIM(kode_pkm))='DEFAULT'");
 		$this->db->query("DELETE FROM m_puskesmas WHERE UPPER(TRIM(kode_pkm))='DEFAULT'");
 	}
 
@@ -280,9 +285,9 @@ class DoclincResetImportService
 		$expectedZero = array('request_staff_assignments','requests','medicalrecords','konsultasi','terapi','consultation_messages','call_sessions','request_events','m_dokter','admin_notification_reads','audit_logs');
 		foreach ($expectedZero as $table) if ($this->count($table) !== 0) throw new NakesImportException('post_reset_zero_state_failed');
 		if ($this->count('m_puskesmas') !== 9 || (int) $this->db->query("SELECT COUNT(*) total FROM m_puskesmas WHERE UPPER(TRIM(kode_pkm))='DEFAULT'")->fetch_assoc()['total'] !== 0) throw new NakesImportException('post_puskesmas_state_failed');
-		if($this->table('puskesmas')&&$this->column('puskesmas','kode_pkm')&&(int)$this->db->query("SELECT COUNT(*) total FROM puskesmas WHERE UPPER(TRIM(kode_pkm))='DEFAULT'")->fetch_assoc()['total']!==0)throw new NakesImportException('post_default_dependency_failed');
-		if($this->table('rating')&&$this->count('rating')!==0)throw new NakesImportException('post_dummy_dependency_failed');
-		if($state['deleted_user_ids']){$deleted=implode(',',array_map('intval',$state['deleted_user_ids']));if((int)$this->db->query("SELECT COUNT(*) total FROM locations WHERE id_user IN ($deleted)")->fetch_assoc()['total']!==0)throw new NakesImportException('post_dummy_dependency_failed');}
+		if($state['optional_tables']['puskesmas']&&$this->column('puskesmas','kode_pkm')&&(int)$this->db->query("SELECT COUNT(*) total FROM puskesmas WHERE UPPER(TRIM(kode_pkm))='DEFAULT'")->fetch_assoc()['total']!==0)throw new NakesImportException('post_default_dependency_failed');
+		if($state['optional_tables']['rating']&&$this->count('rating')!==0)throw new NakesImportException('post_dummy_dependency_failed');
+		if($state['optional_tables']['locations']&&$state['deleted_user_ids']){$deleted=implode(',',array_map('intval',$state['deleted_user_ids']));if((int)$this->db->query("SELECT COUNT(*) total FROM locations WHERE id_user IN ($deleted)")->fetch_assoc()['total']!==0)throw new NakesImportException('post_dummy_dependency_failed');}
 		$roles = $this->db->query("SELECT role,status,COUNT(*) total FROM users GROUP BY role,status")->fetch_all(MYSQLI_ASSOC); $map=array(); foreach($roles as $r)$map[$r['role'].':'.$r['status']]=(int)$r['total'];
 		if (($map['admin:aktif']??0)!==1 || ($map['dokter:aktif']??0)!==35 || $this->count('users')!==36
 			||(int)$this->db->query("SELECT COUNT(*) total FROM users WHERE role='warga' OR (role='dokter' AND status<>'aktif')")->fetch_assoc()['total']!==0||$this->count('puskesmas_staff')!==26) throw new NakesImportException('post_user_state_failed');
@@ -337,13 +342,13 @@ class DoclincResetImportService
 	{
 		if ($this->disposable && self::envTrue('DOCLINC_NAKES_SKIP_GRANT_CHECK_FOR_TEST')) return;
 		$identity=(string)$this->db->query('SELECT CURRENT_USER() identity')->fetch_assoc()['identity'];$identityUser=explode('@',$identity,2)[0]??'';if($this->databaseUser===''||!hash_equals($this->databaseUser,$identityUser))throw new NakesImportException('database_identity_not_allowed');
-		$selectTables=array_merge(array_keys(self::PRE_COUNTS),array('locations','clinical_suggestion_import_batches','clinical_suggestion_terms','clinical_suggestion_aliases','clinical_schema_migrations'));
-		$deleteTables=array('audit_logs','admin_notification_reads','call_sessions','consultation_messages','notifications','request_events','request_staff_assignments','medicalrecords','terapi','konsultasi','requests','locations','puskesmas_staff','m_dokter','users','m_puskesmas');
+		$selectTables=array_merge(array_keys(self::PRE_COUNTS),array('clinical_suggestion_import_batches','clinical_suggestion_terms','clinical_suggestion_aliases','clinical_schema_migrations'));
+		$deleteTables=array('audit_logs','admin_notification_reads','call_sessions','consultation_messages','notifications','request_events','request_staff_assignments','medicalrecords','terapi','konsultasi','requests','puskesmas_staff','m_dokter','users','m_puskesmas');
 		$insertTables=array('users','puskesmas_staff');$allowed=array();$seen=array();
 		foreach($selectTables as $table)$allowed[$table]['SELECT']=true;
 		foreach($deleteTables as $table)$allowed[$table]['DELETE']=true;
 		foreach($insertTables as $table)$allowed[$table]['INSERT']=true;
-		foreach(array('rating','puskesmas')as $table)if($this->table($table)){$allowed[$table]['SELECT']=true;$allowed[$table]['DELETE']=true;$selectTables[]=$table;$deleteTables[]=$table;}
+		foreach($this->optionalCompatibilityTables()as $table=>$row)if($row){$allowed[$table]['SELECT']=true;$allowed[$table]['DELETE']=true;$selectTables[]=$table;$deleteTables[]=$table;}
 		$result=$this->db->query('SHOW GRANTS FOR CURRENT_USER()');foreach($result->fetch_all(MYSQLI_NUM) as $row){$grant=$row[0];if(preg_match('/^GRANT USAGE ON \*\.\*/i',$grant)===1)continue;if(preg_match('/^GRANT (.+) ON `?([^`. ]+)`?\.`?([^` ]+)`? TO /i',$grant,$m)!==1)throw new NakesImportException('writer_grants_unreviewed');if($m[2]!==$this->database||$m[3]==='*'||!isset($allowed[$m[3]])||stripos($grant,'GRANT OPTION')!==false)throw new NakesImportException('writer_grants_excessive');foreach(array_map('trim',explode(',',$m[1]))as $privilege){$privilege=strtoupper($privilege);if(empty($allowed[$m[3]][$privilege]))throw new NakesImportException('writer_grants_excessive');$seen[$m[3]][$privilege]=true;}}
 		foreach($selectTables as $table)if(empty($seen[$table]['SELECT']))throw new NakesImportException('writer_grants_incomplete');
 		foreach($deleteTables as $table)if(empty($seen[$table]['DELETE']))throw new NakesImportException('writer_grants_incomplete');
@@ -353,7 +358,7 @@ class DoclincResetImportService
 	private function assertRelationshipInventory()
 	{
 		$identityColumns=array('user_id','dokter_id','request_id','staff_id','konsul_id','actor_user_id','recipient_user_id','sender_user_id','caller_user_id','callee_user_id','id_user','assigned_by_user_id','created_by_user_id','updated_by_user_id');
-		$known=array_fill_keys(array_merge(array_keys(self::PRE_COUNTS),array('locations','rating','puskesmas')),true);
+		$known=array_fill_keys(array_merge(array_keys(self::PRE_COUNTS),self::OPTIONAL_COMPATIBILITY_TABLES),true);
 		$stmt=$this->db->prepare('SELECT TABLE_NAME,COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE()');$stmt->execute();foreach($stmt->get_result()->fetch_all(MYSQLI_ASSOC)as $row){if(in_array(strtolower($row['COLUMN_NAME']),$identityColumns,true)&&!isset($known[$row['TABLE_NAME']])&&strpos($row['TABLE_NAME'],'clinical_')!==0)throw new NakesImportException('unreviewed_identity_relationship');}$stmt->close();
 		$knownCodeLinks=array('m_puskesmas:kode_pkm'=>true,'puskesmas:kode_pkm'=>true,'puskesmas_staff:kode_pkm'=>true,'request_staff_assignments:kode_pkm'=>true,'requests:assigned_puskesmas_code'=>true,'notifications:recipient_puskesmas_code'=>true,'request_events:puskesmas_code'=>true,'m_dokter:kode_pkm'=>true);$stmt=$this->db->prepare("SELECT TABLE_NAME,COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND COLUMN_NAME IN ('kode_pkm','puskesmas_code','assigned_puskesmas_code','recipient_puskesmas_code')");$stmt->execute();foreach($stmt->get_result()->fetch_all(MYSQLI_ASSOC)as $row)if(!isset($knownCodeLinks[$row['TABLE_NAME'].':'.$row['COLUMN_NAME']]))throw new NakesImportException('unreviewed_puskesmas_relationship');$stmt->close();
 	}
@@ -364,6 +369,7 @@ class DoclincResetImportService
 	private function acquireLock(){$name='doclinc_staging_data_reset_nakes_import';$stmt=$this->db->prepare('SELECT GET_LOCK(?,10) acquired');$stmt->bind_param('s',$name);$stmt->execute();$row=$stmt->get_result()->fetch_assoc();$stmt->close();if(!$row||(int)$row['acquired']!==1)throw new NakesImportException('reset_lock_unavailable');$this->lockAcquired=true;}
 	private function releaseLock(){if(!$this->lockAcquired)return;$name='doclinc_staging_data_reset_nakes_import';try{$stmt=$this->db->prepare('SELECT RELEASE_LOCK(?)');$stmt->bind_param('s',$name);$stmt->execute();$stmt->close();}catch(Throwable $ignored){}$this->lockAcquired=false;}
 	private function deleteIds($table,$column,array $ids){if(!$ids)return;$this->db->query('DELETE FROM `'.$table.'` WHERE `'.$column.'` IN ('.implode(',',array_map('intval',$ids)).')');}
+	private function optionalCompatibilityTables(){$tables=array();foreach(self::OPTIONAL_COMPATIBILITY_TABLES as $name)$tables[$name]=$this->table($name);return $tables;}
 	private function table($name){$stmt=$this->db->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?');$stmt->bind_param('s',$name);$stmt->execute();$row=$stmt->get_result()->fetch_assoc();$stmt->close();return $row;}
 	private function column($table,$name){$stmt=$this->db->prepare('SELECT COLUMN_TYPE,IS_NULLABLE,COLUMN_DEFAULT,EXTRA FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND COLUMN_NAME=?');$stmt->bind_param('ss',$table,$name);$stmt->execute();$row=$stmt->get_result()->fetch_assoc();$stmt->close();return $row;}
 	private function count($table){return(int)$this->db->query('SELECT COUNT(*) total FROM `'.$table.'`')->fetch_assoc()['total'];}
