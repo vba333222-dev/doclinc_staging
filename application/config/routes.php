@@ -53,3 +53,5 @@ $route['default_controller'] = 'home';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 $route['clinical-suggestions'] = 'clinical_suggestions/search';
+$route['login/change-password'] = 'login/change_password';
+$route['login/change-password/submit'] = 'login/update_password';

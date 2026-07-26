@@ -140,11 +140,11 @@ class Home_m extends MX_Controller
 
 	public function getAllDataRequestss($user_id, $statuses)
 	{
-		$this->db->select("requests.*, m_dokter.name AS nama_dokter");
-		$this->db->from("m_dokter");
-		$this->db->join("requests", "requests.dokter_id=m_dokter.professional_id", "inner");
-		$this->db->where("user_id", $user_id);
-		$this->db->where_in("request_status", $statuses);
+		$this->db->select("requests.*, dokter_user.nama AS nama_dokter");
+		$this->db->from("requests");
+		$this->db->join("users AS dokter_user", "requests.dokter_id=dokter_user.userId", "left");
+		$this->db->where("requests.user_id", $user_id);
+		$this->db->where_in("requests.request_status", $statuses);
 		return $this->db->get()->result();
 	}
 
@@ -166,13 +166,12 @@ class Home_m extends MX_Controller
 			$handler_name_parts[] = 'accepted_nakes_user.nama';
 		}
 		$explicit_handler_name_expr = !empty($handler_name_parts) ? 'COALESCE(' . implode(', ', $handler_name_parts) . ')' : 'NULL';
-		$legacy_handler_name_expr = 'COALESCE(' . implode(', ', array_merge($handler_name_parts, array('dokter_user.nama', 'm_dokter.name'))) . ')';
+		$legacy_handler_name_expr = 'COALESCE(' . implode(', ', array_merge($handler_name_parts, array('dokter_user.nama'))) . ')';
 		$handler_name_expr = "CASE WHEN requests.request_status = 'Pending' THEN {$explicit_handler_name_expr} ELSE {$legacy_handler_name_expr} END";
 
 		// Query database
 		$this->db->select("requests.*, {$request_date_select}, COALESCE({$handler_name_expr}, 'Nakes') AS nama_dokter, {$handler_name_expr} AS handling_nakes_name", FALSE);
 		$this->db->from('requests');
-		$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id', 'left');
 		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
 		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
 			$this->db->join('users AS assigned_nakes_user', 'requests.assigned_nakes_user_id = assigned_nakes_user.userId', 'left');
@@ -219,14 +218,12 @@ class Home_m extends MX_Controller
 			$handler_name_parts[] = 'accepted_nakes_user.nama';
 		}
 		$handler_name_parts[] = 'dokter_user.nama';
-		$handler_name_parts[] = 'm_dokter.name';
 		$handler_name_expr = 'COALESCE(' . implode(', ', $handler_name_parts) . ", 'Dokter')";
 
 		// Ambil data utama (hasil konsultasi dan user tanpa join terapi)
 		$this->db->select("requests.*, {$request_date_select}, users.nama, {$handler_name_expr} AS nama_dokter, {$handler_name_expr} AS handling_nakes_name", FALSE);
 		$this->db->from('requests');
 		$this->db->join('users', 'requests.user_id = users.userId');
-		$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id', 'left');
 		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
 		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
 			$this->db->join('users AS assigned_nakes_user', 'requests.assigned_nakes_user_id = assigned_nakes_user.userId', 'left');
@@ -612,11 +609,6 @@ class Home_m extends MX_Controller
 		return $this->db->query("SELECT COUNT(*) AS jumlah, NULL AS user_id FROM requests WHERE DATE(created_at)=CURDATE()");
 	}
 
-	// public function getAllDataDoctor($kode_pkm)
-	// {
-	// 	return $this->db->query("SELECT * FROM m_dokter WHERE kode_pkm='$kode_pkm'");
-	// }
-
 	public function get_data_feeds()
 	{
 		if (!$this->db->table_exists('feeds')) {
@@ -872,6 +864,9 @@ class Home_m extends MX_Controller
 
 	public function getDataDoctor()
 	{
-		return $this->db->query("SELECT * FROM m_dokter");
+		return $this->db
+			->where('role', 'dokter')
+			->where('status', 'aktif')
+			->get('users');
 	}
 }

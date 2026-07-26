@@ -365,7 +365,7 @@ class Home_m extends MX_Controller
 			return $this->empty_result(array('request_id', 'created_at', 'nama', 'username', 'name', 'remark', 'nama_puskesmas'));
 		}
 
-		$doctor_name = $this->db->table_exists('m_dokter') ? "COALESCE(m_dokter.name, dokter_user.nama, '-')" : "COALESCE(dokter_user.nama, '-')";
+		$doctor_name = "COALESCE(dokter_user.nama, '-')";
 		$remark_select = $this->puskesmas_key_expr('requests');
 		$puskesmas_select = $this->puskesmas_display_expr('requests', 'assigned_puskesmas');
 
@@ -373,9 +373,6 @@ class Home_m extends MX_Controller
 		$this->db->from('requests');
 		$this->db->join('users', 'requests.user_id = users.userId');
 		$this->db->join('users dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
-		if ($this->db->table_exists('m_dokter')) {
-			$this->db->join('m_dokter', 'requests.dokter_id = m_dokter.professional_id', 'left');
-		}
 		if ($this->can_join_puskesmas()) {
 			$this->db->join('m_puskesmas assigned_puskesmas', 'assigned_puskesmas.kode_pkm = ' . $this->assigned_puskesmas_code_expr('requests'), 'left', FALSE);
 		}

@@ -159,6 +159,7 @@ $form_values = array(
 									<?php
 									$staff_id = (int) ($row->staff_id ?? 0);
 									$linked_user_id = (int) ($row->user_id ?? 0);
+									$technical_login_email = !empty($row->akun_email) && substr(strtolower((string) $row->akun_email), -strlen('@staging.doclinc.local')) === '@staging.doclinc.local';
 									$kode_pkm = (string) ($row->kode_pkm ?? '');
 									$command_center_user_id = isset($command_center_user_ids[$kode_pkm]) ? (int) $command_center_user_ids[$kode_pkm] : 0;
 									$is_command_center_link = $linked_user_id > 0 && $command_center_user_id > 0 && $linked_user_id === $command_center_user_id;
@@ -216,6 +217,12 @@ $form_values = array(
 												<span>Profesi</span>
 												<strong><?= html_escape($profession_label); ?></strong>
 											</div>
+											<?php if (!empty($row->penugasan)) : ?>
+											<div class="doclinc-account-card__meta">
+												<span>Penugasan</span>
+												<strong><?= html_escape($row->penugasan); ?></strong>
+											</div>
+											<?php endif; ?>
 											<div class="doclinc-account-grid">
 												<div class="doclinc-account-field">
 													<span>No. Telepon</span>
@@ -233,8 +240,10 @@ $form_values = array(
 												<?php if (!empty($row->akun_username) && $akun_label !== $row->akun_username): ?>
 													<small><?= html_escape($row->akun_username); ?></small>
 												<?php endif; ?>
-												<?php if (!empty($row->akun_email)): ?>
+												<?php if (!empty($row->akun_email) && !$technical_login_email): ?>
 													<small><?= html_escape($row->akun_email); ?></small>
+												<?php elseif ($technical_login_email): ?>
+													<small>Email akun teknis staging, bukan email kontak.</small>
 												<?php endif; ?>
 												<span class="doclinc-status-chip <?= $linked_account_is_active ? 'is-active' : 'is-inactive'; ?> mt-2">
 													<?= html_escape($linked_account_status_label); ?>

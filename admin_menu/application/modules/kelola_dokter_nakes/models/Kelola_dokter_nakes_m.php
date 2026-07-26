@@ -18,6 +18,9 @@ class Kelola_dokter_nakes_m extends MX_Controller
 			$this->db->join('m_puskesmas', 'm_puskesmas.kode_pkm = users.remark', 'left');
 		}
 		$this->db->where('users.role', 'dokter');
+		if ($this->db->table_exists('puskesmas_staff') && $this->db->field_exists('user_id', 'puskesmas_staff')) {
+			$this->db->where('NOT EXISTS (SELECT 1 FROM ' . $this->db->dbprefix('puskesmas_staff') . ' personal_staff WHERE personal_staff.user_id = users.userId)', null, false);
+		}
 		$this->db->order_by('users.nama', 'ASC');
 
 		return $this->db->get();
@@ -149,9 +152,6 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		}
 
 		$this->db->trans_commit();
-		if (!$this->sync_m_dokter($user_id, $insert)) {
-			log_message('error', 'Gagal sinkronisasi m_dokter untuk user dokter ' . $user_id);
-		}
 		$this->log_audit('admin_create_puskesmas_nakes_user', $user_id);
 
 		return $user_id;
@@ -270,14 +270,6 @@ class Kelola_dokter_nakes_m extends MX_Controller
 			if (isset($allowed['password'])) {
 				$this->log_audit('admin_reset_puskesmas_nakes_password', $id_user);
 			}
-			$user = $this->db
-				->where('userId', $id_user)
-				->where('role', 'dokter')
-				->get('users')
-				->row_array();
-			if ($user) {
-				$this->sync_m_dokter($id_user, $user);
-			}
 		}
 
 		return $result;
@@ -308,70 +300,6 @@ class Kelola_dokter_nakes_m extends MX_Controller
 			$this->log_audit($status === 'aktif' ? 'admin_enable_puskesmas_nakes_user' : 'admin_disable_puskesmas_nakes_user', $id_user);
 		}
 
-		return $result;
-	}
-
-	private function sync_m_dokter($user_id, $user)
-	{
-		if (!$this->db->table_exists('m_dokter')) {
-			return true;
-		}
-
-		$row = array();
-		$map = array(
-			'userId' => $user_id,
-			'professional_id' => $user_id,
-			'name' => isset($user['nama']) ? $user['nama'] : '',
-			'phone' => !empty($user['no_hp']) ? $user['no_hp'] : 'user-' . $user_id,
-			'email' => isset($user['email']) ? $user['email'] : '',
-			'password' => isset($user['password']) ? $user['password'] : '',
-			'specialization' => 'Umum',
-			'status' => (isset($user['status']) && $user['status'] === 'aktif') ? 'On Duty' : 'Off Duty',
-			'created_at' => date('Y-m-d H:i:s'),
-		);
-
-		foreach ($map as $field => $value) {
-			if ($this->db->field_exists($field, 'm_dokter')) {
-				$row[$field] = $value;
-			}
-		}
-
-		if (empty($row)) {
-			return true;
-		}
-
-		$key_field = null;
-		if ($this->db->field_exists('userId', 'm_dokter')) {
-			$key_field = 'userId';
-		} elseif ($this->db->field_exists('professional_id', 'm_dokter')) {
-			$key_field = 'professional_id';
-		}
-
-		$db_debug = $this->db->db_debug;
-		$this->db->db_debug = FALSE;
-
-		if ($key_field !== null) {
-			$existing = $this->db
-				->where($key_field, $user_id)
-				->get('m_dokter')
-				->row();
-			if ($existing) {
-				unset($row['userId'], $row['professional_id'], $row['created_at']);
-				if (empty($row)) {
-					$this->db->db_debug = $db_debug;
-					return true;
-				}
-
-				$result = $this->db
-					->where($key_field, $user_id)
-					->update('m_dokter', $row);
-				$this->db->db_debug = $db_debug;
-				return $result;
-			}
-		}
-
-		$result = $this->db->insert('m_dokter', $row);
-		$this->db->db_debug = $db_debug;
 		return $result;
 	}
 

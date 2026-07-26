@@ -16,7 +16,7 @@ foreach ($data_profile->result() as $x) {
 
 $dokter_id = []; // siapkan array kosong
 foreach ($dataDoctor->result() as $doc) {
-	$dokter_id[] = $doc->professional_id; // tambahkan ke array
+	$dokter_id[] = $doc->userId; // Identitas Nakes modern memakai users.userId.
 }
 
 if (!function_exists('doclinc_history_safe_text')) {
