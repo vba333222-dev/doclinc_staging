@@ -255,6 +255,9 @@ $summary_cards = array(
 		}
 
 		function renderDetail(data) {
+			var anamnesisSection = String(data.anamnesis || '').trim() !== ''
+				? '<h6 class="font-weight-bold">Anamnesis</h6><p>' + formatText(data.anamnesis) + '</p>'
+				: '';
 			return '' +
 				'<div class="doclinc-record-detail-grid">' +
 				'<div><span>Pasien</span><strong>' + escapeHtml(data.patient_name) + '</strong></div>' +
@@ -267,6 +270,7 @@ $summary_cards = array(
 				'<div><span>Dibuat</span><strong>' + escapeHtml(data.created_at || '-') + '</strong></div>' +
 				'</div>' +
 				'<hr>' +
+				anamnesisSection +
 				'<h6 class="font-weight-bold">Diagnosis</h6><p>' + formatText(data.diagnosis) + '</p>' +
 				'<h6 class="font-weight-bold">Tindakan dan terapi</h6><p>' + formatText(data.treatment) + '</p>' +
 				'<h6 class="font-weight-bold">Saran dan catatan</h6><p>' + formatText(data.recommendations || data.notes) + '</p>';

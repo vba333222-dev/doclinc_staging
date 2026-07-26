@@ -173,6 +173,7 @@ class Rekam_medis_m extends MX_Controller
 		$this->db->select($mode_expr . ' AS consultation_mode', FALSE);
 		$this->db->select($visit_expr . ' AS visit_status', FALSE);
 		$this->db->select($this->diagnosis_expr() . ' AS diagnosis', FALSE);
+		$this->db->select($this->field_expr('medicalrecords', 'anamnesis', 'anamnesis'), FALSE);
 		$this->db->select($this->field_expr('medicalrecords', 'treatment', 'treatment'), FALSE);
 		$this->db->select($this->field_expr('medicalrecords', 'recommendations', 'recommendations'), FALSE);
 		$this->db->select($this->field_expr('medicalrecords', 'notes', 'notes'), FALSE);

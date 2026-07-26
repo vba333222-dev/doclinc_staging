@@ -9,6 +9,7 @@ class Konsultasi_nakes extends MX_Controller
 		$this->load->model('home_nakes/Home_nakes_m');
 		$this->load->helper('request_authz');
 		$this->load->helper('notification');
+		$this->load->library('Clinical_anamnesis');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login', 'refresh');
 		}
@@ -48,6 +49,20 @@ class Konsultasi_nakes extends MX_Controller
 		$x['umur'] = '-';
 		$x['kriteria'] = '';
 		$x['can_handle_request'] = !empty($access_context['can_handle']);
+		$x['anamnesis_schema_ready'] = false;
+		$x['anamnesis_existing'] = '';
+		if ((bool) $this->config->item('clinical_suggestions_enabled')) {
+			$x['anamnesis_schema_ready'] = Clinical_anamnesis::schema_ready($this->db);
+			if ($x['anamnesis_schema_ready']) {
+				$existing_record = $this->db->query(
+					'SELECT anamnesis FROM ' . $this->db->dbprefix('medicalrecords') . ' WHERE request_id = ? ORDER BY record_id DESC LIMIT 1',
+					array($x['request_id'])
+				)->row();
+				$x['anamnesis_existing'] = $existing_record && isset($existing_record->anamnesis)
+					? (string) $existing_record->anamnesis
+					: '';
+			}
+		}
 
 		if (!empty($x['tgl_lahir'])) {
 			try {
@@ -149,6 +164,8 @@ class Konsultasi_nakes extends MX_Controller
 		$terapi = json_decode($this->input->post('terapi'), true);
 		$terapi = is_array($terapi) ? $terapi : [];
 		$foto = null;
+		$write_anamnesis = (bool) $this->config->item('clinical_suggestions_enabled');
+		$anamnesis = null;
 
 		if (!$request_id || !$diagnosa || !$saran || !$kriteria) {
 			$validation_message = !$request_id
@@ -165,6 +182,25 @@ class Konsultasi_nakes extends MX_Controller
 			doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'complete'));
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
+		}
+		if ($write_anamnesis) {
+			if (!Clinical_anamnesis::schema_ready($this->db)) {
+				$this->output
+					->set_status_header(503)
+					->set_output(json_encode(['status' => 'error', 'message' => 'Penyimpanan anamnesis belum siap. Hubungi administrator.']));
+				return;
+			}
+			$normalized_anamnesis = Clinical_anamnesis::normalize($this->input->post('anamnesis', false));
+			if (empty($normalized_anamnesis['valid'])) {
+				$message = $normalized_anamnesis['error'] === 'value_too_long'
+					? 'Anamnesis maksimal 5.000 karakter.'
+					: 'Format anamnesis tidak valid.';
+				$this->output
+					->set_status_header(422)
+					->set_output(json_encode(['status' => 'error', 'message' => $message]));
+				return;
+			}
+			$anamnesis = $normalized_anamnesis['value'];
 		}
 
 		// Upload gambar jika ada
@@ -198,7 +234,9 @@ class Konsultasi_nakes extends MX_Controller
 			$foto,
 			$terapi,
 			$doctor_id,
-			$identity_context
+			$identity_context,
+			$anamnesis,
+			$write_anamnesis
 		);
 
 		if ($result) {

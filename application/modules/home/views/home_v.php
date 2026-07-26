@@ -5,6 +5,8 @@ $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '#';
 $map_provider = $this->config->item('map_provider') ?: 'none';
 $mapbox_public_token = $this->config->item('mapbox_public_token') ?: '';
+$clinical_suggestions_enabled = (bool) $this->config->item('clinical_suggestions_enabled');
+$clinical_suggestions_endpoint = base_url('clinical-suggestions');
 $master_gejala_keluhan_options = isset($master_gejala_keluhan_options) && is_array($master_gejala_keluhan_options)
 	? $master_gejala_keluhan_options
 	: array();
@@ -252,6 +254,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
+	<?php if ($clinical_suggestions_enabled) : ?>
+		<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-clinical-suggestions.css')); ?>">
+	<?php endif; ?>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" integrity="sha512-tS3S5qG0BlhnQROyJXvNjeEM4UpMXHrQfTGmbQ1gKmelCxlSEBUaxhRBj/EFTzpbP4RVSrpEikbmdJobCvhE3g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css" integrity="sha512-sMXtMNL1zRzolHYKEujM2AqCLUR9F2C4/05cdbxjjLSRvMQIciEPCQZo++nk7go3BtSuK9kfa/s+a4f4i5pLkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -1661,6 +1666,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$visit_updated_completed = !empty($data->warga_visit_updated_at) && strtotime($data->warga_visit_updated_at) ? date('d M Y H:i', strtotime($data->warga_visit_updated_at)) : '';
 								$visit_timeline_completed = isset($data->warga_visit_timeline) ? $data->warga_visit_timeline : array();
 								$diagnosa = !empty($data->diagnosa) ? $data->diagnosa : (!empty($data->diagnosis) ? $data->diagnosis : '-');
+								$anamnesis = isset($data->anamnesis) ? trim((string) $data->anamnesis) : '';
 								$saran_dokter = !empty($data->saran) ? $data->saran : $saran;
 								$card_id = !empty($data->konsul_id) ? $data->konsul_id : $id_request;
 								$treatment = !empty($data->treatment) ? $data->treatment : '';
@@ -1731,6 +1737,12 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												<span class="history-result-label">Diagnosis</span>
 												<div class="history-result-value"><?= doclinc_history_safe_lines($diagnosa); ?></div>
 											</div>
+											<?php if ($anamnesis !== '') : ?>
+												<div class="history-result-row">
+													<span class="history-result-label">Anamnesis</span>
+													<div class="history-result-value"><?= nl2br(html_escape($anamnesis), false); ?></div>
+												</div>
+											<?php endif; ?>
 											<div class="history-result-row">
 												<span class="history-result-label">Terapi, tindakan, obat</span>
 												<?php if (!empty($terapi_list)) : ?>
@@ -1911,6 +1923,13 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						<input type="hidden" name="lng" id="edit_request_lng">
 						<div class="mb-3">
 							<label for="edit_request_gejala" class="form-label fw-semibold">Keluhan utama</label>
+							<?php if ($clinical_suggestions_enabled) : ?>
+							<input type="text" class="form-control" name="gejala_utama" id="edit_request_gejala"
+								placeholder="Ketik keluhan, minimal 2 karakter" data-clinical-suggestion
+								data-clinical-suggestion-type="complaint"
+								data-clinical-suggestion-endpoint="<?= html_escape($clinical_suggestions_endpoint); ?>"
+								data-clinical-request-id-source="#edit_request_id">
+							<?php else : ?>
 							<select class="form-control" name="gejala_utama" id="edit_request_gejala">
 								<option value="">Pilih keluhan</option>
 								<?php foreach ($master_gejala_keluhan_options as $option): ?>
@@ -1919,6 +1938,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									<option value="<?= html_escape($option_name); ?>"><?= html_escape($option_name); ?></option>
 								<?php endforeach; ?>
 							</select>
+							<?php endif; ?>
 						</div>
 						<div class="mb-3">
 							<label for="edit_request_keluhan" class="form-label fw-semibold">Detail keluhan</label>
@@ -3848,6 +3868,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			};
 		</script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-incoming-watcher.js')); ?>"></script>
+	<?php endif; ?>
+	<?php if ($clinical_suggestions_enabled) : ?>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-suggestions.js')); ?>"></script>
 	<?php endif; ?>
 
 </body>

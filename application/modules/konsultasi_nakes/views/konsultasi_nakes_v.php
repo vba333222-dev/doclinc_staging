@@ -5,6 +5,11 @@ $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 $can_handle_request = !empty($can_handle_request);
+$clinical_suggestions_enabled = (bool) $this->config->item('clinical_suggestions_enabled') && $can_handle_request;
+$anamnesis_schema_ready = !empty($anamnesis_schema_ready);
+$anamnesis_enabled = $clinical_suggestions_enabled && $anamnesis_schema_ready;
+$anamnesis_existing = isset($anamnesis_existing) ? (string) $anamnesis_existing : '';
+$clinical_suggestions_endpoint = base_url('clinical-suggestions');
 
 if ((string) $kriteria === '0') {
 	$kriteria = 'Selesai Konsultasi';
@@ -123,6 +128,9 @@ if (!function_exists('formatComplaintText')) {
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
+	<?php if ($clinical_suggestions_enabled) : ?>
+		<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-clinical-suggestions.css')); ?>">
+	<?php endif; ?>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" integrity="sha512-tS3S5qG0BlhnQROyJXvNjeEM4UpMXHrQfTGmbQ1gKmelCxlSEBUaxhRBj/EFTzpbP4RVSrpEikbmdJobCvhE3g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css" integrity="sha512-sMXtMNL1zRzolHYKEujM2AqCLUR9F2C4/05cdbxjjLSRvMQIciEPCQZo++nk7go3BtSuK9kfa/s+a4f4i5pLkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -794,6 +802,9 @@ if (!function_exists('formatComplaintText')) {
 		<form id="form_konsul_nakes" enctype="multipart/form-data" data-can-handle="<?= $can_handle_request ? '1' : '0'; ?>">
 			<input type="hidden" name="request_id" id="idReq" value="<?= html_escape($request_id) ?>">
 			<fieldset <?= $can_handle_request ? '' : 'disabled'; ?>>
+			<?php if ($clinical_suggestions_enabled && !$anamnesis_schema_ready) : ?>
+				<div class="alert alert-warning" role="alert">Penyimpanan anamnesis belum siap. Konsultasi tidak dapat diselesaikan sampai administrator memverifikasi schema.</div>
+			<?php endif; ?>
 			<section class="consult-card service-decision-card">
 				<h2 class="section-heading"><i class="bi bi-signpost-split"></i> Tentukan Jenis Layanan</h2>
 				<p class="service-decision-helper">Pilih setelah komunikasi awal dengan warga selesai dilakukan.</p>
@@ -812,8 +823,15 @@ if (!function_exists('formatComplaintText')) {
 			</section>
 			<section class="consult-card">
 				<h2 class="section-heading"><i class="bi bi-clipboard-check"></i> Selesaikan Konsultasi</h2>
+				<?php if ($anamnesis_enabled) : ?>
+					<div class="mb-3">
+						<label class="form-label fw-semibold" for="anamnesis"><i class="bi bi-journal-text"></i> Anamnesis</label>
+						<textarea id="anamnesis" name="anamnesis" class="form-control documentation-field" maxlength="5000" placeholder="Tulis hasil wawancara dan asesmen; ketik minimal 2 karakter untuk mencari istilah gejala" data-clinical-suggestion data-clinical-suggestion-type="symptom" data-clinical-suggestion-endpoint="<?= html_escape($clinical_suggestions_endpoint); ?>" data-clinical-request-id-source="#idReq"><?= html_escape($anamnesis_existing); ?></textarea>
+						<div class="form-text">Saran istilah hanya membantu penulisan. Catatan anamnesis tetap dapat ditulis bebas.</div>
+					</div>
+				<?php endif; ?>
 				<div class="form-floating mb-3">
-					<input type="text" id="diagnosa" name="diagnosa" class="form-control" placeholder="Diagnosa" required>
+					<input type="text" id="diagnosa" name="diagnosa" class="form-control" placeholder="Diagnosa" required<?= $clinical_suggestions_enabled ? ' data-clinical-suggestion data-clinical-suggestion-type="diagnosis" data-clinical-suggestion-endpoint="' . html_escape($clinical_suggestions_endpoint) . '" data-clinical-request-id-source="#idReq"' : ''; ?>>
 					<label for="diagnosa"><i class="bi bi-heart-pulse"></i> Diagnosa*</label>
 				</div>
 				<div class="mb-3">
@@ -826,7 +844,7 @@ if (!function_exists('formatComplaintText')) {
 							<div class="mobile-terapi-fields">
 								<div>
 									<label class="mobile-field-label" for="ui_mobile_terapi_nama">Nama obat / terapi</label>
-									<input type="text" id="ui_mobile_terapi_nama" class="form-control" placeholder="Tulis nama obat atau terapi">
+									<input type="text" id="ui_mobile_terapi_nama" class="form-control" placeholder="Tulis nama obat atau terapi"<?= $clinical_suggestions_enabled ? ' data-clinical-suggestion data-clinical-suggestion-type="medicine" data-clinical-suggestion-endpoint="' . html_escape($clinical_suggestions_endpoint) . '" data-clinical-request-id-source="#idReq"' : ''; ?>>
 								</div>
 								<div>
 									<label class="mobile-field-label" for="ui_mobile_terapi_jumlah">Frekuensi / Signa</label>
@@ -960,7 +978,7 @@ if (!function_exists('formatComplaintText')) {
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 				<div class="modal-body">
-					<input type="text" id="terapiInput" class="form-control" placeholder="Cari terapi...">
+					<input type="text" id="terapiInput" class="form-control" placeholder="Cari terapi..."<?= $clinical_suggestions_enabled ? ' data-clinical-suggestion data-clinical-suggestion-type="medicine" data-clinical-suggestion-endpoint="' . html_escape($clinical_suggestions_endpoint) . '" data-clinical-request-id-source="#idReq"' : ''; ?>>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -1175,6 +1193,11 @@ if (!function_exists('formatComplaintText')) {
 			if (!validateMobileTerapiEditor()) {
 				return;
 			}
+			const candidateName = getMobileTerapiValue('#ui_mobile_terapi_nama').toLowerCase();
+			if (<?= $clinical_suggestions_enabled ? 'true' : 'false'; ?> && mobileTerapiRows.some(function(item) { return normalizeTerapiText(item.terapi).toLowerCase() === candidateName; })) {
+				showMobileTerapiMessage("Obat/terapi yang sama sudah ditambahkan.");
+				return;
+			}
 
 			mobileTerapiRows.push({
 				terapi: getMobileTerapiValue('#ui_mobile_terapi_nama'),
@@ -1265,6 +1288,8 @@ if (!function_exists('formatComplaintText')) {
 
 			// Ambil terapi dari tabel
 			var terapiData = [];
+			var terapiNames = {};
+			var duplicateTerapi = false;
 			$("#tabelTerapi tbody tr").each(function(index, row) {
 				var terapi = getTerapiName(row);
 				var signa = getTerapiJumlah(row);
@@ -1272,6 +1297,12 @@ if (!function_exists('formatComplaintText')) {
 				var keterangan = getTerapiKeterangan(row);
 
 				if (!isTerapiPlaceholder(terapi)) {
+					var terapiKey = normalizeTerapiText(terapi).toLowerCase();
+					if (terapiNames[terapiKey]) {
+						duplicateTerapi = true;
+						return;
+					}
+					terapiNames[terapiKey] = true;
 					terapiData.push({
 						terapi: terapi,
 						jumlah: signa,
@@ -1280,6 +1311,11 @@ if (!function_exists('formatComplaintText')) {
 					});
 				}
 			});
+			if (<?= $clinical_suggestions_enabled ? 'true' : 'false'; ?> && duplicateTerapi) {
+				$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan konsultasi');
+				Swal.fire("Obat duplikat", "Hapus baris obat/terapi yang sama sebelum melanjutkan.", "error");
+				return;
+			}
 
 			// Tambahkan data terapi dalam bentuk string JSON
 			formData.set("terapi", JSON.stringify(terapiData));
@@ -1400,7 +1436,8 @@ if (!function_exists('formatComplaintText')) {
 		});
 	</script>
 
-	<!-- get ICD10 -->
+	<?php if (!$clinical_suggestions_enabled) : ?>
+	<!-- legacy diagnosis lookup -->
 	<script>
 		$(document).ready(function() {
 			$('#diagnosa').autocomplete({
@@ -1426,6 +1463,7 @@ if (!function_exists('formatComplaintText')) {
 			});
 		})
 	</script>
+	<?php endif; ?>
 
 	<!-- tambah bari dan hapus bari -->
 	<script>
@@ -1689,7 +1727,8 @@ if (!function_exists('formatComplaintText')) {
 				$("#terapiModal").modal("show");
 			});
 
-			// Inisialisasi autocomplete saat input aktif
+			<?php if (!$clinical_suggestions_enabled) : ?>
+			// Legacy autocomplete remains available while the UAT feature flag is off.
 			$("#terapiInput").autocomplete({
 				source: function(request, response) {
 					$.ajax({
@@ -1706,6 +1745,7 @@ if (!function_exists('formatComplaintText')) {
 				},
 				minLength: 1
 			});
+			<?php endif; ?>
 
 			// Simpan nilai dari modal ke <td>
 			$("#simpanTerapi").on("click", function() {
@@ -1717,6 +1757,9 @@ if (!function_exists('formatComplaintText')) {
 			});
 		});
 	</script>
+	<?php if ($clinical_suggestions_enabled) : ?>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-suggestions.js')); ?>"></script>
+	<?php endif; ?>
 </body>
 
 </html>
