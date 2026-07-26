@@ -57,7 +57,7 @@ function nakes_foundation_assert_base(mysqli $db)
 		array('users', 'password', 'varchar(100)', 'NO', ''),
 		array('users', 'role', "enum('admin','dokter','warga','')", 'NO', ''),
 		array('users', 'status', "enum('aktif','nonaktif')", 'YES', ''),
-		array('puskesmas_staff', 'staff_id', 'int(11)', 'NO', 'auto_increment'),
+		array('puskesmas_staff', 'staff_id', 'int(10) unsigned', 'NO', 'auto_increment'),
 		array('puskesmas_staff', 'kode_pkm', 'varchar(100)', 'NO', ''),
 		array('puskesmas_staff', 'profesi', 'varchar(100)', 'YES', ''),
 		array('puskesmas_staff', 'user_id', 'int(11)', 'YES', ''),
