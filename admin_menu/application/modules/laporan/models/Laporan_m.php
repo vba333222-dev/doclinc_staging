@@ -218,9 +218,6 @@ class Laporan_m extends MX_Controller
 		$has_puskesmas = $this->db->table_exists('m_puskesmas')
 			&& $this->db->field_exists('kode_pkm', 'm_puskesmas')
 			&& $this->db->field_exists('nama_puskesmas', 'm_puskesmas');
-		$has_dokter = $this->db->table_exists('m_dokter')
-			&& $this->db->field_exists('professional_id', 'm_dokter')
-			&& $this->db->field_exists('name', 'm_dokter');
 		$has_assigned_puskesmas_code = $this->db->field_exists('assigned_puskesmas_code', 'requests');
 		$has_assigned_puskesmas_name = $this->db->field_exists('assigned_puskesmas_name', 'requests');
 		$has_visit_status = $this->db->field_exists('visit_status', 'requests');
@@ -247,7 +244,7 @@ class Laporan_m extends MX_Controller
 		$puskesmas_expr = $has_puskesmas
 			? "COALESCE($assigned_puskesmas_name_clean_expr, assigned_puskesmas.nama_puskesmas, $routed_puskesmas_code_expr, 'Perlu dicek')"
 			: "COALESCE($assigned_puskesmas_name_clean_expr, $routed_puskesmas_code_expr, 'Perlu dicek')";
-		$dokter_expr = $has_dokter ? "COALESCE(m_dokter.name, dokter_user.nama, '-')" : "COALESCE(dokter_user.nama, '-')";
+		$dokter_expr = "COALESCE(dokter_user.nama, '-')";
 		$include_pic = $aggregate_select === '' && $this->can_query_pic_assignment();
 
 		if ($aggregate_select === '') {
@@ -280,9 +277,6 @@ class Laporan_m extends MX_Controller
 		$this->db->join('users dokter_user', 'dokter_user.userId = requests.dokter_id', 'left');
 		if ($has_puskesmas) {
 			$this->db->join('m_puskesmas assigned_puskesmas', "assigned_puskesmas.kode_pkm = $routed_puskesmas_code_expr", 'left', FALSE);
-		}
-		if ($has_dokter) {
-			$this->db->join('m_dokter', 'm_dokter.professional_id = requests.dokter_id', 'left');
 		}
 		if ($include_pic) {
 			$this->db->join('request_staff_assignments pic_assignment', "pic_assignment.assignment_id = (

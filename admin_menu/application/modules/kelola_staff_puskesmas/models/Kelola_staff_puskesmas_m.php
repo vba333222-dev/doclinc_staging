@@ -33,6 +33,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		$this->db
 			->select('puskesmas_staff.staff_id, puskesmas_staff.kode_pkm, puskesmas_staff.nama, puskesmas_staff.no_hp, puskesmas_staff.profesi, puskesmas_staff.nomor_sip, puskesmas_staff.user_id, puskesmas_staff.status')
 			->from('puskesmas_staff');
+		$this->db->select($this->db->field_exists('penugasan', 'puskesmas_staff') ? 'puskesmas_staff.penugasan' : 'NULL AS penugasan', false);
 
 		if ($has_puskesmas) {
 			$this->db->select('m_puskesmas.nama_puskesmas');

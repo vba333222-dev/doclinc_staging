@@ -113,7 +113,12 @@ $config['charset'] = 'UTF-8';
 | setting this variable to TRUE (boolean).  See the user guide for details.
 |
 */
-$config['enable_hooks'] = FALSE;
+$config['enable_hooks'] = TRUE;
+
+$first_login_password_flag = strtolower(trim((string) (getenv('DOCLINC_FIRST_LOGIN_PASSWORD_CHANGE_ENABLED') ?: '')));
+$first_login_password_environment = strtolower(trim((string) (getenv('DOCLINC_FIRST_LOGIN_PASSWORD_CHANGE_ENVIRONMENT') ?: '')));
+$config['first_login_password_change_enabled'] = in_array($first_login_password_flag, array('1', 'true', 'yes', 'on'), TRUE)
+	&& in_array($first_login_password_environment, array('staging', 'uat'), TRUE);
 
 /*
 |--------------------------------------------------------------------------
