@@ -41,7 +41,9 @@
 		this.subscriptionTokenUrl = options.subscriptionTokenUrl || '/realtime/subscription-token';
 		this.fetch = options.fetch || (typeof fetch === 'function' ? fetch.bind(root) : null);
 		this.Centrifuge = options.Centrifuge || (root && root.Centrifuge);
-		this.UnauthorizedError = options.UnauthorizedError || (root && root.UnauthorizedError);
+		this.UnauthorizedError = options.UnauthorizedError
+			|| (this.Centrifuge && this.Centrifuge.UnauthorizedError)
+			|| (root && root.UnauthorizedError);
 		this.setTimer = options.setTimeout || setTimeout;
 		this.clearTimer = options.clearTimeout || clearTimeout;
 		this.onError = typeof options.onError === 'function' ? options.onError : function () {};

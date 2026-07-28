@@ -54,7 +54,26 @@ Admin access is not added. Unknown namespaces, arbitrary channels, cross-owner r
 
 ## Browser client
 
-`assets/js/doclinc-realtime-client.js` is reusable and has no automatic startup. A future authorized page loader must provide the bundled Centrifuge JavaScript SDK, the public WebSocket URL, and domain-specific snapshot URLs. It must not use a public CDN or expose server secrets.
+The browser dependency is the official `centrifuge` npm package pinned to exact version `5.7.0`, compatible with Centrifugo server 6. It was obtained from the official npm registry for the `centrifugal/centrifuge-js` repository. Registry integrity, tarball hashes, retained-file hashes, and license information are recorded in `assets/vendor/centrifuge/5.7.0/PROVENANCE.md`.
+
+Only these runtime files are retained:
+
+```text
+assets/vendor/centrifuge/5.7.0/centrifuge.js
+assets/vendor/centrifuge/5.7.0/LICENSE
+assets/vendor/centrifuge/5.7.0/PROVENANCE.md
+```
+
+The official publisher already minifies `dist/centrifuge.js`; the vendored bytes are unchanged. Runtime must not use a CDN. Load order for a future authorized page is:
+
+```text
+assets/vendor/centrifuge/5.7.0/centrifuge.js
+assets/js/doclinc-realtime-client.js
+```
+
+The SDK exposes `Centrifuge` as a browser global and exposes its authorization error as `Centrifuge.UnauthorizedError`. The shared client resolves that exact SDK 5.7.0 export when converting HTTP 401/403 token responses into a permanent authorization failure.
+
+`assets/js/doclinc-realtime-client.js` is reusable and has no automatic startup. A future authorized page loader must provide the public WebSocket URL and domain-specific snapshot URLs. It must not expose server secrets.
 
 The client uses Centrifuge SDK token callbacks, automatic reconnect/backoff, and automatic connection/subscription token refresh. When recovery is unavailable or a new `event_id` arrives, it performs a same-origin authenticated GET against the configured snapshot URL. Publication data is never applied as domain state. Duplicate event IDs are bounded and ignored. Polling runs only as a fallback while the enabled client is disconnected. Teardown removes subscriptions, timers, dedupe state, and the connection.
 
@@ -68,6 +87,7 @@ Run the isolated contracts from the repository root:
 php tools/realtime_access/tests/unit.php
 node --check assets/js/doclinc-realtime-client.js
 node tools/realtime_access/tests/client_test.js
+node tools/realtime_access/tests/vendor_test.js
 ```
 
 Existing care operations, realtime outbox, clinical autocomplete, and anamnesis regressions must also pass before deployment.
@@ -77,10 +97,10 @@ Existing care operations, realtime outbox, clinical autocomplete, and anamnesis 
 Deploy source with the feature disabled. Before enabling it in staging or UAT:
 
 1. configure a protected HMAC secret that exactly matches the Centrifugo connection-token verifier;
-2. install and serve a reviewed, pinned Centrifuge JavaScript SDK bundle from an approved application asset path;
+2. verify the vendored SDK checksums and serve it from its local application asset path;
 3. add and verify an authenticated public `wss` reverse-proxy route to the loopback Centrifugo listener;
 4. keep direct client publish and unrestricted client subscription disabled;
 5. attach the shared client only to authorized pages and supply existing authorized snapshot endpoints;
 6. run owner, PIC, tenant, first-login, reconnect, refresh, and polling checks before enabling the flag.
 
-Disabling the feature flag is the application rollback. It stops token issuance and prevents new shared-client connections without changing database state. No database migration is part of this component.
+Disabling the feature flag and omitting both JavaScript files from page loading is the application rollback. It stops token issuance and prevents new shared-client connections without changing database state. No database migration is part of this component.
