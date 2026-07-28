@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
 if (!function_exists('doclinc_notifications_ready')) {
@@ -25,7 +25,7 @@ if (!function_exists('doclinc_notification_user_context')) {
 			->get('users')
 			->row() : null;
 		if (!$user) {
-			$context_cache[$user_id] = array('role' => '', 'identity' => null);
+			$context_cache[$user_id] = array('user_id' => 0, 'role' => '', 'identity' => null);
 			return $context_cache[$user_id];
 		}
 
@@ -34,7 +34,7 @@ if (!function_exists('doclinc_notification_user_context')) {
 			$CI->load->helper('request_authz');
 			$identity = doclinc_dokter_identity_context($user_id);
 		}
-		$context_cache[$user_id] = array('role' => (string) $user->role, 'identity' => $identity);
+		$context_cache[$user_id] = array('user_id' => (int) $user->userId, 'role' => (string) $user->role, 'identity' => $identity);
 		return $context_cache[$user_id];
 	}
 }
@@ -42,7 +42,17 @@ if (!function_exists('doclinc_notification_user_context')) {
 if (!function_exists('doclinc_apply_notification_visibility')) {
 	function doclinc_apply_notification_visibility($db, $user_context, $notification_alias = 'notifications')
 	{
-		if (!is_array($user_context) || !isset($user_context['role']) || $user_context['role'] !== 'dokter') {
+		if (!is_array($user_context) || !isset($user_context['role'])) {
+			return;
+		}
+		if ($user_context['role'] === 'warga') {
+			$user_id = isset($user_context['user_id']) ? (int) $user_context['user_id'] : 0;
+			$non_operational = "({$notification_alias}.entity_type <> 'request')";
+			$request_owner = "({$notification_alias}.entity_type = 'request' AND notification_request.user_id = {$user_id})";
+			$db->where("({$non_operational} OR {$request_owner})", null, false);
+			return;
+		}
+		if ($user_context['role'] !== 'dokter') {
 			return;
 		}
 
@@ -132,19 +142,70 @@ if (!function_exists('doclinc_create_notification')) {
 			'created_at' => date('Y-m-d H:i:s'),
 		);
 
-		$previous_debug = $CI->db->db_debug;
-		$CI->db->db_debug = false;
-		$result = $CI->db->insert('notifications', $data);
-		$insert_id = $result ? $CI->db->insert_id() : false;
-		$error = $CI->db->error();
-		$CI->db->db_debug = $previous_debug;
-
-		if (!$result) {
-			log_message('error', 'Notification insert failed: ' . (!empty($error['message']) ? $error['message'] : 'unknown error'));
+		require_once APPPATH . 'libraries/Notification_delivery_service.php';
+		$feature_state = array('enabled' => $CI->config->item('realtime_notifications_enabled') === true);
+		$delivery = new Notification_delivery_service($CI->db, $feature_state);
+		$insert_id = $delivery->create($data);
+		if ($insert_id === false) {
+			log_message('error', 'Notification delivery transaction failed.');
 			return false;
 		}
 
 		return $insert_id;
+	}
+}
+
+if (!function_exists('doclinc_notification_realtime_bootstrap')) {
+	function doclinc_notification_realtime_bootstrap()
+	{
+		$CI = &get_instance();
+		require_once APPPATH . 'libraries/Notification_realtime_policy.php';
+		if ($CI->config->item('realtime_notifications_enabled') !== true
+			|| $CI->config->item('realtime_client_enabled') !== true
+			|| $CI->session->userdata('logged_in') != true
+			|| (int) $CI->session->userdata('must_change_password') === 1) {
+			return null;
+		}
+		$user_id = (int) $CI->session->userdata('id');
+		$role = (string) $CI->session->userdata('role');
+		if ($user_id < 1 || !in_array($role, array('warga', 'dokter'), true)
+			|| !$CI->db->field_exists('must_change_password', 'users')) {
+			return null;
+		}
+		$user = $CI->db->select('userId, role, status, must_change_password')
+			->where('userId', $user_id)->limit(1)->get('users')->row();
+		if (!$user || (string) $user->role !== $role || (string) $user->status !== 'aktif'
+			|| (int) $user->must_change_password === 1) {
+			return null;
+		}
+		$identity = null;
+		if ($role === 'dokter') {
+			$CI->load->helper('request_authz');
+			$identity = doclinc_dokter_identity_context($user_id, true);
+		}
+		$policy = new Notification_realtime_policy();
+		if (!$policy->actorAllowed(array(
+			'authenticated' => true,
+			'user_id' => $user_id,
+			'role' => $role,
+			'status' => (string) $user->status,
+			'must_change_password' => (int) $user->must_change_password === 1,
+			'identity' => $identity,
+		))) {
+			return null;
+		}
+		$base_path = parse_url(base_url(), PHP_URL_PATH);
+		$base_path = is_string($base_path) ? '/' . trim($base_path, '/') : '';
+		$base_path = $base_path === '/' ? '' : $base_path;
+		return array(
+			'enabled' => true,
+			'websocket_url' => (string) $CI->config->item('realtime_client_websocket_url'),
+			'connection_token_url' => $base_path . '/realtime/connection-token',
+			'subscription_token_url' => $base_path . '/realtime/subscription-token',
+			'snapshot_url' => $base_path . '/notifications/snapshot',
+			'channel' => 'user:' . $user_id,
+			'poll_interval_ms' => 30000,
+		);
 	}
 }
 
@@ -166,10 +227,19 @@ if (!function_exists('doclinc_notify_user')) {
 		if (!$user) {
 			return false;
 		}
-		if ((string) $user->role === 'dokter' && (string) $entity_type === 'request') {
+		if ((string) $entity_type === 'request') {
 			$CI->load->helper('request_authz');
-			$identity = doclinc_dokter_identity_context($recipient_user_id);
-			if (!doclinc_can_view_request_notification((int) $entity_id, $identity)) {
+			if ((string) $user->role === 'dokter') {
+				$identity = doclinc_dokter_identity_context($recipient_user_id);
+				if (!doclinc_can_view_request_notification((int) $entity_id, $identity)) {
+					return false;
+				}
+			} elseif ((string) $user->role === 'warga') {
+				$request = doclinc_request_row((int) $entity_id);
+				if (!$request || (int) $request->user_id !== $recipient_user_id) {
+					return false;
+				}
+			} else {
 				return false;
 			}
 		}
@@ -267,6 +337,7 @@ if (!function_exists('doclinc_get_unread_notifications')) {
 			->where('notifications.recipient_user_id', $user_id)
 			->where('is_read', 0)
 			->order_by('notifications.created_at', 'DESC')
+			->order_by('notifications.notification_id', 'DESC')
 			->limit($limit);
 		doclinc_apply_notification_visibility($CI->db, $user_context);
 		return $CI->db

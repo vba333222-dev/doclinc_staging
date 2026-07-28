@@ -8,7 +8,7 @@ class First_login_gate_policy
 		'realtime_access' => array('connection_token', 'subscription_token'),
 		'chat' => array('messages', 'send', 'mark_read', 'foto', 'video'),
 		'upload' => array('foto', 'video'),
-		'notifikasi' => array('list_json', 'mark_read'),
+		'notifikasi' => array('list_json', 'snapshot', 'mark_read'),
 		'notification' => array('test', 'send'),
 		'konsultasi' => array('save_konsultasi', 'send'),
 		'konsultasi_nakes' => array('get_terapi', 'save_konsultasi_nakes', 'geticd_json'),

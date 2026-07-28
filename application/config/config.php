@@ -685,3 +685,26 @@ $config['realtime_client_token_hmac_secret'] = is_string($realtime_token_secret_
 $config['realtime_client_token_ttl_seconds'] = ctype_digit((string) $realtime_token_ttl_env)
 	? (int) $realtime_token_ttl_env
 	: 120;
+
+$realtime_notifications_enabled_env = getenv('DOCLINC_REALTIME_NOTIFICATIONS_ENABLED');
+if ($realtime_notifications_enabled_env === false || $realtime_notifications_enabled_env === '') {
+	$realtime_notifications_enabled_env = isset($_SERVER['DOCLINC_REALTIME_NOTIFICATIONS_ENABLED'])
+		? $_SERVER['DOCLINC_REALTIME_NOTIFICATIONS_ENABLED']
+		: null;
+}
+$realtime_notifications_environment_env = getenv('DOCLINC_REALTIME_NOTIFICATIONS_ENVIRONMENT');
+if ($realtime_notifications_environment_env === false || $realtime_notifications_environment_env === '') {
+	$realtime_notifications_environment_env = isset($_SERVER['DOCLINC_REALTIME_NOTIFICATIONS_ENVIRONMENT'])
+		? $_SERVER['DOCLINC_REALTIME_NOTIFICATIONS_ENVIRONMENT']
+		: '';
+}
+require_once APPPATH . 'libraries/Realtime_notification_feature.php';
+$realtime_notifications_feature = Realtime_notification_feature::resolve(
+	$realtime_notifications_enabled_env,
+	$realtime_notifications_environment_env,
+	$realtime_client_runtime_environment_env,
+	$config['realtime_client_enabled']
+);
+$config['realtime_notifications_enabled'] = $realtime_notifications_feature['enabled'];
+$config['realtime_notifications_environment'] = $realtime_notifications_feature['environment'];
+$config['realtime_notifications_feature_reason'] = $realtime_notifications_feature['reason'];
