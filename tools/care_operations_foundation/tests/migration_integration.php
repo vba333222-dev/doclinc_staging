@@ -40,7 +40,7 @@ function integration_identifier($value)
 	return '`' . $value . '`';
 }
 
-function integration_create_database(mysqli $admin, $name, $staff_type = 'int(10) unsigned')
+function integration_create_database(mysqli $admin, $name, $staff_type = 'int(10) unsigned', $assignment_variant = 'live', $compact = false)
 {
 	global $databases;
 	$admin->query('CREATE DATABASE ' . integration_identifier($name) . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
@@ -53,8 +53,8 @@ function integration_create_database(mysqli $admin, $name, $staff_type = 'int(10
 		(int) integration_env('DOCLINC_TEST_DB_ADMIN_PORT', '3306')
 	);
 	$db->set_charset('utf8mb4');
-	CareOperationsFixture::createSchema($db, $staff_type);
-	CareOperationsFixture::seedBaseline($db);
+	CareOperationsFixture::createSchema($db, $staff_type, $assignment_variant);
+	CareOperationsFixture::seedBaseline($db, $compact ? 1 : 11450, $compact ? 1 : 701);
 	return $db;
 }
 
@@ -125,6 +125,107 @@ function integration_count(mysqli $db, $table)
 	return (int) $db->query('SELECT COUNT(1) AS total FROM ' . integration_identifier($table))->fetch_assoc()['total'];
 }
 
+function integration_target_table_count(mysqli $db)
+{
+	return (int) $db->query("SELECT COUNT(1) AS total FROM information_schema.TABLES
+		WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN
+		('realtime_outbox','consultation_visit_media','medicalrecord_diagnoses','nakes_presence','visit_location_updates')")
+		->fetch_assoc()['total'];
+}
+
+function integration_normalize_default($value)
+{
+	if ($value === null || strtolower((string) $value) === 'null') {
+		return null;
+	}
+	$value = strtolower((string) $value);
+	if (strlen($value) >= 2 && $value[0] === "'" && substr($value, -1) === "'") {
+		return str_replace("''", "'", substr($value, 1, -1));
+	}
+	return $value;
+}
+
+function integration_assignment_schema_is_live(mysqli $db)
+{
+	$table = $db->query("SELECT ENGINE,TABLE_COLLATION FROM information_schema.TABLES
+		WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='request_staff_assignments'")->fetch_assoc();
+	if (!$table || strtoupper((string) $table['ENGINE']) !== 'INNODB'
+		|| (string) $table['TABLE_COLLATION'] !== 'utf8mb4_general_ci') {
+		return false;
+	}
+	$expected_columns = array(
+		'assignment_id' => array('int(10) unsigned', 'NO', null, 'auto_increment'),
+		'request_id' => array('int(11)', 'NO', null, ''),
+		'staff_id' => array('int(10) unsigned', 'NO', null, ''),
+		'kode_pkm' => array('varchar(100)', 'NO', null, ''),
+		'assigned_by_user_id' => array('int(11)', 'NO', null, ''),
+		'status' => array("enum('aktif','diganti','dibatalkan')", 'NO', 'aktif', ''),
+		'note' => array('text', 'YES', null, ''),
+		'assigned_at' => array('datetime', 'NO', 'current_timestamp()', ''),
+		'ended_at' => array('datetime', 'YES', null, ''),
+		'created_at' => array('datetime', 'NO', 'current_timestamp()', ''),
+		'updated_at' => array('datetime', 'YES', null, 'on update current_timestamp()'),
+	);
+	$actual_columns = array();
+	$result = $db->query("SELECT COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,COLUMN_DEFAULT,EXTRA
+		FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE()
+		AND TABLE_NAME='request_staff_assignments' ORDER BY ORDINAL_POSITION");
+	while ($row = $result->fetch_assoc()) {
+		$actual_columns[(string) $row['COLUMN_NAME']] = array(
+			strtolower((string) $row['COLUMN_TYPE']),
+			(string) $row['IS_NULLABLE'],
+			integration_normalize_default($row['COLUMN_DEFAULT']),
+			strtolower((string) $row['EXTRA']),
+		);
+	}
+	if ($actual_columns !== $expected_columns) {
+		return false;
+	}
+	$actual_indexes = array();
+	$result = $db->query("SELECT INDEX_NAME,NON_UNIQUE,COLUMN_NAME FROM information_schema.STATISTICS
+		WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='request_staff_assignments'
+		ORDER BY INDEX_NAME,SEQ_IN_INDEX");
+	while ($row = $result->fetch_assoc()) {
+		$name = (string) $row['INDEX_NAME'];
+		if (!isset($actual_indexes[$name])) {
+			$actual_indexes[$name] = array((int) $row['NON_UNIQUE'], array());
+		}
+		$actual_indexes[$name][1][] = (string) $row['COLUMN_NAME'];
+	}
+	$expected_indexes = array(
+		'PRIMARY' => array(0, array('assignment_id')),
+		'idx_rsa_assigned_by' => array(1, array('assigned_by_user_id')),
+		'idx_rsa_kode_status' => array(1, array('kode_pkm', 'status')),
+		'idx_rsa_request_status' => array(1, array('request_id', 'status')),
+		'idx_rsa_staff_status' => array(1, array('staff_id', 'status')),
+	);
+	ksort($actual_indexes);
+	ksort($expected_indexes);
+	return $actual_indexes === $expected_indexes;
+}
+
+function integration_expect_assignment_variant_rejected(mysqli $admin, $variant, $label)
+{
+	$name = integration_database_name('rsa_' . substr(hash('sha256', $label), 0, 8));
+	$db = integration_create_database($admin, $name, 'int(10) unsigned', $variant, true);
+	$before = CareOperationsFixture::snapshot($db);
+	list($writer, $password) = integration_create_writer($admin, $name);
+	$result = integration_run_migration($name, $writer, $password);
+	$after = CareOperationsFixture::snapshot($db);
+
+	integration_expect($result['exit_code'] !== 0
+		&& strpos($result['stderr'], 'SAFE_ERROR_CODE=base_schema_mismatch') !== false,
+		$label . '_rejected');
+	integration_expect(strpos($result['stderr'], 'DDL_STATEMENT_COUNT=0') !== false
+		&& integration_target_table_count($db) === 0,
+		$label . '_zero_ddl');
+	integration_expect($after['counts'] === $before['counts']
+		&& hash_equals($before['password_digest'], $after['password_digest']),
+		$label . '_existing_state_unchanged');
+	$password = null;
+	$db->close();
+}
+
 $host = integration_env('DOCLINC_TEST_DB_ADMIN_HOST', '127.0.0.1');
 $port = (int) integration_env('DOCLINC_TEST_DB_ADMIN_PORT', '3306');
 $admin_user = integration_env('DOCLINC_TEST_DB_ADMIN_USER', 'root');
@@ -156,6 +257,11 @@ try {
 			fwrite(STDERR, 'DIAGNOSTIC_FAILED_SCHEMA_OBJECT=' . $object_match[1] . "\n");
 		}
 		throw new RuntimeException('valid_apply_failed');
+	}
+	$live_assignment_signature = integration_assignment_schema_is_live($valid_db);
+	integration_expect($live_assignment_signature, 'assignment_schema_live_signature_accepted');
+	if ($live_assignment_signature) {
+		echo "CARE_OPERATIONS_ASSIGNMENT_SCHEMA_LIVE_SIGNATURE_ACCEPTED=PASS\n";
 	}
 
 	$target_tables = array('realtime_outbox', 'consultation_visit_media', 'medicalrecord_diagnoses', 'nakes_presence', 'visit_location_updates');
@@ -208,7 +314,7 @@ try {
 		'target_schema_hash_mismatch_rejected');
 
 	$partial_name = integration_database_name('partial');
-	$partial_db = integration_create_database($admin, $partial_name);
+	$partial_db = integration_create_database($admin, $partial_name, 'int(10) unsigned', 'live', true);
 	$partial_db->query('CREATE TABLE realtime_outbox (fixture_id int(11) NOT NULL PRIMARY KEY) ENGINE=InnoDB');
 	list($partial_writer, $partial_password) = integration_create_writer($admin, $partial_name);
 	$partial = integration_run_migration($partial_name, $partial_writer, $partial_password);
@@ -217,14 +323,30 @@ try {
 	integration_expect(integration_count($partial_db, 'realtime_outbox') === 0, 'partial_schema_test_row_state_unchanged');
 
 	$mismatch_name = integration_database_name('mismatch');
-	$mismatch_db = integration_create_database($admin, $mismatch_name, 'int(10)');
+	$mismatch_db = integration_create_database($admin, $mismatch_name, 'int(10)', 'live', true);
 	list($mismatch_writer, $mismatch_password) = integration_create_writer($admin, $mismatch_name);
 	$mismatch = integration_run_migration($mismatch_name, $mismatch_writer, $mismatch_password);
 	integration_expect($mismatch['exit_code'] !== 0
 		&& strpos($mismatch['stderr'], 'SAFE_ERROR_CODE=base_schema_mismatch') !== false, 'base_signature_signed_staff_id_rejected');
-	$created_on_mismatch = (int) $mismatch_db->query("SELECT COUNT(1) AS total FROM information_schema.TABLES
-		WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('realtime_outbox','consultation_visit_media','medicalrecord_diagnoses','nakes_presence','visit_location_updates')")->fetch_assoc()['total'];
+	$created_on_mismatch = integration_target_table_count($mismatch_db);
 	integration_expect($created_on_mismatch === 0, 'base_signature_failure_zero_ddl');
+
+	foreach (array(
+		'assignment_id_int11' => 'assignment_id_int11',
+		'assignment_id_signed_int10' => 'assignment_id_signed_int10',
+		'staff_id_int11' => 'assignment_staff_id_int11',
+		'staff_id_signed_int10' => 'assignment_staff_id_signed_int10',
+		'status_varchar' => 'assignment_status_varchar',
+		'status_nullable' => 'assignment_status_nullable',
+		'status_without_default' => 'assignment_status_without_default',
+		'status_enum_less' => 'assignment_status_enum_less',
+		'status_enum_more' => 'assignment_status_enum_more',
+		'status_enum_reordered' => 'assignment_status_enum_reordered',
+		'primary_missing' => 'assignment_primary_missing',
+		'primary_different' => 'assignment_primary_different',
+	) as $variant => $label) {
+		integration_expect_assignment_variant_rejected($admin, $variant, $label);
+	}
 
 	$valid_password = null;
 	$partial_password = null;

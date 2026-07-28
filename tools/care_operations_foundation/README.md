@@ -79,6 +79,11 @@ all target columns, signedness, defaults, indexes, checks, engine, collation, an
 comments without granting database-wide SELECT. Base-table signatures continue to be
 checked through exact `information_schema` metadata using table-level SELECT.
 
+The assignment base contract pins `request_staff_assignments.assignment_id` and
+`staff_id` as unsigned `int(10)`, while `request_id` remains signed `int(11)`.
+Assignment status is exactly `enum('aktif','diganti','dibatalkan')`, is not nullable,
+and defaults to `aktif`; the primary key remains `assignment_id`.
+
 Tables:
 
 - `realtime_outbox`: durable authoritative event handoff. Realtime history remains a

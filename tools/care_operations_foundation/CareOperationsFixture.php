@@ -2,11 +2,12 @@
 
 final class CareOperationsFixture
 {
-	public static function createSchema(mysqli $db, $staff_id_type = 'int(10) unsigned')
+	public static function createSchema(mysqli $db, $staff_id_type = 'int(10) unsigned', $assignment_variant = 'live')
 	{
 		if (!in_array($staff_id_type, array('int(10) unsigned', 'int(10)'), true)) {
 			throw new InvalidArgumentException('fixture_staff_id_type_invalid');
 		}
+		$assignment_schema = self::assignmentSchema($assignment_variant);
 
 		$statements = array(
 			"CREATE TABLE users (
@@ -61,16 +62,23 @@ final class CareOperationsFixture
 				KEY idx_requests_nakes (assigned_nakes_user_id)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 			"CREATE TABLE request_staff_assignments (
-				assignment_id int(11) NOT NULL AUTO_INCREMENT,
+				assignment_id {$assignment_schema['assignment_id_type']} NOT NULL AUTO_INCREMENT,
 				request_id int(11) NOT NULL,
-				staff_id int(11) NOT NULL,
+				staff_id {$assignment_schema['staff_id_type']} NOT NULL,
 				kode_pkm varchar(100) NOT NULL,
 				assigned_by_user_id int(11) NOT NULL,
-				status varchar(20) NOT NULL,
-				assigned_at datetime NOT NULL,
-				PRIMARY KEY (assignment_id),
-				KEY idx_assignment_request (request_id, status)
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+				status {$assignment_schema['status_definition']},
+				note text NULL,
+				assigned_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				ended_at datetime NULL,
+				created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				updated_at datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+				{$assignment_schema['primary_definition']}
+				KEY idx_rsa_assigned_by (assigned_by_user_id),
+				KEY idx_rsa_kode_status (kode_pkm, status),
+				KEY idx_rsa_request_status (request_id, status),
+				KEY idx_rsa_staff_status (staff_id, status)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci",
 			"CREATE TABLE medicalrecords (
 				record_id int(11) NOT NULL AUTO_INCREMENT,
 				request_id int(11) NOT NULL,
@@ -136,8 +144,64 @@ final class CareOperationsFixture
 		}
 	}
 
-	public static function seedBaseline(mysqli $db)
+	private static function assignmentSchema($variant)
 	{
+		$schema = array(
+			'assignment_id_type' => 'int(10) unsigned',
+			'staff_id_type' => 'int(10) unsigned',
+			'status_definition' => "enum('aktif','diganti','dibatalkan') NOT NULL DEFAULT 'aktif'",
+			'primary_definition' => 'PRIMARY KEY (assignment_id),',
+		);
+		switch ($variant) {
+			case 'live':
+				break;
+			case 'assignment_id_int11':
+				$schema['assignment_id_type'] = 'int(11)';
+				break;
+			case 'assignment_id_signed_int10':
+				$schema['assignment_id_type'] = 'int(10)';
+				break;
+			case 'staff_id_int11':
+				$schema['staff_id_type'] = 'int(11)';
+				break;
+			case 'staff_id_signed_int10':
+				$schema['staff_id_type'] = 'int(10)';
+				break;
+			case 'status_varchar':
+				$schema['status_definition'] = 'varchar(20) NOT NULL';
+				break;
+			case 'status_nullable':
+				$schema['status_definition'] = "enum('aktif','diganti','dibatalkan') NULL DEFAULT 'aktif'";
+				break;
+			case 'status_without_default':
+				$schema['status_definition'] = "enum('aktif','diganti','dibatalkan') NOT NULL";
+				break;
+			case 'status_enum_less':
+				$schema['status_definition'] = "enum('aktif','diganti') NOT NULL DEFAULT 'aktif'";
+				break;
+			case 'status_enum_more':
+				$schema['status_definition'] = "enum('aktif','diganti','dibatalkan','lainnya') NOT NULL DEFAULT 'aktif'";
+				break;
+			case 'status_enum_reordered':
+				$schema['status_definition'] = "enum('aktif','dibatalkan','diganti') NOT NULL DEFAULT 'aktif'";
+				break;
+			case 'primary_missing':
+				$schema['primary_definition'] = 'UNIQUE KEY uq_fixture_assignment_auto (assignment_id),';
+				break;
+			case 'primary_different':
+				$schema['primary_definition'] = 'PRIMARY KEY (request_id), UNIQUE KEY uq_fixture_assignment_auto (assignment_id),';
+				break;
+			default:
+				throw new InvalidArgumentException('fixture_assignment_variant_invalid');
+		}
+		return $schema;
+	}
+
+	public static function seedBaseline(mysqli $db, $clinical_term_count = 11450, $clinical_alias_count = 701)
+	{
+		if ($clinical_term_count < 1 || $clinical_alias_count < 1 || $clinical_alias_count > $clinical_term_count) {
+			throw new InvalidArgumentException('fixture_clinical_counts_invalid');
+		}
 		for ($index = 1; $index <= 9; $index++) {
 			$code = sprintf('PKM%02d', $index);
 			$name = sprintf('UNIT-%02d', $index);
@@ -214,14 +278,14 @@ final class CareOperationsFixture
 
 		$db->query("INSERT INTO clinical_suggestion_import_batches (suggestion_import_batch_id,batch_reference) VALUES (1,'SYNTHETIC-BATCH')");
 		$stmt = $db->prepare('INSERT INTO clinical_suggestion_terms (suggestion_import_batch_id,reference_key) VALUES (1,?)');
-		for ($index = 1; $index <= 11450; $index++) {
+		for ($index = 1; $index <= $clinical_term_count; $index++) {
 			$key = sprintf('TERM-%05d', $index);
 			$stmt->bind_param('s', $key);
 			$stmt->execute();
 		}
 		$stmt->close();
 		$stmt = $db->prepare('INSERT INTO clinical_suggestion_aliases (suggestion_term_id,alias_key) VALUES (?,?)');
-		for ($index = 1; $index <= 701; $index++) {
+		for ($index = 1; $index <= $clinical_alias_count; $index++) {
 			$key = sprintf('ALIAS-%04d', $index);
 			$stmt->bind_param('is', $index, $key);
 			$stmt->execute();
