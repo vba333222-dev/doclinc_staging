@@ -53,5 +53,7 @@ $route['default_controller'] = 'home';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 $route['clinical-suggestions'] = 'clinical_suggestions/search';
+$route['realtime/connection-token'] = 'realtime_access/connection_token';
+$route['realtime/subscription-token'] = 'realtime_access/subscription_token';
 $route['login/change-password'] = 'login/change_password';
 $route['login/change-password/submit'] = 'login/update_password';
