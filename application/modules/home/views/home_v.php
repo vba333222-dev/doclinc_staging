@@ -3402,7 +3402,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			items.forEach(function(item) {
 				notificationList.appendChild(renderNotificationItem(item));
 			});
-			syncNotificationCountFromList(notificationList);
+			setNotificationCount(parseInt(count || 0, 10));
 		}
 
 		function loadDatabaseNotifications() {
@@ -3440,6 +3440,16 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				}
 			});
 		}
+
+		window.DoclincNotificationUi = {
+			applySnapshot: function(data) {
+				if (!data || !Array.isArray(data.notifications)) {
+					return;
+				}
+				renderDatabaseNotifications(data.notifications, parseInt(data.unread_count || 0, 10));
+			},
+			refresh: loadDatabaseNotifications
+		};
 
 		function markNotificationRead(notification, notificationElement) {
 			const notificationId = notification && notification.notification_id ? notification.notification_id : notification;
@@ -3868,6 +3878,13 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			};
 		</script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-incoming-watcher.js')); ?>"></script>
+	<?php endif; ?>
+	<?php $notification_realtime_bootstrap = doclinc_notification_realtime_bootstrap(); ?>
+	<?php if (is_array($notification_realtime_bootstrap)) : ?>
+		<script id="doclincNotificationRealtimeConfig" type="application/json"><?= json_encode($notification_realtime_bootstrap, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+		<script src="<?= html_escape(base_url('assets/vendor/centrifuge/5.7.0/centrifuge.js')); ?>"></script>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-realtime-client.js')); ?>"></script>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-notifications.js')); ?>"></script>
 	<?php endif; ?>
 	<?php if ($clinical_suggestions_enabled) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-suggestions.js')); ?>"></script>

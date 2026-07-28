@@ -17,7 +17,7 @@ class Notifikasi extends MX_Controller
 
 	public function list_json()
 	{
-		$this->output->set_content_type('application/json');
+		$this->prepare_json_response();
 		if ($this->session->userdata('logged_in') != TRUE) {
 			$this->output
 				->set_status_header(401)
@@ -43,9 +43,75 @@ class Notifikasi extends MX_Controller
 		)));
 	}
 
+	public function snapshot()
+	{
+		$this->prepare_json_response();
+		require_once APPPATH . 'libraries/Notification_realtime_policy.php';
+		if ($this->input->method(TRUE) !== 'GET') {
+			$this->snapshot_error(405, 'method_not_allowed');
+			return;
+		}
+		if ($this->config->item('realtime_notifications_enabled') !== true) {
+			$this->snapshot_error(404, 'feature_disabled');
+			return;
+		}
+		if ($this->session->userdata('logged_in') != TRUE) {
+			$this->snapshot_error(401, 'authentication_required');
+			return;
+		}
+		$user_id = (int) $this->session->userdata('id');
+		$session_role = (string) $this->session->userdata('role');
+		if ($user_id < 1 || !in_array($session_role, array('warga', 'dokter'), true)
+			|| !$this->db->field_exists('must_change_password', 'users')) {
+			$this->snapshot_error(403, 'access_denied');
+			return;
+		}
+		$user = $this->db->select('userId, role, status, must_change_password')
+			->where('userId', $user_id)->limit(1)->get('users')->row();
+		if (!$user || (string) $user->role !== $session_role || (string) $user->status !== 'aktif') {
+			$this->snapshot_error(403, 'access_denied');
+			return;
+		}
+		if ((int) $user->must_change_password === 1 || (int) $this->session->userdata('must_change_password') === 1) {
+			$this->snapshot_error(403, 'password_change_required');
+			return;
+		}
+		$user_context = doclinc_notification_user_context($user_id);
+		$policy = new Notification_realtime_policy();
+		if (!$policy->actorAllowed(array(
+			'authenticated' => true,
+			'user_id' => $user_id,
+			'role' => $session_role,
+			'status' => (string) $user->status,
+			'must_change_password' => (int) $user->must_change_password === 1,
+			'identity' => isset($user_context['identity']) ? $user_context['identity'] : null,
+		))) {
+			$this->snapshot_error(403, 'access_denied');
+			return;
+		}
+		$limit = (int) $this->input->get('limit', TRUE);
+		$limit = $limit > 0 ? min($limit, 50) : 20;
+		$notifications = doclinc_get_unread_notifications($user_id, $limit);
+		foreach ($notifications as &$notification) {
+			$notification['action_url'] = $this->notification_action_url($notification, $user_id, $session_role, $user_context);
+			foreach (array('recipient_user_id', 'recipient_role', 'recipient_puskesmas_code', 'actor_user_id', 'read_at') as $internal_field) {
+				unset($notification[$internal_field]);
+			}
+		}
+		unset($notification);
+		$this->output->set_output(json_encode(array(
+			'success' => true,
+			'data' => array(
+				'unread_count' => doclinc_count_unread_notifications($user_id),
+				'notifications' => $notifications,
+				'limit' => $limit,
+			),
+		), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
+	}
+
 	public function mark_read()
 	{
-		$this->output->set_content_type('application/json');
+		$this->prepare_json_response();
 		if ($this->session->userdata('logged_in') != TRUE) {
 			$this->output
 				->set_status_header(401)
@@ -70,6 +136,22 @@ class Notifikasi extends MX_Controller
 		}
 
 		$this->output->set_output(json_encode(array('status' => 'success')));
+	}
+
+	private function prepare_json_response()
+	{
+		$this->output->set_content_type('application/json', 'utf-8')
+			->set_header('Cache-Control: no-store, private, max-age=0')
+			->set_header('Pragma: no-cache')
+			->set_header('X-Content-Type-Options: nosniff');
+	}
+
+	private function snapshot_error($status, $code)
+	{
+		$this->output->set_status_header((int) $status)->set_output(json_encode(array(
+			'success' => false,
+			'error' => (string) $code,
+		)));
 	}
 
 	private function notification_action_url($notification, $user_id, $role, $user_context = null)
