@@ -632,3 +632,56 @@ $clinical_suggestions_feature = Clinical_suggestion_feature::resolve(
 );
 $config['clinical_suggestions_environment'] = $clinical_suggestions_feature['environment'];
 $config['clinical_suggestions_enabled'] = $clinical_suggestions_feature['enabled'];
+
+$realtime_client_enabled_env = getenv('DOCLINC_REALTIME_CLIENT_ENABLED');
+if ($realtime_client_enabled_env === false || $realtime_client_enabled_env === '') {
+	$realtime_client_enabled_env = isset($_SERVER['DOCLINC_REALTIME_CLIENT_ENABLED'])
+		? $_SERVER['DOCLINC_REALTIME_CLIENT_ENABLED']
+		: null;
+}
+$realtime_client_environment_env = getenv('DOCLINC_REALTIME_CLIENT_ENVIRONMENT');
+if ($realtime_client_environment_env === false || $realtime_client_environment_env === '') {
+	$realtime_client_environment_env = isset($_SERVER['DOCLINC_REALTIME_CLIENT_ENVIRONMENT'])
+		? $_SERVER['DOCLINC_REALTIME_CLIENT_ENVIRONMENT']
+		: '';
+}
+$realtime_client_runtime_environment_env = getenv('DOCLINC_REALTIME_CLIENT_RUNTIME_ENVIRONMENT');
+if ($realtime_client_runtime_environment_env === false || $realtime_client_runtime_environment_env === '') {
+	$realtime_client_runtime_environment_env = isset($_SERVER['DOCLINC_REALTIME_CLIENT_RUNTIME_ENVIRONMENT'])
+		? $_SERVER['DOCLINC_REALTIME_CLIENT_RUNTIME_ENVIRONMENT']
+		: '';
+}
+$realtime_public_websocket_url_env = getenv('DOCLINC_REALTIME_PUBLIC_WEBSOCKET_URL');
+if ($realtime_public_websocket_url_env === false || $realtime_public_websocket_url_env === '') {
+	$realtime_public_websocket_url_env = isset($_SERVER['DOCLINC_REALTIME_PUBLIC_WEBSOCKET_URL'])
+		? $_SERVER['DOCLINC_REALTIME_PUBLIC_WEBSOCKET_URL']
+		: '';
+}
+$realtime_token_secret_env = getenv('DOCLINC_REALTIME_CLIENT_TOKEN_HMAC_SECRET');
+if ($realtime_token_secret_env === false || $realtime_token_secret_env === '') {
+	$realtime_token_secret_env = isset($_SERVER['DOCLINC_REALTIME_CLIENT_TOKEN_HMAC_SECRET'])
+		? $_SERVER['DOCLINC_REALTIME_CLIENT_TOKEN_HMAC_SECRET']
+		: '';
+}
+$realtime_token_ttl_env = getenv('DOCLINC_REALTIME_CLIENT_TOKEN_TTL_SECONDS');
+if ($realtime_token_ttl_env === false || $realtime_token_ttl_env === '') {
+	$realtime_token_ttl_env = isset($_SERVER['DOCLINC_REALTIME_CLIENT_TOKEN_TTL_SECONDS'])
+		? $_SERVER['DOCLINC_REALTIME_CLIENT_TOKEN_TTL_SECONDS']
+		: '';
+}
+
+require_once APPPATH . 'libraries/Realtime_access_feature.php';
+$realtime_client_feature = Realtime_access_feature::resolve(
+	$realtime_client_enabled_env,
+	$realtime_client_environment_env,
+	$realtime_client_runtime_environment_env,
+	$realtime_public_websocket_url_env
+);
+$config['realtime_client_enabled'] = $realtime_client_feature['enabled'];
+$config['realtime_client_environment'] = $realtime_client_feature['environment'];
+$config['realtime_client_websocket_url'] = $realtime_client_feature['websocket_url'];
+$config['realtime_client_feature_reason'] = $realtime_client_feature['reason'];
+$config['realtime_client_token_hmac_secret'] = is_string($realtime_token_secret_env) ? $realtime_token_secret_env : '';
+$config['realtime_client_token_ttl_seconds'] = ctype_digit((string) $realtime_token_ttl_env)
+	? (int) $realtime_token_ttl_env
+	: 120;
