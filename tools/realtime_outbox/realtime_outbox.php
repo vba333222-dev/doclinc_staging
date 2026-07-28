@@ -10,7 +10,7 @@ if (!defined('BASEPATH')) {
 	define('BASEPATH', dirname(__DIR__, 2) . '/system/');
 }
 require_once dirname(__DIR__, 2) . '/application/libraries/Realtime_outbox_feature_flags.php';
-require_once __DIR__ . '/HttpRealtimeTransport.php';
+require_once __DIR__ . '/CentrifugoTransport.php';
 require_once __DIR__ . '/RealtimeOutboxDispatcher.php';
 
 function realtime_outbox_cli_fail($safe_error_code)
@@ -77,8 +77,8 @@ if (!is_string($password) || $password === '') {
 }
 
 try {
-	$transport = new HttpRealtimeTransport(
-		getenv('DOCLINC_REALTIME_GATEWAY_URL'),
+	$transport = new CentrifugoTransport(
+		getenv('DOCLINC_REALTIME_GATEWAY_URL') ?: 'http://127.0.0.1:8000/api/publish',
 		getenv('DOCLINC_REALTIME_GATEWAY_SECRET'),
 		(int) (getenv('DOCLINC_REALTIME_GATEWAY_CONNECT_TIMEOUT_MS') ?: 1500),
 		(int) (getenv('DOCLINC_REALTIME_GATEWAY_TOTAL_TIMEOUT_MS') ?: 4000),
@@ -113,6 +113,9 @@ try {
 		'target_schema_hash_mismatch', 'batch_size_invalid', 'lease_seconds_invalid',
 		'maximum_attempts_invalid', 'gateway_endpoint_invalid', 'gateway_endpoint_not_allowed',
 		'gateway_host_not_allowed', 'gateway_secret_invalid', 'gateway_timeout_invalid', 'dispatcher_lease_lost',
+		'centrifugo_endpoint_invalid', 'centrifugo_endpoint_not_allowed', 'centrifugo_host_not_allowed',
+		'centrifugo_host_allowlist_invalid', 'centrifugo_api_key_invalid', 'centrifugo_timeout_invalid',
+		'centrifugo_response_limit_invalid',
 	);
 	$message = (string) $exception->getMessage();
 	if (strpos($message, ':') !== false) {
