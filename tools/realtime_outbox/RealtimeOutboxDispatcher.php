@@ -226,6 +226,7 @@ final class RealtimeOutboxDispatcher
 			return null;
 		}
 		return array(
+			'audience_type' => (string) $event['audience_type'],
 			'audience_key' => (string) $event['audience_key'],
 			'payload' => $payload,
 			'idempotency_key' => (string) $event['idempotency_key'],

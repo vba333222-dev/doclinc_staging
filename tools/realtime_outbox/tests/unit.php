@@ -7,6 +7,7 @@ require_once dirname(__DIR__, 3) . '/application/libraries/Realtime_outbox_contr
 require_once dirname(__DIR__, 3) . '/application/libraries/Realtime_outbox_feature_flags.php';
 require_once dirname(__DIR__, 3) . '/application/libraries/Realtime_outbox_writer.php';
 require_once dirname(__DIR__) . '/HttpRealtimeTransport.php';
+require_once dirname(__DIR__) . '/CentrifugoTransport.php';
 require_once dirname(__DIR__) . '/InMemoryRealtimeTransport.php';
 
 $passed = 0;
@@ -178,6 +179,162 @@ try {
 } catch (InvalidArgumentException $exception) {
 	outbox_expect($exception->getMessage() === 'gateway_host_not_allowed', 'https_host_allowlist_required');
 }
+
+$centrifugo_message = $message;
+$centrifugo_message['audience_type'] = 'user';
+$centrifugo_requests = array();
+$centrifugo_client = function ($request) use (&$centrifugo_requests) {
+	$centrifugo_requests[] = $request;
+	return array('status' => 200, 'body' => '{"result":{}}', 'failure' => '');
+};
+$centrifugo = new CentrifugoTransport(
+	'http://127.0.0.1:8000/api/publish',
+	$secret,
+	100,
+	200,
+	$centrifugo_client
+);
+$centrifugo_result = $centrifugo->publish($centrifugo_message);
+$sent = isset($centrifugo_requests[0]) ? $centrifugo_requests[0] : array();
+$sent_body = isset($sent['body']) ? json_decode($sent['body'], true) : null;
+outbox_expect($centrifugo_result->successful, 'centrifugo_result_success');
+outbox_expect(isset($sent['method'], $sent['url']) && $sent['method'] === 'POST'
+	&& $sent['url'] === 'http://127.0.0.1:8000/api/publish', 'centrifugo_exact_method_url');
+outbox_expect(isset($sent['headers']) && in_array('Content-Type: application/json', $sent['headers'], true)
+	&& in_array('X-API-Key: ' . $secret, $sent['headers'], true), 'centrifugo_exact_headers');
+outbox_expect(is_array($sent_body) && array_keys($sent_body) === array('channel', 'data', 'idempotency_key')
+	&& $sent_body['channel'] === $centrifugo_message['audience_key']
+	&& $sent_body['data'] === $centrifugo_message['payload']
+	&& $sent_body['idempotency_key'] === $centrifugo_message['idempotency_key'], 'centrifugo_exact_body');
+
+$centrifugo_cases = array(
+	'result_array' => array(array('status' => 200, 'body' => '{"result":[]}', 'failure' => ''), true, false, 'none'),
+	'missing_result' => array(array('status' => 200, 'body' => '{}', 'failure' => ''), false, true, 'centrifugo_result_invalid'),
+	'null_error' => array(array('status' => 200, 'body' => '{"error":null,"result":{}}', 'failure' => ''), false, false, 'centrifugo_api_error'),
+	'logical_error' => array(array('status' => 200, 'body' => '{"error":{"code":102,"message":"ignored"}}', 'failure' => ''), false, false, 'centrifugo_channel_rejected'),
+	'internal_error' => array(array('status' => 200, 'body' => '{"error":{"code":100}}', 'failure' => ''), false, true, 'centrifugo_server_unavailable'),
+	'malformed_json' => array(array('status' => 200, 'body' => '{invalid', 'failure' => ''), false, true, 'centrifugo_response_invalid'),
+	'http_400' => array(array('status' => 400, 'body' => '{}', 'failure' => ''), false, false, 'centrifugo_request_rejected'),
+	'http_401' => array(array('status' => 401, 'body' => '{}', 'failure' => ''), false, false, 'centrifugo_auth_rejected'),
+	'http_403' => array(array('status' => 403, 'body' => '{}', 'failure' => ''), false, false, 'centrifugo_auth_rejected'),
+	'http_404' => array(array('status' => 404, 'body' => '{}', 'failure' => ''), false, false, 'centrifugo_channel_rejected'),
+	'http_408' => array(array('status' => 408, 'body' => '{}', 'failure' => ''), false, true, 'centrifugo_request_timeout'),
+	'http_429' => array(array('status' => 429, 'body' => '{}', 'failure' => ''), false, true, 'centrifugo_rate_limited'),
+	'http_500' => array(array('status' => 500, 'body' => '{}', 'failure' => ''), false, true, 'centrifugo_server_unavailable'),
+	'http_502' => array(array('status' => 502, 'body' => '{}', 'failure' => ''), false, true, 'centrifugo_server_unavailable'),
+	'http_503' => array(array('status' => 503, 'body' => '{}', 'failure' => ''), false, true, 'centrifugo_server_unavailable'),
+	'connection_refused' => array(array('status' => 0, 'body' => '', 'failure' => 'connection_failed'), false, true, 'centrifugo_connection_failed'),
+	'connect_timeout' => array(array('status' => 0, 'body' => '', 'failure' => 'connect_timeout'), false, true, 'centrifugo_connect_timeout'),
+	'total_timeout' => array(array('status' => 0, 'body' => '', 'failure' => 'total_timeout'), false, true, 'centrifugo_total_timeout'),
+	'redirect' => array(array('status' => 302, 'body' => '', 'failure' => ''), false, false, 'centrifugo_redirect_rejected'),
+);
+foreach ($centrifugo_cases as $label => $case) {
+	$transport = new CentrifugoTransport('http://localhost:8000/api/publish', $secret, 100, 200, function () use ($case) {
+		return $case[0];
+	});
+	$result = $transport->publish($centrifugo_message);
+	outbox_expect($result->successful === $case[1] && $result->retryable === $case[2]
+		&& $result->safe_error_code === $case[3], 'centrifugo_classification_' . $label);
+	outbox_expect(strpos($result->safe_error_code, $secret) === false, 'centrifugo_secret_absent_' . $label);
+}
+
+$oversized_transport = new CentrifugoTransport('http://127.0.0.1:8000/api/publish', $secret, 100, 200, function () {
+	return array('status' => 200, 'body' => str_repeat('x', 257), 'failure' => '');
+}, array(), 256);
+$oversized_result = $oversized_transport->publish($centrifugo_message);
+outbox_expect(!$oversized_result->successful && $oversized_result->retryable
+	&& $oversized_result->safe_error_code === 'centrifugo_response_too_large', 'centrifugo_oversized_response');
+
+$retry_bodies = array();
+$stable_transport = new CentrifugoTransport('http://127.0.0.1:8000/api/publish', $secret, 100, 200, function ($request) use (&$retry_bodies) {
+	$retry_bodies[] = $request['body'];
+	return array('status' => 503, 'body' => '{}', 'failure' => '');
+});
+$stable_transport->publish($centrifugo_message);
+$stable_transport->publish($centrifugo_message);
+outbox_expect(count($retry_bodies) === 2 && hash_equals($retry_bodies[0], $retry_bodies[1])
+	&& json_decode($retry_bodies[0], true)['idempotency_key'] === $centrifugo_message['idempotency_key'], 'centrifugo_retry_stable_idempotency');
+
+foreach (array('user:101', 'request:1001', 'puskesmas:PKM01:ops', 'puskesmas:PKM.01:ops') as $channel) {
+	$channel_message = $centrifugo_message;
+	$channel_message['audience_key'] = $channel;
+	$channel_message['payload']['audience'] = $channel;
+	$channel_message['audience_type'] = strpos($channel, 'puskesmas:') === 0 ? 'puskesmas' : explode(':', $channel, 2)[0];
+	$result = $centrifugo->publish($channel_message);
+	outbox_expect($result->successful, 'centrifugo_valid_channel_' . substr(hash('sha256', $channel), 0, 8));
+}
+
+$invalid_channels = array(
+	'', 'user:0', 'user:-1', 'user:1:extra', 'request:0', 'admin:1', 'other:1',
+	'puskesmas:DEFAULT:ops', 'puskesmas:../x:ops', 'puskesmas:PKM..01:ops', 'puskesmas:PKM%3A01:ops',
+	"user:1\n", ' user:1', 'user:1 ', str_repeat('A', 129),
+);
+foreach ($invalid_channels as $channel) {
+	$channel_message = $centrifugo_message;
+	$channel_message['audience_key'] = $channel;
+	$channel_message['payload']['audience'] = $channel;
+	$result = $centrifugo->publish($channel_message);
+	outbox_expect(!$result->successful && !$result->retryable
+		&& $result->safe_error_code === 'centrifugo_message_invalid', 'centrifugo_invalid_channel_' . substr(hash('sha256', $channel), 0, 8));
+}
+
+$mismatch = $centrifugo_message;
+$mismatch['payload']['audience'] = 'request:1001';
+outbox_expect($centrifugo->publish($mismatch)->safe_error_code === 'centrifugo_message_invalid', 'centrifugo_channel_payload_mismatch');
+$mismatch = $centrifugo_message;
+$mismatch['audience_type'] = 'request';
+outbox_expect($centrifugo->publish($mismatch)->safe_error_code === 'centrifugo_message_invalid', 'centrifugo_audience_type_mismatch');
+$override = $centrifugo_message;
+$override['payload']['channel'] = 'user:999';
+outbox_expect($centrifugo->publish($override)->safe_error_code === 'centrifugo_message_invalid', 'centrifugo_payload_channel_override_rejected');
+$override = $centrifugo_message;
+$override['payload']['idempotency_key'] = str_repeat('a', 64);
+outbox_expect($centrifugo->publish($override)->safe_error_code === 'centrifugo_message_invalid', 'centrifugo_payload_idempotency_override_rejected');
+
+$invalid_urls = array(
+	'http://external.invalid/api/publish',
+	'ftp://127.0.0.1:8000/api/publish',
+	'http://127.0.0.1:8000/api',
+	'http://127.0.0.1:8000/api/publish/',
+	'http://127.0.0.1:8000/api/publish?value=1',
+	'http://127.0.0.1:8000/api/publish#fragment',
+	'http://name@127.0.0.1:8000/api/publish',
+	'http://127.0.0.1:99999/api/publish',
+);
+foreach ($invalid_urls as $url) {
+	try {
+		new CentrifugoTransport($url, $secret, 100, 200);
+		outbox_expect(false, 'centrifugo_invalid_url_' . substr(hash('sha256', $url), 0, 8));
+	} catch (InvalidArgumentException $exception) {
+		outbox_expect(strpos($exception->getMessage(), 'centrifugo_') === 0
+			&& strpos($exception->getMessage(), $secret) === false, 'centrifugo_invalid_url_' . substr(hash('sha256', $url), 0, 8));
+	}
+}
+$https_transport = new CentrifugoTransport('https://realtime.internal.invalid/api/publish', $secret, 100, 200, function () {
+	return array('status' => 200, 'body' => '{"result":{}}', 'failure' => '');
+}, array('realtime.internal.invalid'));
+outbox_expect($https_transport->publish($centrifugo_message)->successful, 'centrifugo_https_allowlist_accepted');
+try {
+	new CentrifugoTransport('https://realtime.internal.invalid/api/publish', $secret, 100, 200);
+	outbox_expect(false, 'centrifugo_https_allowlist_required');
+} catch (InvalidArgumentException $exception) {
+	outbox_expect($exception->getMessage() === 'centrifugo_host_not_allowed', 'centrifugo_https_allowlist_required');
+}
+foreach (array(null, '', 'too-short', "invalid\nvalue") as $invalid_secret) {
+	try {
+		new CentrifugoTransport('http://127.0.0.1:8000/api/publish', $invalid_secret, 100, 200);
+		outbox_expect(false, 'centrifugo_invalid_secret_' . md5(serialize($invalid_secret)));
+	} catch (InvalidArgumentException $exception) {
+		outbox_expect($exception->getMessage() === 'centrifugo_api_key_invalid', 'centrifugo_invalid_secret_' . md5(serialize($invalid_secret)));
+	}
+}
+$dispatcher_command_source = file_get_contents(dirname(__DIR__) . '/realtime_outbox.php');
+$transport_position = strpos($dispatcher_command_source, 'new CentrifugoTransport(');
+$database_position = strpos($dispatcher_command_source, 'new mysqli(');
+outbox_expect($transport_position !== false && $database_position !== false
+	&& $transport_position < $database_position, 'centrifugo_configuration_validated_before_database_connection');
+outbox_expect(strpos($dispatcher_command_source, "'http://127.0.0.1:8000/api/publish'") !== false
+	&& strpos($dispatcher_command_source, 'new HttpRealtimeTransport(') === false, 'centrifugo_selected_by_dispatch_command');
 
 echo 'OUTBOX_UNIT_TESTS_PASSED=' . $passed . "\n";
 echo 'OUTBOX_UNIT_TESTS_FAILED=' . $failed . "\n";

@@ -6,6 +6,7 @@ if (!defined('BASEPATH')) {
 require_once dirname(__DIR__, 2) . '/care_operations_foundation/CareOperationsFixture.php';
 require_once dirname(__DIR__, 3) . '/application/libraries/Realtime_outbox_writer.php';
 require_once dirname(__DIR__) . '/RealtimeOutboxDispatcher.php';
+require_once dirname(__DIR__) . '/CentrifugoTransport.php';
 require_once dirname(__DIR__) . '/InMemoryRealtimeTransport.php';
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -275,13 +276,44 @@ try {
 	}
 	$root->query("SELECT RELEASE_LOCK('doclinc_realtime_outbox_dispatcher')");
 
+	$centrifugo_calls = array();
+	$centrifugo_transport = new CentrifugoTransport(
+		'http://127.0.0.1:8000/api/publish',
+		bin2hex(random_bytes(24)),
+		100,
+		200,
+		function ($request) use (&$centrifugo_calls) {
+			$centrifugo_calls[] = json_decode($request['body'], true);
+			return array('status' => 200, 'body' => '{"result":{}}', 'failure' => '');
+		}
+	);
+	$centrifugo_insert = $writer->enqueue($root_adapter, integration_event('centrifugo-success'), array('PKM01'), $feature);
+	$centrifugo_summary = (new RealtimeOutboxDispatcher($worker_db, $centrifugo_transport))->run(1, 120, 5);
+	$centrifugo_state = $root->query('SELECT state FROM realtime_outbox WHERE outbox_id=' . (int) $centrifugo_insert['outbox_id'])->fetch_assoc()['state'];
+	integration_expect($centrifugo_insert['success'] && $centrifugo_summary['published'] === 1
+		&& $centrifugo_state === 'published' && count($centrifugo_calls) === 1
+		&& $centrifugo_calls[0]['idempotency_key'] === (new Realtime_outbox_contract())->prepare(integration_event('centrifugo-success'), array('PKM01'))['idempotency_key'],
+		'centrifugo_success_marks_published');
+
+	$permanent_insert = $writer->enqueue($root_adapter, integration_event('centrifugo-permanent'), array('PKM01'), $feature);
+	$permanent_transport = new CentrifugoTransport('http://127.0.0.1:8000/api/publish', bin2hex(random_bytes(24)), 100, 200, function () {
+		return array('status' => 403, 'body' => '{}', 'failure' => '');
+	});
+	$permanent_summary = (new RealtimeOutboxDispatcher($worker_db, $permanent_transport))->run(1, 120, 5);
+	$permanent_row = $root->query('SELECT state,last_error_code FROM realtime_outbox WHERE outbox_id=' . (int) $permanent_insert['outbox_id'])->fetch_assoc();
+	integration_expect($permanent_summary['failed'] === 1 && $permanent_row['state'] === 'failed'
+		&& $permanent_row['last_error_code'] === 'centrifugo_auth_rejected', 'centrifugo_permanent_failure_marks_failed');
+
 	$retry_insert = $writer->enqueue($root_adapter, integration_event('retry'), array('PKM01'), $feature);
-	$retry_transport = new InMemoryRealtimeTransport(array(RealtimeTransportResult::retryable('gateway_timeout')));
+	$retry_transport = new CentrifugoTransport('http://127.0.0.1:8000/api/publish', bin2hex(random_bytes(24)), 100, 200, function () {
+		return array('status' => 503, 'body' => '{}', 'failure' => '');
+	});
 	$retry_dispatcher = new RealtimeOutboxDispatcher($worker_db, $retry_transport);
 	$retry_summary = $retry_dispatcher->run(1, 120, 5);
 	$retry_row = $root->query("SELECT state,attempt_count,last_error_code,(available_at>NOW(6)) AS is_delayed FROM realtime_outbox WHERE idempotency_key='" . $root->real_escape_string($contract_key = (new Realtime_outbox_contract())->prepare(integration_event('retry'), array('PKM01'))['idempotency_key']) . "'")->fetch_assoc();
 	integration_expect($retry_insert['success'] && $retry_summary['retry_scheduled'] === 1 && $retry_row['state'] === 'pending'
-		&& (int) $retry_row['attempt_count'] === 1 && (int) $retry_row['is_delayed'] === 1, 'retry_increments_attempt_and_delays');
+		&& (int) $retry_row['attempt_count'] === 1 && (int) $retry_row['is_delayed'] === 1
+		&& $retry_row['last_error_code'] === 'centrifugo_server_unavailable', 'centrifugo_retry_increments_attempt_and_delays');
 
 	$stale = $writer->enqueue($root_adapter, integration_event('stale'), array('PKM01'), $feature);
 	$root->query("UPDATE realtime_outbox SET state='claimed',claimed_at=DATE_SUB(NOW(6),INTERVAL 600 SECOND),attempt_count=1 WHERE outbox_id=" . (int) $stale['outbox_id']);
@@ -292,7 +324,9 @@ try {
 
 	$terminal = $writer->enqueue($root_adapter, integration_event('terminal'), array('PKM01'), $feature);
 	$root->query('UPDATE realtime_outbox SET attempt_count=4 WHERE outbox_id=' . (int) $terminal['outbox_id']);
-	$terminal_transport = new InMemoryRealtimeTransport(array(RealtimeTransportResult::retryable('gateway_timeout')));
+	$terminal_transport = new CentrifugoTransport('http://127.0.0.1:8000/api/publish', bin2hex(random_bytes(24)), 100, 200, function () {
+		return array('status' => 503, 'body' => '{}', 'failure' => '');
+	});
 	$terminal_summary = (new RealtimeOutboxDispatcher($worker_db, $terminal_transport))->run(1, 120, 5);
 	$terminal_row = $root->query('SELECT state,attempt_count FROM realtime_outbox WHERE outbox_id=' . (int) $terminal['outbox_id'])->fetch_assoc();
 	integration_expect($terminal_summary['failed'] === 1 && $terminal_row['state'] === 'failed'

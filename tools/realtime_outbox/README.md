@@ -103,7 +103,7 @@ DOCLINC_REALTIME_DISPATCH_DB_NAME=doclinc-staging
 DOCLINC_REALTIME_DISPATCH_DB_USER=<DEDICATED_WORKER>
 DOCLINC_REALTIME_DISPATCH_DB_PASSWORD=<SECRET_FROM_PROTECTED_ENVIRONMENT>
 DOCLINC_REALTIME_DISPATCH_ALLOWED_USERS=<DEDICATED_WORKER>
-DOCLINC_REALTIME_GATEWAY_URL=<HTTPS_OR_LOOPBACK_INTERNAL_ENDPOINT>
+DOCLINC_REALTIME_GATEWAY_URL=http://127.0.0.1:8000/api/publish
 DOCLINC_REALTIME_GATEWAY_ALLOWED_HOSTS=<EXACT_INTERNAL_HOST_ALLOWLIST>
 DOCLINC_REALTIME_GATEWAY_SECRET=<SERVER_ONLY_SECRET>
 DOCLINC_REALTIME_GATEWAY_CONNECT_TIMEOUT_MS=1500
@@ -118,20 +118,45 @@ Secrets belong in a root-readable service environment, not the repository, comma
 arguments, URL, logs, or process output. A future service should use `Type=oneshot` and
 a timer with a non-overlapping interval. PHP must not daemonize or busy-loop.
 
-## Transport boundary
+## Centrifugo transport
 
-`HttpRealtimeTransport` posts a generic server-only request containing channel, data,
-and idempotency key. Only HTTPS endpoints or explicit loopback HTTP endpoints are
-accepted. Non-loopback hosts must also appear in the exact environment allowlist.
-Redirects are disabled and connection/total timeouts are bounded. A 2xx
-response is successful only when valid JSON contains `success=true` and no logical
-error. Timeout, malformed JSON, non-2xx status, and logical errors receive safe
-retryable/permanent classification without exposing response bodies or secrets.
+`CentrifugoTransport` implements the Centrifugo OSS v6.9 server API publish contract.
+The dispatcher posts only to the exact `/api/publish` path with `Content-Type:
+application/json` and the server-only API key in `X-API-Key`. The request body contains
+the validated audience as `channel`, the canonical event envelope as `data`, and the
+stable outbox `idempotency_key`. The same row therefore sends the same key after lease
+recovery or retry.
 
-No realtime gateway is installed or contacted by this package. The concrete internal
-gateway API, pinned server version, verified release checksum, subscription token
-service, and deployment configuration remain prerequisites before dispatcher flags can
-be enabled. There is no Firebase fallback.
+The default endpoint is `http://127.0.0.1:8000/api/publish`. Plain HTTP is accepted only
+for literal `127.0.0.1` or `localhost`. A non-loopback endpoint must use HTTPS and its
+exact host must appear in `DOCLINC_REALTIME_GATEWAY_ALLOWED_HOSTS`. User information,
+query parameters, fragments, alternate paths, unsupported schemes, and redirects are
+rejected. Connection and total timeouts are bounded, as is the response body.
+
+Successful delivery requires a 2xx response containing a JSON object with `result` and
+without `error`. The transport does not expect a generic `success` property. Response
+bodies and API error messages are never included in dispatcher output.
+
+| Condition | Result | Safe code |
+|---|---|---|
+| Connection failure | retry | `centrifugo_connection_failed` |
+| Connect or total timeout | retry | `centrifugo_connect_timeout` / `centrifugo_total_timeout` |
+| HTTP 408 or 429 | retry | `centrifugo_request_timeout` / `centrifugo_rate_limited` |
+| HTTP 5xx or API error 100 | retry | `centrifugo_server_unavailable` |
+| HTTP 401 or 403 | permanent | `centrifugo_auth_rejected` |
+| HTTP 404 or API error 102/104 | permanent | `centrifugo_channel_rejected` |
+| HTTP redirect | permanent | `centrifugo_redirect_rejected` |
+| Other HTTP 4xx | permanent | `centrifugo_request_rejected` |
+| Missing/malformed/oversized response | bounded retry | `centrifugo_result_invalid`, `centrifugo_response_invalid`, or `centrifugo_response_too_large` |
+
+`HttpRealtimeTransport` remains available for generic internal transport tests but is
+not selected by the production dispatcher command. `InMemoryRealtimeTransport` is
+limited to test use. No gateway is contacted by the test suite, and there is no
+Firebase fallback.
+
+Client subscription authorization, connection tokens, WebSocket proxying, and domain
+call-site integration remain outside this package. Dispatcher activation requires a
+pinned Centrifugo deployment and a separately verified release checksum.
 
 ## Tests
 
