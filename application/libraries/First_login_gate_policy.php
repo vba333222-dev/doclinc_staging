@@ -6,6 +6,7 @@ class First_login_gate_policy
 	private $json_routes = array(
 		'clinical_suggestions' => array('*'),
 		'realtime_access' => array('connection_token', 'subscription_token'),
+		'realtime_requests' => array('snapshot'),
 		'chat' => array('messages', 'send', 'mark_read', 'foto', 'video'),
 		'upload' => array('foto', 'video'),
 		'notifikasi' => array('list_json', 'snapshot', 'mark_read'),

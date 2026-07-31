@@ -56,5 +56,6 @@ $route['clinical-suggestions'] = 'clinical_suggestions/search';
 $route['realtime/connection-token'] = 'realtime_access/connection_token';
 $route['realtime/subscription-token'] = 'realtime_access/subscription_token';
 $route['notifications/snapshot'] = 'notifikasi/snapshot';
+$route['realtime/requests/snapshot'] = 'realtime_requests/snapshot';
 $route['login/change-password'] = 'login/change_password';
 $route['login/change-password/submit'] = 'login/update_password';

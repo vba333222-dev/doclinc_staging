@@ -11,6 +11,7 @@ class Home extends MX_Controller
 		$this->load->helper('visit_routing');
 		$this->load->helper('livekit');
 		$this->load->helper('notification');
+		$this->load->helper('request_realtime');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			if (in_array($this->router->fetch_method(), array('visit_location', 'livekit_token', 'livekit_incoming_call', 'answer_livekit_call', 'reject_livekit_call', 'livekit_call_status'), true)) {
 				$this->output
@@ -470,27 +471,13 @@ class Home extends MX_Controller
 		if (function_exists('doclinc_log_request_event')) {
 			doclinc_log_request_event('request_cancelled', $request_id);
 		}
-		if ($request && function_exists('doclinc_notify_user')) {
-			$recipient_id = doclinc_request_handling_nakes_id($request);
-			if (!empty($recipient_id)) {
-				doclinc_notify_user(
-					$recipient_id,
-					'request_cancelled',
-					'request',
-					$request_id,
-					'Konsultasi dibatalkan',
-					'Permintaan konsultasi dibatalkan oleh pasien.',
-					$user_id
-				);
-			}
-		}
-
-		$this->output->set_output(json_encode([
-			'status' => 'success',
-			'message' => 'Permintaan dibatalkan.',
-			'request_id' => $request_id,
-			'request_status' => 'Cancelled'
-		]));
+		$orchestration = doclinc_request_transition_orchestrator()->requestCancelledByOwner(
+			$request_id,
+			$request,
+			$user_id,
+			true
+		);
+		$this->output->set_output(json_encode($orchestration['response']));
 	}
 
 	public function visit_location()

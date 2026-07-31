@@ -13,6 +13,7 @@ class Konsultasi extends MX_Controller
 		$this->load->helper('request_authz');
 		$this->load->helper('puskesmas_routing');
 		$this->load->helper('notification');
+		$this->load->helper('request_realtime');
 		$this->load->helper('request_event');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login', 'refresh');
@@ -199,16 +200,12 @@ class Konsultasi extends MX_Controller
 			), $this);
 			doclinc_log_request_event('request_created', $data, array('puskesmas_code' => $assigned_puskesmas_code));
 			doclinc_log_request_event('puskesmas_assigned', $data, array('puskesmas_code' => $assigned_puskesmas_code));
-			doclinc_notify_puskesmas(
-				$assigned_puskesmas_code,
-				'request_created',
-				'request',
+			$orchestration = doclinc_request_transition_orchestrator()->requestCreated(
 				$data,
-				'Permintaan konsultasi baru',
-				'Ada permintaan konsultasi baru untuk Puskesmas ' . $assigned_puskesmas_name,
+				$created_request,
 				$id_user
 			);
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Permintaan dikirim.']));
+			$this->output->set_output(json_encode($orchestration['response']));
 			return;
 		}
 

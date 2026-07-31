@@ -2295,11 +2295,22 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	</script>
 
 	<?php $notification_realtime_bootstrap = doclinc_notification_realtime_bootstrap(); ?>
+	<?php $request_realtime_bootstrap = doclinc_request_realtime_bootstrap(); ?>
 	<?php if (is_array($notification_realtime_bootstrap)) : ?>
 		<script id="doclincNotificationRealtimeConfig" type="application/json"><?= json_encode($notification_realtime_bootstrap, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+	<?php endif; ?>
+	<?php if (is_array($request_realtime_bootstrap)) : ?>
+		<script id="doclincRequestRealtimeConfig" type="application/json"><?= json_encode($request_realtime_bootstrap, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+	<?php endif; ?>
+	<?php if (is_array($notification_realtime_bootstrap) || is_array($request_realtime_bootstrap)) : ?>
 		<script src="<?= html_escape(base_url('assets/vendor/centrifuge/5.7.0/centrifuge.js')); ?>"></script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-realtime-client.js')); ?>"></script>
+	<?php endif; ?>
+	<?php if (is_array($notification_realtime_bootstrap)) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-notifications.js')); ?>"></script>
+	<?php endif; ?>
+	<?php if (is_array($request_realtime_bootstrap)) : ?>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-requests.js')); ?>"></script>
 	<?php endif; ?>
 
 </body>

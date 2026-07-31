@@ -9,6 +9,7 @@ class Konsultasi_nakes extends MX_Controller
 		$this->load->model('home_nakes/Home_nakes_m');
 		$this->load->helper('request_authz');
 		$this->load->helper('notification');
+		$this->load->helper('request_realtime');
 		$this->load->library('Clinical_anamnesis');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login', 'refresh');
@@ -274,18 +275,13 @@ class Konsultasi_nakes extends MX_Controller
 				'message' => 'Permintaan diselesaikan.',
 				'metadata' => $event_metadata,
 			));
-			if ($request) {
-				doclinc_notify_user(
-					$request->user_id,
-					'consultation_completed',
-					'request',
-					$request_id,
-					'Konsultasi selesai',
-					'Hasil konsultasi Anda sudah tersedia.',
-					$doctor_id
-				);
-			}
-			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Konsultasi selesai.']));
+			$orchestration = doclinc_request_transition_orchestrator()->requestCompleted(
+				$request_id,
+				$request,
+				$doctor_id,
+				$result
+			);
+			$this->output->set_output(json_encode($orchestration['response']));
 			return;
 		}
 
