@@ -285,6 +285,26 @@ class Konsultasi_nakes_m extends MX_Controller
 				}
 			}
 		}
+		if (function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled()) {
+			$puskesmas_code = $this->request_assigned_puskesmas_code($request);
+			$audiences = array('user:' . (int) $request->user_id);
+			$handler_id = isset($request->assigned_nakes_user_id) ? (int) $request->assigned_nakes_user_id : 0;
+			if ($handler_id > 0) { $audiences[] = 'user:' . $handler_id; }
+			if ($puskesmas_code !== '') { $audiences[] = 'puskesmas:' . $puskesmas_code . ':ops'; }
+			$notification = array(
+				'recipient_user_id' => (int) $request->user_id, 'recipient_role' => 'warga',
+				'actor_user_id' => (int) $user, 'event_type' => 'consultation_completed',
+				'entity_type' => 'request', 'entity_id' => (string) $request_id,
+				'title' => 'Konsultasi selesai', 'message' => 'Hasil konsultasi Anda sudah tersedia.',
+				'is_read' => 0, 'created_at' => $date,
+			);
+			if ($puskesmas_code === '' || !doclinc_request_realtime_delivery($this->db)->deliver(
+				'completed', $request_id, $request_id, $audiences, array($puskesmas_code), array($notification)
+			)) {
+				$this->db->trans_rollback();
+				return false;
+			}
+		}
 
 		if ($this->db->trans_status() === false) {
 			$this->db->trans_rollback();

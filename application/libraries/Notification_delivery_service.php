@@ -48,6 +48,9 @@ class Notification_delivery_service
 		if ($notification_id === false) {
 			return false;
 		}
+		if (empty($this->feature_state['enabled'])) {
+			return $notification_id;
+		}
 
 		$result = $this->outbox_writer->enqueue($this->db, array(
 			'event_id' => 'notification:' . $notification_id,

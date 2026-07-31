@@ -708,3 +708,22 @@ $realtime_notifications_feature = Realtime_notification_feature::resolve(
 $config['realtime_notifications_enabled'] = $realtime_notifications_feature['enabled'];
 $config['realtime_notifications_environment'] = $realtime_notifications_feature['environment'];
 $config['realtime_notifications_feature_reason'] = $realtime_notifications_feature['reason'];
+
+$realtime_requests_enabled_env = getenv('DOCLINC_REALTIME_REQUESTS_ENABLED');
+if ($realtime_requests_enabled_env === false || $realtime_requests_enabled_env === '') {
+	$realtime_requests_enabled_env = $_SERVER['DOCLINC_REALTIME_REQUESTS_ENABLED'] ?? null;
+}
+$realtime_requests_environment_env = getenv('DOCLINC_REALTIME_REQUESTS_ENVIRONMENT');
+if ($realtime_requests_environment_env === false || $realtime_requests_environment_env === '') {
+	$realtime_requests_environment_env = $_SERVER['DOCLINC_REALTIME_REQUESTS_ENVIRONMENT'] ?? '';
+}
+require_once APPPATH . 'libraries/Realtime_request_feature.php';
+$realtime_requests_feature = Realtime_request_feature::resolve(
+	$realtime_requests_enabled_env,
+	$realtime_requests_environment_env,
+	$realtime_client_runtime_environment_env,
+	$config['realtime_client_enabled']
+);
+$config['realtime_requests_enabled'] = $realtime_requests_feature['enabled'];
+$config['realtime_requests_environment'] = $realtime_requests_feature['environment'];
+$config['realtime_requests_feature_reason'] = $realtime_requests_feature['reason'];

@@ -11,6 +11,7 @@ class Home_nakes extends MX_Controller
 		$this->load->helper('visit_routing');
 		$this->load->helper('livekit');
 		$this->load->helper('notification');
+		$this->load->helper('request_realtime');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status'), true)) {
 				$this->output
@@ -410,25 +411,14 @@ class Home_nakes extends MX_Controller
 			if (empty($result['already_accepted'])) {
 				doclinc_log_request_event('request_accepted', $id);
 				$request = doclinc_request_row($id);
-				if ($request) {
-					doclinc_notify_user(
-						$request->user_id,
-						'request_accepted',
-						'request',
-						$id,
-						'Konsultasi diterima',
-						'Permintaan konsultasi Anda sudah diterima oleh petugas.',
-						$id_user
-					);
-				}
 			}
-			$this->output->set_output(json_encode([
-				'status' => 'success',
-				'message' => $result['message'],
-				'request_id' => $id,
-				'request_status' => 'Accepted',
-				'redirect_url' => base_url('konsultasi_nakes/konsultasi/' . $id)
-			]));
+			$orchestration = doclinc_request_transition_orchestrator()->requestAccepted(
+				$id,
+				isset($request) ? $request : doclinc_request_row($id),
+				$id_user,
+				$result
+			);
+			$this->output->set_output(json_encode($orchestration['response']));
 			return;
 		}
 
@@ -480,24 +470,13 @@ class Home_nakes extends MX_Controller
 		if (function_exists('doclinc_log_request_event')) {
 			doclinc_log_request_event('request_cancelled', $request_id);
 		}
-		if ($request && function_exists('doclinc_notify_user')) {
-			doclinc_notify_user(
-				$request->user_id,
-				'request_cancelled',
-				'request',
-				$request_id,
-				'Konsultasi dibatalkan',
-				'Permintaan konsultasi Anda dibatalkan oleh petugas.',
-				$user_id
-			);
-		}
-
-		$this->output->set_output(json_encode([
-			'status' => 'success',
-			'message' => $result['message'],
-			'request_id' => $request_id,
-			'request_status' => 'Cancelled'
-		]));
+		$orchestration = doclinc_request_transition_orchestrator()->requestCancelledByCommandCenter(
+			$request_id,
+			$request,
+			$user_id,
+			$result
+		);
+		$this->output->set_output(json_encode($orchestration['response']));
 	}
 	public function visit_location()
 	{

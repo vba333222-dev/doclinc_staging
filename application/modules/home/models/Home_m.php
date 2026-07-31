@@ -770,6 +770,9 @@ class Home_m extends MX_Controller
 		if ($request_id < 1 || $user_id < 1) {
 			return false;
 		}
+		if (function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled()) {
+			return $this->cancel_request_with_realtime($request_id, $user_id);
+		}
 
 		$data = array('request_status' => 'Cancelled');
 		if ($this->db->field_exists('updated_at', 'requests')) {
@@ -783,6 +786,51 @@ class Home_m extends MX_Controller
 			->update('requests', $data);
 
 		return $this->db->affected_rows() > 0;
+	}
+
+	private function cancel_request_with_realtime($request_id, $user_id)
+	{
+		if (!$this->db->trans_begin()) { return false; }
+		$request = $this->db->query(
+			'SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
+			array($request_id)
+		)->row();
+		if (!$request || (int) $request->user_id !== $user_id || (string) $request->request_status !== 'Pending') {
+			$this->db->trans_rollback();
+			return false;
+		}
+		$puskesmas_code = trim((string) ($request->assigned_puskesmas_code ?? ''));
+		if ($puskesmas_code === '' || strtoupper($puskesmas_code) === 'DEFAULT') {
+			$this->db->trans_rollback();
+			return false;
+		}
+		$data = array('request_status' => 'Cancelled');
+		if ($this->db->field_exists('updated_at', 'requests')) { $data['updated_at'] = date('Y-m-d H:i:s'); }
+		$this->db->where('request_id', $request_id)->where('user_id', $user_id)->where('request_status', 'Pending')->update('requests', $data);
+		if ($this->db->affected_rows() !== 1) { $this->db->trans_rollback(); return false; }
+		$recipient_id = 0;
+		foreach (array('assigned_nakes_user_id', 'accepted_by_user_id', 'dokter_id') as $field) {
+			if (isset($request->{$field}) && (int) $request->{$field} > 0) { $recipient_id = (int) $request->{$field}; break; }
+		}
+		$notifications = array();
+		$audiences = array('user:' . $user_id, 'puskesmas:' . $puskesmas_code . ':ops');
+		if ($recipient_id > 0) {
+			$audiences[] = 'user:' . $recipient_id;
+			$notifications[] = array(
+				'recipient_user_id' => $recipient_id, 'recipient_role' => 'dokter',
+				'recipient_puskesmas_code' => $puskesmas_code, 'actor_user_id' => $user_id,
+				'event_type' => 'request_cancelled', 'entity_type' => 'request', 'entity_id' => (string) $request_id,
+				'title' => 'Konsultasi dibatalkan', 'message' => 'Permintaan konsultasi dibatalkan oleh pasien.',
+				'is_read' => 0, 'created_at' => date('Y-m-d H:i:s'),
+			);
+		}
+		if (!doclinc_request_realtime_delivery($this->db)->deliver(
+			'cancelled', $request_id, $request_id, $audiences, array($puskesmas_code), $notifications
+		) || $this->db->trans_status() === false || !$this->db->trans_commit()) {
+			$this->db->trans_rollback();
+			return false;
+		}
+		return true;
 	}
 
 	public function get_visit_location($request_id, $user_id)

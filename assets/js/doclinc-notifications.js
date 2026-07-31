@@ -38,21 +38,25 @@
 		this.fetch = options.fetch;
 		this.storage = safeStorage(options.storage);
 		this.document = options.document || null;
+		this.lifecycleTarget = options.lifecycleTarget || null;
 		this.AudioContext = options.AudioContext || null;
 		this.ui = options.ui || null;
 		this.client = null;
+		this.subscriptionHandle = null;
 		this.audioContext = null;
 		this.soundPrimed = false;
 		this.initialSnapshotReceived = false;
 		this.soundEnabled = this._readPreference();
 		this.seenIds = this._readSeenIds();
 		this.soundButton = null;
+		this.pagehideHandler = null;
 	}
 
 	NotificationRuntime.prototype.start = function () {
 		if (this.config.enabled !== true || typeof this.RealtimeClient !== 'function' || !this.ui) {
 			return false;
 		}
+		if (this.client) { return true; }
 		this._installSoundControl();
 		this.client = new this.RealtimeClient({
 			enabled: true,
@@ -63,12 +67,17 @@
 			fetch: this.fetch
 		});
 		var self = this;
-		this.client.subscribe(this.config.channel, {
+		this.subscriptionHandle = this.client.acquireSubscription(this.config.channel, {
 			snapshotUrl: this.config.snapshot_url,
 			pollIntervalMs: this.config.poll_interval_ms,
 			onSnapshot: function (payload, context) { self.applySnapshot(payload, context); }
 		});
-		return this.client.start();
+		if (!this.client.start()) {
+			this.teardown();
+			return false;
+		}
+		this._bindPagehide();
+		return true;
 	};
 
 	NotificationRuntime.prototype.applySnapshot = function (payload, context) {
@@ -120,7 +129,13 @@
 	};
 
 	NotificationRuntime.prototype.teardown = function () {
-		if (this.client && typeof this.client.teardown === 'function') {
+		this._unbindPagehide();
+		if (this.subscriptionHandle && typeof this.subscriptionHandle.release === 'function') {
+			this.subscriptionHandle.release();
+		}
+		this.subscriptionHandle = null;
+		if (this.client && typeof this.client.hasSubscriptionOwners === 'function'
+			&& !this.client.hasSubscriptionOwners() && typeof this.client.teardown === 'function') {
 			this.client.teardown();
 		}
 		this.client = null;
@@ -129,6 +144,21 @@
 		}
 		this.audioContext = null;
 		this.soundPrimed = false;
+	};
+
+	NotificationRuntime.prototype._bindPagehide = function () {
+		if (this.pagehideHandler || !this.lifecycleTarget || typeof this.lifecycleTarget.addEventListener !== 'function') { return; }
+		var self = this;
+		this.pagehideHandler = function () { self.teardown(); };
+		this.lifecycleTarget.addEventListener('pagehide', this.pagehideHandler);
+	};
+
+	NotificationRuntime.prototype._unbindPagehide = function () {
+		if (!this.pagehideHandler) { return; }
+		if (this.lifecycleTarget && typeof this.lifecycleTarget.removeEventListener === 'function') {
+			this.lifecycleTarget.removeEventListener('pagehide', this.pagehideHandler);
+		}
+		this.pagehideHandler = null;
 	};
 
 	NotificationRuntime.prototype._readPreference = function () {
@@ -275,9 +305,13 @@
 			storage: root.localStorage,
 			document: document,
 			AudioContext: root.AudioContext || root.webkitAudioContext,
+			lifecycleTarget: root,
 			ui: root.DoclincNotificationUi
 		});
 		runtime.start();
+		if (runtime.client) {
+			root.DoclincRealtimeSharedClient = runtime.client;
+		}
 		root.DoclincNotificationRuntime = runtime;
 		return runtime;
 	}

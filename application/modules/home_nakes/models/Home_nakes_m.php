@@ -146,6 +146,71 @@ class Home_nakes_m extends MX_Controller
 		return isset($request->dokter_id) && (string) $request->dokter_id === (string) $user_id;
 	}
 
+	private function locked_command_center_context($user_id, $puskesmas_code, $request)
+	{
+		$user_id = (int) $user_id;
+		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
+		if ($user_id < 1 || $puskesmas_code === '' || !$request
+			|| !$this->db->field_exists('must_change_password', 'users')
+			|| !$this->db->field_exists('status', 'm_puskesmas')
+			|| !$this->request_matches_command_center_tenant($request, $user_id, $puskesmas_code)) {
+			return null;
+		}
+
+		$user_query = $this->db->query(
+			'SELECT userId, role, status, remark, must_change_password FROM ' . $this->db->dbprefix('users')
+				. ' WHERE userId = ? FOR UPDATE',
+			array($user_id)
+		);
+		$user = $user_query ? $user_query->row() : null;
+		if (!$user
+			|| (int) $user->userId !== $user_id
+			|| (string) $user->role !== 'dokter'
+			|| (string) $user->status !== 'aktif'
+			|| (int) $user->must_change_password !== 0
+			|| $this->normalize_puskesmas_code($user->remark) !== $puskesmas_code) {
+			return null;
+		}
+
+		$puskesmas_query = $this->db->query(
+			'SELECT kode_pkm, status FROM ' . $this->db->dbprefix('m_puskesmas')
+				. ' WHERE kode_pkm = ? FOR UPDATE',
+			array($puskesmas_code)
+		);
+		$puskesmas = $puskesmas_query ? $puskesmas_query->row() : null;
+		if (!$puskesmas || (string) $puskesmas->kode_pkm !== $puskesmas_code || (string) $puskesmas->status !== 'aktif') {
+			return null;
+		}
+
+		$canonical_query = $this->db->query(
+			'SELECT userId FROM ' . $this->db->dbprefix('users')
+				. ' WHERE role = ? AND status = ? AND TRIM(remark) = ? ORDER BY userId ASC LIMIT 1 FOR UPDATE',
+			array('dokter', 'aktif', $puskesmas_code)
+		);
+		$canonical = $canonical_query ? $canonical_query->row() : null;
+		if (!$canonical || (int) $canonical->userId !== $user_id) {
+			return null;
+		}
+
+		$staff_query = $this->db->query(
+			'SELECT staff_id FROM ' . $this->db->dbprefix('puskesmas_staff')
+				. ' WHERE user_id = ? ORDER BY staff_id ASC FOR UPDATE',
+			array($user_id)
+		);
+		if (!$staff_query || count($staff_query->result()) !== 0) {
+			return null;
+		}
+
+		return array(
+			'valid' => true,
+			'account_type' => 'command_center',
+			'user_id' => $user_id,
+			'role' => 'dokter',
+			'user_status' => 'aktif',
+			'puskesmas_code' => $puskesmas_code,
+		);
+	}
+
 	private function where_command_center_tenant($user_id, $puskesmas_code)
 	{
 		$user_id = (int) $user_id;
@@ -604,22 +669,33 @@ class Home_nakes_m extends MX_Controller
 			return array('status' => 'error', 'message' => 'Anda tidak memiliki akses.');
 		}
 
-		$request = $this->db
-			->where('request_id', $id)
-			->get('requests')
-			->row();
+		$realtime_enabled = function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled();
+		if ($realtime_enabled && !$this->db->trans_begin()) {
+			return array('status' => 'error', 'message' => 'Permintaan belum dapat diterima.');
+		}
+		$request = $realtime_enabled
+			? $this->db->query('SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE', array((int) $id))->row()
+			: $this->db->where('request_id', $id)->get('requests')->row();
 		if (!$request) {
+			if ($realtime_enabled) { $this->db->trans_rollback(); }
 			return array('status' => 'error', 'message' => 'Permintaan tidak ditemukan.');
 		}
-		if (!$this->request_matches_command_center_tenant($request, $id_user, $puskesmas_code)) {
+		$locked_identity = $realtime_enabled
+			? $this->locked_command_center_context($id_user, $puskesmas_code, $request)
+			: null;
+		if (($realtime_enabled && !$locked_identity)
+			|| (!$realtime_enabled && !$this->request_matches_command_center_tenant($request, $id_user, $puskesmas_code))) {
+			if ($realtime_enabled) { $this->db->trans_rollback(); }
 			return array('status' => 'error', 'message' => 'Permintaan tidak dapat diakses.');
 		}
 
 		if ($request->request_status === 'Accepted') {
+			if ($realtime_enabled) { $this->db->trans_rollback(); }
 			return array('status' => 'error', 'message' => 'Permintaan sudah diterima.');
 		}
 
 		if ($request->request_status !== 'Pending') {
+			if ($realtime_enabled) { $this->db->trans_rollback(); }
 			return array('status' => 'error', 'message' => 'Permintaan tidak dapat diterima.');
 		}
 
@@ -683,8 +759,27 @@ class Home_nakes_m extends MX_Controller
 				'message' => 'Permintaan diterima oleh Puskesmas.',
 				'metadata' => $event_metadata,
 			));
+			if ($realtime_enabled) {
+				$notification = array(
+					'recipient_user_id' => (int) $request->user_id, 'recipient_role' => 'warga',
+					'actor_user_id' => (int) $id_user, 'event_type' => 'request_accepted',
+					'entity_type' => 'request', 'entity_id' => (string) $id,
+					'title' => 'Konsultasi diterima', 'message' => 'Permintaan konsultasi Anda sudah diterima oleh petugas.',
+					'is_read' => 0, 'created_at' => date('Y-m-d H:i:s'),
+				);
+				$delivery = doclinc_request_realtime_delivery($this->db);
+				if (!$delivery->deliver('accepted', $id, $id, array(
+					'user:' . (int) $request->user_id,
+					'puskesmas:' . $event_puskesmas_code . ':ops',
+				), array($event_puskesmas_code), array($notification))
+					|| $this->db->trans_status() === false || !$this->db->trans_commit()) {
+					$this->db->trans_rollback();
+					return array('status' => 'error', 'message' => 'Permintaan belum dapat diterima.');
+				}
+			}
 			return array('status' => 'success', 'message' => 'Konsultasi diterima.', 'already_accepted' => false);
 		}
+		if ($realtime_enabled) { $this->db->trans_rollback(); }
 
 		return array('status' => 'error', 'message' => 'Permintaan tidak dapat diakses.');
 	}
@@ -711,9 +806,7 @@ class Home_nakes_m extends MX_Controller
 			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Permintaan tidak ditemukan.');
 		}
-		$database_identity = function_exists('doclinc_dokter_identity_context')
-			? doclinc_dokter_identity_context($user_id, true)
-			: null;
+		$database_identity = $this->locked_command_center_context($user_id, $puskesmas_code, $request);
 		if (empty($database_identity['valid'])
 			|| $database_identity['account_type'] !== 'command_center'
 			|| trim((string) $database_identity['puskesmas_code']) !== $puskesmas_code
@@ -736,7 +829,11 @@ class Home_nakes_m extends MX_Controller
 
 		$this->db->update('requests', $data);
 		if ($this->db->affected_rows() > 0 && $this->db->trans_status() !== false) {
-			$this->db->trans_commit();
+			$realtime_enabled = function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled();
+			if (!$realtime_enabled && !$this->db->trans_commit()) {
+				$this->db->trans_rollback();
+				return array('status' => 'error', 'message' => 'Permintaan belum dapat dibatalkan.');
+			}
 			$event_puskesmas_code = $puskesmas_code;
 			if (isset($request->assigned_puskesmas_code) && trim((string) $request->assigned_puskesmas_code) !== '') {
 				$event_puskesmas_code = $request->assigned_puskesmas_code;
@@ -754,6 +851,26 @@ class Home_nakes_m extends MX_Controller
 				'message' => 'Permintaan dibatalkan/ditolak oleh Puskesmas.',
 				'metadata' => $event_metadata,
 			));
+			if ($realtime_enabled) {
+				$notification = array(
+					'recipient_user_id' => (int) $request->user_id, 'recipient_role' => 'warga',
+					'actor_user_id' => $user_id, 'event_type' => 'request_cancelled',
+					'entity_type' => 'request', 'entity_id' => (string) $request_id,
+					'title' => 'Konsultasi dibatalkan', 'message' => 'Permintaan konsultasi Anda dibatalkan oleh petugas.',
+					'is_read' => 0, 'created_at' => date('Y-m-d H:i:s'),
+				);
+				if (!doclinc_request_realtime_delivery($this->db)->deliver('cancelled', $request_id, $request_id, array(
+					'user:' . (int) $request->user_id,
+					'puskesmas:' . $event_puskesmas_code . ':ops',
+				), array($event_puskesmas_code), array($notification))) {
+					$this->db->trans_rollback();
+					return array('status' => 'error', 'message' => 'Permintaan belum dapat dibatalkan.');
+				}
+			}
+			if ($realtime_enabled && !$this->db->trans_commit()) {
+				$this->db->trans_rollback();
+				return array('status' => 'error', 'message' => 'Permintaan belum dapat dibatalkan.');
+			}
 			return array('status' => 'success', 'message' => 'Permintaan dibatalkan.');
 		}
 
@@ -1319,8 +1436,9 @@ class Home_nakes_m extends MX_Controller
 		$staff = null;
 		$previous_assignment = null;
 		$assignment_event = null;
-		$abort = function ($message) use (&$result) {
-			$result = array('status' => 'error', 'message' => $message);
+		$new_assignment_id = null;
+		$abort = function ($message, $safe_error_code = 'staff_assignment_failed') use (&$result) {
+			$result = array('status' => 'error', 'message' => $message, 'safe_error_code' => $safe_error_code);
 			throw new RuntimeException('staff_assignment_aborted');
 		};
 
@@ -1335,9 +1453,7 @@ class Home_nakes_m extends MX_Controller
 				array($request_id)
 			);
 			$request = $request_query ? $request_query->row() : null;
-			$database_identity = function_exists('doclinc_dokter_identity_context')
-				? doclinc_dokter_identity_context($assigned_by_user_id, true)
-				: null;
+			$database_identity = $this->locked_command_center_context($assigned_by_user_id, $kode_pkm, $request);
 			if (empty($database_identity['valid'])
 				|| $database_identity['account_type'] !== 'command_center'
 				|| trim((string) $database_identity['puskesmas_code']) !== $kode_pkm
@@ -1354,6 +1470,9 @@ class Home_nakes_m extends MX_Controller
 			$active_assignments = $this->locked_active_staff_assignments($request_id);
 			if ($active_assignments === false) {
 				$abort('Gagal memperbarui PIC.');
+			}
+			if (count($active_assignments) > 1) {
+				$abort('Data PIC aktif perlu diperiksa.', 'ambiguous_active_assignments');
 			}
 			foreach ($active_assignments as $active_assignment) {
 				if ((string) $active_assignment->kode_pkm !== $kode_pkm
@@ -1415,6 +1534,8 @@ class Home_nakes_m extends MX_Controller
 				))) {
 					$abort('Gagal memperbarui PIC.');
 				}
+				$new_assignment_id = (int) $this->db->insert_id();
+				if ($new_assignment_id < 1) { $abort('Gagal memperbarui PIC.'); }
 			}
 
 			if (!$this->synchronize_request_staff_owner($request_id, $kode_pkm, $target_owner_user_id, $assigned_by_user_id)) {
@@ -1429,6 +1550,19 @@ class Home_nakes_m extends MX_Controller
 				$assigned_by_user_id
 			) || $this->db->trans_status() === false) {
 				$abort('Gagal memperbarui PIC.');
+			}
+			if ($assignment_event !== null && function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled()) {
+				$audiences = array(
+					'user:' . (int) $request->user_id,
+					'puskesmas:' . $kode_pkm . ':ops',
+				);
+				if ($target_owner_user_id > 0) { $audiences[] = 'user:' . $target_owner_user_id; }
+				$previous_user_id = $previous_assignment ? (int) ($previous_assignment->staff_user_id ?? 0) : 0;
+				if ($previous_user_id > 0) { $audiences[] = 'user:' . $previous_user_id; }
+				$transition = $assignment_event === 'pic_changed' ? 'pic_reassigned' : 'pic_assigned';
+				if (!doclinc_request_realtime_delivery($this->db)->deliver(
+					$transition, $request_id, $new_assignment_id, $audiences, array($kode_pkm)
+				)) { $abort('Gagal memperbarui PIC.'); }
 			}
 
 			if (!$this->db->trans_commit()) {
@@ -1534,9 +1668,7 @@ class Home_nakes_m extends MX_Controller
 				array($request_id)
 			);
 			$request = $request_query ? $request_query->row() : null;
-			$database_identity = function_exists('doclinc_dokter_identity_context')
-				? doclinc_dokter_identity_context($assigned_by_user_id, true)
-				: null;
+			$database_identity = $this->locked_command_center_context($assigned_by_user_id, $kode_pkm, $request);
 			if (empty($database_identity['valid'])
 				|| $database_identity['account_type'] !== 'command_center'
 				|| trim((string) $database_identity['puskesmas_code']) !== $kode_pkm
@@ -1581,6 +1713,17 @@ class Home_nakes_m extends MX_Controller
 			) || $this->db->trans_status() === false) {
 				$abort('Gagal melepas PIC.');
 			}
+			if (function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled()) {
+				$audiences = array(
+					'user:' . (int) $request->user_id,
+					'puskesmas:' . $kode_pkm . ':ops',
+				);
+				$previous_user_id = (int) ($previous_assignment->staff_user_id ?? 0);
+				if ($previous_user_id > 0) { $audiences[] = 'user:' . $previous_user_id; }
+				if (!doclinc_request_realtime_delivery($this->db)->deliver(
+					'pic_cleared', $request_id, (int) $previous_assignment->assignment_id, $audiences, array($kode_pkm)
+				)) { $abort('Gagal melepas PIC.'); }
+			}
 
 			if (!$this->db->trans_commit()) {
 				$this->db->trans_rollback();
@@ -1624,7 +1767,7 @@ class Home_nakes_m extends MX_Controller
 	private function locked_active_staff_assignments($request_id)
 	{
 		$sql = 'SELECT rsa.assignment_id, rsa.request_id, rsa.staff_id, rsa.kode_pkm, rsa.assigned_by_user_id, rsa.status, rsa.note, rsa.assigned_at, '
-			. 'ps.kode_pkm AS staff_kode_pkm, ps.nama AS staff_nama, ps.profesi AS staff_profesi '
+			. 'ps.kode_pkm AS staff_kode_pkm, ps.user_id AS staff_user_id, ps.nama AS staff_nama, ps.profesi AS staff_profesi '
 			. 'FROM ' . $this->db->dbprefix('request_staff_assignments') . ' rsa '
 			. 'LEFT JOIN ' . $this->db->dbprefix('puskesmas_staff') . ' ps ON ps.staff_id = rsa.staff_id '
 			. 'WHERE rsa.request_id = ? AND rsa.status = ? '

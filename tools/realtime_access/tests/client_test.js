@@ -31,6 +31,7 @@ class MockCentrifuge {
 	connect() { this.connected = true; }
 	disconnect() { this.disconnected = true; }
 	newSubscription(channel, options) {
+		if (MockCentrifuge.failChannel === channel) { throw new Error('synthetic_subscription_failure'); }
 		const subscription = new MockSubscription(channel, options);
 		this.subscriptions.push(subscription);
 		return subscription;
@@ -41,6 +42,7 @@ class MockCentrifuge {
 	emit(name, value) { if (this.handlers[name]) this.handlers[name](value); }
 }
 MockCentrifuge.instances = [];
+MockCentrifuge.failChannel = '';
 
 function response(status, body) {
 	return {
@@ -132,6 +134,52 @@ async function flush() {
 	client.teardown();
 	check(subscription.unsubscribed && sdk.disconnected, 'teardown unsubscribes and disconnects');
 	check(timers.size === 0, 'teardown clears timers');
+
+	const ownershipClient = new RealtimeClient({
+		enabled: true,
+		websocketUrl: 'wss://staging.example.invalid/connection/websocket',
+		fetch: fakeFetch,
+		Centrifuge: MockCentrifuge
+	});
+	let observed = 0;
+	ownershipClient.observe('puskesmas:PKM01:ops', { invalidation: () => { observed += 1; } });
+	check(ownershipClient.entries.size === 0, 'observe alone does not acquire subscription');
+	const userOwnerOne = ownershipClient.acquireSubscription('user:101');
+	const userOwnerTwo = ownershipClient.acquireSubscription('user:101');
+	const tenantOwner = ownershipClient.acquireSubscription('puskesmas:PKM01:ops');
+	check(ownershipClient.start() === true, 'ownership client starts once');
+	const ownershipSdk = MockCentrifuge.instances[MockCentrifuge.instances.length - 1];
+	check(MockCentrifuge.instances.filter(instance => instance === ownershipSdk).length === 1, 'one Centrifuge instance owns all channels');
+	check(ownershipSdk.subscriptions.length === 2, 'exact channels create one SDK subscription each');
+	check(ownershipSdk.subscriptions.filter(item => item.channel === 'user:101').length === 1, 'same channel owners share SDK subscription');
+	check(await ownershipSdk.subscriptions[0].options.getToken() === 'subscription-token'
+		&& await ownershipSdk.subscriptions[1].options.getToken() === 'subscription-token', 'each exact channel retains token refresh callback');
+	check(userOwnerOne.release() === true && ownershipSdk.subscriptions[0].unsubscribed === false, 'first shared owner release preserves subscription');
+	check(userOwnerOne.release() === false, 'repeated release is idempotent');
+	check(userOwnerTwo.release() === true && ownershipSdk.subscriptions[0].unsubscribed === true, 'last shared owner release unsubscribes');
+	check(ownershipSdk.removed === ownershipSdk.subscriptions[0], 'last shared owner removes SDK subscription');
+	check(ownershipClient.hasSubscriptionOwners() === true && ownershipSdk.disconnected === false, 'other channel owner preserves connection');
+	tenantOwner.release();
+	check(ownershipSdk.subscriptions[1].unsubscribed === true && ownershipClient.hasSubscriptionOwners() === false, 'last tenant owner releases exact channel');
+	ownershipClient.teardown();
+
+	const partialClient = new RealtimeClient({
+		enabled: true,
+		websocketUrl: 'wss://staging.example.invalid/connection/websocket',
+		fetch: fakeFetch,
+		Centrifuge: MockCentrifuge
+	});
+	const preservedOwner = partialClient.acquireSubscription('user:202');
+	partialClient.start();
+	const partialSdk = MockCentrifuge.instances[MockCentrifuge.instances.length - 1];
+	MockCentrifuge.failChannel = 'puskesmas:PKM02:ops';
+	let partialRejected = false;
+	try { partialClient.acquireSubscription('puskesmas:PKM02:ops'); } catch (error) { partialRejected = error.message === 'subscription_acquisition_failed'; }
+	MockCentrifuge.failChannel = '';
+	check(partialRejected && partialClient.entries.has('user:202') && !partialClient.entries.has('puskesmas:PKM02:ops'), 'partial acquisition cleans only failed owner');
+	check(partialSdk.subscriptions[0].unsubscribed === false, 'partial acquisition preserves existing owner');
+	preservedOwner.release();
+	partialClient.teardown();
 
 	for (const channel of ['user:0', 'request:-1', 'admin:1', 'puskesmas:DEFAULT:ops', 'request:1 extra']) {
 		let rejected = false;

@@ -7,6 +7,13 @@ class Realtime_outbox_contract
 {
 	private const EVENT_AGGREGATES = array(
 		'notification.created' => array('notification', 'notifications'),
+		'request.created' => array('request', 'requests'),
+		'request.accepted' => array('request', 'requests'),
+		'request.cancelled' => array('request', 'requests'),
+		'request.completed' => array('request', 'requests'),
+		'request.pic_assigned' => array('request', 'assignment'),
+		'request.pic_reassigned' => array('request', 'assignment'),
+		'request.pic_cleared' => array('request', 'assignment'),
 		'request.assignment.changed' => array('request', 'assignment'),
 		'nakes.presence.changed' => array('nakes', 'presence'),
 		'visit.route.changed' => array('visit', 'route'),

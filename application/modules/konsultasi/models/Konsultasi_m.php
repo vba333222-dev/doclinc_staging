@@ -141,6 +141,29 @@ class Konsultasi_m extends MX_Controller
 				));
 			}
 		}
+		if (function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled()) {
+			$delivery = doclinc_request_realtime_delivery($this->db);
+			$notification = array(
+				'recipient_user_id' => (int) $dokter_id,
+				'recipient_role' => 'dokter',
+				'recipient_puskesmas_code' => $assigned_puskesmas_code,
+				'actor_user_id' => (int) $id_user,
+				'event_type' => 'request_created',
+				'entity_type' => 'request',
+				'entity_id' => (string) $request_id,
+				'title' => 'Permintaan konsultasi baru',
+				'message' => 'Ada permintaan konsultasi baru untuk Puskesmas ' . (string) ($routing['assigned_puskesmas_name'] ?? ''),
+				'is_read' => 0,
+				'created_at' => $now,
+			);
+			if (!$delivery->deliver('created', $request_id, $request_id, array(
+				'user:' . (int) $id_user,
+				'puskesmas:' . $assigned_puskesmas_code . ':ops',
+			), array($assigned_puskesmas_code), array($notification))) {
+				$this->db->trans_rollback();
+				return false;
+			}
+		}
 
 		$this->db->trans_complete(); // Selesaikan transaksi
 
