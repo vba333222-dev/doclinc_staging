@@ -2348,6 +2348,28 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		<script>window.DoclincNakesPresenceConfig = <?= json_encode($nakes_presence_bootstrap, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-nakes-presence.js')); ?>"></script>
 	<?php endif; ?>
+	<?php if (!empty($can_coordinate_staff)) : ?>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-pic-assignment.js')); ?>"></script>
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				if (!window.DoclincPicAssignment) {
+					return;
+				}
+				const picAssignment = window.DoclincPicAssignment.create({
+					documentRoot: document,
+					windowObject: window,
+					fetchImpl: window.fetch.bind(window)
+				});
+				if (!picAssignment) {
+					return;
+				}
+				picAssignment.start();
+				window.addEventListener('pagehide', function() {
+					picAssignment.release();
+				}, { once: true });
+			});
+		</script>
+	<?php endif; ?>
 
 </body>
 

@@ -19,7 +19,7 @@ When enabled, completion fails closed unless all of the following are true:
 - the authenticated personal Nakes still owns the locked request;
 - the submitted service mode is one of the two canonical values (`visit` or `non_visit`);
 - the request is `Accepted` and the visit state is `arrived` or `in_service`;
-- a JPEG, PNG, or WebP image of at most 5 MB passes decoded-image, MIME, extension,
+- a JPG/JPEG image of at most 5 MB passes decoded-image, MIME, extension,
   size, and SHA-256 validation;
 - a high-accuracy browser location was captured within the configured freshness window;
 - the location is within the configured arrival radius of the persisted patient location;

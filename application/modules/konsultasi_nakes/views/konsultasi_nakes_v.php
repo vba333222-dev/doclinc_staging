@@ -961,7 +961,7 @@ if (!function_exists('formatComplaintText')) {
 				<p class="optional-note">Opsional jika pasien tidak memerlukan rujukan.</p>
 				<div id="visitDocumentationField" class="<?= $kriteria === 'Kunjungan Nakes' ? '' : 'd-none'; ?>">
 					<div class="form-floating mb-2">
-						<input type="file" class="form-control" id="file" name="file" accept="image/jpeg,image/png,image/webp" capture="environment"<?= $visit_proof_required ? ' required' : ''; ?>>
+						<input type="file" class="form-control" id="file" name="file" accept=".jpg,.jpeg,image/jpeg" capture="environment"<?= $visit_proof_required ? ' required' : ''; ?>>
 						<label for="file"><i class="bi bi-camera"></i> Foto Bukti Kunjungan<?= $visit_proof_required ? '*' : ''; ?></label>
 						<img id="preview-image" src="#" alt="Preview Foto" style="display:none;" class="img-thumbnail" />
 					</div>
@@ -1331,15 +1331,17 @@ if (!function_exists('formatComplaintText')) {
 			if (visitProofRequired && kriteria === 'Kunjungan Nakes') {
 				const proofInput = document.getElementById('file');
 				const proofFile = proofInput && proofInput.files ? proofInput.files[0] : null;
-				const allowedProofTypes = ['image/jpeg', 'image/png', 'image/webp'];
+				const proofFileName = String(proofFile && proofFile.name ? proofFile.name : '');
+				const proofExtension = (proofFileName.match(/\.([A-Za-z0-9]+)$/) || [null, ''])[1].toLowerCase();
 				if (!proofFile) {
 					setClinicalAttachmentFeedback('Foto bukti kunjungan wajib diambil.');
 					Swal.fire('Bukti kunjungan diperlukan', 'Ambil foto di lokasi pasien sebelum konsultasi diselesaikan.', 'error');
 					return;
 				}
-				if (allowedProofTypes.indexOf(proofFile.type) === -1 || proofFile.size < 1 || proofFile.size > 5 * 1024 * 1024) {
-					setClinicalAttachmentFeedback('Gunakan JPG/PNG/WEBP dengan ukuran maksimal 5 MB.');
-					Swal.fire('Foto tidak valid', 'Gunakan JPG/PNG/WEBP dengan ukuran maksimal 5 MB.', 'error');
+				if (proofFile.type !== 'image/jpeg' || ['jpg', 'jpeg'].indexOf(proofExtension) === -1
+					|| proofFile.size < 1 || proofFile.size > 5 * 1024 * 1024) {
+					setClinicalAttachmentFeedback('Gunakan JPG/JPEG dengan ukuran maksimal 5 MB.');
+					Swal.fire('Foto tidak valid', 'Gunakan JPG/JPEG dengan ukuran maksimal 5 MB.', 'error');
 					return;
 				}
 				$('#save_konsul_nakes').prop('disabled', true).text('Memeriksa lokasi...');

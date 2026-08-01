@@ -114,25 +114,32 @@ try {
 	$key_two = $service->newStorageKey();
 	visit_proof_expect(preg_match('/^[a-f0-9]{64}$/', $key_one) === 1 && $key_one !== $key_two, 'storage_keys_random_and_canonical');
 	$config = $service->uploadConfig($key_one);
-	visit_proof_expect(is_array($config) && $config['file_name'] === $key_one && $config['allowed_types'] === 'jpg|jpeg|png|webp', 'upload_config_exact_types_and_name');
+	visit_proof_expect(is_array($config) && $config['file_name'] === $key_one && $config['allowed_types'] === 'jpg|jpeg', 'upload_config_exact_types_and_name');
 
-	$valid_path = $temporary_directory . DIRECTORY_SEPARATOR . $key_one . '.png';
-	$valid_png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true);
-	file_put_contents($valid_path, $valid_png);
+	$valid_path = $temporary_directory . DIRECTORY_SEPARATOR . $key_one . '.jpg';
+	$valid_jpeg = base64_decode('/9j/4AAQSkZJRgABAQAAAAAAAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AVN//2Q==', true);
+	file_put_contents($valid_path, $valid_jpeg);
 	$staged = $service->stageUploadedImage(5001, 201, array('full_path' => $valid_path, 'file_name' => basename($valid_path)), $key_one);
 	visit_proof_expect(!empty($staged['success']) && $staged['media_id'] === 1, 'valid_image_staged');
 	visit_proof_expect($db->rows[1]['lifecycle_state'] === 'pending'
-		&& $db->rows[1]['mime_type'] === 'image/png'
+		&& $db->rows[1]['mime_type'] === 'image/jpeg'
 		&& hash_equals($db->rows[1]['sha256'], hash_file('sha256', $valid_path)), 'staged_metadata_exact_hash_and_mime');
 	$service->failStaged($staged, 'visit_location_outside_radius');
 	visit_proof_expect($db->rows[1]['lifecycle_state'] === 'failed'
 		&& $db->rows[1]['failure_code'] === 'visit_location_outside_radius'
 		&& !is_file($valid_path), 'failed_stage_marked_and_file_removed');
 
+	$png_key = $service->newStorageKey();
+	$png_path = $temporary_directory . DIRECTORY_SEPARATOR . $png_key . '.png';
+	file_put_contents($png_path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true));
+	$png_result = $service->stageUploadedImage(5002, 201, array('full_path' => $png_path, 'file_name' => basename($png_path)), $png_key);
+	visit_proof_expect(empty($png_result['success']) && $png_result['reason'] === 'storage_key_mismatch'
+		&& !is_file($png_path), 'png_visit_proof_rejected_and_removed');
+
 	$invalid_key = $service->newStorageKey();
 	$invalid_path = $temporary_directory . DIRECTORY_SEPARATOR . $invalid_key . '.jpg';
 	file_put_contents($invalid_path, 'not-an-image');
-	$invalid = $service->stageUploadedImage(5002, 201, array('full_path' => $invalid_path, 'file_name' => basename($invalid_path)), $invalid_key);
+	$invalid = $service->stageUploadedImage(5003, 201, array('full_path' => $invalid_path, 'file_name' => basename($invalid_path)), $invalid_key);
 	visit_proof_expect(empty($invalid['success']) && $invalid['reason'] === 'invalid_image_content'
 		&& !is_file($invalid_path) && count($db->rows) === 1, 'invalid_image_rejected_and_removed');
 } finally {
