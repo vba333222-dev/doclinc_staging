@@ -131,6 +131,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/css/bootstrap-select.min.css" integrity="sha512-g2SduJKxa4Lbn3GW+Q7rNz+pKP9AWMR++Ta8fgwsZRCUsawjPvF/BxSMkGS61VsR9yinGoEgrHPGPn2mrj8+4w==" crossorigin="anonymous" referrerpolicy="no-referrer">
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/nakes-dashboard.css">
+	<?php if (!empty($nakes_presence_enabled)) : ?><link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-nakes-presence.css')); ?>"><?php endif; ?>
 </head>
 
 <body class="bg-light dl-dashboard-body dl-nakes-dashboard">
@@ -227,7 +228,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<div class="offcanvas offcanvas-top" style="height: 100vh;" tabindex="-1" id="offcanvasMapTujuan" aria-labelledby="offcanvasMapTujuanLabel">
 		<div class="offcanvas-header bg-success text-white">
 			<h5 class="offcanvas-title d-flex align-items-center" id="offcanvasMapTujuanLabel">
-				<i class="bi bi-geo-alt-fill me-2 fs-4"></i>Rute Anda ke Pasien
+				<i class="bi bi-geo-alt-fill me-2 fs-4"></i><span id="nakesVisitMapTitle">Rute Anda ke Pasien</span>
 			</h5>
 			<button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
 		</div>
@@ -248,7 +249,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				</div>
 				<div class="visit-route-card">
 					<div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-						<div class="visit-route-card-title">Rute Anda ke pasien</div>
+						<div class="visit-route-card-title" id="nakesVisitRouteTitle">Rute Anda ke pasien</div>
 						<span class="visit-route-status" id="nakesVisitRouteStatus">Menghitung...</span>
 					</div>
 					<div class="visit-route-card-row">
@@ -775,7 +776,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			const updateVisitStatusUrl = <?= json_encode(base_url('home_nakes/update_visit_status')); ?>;
 			const visitMapboxToken = <?= json_encode($mapbox_public_token); ?>;
 			const minPostIntervalMs = <?= json_encode((function_exists('doclinc_visit_location_min_interval_seconds') ? doclinc_visit_location_min_interval_seconds() : 5) * 1000); ?>;
+			const monitorRefreshIntervalMs = 10000;
 			const watches = ns.watches = ns.watches || {};
+			let monitorRefreshTimer = null;
 			const mapState = ns.nakesMapState = ns.nakesMapState || {
 				leaflet: null,
 				leafletMarkers: {},
@@ -830,6 +833,13 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				}
 			}
 
+			function setViewerMode(canUpdate) {
+				setTextById('nakesVisitMapTitle', canUpdate ? 'Rute Anda ke Pasien' : 'Monitoring Rute Nakes');
+				setTextById('nakesVisitRouteTitle', canUpdate ? 'Rute Anda ke pasien' : 'Rute PIC menuju pasien');
+				const arrivalNotice = document.getElementById('nakesVisitArrivalNotice');
+				if (arrivalNotice && !canUpdate) arrivalNotice.classList.add('d-none');
+			}
+
 			function setTextById(id, text) {
 				const element = document.getElementById(id);
 				if (element) element.textContent = text;
@@ -872,7 +882,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 				setTextById('nakesVisitRouteDistance', route && route.distance_text ? route.distance_text : 'Menghitung...');
 				setTextById('nakesVisitRouteEta', route && route.eta_text ? route.eta_text : 'Menghitung...');
-				setTextById('nakesVisitRouteUpdated', route && route.calculated_at ? route.calculated_at : (response && response.status ? new Date().toLocaleString('id-ID') : '-'));
+				setTextById('nakesVisitRouteUpdated', response && response.location_updated_text
+					? response.location_updated_text
+					: (route && route.calculated_at ? route.calculated_at : '-'));
 				setTextById('nakesVisitRouteStatus', statusText);
 				const providerNoteElement = document.getElementById('nakesVisitRouteProviderNote');
 				if (providerNoteElement) {
@@ -1210,7 +1222,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 								return;
 							}
 							renderVisitMap(requestId, response, fallbackPatientLocation);
-							if (updateDeviceLocation) {
+							setViewerMode(response.viewer_can_update === true);
+							if (updateDeviceLocation && response.viewer_can_update === true) {
 								refreshDeviceLocation(requestId);
 							}
 							return;
@@ -1414,7 +1427,15 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				const lat = parseFloat($(this).data('lat'));
 				const lng = parseFloat($(this).data('lng'));
 				if (requestId) {
-					fetchNakesVisitLocation(requestId);
+					const monitorOnly = String($(this).data('monitor-only')) === '1';
+					setViewerMode(!monitorOnly);
+					fetchNakesVisitLocation(requestId, !monitorOnly);
+					if (monitorRefreshTimer) window.clearInterval(monitorRefreshTimer);
+					if (monitorOnly) {
+						monitorRefreshTimer = window.setInterval(function() {
+							fetchNakesVisitLocation(requestId, false);
+						}, monitorRefreshIntervalMs);
+					}
 					return;
 				}
 				renderVisitMap('', {}, Number.isFinite(lat) && Number.isFinite(lng) ? {
@@ -1460,6 +1481,12 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						$('#nakesVisitRecenter').trigger('click');
 					}
 				});
+				nakesMapOffcanvas.addEventListener('hidden.bs.offcanvas', function() {
+					if (monitorRefreshTimer) {
+						window.clearInterval(monitorRefreshTimer);
+						monitorRefreshTimer = null;
+					}
+				});
 			}
 
 			$(document).on('click', '.visit-status-update', function(event) {
@@ -1489,6 +1516,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						if (response && response.status === 'success') {
 							refreshVisitWorkflowControl(requestId, response.visit_status, response.visit_status_label);
 							setNakesArrivalNotice(requestId, null);
+							if (response.visit_status === 'en_route') {
+								ns.startNakesVisitTracking(requestId);
+							}
 							if (response.visit_status === 'completed') {
 								stopTracking(requestId);
 							}
@@ -1508,6 +1538,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			});
 
 			$(window).on('beforeunload', function() {
+				if (monitorRefreshTimer) window.clearInterval(monitorRefreshTimer);
 				Object.keys(watches).forEach(stopTracking);
 			});
 		})(window, jQuery);
@@ -1522,6 +1553,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		let map, userMarker, destinationMarker, userLocation;
 		let geocoder, directionsService, directionsRenderer;
 		let firstLoad = true;
+		const legacyNakesDeviceLocationEnabled = <?= $nakes_is_personal ? 'true' : 'false'; ?>;
 
 		function initMap() {
 			if (!hasGoogleMaps()) return;
@@ -1773,7 +1805,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			}
 		}
 
-		if (hasGoogleMaps()) {
+		if (hasGoogleMaps() && legacyNakesDeviceLocationEnabled) {
 			window.addEventListener('load', initMap);
 		}
 	</script>
@@ -2311,6 +2343,10 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<?php endif; ?>
 	<?php if (is_array($request_realtime_bootstrap)) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-requests.js')); ?>"></script>
+	<?php endif; ?>
+	<?php if (!empty($nakes_presence_enabled)) : ?>
+		<script>window.DoclincNakesPresenceConfig = <?= json_encode($nakes_presence_bootstrap, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-nakes-presence.js')); ?>"></script>
 	<?php endif; ?>
 
 </body>

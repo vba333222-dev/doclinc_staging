@@ -30,11 +30,26 @@ $diagnosis_distribution = isset($diagnosis_analytics['puskesmas_distribution']) 
 $diagnosis_period_days = (int) ($diagnosis_analytics['period_days'] ?? 30);
 $max_top_diagnosis = (int) ($diagnosis_analytics['max_top_total'] ?? 0);
 $max_puskesmas_diagnosis = (int) ($diagnosis_analytics['max_puskesmas_total'] ?? 0);
+$nakes_presence_enabled = !empty($nakes_presence_enabled);
 $max_distribution = 0;
 foreach ($distribution as $row) {
 	$max_distribution = max($max_distribution, (int) ($row->total ?? 0));
 }
 ?>
+
+<?php if ($nakes_presence_enabled): ?>
+	<?php
+	$admin_public_base = preg_replace('#/admin_menu$#', '', rtrim(base_url(), '/'));
+	$admin_presence_bootstrap = array(
+		'enabled' => true,
+		'mode' => 'monitor',
+		'snapshotUrl' => site_url('home/nakes_presence_snapshot'),
+		'snapshotIntervalMs' => 30000,
+		'containerId' => 'doclincNakesPresence',
+	);
+	?>
+	<link rel="stylesheet" href="<?= html_escape($admin_public_base . '/assets/css/doclinc-nakes-presence.css'); ?>">
+<?php endif; ?>
 
 <div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 	<div>
@@ -57,6 +72,25 @@ foreach ($distribution as $row) {
 		</div>
 	<?php endforeach; ?>
 </div>
+
+<?php if ($nakes_presence_enabled): ?>
+	<div class="card shadow-sm doclinc-dashboard-panel doclinc-presence-panel mb-4">
+		<div class="card-header d-flex align-items-center justify-content-between">
+			<div>
+				<h2 class="h6 mb-1 font-weight-bold">Status Online Nakes</h2>
+				<div class="doclinc-meta-text">Seluruh akun Nakes personal aktif, diperbarui otomatis</div>
+			</div>
+			<span class="badge badge-light border">Read-only</span>
+		</div>
+		<div class="card-body">
+			<div id="doclincNakesPresence" aria-live="polite" aria-busy="true">
+				<div class="doclinc-presence-empty">Memuat status Nakes...</div>
+			</div>
+		</div>
+	</div>
+	<script>window.DoclincNakesPresenceConfig = <?= json_encode($admin_presence_bootstrap, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
+	<script src="<?= html_escape($admin_public_base . '/assets/js/doclinc-nakes-presence.js'); ?>"></script>
+<?php endif; ?>
 
 <div class="row">
 	<div class="col-xl-7 mb-4">

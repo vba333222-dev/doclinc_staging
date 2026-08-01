@@ -351,7 +351,13 @@ $config['cache_query_string'] = FALSE;
 | https://codeigniter.com/user_guide/libraries/encryption.html
 |
 */
-$config['encryption_key'] = 'SangatRahasia1234567890';
+$encryption_key_env = getenv('DOCLINC_ENCRYPTION_KEY');
+if ($encryption_key_env === false || $encryption_key_env === '') {
+	$encryption_key_env = isset($_SERVER['DOCLINC_ENCRYPTION_KEY'])
+		? $_SERVER['DOCLINC_ENCRYPTION_KEY']
+		: '';
+}
+$config['encryption_key'] = is_string($encryption_key_env) ? $encryption_key_env : '';
 
 /*
 |--------------------------------------------------------------------------
@@ -563,3 +569,36 @@ $config['rewrite_short_tags'] = FALSE;
 | Array:		array('10.0.1.200', '192.168.5.0/24')
 */
 $config['proxy_ips'] = '';
+
+/* Nakes presence remains fail-closed unless both environment flags match. */
+$nakes_presence_enabled_env = getenv('DOCLINC_NAKES_PRESENCE_ENABLED');
+if ($nakes_presence_enabled_env === false || $nakes_presence_enabled_env === '') {
+	$nakes_presence_enabled_env = $_SERVER['DOCLINC_NAKES_PRESENCE_ENABLED'] ?? null;
+}
+$nakes_presence_environment_env = getenv('DOCLINC_NAKES_PRESENCE_ENVIRONMENT');
+if ($nakes_presence_environment_env === false || $nakes_presence_environment_env === '') {
+	$nakes_presence_environment_env = $_SERVER['DOCLINC_NAKES_PRESENCE_ENVIRONMENT'] ?? '';
+}
+$nakes_presence_runtime_env = getenv('DOCLINC_NAKES_PRESENCE_RUNTIME_ENVIRONMENT');
+if ($nakes_presence_runtime_env === false || $nakes_presence_runtime_env === '') {
+	$nakes_presence_runtime_env = getenv('DOCLINC_REALTIME_CLIENT_RUNTIME_ENVIRONMENT');
+}
+if ($nakes_presence_runtime_env === false || $nakes_presence_runtime_env === '') {
+	$nakes_presence_runtime_env = $_SERVER['DOCLINC_NAKES_PRESENCE_RUNTIME_ENVIRONMENT']
+		?? ($_SERVER['DOCLINC_REALTIME_CLIENT_RUNTIME_ENVIRONMENT'] ?? '');
+}
+$shared_feature_flags = dirname(APPPATH, 2) . '/application/libraries/Doclinc_feature_flags.php';
+if (is_file($shared_feature_flags)) {
+	require_once $shared_feature_flags;
+	$nakes_presence_feature = Doclinc_feature_flags::resolve(
+		$nakes_presence_enabled_env,
+		$nakes_presence_environment_env,
+		$nakes_presence_runtime_env
+	);
+} else {
+	$nakes_presence_feature = array('enabled' => false, 'environment' => '', 'reason' => 'resolver_unavailable');
+}
+$config['nakes_presence_enabled'] = !empty($nakes_presence_feature['enabled']);
+$config['nakes_presence_environment'] = (string) ($nakes_presence_feature['environment'] ?? '');
+$config['nakes_presence_feature_reason'] = (string) ($nakes_presence_feature['reason'] ?? 'disabled');
+$config['nakes_presence_online_timeout_seconds'] = 90;

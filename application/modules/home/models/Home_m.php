@@ -243,6 +243,11 @@ class Home_m extends MX_Controller
 				->join('(SELECT request_id, MAX(record_id) AS record_id FROM medicalrecords GROUP BY request_id) latest_medicalrecords', 'latest_medicalrecords.request_id = requests.request_id', 'left', FALSE)
 				->join('medicalrecords', 'medicalrecords.record_id = latest_medicalrecords.record_id', 'left');
 			$this->db->select($this->db->field_exists('anamnesis', 'medicalrecords') ? 'medicalrecords.anamnesis AS anamnesis' : 'NULL AS anamnesis', FALSE);
+			if ($this->db->table_exists('medicalrecord_diagnoses')) {
+				$this->db->select("COALESCE(NULLIF((SELECT GROUP_CONCAT(mrd.display_text ORDER BY mrd.position SEPARATOR '\\n') FROM " . $this->db->dbprefix('medicalrecord_diagnoses') . " mrd WHERE mrd.medicalrecord_id = medicalrecords.record_id AND mrd.position BETWEEN 1 AND 3), ''), medicalrecords.diagnosis) AS diagnoses_display", FALSE);
+			} else {
+				$this->db->select('medicalrecords.diagnosis AS diagnoses_display', FALSE);
+			}
 			if ($this->db->table_exists('konsultasi')) {
 				$this->db->select('(SELECT k.konsul_id FROM konsultasi k WHERE k.request_id = requests.request_id ORDER BY k.konsul_id DESC LIMIT 1) AS konsul_id', FALSE);
 			} else {

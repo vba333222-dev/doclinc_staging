@@ -14,7 +14,7 @@ class First_login_gate_policy
 		'konsultasi' => array('save_konsultasi', 'send'),
 		'konsultasi_nakes' => array('get_terapi', 'save_konsultasi_nakes', 'geticd_json'),
 		'home' => array('livekit_token', 'livekit_incoming_call', 'answer_livekit_call', 'reject_livekit_call', 'livekit_call_status', 'save_konsultasi', 'updaterequestbyid', 'deleterequestbyid', 'cancel_request', 'visit_location', 'submit_rating', 'getdokterrating', 'getduration'),
-		'home_nakes' => array('livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment', 'tes_save_lokasi', 'save_location', 'accept_request', 'cancel_request', 'visit_location', 'update_visit_location', 'update_visit_status', 'get_location_user', 'get_estimation', 'updateprofile'),
+		'home_nakes' => array('livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment', 'tes_save_lokasi', 'save_location', 'accept_request', 'cancel_request', 'visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'get_location_user', 'get_estimation', 'updateprofile'),
 	);
 
 	public function allowed($class, $method)

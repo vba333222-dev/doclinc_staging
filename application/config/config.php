@@ -345,7 +345,13 @@ $config['cache_query_string'] = FALSE;
 | https://codeigniter.com/user_guide/libraries/encryption.html
 |
 */
-$config['encryption_key'] = 'SangatRahasia1234567890';
+$encryption_key_env = getenv('DOCLINC_ENCRYPTION_KEY');
+if ($encryption_key_env === false || $encryption_key_env === '') {
+	$encryption_key_env = isset($_SERVER['DOCLINC_ENCRYPTION_KEY'])
+		? $_SERVER['DOCLINC_ENCRYPTION_KEY']
+		: '';
+}
+$config['encryption_key'] = is_string($encryption_key_env) ? $encryption_key_env : '';
 
 /*
 |--------------------------------------------------------------------------
@@ -727,3 +733,67 @@ $realtime_requests_feature = Realtime_request_feature::resolve(
 $config['realtime_requests_enabled'] = $realtime_requests_feature['enabled'];
 $config['realtime_requests_environment'] = $realtime_requests_feature['environment'];
 $config['realtime_requests_feature_reason'] = $realtime_requests_feature['reason'];
+
+$visit_proof_required_env = getenv('DOCLINC_VISIT_PROOF_REQUIRED');
+if ($visit_proof_required_env === false || $visit_proof_required_env === '') {
+	$visit_proof_required_env = $_SERVER['DOCLINC_VISIT_PROOF_REQUIRED'] ?? null;
+}
+$visit_proof_environment_env = getenv('DOCLINC_VISIT_PROOF_ENVIRONMENT');
+if ($visit_proof_environment_env === false || $visit_proof_environment_env === '') {
+	$visit_proof_environment_env = $_SERVER['DOCLINC_VISIT_PROOF_ENVIRONMENT'] ?? '';
+}
+require_once APPPATH . 'libraries/Doclinc_feature_flags.php';
+$visit_proof_feature = Doclinc_feature_flags::resolve(
+	$visit_proof_required_env,
+	$visit_proof_environment_env,
+	$realtime_client_runtime_environment_env
+);
+$config['visit_proof_required'] = $visit_proof_feature['enabled'];
+$config['visit_proof_environment'] = $visit_proof_feature['environment'];
+$config['visit_proof_feature_reason'] = $visit_proof_feature['reason'];
+$config['visit_proof_max_size_kb'] = 5120;
+$config['visit_proof_location_max_age_seconds'] = 120;
+$visit_proof_storage_path_env = getenv('DOCLINC_VISIT_PROOF_STORAGE_PATH');
+if ($visit_proof_storage_path_env === false || $visit_proof_storage_path_env === '') {
+	$visit_proof_storage_path_env = $_SERVER['DOCLINC_VISIT_PROOF_STORAGE_PATH'] ?? '';
+}
+$config['visit_proof_storage_path'] = is_string($visit_proof_storage_path_env)
+	? trim($visit_proof_storage_path_env)
+	: '';
+
+$additional_diagnoses_enabled_env = getenv('DOCLINC_ADDITIONAL_DIAGNOSES_ENABLED');
+if ($additional_diagnoses_enabled_env === false || $additional_diagnoses_enabled_env === '') {
+	$additional_diagnoses_enabled_env = $_SERVER['DOCLINC_ADDITIONAL_DIAGNOSES_ENABLED'] ?? null;
+}
+$additional_diagnoses_environment_env = getenv('DOCLINC_ADDITIONAL_DIAGNOSES_ENVIRONMENT');
+if ($additional_diagnoses_environment_env === false || $additional_diagnoses_environment_env === '') {
+	$additional_diagnoses_environment_env = $_SERVER['DOCLINC_ADDITIONAL_DIAGNOSES_ENVIRONMENT'] ?? '';
+}
+$additional_diagnoses_feature = Doclinc_feature_flags::resolve(
+	$additional_diagnoses_enabled_env,
+	$additional_diagnoses_environment_env,
+	$realtime_client_runtime_environment_env
+);
+$config['additional_diagnoses_enabled'] = $additional_diagnoses_feature['enabled'];
+$config['additional_diagnoses_environment'] = $additional_diagnoses_feature['environment'];
+$config['additional_diagnoses_feature_reason'] = $additional_diagnoses_feature['reason'];
+
+$nakes_presence_enabled_env = getenv('DOCLINC_NAKES_PRESENCE_ENABLED');
+if ($nakes_presence_enabled_env === false || $nakes_presence_enabled_env === '') {
+	$nakes_presence_enabled_env = $_SERVER['DOCLINC_NAKES_PRESENCE_ENABLED'] ?? null;
+}
+$nakes_presence_environment_env = getenv('DOCLINC_NAKES_PRESENCE_ENVIRONMENT');
+if ($nakes_presence_environment_env === false || $nakes_presence_environment_env === '') {
+	$nakes_presence_environment_env = $_SERVER['DOCLINC_NAKES_PRESENCE_ENVIRONMENT'] ?? '';
+}
+$nakes_presence_feature = Doclinc_feature_flags::resolve(
+	$nakes_presence_enabled_env,
+	$nakes_presence_environment_env,
+	$realtime_client_runtime_environment_env
+);
+$config['nakes_presence_enabled'] = $nakes_presence_feature['enabled'];
+$config['nakes_presence_environment'] = $nakes_presence_feature['environment'];
+$config['nakes_presence_feature_reason'] = $nakes_presence_feature['reason'];
+$config['nakes_presence_heartbeat_seconds'] = 30;
+$config['nakes_presence_write_throttle_seconds'] = 45;
+$config['nakes_presence_online_timeout_seconds'] = 90;

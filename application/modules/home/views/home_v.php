@@ -1665,7 +1665,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$visit_label_completed = isset($data->warga_visit_status_label) ? $data->warga_visit_status_label : doclinc_visit_status_label($visit_status_completed);
 								$visit_updated_completed = !empty($data->warga_visit_updated_at) && strtotime($data->warga_visit_updated_at) ? date('d M Y H:i', strtotime($data->warga_visit_updated_at)) : '';
 								$visit_timeline_completed = isset($data->warga_visit_timeline) ? $data->warga_visit_timeline : array();
-								$diagnosa = !empty($data->diagnosa) ? $data->diagnosa : (!empty($data->diagnosis) ? $data->diagnosis : '-');
+								$diagnosa = !empty($data->diagnoses_display) ? $data->diagnoses_display : (!empty($data->diagnosa) ? $data->diagnosa : (!empty($data->diagnosis) ? $data->diagnosis : '-'));
 								$anamnesis = isset($data->anamnesis) ? trim((string) $data->anamnesis) : '';
 								$saran_dokter = !empty($data->saran) ? $data->saran : $saran;
 								$card_id = !empty($data->konsul_id) ? $data->konsul_id : $id_request;
@@ -3877,6 +3877,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				pollMs: 3000
 			};
 		</script>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-ringtone.js')); ?>"></script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-incoming-watcher.js')); ?>"></script>
 	<?php endif; ?>
 	<?php $notification_realtime_bootstrap = doclinc_notification_realtime_bootstrap(); ?>

@@ -21,6 +21,40 @@
 	let contextEl = null;
 	let messageEl = null;
 	let actionsEl = null;
+	let ringtone = null;
+
+	function ringtoneController() {
+		if (ringtone) {
+			return ringtone;
+		}
+		if (!window.DoclincLivekitRingtone || typeof window.DoclincLivekitRingtone.createController !== 'function') {
+			return null;
+		}
+		ringtone = window.DoclincLivekitRingtone.createController({
+			windowObject: window
+		});
+		return ringtone;
+	}
+
+	function startRingtone(callId) {
+		const controller = ringtoneController();
+		if (controller && typeof controller.start === 'function') {
+			controller.start(callId).catch(function() {});
+		}
+	}
+
+	function stopRingtone(callId) {
+		if (ringtone && typeof ringtone.stop === 'function') {
+			ringtone.stop(callId);
+		}
+	}
+
+	function releaseRingtone() {
+		if (ringtone && typeof ringtone.release === 'function') {
+			ringtone.release();
+		}
+		ringtone = null;
+	}
 
 	function safeText(value, fallback) {
 		value = typeof value === 'string' ? value.trim() : '';
@@ -104,9 +138,11 @@
 			actionsEl.style.display = '';
 		}
 		overlay.classList.add('is-visible');
+		startRingtone(call.call_id);
 	}
 
 	function showNotice(message) {
+		stopRingtone();
 		createOverlay();
 		currentCall = null;
 		callerEl.textContent = 'Panggilan tidak terjawab';
@@ -121,7 +157,9 @@
 	}
 
 	function hideIncoming() {
+		const callId = currentCall && currentCall.call_id ? currentCall.call_id : null;
 		currentCall = null;
+		stopRingtone(callId);
 		if (overlay) {
 			overlay.classList.remove('is-visible');
 		}
@@ -217,6 +255,7 @@
 		if (!pollUrl || timer) {
 			return;
 		}
+		ringtoneController();
 		poll();
 		timer = window.setInterval(poll, pollMs);
 	}
@@ -231,10 +270,13 @@
 	document.addEventListener('visibilitychange', function() {
 		if (document.visibilityState === 'visible') {
 			poll();
+		} else {
+			stopRingtone();
 		}
 	});
 	window.addEventListener('beforeunload', function() {
 		stop();
+		releaseRingtone();
 		if (retryTimer) {
 			window.clearTimeout(retryTimer);
 		}

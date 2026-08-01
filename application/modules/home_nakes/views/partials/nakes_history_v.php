@@ -174,6 +174,7 @@ $history_event_time = static function ($event) {
 									$show_mode = !$history_is_weak_value($mode_label);
 									$show_visit_status = !$history_is_weak_value($visit_status_label);
 									$pic_assignment = isset($request_staff_assignment_map[(int) $x->request_id]) ? $request_staff_assignment_map[(int) $x->request_id] : null;
+									$visit_monitor_only = $nakes_is_command_center && $pic_assignment && !empty($pic_assignment->staff_user_id);
 									$request_events = isset($request_event_map[(int) $x->request_id]) ? array_slice($request_event_map[(int) $x->request_id], 0, 5) : array();
 									$visit_next_status = array(
 										'not_started' => 'en_route',
@@ -295,7 +296,7 @@ $history_event_time = static function ($event) {
 											<?php endif; ?>
 											<?php endif; ?>
 											<div class="visit-route-provider-note mt-2 d-none" data-route-provider-note="<?= html_escape((int) $x->request_id); ?>"></div>
-											<div class="alert alert-success py-2 px-3 mt-2 mb-0 d-none" data-arrival-notice="<?= html_escape((int) $x->request_id); ?>">
+											<div class="alert alert-success py-2 px-3 mt-2 mb-0 d-none" data-arrival-notice="<?= html_escape((int) $x->request_id); ?>"<?= $visit_monitor_only ? ' hidden' : ''; ?>>
 												<div class="small fw-bold" data-arrival-message="<?= html_escape((int) $x->request_id); ?>"></div>
 												<button type="button" class="btn btn-success btn-sm rounded-pill mt-2 visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived">
 													Konfirmasi tiba di lokasi
@@ -305,32 +306,34 @@ $history_event_time = static function ($event) {
 												<div class="nk-action-panel__title">Status kunjungan</div>
 												<div class="nk-action-panel__body">
 													<div class="nk-detail-row dl-visit-workflow-label"><span class="nk-detail-label">Status</span><strong class="nk-detail-value visit-workflow-label"><?= html_escape($visit_status_label); ?></strong></div>
-													<div class="dl-visit-workflow-actions nk-visit-actions">
+													<?php if (!$visit_monitor_only) : ?><div class="dl-visit-workflow-actions nk-visit-actions">
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="en_route" <?= $visit_next_status[$visit_status] === 'en_route' ? '' : 'disabled'; ?>>Mulai perjalanan</button>
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived" <?= $visit_next_status[$visit_status] === 'arrived' ? '' : 'disabled'; ?>>Tiba di lokasi</button>
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="in_service" <?= $visit_next_status[$visit_status] === 'in_service' ? '' : 'disabled'; ?>>Mulai penanganan</button>
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="completed" <?= $visit_next_status[$visit_status] === 'completed' ? '' : 'disabled'; ?>>Selesaikan kunjungan</button>
-													</div>
+													</div><?php else : ?>
+														<div class="small text-muted">Status diperbarui oleh PIC. Puskesmas hanya memonitor perjalanan.</div>
+													<?php endif; ?>
 												</div>
 												<div class="small mt-2 visit-workflow-message" data-visit-workflow-message="<?= html_escape((int) $x->request_id); ?>"></div>
 											</div>
 										</div>
 										<div class="card-footer dl-history-actions">
-											<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id)); ?>" class="btn btn-success shadow-sm rounded-pill dl-history-primary-action">
+											<?php if (!$visit_monitor_only) : ?><a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id)); ?>" class="btn btn-success shadow-sm rounded-pill dl-history-primary-action">
 												<i class="fas fa-notes-medical me-2"></i> Lanjutkan tugas
-											</a>
+											</a><?php endif; ?>
 											<div class="dl-history-secondary-actions">
 												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
 													<i class="fas fa-comments me-2"></i> Buka chat
 												</a>
-												<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
-													<i class="fas fa-map-marker-alt me-2"></i> Lihat lokasi
+												<button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>" data-monitor-only="<?= $visit_monitor_only ? '1' : '0'; ?>">
+													<i class="fas fa-map-marker-alt me-2"></i> <?= $visit_monitor_only ? 'Pantau rute Nakes' : 'Lihat lokasi'; ?>
 												</button>
 											</div>
 											<div class="dl-history-secondary-actions">
-												<button type="button" class="btn btn-outline-primary shadow-sm rounded-pill start-nakes-visit-tracking" data-request-id="<?= html_escape((int) $x->request_id); ?>">
+												<?php if (!$visit_monitor_only) : ?><button type="button" class="btn btn-outline-primary shadow-sm rounded-pill start-nakes-visit-tracking" data-request-id="<?= html_escape((int) $x->request_id); ?>">
 													<i class="fas fa-location-arrow me-2"></i> Lacak kunjungan
-												</button>
+												</button><?php endif; ?>
 												<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
 													<i class="fas fa-times-circle me-2"></i> Batalkan
 												</button>
@@ -369,7 +372,7 @@ $history_event_time = static function ($event) {
 									} catch (Exception $e) {
 										$riwayat = '';
 									}
-									$diagnosa = !empty($x->diagnosa) ? $x->diagnosa : (!empty($x->diagnosis) ? $x->diagnosis : '');
+									$diagnosa = !empty($x->diagnoses_display) ? $x->diagnoses_display : (!empty($x->diagnosa) ? $x->diagnosa : (!empty($x->diagnosis) ? $x->diagnosis : ''));
 									$anamnesis = isset($x->anamnesis) ? trim((string) $x->anamnesis) : '';
 									$saran = !empty($x->saran) ? $x->saran : (!empty($x->recommendations) ? $x->recommendations : '');
 									$treatment = !empty($x->treatment) ? $x->treatment : '';

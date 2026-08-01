@@ -1143,6 +1143,7 @@ Lama keluhan:
 				pollMs: 3000
 			};
 		</script>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-ringtone.js')); ?>"></script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-incoming-watcher.js')); ?>"></script>
 	<?php endif; ?>
 	<?php if ($clinical_suggestions_enabled) : ?>

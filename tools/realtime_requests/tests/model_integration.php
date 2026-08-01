@@ -7,6 +7,8 @@ require_once BASEPATH . 'core/Common.php';
 require_once BASEPATH . 'database/DB.php';
 require_once APPPATH . 'libraries/Request_realtime_delivery.php';
 require_once APPPATH . 'libraries/Request_transition_orchestrator.php';
+require_once APPPATH . 'helpers/visit_routing_helper.php';
+require_once APPPATH . 'helpers/visit_proof_helper.php';
 require_once __DIR__ . '/MariaDbReadiness.php';
 
 class MX_Controller {}
@@ -147,6 +149,7 @@ $database_name = '';
 $admin = null;
 $db = null;
 $stage = 'bootstrap';
+$visit_proof_temp_directories = array();
 
 function model_integration_expect($condition, $label)
 {
@@ -207,12 +210,15 @@ function model_integration_full_digest($db)
 		'requests' => 'SELECT request_id, user_id, dokter_id, request_status, assigned_puskesmas_code, assigned_nakes_user_id, accepted_by_user_id, assigned_nakes_by_user_id FROM requests ORDER BY request_id',
 		'assignments' => 'SELECT assignment_id, request_id, staff_id, kode_pkm, assigned_by_user_id, status, note, assigned_at, ended_at, created_at, updated_at FROM request_staff_assignments ORDER BY assignment_id',
 		'medicalrecords' => 'SELECT record_id, request_id, diagnosis, treatment, recommendations, anamnesis, created_at FROM medicalrecords ORDER BY record_id',
+		'diagnoses' => 'SELECT diagnosis_id, medicalrecord_id, request_id, position, diagnosis_role, diagnosis_code, diagnosis_label, display_text, suggestion_term_id, reference_source, reference_version, created_by_user_id FROM medicalrecord_diagnoses ORDER BY diagnosis_id',
 		'konsultasi' => 'SELECT konsul_id, request_id, diagnosa, saran, kriteria, rujukan, foto, create_date, create_user FROM konsultasi ORDER BY konsul_id',
 		'terapi' => 'SELECT terapi_id, konsul_id, terapi, signa, keterangan, create_date, create_user FROM terapi ORDER BY terapi_id',
 		'history' => 'SELECT id, idUser, riwayat, created_at, updated_at FROM tbl_riwayat ORDER BY id',
 		'notifications' => 'SELECT notification_id, recipient_user_id, recipient_role, recipient_puskesmas_code, actor_user_id, event_type, entity_type, entity_id, title, message, is_read, created_at FROM notifications ORDER BY notification_id',
 		'outbox' => 'SELECT outbox_id, event_type, aggregate_type, aggregate_id, audience_type, audience_key, payload_json, event_version, idempotency_key, state, attempt_count, available_at, claimed_at, published_at, last_error_code, created_at, updated_at FROM realtime_outbox ORDER BY outbox_id',
 		'events' => 'SELECT event_id, request_id, event_type, puskesmas_code, actor_user_id, actor_staff_id, actor_role, message, metadata_json, created_at FROM request_events ORDER BY event_id',
+		'visit_media' => 'SELECT media_id, request_id, medicalrecord_id, uploaded_by_user_id, media_type, storage_key, mime_type, size_bytes, sha256, lifecycle_state, associated_at, finalized_at, failed_at, failure_code FROM consultation_visit_media ORDER BY media_id',
+		'visit_locations' => 'SELECT location_update_id, request_id, nakes_user_id, latitude, longitude, accuracy_m, client_sequence, idempotency_key, captured_at, received_at FROM visit_location_updates ORDER BY location_update_id',
 	);
 	$state = array();
 	foreach ($queries as $key => $sql) { $state[$key] = $db->query($sql)->result_array(); }
@@ -228,7 +234,8 @@ function model_integration_in_transaction($db)
 function model_integration_reset_fixture($db)
 {
 	$db->query('DROP TRIGGER IF EXISTS fail_realtime_outbox');
-	foreach (array('terapi','konsultasi','medicalrecords','request_events','request_staff_assignments','notifications','realtime_outbox','requests','tbl_riwayat','puskesmas_staff','users','m_puskesmas') as $table) {
+	$db->query('DROP TRIGGER IF EXISTS fail_medicalrecord_diagnosis');
+	foreach (array('terapi','konsultasi','consultation_visit_media','visit_location_updates','medicalrecord_diagnoses','medicalrecords','request_events','request_staff_assignments','notifications','realtime_outbox','requests','tbl_riwayat','puskesmas_staff','users','m_puskesmas') as $table) {
 		$db->query('DELETE FROM ' . model_integration_identifier($table));
 	}
 	$db->query("INSERT INTO users(userId,password,role,status,remark,must_change_password) VALUES (10,'unchanged-command','dokter','aktif','PKM01',0),(101,'unchanged-owner','warga','aktif',NULL,0),(201,'unchanged-personal-one','dokter','aktif','PKM01',0),(202,'unchanged-personal-two','dokter','aktif','PKM01',0)");
@@ -345,6 +352,67 @@ function model_integration_insert_request($db, $status, $owner = 101, $handler =
 		'updated_at' => '2026-01-01 00:00:00',
 	));
 	return (int) $db->insert_id();
+}
+
+function model_integration_prepare_visit_request($db, $visit_status = 'arrived')
+{
+	$request_id = model_integration_insert_request($db, 'Accepted', 101, 201);
+	$db->where('request_id', $request_id)->update('requests', array(
+		'assigned_nakes_user_id' => 201,
+		'accepted_by_user_id' => 10,
+		'assigned_nakes_by_user_id' => 10,
+		'visit_status' => $visit_status,
+		'patient_latitude' => -6.0020000,
+		'patient_longitude' => 106.0020000,
+		'lattitude' => '-6.0020000',
+		'longitude' => '106.0020000',
+	));
+	$db->query("INSERT INTO request_staff_assignments(request_id,staff_id,kode_pkm,assigned_by_user_id,status) VALUES(? ,1,'PKM01',10,'aktif')", array($request_id));
+	return $request_id;
+}
+
+function model_integration_create_visit_proof($db, $request_id, $user_id = 201)
+{
+	global $visit_proof_temp_directories;
+	$directory = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'doclinc_visit_proof_' . bin2hex(random_bytes(6));
+	if (!mkdir($directory, 0700, true)) { throw new RuntimeException('visit_proof_temp_directory_failed'); }
+	$visit_proof_temp_directories[] = $directory;
+	$storage_key = hash('sha256', 'visit-proof-' . $request_id . '-' . bin2hex(random_bytes(8)));
+	$file_name = $storage_key . '.jpg';
+	$full_path = $directory . DIRECTORY_SEPARATOR . $file_name;
+	$file_bytes = "synthetic-visit-proof-{$request_id}";
+	if (file_put_contents($full_path, $file_bytes) !== strlen($file_bytes)) { throw new RuntimeException('visit_proof_temp_file_failed'); }
+	$sha256 = hash_file('sha256', $full_path);
+	$db->insert('consultation_visit_media', array(
+		'request_id' => $request_id,
+		'medicalrecord_id' => null,
+		'uploaded_by_user_id' => $user_id,
+		'media_type' => 'image',
+		'storage_key' => $storage_key,
+		'mime_type' => 'image/jpeg',
+		'size_bytes' => filesize($full_path),
+		'sha256' => $sha256,
+		'lifecycle_state' => 'pending',
+	));
+	$media_id = (int) $db->insert_id();
+	$captured_at_ms = (int) round(microtime(true) * 1000);
+	return array(
+		'media_id' => $media_id,
+		'request_id' => $request_id,
+		'uploaded_by_user_id' => $user_id,
+		'storage_key' => $storage_key,
+		'file_name' => $file_name,
+		'full_path' => $full_path,
+		'mime_type' => 'image/jpeg',
+		'size_bytes' => filesize($full_path),
+		'sha256' => $sha256,
+		'location' => array(
+			'latitude' => -6.0020000,
+			'longitude' => 106.0020000,
+			'accuracy_m' => 12.5,
+			'captured_at_ms' => $captured_at_ms,
+		),
+	);
 }
 
 function model_integration_event_audiences($db, $event_type, $request_id)
@@ -493,20 +561,26 @@ try {
 	$GLOBALS['request_model_application']->db = $db;
 	$GLOBALS['request_model_application']->config->set('realtime_client_enabled', true);
 	$GLOBALS['request_model_application']->config->set('realtime_notifications_enabled', true);
+	$GLOBALS['request_model_application']->config->set('visit_proof_location_max_age_seconds', 120);
+	$GLOBALS['request_model_application']->config->set('visit_location_max_accuracy_meters', 100);
+	$GLOBALS['request_model_application']->config->set('visit_arrival_radius_meters', 75);
 
 	$ddl = array(
 		"CREATE TABLE users (userId int NOT NULL AUTO_INCREMENT,password varchar(100) NOT NULL,role enum('admin','dokter','warga','') NOT NULL,status enum('aktif','nonaktif') NULL,remark varchar(100) NULL,must_change_password tinyint(1) NOT NULL DEFAULT 0,PRIMARY KEY(userId)) ENGINE=InnoDB",
 		"CREATE TABLE m_puskesmas (kode_pkm varchar(100) NOT NULL,nama_puskesmas varchar(150) NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(kode_pkm)) ENGINE=InnoDB",
 		"CREATE TABLE puskesmas_staff (staff_id int(10) unsigned NOT NULL AUTO_INCREMENT,kode_pkm varchar(100) NOT NULL,user_id int NULL,nama varchar(150) NOT NULL,no_hp varchar(30) NULL,profesi varchar(100) NULL,nomor_sip varchar(100) NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(staff_id)) ENGINE=InnoDB",
-		"CREATE TABLE requests (request_id int NOT NULL AUTO_INCREMENT,user_id int NOT NULL,dokter_id int NOT NULL,request_description text NULL,request_status enum('Pending','Accepted','Completed','Cancelled') NOT NULL DEFAULT 'Pending',location text NULL,lattitude varchar(50) NULL,longitude varchar(50) NULL,assigned_puskesmas_code varchar(100) NULL,assigned_puskesmas_name varchar(150) NULL,assigned_nakes_user_id int NULL,accepted_by_user_id int NULL,assigned_nakes_by_user_id int NULL,visit_status varchar(30) NULL,created_at datetime NULL,updated_at datetime NULL,PRIMARY KEY(request_id)) ENGINE=InnoDB",
+		"CREATE TABLE requests (request_id int NOT NULL AUTO_INCREMENT,user_id int NOT NULL,dokter_id int NOT NULL,request_description text NULL,request_status enum('Pending','Accepted','Completed','Cancelled') NOT NULL DEFAULT 'Pending',location text NULL,lattitude varchar(50) NULL,longitude varchar(50) NULL,patient_latitude decimal(10,7) NULL,patient_longitude decimal(10,7) NULL,lattitude_dokter decimal(10,7) NULL,longitude_dokter decimal(10,7) NULL,assigned_puskesmas_code varchar(100) NULL,assigned_puskesmas_name varchar(150) NULL,assigned_nakes_user_id int NULL,accepted_by_user_id int NULL,assigned_nakes_by_user_id int NULL,visit_status varchar(30) NULL,consultation_mode varchar(30) NULL,visit_completed_at datetime NULL,created_at datetime NULL,updated_at datetime NULL,PRIMARY KEY(request_id)) ENGINE=InnoDB",
 		"CREATE TABLE request_staff_assignments (assignment_id int(10) unsigned NOT NULL AUTO_INCREMENT,request_id int NOT NULL,staff_id int(10) unsigned NOT NULL,kode_pkm varchar(100) NOT NULL,assigned_by_user_id int NOT NULL,status enum('aktif','diganti','dibatalkan') NOT NULL DEFAULT 'aktif',note text NULL,assigned_at datetime NOT NULL DEFAULT current_timestamp(),ended_at datetime NULL,created_at datetime NOT NULL DEFAULT current_timestamp(),updated_at datetime NULL DEFAULT NULL ON UPDATE current_timestamp(),PRIMARY KEY(assignment_id),KEY idx_request_status(request_id,status)) ENGINE=InnoDB",
 		"CREATE TABLE notifications (notification_id int NOT NULL AUTO_INCREMENT,recipient_user_id int NULL,recipient_role varchar(32) NULL,recipient_puskesmas_code varchar(100) NULL,actor_user_id int NULL,event_type varchar(64) NOT NULL,entity_type varchar(64) NOT NULL,entity_id varchar(64) NOT NULL,title varchar(160) NOT NULL,message text NULL,is_read tinyint(1) NOT NULL DEFAULT 0,created_at datetime NOT NULL,PRIMARY KEY(notification_id)) ENGINE=InnoDB",
 		"CREATE TABLE realtime_outbox (outbox_id bigint unsigned NOT NULL AUTO_INCREMENT,event_type varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,aggregate_type varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,aggregate_id varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,audience_type varchar(20) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,audience_key varchar(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,payload_json longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,event_version bigint unsigned NOT NULL DEFAULT 1,idempotency_key char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,state varchar(16) NOT NULL DEFAULT 'pending',attempt_count smallint unsigned NOT NULL DEFAULT 0,available_at datetime(6) NOT NULL DEFAULT current_timestamp(6),claimed_at datetime(6) NULL,published_at datetime(6) NULL,last_error_code varchar(64) NULL,created_at datetime(6) NOT NULL DEFAULT current_timestamp(6),updated_at datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),PRIMARY KEY(outbox_id),UNIQUE KEY uq_realtime_outbox_idempotency(idempotency_key)) ENGINE=InnoDB",
 		"CREATE TABLE request_events (event_id bigint unsigned NOT NULL AUTO_INCREMENT,request_id int NOT NULL,event_type varchar(80) NOT NULL,puskesmas_code varchar(100) NULL,actor_user_id int NULL,actor_staff_id int NULL,actor_role varchar(50) NULL,message text NULL,metadata_json text NULL,created_at datetime NOT NULL DEFAULT current_timestamp(),PRIMARY KEY(event_id)) ENGINE=InnoDB",
 		"CREATE TABLE tbl_riwayat (id int NOT NULL AUTO_INCREMENT,idUser int NOT NULL,riwayat text NULL,created_at datetime NULL,updated_at datetime NULL,PRIMARY KEY(id),UNIQUE KEY uq_history_user(idUser)) ENGINE=InnoDB",
 		"CREATE TABLE medicalrecords (record_id int NOT NULL AUTO_INCREMENT,request_id int NOT NULL,diagnosis text NULL,treatment text NULL,recommendations text NULL,anamnesis text NULL,created_at datetime NULL,PRIMARY KEY(record_id),UNIQUE KEY uq_medical_request(request_id)) ENGINE=InnoDB",
+		"CREATE TABLE medicalrecord_diagnoses (diagnosis_id bigint unsigned NOT NULL AUTO_INCREMENT,medicalrecord_id int NOT NULL,request_id int NOT NULL,position tinyint unsigned NOT NULL,diagnosis_role varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,diagnosis_code varchar(32) NULL,diagnosis_label varchar(255) NOT NULL,display_text varchar(320) NOT NULL,suggestion_term_id bigint unsigned NULL,reference_source varchar(128) NULL,reference_version varchar(64) NULL,created_by_user_id int NOT NULL,created_at datetime(6) NOT NULL DEFAULT current_timestamp(6),updated_at datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),PRIMARY KEY(diagnosis_id),UNIQUE KEY uq_medicalrecord_diagnosis_position(medicalrecord_id,position),CONSTRAINT chk_diagnosis_position CHECK(position BETWEEN 1 AND 5),CONSTRAINT chk_diagnosis_role CHECK(diagnosis_role IN ('primary','secondary'))) ENGINE=InnoDB",
 		"CREATE TABLE konsultasi (konsul_id int NOT NULL AUTO_INCREMENT,request_id int NOT NULL,diagnosa text NULL,saran text NULL,kriteria varchar(100) NULL,rujukan text NULL,foto text NULL,create_date datetime NULL,create_user int NULL,PRIMARY KEY(konsul_id),UNIQUE KEY uq_consultation_request(request_id)) ENGINE=InnoDB",
 		"CREATE TABLE terapi (terapi_id int NOT NULL AUTO_INCREMENT,konsul_id int NOT NULL,terapi text NULL,signa text NULL,keterangan text NULL,create_date datetime NULL,create_user int NULL,PRIMARY KEY(terapi_id)) ENGINE=InnoDB",
+		"CREATE TABLE consultation_visit_media (media_id bigint unsigned NOT NULL AUTO_INCREMENT,request_id int NOT NULL,medicalrecord_id int NULL,uploaded_by_user_id int NOT NULL,media_type varchar(16) NOT NULL,storage_key char(64) NOT NULL,mime_type varchar(100) NOT NULL,size_bytes bigint unsigned NOT NULL,sha256 char(64) NOT NULL,lifecycle_state varchar(16) NOT NULL DEFAULT 'pending',staged_at datetime(6) NOT NULL DEFAULT current_timestamp(6),associated_at datetime(6) NULL,finalized_at datetime(6) NULL,failed_at datetime(6) NULL,failure_code varchar(64) NULL,created_at datetime(6) NOT NULL DEFAULT current_timestamp(6),updated_at datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),PRIMARY KEY(media_id),UNIQUE KEY uq_visit_media_storage_key(storage_key)) ENGINE=InnoDB",
+		"CREATE TABLE visit_location_updates (location_update_id bigint unsigned NOT NULL AUTO_INCREMENT,request_id int NOT NULL,nakes_user_id int NOT NULL,latitude decimal(10,7) NOT NULL,longitude decimal(10,7) NOT NULL,accuracy_m decimal(10,2) NULL,heading_degrees decimal(6,2) NULL,speed_mps decimal(10,2) NULL,client_sequence bigint unsigned NOT NULL,idempotency_key char(64) NOT NULL,captured_at datetime(6) NOT NULL,received_at datetime(6) NOT NULL DEFAULT current_timestamp(6),created_at datetime(6) NOT NULL DEFAULT current_timestamp(6),PRIMARY KEY(location_update_id),UNIQUE KEY uq_visit_location_idempotency(nakes_user_id,idempotency_key),UNIQUE KEY uq_visit_location_sequence(request_id,nakes_user_id,client_sequence)) ENGINE=InnoDB",
 	);
 	foreach ($ddl as $statement) { $db->query($statement); }
 
@@ -556,6 +630,222 @@ try {
 	$completed = $completion->save_konsultasi_nakes($completion_id, 'Synthetic', 'Synthetic', '0', '', null, array(), 201, $GLOBALS['request_model_identity'][201], null, false);
 	model_integration_expect($completed === true && $db->where('request_id', $completion_id)->get('requests')->row()->request_status === 'Completed', 'actual_complete_succeeds');
 	model_integration_expect(model_integration_event_audiences($db, 'request.completed', $completion_id) === array('puskesmas:PKM01:ops', 'user:101', 'user:201'), 'actual_complete_exact_audiences');
+
+	$stage = 'additional_diagnoses_success';
+	$diagnosis_context = model_integration_prepare_operation('complete', $db);
+	$diagnosis_request_id = (int) $diagnosis_context['request_id'];
+	$diagnosis_values = array('Diagnosis utama', 'Diagnosis tambahan satu', 'Diagnosis tambahan dua');
+	$diagnosis_result = $completion->save_konsultasi_nakes(
+		$diagnosis_request_id, $diagnosis_values[0], 'Synthetic', '0', '', null, array(), 201,
+		$GLOBALS['request_model_identity'][201], null, false, null, false, $diagnosis_values, true
+	);
+	$diagnosis_rows = $db->query(
+		'SELECT position,diagnosis_role,diagnosis_label,display_text,diagnosis_code,suggestion_term_id,created_by_user_id FROM medicalrecord_diagnoses WHERE request_id=? ORDER BY position',
+		array($diagnosis_request_id)
+	)->result_array();
+	$diagnosis_record = $db->where('request_id', $diagnosis_request_id)->get('medicalrecords')->row();
+	$diagnosis_consultation = $db->where('request_id', $diagnosis_request_id)->get('konsultasi')->row();
+	model_integration_expect($diagnosis_result === true
+		&& count($diagnosis_rows) === 3
+		&& array_map('intval', array_column($diagnosis_rows, 'position')) === array(1, 2, 3),
+		'additional_diagnoses_exact_three_ordered_rows');
+	model_integration_expect(array_column($diagnosis_rows, 'diagnosis_role') === array('primary', 'secondary', 'secondary')
+		&& array_column($diagnosis_rows, 'display_text') === $diagnosis_values
+		&& array_unique(array_map('intval', array_column($diagnosis_rows, 'created_by_user_id'))) === array(201),
+		'additional_diagnoses_exact_roles_values_and_actor');
+	model_integration_expect($diagnosis_record && $diagnosis_record->diagnosis === $diagnosis_values[0]
+		&& $diagnosis_consultation && $diagnosis_consultation->diagnosa === $diagnosis_values[0]
+		&& !model_integration_in_transaction($db), 'additional_diagnoses_preserve_legacy_primary_and_close_transaction');
+
+	$stage = 'additional_diagnoses_flag_off';
+	$legacy_diagnosis_context = model_integration_prepare_operation('complete', $db);
+	$legacy_diagnosis_id = (int) $legacy_diagnosis_context['request_id'];
+	$legacy_diagnosis_result = $completion->save_konsultasi_nakes(
+		$legacy_diagnosis_id, 'Legacy primary', 'Synthetic', '0', '', null, array(), 201,
+		$GLOBALS['request_model_identity'][201], null, false, null, false,
+		array('Legacy primary', 'Ignored additional'), false
+	);
+	model_integration_expect($legacy_diagnosis_result === true
+		&& model_integration_count($db, 'medicalrecord_diagnoses') === 0
+		&& $db->where('request_id', $legacy_diagnosis_id)->get('medicalrecords')->row()->diagnosis === 'Legacy primary',
+		'additional_diagnoses_flag_off_preserves_single_legacy_diagnosis');
+
+	$stage = 'additional_diagnoses_duplicate';
+	$duplicate_diagnosis_context = model_integration_prepare_operation('complete', $db);
+	$duplicate_diagnosis_id = (int) $duplicate_diagnosis_context['request_id'];
+	$duplicate_diagnosis_before = model_integration_full_digest($db);
+	$duplicate_diagnosis_result = $completion->save_konsultasi_nakes(
+		$duplicate_diagnosis_id, 'Duplicate', 'Synthetic', '0', '', null, array(), 201,
+		$GLOBALS['request_model_identity'][201], null, false, null, false,
+		array('Duplicate', 'duplicate'), true
+	);
+	model_integration_expect($duplicate_diagnosis_result === false
+		&& $completion->last_failure_code() === 'diagnosis_payload_invalid'
+		&& hash_equals($duplicate_diagnosis_before, model_integration_full_digest($db))
+		&& !model_integration_in_transaction($db), 'additional_diagnoses_duplicate_full_rollback');
+
+	$stage = 'additional_diagnoses_insert_failure';
+	$failing_diagnosis_context = model_integration_prepare_operation('complete', $db);
+	$failing_diagnosis_id = (int) $failing_diagnosis_context['request_id'];
+	$failing_diagnosis_before = model_integration_full_digest($db);
+	$db->query('SET @diagnosis_insert_attempts=0');
+	$db->query("CREATE TRIGGER fail_medicalrecord_diagnosis BEFORE INSERT ON medicalrecord_diagnoses FOR EACH ROW BEGIN SET @diagnosis_insert_attempts=COALESCE(@diagnosis_insert_attempts,0)+1; IF @diagnosis_insert_attempts=2 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic_diagnosis_failure'; END IF; END");
+	$failing_diagnosis_result = $completion->save_konsultasi_nakes(
+		$failing_diagnosis_id, 'Primary', 'Synthetic', '0', '', null, array(), 201,
+		$GLOBALS['request_model_identity'][201], null, false, null, false,
+		array('Primary', 'Secondary'), true
+	);
+	$db->query('DROP TRIGGER IF EXISTS fail_medicalrecord_diagnosis');
+	model_integration_expect($failing_diagnosis_result === false
+		&& $completion->last_failure_code() === 'diagnosis_write_failed'
+		&& hash_equals($failing_diagnosis_before, model_integration_full_digest($db))
+		&& !model_integration_in_transaction($db), 'additional_diagnoses_insert_failure_full_atomic_rollback');
+
+	$stage = 'visit_proof_success';
+	model_integration_reset_fixture($db);
+	$visit_request_id = model_integration_prepare_visit_request($db, 'arrived');
+	$visit_proof = model_integration_create_visit_proof($db, $visit_request_id);
+	$visit_completed = $completion->save_konsultasi_nakes(
+		$visit_request_id, 'Synthetic visit diagnosis', 'Synthetic visit recommendation', '1', '',
+		$visit_proof['file_name'], array(), 201, $GLOBALS['request_model_identity'][201], null, false,
+		$visit_proof, true
+	);
+	$visit_request = $db->where('request_id', $visit_request_id)->get('requests')->row();
+	$visit_media = $db->where('media_id', $visit_proof['media_id'])->get('consultation_visit_media')->row();
+	$visit_location = $db->where('request_id', $visit_request_id)->get('visit_location_updates')->row();
+	$visit_record = $db->where('request_id', $visit_request_id)->get('medicalrecords')->row();
+	model_integration_expect($visit_completed === true
+		&& $visit_request && $visit_request->request_status === 'Completed'
+		&& $visit_request->visit_status === 'completed'
+		&& $visit_request->consultation_mode === 'visit', 'visit_proof_success_exact_completion_state');
+	model_integration_expect($visit_media
+		&& $visit_record
+		&& $visit_media->lifecycle_state === 'ready'
+		&& (int) $visit_media->medicalrecord_id === (int) $visit_record->record_id
+		&& !empty($visit_media->associated_at)
+		&& !empty($visit_media->finalized_at), 'visit_proof_success_media_finalized_with_medicalrecord');
+	model_integration_expect($visit_location
+		&& (int) $visit_location->nakes_user_id === 201
+		&& abs((float) $visit_location->latitude - (-6.0020000)) < 0.0000001
+		&& abs((float) $visit_location->longitude - 106.0020000) < 0.0000001,
+		'visit_proof_success_fresh_location_persisted');
+	model_integration_expect(abs((float) $visit_request->lattitude_dokter - (-6.0020000)) < 0.0000001
+		&& abs((float) $visit_request->longitude_dokter - 106.0020000) < 0.0000001
+		&& !model_integration_in_transaction($db), 'visit_proof_success_request_location_and_transaction_closed');
+
+	$stage = 'visit_proof_missing';
+	model_integration_reset_fixture($db);
+	$missing_request_id = model_integration_prepare_visit_request($db, 'arrived');
+	$missing_result = $completion->save_konsultasi_nakes(
+		$missing_request_id, 'Synthetic', 'Synthetic', '1', '', null, array(), 201,
+		$GLOBALS['request_model_identity'][201], null, false, null, true
+	);
+	model_integration_expect($missing_result === false
+		&& $completion->last_failure_code() === 'visit_proof_missing'
+		&& $db->where('request_id', $missing_request_id)->get('requests')->row()->request_status === 'Accepted',
+		'visit_proof_missing_blocks_completion');
+	model_integration_expect(model_integration_count($db, 'medicalrecords') === 0
+		&& model_integration_count($db, 'konsultasi') === 0
+		&& model_integration_count($db, 'visit_location_updates') === 0
+		&& !model_integration_in_transaction($db), 'visit_proof_missing_zero_domain_write');
+
+	$stage = 'visit_proof_outside_radius';
+	model_integration_reset_fixture($db);
+	$outside_request_id = model_integration_prepare_visit_request($db, 'arrived');
+	$outside_proof = model_integration_create_visit_proof($db, $outside_request_id);
+	$outside_proof['location']['latitude'] = -6.0120000;
+	$outside_result = $completion->save_konsultasi_nakes(
+		$outside_request_id, 'Synthetic', 'Synthetic', '1', '', $outside_proof['file_name'], array(), 201,
+		$GLOBALS['request_model_identity'][201], null, false, $outside_proof, true
+	);
+	model_integration_expect($outside_result === false
+		&& $completion->last_failure_code() === 'visit_location_outside_radius'
+		&& $db->where('request_id', $outside_request_id)->get('requests')->row()->request_status === 'Accepted',
+		'visit_proof_outside_radius_blocks_completion');
+	model_integration_expect($db->where('media_id', $outside_proof['media_id'])->get('consultation_visit_media')->row()->lifecycle_state === 'pending'
+		&& model_integration_count($db, 'visit_location_updates') === 0
+		&& !model_integration_in_transaction($db), 'visit_proof_outside_radius_rolls_back_without_finalizing_media');
+
+	$stage = 'visit_proof_status_gate';
+	model_integration_reset_fixture($db);
+	$status_request_id = model_integration_prepare_visit_request($db, 'en_route');
+	$status_proof = model_integration_create_visit_proof($db, $status_request_id);
+	$status_result = $completion->save_konsultasi_nakes(
+		$status_request_id, 'Synthetic', 'Synthetic', '1', '', $status_proof['file_name'], array(), 201,
+		$GLOBALS['request_model_identity'][201], null, false, $status_proof, true
+	);
+	model_integration_expect($status_result === false
+		&& $completion->last_failure_code() === 'visit_status_invalid'
+		&& model_integration_count($db, 'visit_location_updates') === 0,
+		'visit_proof_requires_arrived_or_in_service_status');
+
+	$stage = 'visit_proof_non_visit_bypass';
+	model_integration_reset_fixture($db);
+	$bypass_request_id = model_integration_prepare_visit_request($db, 'arrived');
+	$bypass_result = $completion->save_konsultasi_nakes(
+		$bypass_request_id, 'Synthetic', 'Synthetic', '0', '', null, array(), 201,
+		$GLOBALS['request_model_identity'][201], null, false, null, true
+	);
+	model_integration_expect($bypass_result === false
+		&& $completion->last_failure_code() === 'visit_mode_mismatch'
+		&& $db->where('request_id', $bypass_request_id)->get('requests')->row()->request_status === 'Accepted',
+		'visit_proof_persisted_visit_cannot_downgrade_to_non_visit');
+	model_integration_expect(model_integration_count($db, 'medicalrecords') === 0
+		&& model_integration_count($db, 'konsultasi') === 0
+		&& model_integration_count($db, 'consultation_visit_media') === 0
+		&& model_integration_count($db, 'visit_location_updates') === 0,
+		'visit_proof_non_visit_bypass_zero_write');
+
+	$stage = 'visit_proof_unknown_mode';
+	model_integration_reset_fixture($db);
+	$unknown_mode_request_id = model_integration_insert_request($db, 'Accepted', 101, 201);
+	$db->query("UPDATE requests SET assigned_nakes_user_id=201,accepted_by_user_id=10,assigned_nakes_by_user_id=10,consultation_mode=NULL,visit_status='not_started' WHERE request_id=?", array($unknown_mode_request_id));
+	$db->query("INSERT INTO request_staff_assignments(request_id,staff_id,kode_pkm,assigned_by_user_id,status) VALUES(? ,1,'PKM01',10,'aktif')", array($unknown_mode_request_id));
+	$unknown_mode_before = model_integration_digest($db, $unknown_mode_request_id);
+	$unknown_mode_result = $completion->save_konsultasi_nakes(
+		$unknown_mode_request_id, 'Synthetic', 'Synthetic', 'arbitrary-mode', '', null, array(), 201,
+		$GLOBALS['request_model_identity'][201], null, false, null, true
+	);
+	model_integration_expect($unknown_mode_result === false
+		&& $completion->last_failure_code() === 'visit_mode_invalid',
+		'visit_proof_unknown_service_mode_rejected');
+	model_integration_expect(hash_equals($unknown_mode_before, model_integration_digest($db, $unknown_mode_request_id))
+		&& !model_integration_in_transaction($db),
+		'visit_proof_unknown_service_mode_zero_write');
+
+	$stage = 'visit_proof_flag_off_compatibility';
+	model_integration_reset_fixture($db);
+	$legacy_visit_request_id = model_integration_prepare_visit_request($db, 'en_route');
+	$legacy_visit_result = $completion->save_konsultasi_nakes(
+		$legacy_visit_request_id, 'Synthetic', 'Synthetic', '1', '', null, array(), 201,
+		$GLOBALS['request_model_identity'][201], null, false, null, false
+	);
+	model_integration_expect($legacy_visit_result === true
+		&& $db->where('request_id', $legacy_visit_request_id)->get('requests')->row()->request_status === 'Completed'
+		&& model_integration_count($db, 'consultation_visit_media') === 0
+		&& model_integration_count($db, 'visit_location_updates') === 0,
+		'visit_proof_flag_off_preserves_legacy_completion');
+
+	$stage = 'visit_proof_realtime_failure';
+	model_integration_reset_fixture($db);
+	$fault_request_id = model_integration_prepare_visit_request($db, 'in_service');
+	$fault_proof = model_integration_create_visit_proof($db, $fault_request_id);
+	model_integration_install_outbox_fault($db, 2);
+	$fault_result = $completion->save_konsultasi_nakes(
+		$fault_request_id, 'Synthetic', 'Synthetic', '1', '', $fault_proof['file_name'], array(), 201,
+		$GLOBALS['request_model_identity'][201], null, false, $fault_proof, true
+	);
+	$db->query('DROP TRIGGER IF EXISTS fail_realtime_outbox');
+	$fault_request = $db->where('request_id', $fault_request_id)->get('requests')->row();
+	$fault_media = $db->where('media_id', $fault_proof['media_id'])->get('consultation_visit_media')->row();
+	model_integration_expect($fault_result === false
+		&& $fault_request->request_status === 'Accepted'
+		&& $fault_media->lifecycle_state === 'pending', 'visit_proof_realtime_failure_rolls_back_completion_and_media_finalize');
+	model_integration_expect(model_integration_count($db, 'visit_location_updates') === 0
+		&& model_integration_count($db, 'medicalrecords') === 0
+		&& model_integration_count($db, 'konsultasi') === 0
+		&& model_integration_count($db, 'realtime_outbox') === 0
+		&& !model_integration_in_transaction($db), 'visit_proof_realtime_failure_full_transaction_rollback');
 
 	foreach (array(
 		'inactive' => function ($db) { $db->query("UPDATE users SET status='nonaktif' WHERE userId=10"); },
@@ -973,6 +1263,13 @@ try {
 	if ($admin instanceof mysqli) {
 		if ($database_name !== '') { $admin->query('DROP DATABASE IF EXISTS ' . model_integration_identifier($database_name)); }
 		$admin->close();
+	}
+	foreach ($visit_proof_temp_directories as $directory) {
+		if (!is_dir($directory)) { continue; }
+		foreach (glob($directory . DIRECTORY_SEPARATOR . '*') ?: array() as $path) {
+			if (is_file($path)) { @unlink($path); }
+		}
+		@rmdir($directory);
 	}
 }
 exit($failed === 0 ? 0 : 1);

@@ -4,6 +4,7 @@ if (!defined('APPPATH')) { define('APPPATH', dirname(__DIR__, 3) . '/application
 if (!defined('FCPATH')) { define('FCPATH', dirname(__DIR__, 3) . '/'); }
 
 require_once APPPATH . 'libraries/Request_transition_orchestrator.php';
+require_once APPPATH . 'libraries/Medicalrecord_diagnosis_service.php';
 
 class MX_Controller
 {
@@ -111,7 +112,7 @@ final class ControllerModelCollaborator
 			? array('status' => 'success', 'message' => 'Permintaan dibatalkan.')
 			: array('status' => 'error', 'message' => 'Permintaan tidak dapat dibatalkan.');
 	}
-	public function save_konsultasi_nakes($request_id, $diagnosis, $recommendation, $criteria, $referral, $photo, $therapy, $actor_id, $identity, $anamnesis, $write_anamnesis) {
+	public function save_konsultasi_nakes($request_id, $diagnosis, $recommendation, $criteria, $referral, $photo, $therapy, $actor_id, $identity, $anamnesis, $write_anamnesis, $visit_proof = null, $visit_proof_required = false) {
 		$this->begin();
 		if ($this->success) { $this->replaceRequest($request_id, array('request_status' => 'Completed')); }
 		$this->finish();
@@ -142,11 +143,23 @@ $GLOBALS['controller_requests'] = array();
 $GLOBALS['controller_orchestrator'] = null;
 $GLOBALS['controller_notification_calls'] = array();
 $GLOBALS['controller_notification_succeeds'] = true;
+$GLOBALS['controller_visit_proof_required'] = false;
 
 function base_url($path = '') { return 'https://fixture.invalid/' . ltrim((string) $path, '/'); }
 function log_message($level, $message) { return true; }
 function redirect($uri = '', $method = 'auto', $code = null) { $GLOBALS['controller_trace'][] = 'redirect'; }
 function doclinc_realtime_requests_enabled() { return false; }
+function doclinc_visit_proof_required() { return $GLOBALS['controller_visit_proof_required'] === true; }
+function doclinc_visit_proof_is_visit($criteria) {
+	$criteria = strtolower(trim((string) $criteria));
+	return $criteria === '1' || $criteria === 'kunjungan nakes';
+}
+function doclinc_visit_proof_persisted_visit($request) {
+	if (!$request) { return false; }
+	$mode = strtolower(trim((string) ($request->consultation_mode ?? '')));
+	$status = strtolower(trim((string) ($request->visit_status ?? '')));
+	return $mode === 'visit' || in_array($status, array('en_route', 'arrived', 'in_service', 'completed'), true);
+}
 function doclinc_request_transition_orchestrator() { return $GLOBALS['controller_orchestrator']; }
 function doclinc_active_consultation_request($user_id) { return false; }
 function doclinc_find_puskesmas_by_service_area($latitude, $longitude) { return (object) array('kode_pkm' => 'PKM01', 'nama_puskesmas' => 'Synthetic clinic'); }
@@ -252,6 +265,7 @@ function controller_run($operation, $success, $notification_succeeds = true) {
 	$GLOBALS['controller_trace'] = array();
 	$GLOBALS['controller_notification_calls'] = array();
 	$GLOBALS['controller_notification_succeeds'] = (bool) $notification_succeeds;
+	$GLOBALS['controller_visit_proof_required'] = false;
 	$GLOBALS['controller_requests'] = $operation === 'create' ? array() : array($request_id => controller_fixture_request($request_id, $operation === 'complete' ? 'Accepted' : 'Pending'));
 	$GLOBALS['controller_orchestrator'] = new ControllerOrchestratorProbe();
 	$_FILES = array();
@@ -333,6 +347,68 @@ controller_expect(count($repeated_accept['probe']->calls) === 1
 controller_expect($repeated_accept['controller']->output->status === 403
 	&& json_decode($repeated_accept['controller']->output->body, true) === array('status' => 'error', 'message' => 'Anda tidak memiliki akses.'),
 	'repeated_accept_exact_controller_noop_response');
+
+$proof_required = controller_run('complete', true);
+$GLOBALS['controller_visit_proof_required'] = true;
+$proof_required['controller']->output->status = 200;
+$proof_required['controller']->output->body = '';
+$proof_required['controller']->save_konsultasi_nakes();
+$proof_body = json_decode($proof_required['controller']->output->body, true);
+controller_expect($proof_required['controller']->output->status === 422
+	&& ($proof_body['status'] ?? '') === 'error'
+	&& strpos((string) ($proof_body['message'] ?? ''), 'Foto bukti kunjungan wajib') === 0,
+	'visit_proof_required_missing_file_controller_rejected');
+controller_expect(count($proof_required['probe']->calls) === 1
+	&& count(array_filter($GLOBALS['controller_trace'], function ($entry) { return $entry === 'model.begin'; })) === 1,
+	'visit_proof_controller_gate_blocks_second_model_and_orchestrator_call');
+
+$GLOBALS['controller_trace'] = array();
+$GLOBALS['controller_notification_calls'] = array();
+$GLOBALS['controller_orchestrator'] = new ControllerOrchestratorProbe();
+$GLOBALS['controller_requests'] = array(5005 => controller_fixture_request(5005, 'Accepted'));
+$GLOBALS['controller_requests'][5005]->visit_status = 'arrived';
+$GLOBALS['controller_visit_proof_required'] = true;
+$_FILES = array();
+$bypass_controller = controller_new('Konsultasi_nakes', 'complete', true, array(
+	'request_id' => 5005,
+	'diagnosa' => 'Synthetic diagnosis',
+	'saran' => 'Synthetic recommendation',
+	'kriteria' => 'Selesai Konsultasi',
+	'rujukan' => '',
+	'terapi' => '[]',
+), array('id' => 201, 'role' => 'dokter'));
+$bypass_controller->save_konsultasi_nakes();
+$bypass_body = json_decode($bypass_controller->output->body, true);
+controller_expect($bypass_controller->output->status === 422
+	&& strpos((string) ($bypass_body['message'] ?? ''), 'Kunjungan yang sudah dimulai') === 0,
+	'visit_proof_controller_rejects_non_visit_downgrade');
+controller_expect(count($GLOBALS['controller_orchestrator']->calls) === 0
+	&& count(array_filter($GLOBALS['controller_trace'], function ($entry) { return $entry === 'model.begin'; })) === 0,
+	'visit_proof_non_visit_downgrade_blocks_model_and_orchestration');
+
+$GLOBALS['controller_trace'] = array();
+$GLOBALS['controller_notification_calls'] = array();
+$GLOBALS['controller_orchestrator'] = new ControllerOrchestratorProbe();
+$GLOBALS['controller_requests'] = array(5005 => controller_fixture_request(5005, 'Accepted'));
+$GLOBALS['controller_visit_proof_required'] = true;
+$_FILES = array();
+$invalid_mode_controller = controller_new('Konsultasi_nakes', 'complete', true, array(
+	'request_id' => 5005,
+	'diagnosa' => 'Synthetic diagnosis',
+	'saran' => 'Synthetic recommendation',
+	'kriteria' => 'arbitrary-mode',
+	'rujukan' => '',
+	'terapi' => '[]',
+), array('id' => 201, 'role' => 'dokter'));
+$invalid_mode_controller->save_konsultasi_nakes();
+$invalid_mode_body = json_decode($invalid_mode_controller->output->body, true);
+controller_expect($invalid_mode_controller->output->status === 422
+	&& strpos((string) ($invalid_mode_body['message'] ?? ''), 'Jenis layanan tidak valid') === 0,
+	'visit_proof_controller_rejects_unknown_service_mode');
+controller_expect(count($GLOBALS['controller_orchestrator']->calls) === 0
+	&& count(array_filter($GLOBALS['controller_trace'], function ($entry) { return $entry === 'model.begin'; })) === 0,
+	'visit_proof_unknown_mode_blocks_model_and_orchestration');
+$GLOBALS['controller_visit_proof_required'] = false;
 
 echo "CONTROLLER_SUCCESS_SCENARIOS={$success_scenarios}\n";
 echo "CONTROLLER_FAILURE_SCENARIOS={$failure_scenarios}\n";
