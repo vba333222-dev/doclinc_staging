@@ -98,7 +98,7 @@ class Call_session_m extends CI_Model
 			->row();
 	}
 
-	public function get_latest_visible_call_for_callee($user_id, $request_id = 0)
+	public function get_latest_visible_call_for_callee($user_id, $request_id = 0, $expire_stale = true)
 	{
 		$user_id = (int) $user_id;
 		$request_id = (int) $request_id;
@@ -133,7 +133,7 @@ class Call_session_m extends CI_Model
 			->get()
 			->row();
 
-		if ($call && $this->is_call_expired($call)) {
+		if ($expire_stale && $call && $this->is_call_expired($call)) {
 			$this->mark_missed((int) $call->call_id);
 			return null;
 		}
@@ -141,9 +141,9 @@ class Call_session_m extends CI_Model
 		return $call;
 	}
 
-	public function get_latest_incoming_for_warga($user_id, $request_id = 0)
+	public function get_latest_incoming_for_warga($user_id, $request_id = 0, $expire_stale = true)
 	{
-		return $this->get_latest_visible_call_for_callee($user_id, $request_id);
+		return $this->get_latest_visible_call_for_callee($user_id, $request_id, $expire_stale);
 	}
 
 	public function start_or_reuse($request, $caller_user_id, $call_type)

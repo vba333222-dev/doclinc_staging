@@ -10,7 +10,7 @@ class Konsultasi_nakes extends MX_Controller
 		$this->load->helper('request_authz');
 		$this->load->helper('notification');
 		$this->load->helper('request_realtime');
-		$this->load->helper(array('visit_routing', 'visit_proof'));
+		$this->load->helper(array('visit_routing', 'visit_proof', 'request_navigation'));
 		$this->load->library('Clinical_anamnesis');
 		$this->load->library('Visit_proof_service');
 		$this->load->library('Medicalrecord_diagnosis_service');
@@ -24,7 +24,7 @@ class Konsultasi_nakes extends MX_Controller
 
 	public function index()
 	{
-		redirect('home_nakes');
+		redirect(doclinc_request_return_target('dokter'));
 	}
 
 	public function konsultasi()
@@ -34,14 +34,14 @@ class Konsultasi_nakes extends MX_Controller
 		$identity_context = doclinc_dokter_identity_context($doctor_id);
 		$access_context = doclinc_nakes_request_access_context($x['request_id'], $identity_context);
 		if (empty($access_context['can_view'])) {
-			redirect('home_nakes');
+			redirect(doclinc_request_return_target('dokter'));
 			return;
 		}
 		$data_request = $this->Konsultasi_nakes_m->get_data_request($x['request_id'], $doctor_id, $identity_context);
 		$request = $data_request->row();
 		if (!$request) {
 			doclinc_log_request_event('unauthorized_request_access', $x['request_id'], array('target' => 'konsultasi_nakes'));
-			redirect('home_nakes');
+			redirect(doclinc_request_return_target('dokter'));
 			return;
 		}
 
@@ -49,6 +49,11 @@ class Konsultasi_nakes extends MX_Controller
 		$x['nama_pasien'] = $request->nama;
 		$x['keluhan'] = $request->request_description;
 		$x['queue_code'] = doclinc_request_queue_code($request);
+		$x['return_url'] = doclinc_request_return_url(
+			'dokter',
+			isset($request->request_status) ? $request->request_status : ''
+		);
+		$x['completed_return_url'] = doclinc_request_return_url('dokter', 'Completed');
 		$x['tgl_lahir'] = !empty($request->tgl) ? $request->tgl : null;
 		$x['umur'] = '-';
 		$x['kriteria'] = '';
@@ -87,6 +92,14 @@ class Konsultasi_nakes extends MX_Controller
 
 	public function get_terapi()
 	{
+		if ($this->input->method(TRUE) !== 'GET') {
+			$this->output->set_status_header(405)->set_content_type('application/json')->set_output(json_encode([]));
+			return;
+		}
+		if ($this->session->userdata('role') !== 'dokter') {
+			$this->output->set_status_header(403)->set_content_type('application/json')->set_output(json_encode([]));
+			return;
+		}
 		$apiUrl = "https://api-satusehat-stg.dto.kemkes.go.id/kfa-v2/products/all";
 		$params = [
 			'page' => 1,
@@ -129,14 +142,7 @@ class Konsultasi_nakes extends MX_Controller
 
 	public function chat()
 	{
-		$request_id = $this->input->get('reqId', TRUE);
-		if (!empty($request_id) && !doclinc_can_view_request($request_id)) {
-			doclinc_log_request_event('unauthorized_request_access', $request_id, array('target' => 'konsultasi_nakes_chat'));
-			redirect('home_nakes');
-			return;
-		}
-
-		$this->load->view('chat');
+		show_404();
 	}
 
 	// public function save_konsultasi_nakes()
@@ -418,9 +424,7 @@ class Konsultasi_nakes extends MX_Controller
 
 	public function getICD_json()
 	{
-		$term = $this->input->get('term');
-		$data = $this->Konsultasi_nakes_m->getICD($term);
-		echo json_encode($data);
+		show_404();
 	}
 
 	private function result_upload_error_message($visit_proof = false)

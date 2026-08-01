@@ -30,7 +30,25 @@ class Clinical_suggestion_m extends CI_Model
 			t.term_code,
 			t.preferred_label,
 			t.source_name,
-			t.source_version
+			t.source_version,
+			t.source_dataset,
+			(
+				SELECT a.alias_label
+				FROM clinical_suggestion_aliases AS a
+				WHERE a.suggestion_term_id = t.suggestion_term_id
+					AND a.active_state = 1
+					AND (
+						a.normalized_alias = ?
+						OR a.normalized_alias LIKE ? ESCAPE '!'
+						OR a.normalized_alias LIKE ? ESCAPE '!'
+					)
+				ORDER BY CASE
+					WHEN a.normalized_alias = ? THEN 1
+					WHEN a.normalized_alias LIKE ? ESCAPE '!' THEN 2
+					ELSE 3
+				END, a.normalized_alias ASC
+				LIMIT 1
+			) AS matched_alias
 		FROM clinical_suggestion_terms AS t
 		INNER JOIN clinical_suggestion_import_batches AS b
 			ON b.suggestion_import_batch_id = t.suggestion_import_batch_id
@@ -67,8 +85,9 @@ class Clinical_suggestion_m extends CI_Model
 		LIMIT " . ($limit + 1);
 
 		$bindings = array(
+			$normalized, $prefix, $contains, $normalized, $prefix,
 			$type, $environment,
-			$normalized, $prefix, $prefix, $contains, $prefix,
+			$normalized, $prefix, $prefix, $contains, $contains,
 			$normalized, $prefix, $prefix, $prefix,
 		);
 		return $this->db->query($sql, $bindings)->result_array();

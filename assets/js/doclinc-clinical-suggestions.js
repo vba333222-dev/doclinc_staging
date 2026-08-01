@@ -20,6 +20,25 @@
 		return String(value || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('id-ID');
 	}
 
+	function displayText(item) {
+		return String(item && (item.display || item.label) || '').trim();
+	}
+
+	function metadataText(item) {
+		return String(item && item.meta || '').trim();
+	}
+
+	function supportingText(item) {
+		return String(item && item.supporting || '').trim();
+	}
+
+	function selectedValue(type, item) {
+		if (type === 'diagnosis') {
+			return String(item && (item.value || item.label) || '').trim();
+		}
+		return String(item && item.label || '').trim();
+	}
+
 	function symptomQuery(value) {
 		var text = String(value || '');
 		var boundary = Math.max(text.lastIndexOf('\n'), text.lastIndexOf(';'));
@@ -167,11 +186,19 @@
 			button.setAttribute('role', 'option');
 			button.dataset.index = String(index);
 			var primary = document.createElement('span');
-			primary.textContent = item.display || item.label || '';
+			primary.textContent = displayText(item);
 			button.appendChild(primary);
-			if (item.source) {
+			var supporting = supportingText(item);
+			if (supporting && normalizeTerm(supporting) !== normalizeTerm(displayText(item))) {
+				var supportingLabel = document.createElement('small');
+				supportingLabel.className = 'clinical-suggestion-supporting';
+				supportingLabel.textContent = supporting;
+				button.appendChild(supportingLabel);
+			}
+			var metadata = metadataText(item);
+			if (metadata) {
 				var source = document.createElement('small');
-				source.textContent = item.source + (item.version ? ' · ' + item.version : '');
+				source.textContent = metadata;
 				button.appendChild(source);
 			}
 			button.addEventListener('pointerdown', function (event) {
@@ -204,7 +231,7 @@
 	};
 
 	SuggestionBox.prototype.select = function (item) {
-		var chosen = this.type === 'diagnosis' ? (item.display || item.label) : item.label;
+		var chosen = selectedValue(this.type, item);
 		if (this.type === 'symptom') {
 			chosen = mergeSymptomText(valueOf(this.element), chosen, this.lastQuery);
 		}
@@ -231,6 +258,10 @@
 	window.DoclincClinicalSuggestions = {
 		initialize: initialize,
 		mergeSymptomText: mergeSymptomText,
-		symptomQuery: symptomQuery
+		symptomQuery: symptomQuery,
+		displayText: displayText,
+		metadataText: metadataText,
+		supportingText: supportingText,
+		selectedValue: selectedValue
 	};
 })(window, document);

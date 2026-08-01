@@ -9,7 +9,7 @@ class Password_change_gate
 			return;
 		}
 		$CI = &get_instance();
-		if (!$CI->session->userdata('logged_in') || (int) $CI->session->userdata('must_change_password') !== 1) {
+		if (!$CI->session->userdata('logged_in')) {
 			return;
 		}
 
@@ -17,28 +17,45 @@ class Password_change_gate
 		$policy = new First_login_gate_policy();
 		$class = (string) $CI->router->class;
 		$method = (string) $CI->router->method;
+
+		$user_id = (int) $CI->session->userdata('id');
+		$session_role = (string) $CI->session->userdata('role');
+		if ($user_id < 1 || $session_role === '' || !$CI->db->table_exists('users')) {
+			$CI->session->sess_destroy();
+			$this->deny($CI, $policy, 'session_not_allowed');
+		}
+
+		$has_password_gate = $CI->db->field_exists('must_change_password', 'users');
+		$select = 'userId, role, status';
+		if ($has_password_gate) {
+			$select .= ', must_change_password';
+		}
+		$user = $CI->db
+			->select($select)
+			->where('userId', $user_id)
+			->limit(1)
+			->get('users')
+			->row();
+		if (!$user || (string) $user->role !== $session_role || (string) $user->status !== 'aktif') {
+			$CI->session->sess_destroy();
+			$this->deny($CI, $policy, 'session_not_allowed');
+		}
+
+		$must_change_password = $has_password_gate ? (int) $user->must_change_password : 0;
+		if ((int) $CI->session->userdata('must_change_password') !== $must_change_password) {
+			$CI->session->set_userdata('must_change_password', $must_change_password);
+		}
+		if ($must_change_password !== 1) {
+			return;
+		}
 		if ($policy->allowed($class, $method)) {
 			return;
 		}
 
 		$enabled = $CI->config->item('first_login_password_change_enabled') === true;
-		if (!$enabled || !$CI->db->table_exists('users') || !$CI->db->field_exists('must_change_password', 'users')) {
-			$this->deny($CI, $policy, 'password_change_unavailable');
-		}
-
-		$user_id = (int) $CI->session->userdata('id');
-		$user = $CI->db
-			->select('userId, role, status, must_change_password')
-			->where('userId', $user_id)
-			->get('users')
-			->row();
-		if (!$user || $user->role !== 'dokter' || $user->status !== 'aktif') {
+		if (!$enabled || !$has_password_gate || $session_role !== 'dokter') {
 			$CI->session->sess_destroy();
-			$this->deny($CI, $policy, 'session_not_allowed');
-		}
-		if ((int) $user->must_change_password !== 1) {
-			$CI->session->set_userdata('must_change_password', 0);
-			return;
+			$this->deny($CI, $policy, 'password_change_unavailable');
 		}
 
 		$this->deny($CI, $policy, 'password_change_required');
@@ -58,12 +75,12 @@ class Password_change_gate
 		);
 		if ($is_json) {
 			$CI->output
-				->set_status_header(403)
+				->set_status_header($code === 'session_not_allowed' ? 401 : 403)
 				->set_content_type('application/json', 'utf-8')
 				->set_header('Cache-Control: no-store, private')
 				->set_output(json_encode(array(
 					'success' => false,
-					'error' => 'password_change_required',
+					'safe_error_code' => $code,
 				)));
 			$CI->output->_display();
 			exit;

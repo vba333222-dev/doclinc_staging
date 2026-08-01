@@ -11,6 +11,17 @@
 		}
 		public function save_user()
 		{
+			if ($this->input->method(TRUE) !== 'POST') {
+				$this->output
+					->set_content_type('application/json')
+					->set_status_header(405)
+					->set_output(json_encode(array(
+						'success' => false,
+						'safe_error_code' => 'method_not_allowed',
+						'message' => 'Metode permintaan tidak didukung.',
+					)));
+				return;
+			}
 		    $this->form_validation->set_rules('nama_lengkap', 'Nama Lengkap', 'required', array('required' => 'Nama lengkap wajib diisi.'));
 		    $this->form_validation->set_rules('no_hp', 'Nomor Handphone', 'required', array('required' => 'Nomor HP wajib diisi.'));
             $this->form_validation->set_rules('email', 'Email', 'required|valid_email|is_unique[users.email]', array('required' => 'Email wajib diisi.', 'valid_email' => 'Masukkan email yang valid.', 'is_unique' => 'Email sudah digunakan.'));

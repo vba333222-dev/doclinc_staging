@@ -90,7 +90,7 @@ $autoload['drivers'] = array();
 |
 |	$autoload['helper'] = array('url', 'file');
 */
-$autoload['helper'] = array('url','form','login','profile_image');
+$autoload['helper'] = array('url', 'form', 'login', 'profile_image', 'csrf_bootstrap');
 
 /*
 | -------------------------------------------------------------------

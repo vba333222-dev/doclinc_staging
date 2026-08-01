@@ -1,9 +1,6 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-use Kreait\Firebase\Factory;
-use Kreait\Firebase\Exception\MessagingException;
-
 class Konsultasi extends MX_Controller
 {
 	function __construct()
@@ -39,14 +36,7 @@ class Konsultasi extends MX_Controller
 
 	public function chat()
 	{
-		$request_id = $this->input->get('reqId', TRUE);
-		if (!empty($request_id) && !doclinc_can_view_request($request_id)) {
-			doclinc_log_request_event('unauthorized_request_access', $request_id, array('target' => 'konsultasi_chat'));
-			redirect('home');
-			return;
-		}
-
-		$this->load->view('chat');
+		show_404();
 	}
 
 	public function save_konsultasi()
@@ -216,70 +206,12 @@ class Konsultasi extends MX_Controller
 
 	public function send()
 	{
-		if (!(bool) $this->config->item('firebase_enabled')) {
-			redirect('home#riwayat');
-			return;
-		}
-
-		$token = $this->input->get('token', TRUE);
-		if (empty($token)) {
-			redirect('home#riwayat');
-			return;
-		}
-
-		$this->config->load('firebase');
-
-		// $token = $this->input->post('token');
-		$serviceAccountPath = $this->config->item('firebase_service_account');
-		if (empty($serviceAccountPath) || !is_file($serviceAccountPath)) {
-			redirect('home#riwayat');
-			return;
-		}
-		// $deviceToken = $this->config->item('firebase_device_token');
-		$deviceToken = $token;
-
-		// Ambil pesan dari input
-		$pesan = "Warga telah melakukan konsultasi, silakan cek sekarang!";
-
-		if (empty($pesan)) {
-			echo "Pesan tidak boleh kosong!";
-			return;
-		}
-
-		// Buat instance Firebase
-		if (!class_exists(Factory::class)) {
-			log_message('error', 'Firebase dependency is missing.');
-			redirect('home#riwayat');
-			return;
-		}
-
-		$firebase = (new Factory)
-			->withServiceAccount($serviceAccountPath)
-			->createMessaging();
-
-		// Data notifikasi
-		$message = [
-			'notification' => [
-				'title' => 'Hai',
-				'body' => $pesan,
-			],
-			'token' => $deviceToken, // Token perangkat tujuan
-		];
-
-		try {
-			$firebase->send($message);
-			header('Location: ' . base_url('home#riwayat'));
-		} catch (MessagingException $e) {
-			log_message('error', 'Gagal mengirim notifikasi konsultasi: ' . $e->getMessage());
-			redirect('home#riwayat');
-		}
+		show_404();
 	}
 
 	public function service_worker()
 	{
-		$this->output
-			->set_content_type('application/javascript')
-			->set_output(file_get_contents(FCPATH . 'firebase-messaging-sw.js'));
+		show_404();
 	}
 
 	private function is_valid_latitude($value)

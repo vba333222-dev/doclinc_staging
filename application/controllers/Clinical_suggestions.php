@@ -9,6 +9,7 @@ class Clinical_suggestions extends CI_Controller
 	public function __construct()
 	{
 		parent::__construct();
+		require_once APPPATH . 'libraries/Clinical_suggestion_presenter.php';
 		$this->load->model('Clinical_suggestion_m');
 		$this->load->library('Clinical_suggestion_policy');
 		$this->load->helper('request_authz');
@@ -65,17 +66,10 @@ class Clinical_suggestions extends CI_Controller
 			$rows = array_slice($rows, 0, self::MAX_RESULTS);
 			$data = array();
 			foreach ($rows as $row) {
-				$code = trim((string) $row['term_code']);
-				$label = trim((string) $row['preferred_label']);
-				$data[] = array(
-					'id' => $row['term_type'] . ':' . $row['reference_key'],
-					'type' => $row['term_type'],
-					'code' => $code,
-					'label' => $label,
-					'display' => $code !== '' ? $code . ' — ' . $label : $label,
-					'source' => (string) $row['source_name'],
-					'version' => (string) $row['source_version'],
-				);
+				$item = Clinical_suggestion_presenter::present($row);
+				if ($item !== null) {
+					$data[] = $item;
+				}
 			}
 			$this->respond(200, true, $data, $meta);
 		} catch (Throwable $exception) {

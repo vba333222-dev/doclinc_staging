@@ -44,8 +44,8 @@ class Login extends MX_Controller
 		$longitude = htmlspecialchars($this->input->post('longitude'));
 		$auth = $this->Login_m->auth($username);
 		$user = $auth->num_rows() > 0 ? $auth->row() : null;
-		$dokter_is_allowed = !$user || $user->role !== 'dokter' || ($user->status ?? null) === 'aktif';
-		if ($user && $dokter_is_allowed && doclinc_password_verify($password, (string) $user->password)) {
+		$actor_is_allowed = $user && (string) ($user->status ?? '') === 'aktif';
+		if ($actor_is_allowed && doclinc_password_verify($password, (string) $user->password)) {
 			$must_change_password = property_exists($user, 'must_change_password') ? (int) $user->must_change_password : 0;
 			if ($must_change_password === 1 && $this->config->item('first_login_password_change_enabled') !== true) {
 				$this->Login_m->log_login_event('login_restricted', $user->userId, array('reason' => 'password_change_unavailable'));
@@ -87,6 +87,10 @@ class Login extends MX_Controller
 
 	public function logout()
 	{
+		if ($this->input->method(TRUE) !== 'POST') {
+			show_404();
+			return;
+		}
 		$this->session->unset_userdata(array('password_change_token_state', 'password_change_session_binding'));
 		$this->session->sess_destroy();
 		redirect('login');

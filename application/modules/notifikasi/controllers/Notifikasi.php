@@ -18,6 +18,12 @@ class Notifikasi extends MX_Controller
 	public function list_json()
 	{
 		$this->prepare_json_response();
+		if ($this->input->method(TRUE) !== 'GET') {
+			$this->output
+				->set_status_header(405)
+				->set_output(json_encode(array('status' => 'error', 'message' => 'Metode tidak diizinkan')));
+			return;
+		}
 		if ($this->session->userdata('logged_in') != TRUE) {
 			$this->output
 				->set_status_header(401)

@@ -124,6 +124,7 @@ if (!function_exists('formatComplaintText')) {
 
 <head>
 	<meta charset="UTF-8">
+	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>DocLink - Konsultasi Nakes</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -742,7 +743,7 @@ if (!function_exists('formatComplaintText')) {
 <body>
 	<div class="consult-shell">
 		<header class="consult-header">
-			<a href="<?= base_url('home_nakes'); ?>" class="consult-back" aria-label="Kembali ke beranda nakes">
+			<a href="<?= html_escape(isset($return_url) ? $return_url : base_url('home_nakes#riwayat_konsul')); ?>" class="consult-back" aria-label="Kembali ke daftar konsultasi">
 				<i class="fas fa-arrow-left"></i>
 			</a>
 			<div class="consult-title">
@@ -1434,7 +1435,7 @@ if (!function_exists('formatComplaintText')) {
 							const firebaseDb = getFirebaseDatabase();
 							if (!firebaseDb) {
 								if (result.dismiss === Swal.DismissReason.timer) {
-									window.location.href = '../../home_nakes#riwayat_konsul_selesai';
+									window.location.href = <?= json_encode(isset($completed_return_url) ? $completed_return_url : base_url('home_nakes#riwayat_konsul_selesai')); ?>;
 								}
 								return;
 							}
@@ -1447,11 +1448,11 @@ if (!function_exists('formatComplaintText')) {
 								timestamp: Date.now()
 							}).then(() => {
 								if (result.dismiss === Swal.DismissReason.timer) {
-									window.location.href = '../../home_nakes#riwayat_konsul_selesai';
+									window.location.href = <?= json_encode(isset($completed_return_url) ? $completed_return_url : base_url('home_nakes#riwayat_konsul_selesai')); ?>;
 								}
 							}).catch(() => {
 								if (result.dismiss === Swal.DismissReason.timer) {
-									window.location.href = '../../home_nakes#riwayat_konsul_selesai';
+									window.location.href = <?= json_encode(isset($completed_return_url) ? $completed_return_url : base_url('home_nakes#riwayat_konsul_selesai')); ?>;
 								}
 							})
 						});
@@ -1523,35 +1524,6 @@ if (!function_exists('formatComplaintText')) {
 			}
 		});
 	</script>
-
-	<?php if (!$clinical_suggestions_enabled) : ?>
-	<!-- legacy diagnosis lookup -->
-	<script>
-		$(document).ready(function() {
-			$('#diagnosa').autocomplete({
-				source: function(request, response) {
-					$.ajax({
-						url: "<?= base_url('konsultasi_nakes/getICD_json'); ?>",
-						type: 'GET',
-						dataType: 'json',
-						data: {
-							term: request.term
-						},
-						success: function(data) {
-							response($.map(data, function(item) {
-								return {
-									label: item.id_keluhan + ' - ' + item.nama_keluhan,
-									value: item.nama_keluhan
-								}
-							}));
-						}
-					});
-				},
-				minLength: 2,
-			});
-		})
-	</script>
-	<?php endif; ?>
 
 	<!-- tambah bari dan hapus bari -->
 	<script>

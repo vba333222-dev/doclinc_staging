@@ -76,6 +76,18 @@ No suggestion account needs access to `requests`, patient diagnosis, medical rec
 
 `GET /clinical-suggestions` accepts `type`, `q`, and the minimum authorization context `request_id`. The query is limited to 80 characters and results to 10.
 
+### User-facing terminology contract
+
+- Diagnosis suggestions are presented only from `20b_master_diagnosis_icd10_who_2019.json`.
+- Diagnosis search accepts the canonical code, official WHO title, and Indonesian search aliases.
+- When an Indonesian alias matches, it is shown as a search aid while the official WHO title, ICD-10 code, and `WHO 2019` remain visible; the canonical `CODE — WHO title` is the selected value.
+- Selecting a diagnosis preserves the canonical `CODE — WHO title` value for the current legacy text storage contract.
+- Database provenance fields such as `source_name`, `source_version`, package identity, or any Doclinc/Doklinc/DocLink branding are never returned as user-facing metadata.
+- A diagnosis with an invalid ICD-10 code, a non-WHO dataset, or an internally branded label is omitted fail-closed.
+- Complaint and symptom suggestions show the human clinical label only; internal codes are never used as display text.
+- Medicine suggestions are accepted only from `21_master_obat_fornas.json`, show the canonical Fornas name, and never expose the internal `EFORNAS_*` code.
+- The current Fornas snapshot is name-only reference data. It must not be presented as dosage, strength, route, restriction, insurance eligibility, or an automatic therapy recommendation.
+
 | Type | Role | Request rule |
 | --- | --- | --- |
 | `complaint` | authenticated Warga | create flow, or own Pending request for edit |

@@ -245,6 +245,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 <head>
 	<meta charset="UTF-8">
+	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>DocLink - Beranda</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -1168,10 +1169,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				</a>
 				<div class="text-white mb-2 dl-location-row">
 					<i class="fas fa-map-marker-alt me-2"></i><small><label for="" id="userLocationAddress">Menunggu lokasi...</label></small>
+					<a id="userLocationMapLink" class="small text-white ms-2 d-none" href="#" target="_blank" rel="noopener noreferrer">Buka peta</a>
 
 					<input type="hidden" id="id_user" value="<?= $this->session->userdata('id'); ?>">
 					<input type="hidden" id="id_kabupaten" value="<?= $this->session->userdata('remark'); ?>">
-					<input type="hidden" id="address" placeholder="Latitude">
 					<input type="hidden" id="latitude" placeholder="Latitude">
 					<input type="hidden" id="longitude" placeholder="Longitude">
 				</div>
@@ -1864,7 +1865,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						<div class="form-floating mb-2">
 
 							<textarea id="address" class="form-control shadow border-success" placeholder="Alamat: ..." readonly style="height: 100px"></textarea>
-							<label for="alamat">Alamat</label>
+							<label for="address">Alamat</label>
 							<input type="text" class="d-none" id="latitudex" placeholder="Latitude" readonly>
 							<input type="text" class="d-none" id="longitudex" placeholder="Longitude" readonly>
 							<div id="map"></div>
@@ -2057,6 +2058,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-location-address.js')); ?>"></script>
 	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
 		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
 	<?php endif; ?>
@@ -2582,7 +2584,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						timerProgressBar: true
 					}).then((result) => {
 						if (result.dismiss === Swal.DismissReason.timer) {
-							window.location.href = 'login/logout';
+							window.DoclincCsrf.submitPost(<?= json_encode(base_url('login/logout')); ?>);
 						}
 					});
 				}
@@ -2900,21 +2902,21 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 		let map;
 		let marker;
-		let geocoder;
-
-		function formatCoordinate(value) {
-			const number = Number(value);
-			return Number.isFinite(number) ? number.toFixed(6) : '';
-		}
+		let locationAddressSequence = 0;
+		const locationAddressResolver = window.DoclincLocationAddress ? window.DoclincLocationAddress.create({
+			provider: mapProvider,
+			mapboxToken: mapboxPublicToken,
+			googleMaps: window.google && window.google.maps ? window.google.maps : null,
+			fetch: window.fetch
+		}) : null;
 
 		function setHeaderCoordinate(location) {
 			const coordinateEl = document.getElementById('userCoordinateLabel');
 			if (!coordinateEl) {
 				return;
 			}
-			const lat = location && formatCoordinate(location.lat);
-			const lng = location && formatCoordinate(location.lng);
-			coordinateEl.textContent = lat && lng ? 'Lat ' + lat + ' · Lng ' + lng : 'Lokasi belum ditemukan. Coba lagi.';
+			const normalized = window.DoclincLocationAddress && window.DoclincLocationAddress.normalizeLocation(location);
+			coordinateEl.textContent = normalized ? 'Lokasi perangkat ditemukan' : 'Lokasi belum ditemukan. Coba lagi.';
 		}
 
 		function setLocationFields(location) {
@@ -2922,11 +2924,17 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			const longitudeEl = document.getElementById("longitude");
 			const latitudexEl = document.getElementById("latitudex");
 			const longitudexEl = document.getElementById("longitudex");
+			const mapLinkEl = document.getElementById('userLocationMapLink');
 
 			if (latitudeEl) latitudeEl.value = location.lat;
 			if (longitudeEl) longitudeEl.value = location.lng;
 			if (latitudexEl) latitudexEl.value = location.lat;
 			if (longitudexEl) longitudexEl.value = location.lng;
+			if (mapLinkEl && window.DoclincLocationAddress) {
+				const mapUrl = window.DoclincLocationAddress.mapUrl(location);
+				mapLinkEl.href = mapUrl || '#';
+				mapLinkEl.classList.toggle('d-none', !mapUrl);
+			}
 			setHeaderCoordinate(location);
 		}
 
@@ -2934,48 +2942,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			const addressEl = document.getElementById("userLocationAddress");
 			const kotaEl = document.getElementById('kota');
 
-			if (addressEl) addressEl.innerHTML = address || "Lokasi belum tersedia";
+			if (addressEl) addressEl.textContent = address || "Alamat belum dapat dikenali";
 			if (kotaEl) kotaEl.textContent = kota || "Lokasi belum tersedia";
-		}
-
-		function getMapboxCity(feature) {
-			if (!feature) return '';
-
-			if (feature.place_type && feature.place_type.includes('place')) {
-				return feature.text || '';
-			}
-
-			const context = feature.context || [];
-			const city = context.find(item => item.id && item.id.indexOf('place.') === 0) ||
-				context.find(item => item.id && item.id.indexOf('district.') === 0);
-
-			return city ? city.text : '';
-		}
-
-		function getMapboxAddress(location) {
-			if (mapProvider !== 'mapbox' || !mapboxPublicToken || !window.fetch) {
-				setLocationText(location.lat + ', ' + location.lng, '');
-				return;
-			}
-
-			const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' +
-				encodeURIComponent(location.lng + ',' + location.lat) +
-				'.json?access_token=' + encodeURIComponent(mapboxPublicToken);
-
-			fetch(url)
-				.then(response => {
-					if (!response.ok) {
-						throw new Error('Mapbox geocoding failed');
-					}
-					return response.json();
-				})
-				.then(data => {
-					const feature = data.features && data.features.length ? data.features[0] : null;
-					setLocationText(feature ? feature.place_name : 'Alamat belum ditemukan.', getMapboxCity(feature));
-				})
-				.catch(() => {
-					setLocationText(location.lat + ', ' + location.lng, '');
-				});
 		}
 
 		function initMap() {
@@ -3010,8 +2978,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				position: initialLocation,
 				map: map,
 			});
-
-			geocoder = new google.maps.Geocoder();
 
 			// Mendapatkan lokasi pengguna
 			if (navigator.geolocation) {
@@ -3133,33 +3099,16 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		}
 
 		function getAddress(location) {
-			if (mapProvider === 'mapbox') {
-				getMapboxAddress(location);
+			const sequence = ++locationAddressSequence;
+			setLocationText('Mencari alamat...', 'Lokasi perangkat ditemukan');
+			if (!locationAddressResolver) {
+				setLocationText('Alamat belum dapat dikenali', 'Lokasi perangkat ditemukan');
 				return;
 			}
 
-			if (!geocoder) {
-				setLocationText(location.lat + ', ' + location.lng, '');
-				return;
-			}
-
-			geocoder.geocode({
-				location: location
-			}, (results, status) => {
-				if (status === "OK") {
-					if (results[0]) {
-						setLocationText(results[0].formatted_address, '');
-
-						const components = results[0].address_components;
-						const city = components.find(c => c.types.includes("locality")) ||
-							components.find(c => c.types.includes("administrative_area_level_2"));
-						document.getElementById('kota').textContent = city ? city.long_name : "Tidak ditemukan";
-					} else {
-						setLocationText('Alamat belum ditemukan.', '');
-					}
-				} else {
-					setLocationText('Alamat belum ditemukan.', '');
-				}
+			locationAddressResolver.resolve(location).then(result => {
+				if (sequence !== locationAddressSequence) return;
+				setLocationText(result.address, result.locality);
 			});
 		}
 

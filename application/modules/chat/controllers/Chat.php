@@ -8,6 +8,7 @@ class Chat extends MX_Controller
 		parent::__construct();
 		$this->load->model('Chat_m');
 		$this->load->helper('request_authz');
+		$this->load->helper('request_navigation');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login');
@@ -20,23 +21,39 @@ class Chat extends MX_Controller
 		if ($request_id < 1 || !doclinc_can_view_chat($request_id)) {
 			doclinc_log_request_event('unauthorized_request_access', $request_id, array('target' => 'chat'));
 			$role = doclinc_current_user_role();
-			redirect($role === 'dokter' ? 'home_nakes' : 'home');
+			redirect(doclinc_request_return_target($role));
 			return;
 		}
 
 		$request = $this->Chat_m->get_request_for_chat($request_id);
+		if (!$request) {
+			doclinc_log_request_event('unauthorized_request_access', $request_id, array('target' => 'chat_missing_request'));
+			redirect(doclinc_request_return_target(doclinc_current_user_role()));
+			return;
+		}
+		$current_role = doclinc_current_user_role();
 		$this->load->view('thread_v', array(
 			'request' => $request,
 			'request_id' => $request_id,
 			'can_send' => doclinc_can_send_chat($request_id),
 			'current_user_id' => doclinc_current_user_id(),
-			'current_role' => doclinc_current_user_role(),
+			'current_role' => $current_role,
+			'back_url' => doclinc_request_return_url(
+				$current_role,
+				isset($request->request_status) ? $request->request_status : ''
+			),
 		));
 	}
 
 	public function messages()
 	{
 		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) !== 'GET') {
+			$this->output
+				->set_status_header(405)
+				->set_output(json_encode(array('status' => 'error', 'message' => 'Metode tidak diizinkan')));
+			return;
+		}
 		$request_id = (int) $this->input->get('request_id', TRUE);
 		$after_id = (int) $this->input->get('after_id', TRUE);
 		$user_id = (int) $this->session->userdata('id');
@@ -49,7 +66,6 @@ class Chat extends MX_Controller
 			return;
 		}
 
-		$this->Chat_m->mark_read($request_id, $user_id);
 		$this->output->set_output(json_encode(array(
 			'status' => 'success',
 			'can_send' => doclinc_can_send_chat($request_id, $user_id),

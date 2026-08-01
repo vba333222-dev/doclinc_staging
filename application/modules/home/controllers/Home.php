@@ -29,6 +29,9 @@ class Home extends MX_Controller
 	public function livekit_token()
 	{
 		$this->output->set_content_type('application/json');
+		if (!$this->require_livekit_post()) {
+			return;
+		}
 		if ($this->session->userdata('role') !== 'warga') {
 			$this->output
 				->set_status_header(403)
@@ -55,6 +58,14 @@ class Home extends MX_Controller
 	{
 		$this->output->set_content_type('application/json');
 		try {
+			if ($this->input->method(TRUE) !== 'GET') {
+				$this->output->set_status_header(405)->set_output(json_encode(array(
+					'success' => false,
+					'has_incoming' => false,
+					'message' => 'Metode permintaan tidak didukung.',
+				)));
+				return;
+			}
 			if ($this->session->userdata('role') !== 'warga') {
 				$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'has_incoming' => false, 'message' => 'Anda tidak memiliki akses.')));
 				return;
@@ -67,7 +78,7 @@ class Home extends MX_Controller
 
 			$user_id = (int) $this->session->userdata('id');
 			$request_id = (int) $this->livekit_request_value('request_id');
-			$expired_count = $this->Call_session_m->expire_stale_ringing_calls($this->Call_session_m->stale_cleanup_limit());
+			$expired_count = 0;
 			if ($request_id > 0) {
 				$request = doclinc_request_row($request_id);
 				if (!$request || (string) $request->user_id !== (string) $user_id || $request->request_status !== 'Accepted') {
@@ -76,7 +87,11 @@ class Home extends MX_Controller
 				}
 			}
 
-			$call = $this->Call_session_m->get_latest_incoming_for_warga($user_id, $request_id);
+			$call = $this->Call_session_m->get_latest_incoming_for_warga($user_id, $request_id, false);
+			if ($call && $this->Call_session_m->is_call_expired($call)) {
+				$call = null;
+				$expired_count = 1;
+			}
 			if (!$call) {
 				$message = $expired_count > 0 ? 'Panggilan tidak terjawab.' : 'Belum ada panggilan masuk';
 				$this->output->set_output(json_encode(array('success' => true, 'has_incoming' => false, 'message' => $message, 'expired' => $expired_count > 0)));
@@ -100,6 +115,9 @@ class Home extends MX_Controller
 	public function answer_livekit_call()
 	{
 		$this->output->set_content_type('application/json');
+		if (!$this->require_livekit_post()) {
+			return;
+		}
 		if ($this->session->userdata('role') !== 'warga') {
 			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
@@ -151,8 +169,7 @@ class Home extends MX_Controller
 	public function reject_livekit_call()
 	{
 		$this->output->set_content_type('application/json');
-		if ($this->input->method(TRUE) !== 'POST') {
-			$this->output->set_status_header(405)->set_output(json_encode(array('success' => false, 'message' => 'Metode permintaan tidak didukung.')));
+		if (!$this->require_livekit_post()) {
 			return;
 		}
 		if ($this->session->userdata('role') !== 'warga') {
@@ -209,6 +226,9 @@ class Home extends MX_Controller
 	public function livekit_call_status()
 	{
 		$this->output->set_content_type('application/json');
+		if (!$this->require_livekit_post()) {
+			return;
+		}
 		$call_id = (int) $this->livekit_request_value('call_id');
 		$this->Call_session_m->expire_stale_ringing_calls($this->Call_session_m->stale_cleanup_limit());
 		$call = $this->Call_session_m->get_by_id($call_id);
@@ -248,6 +268,22 @@ class Home extends MX_Controller
 		}
 
 		return $value;
+	}
+
+	private function require_livekit_post()
+	{
+		if ($this->input->method(TRUE) === 'POST') {
+			return true;
+		}
+
+		$this->output
+			->set_status_header(405)
+			->set_output(json_encode(array(
+				'success' => false,
+				'safe_error_code' => 'method_not_allowed',
+				'message' => 'Metode permintaan tidak didukung.',
+			)));
+		return false;
 	}
 
 	public function index()
@@ -295,20 +331,7 @@ class Home extends MX_Controller
 	}
 	public function save_konsultasi()
 	{
-		if (!$this->require_post_json()) {
-			return;
-		}
-		$nama = $this->input->post('nama');
-		$keluhan = $this->input->post('keluhan');
-		$no_hp = $this->input->post('no_hp');
-		$lat = $this->input->post('lat');
-		$lng = $this->input->post('lng');
-		$alamat = $this->input->post('alamat');
-		$tanggal = $this->input->post('tanggal');
-
-		$this->Home_m->saveKonsultasi($nama, $keluhan, $no_hp, $lat, $lng, $alamat, $tanggal);
-
-		//	echo json_encode(['status' => 'success', 'message' => 'Data berhasil disimpan']);
+		show_404();
 	}
 
 	public function updateRequestById()
@@ -679,6 +702,13 @@ class Home extends MX_Controller
 
 	public function getDokterRating()
 	{
+		if (!$this->require_post_json()) {
+			return;
+		}
+		if ($this->session->userdata('role') !== 'warga') {
+			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
+			return;
+		}
 		$id_dokter = $this->input->post('id_dokter');
 		$result = $this->Home_m->getDokterRating($id_dokter)->result_array();
 		echo json_encode($result);
@@ -686,6 +716,9 @@ class Home extends MX_Controller
 
 	public function getDuration()
 	{
+		if (!$this->require_post_json()) {
+			return;
+		}
 		$this->load->model('Home_m');
 		$kode_pkm = strval($this->session->userdata('remark'));
 		$nama = $this->Home_m->getAllDataDoctors($kode_pkm);

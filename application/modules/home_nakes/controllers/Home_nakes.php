@@ -29,6 +29,9 @@ class Home_nakes extends MX_Controller
 	public function livekit_token()
 	{
 		$this->output->set_content_type('application/json');
+		if (!$this->require_livekit_post()) {
+			return;
+		}
 		if (!in_array($this->session->userdata('role'), array('dokter', 'nakes'), true)) {
 			$this->output
 				->set_status_header(403)
@@ -46,6 +49,9 @@ class Home_nakes extends MX_Controller
 	public function start_livekit_call()
 	{
 		$this->output->set_content_type('application/json');
+		if (!$this->require_livekit_post()) {
+			return;
+		}
 		if (!in_array($this->session->userdata('role'), array('dokter', 'nakes'), true)) {
 			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
@@ -102,6 +108,9 @@ class Home_nakes extends MX_Controller
 	public function end_livekit_call()
 	{
 		$this->output->set_content_type('application/json');
+		if (!$this->require_livekit_post()) {
+			return;
+		}
 		if (!in_array($this->session->userdata('role'), array('dokter', 'nakes'), true)) {
 			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
@@ -137,6 +146,9 @@ class Home_nakes extends MX_Controller
 	public function livekit_call_status()
 	{
 		$this->output->set_content_type('application/json');
+		if (!$this->require_livekit_post()) {
+			return;
+		}
 		if (!in_array($this->session->userdata('role'), array('dokter', 'nakes'), true)) {
 			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
@@ -185,6 +197,22 @@ class Home_nakes extends MX_Controller
 		}
 
 		return $value;
+	}
+
+	private function require_livekit_post()
+	{
+		if ($this->input->method(TRUE) === 'POST') {
+			return true;
+		}
+
+		$this->output
+			->set_status_header(405)
+			->set_output(json_encode(array(
+				'success' => false,
+				'safe_error_code' => 'method_not_allowed',
+				'message' => 'Metode permintaan tidak didukung.',
+			)));
+		return false;
 	}
 
 	public function presence_heartbeat()
@@ -487,35 +515,12 @@ class Home_nakes extends MX_Controller
 
 	public function tes_save_lokasi()
 	{
-		$this->load->view('tes_save_lokasi');
+		show_404();
 	}
 
 	public function save_location()
 	{
-		if (!$this->require_post_json()) {
-			return;
-		}
-		$ip_address = $this->input->ip_address();
-		$data = array(
-			'id_user' => $this->session->userdata('id'),
-			'name' => $this->session->userdata('username'),
-			'ip_address' => $ip_address,
-			'latitude' => $this->input->post('latitude'),
-			'longitude' => $this->input->post('longitude'),
-			'update_date' => date('Y-m-d H:i:s')
-		);
-		// Cek apakah IP address sudah ada
-		$existing_location = $this->Home_nakes_m->check_ip_exists($ip_address);
-		if ($existing_location) {
-			// Jika ada, update data
-			$this->Home_nakes_m->update_location($data, $ip_address);
-			$this->output->set_output(json_encode(['status' => 'updated']));
-		} else {
-			// Jika tidak ada, insert data baru
-			$data['create_date'] = date('Y-m-d H:i:s');
-			$this->Home_nakes_m->save_location($data);
-			$this->output->set_output(json_encode(['status' => 'inserted']));
-		}
+		show_404();
 	}
 	public function accept_request()
 	{
@@ -896,10 +901,9 @@ class Home_nakes extends MX_Controller
 	}
 	public function get_location_user()
 	{
-		$name = $_SESSION['name'];
-		$d['data_user'] = $this->Home_nakes_m->get_location_user($name);
+		show_404();
 	}
-	public function get_estimation($origin_lat, $origin_lng, $dest_lat, $dest_lng)
+	private function get_estimation($origin_lat, $origin_lng, $dest_lat, $dest_lng)
 	{
 		$apiKey = $this->config->item('google_maps_api_key') ?: '';
 		$mapProvider = $this->config->item('map_provider') ?: 'none';
@@ -916,7 +920,9 @@ class Home_nakes extends MX_Controller
 		curl_setopt_array($curl, [
 			CURLOPT_RETURNTRANSFER => 1,
 			CURLOPT_URL => $url,
-			CURLOPT_SSL_VERIFYPEER => false
+			CURLOPT_SSL_VERIFYPEER => true,
+			CURLOPT_CONNECTTIMEOUT => 2,
+			CURLOPT_TIMEOUT => 5,
 		]);
 
 		$response = curl_exec($curl);
@@ -943,16 +949,32 @@ class Home_nakes extends MX_Controller
 		if (!$this->require_post_json()) {
 			return;
 		}
+		if ($this->session->userdata('role') !== 'dokter') {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode([
+					'status' => 'error',
+					'safe_error_code' => 'actor_denied',
+					'message' => 'Anda tidak memiliki akses.',
+				]));
+			return;
+		}
 		$response = ['status' => 'error', 'message' => 'Gagal menyimpan'];
 
 		$id = $this->session->userdata('id');
-		$data = [
-			'nama'      => $this->input->post('nama_lengkap'),
-			'no_hp'     => $this->input->post('no_hp'),
-			'tgl' 		=> $this->input->post('tgl_lahir'),
-			'gender'   	=> $this->input->post('jk'),
-			'alamat'    => $this->input->post('alamat'),
-		];
+		$validated = $this->validated_profile_input();
+		if ($validated['success'] !== true) {
+			$this->output
+				->set_status_header(422)
+				->set_output(json_encode([
+					'status' => 'error',
+					'safe_error_code' => 'profile_validation_failed',
+					'message' => $validated['message'],
+				]));
+			return;
+		}
+		$data = $validated['data'];
+		$uploaded_profile_path = '';
 
 		// Upload foto jika ada
 		if (!empty($_FILES['foto']['name'])) {
@@ -968,6 +990,7 @@ class Home_nakes extends MX_Controller
 			if ($this->upload->do_upload('foto')) {
 				$uploadData = $this->upload->data();
 				$data['foto'] = $uploadData['file_name'];
+				$uploaded_profile_path = isset($uploadData['full_path']) ? (string) $uploadData['full_path'] : '';
 			} else {
 				$response['message'] = 'Foto profil belum dapat diunggah. Periksa file dan coba lagi.';
 				$this->output->set_output(json_encode($response));
@@ -977,11 +1000,59 @@ class Home_nakes extends MX_Controller
 
 		// Simpan lewat model
 		if ($this->Home_nakes_m->update_profile($id, $data)) {
-			$this->session->set_userdata($data); // Perbarui session
+			$this->session->set_userdata($data);
 			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Profil diperbarui.']));
 		} else {
+			if ($uploaded_profile_path !== '' && is_file($uploaded_profile_path)) {
+				@unlink($uploaded_profile_path);
+			}
+			$this->output->set_status_header(500);
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Gagal memperbarui profil.']));
 		}
+	}
+
+	private function validated_profile_input()
+	{
+		$name = trim(strip_tags((string) $this->input->post('nama_lengkap')));
+		$name = preg_replace('/\s+/u', ' ', $name);
+		$phone = preg_replace('/[\s().-]+/', '', trim((string) $this->input->post('no_hp')));
+		$birthdate = trim((string) $this->input->post('tgl_lahir'));
+		$gender = trim((string) $this->input->post('jk'));
+		$address = trim(strip_tags((string) $this->input->post('alamat')));
+		$address = preg_replace('/[\t ]+/u', ' ', $address);
+
+		if ($name === '' || $this->profile_text_length($name) < 2 || $this->profile_text_length($name) > 100) {
+			return ['success' => false, 'message' => 'Nama lengkap harus terdiri dari 2 sampai 100 karakter.'];
+		}
+		if (!preg_match('/^\+?[0-9]{8,20}$/', $phone)) {
+			return ['success' => false, 'message' => 'Nomor HP belum valid. Gunakan 8 sampai 20 angka.'];
+		}
+		$birthdate_value = DateTime::createFromFormat('!Y-m-d', $birthdate);
+		if (!$birthdate_value || $birthdate_value->format('Y-m-d') !== $birthdate || $birthdate_value > new DateTime('today')) {
+			return ['success' => false, 'message' => 'Tanggal lahir belum valid.'];
+		}
+		if (!in_array($gender, ['Laki-laki', 'Perempuan'], true)) {
+			return ['success' => false, 'message' => 'Jenis kelamin belum valid.'];
+		}
+		if ($this->profile_text_length($address) < 5 || $this->profile_text_length($address) > 500) {
+			return ['success' => false, 'message' => 'Alamat harus terdiri dari 5 sampai 500 karakter.'];
+		}
+
+		return [
+			'success' => true,
+			'data' => [
+				'nama' => $name,
+				'no_hp' => $phone,
+				'tgl' => $birthdate,
+				'gender' => $gender,
+				'alamat' => $address,
+			],
+		];
+	}
+
+	private function profile_text_length($value)
+	{
+		return function_exists('mb_strlen') ? mb_strlen((string) $value, 'UTF-8') : strlen((string) $value);
 	}
 
 	private function require_post_json()
