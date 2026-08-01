@@ -423,10 +423,10 @@ class Konsultasi_nakes extends MX_Controller
 		echo json_encode($data);
 	}
 
-	private function result_upload_error_message($allow_webp = false)
+	private function result_upload_error_message($visit_proof = false)
 	{
-		return $allow_webp
-			? 'Foto bukti tidak valid. Gunakan JPG/PNG/WEBP dengan ukuran maksimal 5 MB.'
+		return $visit_proof
+			? 'Foto bukti tidak valid. Gunakan JPG/JPEG dengan ukuran maksimal 5 MB.'
 			: 'File hasil konsultasi tidak valid. Gunakan JPG/PNG dengan ukuran maksimal 5 MB.';
 	}
 

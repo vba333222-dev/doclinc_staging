@@ -230,21 +230,19 @@ $history_event_time = static function ($event) {
 												</div>
 											</div>
 											<?php if ($can_coordinate_staff) : ?>
-											<div class="nk-action-panel nk-action-panel--pic nk-card-section">
+											<div class="nk-action-panel nk-action-panel--pic nk-card-section" data-pic-panel data-request-id="<?= html_escape((int) $x->request_id); ?>">
 												<div class="nk-action-panel__title">PIC</div>
 												<div class="nk-action-panel__body">
 													<div class="nk-pic-current">
 														<span>Status PIC</span>
-														<strong>
+														<strong data-pic-name>
 															<?php if ($pic_assignment) : ?>
 																<?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_profesi) ? ' · ' . html_escape($pic_assignment->staff_profesi) : ''; ?>
 															<?php else : ?>
 																Belum ditentukan
 															<?php endif; ?>
 														</strong>
-														<?php if ($pic_assignment && !empty($pic_assignment->staff_no_hp)) : ?>
-															<small><?= html_escape($pic_assignment->staff_no_hp); ?></small>
-														<?php endif; ?>
+														<small data-pic-contact <?= !$pic_assignment || empty($pic_assignment->staff_no_hp) ? 'hidden' : ''; ?>><?= $pic_assignment && !empty($pic_assignment->staff_no_hp) ? html_escape($pic_assignment->staff_no_hp) : ''; ?></small>
 													</div>
 													<?php if (!$staff_assignment_ready) : ?>
 														<p class="nk-pic-muted">Fitur PIC belum tersedia.</p>
@@ -263,15 +261,14 @@ $history_event_time = static function ($event) {
 															</select>
 															<input type="text" name="note" class="form-control form-control-sm" maxlength="255" placeholder="Catatan opsional">
 															<div class="nk-pic-actions">
-																<button type="submit" class="btn btn-outline-success btn-sm rounded-pill"><?= $pic_assignment ? 'Ganti PIC' : 'Tetapkan PIC'; ?></button>
+																<button type="submit" class="btn btn-outline-success btn-sm rounded-pill" data-pic-submit><?= $pic_assignment ? 'Ganti PIC' : 'Tetapkan PIC'; ?></button>
 															</div>
 														</form>
-														<?php if ($pic_assignment) : ?>
-															<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form">
-																<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
-																<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Lepas PIC</button>
-															</form>
-														<?php endif; ?>
+														<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form" <?= $pic_assignment ? '' : 'hidden'; ?>>
+															<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
+															<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Lepas PIC</button>
+														</form>
+														<div class="nk-pic-native-feedback" data-pic-feedback role="status" aria-live="polite" hidden></div>
 													<?php endif; ?>
 												</div>
 											</div>

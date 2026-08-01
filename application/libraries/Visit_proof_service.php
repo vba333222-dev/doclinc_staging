@@ -63,7 +63,7 @@ class Visit_proof_service
 		}
 		return array(
 			'upload_path' => rtrim($this->storage_directory, '/\\') . DIRECTORY_SEPARATOR,
-			'allowed_types' => 'jpg|jpeg|png|webp',
+			'allowed_types' => 'jpg|jpeg',
 			'max_size' => function_exists('doclinc_visit_proof_max_size_kb') ? doclinc_visit_proof_max_size_kb() : 5120,
 			'file_name' => $storage_key,
 			'overwrite' => false,
@@ -113,20 +113,18 @@ class Visit_proof_service
 		}
 		$extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
 		if (pathinfo($file_name, PATHINFO_FILENAME) !== $expected_storage_key
-			|| !in_array($extension, array('jpg', 'jpeg', 'png', 'webp'), true)) {
+			|| !in_array($extension, array('jpg', 'jpeg'), true)) {
 			@unlink($full_path);
 			return array('success' => false, 'reason' => 'storage_key_mismatch');
 		}
 
 		$mime_type = $this->detectedMimeType($full_path);
-		$allowed_mimes = array('image/jpeg', 'image/png', 'image/webp');
+		$allowed_mimes = array('image/jpeg');
 		$image_info = @getimagesize($full_path);
 		$size_bytes = @filesize($full_path);
 		$max_bytes = (function_exists('doclinc_visit_proof_max_size_kb') ? doclinc_visit_proof_max_size_kb() : 5120) * 1024;
 		$mime_extensions = array(
 			'image/jpeg' => array('jpg', 'jpeg'),
-			'image/png' => array('png'),
-			'image/webp' => array('webp'),
 		);
 		$pixels = $image_info !== false && isset($image_info[0], $image_info[1])
 			? (int) $image_info[0] * (int) $image_info[1]

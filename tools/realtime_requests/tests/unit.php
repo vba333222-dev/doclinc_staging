@@ -174,11 +174,17 @@ request_expect(strpos($visit_model_source, "insert('visit_location_updates'") !=
 	'visit_proof_model_locks_media_and_persists_location');
 request_expect(strpos($visit_view_source, 'capture="environment"') !== false
 	&& strpos($visit_view_source, 'acquireVisitProofLocation') !== false
-	&& strpos($visit_view_source, "formData.set('proof_latitude'") !== false,
+	&& strpos($visit_view_source, "formData.set('proof_latitude'") !== false
+	&& strpos($visit_view_source, 'accept=".jpg,.jpeg,image/jpeg"') !== false
+	&& strpos($visit_view_source, "proofFile.type !== 'image/jpeg'") !== false
+	&& strpos($visit_view_source, "'image/webp'") === false,
 	'visit_proof_browser_requires_camera_and_fresh_location');
 request_expect(strpos($visit_service_source, "hash_file('sha256'") !== false
 	&& strpos($visit_service_source, 'getimagesize(') !== false
-	&& strpos($visit_service_source, "'image/webp'") !== false,
+	&& strpos($visit_service_source, "'allowed_types' => 'jpg|jpeg'") !== false
+	&& strpos($visit_service_source, "\$allowed_mimes = array('image/jpeg');") !== false
+	&& strpos($visit_service_source, "'image/png'") === false
+	&& strpos($visit_service_source, "'image/webp'") === false,
 	'visit_proof_service_validates_decoded_image_hash_and_mime');
 
 echo "REALTIME_REQUEST_UNIT_PASSED={$passed}\nREALTIME_REQUEST_UNIT_FAILED={$failed}\n";

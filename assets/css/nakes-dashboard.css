@@ -2306,6 +2306,22 @@
 			margin-top: 7px;
 		}
 
+		.nk-pic-clear-form[hidden] {
+			display: none !important;
+		}
+
+		.nk-pic-native-feedback {
+			color: #315d0d;
+			font-size: 12px;
+			font-weight: 700;
+			line-height: 1.35;
+			margin-top: 7px;
+		}
+
+		.nk-pic-native-feedback.is-error {
+			color: #b42318;
+		}
+
 		.nk-pic-inline {
 			background: #f8fbf9;
 			border: 1px solid var(--dl-color-border);

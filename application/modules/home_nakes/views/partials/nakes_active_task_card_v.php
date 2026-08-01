@@ -44,9 +44,9 @@
 			</div>
 		</div>
 		<?php if (!empty($can_coordinate_staff)) : ?>
-		<div class="nk-pic-inline">
+		<div class="nk-pic-inline" data-pic-summary data-request-id="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
 			<span>PIC</span>
-			<strong>
+			<strong data-pic-name>
 				<?php if ($primary_pic_assignment) : ?>
 					<?= html_escape($primary_pic_assignment->staff_nama); ?><?= !empty($primary_pic_assignment->staff_profesi) ? ' · ' . html_escape($primary_pic_assignment->staff_profesi) : ''; ?>
 				<?php else : ?>
@@ -54,7 +54,7 @@
 				<?php endif; ?>
 			</strong>
 		</div>
-		<div class="nk-action-panel nk-action-panel--pic nk-card-section nk-pic-dashboard-panel">
+		<div class="nk-action-panel nk-action-panel--pic nk-card-section nk-pic-dashboard-panel" data-pic-panel data-request-id="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
 			<div class="nk-action-panel__title">PIC</div>
 			<div class="nk-action-panel__body">
 				<?php if (!$primary_staff_assignment_ready) : ?>
@@ -74,15 +74,14 @@
 						</select>
 						<input type="text" name="note" class="form-control form-control-sm" maxlength="255" placeholder="Catatan opsional">
 						<div class="nk-pic-actions">
-							<button type="submit" class="btn btn-outline-success btn-sm rounded-pill"><?= $primary_pic_assignment ? 'Ganti PIC' : 'Tetapkan PIC'; ?></button>
+							<button type="submit" class="btn btn-outline-success btn-sm rounded-pill" data-pic-submit><?= $primary_pic_assignment ? 'Ganti PIC' : 'Tetapkan PIC'; ?></button>
 						</div>
 					</form>
-					<?php if ($primary_pic_assignment) : ?>
-						<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form">
-							<input type="hidden" name="request_id" value="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
-							<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Lepas PIC</button>
-						</form>
-					<?php endif; ?>
+					<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form" <?= $primary_pic_assignment ? '' : 'hidden'; ?>>
+						<input type="hidden" name="request_id" value="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
+						<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Lepas PIC</button>
+					</form>
+					<div class="nk-pic-native-feedback" data-pic-feedback role="status" aria-live="polite" hidden></div>
 				<?php endif; ?>
 			</div>
 		</div>

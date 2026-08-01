@@ -14,7 +14,7 @@ class Home_nakes extends MX_Controller
 		$this->load->helper('request_realtime');
 		$this->load->library('Visit_monitoring_policy');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status'), true)) {
+			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -396,6 +396,10 @@ class Home_nakes extends MX_Controller
 			|| empty($identity_context['valid'])
 			|| $identity_context['account_type'] !== 'command_center'
 			|| !doclinc_can_coordinate_request($request, $identity_context)) {
+			if ($this->staff_assignment_json_requested()) {
+				$this->respond_staff_assignment_json(403, array('status' => 'error', 'message' => 'Anda tidak memiliki akses.'), $request_id);
+				return;
+			}
 			$this->session->set_flashdata('staff_assignment_error', 'Anda tidak memiliki akses.');
 			redirect('home_nakes#riwayat_konsul');
 			return;
@@ -403,6 +407,16 @@ class Home_nakes extends MX_Controller
 
 		$result = $this->Home_nakes_m->assign_staff_to_request($request_id, $staff_id, $puskesmas_code, $user_id, $note, $identity_context);
 		$message = !empty($result['message']) ? $result['message'] : 'Gagal memperbarui PIC.';
+		if ($this->staff_assignment_json_requested()) {
+			$result['message'] = $message;
+			$this->respond_staff_assignment_json(
+				isset($result['status']) && $result['status'] === 'success' ? 200 : 409,
+				$result,
+				$request_id,
+				true
+			);
+			return;
+		}
 		$this->session->set_flashdata(
 			isset($result['status']) && $result['status'] === 'success' ? 'staff_assignment_success' : 'staff_assignment_error',
 			$message
@@ -429,6 +443,10 @@ class Home_nakes extends MX_Controller
 		if (empty($identity_context['valid'])
 			|| $identity_context['account_type'] !== 'command_center'
 			|| !doclinc_can_coordinate_request($request, $identity_context)) {
+			if ($this->staff_assignment_json_requested()) {
+				$this->respond_staff_assignment_json(403, array('status' => 'error', 'message' => 'Anda tidak memiliki akses.'), $request_id);
+				return;
+			}
 			$this->session->set_flashdata('staff_assignment_error', 'Anda tidak memiliki akses.');
 			redirect('home_nakes#riwayat_konsul');
 			return;
@@ -436,6 +454,16 @@ class Home_nakes extends MX_Controller
 
 		$result = $this->Home_nakes_m->clear_staff_assignment($request_id, $puskesmas_code, $user_id, $identity_context);
 		$message = !empty($result['message']) ? $result['message'] : 'Gagal melepas PIC.';
+		if ($this->staff_assignment_json_requested()) {
+			$result['message'] = $message;
+			$this->respond_staff_assignment_json(
+				isset($result['status']) && $result['status'] === 'success' ? 200 : 409,
+				$result,
+				$request_id,
+				false
+			);
+			return;
+		}
 		$this->session->set_flashdata(
 			isset($result['status']) && $result['status'] === 'success' ? 'staff_assignment_success' : 'staff_assignment_error',
 			$message
@@ -960,6 +988,10 @@ class Home_nakes extends MX_Controller
 		if ($this->session->userdata('role') === 'dokter') {
 			return true;
 		}
+		if ($this->staff_assignment_json_requested()) {
+			$this->respond_staff_assignment_json(403, array('status' => 'error', 'message' => 'Anda tidak memiliki akses.'), (int) $this->input->post('request_id'));
+			return false;
+		}
 
 		$role = $this->session->userdata('role');
 		if ($role === 'warga') {
@@ -973,6 +1005,52 @@ class Home_nakes extends MX_Controller
 
 		redirect('login');
 		return false;
+	}
+
+	private function staff_assignment_json_requested()
+	{
+		$accept = isset($_SERVER['HTTP_ACCEPT']) ? (string) $_SERVER['HTTP_ACCEPT'] : '';
+		return $this->input->is_ajax_request() || stripos($accept, 'application/json') !== false;
+	}
+
+	private function respond_staff_assignment_json($http_status, array $result, $request_id, $expect_assignment = null)
+	{
+		$success = isset($result['status']) && $result['status'] === 'success';
+		$assignment = null;
+		if ($success) {
+			$current = $this->Home_nakes_m->get_active_staff_assignment((int) $request_id);
+			$snapshot_valid = $expect_assignment === null
+				|| ($expect_assignment === true && $current)
+				|| ($expect_assignment === false && !$current);
+			if (!$snapshot_valid) {
+				$success = false;
+				$http_status = 500;
+				$result['message'] = 'PIC berhasil diproses. Muat ulang untuk melihat status terbaru.';
+			}
+			if ($current) {
+				$assignment = array(
+					'staff_id' => (int) $current->staff_id,
+					'staff_name' => (string) $current->staff_nama,
+					'staff_profession' => isset($current->staff_profesi) ? (string) $current->staff_profesi : '',
+					'staff_contact' => isset($current->staff_no_hp) ? (string) $current->staff_no_hp : '',
+				);
+			}
+		}
+
+		$body = array(
+			'status' => $success ? 'success' : 'error',
+			'message' => isset($result['message']) ? (string) $result['message'] : ($success ? 'PIC diperbarui.' : 'Gagal memperbarui PIC.'),
+			'request_id' => (int) $request_id,
+			'assignment' => $assignment,
+		);
+		if (!$success && isset($result['safe_error_code']) && preg_match('/^[a-z0-9_]{1,80}$/', (string) $result['safe_error_code'])) {
+			$body['safe_error_code'] = (string) $result['safe_error_code'];
+		}
+		$this->output
+			->set_content_type('application/json')
+			->set_header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0')
+			->set_status_header((int) $http_status)
+			->set_output(json_encode($body));
 	}
 
 	private function is_valid_latitude($value)
