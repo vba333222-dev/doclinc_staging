@@ -12,8 +12,9 @@ class Home_nakes extends MX_Controller
 		$this->load->helper('livekit');
 		$this->load->helper('notification');
 		$this->load->helper('request_realtime');
+		$this->load->library('Visit_monitoring_policy');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status'), true)) {
+			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -172,6 +173,99 @@ class Home_nakes extends MX_Controller
 		return $value;
 	}
 
+	public function presence_heartbeat()
+	{
+		$this->output->set_content_type('application/json')->set_header('Cache-Control: no-store');
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->presence_respond(405, false, 'method_not_allowed');
+			return;
+		}
+		if ($this->config->item('nakes_presence_enabled') !== true) {
+			$this->presence_respond(403, false, 'feature_disabled');
+			return;
+		}
+
+		$actor = $this->presence_actor();
+		require_once APPPATH . 'libraries/Nakes_presence_service.php';
+		$service = new Nakes_presence_service(
+			$this->db,
+			(int) $this->config->item('nakes_presence_online_timeout_seconds'),
+			(int) $this->config->item('nakes_presence_write_throttle_seconds')
+		);
+		$result = $service->touch($actor);
+		$this->presence_respond(!empty($result['ok']) ? 200 : ($result['code'] === 'schema_unavailable' ? 503 : 403), !empty($result['ok']), $result['code'], array(
+			'persisted' => !empty($result['persisted']),
+		));
+	}
+
+	public function presence_snapshot()
+	{
+		$this->output->set_content_type('application/json')->set_header('Cache-Control: no-store');
+		if ($this->input->method(TRUE) !== 'GET') {
+			$this->presence_respond(405, false, 'method_not_allowed');
+			return;
+		}
+		if (!empty($this->input->get(null, true))) {
+			$this->presence_respond(400, false, 'query_not_allowed');
+			return;
+		}
+		if ($this->config->item('nakes_presence_enabled') !== true) {
+			$this->presence_respond(403, false, 'feature_disabled');
+			return;
+		}
+
+		$actor = $this->presence_actor();
+		require_once APPPATH . 'libraries/Nakes_presence_service.php';
+		$service = new Nakes_presence_service(
+			$this->db,
+			(int) $this->config->item('nakes_presence_online_timeout_seconds'),
+			(int) $this->config->item('nakes_presence_write_throttle_seconds')
+		);
+		$result = $service->snapshot($actor, 500);
+		if (empty($result['ok'])) {
+			$this->presence_respond($result['code'] === 'schema_unavailable' ? 503 : 403, false, $result['code']);
+			return;
+		}
+		$this->presence_respond(200, true, 'ok', $result['data']);
+	}
+
+	private function presence_actor()
+	{
+		$user_id = (int) $this->session->userdata('id');
+		$actor = array(
+			'authenticated' => $this->session->userdata('logged_in') == true,
+			'user_id' => $user_id,
+			'role' => (string) $this->session->userdata('role'),
+			'status' => '',
+			'must_change_password' => true,
+			'identity' => array(),
+		);
+		if ($user_id < 1 || !$this->db->table_exists('users')
+			|| !$this->db->field_exists('must_change_password', 'users')) {
+			return $actor;
+		}
+		$user = $this->db->select('userId, role, status, must_change_password')
+			->where('userId', $user_id)->limit(1)->get('users')->row();
+		if (!$user || (string) $user->role !== $actor['role']) {
+			return $actor;
+		}
+		$actor['status'] = (string) $user->status;
+		$actor['must_change_password'] = (int) $user->must_change_password === 1;
+		if ($actor['role'] === 'dokter') {
+			$actor['identity'] = doclinc_dokter_identity_context($user_id, true);
+		}
+		return $actor;
+	}
+
+	private function presence_respond($status, $success, $code, array $data = array())
+	{
+		$body = array('success' => (bool) $success, 'safe_error_code' => (string) $code);
+		if ($success) {
+			$body['data'] = $data;
+		}
+		$this->output->set_status_header((int) $status)->set_output(json_encode($body));
+	}
+
 	public function index()
 	{
 		if (!$this->require_dokter_session()) {
@@ -192,6 +286,17 @@ class Home_nakes extends MX_Controller
 		);
 		$d['nakes_puskesmas_code'] = $puskesmas_code;
 		$d['nakes_puskesmas_name'] = !empty($identity_context['puskesmas_name']) ? (string) $identity_context['puskesmas_name'] : '';
+		$d['nakes_presence_enabled'] = $this->config->item('nakes_presence_enabled') === true
+			&& !empty($identity_context['valid'])
+			&& in_array($account_type, array('personal', 'command_center'), true);
+		$d['nakes_presence_bootstrap'] = array(
+			'enabled' => $d['nakes_presence_enabled'],
+			'mode' => $account_type === 'personal' ? 'heartbeat' : ($account_type === 'command_center' ? 'monitor' : 'disabled'),
+			'heartbeatUrl' => base_url('home_nakes/presence_heartbeat'),
+			'snapshotUrl' => base_url('home_nakes/presence_snapshot'),
+			'heartbeatIntervalMs' => max(15000, (int) $this->config->item('nakes_presence_heartbeat_seconds') * 1000),
+			'snapshotIntervalMs' => 30000,
+		);
 		$d['profile'] = $this->Home_nakes_m->get_profile_by_id($uid);
 		if (!is_array($d['profile'])) {
 			$d['profile'] = array();
@@ -512,7 +617,8 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 		$access_context = doclinc_nakes_request_access_context($request, $identity_context);
-		if (empty($access_context['can_handle'])) {
+		$monitoring_access = Visit_monitoring_policy::resolve($identity_context, $access_context, $request);
+		if (empty($monitoring_access['allowed'])) {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(array('status' => false, 'message' => 'Anda tidak memiliki akses.')));
@@ -544,7 +650,13 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		$this->output->set_output(json_encode($this->build_nakes_visit_location_payload($row, true)));
+		$this->output->set_output(json_encode($this->build_nakes_visit_location_payload(
+			$row,
+			true,
+			null,
+			null,
+			!empty($monitoring_access['can_update'])
+		)));
 	}
 	public function update_visit_location()
 	{
@@ -659,7 +771,7 @@ class Home_nakes extends MX_Controller
 		}
 
 		$row = $this->Home_nakes_m->get_visit_location($request_id, $user_id, $identity_context);
-		$payload = $row ? $this->build_nakes_visit_location_payload($row, 'success', (float) $latitude, (float) $longitude) : array();
+		$payload = $row ? $this->build_nakes_visit_location_payload($row, 'success', (float) $latitude, (float) $longitude, true) : array();
 		$this->output->set_output(json_encode(array_merge($payload, [
 			'status' => 'success',
 			'success' => true,
@@ -889,7 +1001,7 @@ class Home_nakes extends MX_Controller
 		return (float) $value;
 	}
 
-	private function build_nakes_visit_location_payload($row, $status, $override_nakes_latitude = null, $override_nakes_longitude = null)
+	private function build_nakes_visit_location_payload($row, $status, $override_nakes_latitude = null, $override_nakes_longitude = null, $viewer_can_update = false)
 	{
 		$route = function_exists('doclinc_visit_route_pending_payload') ? doclinc_visit_route_pending_payload() : array();
 		$arrival = function_exists('doclinc_visit_arrival_payload') ? doclinc_visit_arrival_payload(null, null, null, null, null) : array();
@@ -930,11 +1042,20 @@ class Home_nakes extends MX_Controller
 			if (!isset($row->request_status) || $row->request_status !== 'Accepted') {
 				$arrival['should_prompt_arrival'] = false;
 			}
+			if (!$viewer_can_update) {
+				$arrival['should_prompt_arrival'] = false;
+			}
 		}
 
 		return array(
 			'status' => $status,
 			'success' => $status === true || $status === 'success',
+			'viewer_can_update' => (bool) $viewer_can_update,
+			'viewer_mode' => $viewer_can_update ? 'operator' : 'monitor',
+			'location_updated_at' => isset($row->updated_at) ? $row->updated_at : null,
+			'location_updated_text' => isset($row->updated_at) && strtotime((string) $row->updated_at)
+				? date('d M Y H:i', strtotime((string) $row->updated_at))
+				: null,
 			'tracking_active' => isset($row->request_status) && $row->request_status === 'Accepted' && (!isset($row->visit_status) || doclinc_normalize_visit_status($row->visit_status) !== 'completed'),
 			'message' => $message,
 			'request_id' => isset($row->request_id) ? (int) $row->request_id : null,

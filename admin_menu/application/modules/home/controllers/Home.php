@@ -24,10 +24,77 @@ class Home extends MX_Controller
 		$x['attention_requests'] = $this->Home_m->get_attention_requests(8);
 		$x['recent_activity'] = $this->Home_m->get_recent_request_events(8);
 		$x['diagnosis_analytics'] = $this->Home_m->get_diagnosis_dashboard(30);
+		$x['nakes_presence_enabled'] = $this->config->item('nakes_presence_enabled') === true;
 
 		$this->load->view('commons/header');
 		$this->load->view('home_v', $x);
 		$this->load->view('commons/footer');
+	}
+
+	public function nakes_presence_snapshot()
+	{
+		$this->output->set_content_type('application/json')->set_header('Cache-Control: no-store');
+		if ($this->input->method(TRUE) !== 'GET') {
+			$this->admin_presence_response(405, false, 'method_not_allowed');
+			return;
+		}
+		if (!empty($this->input->get(null, true))) {
+			$this->admin_presence_response(400, false, 'query_not_allowed');
+			return;
+		}
+		if ($this->config->item('nakes_presence_enabled') !== true) {
+			$this->admin_presence_response(403, false, 'feature_disabled');
+			return;
+		}
+
+		$email = trim((string) $this->session->userdata('email'));
+		$actor = array(
+			'authenticated' => $this->session->userdata('is_login') == true,
+			'role' => 'admin',
+			'status' => '',
+			'must_change_password' => true,
+		);
+		if ($email !== '' && $this->db->table_exists('users')) {
+			$select = 'userId, role, status';
+			if ($this->db->field_exists('must_change_password', 'users')) {
+				$select .= ', must_change_password';
+			}
+			$user = $this->db->select($select)->where('email', $email)->limit(1)->get('users')->row();
+			if ($user && (string) $user->role === 'admin') {
+				$actor['user_id'] = (int) $user->userId;
+				$actor['status'] = (string) $user->status;
+				$actor['must_change_password'] = isset($user->must_change_password)
+					? (int) $user->must_change_password === 1
+					: true;
+			}
+		}
+
+		$service_file = dirname(APPPATH, 2) . '/application/libraries/Nakes_presence_service.php';
+		if (!is_file($service_file)) {
+			$this->admin_presence_response(503, false, 'service_unavailable');
+			return;
+		}
+		require_once $service_file;
+		$service = new Nakes_presence_service(
+			$this->db,
+			(int) $this->config->item('nakes_presence_online_timeout_seconds'),
+			45
+		);
+		$result = $service->snapshot($actor, 500);
+		if (empty($result['ok'])) {
+			$this->admin_presence_response($result['code'] === 'schema_unavailable' ? 503 : 403, false, $result['code']);
+			return;
+		}
+		$this->admin_presence_response(200, true, 'ok', $result['data']);
+	}
+
+	private function admin_presence_response($status, $success, $code, array $data = array())
+	{
+		$body = array('success' => (bool) $success, 'safe_error_code' => (string) $code);
+		if ($success) {
+			$body['data'] = $data;
+		}
+		$this->output->set_status_header((int) $status)->set_output(json_encode($body));
 	}
 	public function change_password()
 	{

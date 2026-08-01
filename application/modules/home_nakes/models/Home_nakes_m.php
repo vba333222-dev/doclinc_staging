@@ -334,6 +334,11 @@ class Home_nakes_m extends MX_Controller
 				->join('(SELECT request_id, MAX(record_id) AS record_id FROM medicalrecords GROUP BY request_id) latest_medicalrecords', 'latest_medicalrecords.request_id = requests.request_id', 'left', false)
 				->join('medicalrecords', 'medicalrecords.record_id = latest_medicalrecords.record_id', 'left');
 			$this->db->select($this->db->field_exists('anamnesis', 'medicalrecords') ? 'medicalrecords.anamnesis AS anamnesis' : 'NULL AS anamnesis', false);
+			if ($this->db->table_exists('medicalrecord_diagnoses')) {
+				$this->db->select("COALESCE(NULLIF((SELECT GROUP_CONCAT(mrd.display_text ORDER BY mrd.position SEPARATOR '\\n') FROM " . $this->db->dbprefix('medicalrecord_diagnoses') . " mrd WHERE mrd.medicalrecord_id = medicalrecords.record_id AND mrd.position BETWEEN 1 AND 3), ''), medicalrecords.diagnosis) AS diagnoses_display", false);
+			} else {
+				$this->db->select('medicalrecords.diagnosis AS diagnoses_display', false);
+			}
 			return;
 		}
 
@@ -549,8 +554,8 @@ class Home_nakes_m extends MX_Controller
 			|| empty($identity_context['valid'])
 			|| empty($database_identity['valid'])
 			|| (int) $identity_context['user_id'] !== $nakes_user_id
-			|| !function_exists('doclinc_can_handle_nakes_request')
-			|| !doclinc_can_handle_nakes_request($request_id, $database_identity)) {
+			|| !function_exists('doclinc_can_view_nakes_request')
+			|| !doclinc_can_view_nakes_request($request_id, $database_identity)) {
 			return null;
 		}
 
@@ -604,6 +609,11 @@ class Home_nakes_m extends MX_Controller
 				->join('(SELECT request_id, MAX(record_id) AS record_id FROM medicalrecords GROUP BY request_id) latest_medicalrecords', 'latest_medicalrecords.request_id = requests.request_id', 'left', FALSE)
 				->join('medicalrecords', 'medicalrecords.record_id = latest_medicalrecords.record_id', 'left');
 			$this->db->select($this->db->field_exists('anamnesis', 'medicalrecords') ? 'medicalrecords.anamnesis AS anamnesis' : 'NULL AS anamnesis', FALSE);
+			if ($this->db->table_exists('medicalrecord_diagnoses')) {
+				$this->db->select("COALESCE(NULLIF((SELECT GROUP_CONCAT(mrd.display_text ORDER BY mrd.position SEPARATOR '\\n') FROM " . $this->db->dbprefix('medicalrecord_diagnoses') . " mrd WHERE mrd.medicalrecord_id = medicalrecords.record_id AND mrd.position BETWEEN 1 AND 3), ''), medicalrecords.diagnosis) AS diagnoses_display", FALSE);
+			} else {
+				$this->db->select('medicalrecords.diagnosis AS diagnoses_display', FALSE);
+			}
 		} else {
 			if ($this->db->table_exists('konsultasi')) {
 				$this->db
@@ -1209,7 +1219,7 @@ class Home_nakes_m extends MX_Controller
 		}
 
 		$rows = $this->db
-			->select('rsa.assignment_id, rsa.request_id, rsa.staff_id, rsa.kode_pkm, rsa.assigned_by_user_id, rsa.status, rsa.note, rsa.assigned_at, rsa.ended_at, ps.nama AS staff_nama, ps.no_hp AS staff_no_hp, ps.profesi AS staff_profesi, ps.nomor_sip AS staff_nomor_sip')
+			->select('rsa.assignment_id, rsa.request_id, rsa.staff_id, rsa.kode_pkm, rsa.assigned_by_user_id, rsa.status, rsa.note, rsa.assigned_at, rsa.ended_at, ps.user_id AS staff_user_id, ps.nama AS staff_nama, ps.no_hp AS staff_no_hp, ps.profesi AS staff_profesi, ps.nomor_sip AS staff_nomor_sip')
 			->from('request_staff_assignments AS rsa')
 			->join('puskesmas_staff AS ps', 'ps.staff_id = rsa.staff_id', 'left')
 			->where('rsa.status', 'aktif')
@@ -1259,7 +1269,7 @@ class Home_nakes_m extends MX_Controller
 		}
 
 		$rows = $this->db
-			->select('rsa.assignment_id, rsa.request_id, rsa.staff_id, rsa.kode_pkm, rsa.assigned_by_user_id, rsa.status, rsa.note, rsa.assigned_at, rsa.ended_at, ps.nama AS staff_nama, ps.no_hp AS staff_no_hp, ps.profesi AS staff_profesi, ps.nomor_sip AS staff_nomor_sip')
+			->select('rsa.assignment_id, rsa.request_id, rsa.staff_id, rsa.kode_pkm, rsa.assigned_by_user_id, rsa.status, rsa.note, rsa.assigned_at, rsa.ended_at, ps.user_id AS staff_user_id, ps.nama AS staff_nama, ps.no_hp AS staff_no_hp, ps.profesi AS staff_profesi, ps.nomor_sip AS staff_nomor_sip')
 			->from('request_staff_assignments AS rsa')
 			->join('puskesmas_staff AS ps', 'ps.staff_id = rsa.staff_id', 'left')
 			->where_in('rsa.request_id', array_values($ids))

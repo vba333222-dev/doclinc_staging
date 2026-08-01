@@ -10,7 +10,10 @@ class Konsultasi_nakes extends MX_Controller
 		$this->load->helper('request_authz');
 		$this->load->helper('notification');
 		$this->load->helper('request_realtime');
+		$this->load->helper(array('visit_routing', 'visit_proof'));
 		$this->load->library('Clinical_anamnesis');
+		$this->load->library('Visit_proof_service');
+		$this->load->library('Medicalrecord_diagnosis_service');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login', 'refresh');
 		}
@@ -50,6 +53,8 @@ class Konsultasi_nakes extends MX_Controller
 		$x['umur'] = '-';
 		$x['kriteria'] = '';
 		$x['can_handle_request'] = !empty($access_context['can_handle']);
+		$x['visit_proof_required'] = doclinc_visit_proof_required();
+		$x['additional_diagnoses_enabled'] = (bool) $this->config->item('additional_diagnoses_enabled');
 		$x['anamnesis_schema_ready'] = false;
 		$x['anamnesis_existing'] = '';
 		if ((bool) $this->config->item('clinical_suggestions_enabled')) {
@@ -159,12 +164,23 @@ class Konsultasi_nakes extends MX_Controller
 		$doctor_id = (int) $this->session->userdata('id');
 		$identity_context = doclinc_dokter_identity_context($doctor_id);
 		$diagnosa = $this->input->post('diagnosa');
+		$write_additional_diagnoses = (bool) $this->config->item('additional_diagnoses_enabled');
+		$additional_diagnoses = $this->input->post('diagnosa_tambahan', false);
+		$normalized_diagnoses = Medicalrecord_diagnosis_service::normalize(
+			$diagnosa,
+			$additional_diagnoses === null ? array() : $additional_diagnoses,
+			$write_additional_diagnoses
+		);
 		$saran = $this->input->post('saran');
 		$kriteria = $this->input->post('kriteria');
 		$rujukan = $this->input->post('rujukan');
 		$terapi = json_decode($this->input->post('terapi'), true);
 		$terapi = is_array($terapi) ? $terapi : [];
 		$foto = null;
+		$visit_proof_context = null;
+		$visit_proof_required = doclinc_visit_proof_required();
+		$is_visit_selection = doclinc_visit_proof_is_visit($kriteria);
+		$is_non_visit_selection = in_array(strtolower(trim((string) $kriteria)), array('0', 'selesai konsultasi'), true);
 		$write_anamnesis = (bool) $this->config->item('clinical_suggestions_enabled');
 		$anamnesis = null;
 
@@ -177,6 +193,26 @@ class Konsultasi_nakes extends MX_Controller
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => $validation_message]));
 			return;
 		}
+		if (empty($normalized_diagnoses['valid'])) {
+			$diagnosis_messages = array(
+				'primary_required' => 'Masukkan diagnosis utama.',
+				'too_many_diagnoses' => 'Maksimal tiga diagnosis dapat dicatat.',
+				'duplicate_diagnosis' => 'Diagnosis yang sama tidak boleh dicatat dua kali.',
+				'diagnosis_too_long' => 'Setiap diagnosis maksimal 255 karakter.',
+			);
+			$message = isset($diagnosis_messages[$normalized_diagnoses['error']])
+				? $diagnosis_messages[$normalized_diagnoses['error']]
+				: 'Format diagnosis tidak valid.';
+			$this->output->set_status_header(422)->set_output(json_encode(array('status' => 'error', 'message' => $message)));
+			return;
+		}
+		$diagnosa = $normalized_diagnoses['diagnoses'][0];
+		if ($visit_proof_required && !$is_visit_selection && !$is_non_visit_selection) {
+			$this->output
+				->set_status_header(422)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Jenis layanan tidak valid. Pilih konsultasi jarak jauh atau Kunjungan Nakes.']));
+			return;
+		}
 		$access_context = doclinc_nakes_request_access_context($request_id, $identity_context);
 		if (empty($access_context['can_handle'])) {
 			$this->output->set_status_header(403);
@@ -184,6 +220,21 @@ class Konsultasi_nakes extends MX_Controller
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
+		if ($write_additional_diagnoses && !Medicalrecord_diagnosis_service::schemaReady($this->db)) {
+			$this->output
+				->set_status_header(503)
+				->set_output(json_encode(array('status' => 'error', 'message' => 'Penyimpanan diagnosis tambahan belum siap. Hubungi administrator.')));
+			return;
+		}
+		$request_before_completion = doclinc_request_row($request_id);
+		$persisted_visit = doclinc_visit_proof_persisted_visit($request_before_completion);
+		if ($visit_proof_required && $persisted_visit && !$is_visit_selection) {
+			$this->output
+				->set_status_header(422)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Kunjungan yang sudah dimulai tidak dapat ditutup sebagai konsultasi non-visit.']));
+			return;
+		}
+		$is_visit_completion = $is_visit_selection || $persisted_visit;
 		if ($write_anamnesis) {
 			if (!Clinical_anamnesis::schema_ready($this->db)) {
 				$this->output
@@ -204,26 +255,82 @@ class Konsultasi_nakes extends MX_Controller
 			$anamnesis = $normalized_anamnesis['value'];
 		}
 
-		// Upload gambar jika ada
-		if (!empty($_FILES['file']['name'])) {
-			$config['upload_path'] = './uploads/';
-			$config['allowed_types'] = 'jpg|jpeg|png';
-			$config['max_size'] = 5120; // 5MB
-			$config['encrypt_name'] = TRUE;
-			$config['detect_mime'] = TRUE;
-			$config['mod_mime_fix'] = TRUE;
-			$config['remove_spaces'] = TRUE;
-			$this->load->library('upload', $config);
-
+		if ($visit_proof_required && $is_visit_completion) {
+			if (empty($_FILES['file']['name']) || !isset($_FILES['file']['error']) || (int) $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+				$this->output
+					->set_status_header(422)
+					->set_output(json_encode(['status' => 'error', 'message' => 'Foto bukti kunjungan wajib diambil sebelum konsultasi diselesaikan.']));
+				return;
+			}
+			$location = doclinc_visit_proof_location_input(
+				$this->input->post('proof_latitude'),
+				$this->input->post('proof_longitude'),
+				$this->input->post('proof_accuracy_m'),
+				$this->input->post('proof_captured_at_ms')
+			);
+			if (empty($location['valid'])) {
+				$this->output
+					->set_status_header(422)
+					->set_output(json_encode(['status' => 'error', 'message' => $this->visit_proof_location_error_message($location['reason'] ?? '')]));
+				return;
+			}
+			if (!$this->visit_proof_service->schemaReady() || !$this->visit_proof_service->ensureStorageReady()) {
+				$this->output
+					->set_status_header(503)
+					->set_output(json_encode(['status' => 'error', 'message' => 'Penyimpanan bukti kunjungan belum siap. Hubungi administrator.']));
+				return;
+			}
+			$storage_key = $this->visit_proof_service->newStorageKey();
+			$config = $this->visit_proof_service->uploadConfig($storage_key);
+			if ($storage_key === '' || $config === false) {
+				$this->output
+					->set_status_header(503)
+					->set_output(json_encode(['status' => 'error', 'message' => 'Bukti kunjungan belum dapat disiapkan. Coba lagi.']));
+				return;
+			}
+			$this->load->library('upload');
+			$this->upload->initialize($config, true);
+			if (!$this->upload->do_upload('file')) {
+				$this->output
+					->set_status_header(400)
+					->set_output(json_encode(['status' => 'error', 'message' => $this->result_upload_error_message(true)]));
+				return;
+			}
+			$uploaded = $this->upload->data();
+			$visit_proof_context = $this->visit_proof_service->stageUploadedImage($request_id, $doctor_id, $uploaded, $storage_key);
+			if (empty($visit_proof_context['success'])) {
+				$this->output
+					->set_status_header(400)
+					->set_output(json_encode(['status' => 'error', 'message' => $this->result_upload_error_message(true)]));
+				return;
+			}
+			$visit_proof_context['location'] = $location;
+			$foto = $visit_proof_context['file_name'];
+		} elseif ($visit_proof_required && !$is_visit_completion && !empty($_FILES['file']['name'])) {
+			$this->output
+				->set_status_header(422)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Foto bukti hanya digunakan untuk Kunjungan Nakes.']));
+			return;
+		} elseif (!empty($_FILES['file']['name'])) {
+			$config = array(
+				'upload_path' => './uploads/',
+				'allowed_types' => 'jpg|jpeg|png',
+				'max_size' => 5120,
+				'encrypt_name' => true,
+				'detect_mime' => true,
+				'mod_mime_fix' => true,
+				'remove_spaces' => true,
+			);
+			$this->load->library('upload');
+			$this->upload->initialize($config, true);
 			if (!$this->upload->do_upload('file')) {
 				$this->output
 					->set_status_header(400)
 					->set_output(json_encode(['status' => 'error', 'message' => $this->result_upload_error_message()]));
 				return;
-			} else {
-				$uploaded = $this->upload->data();
-				$foto = $uploaded['file_name'];
 			}
+			$uploaded = $this->upload->data();
+			$foto = $uploaded['file_name'];
 		}
 
 		$result = $this->Konsultasi_nakes_m->save_konsultasi_nakes(
@@ -237,7 +344,11 @@ class Konsultasi_nakes extends MX_Controller
 			$doctor_id,
 			$identity_context,
 			$anamnesis,
-			$write_anamnesis
+			$write_anamnesis,
+			$visit_proof_context,
+			$visit_proof_required,
+			$normalized_diagnoses['diagnoses'],
+			$write_additional_diagnoses
 		);
 
 		if ($result) {
@@ -246,6 +357,9 @@ class Konsultasi_nakes extends MX_Controller
 			$event_metadata = array(
 				'request_status' => $request && isset($request->request_status) ? $request->request_status : 'Completed',
 			);
+			if (is_array($visit_proof_context) && !empty($visit_proof_context['media_id'])) {
+				$event_metadata['visit_proof_media_id'] = (int) $visit_proof_context['media_id'];
+			}
 			if ($request && isset($request->updated_at) && !empty($request->updated_at)) {
 				$event_metadata['completed_at'] = $request->updated_at;
 			}
@@ -284,8 +398,21 @@ class Konsultasi_nakes extends MX_Controller
 			$this->output->set_output(json_encode($orchestration['response']));
 			return;
 		}
+		if (is_array($visit_proof_context)) {
+			$this->visit_proof_service->failStaged(
+				$visit_proof_context,
+				method_exists($this->Konsultasi_nakes_m, 'last_failure_code')
+					? $this->Konsultasi_nakes_m->last_failure_code()
+					: 'completion_failed'
+			);
+		} elseif ($foto !== null && $foto !== '') {
+			$legacy_path = rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . basename($foto);
+			if (is_file($legacy_path)) {
+				@unlink($legacy_path);
+			}
+		}
 
-		$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Konsultasi belum dapat diselesaikan.']));
+		$this->output->set_output(json_encode(['status' => 'error', 'message' => $this->completion_failure_message()]));
 	}
 
 
@@ -296,8 +423,41 @@ class Konsultasi_nakes extends MX_Controller
 		echo json_encode($data);
 	}
 
-	private function result_upload_error_message()
+	private function result_upload_error_message($allow_webp = false)
 	{
-		return 'File hasil konsultasi tidak valid. Gunakan JPG/PNG dengan ukuran maksimal 5 MB.';
+		return $allow_webp
+			? 'Foto bukti tidak valid. Gunakan JPG/PNG/WEBP dengan ukuran maksimal 5 MB.'
+			: 'File hasil konsultasi tidak valid. Gunakan JPG/PNG dengan ukuran maksimal 5 MB.';
+	}
+
+	private function visit_proof_location_error_message($reason)
+	{
+		if ($reason === 'low_accuracy') {
+			return 'Akurasi GPS belum cukup baik. Tunggu sebentar lalu coba lagi.';
+		}
+		if ($reason === 'stale_location') {
+			return 'Lokasi sudah kedaluwarsa. Ambil lokasi ulang lalu coba lagi.';
+		}
+		return 'Lokasi Nakes wajib tersedia dan valid untuk bukti kunjungan.';
+	}
+
+	private function completion_failure_message()
+	{
+		$code = method_exists($this->Konsultasi_nakes_m, 'last_failure_code')
+			? $this->Konsultasi_nakes_m->last_failure_code()
+			: '';
+		$messages = array(
+			'visit_mode_invalid' => 'Jenis layanan tidak valid. Pilih konsultasi jarak jauh atau Kunjungan Nakes.',
+			'visit_mode_mismatch' => 'Kunjungan yang sudah dimulai tidak dapat ditutup sebagai konsultasi non-visit.',
+			'visit_status_invalid' => 'Status kunjungan harus sudah tiba atau dalam penanganan.',
+			'visit_location_outside_radius' => 'Lokasi Nakes belum berada dalam radius pasien.',
+			'visit_proof_missing' => 'Foto bukti kunjungan wajib tersedia.',
+			'visit_proof_invalid' => 'Bukti kunjungan tidak valid atau bukan milik konsultasi ini.',
+			'visit_proof_schema_unavailable' => 'Penyimpanan bukti kunjungan belum siap. Hubungi administrator.',
+			'diagnosis_schema_unavailable' => 'Penyimpanan diagnosis tambahan belum siap. Hubungi administrator.',
+			'diagnosis_payload_invalid' => 'Format diagnosis tidak valid.',
+			'diagnosis_write_failed' => 'Diagnosis belum dapat disimpan. Coba lagi.',
+		);
+		return isset($messages[$code]) ? $messages[$code] : 'Konsultasi belum dapat diselesaikan.';
 	}
 }

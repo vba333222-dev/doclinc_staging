@@ -5,6 +5,8 @@ $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 $can_handle_request = !empty($can_handle_request);
+$visit_proof_required = !empty($visit_proof_required);
+$additional_diagnoses_enabled = !empty($additional_diagnoses_enabled) && $can_handle_request;
 $clinical_suggestions_enabled = (bool) $this->config->item('clinical_suggestions_enabled') && $can_handle_request;
 $anamnesis_schema_ready = !empty($anamnesis_schema_ready);
 $anamnesis_enabled = $clinical_suggestions_enabled && $anamnesis_schema_ready;
@@ -831,9 +833,17 @@ if (!function_exists('formatComplaintText')) {
 					</div>
 				<?php endif; ?>
 				<div class="form-floating mb-3">
-					<input type="text" id="diagnosa" name="diagnosa" class="form-control" placeholder="Diagnosa" required<?= $clinical_suggestions_enabled ? ' data-clinical-suggestion data-clinical-suggestion-type="diagnosis" data-clinical-suggestion-endpoint="' . html_escape($clinical_suggestions_endpoint) . '" data-clinical-request-id-source="#idReq"' : ''; ?>>
-					<label for="diagnosa"><i class="bi bi-heart-pulse"></i> Diagnosa*</label>
+					<input type="text" id="diagnosa" name="diagnosa" class="form-control" maxlength="255" placeholder="Diagnosis utama" required<?= $clinical_suggestions_enabled ? ' data-clinical-suggestion data-clinical-suggestion-type="diagnosis" data-clinical-suggestion-endpoint="' . html_escape($clinical_suggestions_endpoint) . '" data-clinical-request-id-source="#idReq"' : ''; ?>>
+					<label for="diagnosa"><i class="bi bi-heart-pulse"></i> Diagnosis utama*</label>
 				</div>
+				<?php if ($additional_diagnoses_enabled) : ?>
+					<div class="mb-3" id="additionalDiagnosisFields">
+						<label class="form-label fw-semibold"><i class="bi bi-list-check"></i> Diagnosis tambahan</label>
+						<input type="text" name="diagnosa_tambahan[]" class="form-control mb-2 additional-diagnosis" maxlength="255" placeholder="Diagnosis tambahan 1 (opsional)"<?= $clinical_suggestions_enabled ? ' data-clinical-suggestion data-clinical-suggestion-type="diagnosis" data-clinical-suggestion-endpoint="' . html_escape($clinical_suggestions_endpoint) . '" data-clinical-request-id-source="#idReq"' : ''; ?>>
+						<input type="text" name="diagnosa_tambahan[]" class="form-control additional-diagnosis" maxlength="255" placeholder="Diagnosis tambahan 2 (opsional)"<?= $clinical_suggestions_enabled ? ' data-clinical-suggestion data-clinical-suggestion-type="diagnosis" data-clinical-suggestion-endpoint="' . html_escape($clinical_suggestions_endpoint) . '" data-clinical-request-id-source="#idReq"' : ''; ?>>
+						<div class="form-text">Maksimal tiga diagnosis termasuk diagnosis utama. Diagnosis yang sama tidak boleh diulang.</div>
+					</div>
+				<?php endif; ?>
 				<div class="mb-3">
 					<h3 class="section-heading"><i class="bi bi-capsule"></i> Obat / Farmakoterapi</h3>
 					<p class="terapi-helper">Bagian ini digunakan untuk mencatat obat/farmakoterapi bila diberikan. Kosongkan bila tidak ada obat.</p>
@@ -951,12 +961,14 @@ if (!function_exists('formatComplaintText')) {
 				<p class="optional-note">Opsional jika pasien tidak memerlukan rujukan.</p>
 				<div id="visitDocumentationField" class="<?= $kriteria === 'Kunjungan Nakes' ? '' : 'd-none'; ?>">
 					<div class="form-floating mb-2">
-						<input type="file" class="form-control" id="file" name="file" accept="image/*">
-						<label for="file"><i class="bi bi-camera"></i> Foto Kunjungan</label>
+						<input type="file" class="form-control" id="file" name="file" accept="image/jpeg,image/png,image/webp" capture="environment"<?= $visit_proof_required ? ' required' : ''; ?>>
+						<label for="file"><i class="bi bi-camera"></i> Foto Bukti Kunjungan<?= $visit_proof_required ? '*' : ''; ?></label>
 						<img id="preview-image" src="#" alt="Preview Foto" style="display:none;" class="img-thumbnail" />
 					</div>
 					<div id="clinicalAttachmentFeedback" class="small text-danger d-none" role="alert"></div>
-					<p class="optional-note">Opsional sesuai kebutuhan dokumentasi kunjungan.</p>
+					<p class="optional-note"><?= $visit_proof_required
+						? 'Wajib. Ambil foto di lokasi pasien. GPS akan diverifikasi saat konsultasi diselesaikan.'
+						: 'Opsional sesuai kebutuhan dokumentasi kunjungan.'; ?></p>
 				</div>
 			</fieldset>
 			<?php if ($can_handle_request) : ?>
@@ -1012,6 +1024,7 @@ if (!function_exists('formatComplaintText')) {
 	<script>
 		const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
 		const mapProvider = <?= json_encode($map_provider); ?>;
+		const visitProofRequired = <?= json_encode($visit_proof_required); ?>;
 
 		function getFirebaseDatabase() {
 			if (!firebaseEnabled || !window.firebase || !firebase.database) {
@@ -1240,9 +1253,10 @@ if (!function_exists('formatComplaintText')) {
 
 			if (kriteria === 'Kunjungan Nakes') {
 				$('#visitDocumentationField').removeClass('d-none');
+				$('#file').prop('required', visitProofRequired);
 			} else {
 				$('#visitDocumentationField').addClass('d-none');
-				$('#file').val('');
+				$('#file').prop('required', false).val('');
 				$('#preview-image').hide().attr('src', '#');
 				setClinicalAttachmentFeedback('');
 			}
@@ -1252,11 +1266,45 @@ if (!function_exists('formatComplaintText')) {
 			setServiceDecision($(this).data('kriteria'), $(this).data('label'));
 		});
 
-		$('#save_konsul_nakes').click(function() {
+		function restoreCompletionButton() {
+			$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan konsultasi');
+		}
+
+		function acquireVisitProofLocation() {
+			return new Promise(function(resolve, reject) {
+				if (!navigator.geolocation) {
+					reject(new Error('geolocation_unavailable'));
+					return;
+				}
+				navigator.geolocation.getCurrentPosition(function(position) {
+					if (!position || !position.coords) {
+						reject(new Error('geolocation_invalid'));
+						return;
+					}
+					resolve({
+						latitude: position.coords.latitude,
+						longitude: position.coords.longitude,
+						accuracy: position.coords.accuracy,
+						capturedAtMs: position.timestamp || Date.now()
+					});
+				}, function() {
+					reject(new Error('geolocation_denied'));
+				}, {
+					enableHighAccuracy: true,
+					timeout: 15000,
+					maximumAge: 0
+				});
+			});
+		}
+
+		$('#save_konsul_nakes').click(async function() {
 			const userId = document.getElementById('userId').value;
 			const dokterId = document.getElementById('dokterId').value;
 			const idReq = document.getElementById('idReq').value;
 			const diagnosa = $('#diagnosa').val().trim();
+			const additionalDiagnoses = Array.from(document.querySelectorAll('.additional-diagnosis'))
+				.map(function(input) { return input.value.trim(); })
+				.filter(function(value) { return value !== ''; });
 			const saranUtama = $('#ui_saran_utama').val().trim();
 			syncNakesDocumentationFields();
 			const saran = $('#saran').val().trim();
@@ -1271,6 +1319,38 @@ if (!function_exists('formatComplaintText')) {
 				Swal.fire("Data belum lengkap", validationMessage, "error");
 				return;
 			}
+			const diagnosisKeys = [diagnosa].concat(additionalDiagnoses).map(function(value) { return value.toLocaleLowerCase('id-ID'); });
+			if (diagnosisKeys.length > 3 || new Set(diagnosisKeys).size !== diagnosisKeys.length) {
+				Swal.fire('Diagnosis tidak valid', diagnosisKeys.length > 3
+					? 'Maksimal tiga diagnosis dapat dicatat.'
+					: 'Diagnosis yang sama tidak boleh dicatat dua kali.', 'error');
+				return;
+			}
+
+			let proofLocation = null;
+			if (visitProofRequired && kriteria === 'Kunjungan Nakes') {
+				const proofInput = document.getElementById('file');
+				const proofFile = proofInput && proofInput.files ? proofInput.files[0] : null;
+				const allowedProofTypes = ['image/jpeg', 'image/png', 'image/webp'];
+				if (!proofFile) {
+					setClinicalAttachmentFeedback('Foto bukti kunjungan wajib diambil.');
+					Swal.fire('Bukti kunjungan diperlukan', 'Ambil foto di lokasi pasien sebelum konsultasi diselesaikan.', 'error');
+					return;
+				}
+				if (allowedProofTypes.indexOf(proofFile.type) === -1 || proofFile.size < 1 || proofFile.size > 5 * 1024 * 1024) {
+					setClinicalAttachmentFeedback('Gunakan JPG/PNG/WEBP dengan ukuran maksimal 5 MB.');
+					Swal.fire('Foto tidak valid', 'Gunakan JPG/PNG/WEBP dengan ukuran maksimal 5 MB.', 'error');
+					return;
+				}
+				$('#save_konsul_nakes').prop('disabled', true).text('Memeriksa lokasi...');
+				try {
+					proofLocation = await acquireVisitProofLocation();
+				} catch (error) {
+					restoreCompletionButton();
+					Swal.fire('Lokasi diperlukan', 'Aktifkan izin lokasi dan GPS, lalu coba lagi dari lokasi pasien.', 'error');
+					return;
+				}
+			}
 
 			var form = document.getElementById('form_konsul_nakes');
 			var formData = new FormData(form);
@@ -1278,6 +1358,12 @@ if (!function_exists('formatComplaintText')) {
 			formData.set("diagnosa", diagnosa);
 			formData.set("saran", saran);
 			formData.set("kriteria", kriteria);
+			if (proofLocation) {
+				formData.set('proof_latitude', proofLocation.latitude);
+				formData.set('proof_longitude', proofLocation.longitude);
+				formData.set('proof_accuracy_m', proofLocation.accuracy);
+				formData.set('proof_captured_at_ms', proofLocation.capturedAtMs);
+			}
 
 			hydrateMobileTerapiRowsFromTable();
 			syncMobileTerapiRowsToTable();
@@ -1312,7 +1398,7 @@ if (!function_exists('formatComplaintText')) {
 				}
 			});
 			if (<?= $clinical_suggestions_enabled ? 'true' : 'false'; ?> && duplicateTerapi) {
-				$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan konsultasi');
+				restoreCompletionButton();
 				Swal.fire("Obat duplikat", "Hapus baris obat/terapi yang sama sebelum melanjutkan.", "error");
 				return;
 			}
@@ -1370,7 +1456,7 @@ if (!function_exists('formatComplaintText')) {
 					} else {
 						const message = response && response.message ? response.message : "Terjadi kesalahan. Coba lagi.";
 						Swal.fire("Konsultasi belum diselesaikan", message, "error");
-						$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan konsultasi');
+						restoreCompletionButton();
 					}
 				},
 				error: function(xhr, status, error) {
@@ -1384,7 +1470,7 @@ if (!function_exists('formatComplaintText')) {
 						} catch (e) {}
 					}
 					Swal.fire("Konsultasi belum diselesaikan", message, "error");
-					$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan konsultasi');
+					restoreCompletionButton();
 				}
 			});
 		});

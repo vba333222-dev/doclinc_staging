@@ -5,6 +5,17 @@
 							<div class="alert alert-info mb-0" role="status">Hanya tugas Anda yang tampil di sini.</div>
 						<?php endif; ?>
 						<?php $this->load->view('partials/nakes_stat_cards_v', get_defined_vars()); ?>
+						<?php if (!empty($nakes_is_command_center) && !empty($nakes_presence_enabled)) : ?>
+							<?php $this->load->view('partials/nakes_section_header_v', array(
+								'section_title' => 'Status Nakes',
+								'section_meta' => 'Diperbarui otomatis',
+							)); ?>
+							<div class="dl-nakes-card dl-dashboard-section doclinc-presence-panel">
+								<div id="doclincNakesPresence" aria-live="polite" aria-busy="true">
+									<div class="doclinc-presence-empty">Memuat status Nakes...</div>
+								</div>
+							</div>
+						<?php endif; ?>
 						<?php if (!empty($nakes_is_command_center)) : ?>
 						<?php
 						$dashboard_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_list) ? array_slice($puskesmas_staff_list, 0, 3) : array();

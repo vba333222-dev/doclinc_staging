@@ -38,6 +38,7 @@ php tools/realtime_requests/tests/readiness_test.php
 php tools/realtime_requests/tests/integration.php
 php tools/realtime_requests/tests/model_integration.php
 php tools/realtime_requests/tests/controller_orchestration_integration.php
+php tools/visit_proof/tests/unit.php
 ```
 
 The MariaDB integration commands include their own bounded readiness gate. They authenticate with the disposable administrator account and require a successful `SELECT 1` before creating a fixture database. The default deadline is 45 seconds with a 500 ms retry interval; test-only overrides are available through `DOCLINC_TEST_DB_READY_TIMEOUT_MS` and `DOCLINC_TEST_DB_READY_INTERVAL_MS`. Authentication or readiness failure exits nonzero without printing connection credentials.
@@ -45,5 +46,7 @@ The MariaDB integration commands include their own bounded readiness gate. They 
 The model integration command exercises the production model methods and transition orchestrator. Its request-realtime-off matrix covers two distinct runtime contracts: client and notification realtime enabled with request coordination disabled, and the full legacy fallback with all three disabled. The first contract retains durable notifications plus `notification.created`; the second retains only durable notifications. Both reject request lifecycle outbox events and perform no direct publish. A separate enabled-state matrix invokes each lifecycle model followed by the production orchestrator and verifies exact notification, outbox, audience, and idempotency counts.
 
 The controller orchestration command is an independent harness for the five public controller actions. It uses authenticated session, request input, model-result, orchestrator, and response collaborators to verify the ordered `model -> orchestrator -> response` success path and the `model -> response` failure path. It does not execute the model integration suite again. Controller notifications remain a post-model compatibility boundary when request realtime is disabled, so a notification insert failure does not reverse an already successful domain mutation.
+
+The visit-proof extension is independent from request realtime. When its separate default-off flag is enabled, an on-site completion also requires a staged image, fresh accurate location within the patient radius, and an arrived/in-service visit state. The model integration verifies that proof media finalization and the append-only location sample commit with completion, while a downstream realtime failure rolls all transactional proof associations back.
 
 Deployment is source-first with the request flag off. Rollback is disabling the request flag; durable requests and existing notification polling continue to operate.

@@ -155,5 +155,31 @@ foreach ($views as $view) {
 	request_expect(strpos($source, 'is_array($request_realtime_bootstrap)') !== false && strpos($source, 'assets/js/doclinc-requests.js') !== false, 'asset_flag_guard_' . md5($view));
 }
 
+$visit_controller_source = file_get_contents($root . '/application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php');
+$visit_model_source = file_get_contents($root . '/application/modules/konsultasi_nakes/models/Konsultasi_nakes_m.php');
+$visit_view_source = file_get_contents($root . '/application/modules/konsultasi_nakes/views/konsultasi_nakes_v.php');
+$visit_service_source = file_get_contents($root . '/application/libraries/Visit_proof_service.php');
+request_expect(strpos($visit_controller_source, 'doclinc_visit_proof_required()') !== false
+	&& strpos($visit_controller_source, 'stageUploadedImage(') !== false
+	&& strpos($visit_controller_source, '$visit_proof_context,') !== false,
+	'visit_proof_controller_requires_and_stages_evidence');
+request_expect(strpos($visit_model_source, 'validate_and_record_visit_proof(') !== false
+	&& strpos($visit_model_source, "'visit_location_outside_radius'") !== false
+	&& strpos($visit_model_source, "'visit_status_invalid'") !== false
+	&& strpos($visit_model_source, "'visit_mode_invalid'") !== false
+	&& strpos($visit_model_source, "'lifecycle_state' => 'ready'") !== false,
+	'visit_proof_model_fail_closed_and_finalizes_in_transaction');
+request_expect(strpos($visit_model_source, "insert('visit_location_updates'") !== false
+	&& strpos($visit_model_source, "WHERE media_id = ? FOR UPDATE") !== false,
+	'visit_proof_model_locks_media_and_persists_location');
+request_expect(strpos($visit_view_source, 'capture="environment"') !== false
+	&& strpos($visit_view_source, 'acquireVisitProofLocation') !== false
+	&& strpos($visit_view_source, "formData.set('proof_latitude'") !== false,
+	'visit_proof_browser_requires_camera_and_fresh_location');
+request_expect(strpos($visit_service_source, "hash_file('sha256'") !== false
+	&& strpos($visit_service_source, 'getimagesize(') !== false
+	&& strpos($visit_service_source, "'image/webp'") !== false,
+	'visit_proof_service_validates_decoded_image_hash_and_mime');
+
 echo "REALTIME_REQUEST_UNIT_PASSED={$passed}\nREALTIME_REQUEST_UNIT_FAILED={$failed}\n";
 exit($failed === 0 ? 0 : 1);

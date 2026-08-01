@@ -592,6 +592,7 @@ if ($current_role === 'dokter') {
 			display: flex;
 			align-items: center;
 			justify-content: center;
+			flex-wrap: wrap;
 			gap: 14px;
 			padding: 18px 14px calc(20px + env(safe-area-inset-bottom));
 			background: transparent;
@@ -626,6 +627,12 @@ if ($current_role === 'dokter') {
 		.doclinc-call-control.is-off {
 			background: rgba(255, 255, 255, 0.9);
 			color: #111827;
+		}
+
+		.doclinc-call-control.speaker.is-active {
+			background: #437a13;
+			border-color: #5f9d27;
+			color: #ffffff;
 		}
 
 		.doclinc-call-control.end-call {
@@ -906,6 +913,12 @@ if ($current_role === 'dokter') {
 							<path d="m15.7 10 4.8-2.8v9.6L15.7 14" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
 						</svg>
 					</button>
+					<button type="button" class="doclinc-call-control speaker" id="doclincCallSpeaker" title="Aktifkan loudspeaker" aria-label="Aktifkan loudspeaker" aria-pressed="false">
+						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+							<path d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+							<path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11" stroke-width="1.9" stroke-linecap="round" />
+						</svg>
+					</button>
 					<button type="button" class="doclinc-call-control" id="doclincCallSwitch" title="Ganti kamera" aria-label="Ganti kamera">
 						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
 							<path d="M16 3h5v5M20.5 3.5 15 9M8 21H3v-5M3.5 20.5 9 15" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
@@ -938,6 +951,8 @@ if ($current_role === 'dokter') {
 			<span class="doclinc-active-call-restore">Buka</span>
 		</button>
 		<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-ringtone.js')); ?>"></script>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-audio.js')); ?>"></script>
 	<?php else : ?>
 		<?php /* TODO #16D: render incoming call invitation here after reliable call invite signaling exists. */ ?>
 	<?php endif; ?>
@@ -973,6 +988,7 @@ if ($current_role === 'dokter') {
 					mode: 'video',
 					micEnabled: true,
 					cameraEnabled: true,
+					speakerEnabled: false,
 					facingMode: 'user',
 					localTracks: [],
 					connecting: false,
@@ -985,7 +1001,9 @@ if ($current_role === 'dokter') {
 					statusPollMs: 3000,
 					incomingFailures: 0,
 					incomingPollSequence: 0,
-					incomingRejecting: false
+					incomingRejecting: false,
+					audioController: null,
+					incomingRingtone: null
 				};
 				const elements = {};
 				const remoteTrackRegistry = new Map();
@@ -1012,6 +1030,7 @@ if ($current_role === 'dokter') {
 					elements.join = byId('doclincCallJoin');
 					elements.mic = byId('doclincCallMic');
 					elements.camera = byId('doclincCallCamera');
+					elements.speaker = byId('doclincCallSpeaker');
 					elements.switchCamera = byId('doclincCallSwitch');
 					elements.end = byId('doclincCallEnd');
 					elements.close = byId('doclincCallClose');
@@ -1023,6 +1042,120 @@ if ($current_role === 'dokter') {
 					elements.incomingType = byId('doclincIncomingType');
 					elements.incomingAnswer = byId('doclincIncomingAnswer');
 					elements.incomingReject = byId('doclincIncomingReject');
+				}
+
+				function audioController() {
+					if (state.audioController) {
+						return state.audioController;
+					}
+					if (!window.DoclincLivekitAudio || typeof window.DoclincLivekitAudio.createController !== 'function') {
+						return null;
+					}
+					state.audioController = window.DoclincLivekitAudio.createController({
+						getRoom: function() {
+							return state.room;
+						},
+						getRemoteMediaNodes: function() {
+							return elements.remote ? elements.remote.querySelectorAll('audio,video') : [];
+						},
+						speakerGain: 1.8
+					});
+					return state.audioController;
+				}
+
+				function incomingRingtone() {
+					if (state.incomingRingtone) {
+						return state.incomingRingtone;
+					}
+					if (!window.DoclincLivekitRingtone || typeof window.DoclincLivekitRingtone.createController !== 'function') {
+						return null;
+					}
+					state.incomingRingtone = window.DoclincLivekitRingtone.createController({
+						windowObject: window
+					});
+					return state.incomingRingtone;
+				}
+
+				function startIncomingRingtone(callId) {
+					const controller = incomingRingtone();
+					if (controller && typeof controller.start === 'function') {
+						controller.start(callId).catch(function() {});
+					}
+				}
+
+				function stopIncomingRingtone(callId) {
+					if (state.incomingRingtone && typeof state.incomingRingtone.stop === 'function') {
+						state.incomingRingtone.stop(callId);
+					}
+				}
+
+				function releaseIncomingRingtone() {
+					if (state.incomingRingtone && typeof state.incomingRingtone.release === 'function') {
+						state.incomingRingtone.release();
+					}
+					state.incomingRingtone = null;
+				}
+
+				function updateSpeakerControl(enabled) {
+					state.speakerEnabled = enabled === true;
+					if (!elements.speaker) {
+						return;
+					}
+					elements.speaker.classList.toggle('is-active', state.speakerEnabled);
+					elements.speaker.setAttribute('aria-pressed', state.speakerEnabled ? 'true' : 'false');
+					elements.speaker.setAttribute('aria-label', state.speakerEnabled ? 'Nonaktifkan loudspeaker' : 'Aktifkan loudspeaker');
+					elements.speaker.title = state.speakerEnabled ? 'Nonaktifkan loudspeaker' : 'Aktifkan loudspeaker';
+				}
+
+				function releaseRemoteAudio() {
+					if (state.audioController && typeof state.audioController.release === 'function') {
+						state.audioController.release();
+					}
+					state.audioController = null;
+					updateSpeakerControl(false);
+				}
+
+				function resumeRemoteAudio() {
+					const controller = audioController();
+					if (!controller || typeof controller.resumeAudio !== 'function') {
+						return Promise.resolve(false);
+					}
+					return controller.resumeAudio();
+				}
+
+				function toggleSpeakerOutput() {
+					const controller = audioController();
+					if (!controller || typeof controller.toggleSpeaker !== 'function') {
+						setStatus('Kontrol loudspeaker belum didukung perangkat ini.', true);
+						return;
+					}
+					if (elements.speaker) {
+						elements.speaker.disabled = true;
+					}
+					controller.toggleSpeaker().then(function(result) {
+						const enabled = !!(result && result.enabled);
+						updateSpeakerControl(enabled);
+						if (!enabled) {
+							setStatus('Loudspeaker nonaktif.');
+							return;
+						}
+						if (result.outputSelected) {
+							setStatus('Loudspeaker aktif' + (result.outputLabel ? ': ' + result.outputLabel : '.'));
+							return;
+						}
+						if (result.boosted) {
+							setStatus('Loudspeaker aktif. Volume suara diperkuat.');
+							return;
+						}
+						setStatus('Perangkat membatasi pemilihan output. Gunakan kontrol speaker perangkat.', true);
+					}).catch(function() {
+						updateSpeakerControl(false);
+						setStatus('Loudspeaker belum dapat diaktifkan di perangkat ini.', true);
+					}).finally(function() {
+						if (elements.speaker) {
+							elements.speaker.disabled = false;
+						}
+					});
 				}
 
 				function setStatus(message, isError) {
@@ -1151,6 +1284,7 @@ if ($current_role === 'dokter') {
 					state.connecting = false;
 					state.minimized = false;
 					stopLocalTracks();
+					releaseRemoteAudio();
 					stopElapsedTimer();
 					stopStatusPolling();
 					clearRemoteTracks();
@@ -1179,6 +1313,7 @@ if ($current_role === 'dokter') {
 					state.mode = mode === 'audio' ? 'audio' : 'video';
 					state.micEnabled = true;
 					state.cameraEnabled = state.mode === 'video';
+					updateSpeakerControl(false);
 					if (elements.camera) {
 						elements.camera.classList.toggle('is-off', state.mode !== 'video');
 					}
@@ -1395,11 +1530,17 @@ if ($current_role === 'dokter') {
 						}
 						node.autoplay = true;
 						node.playsInline = true;
+						node.muted = false;
+						node.volume = 1;
 						if (!elements.remote.contains(node)) {
 							elements.remote.appendChild(node);
 						}
 						if (elements.remote.contains(node) && storedNodes.indexOf(node) === -1) {
 							storedNodes.push(node);
+						}
+						const controller = audioController();
+						if (controller && typeof controller.configureMediaElement === 'function') {
+							controller.configureMediaElement(node);
 						}
 					});
 					if (!storedNodes.length) {
@@ -1506,6 +1647,7 @@ if ($current_role === 'dokter') {
 						state.connecting = false;
 						state.minimized = false;
 						stopLocalTracks();
+						releaseRemoteAudio();
 						clearRemoteTracks();
 						setStatus('Panggilan terputus');
 						setCallActive(false);
@@ -1523,6 +1665,7 @@ if ($current_role === 'dokter') {
 							return;
 						}
 						publishExistingParticipants(room);
+						resumeRemoteAudio();
 						setStatus('Terhubung kembali');
 					});
 				}
@@ -1710,6 +1853,7 @@ if ($current_role === 'dokter') {
 						startStatusPolling();
 						updateFloatingCall();
 						publishExistingParticipants(room);
+						resumeRemoteAudio();
 						return createLocalTrack('audio').then(publishTrack).catch(function() {
 							state.micEnabled = false;
 							if (elements.mic) {
@@ -1849,7 +1993,9 @@ if ($current_role === 'dokter') {
 				}
 
 				function hideIncomingCall() {
+					const callId = state.incomingCall && state.incomingCall.call_id ? state.incomingCall.call_id : null;
 					state.incomingCall = null;
+					stopIncomingRingtone(callId);
 					if (elements.incoming) {
 						elements.incoming.classList.add('is-hidden');
 					}
@@ -1875,6 +2021,7 @@ if ($current_role === 'dokter') {
 						setIncomingActionsDisabled(false);
 					}
 					elements.incoming.classList.remove('is-hidden');
+					startIncomingRingtone(call.call_id);
 				}
 
 				function setIncomingActionsDisabled(disabled) {
@@ -2015,6 +2162,8 @@ if ($current_role === 'dokter') {
 
 				document.addEventListener('DOMContentLoaded', function() {
 					cacheElements();
+					incomingRingtone();
+					window.addEventListener('pagehide', releaseIncomingRingtone);
 					document.querySelectorAll('.doclinc-call-start').forEach(function(button) {
 						button.addEventListener('click', function(event) {
 							event.preventDefault();
@@ -2033,6 +2182,9 @@ if ($current_role === 'dokter') {
 						elements.camera.addEventListener('click', function() {
 							toggleTrack('video', elements.camera);
 						});
+					}
+					if (elements.speaker) {
+						elements.speaker.addEventListener('click', toggleSpeakerOutput);
 					}
 					if (elements.switchCamera) {
 						elements.switchCamera.addEventListener('click', switchCamera);
