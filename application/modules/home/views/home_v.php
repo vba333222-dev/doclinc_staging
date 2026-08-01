@@ -3874,6 +3874,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				incomingUrl: <?= json_encode(base_url('home/livekit_incoming_call')); ?>,
 				rejectUrl: <?= json_encode(base_url('home/reject_livekit_call')); ?>,
 				chatUrl: <?= json_encode(base_url('chat')); ?>,
+				ringtoneUrl: <?= json_encode(base_url('assets/audio/doclinc-ringtone.wav')); ?>,
 				pollMs: 3000
 			};
 		</script>

@@ -53,13 +53,36 @@ class AudioContext {
 	close() { this.state = 'closed'; }
 }
 
-function snapshot(ids) {
-	return { success: true, data: { unread_count: ids.length, notifications: ids.map(id => ({ notification_id: id })) } };
+class FakeAudio {
+	constructor(url) {
+		this.url = url;
+		this.preload = '';
+		this.volume = 1;
+		this.currentTime = 0;
+		this.muted = false;
+		this.playCalls = 0;
+		this.pauseCalls = 0;
+	}
+	play() { this.playCalls += 1; return Promise.resolve(); }
+	pause() { this.pauseCalls += 1; }
+}
+
+function snapshot(ids, eventType) {
+	return { success: true, data: { unread_count: ids.length, notifications: ids.map(id => ({
+		notification_id: id,
+		event_type: eventType || 'service_update'
+	})) } };
+}
+
+function flush() {
+	return new Promise(resolve => setImmediate(resolve));
 }
 
 const storage = new Storage();
 const applied = [];
 const lifecycleTarget = new FakeEventTarget();
+const audioElements = [];
+const newNotificationBatches = [];
 const runtime = new notifications.NotificationRuntime({
 	config: {
 		enabled: true,
@@ -67,6 +90,7 @@ const runtime = new notifications.NotificationRuntime({
 		connection_token_url: '/realtime/connection-token',
 		subscription_token_url: '/realtime/subscription-token',
 		snapshot_url: '/notifications/snapshot',
+		sound_url: '/assets/audio/doclinc-notification.wav',
 		channel: 'user:101',
 		poll_interval_ms: 30000
 	},
@@ -75,6 +99,8 @@ const runtime = new notifications.NotificationRuntime({
 	fetch: async () => ({}),
 	storage,
 	AudioContext,
+	createAudio(url) { const audio = new FakeAudio(url); audioElements.push(audio); return audio; },
+	onNewNotifications(items) { newNotificationBatches.push(items); },
 	lifecycleTarget,
 	ui: { applySnapshot(data, context) { applied.push({ data, context }); } }
 });
@@ -87,19 +113,27 @@ expect(runtime.applySnapshot(snapshot([1, 2]), { reason: 'poll' }), 'initial_sna
 expect(oscillatorStarts === 0, 'initial_notifications_silent');
 
 (async () => {
-	expect(await runtime.toggleSound() === true, 'sound_enabled_after_user_gesture');
-	expect(runtime.soundPrimed === true && storage.getItem('doclinc.notification.sound.enabled') === '1', 'audio_preference_and_priming_saved');
-	runtime.applySnapshot(snapshot([3, 2, 1]), { reason: 'invalidation' });
-	expect(oscillatorStarts === 2, 'new_notification_plays_one_chime');
+	expect(runtime.soundEnabled === true, 'sound_defaults_enabled_without_manual_toggle');
+	lifecycleTarget.dispatch('pointerdown');
+	await flush();
+	expect(runtime.soundPrimed === true && audioElements.length === 1
+		&& audioElements[0].url === '/assets/audio/doclinc-notification.wav', 'first_global_gesture_primes_local_natural_sound');
+	runtime.applySnapshot(snapshot([3, 2, 1], 'incoming_call'), { reason: 'invalidation' });
+	expect(audioElements[0].playCalls === 2 && oscillatorStarts === 0, 'new_notification_prefers_local_audio_over_oscillator');
+	expect(newNotificationBatches.length === 1 && newNotificationBatches[0].length === 1
+		&& newNotificationBatches[0][0].event_type === 'incoming_call', 'new_notification_event_exposes_exact_incoming_call');
 	runtime.applySnapshot(snapshot([3, 2, 1]), { reason: 'recovery_unavailable' });
 	runtime.applySnapshot(snapshot([3, 2, 1]), { reason: 'poll' });
-	expect(oscillatorStarts === 2, 'duplicate_recovery_and_poll_silent');
-	runtime.applySnapshot(snapshot([4, 3, 2]), { reason: 'poll' });
-	expect(oscillatorStarts === 4, 'polling_fallback_new_notification_chimes_once');
-	expect(applied.length === 5, 'snapshots_forwarded_to_existing_ui');
-	expect(await runtime.toggleSound() === false, 'sound_control_disables_audio');
+	expect(audioElements[0].playCalls === 2, 'duplicate_recovery_and_poll_silent');
+	runtime.applySnapshot(snapshot([4, 3, 2], 'service_update'), { reason: 'poll' });
+	expect(audioElements[0].playCalls === 3, 'service_notification_plays_natural_chime');
+	runtime.applySnapshot(snapshot([6, 4, 3], 'chat_message'), { reason: 'invalidation' });
+	expect(audioElements[0].playCalls === 4, 'messaging_notification_plays_natural_chime');
+	expect(applied.length === 6, 'snapshots_forwarded_to_existing_ui');
+	expect(await runtime.toggleSound() === false && storage.getItem('doclinc.notification.sound.enabled') === '0', 'sound_control_disables_audio');
 	runtime.applySnapshot(snapshot([5, 4]), { reason: 'invalidation' });
-	expect(oscillatorStarts === 4, 'disabled_sound_remains_silent');
+	expect(audioElements[0].playCalls === 4, 'disabled_sound_remains_silent');
+	expect(await runtime.toggleSound() === true && storage.getItem('doclinc.notification.sound.enabled') === '1', 'sound_control_can_reenable_and_persist_audio');
 	expect(notifications.positiveId('0') === '' && notifications.positiveId('-1') === '' && notifications.positiveId('7') === '7', 'notification_id_validation');
 	expect(notifications.snapshotData({ success: false }) === null, 'invalid_snapshot_rejected');
 	const off = new notifications.NotificationRuntime({ config: { enabled: false }, RealtimeClient, ui: {} });
@@ -108,7 +142,9 @@ expect(oscillatorStarts === 0, 'initial_notifications_silent');
 	lifecycleTarget.dispatch('pagehide');
 	lifecycleTarget.dispatch('pagehide');
 	expect(runtime.client === null && runtime.soundPrimed === false, 'pagehide_teardown_disconnects_and_releases_audio');
-	expect(activeClient.releaseCount === 1 && activeClient.teardownCount === 1 && lifecycleTarget.count('pagehide') === 0, 'repeated_pagehide_is_idempotent');
+	expect(activeClient.releaseCount === 1 && activeClient.teardownCount === 1 && lifecycleTarget.count('pagehide') === 0
+		&& lifecycleTarget.count('pointerdown') === 0 && lifecycleTarget.count('touchstart') === 0
+		&& lifecycleTarget.count('keydown') === 0, 'repeated_pagehide_is_idempotent_and_removes_audio_unlock');
 	runtime.teardown();
 	expect(activeClient.releaseCount === 1 && activeClient.teardownCount === 1, 'manual_teardown_after_pagehide_is_idempotent');
 	process.stdout.write(`REALTIME_NOTIFICATION_CLIENT_PASSED=${passed}\n`);

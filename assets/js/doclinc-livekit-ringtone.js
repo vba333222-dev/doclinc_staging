@@ -41,7 +41,97 @@
         var audible = false;
         var released = false;
         var gestureBound = false;
+        var media = null;
+        var mediaPlaying = false;
         var gestureEvents = ['pointerdown', 'touchstart', 'keydown'];
+
+        function createMedia() {
+            if (released || media || typeof options.audioUrl !== 'string' || options.audioUrl.trim() === '') {
+                return media;
+            }
+            try {
+                if (typeof options.createAudio === 'function') {
+                    media = options.createAudio(options.audioUrl);
+                } else if (windowObject && typeof windowObject.Audio === 'function') {
+                    media = new windowObject.Audio(options.audioUrl);
+                }
+                if (media) {
+                    media.preload = 'auto';
+                    media.loop = true;
+                    media.volume = 0.86;
+                }
+            } catch (error) {
+                media = null;
+            }
+            return media;
+        }
+
+        function stopMedia() {
+            if (!media) {
+                return false;
+            }
+            var wasPlaying = mediaPlaying;
+            try {
+                if (typeof media.pause === 'function') {
+                    media.pause();
+                }
+                media.currentTime = 0;
+            } catch (error) {}
+            mediaPlaying = false;
+            return wasPlaying;
+        }
+
+        function playMedia() {
+            var audio = createMedia();
+            if (released || activeCallId === '' || !audio || typeof audio.play !== 'function') {
+                return Promise.resolve(false);
+            }
+            if (mediaPlaying) {
+                audible = true;
+                return Promise.resolve(true);
+            }
+            try {
+                audio.muted = false;
+                audio.loop = true;
+                audio.volume = 0.86;
+                return asPromise(audio.play()).then(function () {
+                    mediaPlaying = true;
+                    audible = true;
+                    return true;
+                }, function () {
+                    mediaPlaying = false;
+                    return false;
+                });
+            } catch (error) {
+                mediaPlaying = false;
+                return Promise.resolve(false);
+            }
+        }
+
+        function primeMedia() {
+            var audio = createMedia();
+            if (!audio || typeof audio.play !== 'function') {
+                return Promise.resolve(false);
+            }
+            try {
+                audio.muted = true;
+                return asPromise(audio.play()).then(function () {
+                    if (typeof audio.pause === 'function') {
+                        audio.pause();
+                    }
+                    audio.currentTime = 0;
+                    audio.muted = false;
+                    mediaPlaying = false;
+                    return true;
+                }, function () {
+                    audio.muted = false;
+                    return false;
+                });
+            } catch (error) {
+                audio.muted = false;
+                return Promise.resolve(false);
+            }
+        }
 
         function contextConstructor() {
             if (typeof options.getAudioContextConstructor === 'function') {
@@ -141,18 +231,23 @@
         }
 
         function resume() {
-            var audioContext = ensureContext();
-            if (!audioContext) {
-                return Promise.resolve(false);
-            }
-            var resumeResult = audioContext.state === 'running' || typeof audioContext.resume !== 'function'
-                ? Promise.resolve()
-                : asPromise(audioContext.resume());
-            return resumeResult.then(function () {
-                return beginLoop();
-            }, function () {
-                audible = false;
-                return false;
+            return playMedia().then(function (mediaStarted) {
+                if (mediaStarted) {
+                    return true;
+                }
+                var audioContext = ensureContext();
+                if (!audioContext) {
+                    return false;
+                }
+                var resumeResult = audioContext.state === 'running' || typeof audioContext.resume !== 'function'
+                    ? Promise.resolve()
+                    : asPromise(audioContext.resume());
+                return resumeResult.then(function () {
+                    return beginLoop();
+                }, function () {
+                    audible = false;
+                    return false;
+                });
             });
         }
 
@@ -161,9 +256,10 @@
             if (normalizedCallId !== '' && activeCallId !== normalizedCallId) {
                 return false;
             }
-            var hadActiveCall = activeCallId !== '' || intervalId !== null || activeNodes.length > 0;
+            var hadActiveCall = activeCallId !== '' || intervalId !== null || activeNodes.length > 0 || mediaPlaying;
             activeCallId = '';
             audible = false;
+            stopMedia();
             if (intervalId !== null) {
                 clearIntervalFunction(intervalId);
                 intervalId = null;
@@ -199,7 +295,15 @@
         }
 
         function onUserGesture() {
-            resume();
+            if (activeCallId !== '') {
+                resume();
+                return;
+            }
+            primeMedia();
+            var audioContext = ensureContext();
+            if (audioContext && audioContext.state !== 'running' && typeof audioContext.resume === 'function') {
+                asPromise(audioContext.resume()).catch(function () {});
+            }
         }
 
         function bindUserGesture() {
@@ -237,6 +341,8 @@
                 } catch (error) {}
             }
             context = null;
+            stopMedia();
+            media = null;
             return true;
         }
 
@@ -246,6 +352,8 @@
                 audible: audible,
                 intervalActive: intervalId !== null,
                 activeNodeCount: activeNodes.length,
+                mediaActive: mediaPlaying,
+                playbackMode: mediaPlaying ? 'media' : (intervalId !== null ? 'oscillator' : 'none'),
                 gestureBound: gestureBound,
                 released: released
             };
