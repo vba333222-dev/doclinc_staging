@@ -7,9 +7,17 @@
 		}
 
 		public function index(){
+			if ($this->input->method(TRUE) !== 'GET') {
+				show_404();
+				return;
+			}
 			$this->load->view('super_app_v');
 		}
 		public function b(){
+			if ($this->input->method(TRUE) !== 'GET') {
+				show_404();
+				return;
+			}
 			$this->load->view('super_app_b_v');
 		}
 	}

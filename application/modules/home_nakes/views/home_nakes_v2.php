@@ -6,6 +6,7 @@
 	<html>
 	  <head>
 	    <meta charset="UTF-8">
+	    <?= doclinc_csrf_bootstrap_markup(); ?>
 	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	    <title>SehatGeh - Home</title>
 	    <?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
@@ -547,7 +548,7 @@
 	              timerProgressBar: true
 	            }).then((result) => {
 	              if (result.dismiss === Swal.DismissReason.timer) {
-	                window.location.href = 'login/logout';
+	                window.DoclincCsrf.submitPost(<?= json_encode(base_url('login/logout')); ?>);
 	              }
 	            });
 	          }

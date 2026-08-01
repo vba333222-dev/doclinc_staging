@@ -18,3 +18,10 @@ $hook['post_controller_constructor'][] = array(
 	'filepath' => 'hooks',
 	'params' => array(),
 );
+$hook['post_controller'][] = array(
+	'class' => 'Cookie_samesite_gate',
+	'function' => 'enforce',
+	'filename' => 'Cookie_samesite_gate.php',
+	'filepath' => 'hooks',
+	'params' => array(),
+);

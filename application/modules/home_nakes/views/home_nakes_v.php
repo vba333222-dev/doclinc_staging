@@ -115,10 +115,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="id">
 
 <head>
 	<meta charset="UTF-8">
+	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>DocLink - Nakes</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -174,32 +175,32 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						<div class="nk-profile-modal__photo">
 							<label for="uploadFoto" class="nk-profile-modal__photo-picker">
 								<img id="previewFoto" src="<?= doclinc_safe_profile_image_src($profile['foto'] ?? ''); ?>" alt="Foto Profil">
-								<input type="file" id="uploadFoto" name="foto" accept="image/*" class="d-none" onchange="previewImage(event)">
+							<input type="file" id="uploadFoto" name="foto" accept="image/jpeg,image/png" class="d-none" onchange="previewImage(event)">
 							</label>
 							<small>Klik untuk mengubah foto</small>
 							<div id="profileImageFeedback" class="small text-danger mt-2 d-none" role="alert"></div>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
-							<input type="text" class="form-control" id="nama_lengkap_edit" name="nama_lengkap" value="<?= $this->session->userdata('nama'); ?>" placeholder="Nama Lengkap">
+							<input type="text" class="form-control" id="nama_lengkap_edit" name="nama_lengkap" value="<?= html_escape((string) $this->session->userdata('nama')); ?>" placeholder="Nama Lengkap" maxlength="100" required>
 							<label for="nama_lengkap_edit"><i class="bi bi-person-fill me-2"></i>Nama lengkap</label>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
-							<input type="date" class="form-control" id="tgl_edit" name="tgl_lahir" value="<?= $profile['tgl'] ?>" placeholder="Tanggal Lahir">
+							<input type="date" class="form-control" id="tgl_edit" name="tgl_lahir" value="<?= html_escape((string) ($profile['tgl'] ?? '')); ?>" placeholder="Tanggal Lahir" max="<?= html_escape(date('Y-m-d')); ?>" required>
 							<label for="tgl_edit"><i class="bi bi-calendar-event-fill me-2"></i>Tanggal lahir</label>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
 							<select class="form-select" name="jk" id="jk_edit">
-								<option value="Laki-laki" <?= $this->session->userdata('jk') == 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
-								<option value="Perempuan" <?= $this->session->userdata('jk') == 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
+								<option value="Laki-laki" <?= (string) ($profile['gender'] ?? '') === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
+								<option value="Perempuan" <?= (string) ($profile['gender'] ?? '') === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
 							</select>
 							<label for="jk_edit"><i class="bi bi-gender-ambiguous me-2"></i>Jenis kelamin</label>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
-							<input type="text" class="form-control" id="no_hp_edit" name="no_hp" value="<?= $profile['no_hp'] ?>" placeholder="Nomor HP">
+							<input type="tel" class="form-control" id="no_hp_edit" name="no_hp" value="<?= html_escape((string) ($profile['no_hp'] ?? '')); ?>" placeholder="Nomor HP" inputmode="tel" maxlength="20" required>
 							<label for="no_hp_edit"><i class="bi bi-telephone-fill me-2"></i>Nomor HP</label>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
-							<textarea class="form-control" placeholder="Alamat" name="alamat" id="alamat_edit"><?= $profile['alamat'] ?></textarea>
+							<textarea class="form-control" placeholder="Alamat" name="alamat" id="alamat_edit" maxlength="500" required><?= html_escape((string) ($profile['alamat'] ?? '')); ?></textarea>
 							<label for="alamat_edit"><i class="bi bi-geo-alt-fill me-2"></i>Alamat</label>
 						</div>
 					</div>
@@ -264,6 +265,20 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						<span>Terakhir diperbarui</span>
 						<strong id="nakesVisitRouteUpdated">-</strong>
 					</div>
+					<div class="visit-route-card-row align-items-start">
+						<span>Alamat pasien</span>
+						<span class="text-end">
+							<strong id="nakesVisitPatientAddress">Mencari alamat...</strong>
+							<a id="nakesVisitPatientMapLink" class="small d-none" href="#" target="_blank" rel="noopener noreferrer">Buka peta</a>
+						</span>
+					</div>
+					<div class="visit-route-card-row align-items-start">
+						<span>Posisi Nakes</span>
+						<span class="text-end">
+							<strong id="nakesVisitNakesAddress">Menunggu lokasi Nakes</strong>
+							<a id="nakesVisitNakesMapLink" class="small d-none" href="#" target="_blank" rel="noopener noreferrer">Buka peta</a>
+						</span>
+					</div>
 					<div class="visit-route-provider-note mt-1 d-none" id="nakesVisitRouteProviderNote"></div>
 					<div class="alert alert-success py-2 px-3 mt-2 mb-0 d-none" id="nakesVisitArrivalNotice">
 						<div class="small fw-bold" id="nakesVisitArrivalMessage"></div>
@@ -279,11 +294,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	</div>
 
 	<!-- chatting dokter dengan pasien -->
-	<div class="modal fade" id="chat" tabindex="-1" aria-labelledby="modalProfilLabel" aria-hidden="true">
+	<div class="modal fade" id="chat" tabindex="-1" aria-labelledby="chatModalLabel" aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="modalProfilLabel">Chat dengan pasien</h1>
+					<h1 class="modal-title fs-5" id="chatModalLabel">Chat dengan pasien</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
 
@@ -354,6 +369,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-location-address.js')); ?>"></script>
 	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
 		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
 	<?php endif; ?>
@@ -517,7 +533,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						timerProgressBar: true
 					}).then((result) => {
 						if (result.dismiss === Swal.DismissReason.timer) {
-							window.location.href = 'login/logout';
+							window.DoclincCsrf.submitPost(<?= json_encode(base_url('login/logout')); ?>);
 						}
 					});
 				}
@@ -539,7 +555,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				const namaPasien = this.dataset.namapasien;
 				const riwayat = this.dataset.riwayat;
 				const keluhan = this.dataset.keluhan;
-				const namaDokter = "<?= $this->session->userdata('nama') ?>";
+				const namaDokter = <?= json_encode((string) $this->session->userdata('nama'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
 
 				Swal.fire({
@@ -777,6 +793,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			const visitMapboxToken = <?= json_encode($mapbox_public_token); ?>;
 			const minPostIntervalMs = <?= json_encode((function_exists('doclinc_visit_location_min_interval_seconds') ? doclinc_visit_location_min_interval_seconds() : 5) * 1000); ?>;
 			const monitorRefreshIntervalMs = 10000;
+			const locationAddressResolver = window.DoclincLocationAddress ? window.DoclincLocationAddress.create({
+				provider: <?= json_encode($map_provider); ?>,
+				mapboxToken: visitMapboxToken,
+				googleMaps: window.google && window.google.maps ? window.google.maps : null
+			}) : null;
 			const watches = ns.watches = ns.watches || {};
 			let monitorRefreshTimer = null;
 			const mapState = ns.nakesMapState = ns.nakesMapState || {
@@ -891,6 +912,43 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					providerNoteElement.textContent = isValhallaRoute ? 'Estimasi berdasarkan rute jalan' : '';
 					providerNoteElement.classList.toggle('d-none', !isValhallaRoute);
 				}
+			}
+
+			function setAddressPresentation(requestId, location, addressElementId, mapLinkId, missingText) {
+				const addressElement = document.getElementById(addressElementId);
+				const mapLink = document.getElementById(mapLinkId);
+				const normalized = window.DoclincLocationAddress
+					? window.DoclincLocationAddress.normalizeLocation(location)
+					: null;
+				if (addressElement) {
+					addressElement.textContent = normalized ? 'Mencari alamat...' : missingText;
+				}
+				if (mapLink) {
+					const mapUrl = normalized && window.DoclincLocationAddress
+						? window.DoclincLocationAddress.mapUrl(normalized)
+						: '';
+					mapLink.href = mapUrl || '#';
+					mapLink.classList.toggle('d-none', !mapUrl);
+				}
+				if (!normalized || !locationAddressResolver) return;
+
+				locationAddressResolver.resolve(normalized).then(function(result) {
+					if (String(mapState.currentRequestId || '') !== String(requestId || '')) return;
+					if (addressElement) {
+						addressElement.textContent = result && result.address
+							? result.address
+							: 'Alamat belum dapat dikenali';
+					}
+				}).catch(function() {
+					if (String(mapState.currentRequestId || '') === String(requestId || '') && addressElement) {
+						addressElement.textContent = 'Alamat belum dapat dikenali';
+					}
+				});
+			}
+
+			function setVisitAddressPresentations(requestId, patientLocation, nakesLocation) {
+				setAddressPresentation(requestId, patientLocation, 'nakesVisitPatientAddress', 'nakesVisitPatientMapLink', 'Lokasi pasien belum tersedia');
+				setAddressPresentation(requestId, nakesLocation, 'nakesVisitNakesAddress', 'nakesVisitNakesMapLink', 'Menunggu lokasi Nakes');
 			}
 
 			function parseLocation(location) {
@@ -1155,7 +1213,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			function renderVisitMap(requestId, response, fallbackPatientLocation) {
 				const patientLocation = parseLocation(response && response.patient) || fallbackPatientLocation || null;
 				const nakesLocation = parseLocation(response && response.nakes);
+				mapState.currentRequestId = requestId;
 				setNakesRouteSummary(response || {}, patientLocation, nakesLocation);
+				setVisitAddressPresentations(requestId, patientLocation, nakesLocation);
 				setRouteText(requestId, response && response.route ? response.route : null);
 				setNakesArrivalNotice(requestId, response && response.arrival ? response.arrival : null);
 
@@ -1545,7 +1605,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	</script>
 
 	<script>
-		const userName = '<?= $_SESSION['username'] ?>';
+		const userName = <?= json_encode((string) ($this->session->userdata('username') ?: ''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 	</script>
 
 	<!-- maps -->

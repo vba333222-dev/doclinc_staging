@@ -6,6 +6,7 @@ $map_provider = $this->config->item('map_provider') ?: 'none';
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <?= doclinc_csrf_bootstrap_markup(); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-Time Location Tracking</title>
     <!-- Load Google Maps API -->

@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 	<meta charset="UTF-8">
+	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="robots" content="noindex,nofollow">
 	<title>DocLink - Perbarui Password</title>

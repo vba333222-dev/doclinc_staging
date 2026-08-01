@@ -415,7 +415,7 @@ $sess_save_path = getenv('DOCLINC_SESSION_PATH') ?: getenv('CI_SESSION_PATH');
 $config['sess_save_path'] = $sess_save_path ? rtrim($sess_save_path, "/\\") . DIRECTORY_SEPARATOR : APPPATH . 'cache/sessions/';
 $config['sess_match_ip'] = FALSE;
 $config['sess_time_to_update'] = 300;
-$config['sess_regenerate_destroy'] = FALSE;
+$config['sess_regenerate_destroy'] = TRUE;
 
 
 // Terus hapus komentar yang ini ya
@@ -445,8 +445,19 @@ $config['sess_regenerate_destroy'] = FALSE;
 $config['cookie_prefix']	= '';
 $config['cookie_domain']	= '';
 $config['cookie_path']		= '/';
-$config['cookie_secure']	= FALSE;
-$config['cookie_httponly'] 	= FALSE;
+$doclinc_cookie_secure_default = strtolower((string) parse_url((string) $config['base_url'], PHP_URL_SCHEME)) === 'https';
+$doclinc_cookie_secure_env = strtolower(trim((string) (getenv('DOCLINC_COOKIE_SECURE') ?: '')));
+if ($doclinc_cookie_secure_env === '') {
+	$config['cookie_secure'] = $doclinc_cookie_secure_default;
+} elseif (in_array($doclinc_cookie_secure_env, array('1', 'true', 'yes', 'on'), TRUE)) {
+	$config['cookie_secure'] = TRUE;
+} elseif (in_array($doclinc_cookie_secure_env, array('0', 'false', 'no', 'off'), TRUE)) {
+	$config['cookie_secure'] = FALSE;
+} else {
+	$config['cookie_secure'] = $doclinc_cookie_secure_default;
+}
+$config['cookie_httponly'] = TRUE;
+$config['cookie_samesite'] = 'Lax';
 
 /*
 |--------------------------------------------------------------------------
@@ -490,11 +501,11 @@ $config['global_xss_filtering'] = FALSE;
 | 'csrf_regenerate' = Regenerate token on every submission
 | 'csrf_exclude_uris' = Array of URIs which ignore CSRF checks
 */
-$config['csrf_protection'] = FALSE;
-$config['csrf_token_name'] = 'csrf_test_name';
-$config['csrf_cookie_name'] = 'csrf_cookie_name';
+$config['csrf_protection'] = TRUE;
+$config['csrf_token_name'] = 'doclinc_csrf_token';
+$config['csrf_cookie_name'] = 'doclinc_csrf_cookie';
 $config['csrf_expire'] = 7200;
-$config['csrf_regenerate'] = TRUE;
+$config['csrf_regenerate'] = FALSE;
 $config['csrf_exclude_uris'] = array();
 
 /*

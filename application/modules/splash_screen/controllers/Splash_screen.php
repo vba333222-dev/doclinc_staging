@@ -7,9 +7,17 @@
 		}
 
 		public function index(){
+			if ($this->input->method(TRUE) !== 'GET') {
+				show_404();
+				return;
+			}
 			$this->load->view('splash_screen_v');
 		}
 		public function b(){
+			if ($this->input->method(TRUE) !== 'GET') {
+				show_404();
+				return;
+			}
 			$this->load->view('splash_screen_b_v');
 		}
 	}

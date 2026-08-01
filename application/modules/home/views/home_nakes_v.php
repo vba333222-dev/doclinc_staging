@@ -2,6 +2,7 @@
 <html>
 <head>
 	<meta charset="UTF-8">
+	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>SehatGeh - Home</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -450,7 +451,7 @@ Banten, Indonesia - 42436
   						timerProgressBar: true
 					}).then((result) => {
 						if (result.dismiss === Swal.DismissReason.timer) {
-							window.location.href = 'login/logout';
+							window.DoclincCsrf.submitPost(<?= json_encode(base_url('login/logout')); ?>);
 						}
 					});
 				}

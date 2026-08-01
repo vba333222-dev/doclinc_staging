@@ -10,6 +10,7 @@ if (!class_exists('CI_Model', false)) {
 	class CI_Model { public $db; }
 }
 require_once $root . '/application/models/Clinical_suggestion_m.php';
+require_once $root . '/application/libraries/Clinical_suggestion_presenter.php';
 
 $passed = 0;
 $failed = 0;
@@ -96,6 +97,67 @@ $model->search('diagnosis', 'A%_', 'uat', 999);
 check_case('maximum_limit_enforced', strpos($model->db->sql, 'LIMIT 11') !== false);
 check_case('wildcards_escaped', in_array('a!%!_%', $model->db->bindings, true));
 check_case('lexical_rank_order', strpos($model->db->sql, 'WHEN t.term_code = ? THEN 1') !== false && strpos($model->db->sql, 'normalized_alias LIKE') !== false);
+check_case('search_placeholder_binding_count_matches', substr_count($model->db->sql, '?') === count($model->db->bindings));
+check_case('matched_alias_is_projected_for_localized_search_aid', strpos($model->db->sql, 'AS matched_alias') !== false
+	&& strpos($model->db->sql, 'a.alias_label') !== false);
+$whoDiagnosis = Clinical_suggestion_presenter::present(array(
+	'term_type' => 'diagnosis',
+	'reference_key' => 'J45',
+	'term_code' => 'j45',
+	'preferred_label' => 'Asthma',
+	'matched_alias' => 'Asma',
+	'source_dataset' => '20b_master_diagnosis_icd10_who_2019.json',
+	'source_name' => 'WHO ICD-10 2019 via simple_icd_10 2.1.1',
+	'source_version' => '2019',
+	'internal_debug_source' => 'Doclinc internal source must never be exposed',
+));
+check_case('who_icd10_primary_label_and_secondary_metadata', is_array($whoDiagnosis)
+	&& $whoDiagnosis['display'] === 'Asma'
+	&& $whoDiagnosis['supporting'] === 'Asthma'
+	&& $whoDiagnosis['value'] === 'J45 — Asthma'
+	&& $whoDiagnosis['meta'] === 'ICD-10 J45 · WHO 2019'
+	&& $whoDiagnosis['standard'] === 'WHO ICD-10'
+	&& $whoDiagnosis['edition'] === '2019');
+check_case('internal_source_metadata_not_exposed', is_array($whoDiagnosis)
+	&& !array_key_exists('source', $whoDiagnosis)
+	&& !array_key_exists('version', $whoDiagnosis)
+	&& stripos(json_encode($whoDiagnosis), 'doclinc') === false);
+check_case('internal_brand_in_clinical_label_rejected', Clinical_suggestion_presenter::present(array(
+	'term_type' => 'diagnosis', 'reference_key' => 'J45', 'term_code' => 'J45',
+	'preferred_label' => 'Doclinc Asthma', 'source_dataset' => '20b_master_diagnosis_icd10_who_2019.json', 'source_version' => '2019',
+)) === null);
+check_case('non_who_diagnosis_dataset_rejected', Clinical_suggestion_presenter::present(array(
+	'term_type' => 'diagnosis', 'reference_key' => 'J45', 'term_code' => 'J45',
+	'preferred_label' => 'Asthma', 'source_dataset' => 'internal_diagnosis.json', 'source_version' => '2019',
+)) === null);
+check_case('invalid_icd10_code_rejected', Clinical_suggestion_presenter::present(array(
+	'term_type' => 'diagnosis', 'reference_key' => 'INTERNAL-1', 'term_code' => 'INTERNAL-1',
+	'preferred_label' => 'Asthma', 'source_dataset' => '20b_master_diagnosis_icd10_who_2019.json', 'source_version' => '2019',
+)) === null);
+check_case('non_2019_icd10_source_rejected', Clinical_suggestion_presenter::present(array(
+	'term_type' => 'diagnosis', 'reference_key' => 'J45', 'term_code' => 'J45',
+	'preferred_label' => 'Asthma', 'source_dataset' => '20b_master_diagnosis_icd10_who_2019.json', 'source_version' => 'internal',
+)) === null);
+$medicinePresentation = Clinical_suggestion_presenter::present(array(
+	'term_type' => 'medicine', 'reference_key' => 'FORNAS-1', 'term_code' => 'FORNAS-1',
+	'preferred_label' => 'Paracetamol 500 mg', 'source_dataset' => '21_master_obat_fornas.json',
+	'source_name' => 'e-Fornas Kementerian Kesehatan RI',
+));
+check_case('medicine_primary_label_has_no_internal_prefix', is_array($medicinePresentation)
+	&& $medicinePresentation['display'] === 'Paracetamol 500 mg'
+	&& $medicinePresentation['value'] === 'Paracetamol 500 mg'
+	&& $medicinePresentation['meta'] === 'Formularium Nasional'
+	&& $medicinePresentation['standard'] === 'Formularium Nasional');
+check_case('non_fornas_medicine_dataset_rejected', Clinical_suggestion_presenter::present(array(
+	'term_type' => 'medicine', 'reference_key' => 'INTERNAL-1', 'term_code' => 'INTERNAL-1',
+	'preferred_label' => 'Paracetamol 500 mg', 'source_dataset' => 'internal_medicine.json',
+	'source_name' => 'e-Fornas Kementerian Kesehatan RI',
+)) === null);
+check_case('non_efornas_medicine_source_rejected', Clinical_suggestion_presenter::present(array(
+	'term_type' => 'medicine', 'reference_key' => 'FORNAS-1', 'term_code' => 'FORNAS-1',
+	'preferred_label' => 'Paracetamol 500 mg', 'source_dataset' => '21_master_obat_fornas.json',
+	'source_name' => 'internal_medicine_source',
+)) === null);
 $featureMissing = Clinical_suggestion_feature::resolve(false, false);
 $featureEmpty = Clinical_suggestion_feature::resolve('', '');
 $featureMalformed = Clinical_suggestion_feature::resolve('definitely', 'uat');
@@ -153,7 +215,9 @@ check_case('legacy_record_without_anamnesis_still_renders', strpos($homeModelSou
 	&& strpos($homeViewSource, "if (\$anamnesis !== '')") !== false);
 check_case('anamnesis_history_is_escaped', strpos($homeViewSource, 'nl2br(html_escape($anamnesis)') !== false
 	&& strpos($nakesHistorySource, 'nl2br(html_escape($anamnesis)') !== false);
-check_case('legacy_endpoint_not_broken', strpos($nakesController, 'set_status_header(410)') === false);
+check_case('legacy_non_who_diagnosis_endpoint_retired', strpos($nakesController, 'public function getICD_json()') !== false
+	&& strpos($nakesController, 'show_404();') !== false
+	&& strpos($nakesView, "base_url('konsultasi_nakes/getICD_json')") === false);
 $suggestionController = file_get_contents($root . '/application/controllers/Clinical_suggestions.php');
 check_case('endpoint_uses_database_identity_and_assignment_helper', strpos($suggestionController, 'doclinc_dokter_identity_context') !== false
 	&& strpos($suggestionController, 'doclinc_nakes_request_access_context') !== false);
@@ -161,6 +225,9 @@ check_case('safe_json_encoding', strpos($suggestionController, 'JSON_HEX_TAG') !
 	&& strpos($suggestionController, 'JSON_HEX_AMP') !== false
 	&& strpos($suggestionController, 'JSON_HEX_APOS') !== false
 	&& strpos($suggestionController, 'JSON_HEX_QUOT') !== false);
+check_case('endpoint_uses_clinical_presenter_without_internal_source_output', strpos($suggestionController, 'Clinical_suggestion_presenter::present') !== false
+	&& strpos($suggestionController, "'source' =>") === false
+	&& strpos($suggestionController, "'version' =>") === false);
 $migrationScript = $root . '/application/migrations/20260726000100_clinical_suggestions_uat_foundation.php';
 list($migrationPlanCode, $migrationPlanOut) = run_php_cli(array($migrationScript));
 check_case('migration_direct_command_valid', $migrationPlanCode === 0
@@ -197,8 +264,29 @@ foreach (array_slice($argv, 1) as $argument) {
 if ($packageRoot !== null) {
 	$package = (new ClinicalSuggestionPackage())->load($packageRoot);
 	$byType = array();
-	foreach ($package['terms'] as $term) $byType[$term['type']] = ($byType[$term['type']] ?? 0) + 1;
+	$whoDiagnosisContractValid = true;
+	$fornasMedicineContractValid = true;
+	foreach ($package['terms'] as $term) {
+		$byType[$term['type']] = ($byType[$term['type']] ?? 0) + 1;
+		if ($term['type'] === 'diagnosis' && (
+			$term['source_dataset'] !== Clinical_suggestion_presenter::WHO_ICD10_DATASET
+			|| preg_match('/\A[A-Z][0-9]{2}(?:\.[0-9A-Z]{1,4})?[†*]?\z/u', strtoupper($term['code'])) !== 1
+			|| preg_match('/(?:doclinc|doklinc|doclink)/iu', $term['label']) === 1
+		)) {
+			$whoDiagnosisContractValid = false;
+		}
+		if ($term['type'] === 'medicine' && (
+			$term['source_dataset'] !== Clinical_suggestion_presenter::FORNAS_DATASET
+			|| $term['source_name'] !== Clinical_suggestion_presenter::FORNAS_SOURCE
+			|| strpos($term['code'], 'EFORNAS_') !== 0
+			|| preg_match('/(?:doclinc|doklinc|doclink)/iu', $term['label']) === 1
+		)) {
+			$fornasMedicineContractValid = false;
+		}
+	}
 	check_case('official_package_inspection_and_allowlist', $package['datasets'] === array('01_master_keluhan.json', '02_master_gejala.json', '20b_master_diagnosis_icd10_who_2019.json', '20c_master_diagnosis_alias_indonesia_starter.json', '21_master_obat_fornas.json'));
+	check_case('all_diagnoses_match_who_icd10_2019_presentation_contract', $whoDiagnosisContractValid);
+	check_case('all_medicines_match_efornas_name_reference_contract', $fornasMedicineContractValid);
 	check_case('complaint_source_count', ($byType['complaint'] ?? 0) === 35);
 	check_case('symptom_source_count', ($byType['symptom'] ?? 0) === 94);
 	check_case('diagnosis_selectable_source_count', ($byType['diagnosis'] ?? 0) === 10658);

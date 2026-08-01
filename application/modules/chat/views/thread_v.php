@@ -28,7 +28,9 @@ $queue_display = 'No. Antrian: ' . $queue_code;
 if ($current_role !== 'dokter') {
 	$queue_display = doclinc_request_puskesmas_label($request) . ' · ' . doclinc_request_queue_number_label($request);
 }
-$back_url = ($current_role === 'dokter') ? base_url('home_nakes') : base_url('home#riwayat');
+$back_url = isset($back_url) && is_string($back_url) && $back_url !== ''
+	? $back_url
+	: base_url($is_nakes_role ? 'home_nakes#riwayat_konsul' : 'home#riwayat');
 $status_label = 'Chat belum tersedia';
 if ($request_status === 'Accepted') {
 	$status_label = 'Chat aktif';
@@ -56,6 +58,7 @@ if ($current_role === 'dokter') {
 
 <head>
 	<meta charset="UTF-8">
+	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Chat Konsultasi</title>
 	<style>
