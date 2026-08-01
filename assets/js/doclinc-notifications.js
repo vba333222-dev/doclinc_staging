@@ -40,16 +40,20 @@
 		this.document = options.document || null;
 		this.lifecycleTarget = options.lifecycleTarget || null;
 		this.AudioContext = options.AudioContext || null;
+		this.createAudio = typeof options.createAudio === 'function' ? options.createAudio : null;
+		this.onNewNotifications = typeof options.onNewNotifications === 'function' ? options.onNewNotifications : null;
 		this.ui = options.ui || null;
 		this.client = null;
 		this.subscriptionHandle = null;
 		this.audioContext = null;
+		this.audioElement = null;
 		this.soundPrimed = false;
 		this.initialSnapshotReceived = false;
 		this.soundEnabled = this._readPreference();
 		this.seenIds = this._readSeenIds();
 		this.soundButton = null;
 		this.pagehideHandler = null;
+		this.audioUnlockHandler = null;
 	}
 
 	NotificationRuntime.prototype.start = function () {
@@ -58,6 +62,7 @@
 		}
 		if (this.client) { return true; }
 		this._installSoundControl();
+		this._bindAudioUnlock();
 		this.client = new this.RealtimeClient({
 			enabled: true,
 			websocketUrl: this.config.websocket_url,
@@ -92,11 +97,16 @@
 				ids.push(id);
 			}
 		}
-		var hasNew = false;
+		var newNotifications = [];
 		if (this.initialSnapshotReceived) {
 			for (var j = 0; j < ids.length; j += 1) {
 				if (this.seenIds.indexOf(ids[j]) === -1) {
-					hasNew = true;
+					for (var itemIndex = 0; itemIndex < data.notifications.length; itemIndex += 1) {
+						if (positiveId(data.notifications[itemIndex] && data.notifications[itemIndex].notification_id) === ids[j]) {
+							newNotifications.push(data.notifications[itemIndex]);
+							break;
+						}
+					}
 				}
 			}
 		}
@@ -105,15 +115,19 @@
 			this._remember(ids[k]);
 		}
 		this.ui.applySnapshot(data, context || {});
-		if (hasNew) {
+		if (newNotifications.length > 0) {
 			this._playChime();
+			if (this.onNewNotifications) {
+				this.onNewNotifications(newNotifications.slice());
+			}
 		}
 		return true;
 	};
 
 	NotificationRuntime.prototype.toggleSound = async function () {
-		if (this.soundEnabled && this.soundPrimed) {
+		if (this.soundEnabled) {
 			this.soundEnabled = false;
+			this._stopAudioElement();
 			this._writePreference();
 			this._updateSoundControl();
 			return false;
@@ -130,6 +144,7 @@
 
 	NotificationRuntime.prototype.teardown = function () {
 		this._unbindPagehide();
+		this._unbindAudioUnlock();
 		if (this.subscriptionHandle && typeof this.subscriptionHandle.release === 'function') {
 			this.subscriptionHandle.release();
 		}
@@ -143,7 +158,34 @@
 			this.audioContext.close();
 		}
 		this.audioContext = null;
+		this._stopAudioElement();
+		this.audioElement = null;
 		this.soundPrimed = false;
+	};
+
+	NotificationRuntime.prototype._bindAudioUnlock = function () {
+		if (this.audioUnlockHandler || !this.lifecycleTarget || typeof this.lifecycleTarget.addEventListener !== 'function') { return; }
+		var self = this;
+		this.audioUnlockHandler = function () {
+			if (self.soundEnabled && !self.soundPrimed) {
+				self._primeAudio().then(function (primed) {
+					self.soundPrimed = primed;
+					self._updateSoundControl();
+				});
+			}
+		};
+		['pointerdown', 'touchstart', 'keydown'].forEach(function (eventName) {
+			self.lifecycleTarget.addEventListener(eventName, self.audioUnlockHandler, true);
+		});
+	};
+
+	NotificationRuntime.prototype._unbindAudioUnlock = function () {
+		if (!this.audioUnlockHandler || !this.lifecycleTarget || typeof this.lifecycleTarget.removeEventListener !== 'function') { return; }
+		var self = this;
+		['pointerdown', 'touchstart', 'keydown'].forEach(function (eventName) {
+			self.lifecycleTarget.removeEventListener(eventName, self.audioUnlockHandler, true);
+		});
+		this.audioUnlockHandler = null;
 	};
 
 	NotificationRuntime.prototype._bindPagehide = function () {
@@ -163,12 +205,12 @@
 
 	NotificationRuntime.prototype._readPreference = function () {
 		if (!this.storage) {
-			return false;
+			return true;
 		}
 		try {
-			return this.storage.getItem(PREFERENCE_KEY) === '1';
+			return this.storage.getItem(PREFERENCE_KEY) !== '0';
 		} catch (error) {
-			return false;
+			return true;
 		}
 	};
 
@@ -214,22 +256,86 @@
 	};
 
 	NotificationRuntime.prototype._primeAudio = async function () {
-		if (typeof this.AudioContext !== 'function') {
-			return false;
-		}
+		var mediaPrimed = false;
 		try {
-			this.audioContext = this.audioContext || new this.AudioContext();
-			if (this.audioContext.state === 'suspended' && typeof this.audioContext.resume === 'function') {
-				await this.audioContext.resume();
+			var media = this._ensureAudioElement();
+			if (media && typeof media.play === 'function') {
+				media.muted = true;
+				var playResult = media.play();
+				if (playResult && typeof playResult.then === 'function') {
+					await playResult;
+				}
+				this._stopAudioElement();
+				media.muted = false;
+				mediaPrimed = true;
 			}
-			return this.audioContext.state === 'running';
 		} catch (error) {
-			return false;
+			this._stopAudioElement();
 		}
+		var contextPrimed = false;
+		if (typeof this.AudioContext === 'function') {
+			try {
+				this.audioContext = this.audioContext || new this.AudioContext();
+				if (this.audioContext.state === 'suspended' && typeof this.audioContext.resume === 'function') {
+					await this.audioContext.resume();
+				}
+				contextPrimed = this.audioContext.state === 'running';
+			} catch (error) {
+				contextPrimed = false;
+			}
+		}
+		return mediaPrimed || contextPrimed;
 	};
 
 	NotificationRuntime.prototype._playChime = function () {
-		if (!this.soundEnabled || !this.soundPrimed || !this.audioContext || this.audioContext.state !== 'running') {
+		if (!this.soundEnabled || !this.soundPrimed) {
+			return false;
+		}
+		var media = this._ensureAudioElement();
+		if (media && typeof media.play === 'function') {
+			try {
+				media.muted = false;
+				media.volume = 0.78;
+				media.currentTime = 0;
+				var self = this;
+				var playResult = media.play();
+				if (playResult && typeof playResult.catch === 'function') {
+					playResult.catch(function () { self._playFallbackChime(); });
+				}
+				return true;
+			} catch (error) {
+				return this._playFallbackChime();
+			}
+		}
+		return this._playFallbackChime();
+	};
+
+	NotificationRuntime.prototype._ensureAudioElement = function () {
+		if (this.audioElement || !this.createAudio || typeof this.config.sound_url !== 'string' || this.config.sound_url.trim() === '') {
+			return this.audioElement;
+		}
+		try {
+			this.audioElement = this.createAudio(this.config.sound_url);
+			if (this.audioElement) {
+				this.audioElement.preload = 'auto';
+				this.audioElement.volume = 0.78;
+			}
+		} catch (error) {
+			this.audioElement = null;
+		}
+		return this.audioElement;
+	};
+
+	NotificationRuntime.prototype._stopAudioElement = function () {
+		if (!this.audioElement) { return; }
+		try {
+			if (typeof this.audioElement.pause === 'function') { this.audioElement.pause(); }
+			this.audioElement.currentTime = 0;
+		} catch (error) {}
+	};
+
+	NotificationRuntime.prototype._playFallbackChime = function () {
+		if (!this.audioContext || this.audioContext.state !== 'running') {
 			return false;
 		}
 		try {
@@ -280,7 +386,7 @@
 		if (!this.soundButton) {
 			return;
 		}
-		var active = this.soundEnabled && this.soundPrimed;
+		var active = this.soundEnabled;
 		this.soundButton.textContent = active ? 'Suara aktif' : 'Aktifkan suara';
 		this.soundButton.setAttribute('aria-label', active ? 'Nonaktifkan suara notifikasi' : 'Aktifkan suara notifikasi');
 		this.soundButton.setAttribute('aria-pressed', active ? 'true' : 'false');
@@ -305,7 +411,13 @@
 			storage: root.localStorage,
 			document: document,
 			AudioContext: root.AudioContext || root.webkitAudioContext,
+			createAudio: typeof root.Audio === 'function' ? function (url) { return new root.Audio(url); } : null,
 			lifecycleTarget: root,
+			onNewNotifications: function (items) {
+				if (typeof root.dispatchEvent === 'function' && typeof root.CustomEvent === 'function') {
+					root.dispatchEvent(new root.CustomEvent('doclinc:notifications:new', { detail: { notifications: items } }));
+				}
+			},
 			ui: root.DoclincNotificationUi
 		});
 		runtime.start();

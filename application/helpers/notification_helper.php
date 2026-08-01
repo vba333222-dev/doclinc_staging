@@ -203,6 +203,7 @@ if (!function_exists('doclinc_notification_realtime_bootstrap')) {
 			'connection_token_url' => $base_path . '/realtime/connection-token',
 			'subscription_token_url' => $base_path . '/realtime/subscription-token',
 			'snapshot_url' => $base_path . '/notifications/snapshot',
+			'sound_url' => $base_path . '/assets/audio/doclinc-notification.wav',
 			'channel' => 'user:' . $user_id,
 			'poll_interval_ms' => 30000,
 		);

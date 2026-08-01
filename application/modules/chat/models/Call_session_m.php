@@ -156,6 +156,7 @@ class Call_session_m extends CI_Model
 		$this->expire_stale_ringing_calls($this->stale_cleanup_limit());
 		$existing = $this->get_active_call_for_request($request_id);
 		if ($existing) {
+			$existing->was_created = false;
 			return $existing;
 		}
 
@@ -174,7 +175,11 @@ class Call_session_m extends CI_Model
 
 		$this->db->insert(self::TABLE, $data);
 		$call_id = (int) $this->db->insert_id();
-		return $call_id > 0 ? $this->get_by_id($call_id) : null;
+		$created = $call_id > 0 ? $this->get_by_id($call_id) : null;
+		if ($created) {
+			$created->was_created = true;
+		}
+		return $created;
 	}
 
 	public function expire_stale_ringing_calls($limit = 20)

@@ -31,7 +31,8 @@
 			return null;
 		}
 		ringtone = window.DoclincLivekitRingtone.createController({
-			windowObject: window
+			windowObject: window,
+			audioUrl: config.ringtoneUrl || ''
 		});
 		return ringtone;
 	}
@@ -213,9 +214,6 @@
 		if (!pollUrl) {
 			return;
 		}
-		if (document.visibilityState && document.visibilityState !== 'visible') {
-			return;
-		}
 		fetch(pollUrl, {
 			credentials: 'same-origin',
 			headers: {
@@ -267,21 +265,41 @@
 		timer = null;
 	}
 
-	document.addEventListener('visibilitychange', function() {
+	function onVisibilityChange() {
 		if (document.visibilityState === 'visible') {
 			poll();
-		} else {
-			stopRingtone();
 		}
-	});
-	window.addEventListener('beforeunload', function() {
+	}
+
+	function onRealtimeNotification(event) {
+		const notifications = event && event.detail && Array.isArray(event.detail.notifications)
+			? event.detail.notifications
+			: [];
+		if (notifications.some(function(notification) {
+			return notification && notification.event_type === 'incoming_call';
+		})) {
+			poll();
+		}
+	}
+
+	function teardown() {
 		stop();
 		releaseRingtone();
 		if (retryTimer) {
 			window.clearTimeout(retryTimer);
 		}
-	});
+		retryTimer = null;
+		document.removeEventListener('visibilitychange', onVisibilityChange);
+		window.removeEventListener('doclinc:notifications:new', onRealtimeNotification);
+		window.removeEventListener('beforeunload', teardown);
+		window.removeEventListener('pagehide', teardown);
+	}
 
-	// TODO: true background incoming call needs native app push notification/FCM integration.
+	document.addEventListener('visibilitychange', onVisibilityChange);
+	window.addEventListener('doclinc:notifications:new', onRealtimeNotification);
+	window.addEventListener('beforeunload', teardown);
+	window.addEventListener('pagehide', teardown);
+
+	// Hidden tabs keep best-effort polling and ringtone. Fully closed apps require OS push/native notification channels.
 	start();
 })(window, document);

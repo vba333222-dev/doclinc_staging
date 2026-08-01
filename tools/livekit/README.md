@@ -17,12 +17,19 @@ Browser output routing remains capability-dependent. Android WebView may require
 native `AudioManager` bridge to force speakerphone routing; the web runtime reports that
 limitation instead of claiming a successful output switch.
 
-`assets/js/doclinc-livekit-ringtone.js` provides the foreground incoming-call ringtone
-for both the global Warga watcher and the chat call overlay. It synthesizes a short
-three-note pattern locally, deduplicates repeated polling for the same call, and stops on
-answer, reject, expiry, page hide, or teardown. The runtime primes Web Audio on the next
-user gesture when autoplay policy blocks a poll-triggered sound. Closed-app and true
-background ringing still require native push/call integration.
+`assets/js/doclinc-livekit-ringtone.js` provides the incoming-call ringtone for both the
+global Warga watcher and the chat call overlay. It prefers the local, looping
+`assets/audio/doclinc-ringtone.wav` asset and keeps the synthesized three-note Web Audio
+pattern only as a compatibility fallback. It deduplicates repeated polling for the same
+call and stops on answer, reject, expiry, page navigation, or teardown. The first page
+gesture silently primes playback. Hidden tabs continue best-effort polling and no longer
+silence an active ringtone merely because `visibilityState` changed.
+
+Every newly created call session also creates one durable `incoming_call` notification.
+Its normal `notification.created` invalidation makes the Warga client poll the authorized
+call endpoint immediately; reused call sessions do not create another notification.
+Fully closed or OS-suspended browsers still require native/OS push and a call notification
+channel for guaranteed ringing.
 
 Run the deterministic browser-contract test with:
 

@@ -21,6 +21,7 @@ $call_incoming_url = base_url('home/livekit_incoming_call');
 $call_answer_url = base_url('home/answer_livekit_call');
 $call_reject_url = base_url('home/reject_livekit_call');
 $call_warga_status_url = base_url('home/livekit_call_status');
+$call_ringtone_url = base_url('assets/audio/doclinc-ringtone.wav');
 $auto_answer_call_id = isset($_GET['answer_call']) ? (int) $_GET['answer_call'] : 0;
 $queue_code = doclinc_request_queue_code($request);
 $queue_display = 'No. Antrian: ' . $queue_code;
@@ -1071,7 +1072,8 @@ if ($current_role === 'dokter') {
 						return null;
 					}
 					state.incomingRingtone = window.DoclincLivekitRingtone.createController({
-						windowObject: window
+						windowObject: window,
+						audioUrl: <?= json_encode($call_ringtone_url); ?>
 					});
 					return state.incomingRingtone;
 				}

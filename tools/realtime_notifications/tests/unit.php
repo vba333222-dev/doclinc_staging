@@ -246,6 +246,19 @@ foreach (array('home/views/home_v.php', 'home_nakes/views/home_nakes_v.php') as 
 $browser_source = file_get_contents(dirname(__DIR__, 3) . '/assets/js/doclinc-notifications.js');
 notification_expect(strpos($browser_source, "setAttribute('aria-label'") !== false
 	&& strpos($browser_source, "setAttribute('aria-pressed'") !== false, 'sound_control_accessible_state');
+notification_expect(strpos($helper, "'sound_url' => \$base_path . '/assets/audio/doclinc-notification.wav'") !== false
+	&& strpos($browser_source, 'this.createAudio(this.config.sound_url)') !== false,
+	'natural_local_notification_sound_contract');
+notification_expect(strpos($browser_source, "doclinc:notifications:new") !== false
+	&& strpos($browser_source, 'onNewNotifications(newNotifications.slice())') !== false,
+	'new_notification_event_bridge_contract');
+$call_model = file_get_contents(dirname(__DIR__, 3) . '/application/modules/chat/models/Call_session_m.php');
+$nakes_controller = file_get_contents(dirname(__DIR__, 3) . '/application/modules/home_nakes/controllers/Home_nakes.php');
+notification_expect(strpos($call_model, '$existing->was_created = false;') !== false
+	&& strpos($call_model, '$created->was_created = true;') !== false
+	&& strpos($nakes_controller, 'if (!empty($call->was_created))') !== false
+	&& strpos($nakes_controller, "'incoming_call'") !== false,
+	'incoming_call_notification_created_once_per_new_session_contract');
 
 echo 'REALTIME_NOTIFICATION_UNIT_PASSED=' . $passed . "\n";
 echo 'REALTIME_NOTIFICATION_UNIT_FAILED=' . $failed . "\n";

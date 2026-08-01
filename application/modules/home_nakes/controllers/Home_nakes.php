@@ -76,6 +76,20 @@ class Home_nakes extends MX_Controller
 			$this->output->set_status_header((int) $result['http_status'])->set_output(json_encode($result['body']));
 			return;
 		}
+		if (!empty($call->was_created)) {
+			$notified = doclinc_notify_user(
+				(int) $request->user_id,
+				'incoming_call',
+				'request',
+				$request_id,
+				'Panggilan Doclinc masuk',
+				$call_type === 'audio' ? 'Ada panggilan suara dari Nakes.' : 'Ada panggilan video dari Nakes.',
+				$user_id
+			);
+			if (!$notified) {
+				log_message('error', 'Incoming LiveKit call notification could not be delivered for call_id=' . (int) $call->call_id);
+			}
+		}
 
 		$body = $result['body'];
 		$body['call_id'] = (int) $call->call_id;
