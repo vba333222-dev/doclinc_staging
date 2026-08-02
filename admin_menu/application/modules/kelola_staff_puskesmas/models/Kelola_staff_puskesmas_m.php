@@ -50,9 +50,10 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			$this->db->select($this->db->field_exists('status', 'users') ? 'staff_user.status AS akun_status' : 'NULL AS akun_status', false);
 			$this->db->select($this->db->field_exists('role', 'users') ? 'staff_user.role AS akun_role' : 'NULL AS akun_role', false);
 			$this->db->select($this->db->field_exists('remark', 'users') ? 'staff_user.remark AS akun_remark' : 'NULL AS akun_remark', false);
+			$this->db->select($this->db->field_exists('must_change_password', 'users') ? 'staff_user.must_change_password AS akun_must_change_password' : 'NULL AS akun_must_change_password', false);
 			$this->db->join('users staff_user', 'staff_user.userId = puskesmas_staff.user_id', 'left');
 		} else {
-			$this->db->select('NULL AS akun_nama, NULL AS akun_username, NULL AS akun_email, NULL AS akun_status, NULL AS akun_role, NULL AS akun_remark', FALSE);
+			$this->db->select('NULL AS akun_nama, NULL AS akun_username, NULL AS akun_email, NULL AS akun_status, NULL AS akun_role, NULL AS akun_remark, NULL AS akun_must_change_password', FALSE);
 		}
 
 		$kode_pkm = isset($filters['kode_pkm']) ? trim((string) $filters['kode_pkm']) : '';
@@ -251,6 +252,8 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		$account_state = (string) ($staff->personal_account_state ?? 'invalid');
 		if ($account_state !== 'linked') {
 			$issues[] = $account_state === 'unlinked' ? 'staff_account_unlinked' : 'staff_account_invalid';
+		} elseif ((int) ($staff->akun_must_change_password ?? 0) === 1) {
+			$issues[] = 'staff_password_change_required';
 		}
 		if ((string) ($staff->puskesmas_status ?? '') !== 'aktif') {
 			$issues[] = 'staff_facility';
@@ -316,7 +319,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			return false;
 		}
 
-		foreach (array('userId', 'nama', 'email', 'username', 'password', 'role', 'status', 'remark') as $field) {
+		foreach (array('userId', 'nama', 'email', 'username', 'password', 'role', 'status', 'remark', 'must_change_password', 'password_changed_at') as $field) {
 			if (!$this->db->field_exists($field, 'users')) {
 				return false;
 			}
@@ -388,7 +391,8 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			|| $email === ''
 			|| strlen($email) > 100
 			|| !filter_var($email, FILTER_VALIDATE_EMAIL)
-			|| strlen($password) < 8
+			|| strlen($password) < 10
+			|| strlen($password) > 72
 			|| !$this->personal_account_creation_ready()) {
 			return array('status' => 'error', 'message' => 'Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
 		}
@@ -505,6 +509,8 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 				'role' => 'dokter',
 				'status' => 'aktif',
 				'remark' => $kode_pkm,
+				'must_change_password' => 1,
+				'password_changed_at' => null,
 			);
 			if ($this->db->field_exists('created_at', 'users')) {
 				$user_row['created_at'] = $now;
@@ -551,7 +557,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			$transaction_started = false;
 			$result = array(
 				'status' => 'success',
-				'message' => 'Akun personal dibuat dan dihubungkan.',
+				'message' => 'Akun personal dibuat dan dihubungkan. Nakes wajib mengganti password sementara saat login pertama.',
 			);
 		} catch (RuntimeException $e) {
 			if ($e->getMessage() !== 'personal_account_creation_aborted') {

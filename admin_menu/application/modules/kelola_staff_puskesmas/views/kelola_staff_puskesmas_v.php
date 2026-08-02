@@ -12,6 +12,7 @@ $staff_readiness_labels = array(
 	'staff_nip' => 'NIP 18 angka belum lengkap',
 	'staff_account_unlinked' => 'Akun personal belum terhubung',
 	'staff_account_invalid' => 'Relasi akun personal perlu diperiksa',
+	'staff_password_change_required' => 'Nakes belum mengganti password sementara',
 	'staff_facility' => 'Puskesmas staf tidak aktif atau tidak valid',
 );
 $form_mode = isset($form_mode) ? (string) $form_mode : '';
@@ -227,6 +228,7 @@ $form_values = array(
 									$linked_account_status = strtolower(trim((string) ($row->akun_status ?? '')));
 									$linked_account_status_label = $account_status_labels[$linked_account_status] ?? 'Status belum tersedia';
 									$linked_account_is_active = $linked_account_status === 'aktif';
+									$linked_account_must_change_password = (int) ($row->akun_must_change_password ?? 0) === 1;
 									$puskesmas_status = $row->puskesmas_status ?? null;
 									$puskesmas_is_valid = trim($kode_pkm) !== ''
 										&& strtoupper(trim($kode_pkm)) !== 'DEFAULT'
@@ -307,6 +309,9 @@ $form_values = array(
 												</span>
 												<?php if (!$linked_account_is_active): ?>
 													<small class="text-danger mt-1">Akun belum dapat digunakan untuk login.</small>
+												<?php endif; ?>
+												<?php if ($linked_account_is_active && $linked_account_must_change_password): ?>
+													<small class="text-warning mt-1">Menunggu Nakes mengganti password sementara. Fitur lain tetap terkunci.</small>
 												<?php endif; ?>
 												<?php if ($is_command_center_link): ?>
 													<div class="doclinc-account-card__note is-warning mt-2"><i class="fas fa-exclamation-triangle mr-1"></i> Akun ini terlihat sebagai akun koordinator Puskesmas. Periksa ulang sebelum digunakan sebagai akun personal.</div>
@@ -432,7 +437,7 @@ $form_values = array(
 																	<div class="small text-muted"><?= html_escape($profession_label); ?></div>
 																	<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? '-'); ?> (<?= html_escape($row->kode_pkm ?? '-'); ?>)</div>
 																</div>
-																		<div class="alert alert-info">Password tidak ditampilkan kembali.</div>
+														<div class="alert alert-info">Password sementara tidak ditampilkan kembali. Nakes wajib membuat password baru saat login pertama dan tidak dapat memakai fitur lain sebelum selesai.</div>
 																		<div class="row">
 																			<div class="col-md-6"><div class="form-group">
 																				<label class="text-info">Username</label>
@@ -446,11 +451,11 @@ $form_values = array(
 																<div class="row">
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Password sementara</label>
-																		<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" autocomplete="new-password" required>
+																<input type="password" class="form-control rounded-pill border-info" name="password" minlength="10" maxlength="72" autocomplete="new-password" required>
 																	</div></div>
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Konfirmasi password</label>
-																		<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" autocomplete="new-password" required>
+																<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="10" maxlength="72" autocomplete="new-password" required>
 																	</div></div>
 																</div>
 															</div>
