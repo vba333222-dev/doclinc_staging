@@ -129,20 +129,34 @@ function readiness_text_valid($value, $minimum)
 
 function readiness_operational_state($db, ReadinessIdentityResolver $resolver)
 {
+	$managed_gap_counts = array(
+		'facility_name' => 0, 'facility_address' => 0, 'facility_latitude' => 0,
+		'facility_longitude' => 0, 'facility_command_center' => 0,
+		'staff_name' => 0, 'staff_phone' => 0, 'staff_profession' => 0,
+		'staff_registration_number' => 0, 'staff_nip' => 0, 'staff_identity' => 0,
+	);
 	$facilities = $db->select('kode_pkm, nama_puskesmas, alamat, latitude, longitude')->where('status', 'aktif')->get('m_puskesmas')->result();
 	$facility_complete = 0;
 	$facility_command_center_ready = 0;
 	foreach ($facilities as $facility) {
 		$latitude = trim((string) $facility->latitude);
 		$longitude = trim((string) $facility->longitude);
-		if (readiness_text_valid($facility->nama_puskesmas, 3)
-			&& readiness_text_valid($facility->alamat, 5)
-			&& $latitude !== '' && is_numeric($latitude) && (float) $latitude >= -90 && (float) $latitude <= 90
-			&& $longitude !== '' && is_numeric($longitude) && (float) $longitude >= -180 && (float) $longitude <= 180) {
+		$name_ready = readiness_text_valid($facility->nama_puskesmas, 3);
+		$address_ready = readiness_text_valid($facility->alamat, 5);
+		$latitude_ready = $latitude !== '' && is_numeric($latitude) && (float) $latitude >= -90 && (float) $latitude <= 90;
+		$longitude_ready = $longitude !== '' && is_numeric($longitude) && (float) $longitude >= -180 && (float) $longitude <= 180;
+		if (!$name_ready) { $managed_gap_counts['facility_name']++; }
+		if (!$address_ready) { $managed_gap_counts['facility_address']++; }
+		if (!$latitude_ready) { $managed_gap_counts['facility_latitude']++; }
+		if (!$longitude_ready) { $managed_gap_counts['facility_longitude']++; }
+		if ($name_ready && $address_ready && $latitude_ready && $longitude_ready) {
 			$facility_complete++;
 		}
-		if ($resolver->commandCenterReady($facility->kode_pkm)) {
+		$command_center_ready = $resolver->commandCenterReady($facility->kode_pkm);
+		if ($command_center_ready) {
 			$facility_command_center_ready++;
+		} else {
+			$managed_gap_counts['facility_command_center']++;
 		}
 	}
 
@@ -152,15 +166,22 @@ function readiness_operational_state($db, ReadinessIdentityResolver $resolver)
 	foreach ($staff_rows as $staff) {
 		$phone = preg_replace('/[^0-9+]/', '', trim((string) $staff->no_hp));
 		$identity = $resolver->resolve((int) $staff->user_id);
-		if (readiness_text_valid($staff->nama, 2)
-			&& preg_match('/^\+?[0-9]{8,20}$/', $phone) === 1
-			&& readiness_text_valid($staff->profesi, 2)
-			&& readiness_text_valid($staff->nomor_sip, 3)
-			&& !empty($identity_policy->nip($staff->nip)['valid'])
-			&& !empty($identity['valid'])
+		$name_ready = readiness_text_valid($staff->nama, 2);
+		$phone_ready = preg_match('/^\+?[0-9]{8,20}$/', $phone) === 1;
+		$profession_ready = readiness_text_valid($staff->profesi, 2);
+		$registration_ready = readiness_text_valid($staff->nomor_sip, 3);
+		$nip_ready = !empty($identity_policy->nip($staff->nip)['valid']);
+		$identity_ready = !empty($identity['valid'])
 			&& (string) $identity['account_type'] === 'personal'
 			&& (int) $identity['staff_id'] === (int) $staff->staff_id
-			&& (string) $identity['puskesmas_code'] === trim((string) $staff->kode_pkm)) {
+			&& (string) $identity['puskesmas_code'] === trim((string) $staff->kode_pkm);
+		if (!$name_ready) { $managed_gap_counts['staff_name']++; }
+		if (!$phone_ready) { $managed_gap_counts['staff_phone']++; }
+		if (!$profession_ready) { $managed_gap_counts['staff_profession']++; }
+		if (!$registration_ready) { $managed_gap_counts['staff_registration_number']++; }
+		if (!$nip_ready) { $managed_gap_counts['staff_nip']++; }
+		if (!$identity_ready) { $managed_gap_counts['staff_identity']++; }
+		if ($name_ready && $phone_ready && $profession_ready && $registration_ready && $nip_ready && $identity_ready) {
 			$staff_ready++;
 		}
 	}
@@ -170,6 +191,7 @@ function readiness_operational_state($db, ReadinessIdentityResolver $resolver)
 		'facility_command_center_ready' => $facility_command_center_ready,
 		'staff_total' => count($staff_rows),
 		'staff_ready' => $staff_ready,
+		'managed_gap_counts' => $managed_gap_counts,
 	);
 }
 
@@ -206,7 +228,7 @@ try {
 	$operational_state = array();
 	if (empty($schema_gaps)) {
 		$stage = 'actor_projection';
-		$actors = $db->select('userId')->where_in('role', array('warga', 'dokter'))->where('status', 'aktif')
+		$actors = $db->select('userId, must_change_password')->where_in('role', array('warga', 'dokter'))->where('status', 'aktif')
 			->order_by('userId', 'ASC')->limit(10001)->get('users')->result();
 		if (count($actors) > 10000) { throw new RuntimeException('actor_result_too_large'); }
 		$resolver = new ReadinessIdentityResolver($db);
@@ -222,7 +244,12 @@ try {
 			},
 		));
 		foreach ($actors as $actor) {
-			$states[] = $service->evaluate((int) $actor->userId, true);
+			$state = $service->evaluate((int) $actor->userId, true);
+			$state['audit_denial_reason'] = (int) $actor->must_change_password === 1
+				? 'password_change_required'
+				: (((string) ($state['actor_type'] ?? '') === 'denied'
+					|| (string) ($state['safe_error_code'] ?? '') === 'actor_denied') ? 'identity_invalid' : '');
+			$states[] = $state;
 		}
 	}
 
