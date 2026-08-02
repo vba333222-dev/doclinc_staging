@@ -49,6 +49,7 @@ Masalah:
 - Warga dapat memperbaiki nama, email, nomor HP, tanggal lahir, gender, dan alamat melalui endpoint POST tervalidasi. Form command-center hanya meminta field akun bersama, sedangkan field personal tetap khusus Nakes personal.
 - Aktivasi gate tetap menunggu audit kelengkapan agregat tanpa PII dan authenticated UAT; schema presence saja tidak membuktikan seluruh row operasional sudah lengkap.
 - Audit agregat staging read-only pada 2 Agustus 2026 menemukan 0/18 Warga dan 0/33 Nakes beridentitas valid memenuhi seluruh prasyarat. Karena itu enforcement tetap OFF. Dashboard kini tetap menampilkan kekurangan secara non-blocking agar pemutakhiran data dapat dimulai sebelum aktivasi gate.
+- Gate pre-activation resmi tersedia di `tools/production_readiness`: target database dikunci ke staging, transaksi dipaksa read-only, setiap actor aktif dievaluasi melalui service production, file foto divalidasi dari storage aktual, dan output dibatasi ke hitungan agregat/kode field aman. Exit `3` berarti eksekusi aman tetapi rollout masih diblokir data; gate tidak mengaktifkan flag atau menjalankan migration.
 
 Acceptance criteria:
 
