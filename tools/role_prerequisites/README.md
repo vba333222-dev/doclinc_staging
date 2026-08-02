@@ -12,11 +12,13 @@ Saat aktif, gate berlaku pada:
 - perubahan status kunjungan;
 - penyelesaian konsultasi.
 
-Kontrak ini telah dicocokkan dengan schema staging Alibaba pada 2 Agustus 2026. Profil Warga memakai `users.nama`, `email`, `no_hp`, `alamat`, `tgl`, `gender`, dan `foto`. Nakes personal juga wajib memiliki link aktif `puskesmas_staff` dengan profesi dan nomor SIP. Baik Nakes personal maupun command-center mensyaratkan `m_puskesmas` aktif dengan nama, alamat, latitude, dan longitude yang valid.
+Kontrak ini telah dicocokkan dengan schema staging Alibaba pada 2 Agustus 2026. Profil Warga memakai `users.nama`, `email`, `no_hp`, `alamat`, `tgl`, `gender`, `foto`, `nik`, `nomor_kk`, dan `nomor_bpjs_kis`. Nakes personal juga wajib memiliki link aktif `puskesmas_staff` dengan profesi, nomor SIP, dan NIP. Baik Nakes personal maupun command-center mensyaratkan `m_puskesmas` aktif dengan nama, alamat, latitude, dan longitude yang valid.
 
 Respons membedakan `self_service_fields` dari `managed_fields`. Data profil pengguna dapat diperbaiki dari halaman profil; link staf dan data fasilitas harus diperbaiki pengelola sehingga API tidak memberikan CTA profil yang menyesatkan.
 
-Pembatalan request, membaca riwayat, membuka chat, dan memperbaiki profil tidak diblokir agar pengguna tidak terjebak.
+Kekurangan data tetap ditampilkan sebagai peringatan non-blocking ketika feature flag OFF. Command-center juga menerima ringkasan kesiapan tenant read-only untuk data fasilitas, SIP staf aktif, dan linkage akun personal. Ringkasan ini tidak mengubah row database dan tidak menggantikan validasi authoritative saat enforcement nantinya diaktifkan.
+
+Saat enforcement aktif, seluruh penggunaan aplikasi diblokir kecuali halaman penyelesaian profil, endpoint penyimpanan profil/foto, pemeriksaan status persyaratan, pembacaan foto terotorisasi, dan logout. Password-change gate tetap berjalan lebih dahulu. Error JSON memiliki kode aman dan request ID tanpa memuat nilai NIK, KK, BPJS/KIS, atau NIP.
 
 Jalankan kontrak source:
 

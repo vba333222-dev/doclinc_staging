@@ -18,6 +18,13 @@ $hook['post_controller_constructor'][] = array(
 	'filepath' => 'hooks',
 	'params' => array(),
 );
+$hook['post_controller_constructor'][] = array(
+	'class' => 'Role_prerequisite_gate',
+	'function' => 'enforce',
+	'filename' => 'Role_prerequisite_gate.php',
+	'filepath' => 'hooks',
+	'params' => array(),
+);
 $hook['post_controller'][] = array(
 	'class' => 'Cookie_samesite_gate',
 	'function' => 'enforce',

@@ -99,6 +99,30 @@ class Master_puskesmas_m extends MX_Controller
 		return $result;
 	}
 
+	public function is_operationally_complete($kode)
+	{
+		if (!$this->db->table_exists('m_puskesmas')) {
+			return false;
+		}
+
+		$row = $this->db
+			->select('kode_pkm, nama_puskesmas, alamat, latitude, longitude')
+			->where('kode_pkm', trim((string) $kode))
+			->limit(1)
+			->get('m_puskesmas')
+			->row();
+		if (!$row || trim((string) $row->nama_puskesmas) === '' || trim((string) $row->alamat) === ''
+			|| !is_numeric($row->latitude) || !is_numeric($row->longitude)) {
+			return false;
+		}
+
+		$latitude = (float) $row->latitude;
+		$longitude = (float) $row->longitude;
+
+		return $latitude >= -90 && $latitude <= 90
+			&& $longitude >= -180 && $longitude <= 180;
+	}
+
 	private function filter_fields($data)
 	{
 		$row = array();

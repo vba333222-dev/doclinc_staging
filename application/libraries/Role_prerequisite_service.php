@@ -37,7 +37,7 @@ class Role_prerequisite_service
 			'cta_label' => 'Lengkapi profil',
 		);
 
-		$required_user_fields = array('userId', 'nama', 'email', 'role', 'status', 'must_change_password', 'no_hp', 'alamat', 'tgl', 'gender', 'foto', 'remark');
+		$required_user_fields = array('userId', 'nama', 'email', 'role', 'status', 'must_change_password', 'no_hp', 'alamat', 'tgl', 'gender', 'foto', 'remark', 'nik', 'nomor_kk', 'nomor_bpjs_kis');
 		$core_user_fields = array('userId', 'nama', 'email', 'role', 'status', 'must_change_password');
 		if ($user_id < 1 || !$this->db->table_exists('users')) {
 			$base['safe_error_code'] = 'profile_schema_unavailable';
@@ -75,12 +75,13 @@ class Role_prerequisite_service
 		$this->require_email($user->email, $missing, $labels);
 
 		if ((string) $user->role === 'warga') {
-			$this->collect_user_schema_gaps(array('no_hp', 'alamat', 'tgl', 'gender', 'foto'), $schema_gaps);
+			$this->collect_user_schema_gaps(array('no_hp', 'alamat', 'tgl', 'gender', 'foto', 'nik', 'nomor_kk', 'nomor_bpjs_kis'), $schema_gaps);
 			$this->require_phone($user->no_hp, $missing, $labels);
 			$this->require_text($user->alamat, 'address', 'Alamat', 5, $missing, $labels);
 			$this->require_birthdate($user->tgl, $missing, $labels);
 			$this->require_gender($user->gender, $missing, $labels);
 			$this->require_photo($user->foto, $missing, $labels);
+			$this->warga_identity_requirements($user, $missing, $labels);
 		} else {
 			$identity = $this->resolve_identity($user_id);
 			if (!is_array($identity) || empty($identity['valid']) || !in_array((string) ($identity['account_type'] ?? ''), array('personal', 'command_center'), true)) {
@@ -108,11 +109,14 @@ class Role_prerequisite_service
 			}
 		}
 
-		$missing = array_values(array_unique($missing));
-		$labels = array_values(array_unique($labels));
+		// add_missing() already de-duplicates by field code. Keep labels in the
+		// same positional order because multiple fields may intentionally share
+		// one user-facing label (for example both facility coordinates).
+		$missing = array_values($missing);
+		$labels = array_values($labels);
 		$complete = empty($missing) && empty($schema_gaps);
 		$allowed = !$enforced || $complete;
-		$self_service_codes = array('name', 'email', 'phone', 'address', 'birthdate', 'gender', 'photo');
+		$self_service_codes = array('name', 'email', 'phone', 'address', 'birthdate', 'gender', 'photo', 'nik', 'family_card_number', 'bpjs_number');
 		$self_service_fields = array_values(array_intersect($missing, $self_service_codes));
 		$managed_fields = array_values(array_diff($missing, $self_service_codes));
 		$remediation_mode = 'none';
@@ -123,9 +127,7 @@ class Role_prerequisite_service
 		} elseif (!empty($managed_fields)) {
 			$remediation_mode = 'managed';
 		}
-		$cta_url = !empty($self_service_fields)
-			? ($actor_type === 'warga' ? 'home#profile' : 'home_nakes#profile')
-			: '';
+		$cta_url = !empty($self_service_fields) ? 'profile/complete' : '';
 		return array(
 			'enforced' => (bool) $enforced,
 			'allowed' => $allowed,
@@ -153,7 +155,7 @@ class Role_prerequisite_service
 			}
 			return;
 		}
-		$fields = array('staff_id', 'kode_pkm', 'nama', 'no_hp', 'profesi', 'nomor_sip', 'user_id', 'status');
+		$fields = array('staff_id', 'kode_pkm', 'nama', 'no_hp', 'profesi', 'nomor_sip', 'nip', 'user_id', 'status');
 		$select = array();
 		foreach ($fields as $field) {
 			if ($this->db->field_exists($field, 'puskesmas_staff')) {
@@ -172,6 +174,38 @@ class Role_prerequisite_service
 		$this->require_phone($staff->no_hp, $missing, $labels, 'staff_phone', 'Kontak staf');
 		$this->require_text($staff->profesi, 'profession', 'Profesi', 2, $missing, $labels);
 		$this->require_text($staff->nomor_sip, 'registration_number', 'Nomor SIP', 3, $missing, $labels);
+		$this->require_nip($staff->nip, $missing, $labels);
+	}
+
+	private function warga_identity_requirements($user, array &$missing, array &$labels)
+	{
+		require_once __DIR__ . '/Role_identity_policy.php';
+		$result = (new Role_identity_policy())->warga(array(
+			'nik' => isset($user->nik) ? $user->nik : '',
+			'nomor_kk' => isset($user->nomor_kk) ? $user->nomor_kk : '',
+			'nomor_bpjs_kis' => isset($user->nomor_bpjs_kis) ? $user->nomor_bpjs_kis : '',
+		));
+		$labels_by_field = array(
+			'nik' => 'NIK',
+			'nomor_kk' => 'Nomor Kartu Keluarga',
+			'nomor_bpjs_kis' => 'Nomor kartu BPJS/KIS',
+		);
+		$codes = array(
+			'nik' => 'nik',
+			'nomor_kk' => 'family_card_number',
+			'nomor_bpjs_kis' => 'bpjs_number',
+		);
+		foreach (array_keys($result['field_errors']) as $field) {
+			$this->add_missing($codes[$field], $labels_by_field[$field], $missing, $labels);
+		}
+	}
+
+	private function require_nip($value, array &$missing, array &$labels)
+	{
+		require_once __DIR__ . '/Role_identity_policy.php';
+		if (!(new Role_identity_policy())->nip($value)['valid']) {
+			$this->add_missing('nip', 'NIP', $missing, $labels);
+		}
 	}
 
 	private function facility_requirements(array $identity, array &$missing, array &$labels, array &$schema_gaps)
@@ -283,6 +317,9 @@ class Role_prerequisite_service
 
 	private function add_missing($code, $label, array &$missing, array &$labels)
 	{
+		if (in_array((string) $code, $missing, true)) {
+			return;
+		}
 		$missing[] = (string) $code;
 		$labels[] = (string) $label;
 	}

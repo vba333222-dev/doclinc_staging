@@ -688,6 +688,11 @@ class Home_m extends MX_Controller
 	{
 		$user_id = (int) $user_id;
 		$allowed = array('nama', 'email', 'no_hp', 'tgl', 'gender', 'alamat');
+		foreach (array('nik', 'nomor_kk', 'nomor_bpjs_kis') as $identity_field) {
+			if ($this->db->field_exists($identity_field, 'users')) {
+				$allowed[] = $identity_field;
+			}
+		}
 		foreach (array_keys($data) as $field) {
 			if (!in_array($field, $allowed, true) || !$this->db->field_exists($field, 'users')) {
 				unset($data[$field]);
@@ -716,6 +721,27 @@ class Home_m extends MX_Controller
 			->limit(1)
 			->get('users')
 			->row();
+	}
+
+	public function identity_value_available($user_id, $field, $value)
+	{
+		$user_id = (int) $user_id;
+		$field = (string) $field;
+		$value = trim((string) $value);
+		if ($user_id < 1 || $value === '' || !in_array($field, array('nik', 'nomor_bpjs_kis'), true)
+			|| !$this->db->field_exists($field, 'users')) {
+			return false;
+		}
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$query = $this->db
+			->select('userId')
+			->where($field, $value)
+			->where('userId !=', $user_id)
+			->limit(1)
+			->get('users');
+		$this->db->db_debug = $db_debug;
+		return $query !== false && !$query->row();
 	}
 
 	public function get_request_for_pending_edit($request_id, $user_id)

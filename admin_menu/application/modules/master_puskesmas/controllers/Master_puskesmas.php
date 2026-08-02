@@ -33,6 +33,9 @@ class Master_puskesmas extends MX_Controller
 		$this->load->library('form_validation');
 		$this->form_validation->set_rules('kode_pkm', 'Kode Puskesmas', 'trim|required', array('required' => 'Kode Puskesmas wajib diisi.'));
 		$this->form_validation->set_rules('nama_puskesmas', 'Nama Puskesmas', 'trim|required', array('required' => 'Nama Puskesmas wajib diisi.'));
+		$this->form_validation->set_rules('alamat', 'Alamat lengkap', 'trim|required', array('required' => 'Alamat lengkap Puskesmas wajib diisi.'));
+		$this->form_validation->set_rules('latitude', 'Latitude', 'trim|required', array('required' => 'Titik lokasi Puskesmas wajib diisi.'));
+		$this->form_validation->set_rules('longitude', 'Longitude', 'trim|required', array('required' => 'Titik lokasi Puskesmas wajib diisi.'));
 
 		$kode = trim((string) $this->input->post('kode_pkm', TRUE));
 		if ($kode !== '' && $this->Master_puskesmas_m->code_exists($kode)) {
@@ -62,6 +65,9 @@ class Master_puskesmas extends MX_Controller
 		}
 		$this->load->library('form_validation');
 		$this->form_validation->set_rules('nama_puskesmas', 'Nama Puskesmas', 'trim|required', array('required' => 'Nama Puskesmas wajib diisi.'));
+		$this->form_validation->set_rules('alamat', 'Alamat lengkap', 'trim|required', array('required' => 'Alamat lengkap Puskesmas wajib diisi.'));
+		$this->form_validation->set_rules('latitude', 'Latitude', 'trim|required', array('required' => 'Titik lokasi Puskesmas wajib diisi.'));
+		$this->form_validation->set_rules('longitude', 'Longitude', 'trim|required', array('required' => 'Titik lokasi Puskesmas wajib diisi.'));
 		$kode = trim((string) $kode);
 		$data = $this->build_payload(false);
 
@@ -105,6 +111,11 @@ class Master_puskesmas extends MX_Controller
 			redirect('master_puskesmas', 'refresh');
 			return;
 		}
+		if ($status === 'aktif' && !$this->Master_puskesmas_m->is_operationally_complete($kode)) {
+			$this->session->set_flashdata('error', 'Puskesmas belum dapat diaktifkan. Lengkapi nama, alamat, dan titik lokasi terlebih dahulu.');
+			redirect('master_puskesmas', 'refresh');
+			return;
+		}
 
 		if ($this->Master_puskesmas_m->set_status($kode, $status)) {
 			$this->session->set_flashdata('success', $status === 'aktif' ? 'Puskesmas diaktifkan.' : 'Puskesmas dinonaktifkan.');
@@ -137,13 +148,17 @@ class Master_puskesmas extends MX_Controller
 
 	private function valid_coordinates($data)
 	{
-		foreach (array('latitude', 'longitude') as $field) {
-			if ($data[$field] !== '' && !is_numeric($data[$field])) {
-				return false;
-			}
+		if (!isset($data['latitude'], $data['longitude'])
+			|| $data['latitude'] === '' || $data['longitude'] === ''
+			|| !is_numeric($data['latitude']) || !is_numeric($data['longitude'])) {
+			return false;
 		}
 
-		return true;
+		$latitude = (float) $data['latitude'];
+		$longitude = (float) $data['longitude'];
+
+		return $latitude >= -90 && $latitude <= 90
+			&& $longitude >= -180 && $longitude <= 180;
 	}
 
 	private function require_post()

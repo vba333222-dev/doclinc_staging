@@ -43,11 +43,12 @@ Masalah:
 
 - Login seluruh role dan session aktif sudah direvalidasi terhadap role/status database pada batch 1.
 - Batch lokal menambahkan `Role_prerequisite_service`, endpoint status privat, safe error contract, banner perbaikan profil, dan gate default-off pada sepuluh entry point workflow sensitif.
-- Gate sengaja tidak memblokir pembatalan, chat, riwayat, atau perbaikan profil agar pengguna tidak terjebak.
+- Gate workflow lama masih bersifat kompatibilitas ketika flag OFF. Batch terbaru menambahkan gate global: ketika flag ON, Warga/Nakes yang belum lengkap hanya dapat membuka penyelesaian profil, menyimpan profil/foto, memeriksa status, membaca foto terotorisasi, dan logout.
 - Discovery schema staging read-only pada MariaDB 10.11 sudah memverifikasi field canonical `users`, `puskesmas_staff`, serta alamat/latitude/longitude `m_puskesmas`; tidak ada pembacaan row pasien atau write.
 - Prasyarat kini membedakan data yang dapat diperbaiki sendiri (profil akun/foto) dari data yang dikelola pengelola (SIP, profesi, linkage staf, dan identitas/lokasi Puskesmas), sehingga CTA tidak mengarahkan pengguna ke form yang tidak mampu memperbaiki masalah.
 - Warga dapat memperbaiki nama, email, nomor HP, tanggal lahir, gender, dan alamat melalui endpoint POST tervalidasi. Form command-center hanya meminta field akun bersama, sedangkan field personal tetap khusus Nakes personal.
 - Aktivasi gate tetap menunggu audit kelengkapan agregat tanpa PII dan authenticated UAT; schema presence saja tidak membuktikan seluruh row operasional sudah lengkap.
+- Audit agregat staging read-only pada 2 Agustus 2026 menemukan 0/18 Warga dan 0/33 Nakes beridentitas valid memenuhi seluruh prasyarat. Karena itu enforcement tetap OFF. Dashboard kini tetap menampilkan kekurangan secara non-blocking agar pemutakhiran data dapat dimulai sebelum aktivasi gate.
 
 Acceptance criteria:
 
@@ -231,7 +232,7 @@ Acceptance criteria:
 
 ### VISIT-01 — Bukti kunjungan dan anti-FakeGPS berlapis
 
-Status: `OPEN`
+Status: `IN PROGRESS`
 
 Masalah:
 
@@ -250,13 +251,21 @@ Acceptance criteria:
 
 ### ERROR-01 — Unified error handler dan prerequisite failures
 
-Status: `OPEN`
+Status: `IN PROGRESS`
 
 Masalah:
 
 - Bentuk response masih campuran: `1/0`, `status`, `success`, redirect, HTML error, dan JSON.
 - Session expiry pada endpoint AJAX kadang menghasilkan redirect HTML.
 - Kesalahan data wajib per role belum diarahkan ke tindakan perbaikan yang tepat.
+
+Implemented locally in the current batch:
+
+- Global post-controller-constructor gate for Warga and Nakes, ordered after the password-change gate.
+- Only completion/status/profile-photo/profile-save/logout remediation routes remain available while blocked.
+- Dedicated completion page separates self-service data from fields owned by Administrator Dinas Kesehatan.
+- Safe JSON failures include stable code, field ownership, request ID, and retryability without identity values.
+- Warga prerequisites now include NIK, Kartu Keluarga, and BPJS/KIS; personal Nakes prerequisites include Admin-managed NIP.
 
 Acceptance criteria:
 
@@ -293,12 +302,14 @@ Acceptance criteria:
 
 ### PUSKESMAS-01 — Command-center harus berbeda dari Nakes personal
 
-Status: `OPEN`
+Status: `IN PROGRESS`
 
 Masalah:
 
 - UI dan fungsi command-center masih terlalu mirip dashboard Nakes personal.
 - Command-center membutuhkan koordinasi operasional, bukan workflow klinis personal.
+- Dashboard command-center kini mempunyai panel kesiapan data tenant read-only untuk alamat unit, SIP, kelengkapan inti staf, dan status linkage akun personal. Daftar staf menampilkan gap SIP/account secara eksplisit; perubahan data authoritative tetap menunggu workflow pengelolaan dan audit yang disepakati.
+- Dashboard command-center kini juga mempunyai exception board tenant-scoped untuk permintaan menunggu, layanan diterima tanpa PIC, dan gap kesiapan data. Nilai NIK/KK/BPJS/NIP serta data klinis tidak diproyeksikan ke panel.
 
 Target capability command-center:
 
@@ -416,4 +427,6 @@ Satu tahap remediation hanya boleh ditutup bila seluruh gate relevan lulus:
 - PRIV-01 batch 5 implemented locally: runner inspect/apply untuk file legacy, backup+manifest SHA-256, filesystem/database rollback, safe rerun, dan template Nginx deny tersedia. Execution terhadap staging, pemasangan Nginx deny, dynamic cross-role HTTP regression, serta media profil masih menjadi gate terbuka.
 - PRIV-01 batch 6 implemented locally: foto profil baru Warga/Nakes disimpan di private storage, akses foto memerlukan self/consultation/same-tenant relationship, Admin dan cross-tenant ditolak, dashboard/history/chat/call memakai endpoint terotorisasi, serta direct legacy URL mempunyai template Nginx deny. PHP 8.1 unit, authenticated HTTP matrix, deployment private directory, dan Nginx rollout masih menjadi gate terbuka.
 - Authenticated browser UAT, penetration test aktif, dan database staging mutation tidak dilakukan dalam audit.
+- Role-identity batch implemented locally: nullable schema foundation for NIK/KK/BPJS/NIP, Warga self-service validation, Admin-only NIP/SIP/profession/status/link management, global usage gate, dedicated completion UI, and Puskesmas exception board. Enforcement remains OFF until migration, data backfill, and authenticated UAT complete.
+- Activation decision required: NIP 18 digits is valid for ASN. If DocLink includes non-ASN/honorary Nakes, introduce an employment category and canonical alternate employee identifier before enabling the gate; do not fabricate NIP values.
 - Dokumen ini belum menyatakan remediation selesai.

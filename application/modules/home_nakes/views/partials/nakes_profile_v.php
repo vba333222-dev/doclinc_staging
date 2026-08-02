@@ -20,6 +20,12 @@ $profile_weak_value = static function ($value) {
 $profile_puskesmas_display = !$profile_weak_value($profile_puskesmas_name) ? $profile_puskesmas_name : (!$profile_weak_value($profile_puskesmas_code) ? $profile_puskesmas_code : 'Belum dikonfigurasi');
 $profile_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_list) ? $puskesmas_staff_list : array();
 $profile_staff_count = isset($puskesmas_staff_count) ? (int) $puskesmas_staff_count : count($profile_staff_rows);
+$profile_staff_account_states = array();
+if (isset($puskesmas_staff_options) && is_array($puskesmas_staff_options)) {
+	foreach ($puskesmas_staff_options as $staff_option) {
+		$profile_staff_account_states[(int) $staff_option->staff_id] = isset($staff_option->personal_account_state) ? (string) $staff_option->personal_account_state : 'invalid';
+	}
+}
 $profile_rows = array(
 	array('id' => 'nama_lengkap', 'label' => 'Nama lengkap', 'icon' => 'bi bi-person-fill', 'value' => $profile_name, 'type' => 'text'),
 	array('id' => 'email', 'label' => 'Email', 'icon' => 'bi bi-envelope-fill', 'value' => $profile_email, 'type' => 'email'),
@@ -88,18 +94,18 @@ if ($profile_is_personal) {
 										$staff_profesi = trim((string) (isset($staff->profesi) ? $staff->profesi : ''));
 										$staff_phone = trim((string) (isset($staff->no_hp) ? $staff->no_hp : ''));
 										$staff_sip = trim((string) (isset($staff->nomor_sip) ? $staff->nomor_sip : ''));
+										$staff_account_state = isset($profile_staff_account_states[(int) $staff->staff_id]) ? $profile_staff_account_states[(int) $staff->staff_id] : 'invalid';
 									?>
 										<div class="nk-staff-item">
 											<div class="nk-staff-main">
 												<strong><?= html_escape($staff_name !== '' ? $staff_name : 'Nama belum diisi'); ?></strong>
 												<?php if ($staff_profesi !== '') : ?><span><?= html_escape($staff_profesi); ?></span><?php endif; ?>
 											</div>
-											<?php if ($staff_phone !== '' || $staff_sip !== '') : ?>
-												<div class="nk-staff-meta">
-													<?php if ($staff_phone !== '') : ?><span><?= html_escape($staff_phone); ?></span><?php endif; ?>
-													<?php if ($staff_sip !== '') : ?><span>SIP <?= html_escape($staff_sip); ?></span><?php endif; ?>
-												</div>
-											<?php endif; ?>
+											<div class="nk-staff-meta">
+												<?php if ($staff_phone !== '') : ?><span><?= html_escape($staff_phone); ?></span><?php endif; ?>
+												<?php if ($staff_sip !== '') : ?><span>SIP <?= html_escape($staff_sip); ?></span><?php else : ?><span class="is-warning">SIP belum dilengkapi</span><?php endif; ?>
+												<?php if ($staff_account_state === 'linked') : ?><span>Akun personal terhubung</span><?php elseif ($staff_account_state === 'unlinked') : ?><span class="is-warning">Belum ada akun personal</span><?php else : ?><span class="is-danger">Akun perlu ditinjau</span><?php endif; ?>
+											</div>
 										</div>
 									<?php endforeach; ?>
 								</div>

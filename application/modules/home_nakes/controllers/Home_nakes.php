@@ -370,6 +370,8 @@ class Home_nakes extends MX_Controller
 		$d['request_staff_latest_assignment_map'] = array();
 		$d['request_event_ready'] = false;
 		$d['request_event_map'] = array();
+		$d['puskesmas_data_readiness'] = array();
+		$d['puskesmas_operation_exceptions'] = array();
 
 		if ($account_type === 'command_center') {
 			$d['data_request_new'] = $this->Home_nakes_m->request_keluhan_command_center($identity_context);
@@ -379,6 +381,11 @@ class Home_nakes extends MX_Controller
 			$d['puskesmas_staff_count'] = $this->Home_nakes_m->count_puskesmas_staff_by_code($puskesmas_code);
 			$d['staff_assignment_ready'] = $this->Home_nakes_m->staff_assignment_table_ready();
 			$d['puskesmas_staff_options'] = $this->Home_nakes_m->get_active_staff_options_by_code($puskesmas_code);
+			$this->load->library('Puskesmas_data_readiness');
+			$d['puskesmas_data_readiness'] = $this->puskesmas_data_readiness->summarize(
+				$d['role_prerequisite_state'],
+				$d['puskesmas_staff_options']
+			);
 
 			$assignment_request_ids = array();
 			$completed_assignment_request_ids = array();
@@ -391,6 +398,18 @@ class Home_nakes extends MX_Controller
 			$d['request_staff_assignment_map'] = $d['staff_assignment_ready']
 				? $this->Home_nakes_m->get_active_staff_assignments_by_request_ids($assignment_request_ids)
 				: array();
+			$accepted_without_pic = 0;
+			foreach ($assignment_request_ids as $request_id) {
+				if (empty($d['request_staff_assignment_map'][(int) $request_id])) {
+					$accepted_without_pic++;
+				}
+			}
+			$d['puskesmas_operation_exceptions'] = array(
+				'pending_requests' => (int) $d['data_request_new']->num_rows(),
+				'accepted_requests' => count($assignment_request_ids),
+				'accepted_without_pic' => $accepted_without_pic,
+				'staff_data_attention' => isset($d['puskesmas_data_readiness']['attention_count']) ? (int) $d['puskesmas_data_readiness']['attention_count'] : 0,
+			);
 			$d['request_staff_latest_assignment_map'] = $d['staff_assignment_ready']
 				? $this->Home_nakes_m->get_latest_staff_assignments_by_request_ids($completed_assignment_request_ids)
 				: array();
