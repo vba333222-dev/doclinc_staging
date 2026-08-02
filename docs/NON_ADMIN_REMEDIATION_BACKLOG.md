@@ -310,6 +310,7 @@ Masalah:
 - Command-center membutuhkan koordinasi operasional, bukan workflow klinis personal.
 - Dashboard command-center kini mempunyai panel kesiapan data tenant read-only untuk alamat unit, SIP, kelengkapan inti staf, dan status linkage akun personal. Daftar staf menampilkan gap SIP/account secara eksplisit; perubahan data authoritative tetap menunggu workflow pengelolaan dan audit yang disepakati.
 - Dashboard command-center kini juga mempunyai exception board tenant-scoped untuk permintaan menunggu, layanan diterima tanpa PIC, dan gap kesiapan data. Nilai NIK/KK/BPJS/NIP serta data klinis tidak diproyeksikan ke panel.
+- Batch operasional command-center telah diimplementasikan lokal pada route stabil `/puskesmas/operations`: snapshot read-only tenant-scoped menggabungkan presence, beban permintaan aktif, status kunjungan, PIC, serta exception assignment. Payload tidak memuat identitas pasien, isi klinis, kontak, alamat, atau koordinat. Fitur default off, bergantung pada role-prerequisite dan presence, tidak menambah schema, serta fail-closed bila hasil melampaui batas.
 
 Target capability command-center:
 
@@ -428,5 +429,6 @@ Satu tahap remediation hanya boleh ditutup bila seluruh gate relevan lulus:
 - PRIV-01 batch 6 implemented locally: foto profil baru Warga/Nakes disimpan di private storage, akses foto memerlukan self/consultation/same-tenant relationship, Admin dan cross-tenant ditolak, dashboard/history/chat/call memakai endpoint terotorisasi, serta direct legacy URL mempunyai template Nginx deny. PHP 8.1 unit, authenticated HTTP matrix, deployment private directory, dan Nginx rollout masih menjadi gate terbuka.
 - Authenticated browser UAT, penetration test aktif, dan database staging mutation tidak dilakukan dalam audit.
 - Role-identity batch implemented locally: nullable schema foundation for NIK/KK/BPJS/NIP, Warga self-service validation, Admin-only NIP/SIP/profession/status/link management, global usage gate, dedicated completion UI, and Puskesmas exception board. Enforcement remains OFF until migration, data backfill, and authenticated UAT complete.
+- PUSKESMAS-01 batch operasional implemented locally: dedicated command-center route/navigation, exact canonical actor policy, bounded tenant snapshot, workload/presence/visit aggregation, assignment exception board, and personal-Nakes denial. Fitur tetap default off sampai PHP 8.1/MariaDB integration, cross-tenant dynamic test, serta authenticated UAT selesai.
 - Activation decision required: NIP 18 digits is valid for ASN. If DocLink includes non-ASN/honorary Nakes, introduce an employment category and canonical alternate employee identifier before enabling the gate; do not fabricate NIP values.
 - Dokumen ini belum menyatakan remediation selesai.

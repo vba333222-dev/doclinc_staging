@@ -847,3 +847,29 @@ $config['nakes_presence_feature_reason'] = $nakes_presence_feature['reason'];
 $config['nakes_presence_heartbeat_seconds'] = 30;
 $config['nakes_presence_write_throttle_seconds'] = 45;
 $config['nakes_presence_online_timeout_seconds'] = 90;
+
+$puskesmas_operations_enabled_env = getenv('DOCLINC_PUSKESMAS_OPERATIONS_ENABLED');
+if ($puskesmas_operations_enabled_env === false || $puskesmas_operations_enabled_env === '') {
+	$puskesmas_operations_enabled_env = $_SERVER['DOCLINC_PUSKESMAS_OPERATIONS_ENABLED'] ?? null;
+}
+$puskesmas_operations_environment_env = getenv('DOCLINC_PUSKESMAS_OPERATIONS_ENVIRONMENT');
+if ($puskesmas_operations_environment_env === false || $puskesmas_operations_environment_env === '') {
+	$puskesmas_operations_environment_env = $_SERVER['DOCLINC_PUSKESMAS_OPERATIONS_ENVIRONMENT'] ?? '';
+}
+$puskesmas_operations_feature = Doclinc_feature_flags::resolve(
+	$puskesmas_operations_enabled_env,
+	$puskesmas_operations_environment_env,
+	$realtime_client_runtime_environment_env
+);
+$config['puskesmas_operations_enabled'] = $puskesmas_operations_feature['enabled']
+	&& $config['role_prerequisites_enabled'] === true
+	&& $config['nakes_presence_enabled'] === true;
+$config['puskesmas_operations_environment'] = $puskesmas_operations_feature['environment'];
+$config['puskesmas_operations_feature_reason'] = !$puskesmas_operations_feature['enabled']
+	? $puskesmas_operations_feature['reason']
+	: ($config['role_prerequisites_enabled'] !== true
+		? 'role_prerequisites_required'
+		: ($config['nakes_presence_enabled'] !== true ? 'nakes_presence_required' : 'enabled'));
+$config['puskesmas_operations_poll_seconds'] = 30;
+$config['puskesmas_operations_staff_limit'] = 200;
+$config['puskesmas_operations_request_limit'] = 200;

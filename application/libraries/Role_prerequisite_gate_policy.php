@@ -7,6 +7,7 @@ class Role_prerequisite_gate_policy
 		'clinical_suggestions' => array('*'),
 		'realtime_access' => array('connection_token', 'subscription_token'),
 		'realtime_requests' => array('snapshot'),
+		'puskesmas_operations' => array('snapshot'),
 		'profile_requirements' => array('status'),
 		'chat' => array('messages', 'send', 'mark_read', 'foto'),
 		'notifikasi' => array('list_json', 'snapshot', 'mark_read'),
