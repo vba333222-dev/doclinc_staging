@@ -14,14 +14,34 @@ The audit prints aggregate counts and safe field codes only. It never prints
 user IDs, names, email addresses, phone numbers, NIK, KK, BPJS/KIS, NIP,
 Puskesmas codes, profile keys, or other stored values.
 
+The report separates three gates so self-service profile gaps are not confused
+with data that only Dinas Kesehatan can repair:
+
+- `MANAGED_DATA_READY`: every active Puskesmas, canonical command center, and
+  staff roster row is complete, and there is no invalid role identity;
+- `CONTROLLED_ENFORCEMENT_READY`: managed data, schema, private storage, and
+  actor classification are safe enough to enable the completion gate. Actors
+  still completing their own profile or changing a temporary password may
+  remain incomplete and will be redirected by the existing gates;
+- `PRODUCTION_ACTIVATION_READY`: strict final state; every active actor and all
+  managed data are complete.
+
+The audit also reports `ACTOR_PROFILE_EVALUATED`, password-change denials,
+identity denials, self-service/managed actor-gap counts, and per-field managed
+gap counts. These are aggregate counts only; they deliberately do not identify
+the affected record.
+
 The database target is fixed to local `127.0.0.1:3306/doclinc-staging` using the
 CloudPanel root identity, revalidated after connect, and inspected inside
 `START TRANSACTION READ ONLY`. Exit status meanings:
 
-- `0`: all active actors, facilities, command centers, staff, schema contracts,
-  and private storage are ready;
+- `0`: `PRODUCTION_ACTIVATION_READY=true` (the strict final state);
 - `3`: audit completed safely, but activation is blocked by data/readiness;
 - `1`: the audit itself failed.
+
+Exit `3` can therefore coexist with `CONTROLLED_ENFORCEMENT_READY=true`; that
+means the gate may be enabled through a separate reviewed rollout, not that the
+application is already fully production-ready.
 
 The runner also inspects active PHP-FPM pool declarations for the role
 prerequisite flag. If incomplete data is detected while the flag is already

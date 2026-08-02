@@ -4,6 +4,12 @@ final class ProductionReadinessReport
 {
 	private const ACTOR_TYPES = array('warga', 'personal', 'command_center', 'denied');
 	private const REMEDIATION_MODES = array('none', 'self_service', 'managed', 'mixed');
+	private const DENIAL_REASONS = array('password_change_required', 'identity_invalid');
+	private const MANAGED_GAPS = array(
+		'facility_name', 'facility_address', 'facility_latitude', 'facility_longitude',
+		'facility_command_center', 'staff_name', 'staff_phone', 'staff_profession',
+		'staff_registration_number', 'staff_nip', 'staff_identity',
+	);
 	private const SAFE_FIELDS = array(
 		'name', 'email', 'phone', 'address', 'birthdate', 'gender', 'photo',
 		'nik', 'family_card_number', 'bpjs_number', 'nakes_identity', 'staff_link',
@@ -19,6 +25,11 @@ final class ProductionReadinessReport
 			'actor_complete' => 0,
 			'actor_incomplete' => 0,
 			'actor_denied' => 0,
+			'actor_password_change_required' => 0,
+			'actor_identity_denied' => 0,
+			'actor_profile_evaluated' => 0,
+			'actor_self_service_gap_count' => 0,
+			'actor_managed_gap_count' => 0,
 			'actor_type_counts' => array_fill_keys(self::ACTOR_TYPES, 0),
 			'actor_type_complete' => array_fill_keys(self::ACTOR_TYPES, 0),
 			'remediation_counts' => array_fill_keys(self::REMEDIATION_MODES, 0),
@@ -34,6 +45,10 @@ final class ProductionReadinessReport
 			'facility_command_center_ready' => 0,
 			'staff_total' => max(0, (int) ($operational_state['staff_total'] ?? 0)),
 			'staff_ready' => 0,
+			'managed_gap_counts' => array_fill_keys(self::MANAGED_GAPS, 0),
+			'managed_gap_total' => 0,
+			'managed_data_ready' => false,
+			'controlled_enforcement_ready' => false,
 			'activation_ready' => false,
 			'blocker_count' => 0,
 		);
@@ -49,6 +64,14 @@ final class ProductionReadinessReport
 			$report['staff_total'],
 			max(0, (int) ($operational_state['staff_ready'] ?? 0))
 		);
+		foreach (self::MANAGED_GAPS as $gap) {
+			$maximum = strpos($gap, 'facility_') === 0 ? $report['facility_total'] : $report['staff_total'];
+			$report['managed_gap_counts'][$gap] = max(
+				0,
+				min($maximum, (int) (($operational_state['managed_gap_counts'] ?? array())[$gap] ?? 0))
+			);
+		}
+		$report['managed_gap_total'] = array_sum($report['managed_gap_counts']);
 
 		foreach ($states as $state) {
 			if (!is_array($state)) {
@@ -66,8 +89,31 @@ final class ProductionReadinessReport
 			} else {
 				$report['actor_incomplete']++;
 			}
-			if ($type === 'denied' || (string) ($state['safe_error_code'] ?? '') === 'actor_denied') {
+			$denied = $type === 'denied' || (string) ($state['safe_error_code'] ?? '') === 'actor_denied';
+			if ($denied) {
 				$report['actor_denied']++;
+			}
+			$denial_reason = (string) ($state['audit_denial_reason'] ?? '');
+			if (!in_array($denial_reason, self::DENIAL_REASONS, true)) {
+				$denial_reason = $denied ? 'identity_invalid' : '';
+			}
+			if ($denial_reason === 'password_change_required' && !$denied) {
+				$denial_reason = '';
+			}
+			if ($denial_reason === 'password_change_required') {
+				$report['actor_password_change_required']++;
+			} else {
+				if ($denial_reason === 'identity_invalid') {
+					$report['actor_identity_denied']++;
+				} else {
+					$report['actor_profile_evaluated']++;
+				}
+			}
+			if (!empty($state['self_service_fields'])) {
+				$report['actor_self_service_gap_count']++;
+			}
+			if (!empty($state['managed_fields'])) {
+				$report['actor_managed_gap_count']++;
 			}
 
 			$mode = in_array((string) ($state['remediation_mode'] ?? ''), self::REMEDIATION_MODES, true)
@@ -94,9 +140,20 @@ final class ProductionReadinessReport
 			&& $report['facility_command_center_ready'] === $report['facility_total']
 			&& $report['staff_total'] > 0
 			&& $report['staff_ready'] === $report['staff_total'];
+		$storage_ready = $report['storage_ready'] && $report['storage_private']
+			&& $report['storage_mode_0700'] && $report['storage_owner_ready'];
+		$report['managed_data_ready'] = $operational_ready
+			&& $report['managed_gap_total'] === 0
+			&& $report['actor_managed_gap_count'] === 0
+			&& $report['actor_identity_denied'] === 0;
+		$report['controlled_enforcement_ready'] = $report['actor_total'] > 0
+			&& empty($report['schema_gaps'])
+			&& $storage_ready
+			&& $report['managed_data_ready']
+			&& $report['actor_denied'] === $report['actor_password_change_required'];
 		$report['blocker_count'] = $report['actor_incomplete']
 			+ count($report['schema_gaps'])
-			+ ($report['storage_ready'] && $report['storage_private'] && $report['storage_mode_0700'] && $report['storage_owner_ready'] ? 0 : 1)
+			+ ($storage_ready ? 0 : 1)
 			+ ($report['facility_total'] - $report['facility_complete'])
 			+ ($report['facility_total'] - $report['facility_command_center_ready'])
 			+ ($report['staff_total'] - $report['staff_ready'])
@@ -105,10 +162,7 @@ final class ProductionReadinessReport
 			&& $report['actor_complete'] === $report['actor_total']
 			&& $report['actor_denied'] === 0
 			&& empty($report['schema_gaps'])
-			&& $report['storage_ready']
-			&& $report['storage_private']
-			&& $report['storage_mode_0700']
-			&& $report['storage_owner_ready']
+			&& $storage_ready
 			&& $operational_ready;
 		return $report;
 	}
@@ -120,6 +174,11 @@ final class ProductionReadinessReport
 			'ACTOR_COMPLETE=' . (int) $report['actor_complete'],
 			'ACTOR_INCOMPLETE=' . (int) $report['actor_incomplete'],
 			'ACTOR_DENIED=' . (int) $report['actor_denied'],
+			'ACTOR_PASSWORD_CHANGE_REQUIRED=' . (int) $report['actor_password_change_required'],
+			'ACTOR_IDENTITY_DENIED=' . (int) $report['actor_identity_denied'],
+			'ACTOR_PROFILE_EVALUATED=' . (int) $report['actor_profile_evaluated'],
+			'ACTOR_SELF_SERVICE_GAP_COUNT=' . (int) $report['actor_self_service_gap_count'],
+			'ACTOR_MANAGED_GAP_COUNT=' . (int) $report['actor_managed_gap_count'],
 		);
 		foreach (self::ACTOR_TYPES as $type) {
 			$key = strtoupper($type);
@@ -149,7 +208,13 @@ final class ProductionReadinessReport
 		$lines[] = 'ACTIVE_FACILITY_COMMAND_CENTER_READY=' . (int) $report['facility_command_center_ready'];
 		$lines[] = 'ACTIVE_STAFF_TOTAL=' . (int) $report['staff_total'];
 		$lines[] = 'ACTIVE_STAFF_READY=' . (int) $report['staff_ready'];
+		foreach (self::MANAGED_GAPS as $gap) {
+			$lines[] = 'MANAGED_GAP_' . strtoupper($gap) . '=' . (int) $report['managed_gap_counts'][$gap];
+		}
+		$lines[] = 'MANAGED_GAP_TOTAL=' . (int) $report['managed_gap_total'];
 		$lines[] = 'BLOCKER_COUNT=' . (int) $report['blocker_count'];
+		$lines[] = 'MANAGED_DATA_READY=' . ($report['managed_data_ready'] ? 'true' : 'false');
+		$lines[] = 'CONTROLLED_ENFORCEMENT_READY=' . ($report['controlled_enforcement_ready'] ? 'true' : 'false');
 		$lines[] = 'PRODUCTION_ACTIVATION_READY=' . ($report['activation_ready'] ? 'true' : 'false');
 		return $lines;
 	}
