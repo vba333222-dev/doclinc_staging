@@ -12,8 +12,9 @@ class Home extends MX_Controller
 		$this->load->helper('livekit');
 		$this->load->helper('notification');
 		$this->load->helper('request_realtime');
+		$this->load->helper('role_prerequisite');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if (in_array($this->router->fetch_method(), array('visit_location', 'livekit_token', 'livekit_incoming_call', 'answer_livekit_call', 'reject_livekit_call', 'livekit_call_status'), true)) {
+			if (in_array($this->router->fetch_method(), array('visit_location', 'livekit_token', 'livekit_incoming_call', 'answer_livekit_call', 'reject_livekit_call', 'livekit_call_status', 'update_profile', 'update_profile_photo'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -24,6 +25,117 @@ class Home extends MX_Controller
 			redirect('login');
 		}
 		$this->load->helper('maps');
+	}
+
+	public function update_profile_photo()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->input->method(true) !== 'POST') {
+			$this->output->set_status_header(405)->set_output(json_encode(array('status' => 'error', 'safe_error_code' => 'method_not_allowed')));
+			return;
+		}
+		$user_id = (int) $this->session->userdata('id');
+		if ($user_id < 1 || $this->session->userdata('role') !== 'warga' || empty($_FILES['foto']['name'])) {
+			$this->output->set_status_header(422)->set_output(json_encode(array('status' => 'error', 'message' => 'Pilih foto profil terlebih dahulu.')));
+			return;
+		}
+
+		require_once APPPATH . 'libraries/Profile_image_storage.php';
+		$storage = new Profile_image_storage(array(
+			'storage_path' => $this->config->item('profile_image_storage_path'),
+			'public_root' => FCPATH,
+		));
+		$upload_directory = $storage->ensure_storage_directory();
+		if ($upload_directory === false) {
+			$this->output->set_status_header(503)->set_output(json_encode(array('status' => 'error', 'message' => 'Penyimpanan foto profil belum siap.')));
+			return;
+		}
+
+		$max_size_kb = max(1, (int) $this->config->item('profile_image_max_size_kb'));
+		$config = array(
+			'upload_path' => $upload_directory,
+			'allowed_types' => 'jpg|jpeg|png|webp',
+			'max_size' => $max_size_kb,
+			'encrypt_name' => true,
+			'detect_mime' => true,
+			'mod_mime_fix' => true,
+			'remove_spaces' => true,
+		);
+		$this->load->library('upload', $config);
+		if (!$this->upload->do_upload('foto')) {
+			$this->output->set_status_header(422)->set_output(json_encode(array('status' => 'error', 'message' => 'Foto belum dapat diunggah. Gunakan JPG, PNG, atau WebP maksimal 5 MB.')));
+			return;
+		}
+
+		$upload_data = $this->upload->data();
+		$stored_key = $storage->stored_key_from_upload($upload_data);
+		$uploaded_path = isset($upload_data['full_path']) ? (string) $upload_data['full_path'] : '';
+		if (!$storage->upload_is_valid($uploaded_path, $stored_key, $max_size_kb)) {
+			if ($uploaded_path !== '' && is_file($uploaded_path)) {
+				@unlink($uploaded_path);
+			}
+			$this->output->set_status_header(422)->set_output(json_encode(array('status' => 'error', 'message' => 'Isi file foto tidak valid.')));
+			return;
+		}
+		@chmod($uploaded_path, 0600);
+
+		if (!$this->Home_m->update_profile_photo($user_id, $stored_key)) {
+			$storage->remove_private_file($stored_key);
+			$this->output->set_status_header(500)->set_output(json_encode(array('status' => 'error', 'message' => 'Foto profil belum dapat disimpan.')));
+			return;
+		}
+
+		$this->session->set_userdata('foto', $stored_key);
+		$this->output->set_output(json_encode(array('status' => 'success', 'message' => 'Foto profil diperbarui.')));
+	}
+
+	public function update_profile()
+	{
+		if (!$this->require_post_json()) {
+			return;
+		}
+		$user_id = (int) $this->session->userdata('id');
+		if ($user_id < 1 || $this->session->userdata('role') !== 'warga') {
+			$this->output->set_status_header(403)->set_output(json_encode(array(
+				'status' => 'error',
+				'safe_error_code' => 'actor_denied',
+				'message' => 'Anda tidak memiliki akses.',
+			)));
+			return;
+		}
+
+		$validated = $this->validated_warga_profile_input();
+		if (empty($validated['success'])) {
+			$this->output->set_status_header(422)->set_output(json_encode(array(
+				'status' => 'error',
+				'safe_error_code' => 'profile_validation_failed',
+				'message' => $validated['message'],
+			)));
+			return;
+		}
+		$data = $validated['data'];
+		if (!$this->Home_m->email_available_for_user($user_id, $data['email'])) {
+			$this->output->set_status_header(409)->set_output(json_encode(array(
+				'status' => 'error',
+				'safe_error_code' => 'profile_email_conflict',
+				'message' => 'Email sudah digunakan akun lain.',
+			)));
+			return;
+		}
+		if (!$this->Home_m->update_profile($user_id, $data)) {
+			$this->output->set_status_header(500)->set_output(json_encode(array(
+				'status' => 'error',
+				'safe_error_code' => 'profile_update_failed',
+				'message' => 'Profil belum dapat disimpan.',
+			)));
+			return;
+		}
+
+		$this->session->set_userdata($data);
+		$this->output->set_output(json_encode(array(
+			'status' => 'success',
+			'message' => 'Profil berhasil diperbarui.',
+		)));
 	}
 
 	public function livekit_token()
@@ -315,6 +427,7 @@ class Home extends MX_Controller
 
 				$x['dataDoctor'] = $this->Home_m->getDataDoctor();
 				$x['master_gejala_keluhan_options'] = $this->Home_m->get_master_gejala_keluhan_options();
+				$x['role_prerequisite_state'] = doclinc_role_prerequisite_state($userid, true);
 
 				$this->load->view('home_v', $x);
 			} elseif ($role == 'dokter') {
@@ -777,6 +890,52 @@ class Home extends MX_Controller
 				? 'PIC layanan: ' . $pic_name . ($pic_profesi !== '' ? ' - ' . $pic_profesi : '')
 				: 'PIC layanan belum ditentukan',
 		);
+	}
+
+	private function validated_warga_profile_input()
+	{
+		$name = trim(strip_tags((string) $this->input->post('nama_lengkap')));
+		$name = preg_replace('/\s+/u', ' ', $name);
+		$email = strtolower(trim((string) $this->input->post('email')));
+		$phone = preg_replace('/[\s().-]+/', '', trim((string) $this->input->post('no_hp')));
+		$birthdate = trim((string) $this->input->post('tgl_lahir'));
+		$gender = trim((string) $this->input->post('jk'));
+		$address = trim(strip_tags((string) $this->input->post('alamat')));
+		$address = preg_replace('/[\t ]+/u', ' ', $address);
+
+		if ($this->profile_text_length($name) < 2 || $this->profile_text_length($name) > 100) {
+			return array('success' => false, 'message' => 'Nama lengkap harus terdiri dari 2 sampai 100 karakter.');
+		}
+		if (filter_var($email, FILTER_VALIDATE_EMAIL) === false || strlen($email) > 100) {
+			return array('success' => false, 'message' => 'Email belum valid.');
+		}
+		if (!preg_match('/^\+?[0-9]{8,20}$/', $phone)) {
+			return array('success' => false, 'message' => 'Nomor HP belum valid. Gunakan 8 sampai 20 angka.');
+		}
+		$birthdate_value = DateTime::createFromFormat('!Y-m-d', $birthdate);
+		if (!$birthdate_value || $birthdate_value->format('Y-m-d') !== $birthdate || $birthdate_value > new DateTime('today')) {
+			return array('success' => false, 'message' => 'Tanggal lahir belum valid.');
+		}
+		if (!in_array($gender, array('Laki-laki', 'Perempuan'), true)) {
+			return array('success' => false, 'message' => 'Jenis kelamin belum valid.');
+		}
+		if ($this->profile_text_length($address) < 5 || $this->profile_text_length($address) > 500) {
+			return array('success' => false, 'message' => 'Alamat harus terdiri dari 5 sampai 500 karakter.');
+		}
+
+		return array('success' => true, 'data' => array(
+			'nama' => $name,
+			'email' => $email,
+			'no_hp' => $phone,
+			'tgl' => $birthdate,
+			'gender' => $gender,
+			'alamat' => $address,
+		));
+	}
+
+	private function profile_text_length($value)
+	{
+		return function_exists('mb_strlen') ? mb_strlen((string) $value, 'UTF-8') : strlen((string) $value);
 	}
 
 	private function require_post_json()

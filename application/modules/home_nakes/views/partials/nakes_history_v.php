@@ -190,6 +190,7 @@ $history_event_time = static function ($event) {
 											$this->load->view('partials/nakes_avatar_v', array(
 												'avatar_name' => $x->nama,
 												'avatar_photo' => $patient_photo,
+												'avatar_user_id' => (int) $x->user_id,
 												'avatar_alt' => 'Foto pasien',
 												'avatar_class' => 'nk-avatar--md nk-avatar--patient',
 											));
@@ -391,6 +392,7 @@ $history_event_time = static function ($event) {
 											$this->load->view('partials/nakes_avatar_v', array(
 												'avatar_name' => $x->nama,
 												'avatar_photo' => $patient_photo,
+												'avatar_user_id' => (int) $x->user_id,
 												'avatar_alt' => 'Foto pasien',
 												'avatar_class' => 'nk-avatar--md nk-avatar--patient nk-avatar--muted',
 											));

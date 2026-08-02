@@ -12,6 +12,7 @@ class Home_nakes extends MX_Controller
 		$this->load->helper('livekit');
 		$this->load->helper('notification');
 		$this->load->helper('request_realtime');
+		$this->load->helper('role_prerequisite');
 		$this->load->library('Visit_monitoring_policy');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment'), true)) {
@@ -38,9 +39,13 @@ class Home_nakes extends MX_Controller
 				->set_output(json_encode(array('success' => false, 'message' => 'Anda tidak memiliki akses.')));
 			return;
 		}
+		$user_id = (int) $this->session->userdata('id');
+		if (!$this->require_role_prerequisites($user_id)) {
+			return;
+		}
 
 		$request_id = (int) ($this->input->post('request_id') ?: $this->input->get('request_id', TRUE));
-		$result = doclinc_livekit_token_payload($request_id, (int) $this->session->userdata('id'), $this->session->userdata('role'));
+		$result = doclinc_livekit_token_payload($request_id, $user_id, $this->session->userdata('role'));
 		$this->output
 			->set_status_header((int) $result['http_status'])
 			->set_output(json_encode($result['body']));
@@ -68,6 +73,9 @@ class Home_nakes extends MX_Controller
 		$request = doclinc_request_row($request_id);
 		if (!$request || $request->request_status !== 'Accepted' || !doclinc_request_is_handled_by_nakes($request, $user_id)) {
 			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'message' => 'Panggilan tidak diizinkan')));
+			return;
+		}
+		if (!$this->require_role_prerequisites($user_id)) {
 			return;
 		}
 
@@ -226,6 +234,9 @@ class Home_nakes extends MX_Controller
 			$this->presence_respond(403, false, 'feature_disabled');
 			return;
 		}
+		if (!$this->require_role_prerequisites((int) $this->session->userdata('id'))) {
+			return;
+		}
 
 		$actor = $this->presence_actor();
 		require_once APPPATH . 'libraries/Nakes_presence_service.php';
@@ -340,6 +351,7 @@ class Home_nakes extends MX_Controller
 			'snapshotIntervalMs' => 30000,
 		);
 		$d['profile'] = $this->Home_nakes_m->get_profile_by_id($uid);
+		$d['role_prerequisite_state'] = doclinc_role_prerequisite_state($uid, true);
 		if (!is_array($d['profile'])) {
 			$d['profile'] = array();
 		}
@@ -446,6 +458,9 @@ class Home_nakes extends MX_Controller
 			redirect('home_nakes#riwayat_konsul');
 			return;
 		}
+		if (!$this->require_role_prerequisites($user_id, false)) {
+			return;
+		}
 
 		$result = $this->Home_nakes_m->assign_staff_to_request($request_id, $staff_id, $puskesmas_code, $user_id, $note, $identity_context);
 		$message = !empty($result['message']) ? $result['message'] : 'Gagal memperbarui PIC.';
@@ -491,6 +506,9 @@ class Home_nakes extends MX_Controller
 			}
 			$this->session->set_flashdata('staff_assignment_error', 'Anda tidak memiliki akses.');
 			redirect('home_nakes#riwayat_konsul');
+			return;
+		}
+		if (!$this->require_role_prerequisites($user_id, false)) {
 			return;
 		}
 
@@ -555,6 +573,9 @@ class Home_nakes extends MX_Controller
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
+			return;
+		}
+		if (!$this->require_role_prerequisites($id_user)) {
 			return;
 		}
 
@@ -761,6 +782,9 @@ class Home_nakes extends MX_Controller
 				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
+		if (!$this->require_role_prerequisites($user_id)) {
+			return;
+		}
 		$current_visit_status = isset($request->visit_status) && $request->visit_status !== null
 			? doclinc_normalize_visit_status($request->visit_status)
 			: '';
@@ -875,6 +899,9 @@ class Home_nakes extends MX_Controller
 				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
 			return;
 		}
+		if (!$this->require_role_prerequisites($user_id)) {
+			return;
+		}
 
 		$result = $this->Home_nakes_m->update_visit_status($request_id, $user_id, $visit_status, $identity_context);
 		if (empty($result['status']) || $result['status'] !== 'success') {
@@ -961,8 +988,17 @@ class Home_nakes extends MX_Controller
 		}
 		$response = ['status' => 'error', 'message' => 'Gagal menyimpan'];
 
-		$id = $this->session->userdata('id');
-		$validated = $this->validated_profile_input();
+		$id = (int) $this->session->userdata('id');
+		$identity = doclinc_dokter_identity_context($id, true);
+		if (empty($identity['valid']) || !in_array((string) ($identity['account_type'] ?? ''), array('personal', 'command_center'), true)) {
+			$this->output->set_status_header(403)->set_output(json_encode(array(
+				'status' => 'error',
+				'safe_error_code' => 'actor_denied',
+				'message' => 'Identitas akun belum valid.',
+			)));
+			return;
+		}
+		$validated = $this->validated_profile_input((string) $identity['account_type']);
 		if ($validated['success'] !== true) {
 			$this->output
 				->set_status_header(422)
@@ -974,13 +1010,37 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 		$data = $validated['data'];
-		$uploaded_profile_path = '';
+		if (!$this->Home_nakes_m->email_available_for_user($id, $data['email'])) {
+			$this->output
+				->set_status_header(409)
+				->set_output(json_encode(array(
+					'status' => 'error',
+					'safe_error_code' => 'profile_email_conflict',
+					'message' => 'Email sudah digunakan akun lain.',
+				)));
+			return;
+		}
+		$uploaded_profile_key = '';
+		$profile_storage = null;
 
 		// Upload foto jika ada
 		if (!empty($_FILES['foto']['name'])) {
-			$config['upload_path']   = './uploads/profile/';
-			$config['allowed_types'] = 'jpg|jpeg|png';
-			$config['max_size']      = 5120; // 5MB
+			require_once APPPATH . 'libraries/Profile_image_storage.php';
+			$profile_storage = new Profile_image_storage(array(
+				'storage_path' => $this->config->item('profile_image_storage_path'),
+				'public_root' => FCPATH,
+			));
+			$upload_directory = $profile_storage->ensure_storage_directory();
+			if ($upload_directory === false) {
+				$this->output
+					->set_status_header(503)
+					->set_output(json_encode(array('status' => 'error', 'message' => 'Penyimpanan foto profil belum siap.')));
+				return;
+			}
+
+			$config['upload_path']   = $upload_directory;
+			$config['allowed_types'] = 'jpg|jpeg|png|webp';
+			$config['max_size']      = max(1, (int) $this->config->item('profile_image_max_size_kb'));
 			$config['encrypt_name']  = TRUE;
 			$config['detect_mime']   = TRUE;
 			$config['mod_mime_fix']  = TRUE;
@@ -989,11 +1049,22 @@ class Home_nakes extends MX_Controller
 			$this->load->library('upload', $config);
 			if ($this->upload->do_upload('foto')) {
 				$uploadData = $this->upload->data();
-				$data['foto'] = $uploadData['file_name'];
+				$uploaded_profile_key = $profile_storage->stored_key_from_upload($uploadData);
 				$uploaded_profile_path = isset($uploadData['full_path']) ? (string) $uploadData['full_path'] : '';
+				if (!$profile_storage->upload_is_valid($uploaded_profile_path, $uploaded_profile_key, $config['max_size'])) {
+					if ($uploaded_profile_path !== '' && is_file($uploaded_profile_path)) {
+						@unlink($uploaded_profile_path);
+					}
+					$this->output
+						->set_status_header(422)
+						->set_output(json_encode(array('status' => 'error', 'message' => 'Isi file foto tidak valid. Gunakan JPG, PNG, atau WebP.')));
+					return;
+				}
+				@chmod($uploaded_profile_path, 0600);
+				$data['foto'] = $uploaded_profile_key;
 			} else {
 				$response['message'] = 'Foto profil belum dapat diunggah. Periksa file dan coba lagi.';
-				$this->output->set_output(json_encode($response));
+				$this->output->set_status_header(422)->set_output(json_encode($response));
 				return;
 			}
 		}
@@ -1003,18 +1074,19 @@ class Home_nakes extends MX_Controller
 			$this->session->set_userdata($data);
 			$this->output->set_output(json_encode(['status' => 'success', 'message' => 'Profil diperbarui.']));
 		} else {
-			if ($uploaded_profile_path !== '' && is_file($uploaded_profile_path)) {
-				@unlink($uploaded_profile_path);
+			if ($profile_storage && $uploaded_profile_key !== '') {
+				$profile_storage->remove_private_file($uploaded_profile_key);
 			}
 			$this->output->set_status_header(500);
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Gagal memperbarui profil.']));
 		}
 	}
 
-	private function validated_profile_input()
+	private function validated_profile_input($account_type)
 	{
 		$name = trim(strip_tags((string) $this->input->post('nama_lengkap')));
 		$name = preg_replace('/\s+/u', ' ', $name);
+		$email = strtolower(trim((string) $this->input->post('email')));
 		$phone = preg_replace('/[\s().-]+/', '', trim((string) $this->input->post('no_hp')));
 		$birthdate = trim((string) $this->input->post('tgl_lahir'));
 		$gender = trim((string) $this->input->post('jk'));
@@ -1024,8 +1096,24 @@ class Home_nakes extends MX_Controller
 		if ($name === '' || $this->profile_text_length($name) < 2 || $this->profile_text_length($name) > 100) {
 			return ['success' => false, 'message' => 'Nama lengkap harus terdiri dari 2 sampai 100 karakter.'];
 		}
+		if (filter_var($email, FILTER_VALIDATE_EMAIL) === false || strlen($email) > 100) {
+			return ['success' => false, 'message' => 'Email belum valid.'];
+		}
 		if (!preg_match('/^\+?[0-9]{8,20}$/', $phone)) {
 			return ['success' => false, 'message' => 'Nomor HP belum valid. Gunakan 8 sampai 20 angka.'];
+		}
+		if ($account_type === 'command_center') {
+			return [
+				'success' => true,
+				'data' => [
+					'nama' => $name,
+					'email' => $email,
+					'no_hp' => $phone,
+				],
+			];
+		}
+		if ($account_type !== 'personal') {
+			return ['success' => false, 'message' => 'Identitas akun belum valid.'];
 		}
 		$birthdate_value = DateTime::createFromFormat('!Y-m-d', $birthdate);
 		if (!$birthdate_value || $birthdate_value->format('Y-m-d') !== $birthdate || $birthdate_value > new DateTime('today')) {
@@ -1042,6 +1130,7 @@ class Home_nakes extends MX_Controller
 			'success' => true,
 			'data' => [
 				'nama' => $name,
+				'email' => $email,
 				'no_hp' => $phone,
 				'tgl' => $birthdate,
 				'gender' => $gender,
@@ -1089,6 +1178,28 @@ class Home_nakes extends MX_Controller
 		}
 
 		redirect('login');
+		return false;
+	}
+
+	private function require_role_prerequisites($user_id, $json_only = true)
+	{
+		$state = doclinc_role_prerequisite_state((int) $user_id, true);
+		if (!empty($state['allowed'])) {
+			return true;
+		}
+
+		$payload = doclinc_role_prerequisite_error_payload($state);
+		if ($json_only || $this->staff_assignment_json_requested()) {
+			$this->output
+				->set_content_type('application/json')
+				->set_header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0')
+				->set_status_header(doclinc_role_prerequisite_http_status($state))
+				->set_output(json_encode($payload));
+			return false;
+		}
+
+		$this->session->set_flashdata('staff_assignment_error', $payload['message']);
+		redirect('home_nakes#profile');
 		return false;
 	}
 

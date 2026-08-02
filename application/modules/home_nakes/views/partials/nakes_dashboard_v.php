@@ -1,6 +1,28 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 				<div id="beranda" class="content active">
 					<div class="dl-dashboard-stack">
+						<?php
+						$role_prerequisite_state = isset($role_prerequisite_state) && is_array($role_prerequisite_state) ? $role_prerequisite_state : array();
+						$role_prerequisite_blocked = !empty($role_prerequisite_state['enforced']) && empty($role_prerequisite_state['allowed']);
+						$role_prerequisite_labels = !empty($role_prerequisite_state['missing_labels']) && is_array($role_prerequisite_state['missing_labels'])
+							? array_slice($role_prerequisite_state['missing_labels'], 0, 3)
+							: array();
+						$role_prerequisite_cta_url = !empty($role_prerequisite_state['cta_url']) ? (string) $role_prerequisite_state['cta_url'] : '';
+						$role_prerequisite_cta_label = !empty($role_prerequisite_state['cta_label']) ? (string) $role_prerequisite_state['cta_label'] : '';
+						?>
+						<?php if ($role_prerequisite_blocked) : ?>
+							<div class="alert alert-warning d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 mb-0" role="alert" data-role-prerequisite-alert>
+								<div>
+									<strong>Profil belum lengkap.</strong>
+									<span><?= html_escape(!empty($role_prerequisite_labels) ? implode(', ', $role_prerequisite_labels) . ' perlu dilengkapi.' : 'Lengkapi data profil untuk melanjutkan.'); ?></span>
+								</div>
+								<?php if ($role_prerequisite_cta_url !== '') : ?>
+									<a class="btn btn-warning btn-sm" href="#profile" onclick="showContent('profile')"><?= html_escape($role_prerequisite_cta_label !== '' ? $role_prerequisite_cta_label : 'Lengkapi profil'); ?></a>
+								<?php else : ?>
+									<span class="small fw-semibold">Hubungi pengelola DocLink.</span>
+								<?php endif; ?>
+							</div>
+						<?php endif; ?>
 						<?php if (!empty($nakes_is_personal)) : ?>
 							<div class="alert alert-info mb-0" role="status">Hanya tugas Anda yang tampil di sini.</div>
 						<?php endif; ?>

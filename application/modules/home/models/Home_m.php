@@ -649,6 +649,75 @@ class Home_m extends MX_Controller
 		return $this->db->where('userId', $idUser)->get('users');
 	}
 
+	public function update_profile_photo($user_id, $stored_key)
+	{
+		$user_id = (int) $user_id;
+		$stored_key = trim((string) $stored_key);
+		if ($user_id < 1 || $stored_key === '' || !$this->db->field_exists('foto', 'users')) {
+			return false;
+		}
+
+		$this->db
+			->where('userId', $user_id)
+			->where('role', 'warga')
+			->where('status', 'aktif')
+			->update('users', array('foto' => $stored_key));
+		return $this->db->affected_rows() === 1;
+	}
+
+	public function email_available_for_user($user_id, $email)
+	{
+		$user_id = (int) $user_id;
+		$email = strtolower(trim((string) $email));
+		if ($user_id < 1 || filter_var($email, FILTER_VALIDATE_EMAIL) === false || !$this->db->field_exists('email', 'users')) {
+			return false;
+		}
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$query = $this->db
+			->select('userId')
+			->where('email', $email)
+			->where('userId !=', $user_id)
+			->limit(1)
+			->get('users');
+		$this->db->db_debug = $db_debug;
+		return $query !== false && !$query->row();
+	}
+
+	public function update_profile($user_id, array $data)
+	{
+		$user_id = (int) $user_id;
+		$allowed = array('nama', 'email', 'no_hp', 'tgl', 'gender', 'alamat');
+		foreach (array_keys($data) as $field) {
+			if (!in_array($field, $allowed, true) || !$this->db->field_exists($field, 'users')) {
+				unset($data[$field]);
+			}
+		}
+		if ($user_id < 1 || count($data) !== count($allowed)) {
+			return false;
+		}
+
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$updated = $this->db
+			->where('userId', $user_id)
+			->where('role', 'warga')
+			->where('status', 'aktif')
+			->update('users', $data);
+		$this->db->db_debug = $db_debug;
+		if (!$updated) {
+			return false;
+		}
+		return (bool) $this->db
+			->select('userId')
+			->where('userId', $user_id)
+			->where('role', 'warga')
+			->where('status', 'aktif')
+			->limit(1)
+			->get('users')
+			->row();
+	}
+
 	public function get_request_for_pending_edit($request_id, $user_id)
 	{
 		$request_id = (int) $request_id;

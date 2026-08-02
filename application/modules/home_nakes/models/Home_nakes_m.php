@@ -1956,8 +1956,9 @@ class Home_nakes_m extends MX_Controller
 
 	public function update_profile($id, $data)
 	{
+		$allowed = array('nama', 'email', 'no_hp', 'tgl', 'gender', 'alamat', 'foto');
 		foreach (array_keys($data) as $field) {
-			if (!$this->db->field_exists($field, 'users')) {
+			if (!in_array($field, $allowed, true) || !$this->db->field_exists($field, 'users')) {
 				unset($data[$field]);
 			}
 		}
@@ -1965,7 +1966,43 @@ class Home_nakes_m extends MX_Controller
 			return true;
 		}
 
-		$this->db->where('userId', $id);
-		return $this->db->update('users', $data);
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$updated = $this->db
+			->where('userId', (int) $id)
+			->where('role', 'dokter')
+			->where('status', 'aktif')
+			->update('users', $data);
+		$this->db->db_debug = $db_debug;
+		if (!$updated) {
+			return false;
+		}
+		return (bool) $this->db
+			->select('userId')
+			->where('userId', (int) $id)
+			->where('role', 'dokter')
+			->where('status', 'aktif')
+			->limit(1)
+			->get('users')
+			->row();
+	}
+
+	public function email_available_for_user($user_id, $email)
+	{
+		$user_id = (int) $user_id;
+		$email = strtolower(trim((string) $email));
+		if ($user_id < 1 || filter_var($email, FILTER_VALIDATE_EMAIL) === false || !$this->db->field_exists('email', 'users')) {
+			return false;
+		}
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$query = $this->db
+			->select('userId')
+			->where('email', $email)
+			->where('userId !=', $user_id)
+			->limit(1)
+			->get('users');
+		$this->db->db_debug = $db_debug;
+		return $query !== false && !$query->row();
 	}
 }

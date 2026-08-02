@@ -7,12 +7,14 @@ class First_login_gate_policy
 		'clinical_suggestions' => array('*'),
 		'realtime_access' => array('connection_token', 'subscription_token'),
 		'realtime_requests' => array('snapshot'),
+		'profile_media' => array('photo'),
+		'profile_requirements' => array('status'),
 		'chat' => array('messages', 'send', 'mark_read', 'foto', 'video'),
 		'upload' => array('foto', 'video'),
 		'notifikasi' => array('list_json', 'snapshot', 'mark_read'),
 		'konsultasi' => array('save_konsultasi'),
 		'konsultasi_nakes' => array('get_terapi', 'save_konsultasi_nakes'),
-		'home' => array('livekit_token', 'livekit_incoming_call', 'answer_livekit_call', 'reject_livekit_call', 'livekit_call_status', 'updaterequestbyid', 'deleterequestbyid', 'cancel_request', 'visit_location', 'submit_rating', 'getdokterrating', 'getduration'),
+		'home' => array('livekit_token', 'livekit_incoming_call', 'answer_livekit_call', 'reject_livekit_call', 'livekit_call_status', 'updaterequestbyid', 'deleterequestbyid', 'cancel_request', 'visit_location', 'submit_rating', 'getdokterrating', 'getduration', 'update_profile', 'update_profile_photo'),
 		'home_nakes' => array('livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment', 'accept_request', 'cancel_request', 'visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'updateprofile'),
 	);
 

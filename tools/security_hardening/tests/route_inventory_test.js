@@ -65,7 +65,7 @@ const inventory = {
     reject_livekit_call: 'POST_LIVEKIT', livekit_call_status: 'POST_LIVEKIT', index: 'READ',
     save_konsultasi: 'TOMBSTONE', updateRequestById: 'POST_HELPER', deleterequestbyid: 'POST_HELPER',
     cancel_request: 'POST_HELPER', visit_location: 'GET', submit_rating: 'POST_HELPER',
-    getDokterRating: 'POST_HELPER', getDuration: 'POST_HELPER',
+    getDokterRating: 'POST_HELPER', getDuration: 'POST_HELPER', update_profile: 'POST_HELPER', update_profile_photo: 'POST',
   },
   'application/modules/home/controllers/Notification.php': {
     index: 'TOMBSTONE', test: 'TOMBSTONE', send: 'TOMBSTONE', service_worker: 'TOMBSTONE',
@@ -94,6 +94,12 @@ const inventory = {
   },
   'application/controllers/Realtime_requests.php': {
     snapshot: 'GET',
+  },
+  'application/controllers/Profile_media.php': {
+    photo: 'GET',
+  },
+  'application/controllers/Profile_requirements.php': {
+    status: 'GET',
   },
   'application/controllers/Clinical_suggestions.php': {
     search: 'GET',

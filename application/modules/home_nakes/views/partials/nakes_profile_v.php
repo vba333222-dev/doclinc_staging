@@ -1,6 +1,7 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 <?php
 $profile_name = (string) $this->session->userdata('nama');
+$profile_email = isset($profile['email']) ? trim((string) $profile['email']) : (string) $this->session->userdata('email');
 $profile_photo = isset($profile['foto']) ? trim((string) $profile['foto']) : '';
 $profile_birthdate = isset($profile['tgl']) ? (string) $profile['tgl'] : '';
 $profile_gender = isset($profile['gender']) ? (string) $profile['gender'] : '';
@@ -21,10 +22,15 @@ $profile_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_
 $profile_staff_count = isset($puskesmas_staff_count) ? (int) $puskesmas_staff_count : count($profile_staff_rows);
 $profile_rows = array(
 	array('id' => 'nama_lengkap', 'label' => 'Nama lengkap', 'icon' => 'bi bi-person-fill', 'value' => $profile_name, 'type' => 'text'),
-	array('id' => 'tgl', 'label' => 'Tanggal lahir', 'icon' => 'bi bi-calendar-event-fill', 'value' => $profile_birthdate, 'type' => 'date'),
-	array('id' => 'jk', 'label' => 'Jenis kelamin', 'icon' => 'bi bi-gender-ambiguous', 'value' => $profile_gender, 'type' => 'text'),
+	array('id' => 'email', 'label' => 'Email', 'icon' => 'bi bi-envelope-fill', 'value' => $profile_email, 'type' => 'email'),
 	array('id' => 'no_hp', 'label' => 'Nomor HP', 'icon' => 'bi bi-telephone-fill', 'value' => $profile_phone, 'type' => 'text'),
 );
+if ($profile_is_personal) {
+	array_splice($profile_rows, 2, 0, array(
+		array('id' => 'tgl', 'label' => 'Tanggal lahir', 'icon' => 'bi bi-calendar-event-fill', 'value' => $profile_birthdate, 'type' => 'date'),
+		array('id' => 'jk', 'label' => 'Jenis kelamin', 'icon' => 'bi bi-gender-ambiguous', 'value' => $profile_gender, 'type' => 'text'),
+	));
+}
 ?>
 				<div id="profile" class="content">
 					<div class="dl-profile-stack">
@@ -33,7 +39,8 @@ $profile_rows = array(
 							$this->load->view('partials/nakes_avatar_v', array(
 								'avatar_name' => $profile_name,
 								'avatar_photo' => $profile_photo,
-								'avatar_alt' => 'Foto akun Puskesmas',
+								'avatar_user_id' => (int) $this->session->userdata('id'),
+								'avatar_alt' => $profile_is_personal ? 'Foto Nakes' : 'Foto akun Puskesmas',
 								'avatar_class' => 'nk-avatar--lg nk-avatar--nakes',
 								'avatar_icon' => 'fas fa-user-md',
 							));
@@ -112,6 +119,7 @@ $profile_rows = array(
 									</div>
 								</div>
 							<?php endforeach; ?>
+							<?php if ($profile_is_personal) : ?>
 							<div class="dl-profile-field dl-profile-field-address">
 								<div class="dl-profile-field-icon"><i class="bi bi-geo-alt-fill"></i></div>
 								<div class="dl-profile-field-body">
@@ -119,6 +127,7 @@ $profile_rows = array(
 									<textarea id="alamat" placeholder="Alamat" readonly><?= html_escape($profile_address); ?></textarea>
 								</div>
 							</div>
+							<?php endif; ?>
 						</div>
 
 						<div class="dl-profile-actions">

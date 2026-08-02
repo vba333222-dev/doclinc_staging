@@ -31,6 +31,7 @@ foreach (array('foto', 'photo', 'profile_photo', 'profile_image', 'patient_photo
 	$this->load->view('partials/nakes_avatar_v', array(
 		'avatar_name' => $latest_request->nama,
 		'avatar_photo' => $latest_patient_photo,
+		'avatar_user_id' => (int) $latest_request->user_id,
 		'avatar_alt' => 'Foto pasien',
 		'avatar_class' => 'nk-avatar--sm nk-avatar--patient',
 	));

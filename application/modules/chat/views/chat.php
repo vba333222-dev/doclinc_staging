@@ -351,10 +351,8 @@ $session_id = $this->session->userdata('id') ?: '';
 			</a>
 			<?php
 			if ($session_role == 'dokter') { ?>
-				<!-- <img src="<?= base_url(); ?>uploads/profile/<?= $foto ?>" alt="Pasien" id="ustadzProfileImage"> -->
 				<img src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>" alt="Pasien" id="ustadzProfileImage">
 			<?php } elseif ($session_role == 'warga') { ?>
-				<!-- <img src="<?= base_url(); ?>uploads/profile/<?= $foto ?>" alt="Dokter" id="ustadzProfileImage"> -->
 				<img src="<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>" alt="Dokter" id="ustadzProfileImage">
 			<?php } else { ?>
 				<img class="rounded-4 shadow"
