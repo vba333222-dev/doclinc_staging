@@ -54,6 +54,7 @@ $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 $route['clinical-suggestions'] = 'clinical_suggestions/search';
 $route['chat/attachment/(:num)'] = 'chat/chat/attachment/$1';
+$route['profile/photo/update'] = 'profile_media/update_photo';
 $route['profile/photo/(:num)'] = 'profile_media/photo/$1';
 $route['profile/requirements'] = 'profile_requirements/status';
 $route['profile/complete'] = 'profile_completion/index';

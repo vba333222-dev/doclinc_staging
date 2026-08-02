@@ -171,12 +171,12 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 												</div>
 											<div class="form-group">
 												<label class="text-info"><i class="fas fa-lock mr-1"></i> Password Baru</label>
-												<input type="password" class="form-control rounded-pill border-info" name="password" minlength="10" maxlength="72" autocomplete="new-password">
-												<small class="text-muted">Biarkan kosong jika tidak ingin mereset. Jika diisi, ini menjadi password sementara dan pengguna wajib menggantinya saat login berikutnya.</small>
+												<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password">
+												<small class="text-muted">Biarkan kosong jika tidak ingin mereset. Jika diisi, gunakan minimal 8 karakter dengan huruf besar, huruf kecil, angka, dan karakter khusus. Pengguna wajib menggantinya saat login berikutnya.</small>
 											</div>
 											<div class="form-group">
 												<label class="text-info"><i class="fas fa-lock mr-1"></i> Konfirmasi Password Baru</label>
-												<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="10" maxlength="72" autocomplete="new-password">
+												<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password">
 												</div>
 											</div>
 											<div class="modal-footer border-0 px-4 pb-4">
@@ -244,13 +244,14 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-lock mr-1"></i> Password</label>
-								<input type="password" class="form-control rounded-pill border-success" name="password" minlength="10" maxlength="72" required>
+								<input type="password" class="form-control rounded-pill border-success" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
+								<small class="text-muted">Minimal 8 karakter: huruf besar, huruf kecil, angka, dan karakter khusus.</small>
 							</div>
 						</div>
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-lock mr-1"></i> Konfirmasi Password</label>
-								<input type="password" class="form-control rounded-pill border-success" name="confirm_password" minlength="10" maxlength="72" required>
+								<input type="password" class="form-control rounded-pill border-success" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
 							</div>
 						</div>
 					</div>

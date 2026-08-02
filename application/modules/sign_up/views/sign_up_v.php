@@ -37,11 +37,12 @@
 							  <label for="username">Nama pengguna</label>
 							</div>
 							<div class="form-floating mb-2">
-							  <input type="password" class="form-control" id="password" name="password" placeholder="Password" autocomplete="off">
+							  <input type="password" class="form-control" id="password" name="password" placeholder="Password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
 							  <label for="password">Password</label>
 							</div>
+							<div class="form-text mb-2">Minimal 8 karakter: huruf besar, huruf kecil, angka, dan karakter khusus.</div>
 							<div class="form-floating mb-2">
-							  <input type="password" class="form-control" id="k_password" name="k_password" placeholder="Konfirmasi password">
+							  <input type="password" class="form-control" id="k_password" name="k_password" placeholder="Konfirmasi password" minlength="8" maxlength="72" autocomplete="new-password" required>
 							  <label for="k_password">Konfirmasi password</label>
 							</div>
 							<div class="row g-2">
@@ -119,9 +120,12 @@
 					}
 				},
 				error: function(xhr, status, error) {
+					var safeMessage = xhr && xhr.responseJSON && typeof xhr.responseJSON.message === 'string'
+						? xhr.responseJSON.message.trim()
+						: '';
 					Swal.fire({
 						title: "Akun belum dibuat",
-						text: "Terjadi kesalahan. Coba lagi.",
+						text: safeMessage || "Terjadi kesalahan. Coba lagi.",
 						icon: "error",
 						showConfirmButton: true
 					});

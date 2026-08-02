@@ -33,9 +33,15 @@ const chatView = read('application/modules/chat/views/thread_v.php');
 const nginx = read('tools/profile_images/nginx/doclinc-private-profile-images.conf');
 
 expect(routes.includes("$route['profile/photo/(:num)'] = 'profile_media/photo/$1';"), 'authorized_route_registered');
+expect(routes.includes("$route['profile/photo/update'] = 'profile_media/update_photo';"), 'self_update_route_registered');
 expect(helper.includes("base_url('profile/photo/' . $user_id)"), 'helper_uses_authorized_route');
 expect(!helper.includes("base_url(rtrim($uploadBase"), 'helper_never_builds_public_upload_url');
 expect(controller.includes("$policy->can_view($actor, $target)"), 'controller_enforces_policy');
+expect(controller.includes('public function update_photo()') && controller.includes("array('warga', 'dokter')"), 'unified_self_upload_endpoint_present');
+expect(controller.includes("->where('userId', $user_id)") && controller.includes("->where('role', $role)") && controller.includes("->where('status', 'aktif')"), 'unified_upload_update_is_actor_scoped');
+expect(controller.includes("where('foto IS NULL', null, false)") && controller.includes("where('foto', (string) $actor->foto)"), 'concurrent_photo_replacement_uses_compare_and_swap');
+expect(controller.includes("set_userdata(array('foto' => $stored_key, 'picture' => $stored_key))"), 'unified_upload_refreshes_session_photo');
+expect(controller.includes('$storage->remove_private_file($previous_key)'), 'replaced_private_photo_is_cleaned_after_update');
 expect(controller.includes("Cache-Control: private, no-store"), 'controller_private_no_store');
 expect(controller.includes("X-Content-Type-Options: nosniff"), 'controller_nosniff');
 expect(controller.includes("Cross-Origin-Resource-Policy: same-origin"), 'controller_same_origin_resource_policy');
@@ -54,7 +60,8 @@ expect(homeController.includes("$storage->upload_is_valid"), 'warga_upload_conte
 expect(homeModel.includes("->where('role', 'warga')") && homeModel.includes("->where('status', 'aktif')"), 'warga_update_scoped');
 expect(nakesController.includes("$profile_storage->upload_is_valid"), 'nakes_upload_content_validated');
 expect(nakesController.includes("'upload_path']   = $upload_directory"), 'nakes_upload_uses_private_storage');
-expect(homeView.includes('wargaProfilePhotoForm') && homeView.includes("base_url('home/update_profile_photo')"), 'warga_photo_ui_connected');
+expect(homeView.includes('wargaProfilePhotoForm') && homeView.includes("base_url('profile/photo/update')"), 'warga_photo_ui_connected_to_unified_endpoint');
+expect(nakesView.includes("base_url('profile/photo/update')") && nakesView.includes("formData.delete('foto')"), 'nakes_photo_ui_connected_to_unified_endpoint');
 expect(nakesView.includes('doclinc_profile_image_src') && avatar.includes('avatar_user_id'), 'nakes_views_use_subject_identity');
 expect(chatView.includes("base_url('profile/photo/' . $partner_user_id)") && (chatView.match(/\$partner_photo_src/g) || []).length >= 4, 'chat_and_call_use_authorized_partner_photo');
 expect(nginx.includes('location ^~ /uploads/profile/') && nginx.includes('return 404;'), 'legacy_direct_http_denied');

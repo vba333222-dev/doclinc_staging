@@ -5,17 +5,11 @@ class First_login_password_policy
 {
 	public function validate($password, $confirmation, array $identity, $stored_hash)
 	{
-		if (!is_string($password) || !is_string($confirmation)) {
-			return 'invalid_payload';
-		}
-		if (!hash_equals($password, $confirmation)) {
-			return 'confirmation_mismatch';
-		}
-		if (strlen($password) < 10 || strlen($password) > 72) {
-			return 'invalid_length';
-		}
-		if (preg_match('/[\x00-\x1F\x7F]/', $password) === 1) {
-			return 'invalid_characters';
+		require_once __DIR__ . '/Password_strength_policy.php';
+		$strength_policy = new Password_strength_policy();
+		$strength_error = $strength_policy->validate($password, $confirmation);
+		if ($strength_error !== null) {
+			return $strength_error;
 		}
 
 		$candidates = array();

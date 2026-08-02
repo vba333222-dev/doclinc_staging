@@ -18,6 +18,14 @@ New Warga and Nakes uploads are written outside the public web root using
 files are mode `0600`. Database values use the `profile-images/<hash>.<ext>`
 key contract. Legacy hashed names remain readable by the authorized endpoint.
 
+Seluruh UI profil publik memakai satu boundary `POST /profile/photo/update`.
+Endpoint tersebut melakukan revalidasi actor aktif, role Warga/Nakes, status
+password, MIME berdasarkan isi file, ukuran maksimal, write terikat user yang
+sedang login, pembaruan session, dan penghapusan file privat lama setelah row
+baru berhasil disimpan. Update data profil dan upload foto sengaja dipisahkan
+agar kegagalan foto mempunyai error yang jelas dan tidak mengacaukan field
+profil lain.
+
 Before rollout:
 
 1. Set `DOCLINC_PROFILE_IMAGE_STORAGE_PATH` in every PHP-FPM pool serving this
