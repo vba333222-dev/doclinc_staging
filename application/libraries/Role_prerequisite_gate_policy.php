@@ -34,6 +34,9 @@ class Role_prerequisite_gate_policy
 		if ($class === 'profile_media' && $method === 'photo') {
 			return (int) $resource_user_id > 0 && (int) $resource_user_id === (int) $actor_user_id;
 		}
+		if ($class === 'profile_media' && $method === 'update_photo') {
+			return in_array($role, array('warga', 'dokter'), true) && (int) $actor_user_id > 0;
+		}
 		if ($role === 'warga' && $class === 'home' && in_array($method, array('update_profile', 'update_profile_photo'), true)) {
 			return true;
 		}

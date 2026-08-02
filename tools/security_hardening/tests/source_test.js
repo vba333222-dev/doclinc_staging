@@ -47,6 +47,8 @@ const csrfClient = source('assets/js/doclinc-csrf.js');
 const sameSiteGate = source('application/hooks/Cookie_samesite_gate.php');
 const login = source('application/modules/login/controllers/Login.php');
 const signup = source('application/modules/sign_up/controllers/Sign_up.php');
+const signupView = source('application/modules/sign_up/views/sign_up_v.php');
+const passwordPolicy = source('application/libraries/Password_strength_policy.php');
 const sessionGate = source('application/hooks/Password_change_gate.php');
 const gatePolicy = source('application/libraries/First_login_gate_policy.php');
 const home = source('application/modules/home/controllers/Home.php');
@@ -117,6 +119,9 @@ expect(!gatePolicy.includes("'notification' =>") && !gatePolicy.includes("array(
 expect(methodBody(login, 'auth').includes("method(TRUE) !== 'POST'"), 'login_auth_post_only');
 expect(methodBody(login, 'logout').includes("method(TRUE) !== 'POST'") && methodBody(login, 'logout').includes('show_404();'), 'logout_post_only');
 expect(methodBody(signup, 'save_user').includes("method(TRUE) !== 'POST'"), 'signup_post_only');
+expect(methodBody(signup, 'save_user').includes('Password_strength_policy') && signup.includes('required|min_length[8]|max_length[72]'), 'signup_uses_authoritative_password_policy');
+expect(signupView.includes('minlength="8" maxlength="72"') && signupView.includes('huruf besar, huruf kecil, angka, dan karakter khusus'), 'signup_explains_password_contract');
+expect(passwordPolicy.includes("preg_match('/[A-Z]/'") && passwordPolicy.includes("preg_match('/[a-z]/'") && passwordPolicy.includes("preg_match('/[0-9]/'") && passwordPolicy.includes("preg_match('/[^A-Za-z0-9\\s]/'"), 'password_complexity_is_server_enforced');
 expect(methodBody(chat, 'messages').includes("method(TRUE) !== 'GET'"), 'chat_messages_get_only');
 expect(methodBody(chat, 'send').includes("method(TRUE) !== 'POST'"), 'chat_send_post_only');
 expect(methodBody(chat, 'mark_read').includes("method(TRUE) !== 'POST'"), 'chat_mark_read_post_only');

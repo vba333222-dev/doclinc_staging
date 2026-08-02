@@ -96,7 +96,7 @@ const inventory = {
     snapshot: 'GET',
   },
   'application/controllers/Profile_media.php': {
-    photo: 'GET',
+    photo: 'GET', update_photo: 'POST',
   },
   'application/controllers/Profile_requirements.php': {
     status: 'GET',
