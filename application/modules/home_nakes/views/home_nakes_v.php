@@ -155,6 +155,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					<?php $this->load->view('partials/nakes_dashboard_v', get_defined_vars()); ?>
 					<?php if ($nakes_is_command_center) : ?>
 						<?php $this->load->view('partials/nakes_requests_v', get_defined_vars()); ?>
+						<?php if (!empty($puskesmas_operations_enabled)) : ?>
+							<?php $this->load->view('partials/puskesmas_operations_v', get_defined_vars()); ?>
+						<?php endif; ?>
 					<?php endif; ?>
 					<?php $this->load->view('partials/nakes_history_v', get_defined_vars()); ?>
 				<?php endif; ?>
@@ -479,10 +482,13 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				document.getElementById('nav-bottom-wrapper').style.display = 'block';
 			}, 1500);
 		});
+		const initialNakesSection = <?= json_encode(isset($nakes_initial_section) ? (string) $nakes_initial_section : 'beranda'); ?>;
 		document.addEventListener('DOMContentLoaded', function() {
 			var hash = window.location.hash;
 			if (hash) {
 				showContent(hash.replace('#', ''));
+			} else if (initialNakesSection && initialNakesSection !== 'beranda') {
+				showContent(initialNakesSection);
 			}
 			var highlightRequestId = new URLSearchParams(window.location.search).get('highlight_request_id');
 			if (highlightRequestId) {
@@ -520,6 +526,21 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				targetMenu.classList.add('active');
 			}
 		}
+
+		function navigateNakesSection(tab, url) {
+			showContent(tab);
+			if (url && window.history && window.history.pushState && window.location.href !== url) {
+				window.history.pushState({ doclincSection: tab }, '', url);
+			}
+		}
+
+		window.addEventListener('popstate', function() {
+			var operationsPath = <?= json_encode(parse_url(site_url('puskesmas/operations'), PHP_URL_PATH)); ?>;
+			var tab = window.location.pathname === operationsPath
+				? 'operasional'
+				: (window.location.hash ? window.location.hash.replace('#', '') : 'beranda');
+			showContent(tab);
+		});
 
 		$('#btn-logout').click(function(event) {
 			Swal.fire({
@@ -2413,6 +2434,10 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<?php if (!empty($nakes_presence_enabled)) : ?>
 		<script>window.DoclincNakesPresenceConfig = <?= json_encode($nakes_presence_bootstrap, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-nakes-presence.js')); ?>"></script>
+	<?php endif; ?>
+	<?php if (!empty($puskesmas_operations_enabled)) : ?>
+		<script>window.DoclincPuskesmasOperationsConfig = <?= json_encode($puskesmas_operations_bootstrap, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-puskesmas-operations.js')); ?>"></script>
 	<?php endif; ?>
 	<?php if (!empty($can_coordinate_staff)) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-pic-assignment.js')); ?>"></script>

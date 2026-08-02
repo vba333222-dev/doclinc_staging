@@ -75,7 +75,7 @@ const inventory = {
     livekit_call_status: 'POST_LIVEKIT', presence_heartbeat: 'POST', presence_snapshot: 'GET', index: 'READ',
     assign_staff: 'POST', clear_staff_assignment: 'POST', tes_save_lokasi: 'TOMBSTONE', save_location: 'TOMBSTONE',
     accept_request: 'POST', cancel_request: 'POST_HELPER', visit_location: 'GET', update_visit_location: 'POST',
-    update_visit_status: 'POST', get_location_user: 'TOMBSTONE', updateprofile: 'POST_HELPER',
+    update_visit_status: 'POST', get_location_user: 'TOMBSTONE', updateprofile: 'POST_HELPER', operations: 'READ',
   },
   'application/modules/konsultasi/controllers/Konsultasi.php': {
     index: 'READ', chat: 'TOMBSTONE', save_konsultasi: 'POST', send: 'TOMBSTONE', service_worker: 'TOMBSTONE',
@@ -103,6 +103,9 @@ const inventory = {
   },
   'application/controllers/Profile_completion.php': {
     index: 'GET',
+  },
+  'application/controllers/Puskesmas_operations.php': {
+    snapshot: 'GET',
   },
   'application/controllers/Clinical_suggestions.php': {
     search: 'GET',

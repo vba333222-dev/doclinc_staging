@@ -2,6 +2,8 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 class Home_nakes extends MX_Controller
 {
+	private $initial_section = 'beranda';
+
 	function __construct()
 	{
 		parent::__construct();
@@ -319,6 +321,27 @@ class Home_nakes extends MX_Controller
 		$this->output->set_status_header((int) $status)->set_output(json_encode($body));
 	}
 
+	public function operations()
+	{
+		if (!$this->require_dokter_session()) {
+			return;
+		}
+		if ($this->config->item('puskesmas_operations_enabled') !== true) {
+			show_404();
+			return;
+		}
+		$user_id = (int) $this->session->userdata('id');
+		$identity = doclinc_dokter_identity_context($user_id, true);
+		if (empty($identity['valid'])
+			|| (string) ($identity['account_type'] ?? '') !== 'command_center'
+			|| empty($identity['is_command_center'])) {
+			show_404();
+			return;
+		}
+		$this->initial_section = 'operasional';
+		$this->index();
+	}
+
 	public function index()
 	{
 		if (!$this->require_dokter_session()) {
@@ -330,6 +353,7 @@ class Home_nakes extends MX_Controller
 		$account_type = !empty($identity_context['valid']) ? (string) $identity_context['account_type'] : 'unclassified';
 		$puskesmas_code = !empty($identity_context['puskesmas_code']) ? (string) $identity_context['puskesmas_code'] : '';
 		$d['nakes_account_type'] = $account_type;
+		$d['nakes_initial_section'] = $this->initial_section;
 		$d['nakes_identity_valid'] = !empty($identity_context['valid']);
 		$d['can_coordinate_staff'] = $account_type === 'command_center';
 		$d['nakes_identity_staff'] = array(
@@ -349,6 +373,16 @@ class Home_nakes extends MX_Controller
 			'snapshotUrl' => base_url('home_nakes/presence_snapshot'),
 			'heartbeatIntervalMs' => max(15000, (int) $this->config->item('nakes_presence_heartbeat_seconds') * 1000),
 			'snapshotIntervalMs' => 30000,
+		);
+		$d['puskesmas_operations_enabled'] = $this->config->item('puskesmas_operations_enabled') === true
+			&& $account_type === 'command_center'
+			&& !empty($identity_context['valid']);
+		$d['puskesmas_operations_bootstrap'] = array(
+			'enabled' => $d['puskesmas_operations_enabled'],
+			'snapshotUrl' => base_url('puskesmas/operations/snapshot'),
+			'pageUrl' => site_url('puskesmas/operations'),
+			'pollIntervalMs' => max(15000, (int) $this->config->item('puskesmas_operations_poll_seconds') * 1000),
+			'containerId' => 'doclincPuskesmasOperations',
 		);
 		$d['profile'] = $this->Home_nakes_m->get_profile_by_id($uid);
 		$d['role_prerequisite_state'] = doclinc_role_prerequisite_state($uid, true);
