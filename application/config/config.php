@@ -772,6 +772,17 @@ $config['visit_proof_storage_path'] = is_string($visit_proof_storage_path_env)
 	? trim($visit_proof_storage_path_env)
 	: '';
 
+$chat_attachment_storage_path_env = getenv('DOCLINC_CHAT_ATTACHMENT_STORAGE_PATH');
+if ($chat_attachment_storage_path_env === false || $chat_attachment_storage_path_env === '') {
+	$chat_attachment_storage_path_env = $_SERVER['DOCLINC_CHAT_ATTACHMENT_STORAGE_PATH'] ?? '';
+}
+if (!is_string($chat_attachment_storage_path_env) || trim($chat_attachment_storage_path_env) === '') {
+	$chat_attachment_storage_path_env = dirname(dirname(rtrim(FCPATH, '/\\')))
+		. DIRECTORY_SEPARATOR . 'private' . DIRECTORY_SEPARATOR . 'chat-attachments';
+}
+$config['chat_attachment_storage_path'] = trim($chat_attachment_storage_path_env);
+$config['chat_attachment_max_size_kb'] = 4096;
+
 $additional_diagnoses_enabled_env = getenv('DOCLINC_ADDITIONAL_DIAGNOSES_ENABLED');
 if ($additional_diagnoses_enabled_env === false || $additional_diagnoses_enabled_env === '') {
 	$additional_diagnoses_enabled_env = $_SERVER['DOCLINC_ADDITIONAL_DIAGNOSES_ENABLED'] ?? null;

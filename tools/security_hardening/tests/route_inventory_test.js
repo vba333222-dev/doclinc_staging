@@ -55,7 +55,7 @@ const inventory = {
     index: 'READ', save_user: 'POST',
   },
   'application/modules/chat/controllers/Chat.php': {
-    index: 'READ', messages: 'GET', send: 'POST', mark_read: 'POST', foto: 'POST_UPLOAD', video: 'RETIRED_VIDEO',
+    index: 'READ', messages: 'GET', send: 'POST', mark_read: 'POST', foto: 'POST_UPLOAD', attachment: 'GET', video: 'RETIRED_VIDEO',
   },
   'application/modules/chat/controllers/upload.php': {
     index: 'TOMBSTONE', foto: 'TOMBSTONE', video: 'TOMBSTONE',

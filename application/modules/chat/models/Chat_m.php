@@ -87,7 +87,7 @@ class Chat_m extends CI_Model
 		return $row ? $this->format_message($row) : false;
 	}
 
-	public function send_image_message($request_id, $current_user_id, $relative_path, $mime_type = '', $original_name = '')
+	private function send_image_message($request_id, $current_user_id, $relative_path, $mime_type = '', $original_name = '')
 	{
 		$request_id = (int) $request_id;
 		$current_user_id = (int) $current_user_id;
@@ -128,10 +128,15 @@ class Chat_m extends CI_Model
 
 	public function image_upload_config()
 	{
+		$upload_path = $this->attachment_storage()->ensure_storage_directory();
+		if ($upload_path === false) {
+			return false;
+		}
+
 		return array(
-			'upload_path' => './uploads/chat_images/',
+			'upload_path' => $upload_path,
 			'allowed_types' => 'jpg|jpeg|png|webp',
-			'max_size' => 4096,
+			'max_size' => max(1, (int) $this->config->item('chat_attachment_max_size_kb')),
 			'encrypt_name' => TRUE,
 			'detect_mime' => TRUE,
 			'mod_mime_fix' => TRUE,
@@ -144,13 +149,70 @@ class Chat_m extends CI_Model
 		if (!is_array($upload_data) || empty($upload_data['file_name'])) {
 			return false;
 		}
+		$stored_key = $this->attachment_storage()->stored_key_from_upload($upload_data);
+		if ($stored_key === '') {
+			return false;
+		}
+		$storage = $this->attachment_storage();
+		$stored_path = $storage->resolve_stored_file($stored_key);
+		$actual_mime = $storage->allowed_mime($stored_path);
+		$max_bytes = max(1, (int) $this->config->item('chat_attachment_max_size_kb')) * 1024;
+		$stored_size = $stored_path !== false ? @filesize($stored_path) : false;
+		if ($stored_path === false || $actual_mime === '' || $stored_size === false || $stored_size < 1 || $stored_size > $max_bytes) {
+			return false;
+		}
 
 		return $this->send_image_message(
 			$request_id,
 			$current_user_id,
-			'uploads/chat_images/' . $upload_data['file_name'],
-			isset($upload_data['file_type']) ? $upload_data['file_type'] : '',
+			$stored_key,
+			$actual_mime,
 			isset($upload_data['client_name']) ? $upload_data['client_name'] : ''
+		);
+	}
+
+	public function get_attachment_for_user($message_id, $current_user_id)
+	{
+		$message_id = (int) $message_id;
+		$current_user_id = (int) $current_user_id;
+		if ($message_id < 1 || $current_user_id < 1 || !$this->messages_ready()) {
+			return false;
+		}
+
+		$row = $this->db
+			->select('message_id, request_id, message_type, message_text, attachment_path, attachment_mime, attachment_original_name, deleted_at')
+			->where('message_id', $message_id)
+			->limit(1)
+			->get('consultation_messages')
+			->row_array();
+		if (!$row || !empty($row['deleted_at']) || (string) $row['message_type'] !== 'image'
+			|| !doclinc_can_view_chat((int) $row['request_id'], $current_user_id)) {
+			return false;
+		}
+
+		$stored_key = $this->safe_attachment_path(isset($row['attachment_path']) ? $row['attachment_path'] : '');
+		if ($stored_key === '') {
+			$stored_key = $this->safe_attachment_path(isset($row['message_text']) ? $row['message_text'] : '');
+		}
+		$storage = $this->attachment_storage();
+		$path = $storage->resolve_stored_file($stored_key);
+		$mime = $storage->allowed_mime($path);
+		$max_bytes = max(1, (int) $this->config->item('chat_attachment_max_size_kb')) * 1024;
+		$size = $path !== false ? @filesize($path) : false;
+		if ($path === false || $mime === '' || $size === false || $size < 1 || $size > $max_bytes) {
+			return false;
+		}
+
+		$extension = $mime === 'image/png' ? 'png' : ($mime === 'image/webp' ? 'webp' : 'jpg');
+		$original_name = $this->safe_download_name(isset($row['attachment_original_name']) ? $row['attachment_original_name'] : '', $extension);
+
+		return array(
+			'message_id' => (int) $row['message_id'],
+			'request_id' => (int) $row['request_id'],
+			'path' => $path,
+			'mime' => $mime,
+			'size' => (int) $size,
+			'original_name' => $original_name,
 		);
 	}
 
@@ -184,6 +246,14 @@ class Chat_m extends CI_Model
 		if ($attachment_path === '' && isset($row['message_type']) && $row['message_type'] === 'image') {
 			$attachment_path = $this->safe_attachment_path(isset($row['message_text']) ? $row['message_text'] : '');
 		}
+		$attachment_mime = strtolower(trim((string) (isset($row['attachment_mime']) ? $row['attachment_mime'] : '')));
+		if (!in_array($attachment_mime, array('image/jpeg', 'image/png', 'image/webp'), true)) {
+			$attachment_mime = '';
+		}
+		$attachment_extension = $attachment_mime === 'image/png' ? 'png' : ($attachment_mime === 'image/webp' ? 'webp' : 'jpg');
+		$attachment_name = $attachment_path !== ''
+			? $this->safe_download_name(isset($row['attachment_original_name']) ? $row['attachment_original_name'] : '', $attachment_extension)
+			: '';
 
 		return array(
 			'message_id' => (int) $row['message_id'],
@@ -191,11 +261,10 @@ class Chat_m extends CI_Model
 			'sender_user_id' => (int) $row['sender_user_id'],
 			'sender_role' => $row['sender_role'],
 			'message_type' => $row['message_type'],
-			'message_text' => $row['message_text'],
-			'attachment_path' => $attachment_path,
-			'attachment_url' => $attachment_path !== '' ? base_url($attachment_path) : '',
-			'attachment_mime' => $row['attachment_mime'],
-			'attachment_original_name' => $row['attachment_original_name'],
+			'message_text' => (string) $row['message_type'] === 'image' ? '' : $row['message_text'],
+			'attachment_url' => $attachment_path !== '' ? base_url('chat/attachment/' . (int) $row['message_id']) : '',
+			'attachment_mime' => $attachment_mime,
+			'attachment_original_name' => $attachment_name,
 			'is_read' => (int) $row['is_read'],
 			'created_at' => $row['created_at'],
 		);
@@ -203,21 +272,28 @@ class Chat_m extends CI_Model
 
 	private function safe_attachment_path($path)
 	{
-		$path = trim(str_replace('\\', '/', (string) $path));
-		if ($path === '' || strpos($path, '..') !== false || strpos($path, ':') !== false || strpos($path, '//') !== false || $path[0] === '/') {
-			return '';
-		}
+		return $this->attachment_storage()->safe_stored_key($path);
+	}
 
-		if (strpos($path, 'uploads/chat_images/') !== 0) {
-			return '';
-		}
+	private function attachment_storage()
+	{
+		require_once APPPATH . 'libraries/Chat_attachment_storage.php';
+		return new Chat_attachment_storage(array(
+			'storage_path' => (string) $this->config->item('chat_attachment_storage_path'),
+			'public_root' => FCPATH,
+		));
+	}
 
-		$extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-		if (!in_array($extension, array('jpg', 'jpeg', 'png', 'webp'), true)) {
-			return '';
+	private function safe_download_name($value, $extension)
+	{
+		$value = basename(str_replace(array("\r", "\n", "\0"), '', (string) $value));
+		$value = pathinfo($value, PATHINFO_FILENAME);
+		$value = preg_replace('/[^A-Za-z0-9._ -]+/', '-', $value);
+		$value = trim((string) $value, " .-\t\n\r\0\x0B");
+		if ($value === '') {
+			$value = 'foto-konsultasi';
 		}
-
-		return $path;
+		return substr($value, 0, 132) . '.' . $extension;
 	}
 
 	private function notify_recipient($request_id, $sender_user_id)

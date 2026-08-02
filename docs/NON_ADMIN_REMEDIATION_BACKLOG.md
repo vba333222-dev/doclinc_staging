@@ -205,12 +205,15 @@ Acceptance criteria:
 
 ### PRIV-01 — Lampiran chat dan media profil harus privat
 
-Status: `OPEN`
+Status: `IN PROGRESS`
 
 Masalah:
 
-- Lampiran chat saat ini dikembalikan sebagai URL web-root langsung.
-- Access control message tidak otomatis melindungi file URL.
+- Upload lampiran chat baru sudah diarahkan ke storage privat di luar `FCPATH`.
+- Response message hanya mengembalikan URL controller berbasis `message_id`; storage key tidak dikirim ke browser.
+- Download melakukan authorization ulang terhadap request, validasi MIME dari isi file, batas ukuran, dan header `private, no-store`/`nosniff`.
+- Row legacy `uploads/chat_images/` tetap dapat dibaca melalui controller untuk kompatibilitas, tetapi file fisik lama belum dimigrasikan dan URL statis lama belum diblokir pada Nginx.
+- Media profil masih memakai jalur legacy dan belum termasuk remediation batch lampiran chat ini.
 
 Acceptance criteria:
 
@@ -402,5 +405,6 @@ Satu tahap remediation hanya boleh ditutup bila seluruh gate relevan lulus:
 - ROUTE-01 tetap `IN PROGRESS` sampai manifest method contract dieksekusi terhadap bootstrap/router CI3 sebenarnya (bukan source contract saja).
 - AUTH-01, XSS-01, dan ROUTE-01 belum `DONE` sampai seluruh controller/view/implicit route selesai diaudit dinamis.
 - UX-CLINICAL batch 3 implemented locally: WHO ICD-10 2019 canonical presenter, alias Indonesia sebagai search aid, official WHO title/code sebagai canonical selection, Fornas-only medicine presenter, fail-closed non-canonical/internal-brand filtering, no internal provenance pada browser API, dan retirement endpoint diagnosis legacy yang digantikan endpoint canonical. Final regression count dicatat pada handoff batch.
+- PRIV-01 batch 4 dimulai lokal: upload gambar chat baru berada di storage privat, browser hanya menerima endpoint download berizin berbasis message ID, dan storage key tidak lagi diekspos. Migrasi file legacy, Nginx deny rule, dynamic cross-role HTTP regression, serta media profil masih menjadi gate terbuka.
 - Authenticated browser UAT, penetration test aktif, dan database staging mutation tidak dilakukan dalam audit.
 - Dokumen ini belum menyatakan remediation selesai.
