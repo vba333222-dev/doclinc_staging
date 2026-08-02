@@ -151,7 +151,12 @@ try {
 	operations_integration_expect(empty($missing_schema['ok']) && $missing_schema['code'] === 'schema_unavailable', 'missing_assignment_snapshot_fails_closed');
 
 	$db->query("CREATE TABLE request_staff_assignments(assignment_id int NOT NULL,request_id int NOT NULL,staff_id int NOT NULL,status enum('aktif','diganti','dibatalkan') NOT NULL,PRIMARY KEY(assignment_id),KEY idx_assignment_request_status(request_id,status,assignment_id)) ENGINE=InnoDB");
-	operations_integration_expect($service->schemaReady(), 'complete_schema_ready');
+	$db->data_cache = array();
+	$complete_schema_ready = $service->schemaReady();
+	operations_integration_expect($complete_schema_ready, 'complete_schema_ready');
+	if (!$complete_schema_ready) {
+		throw new RuntimeException('complete_schema_not_ready');
+	}
 
 	$stage = 'fixture';
 	$db->query("INSERT INTO users VALUES
@@ -196,8 +201,12 @@ try {
 	$before_digest = operations_database_digest($db);
 	$tenant_a = $service->snapshot(operations_command_center_actor(10, 'PKM01'));
 	$after_digest = operations_database_digest($db);
-	operations_integration_expect(!empty($tenant_a['ok']) && $tenant_a['code'] === 'ok', 'tenant_a_snapshot_succeeds');
+	$tenant_a_ready = !empty($tenant_a['ok']) && $tenant_a['code'] === 'ok' && isset($tenant_a['data']);
+	operations_integration_expect($tenant_a_ready, 'tenant_a_snapshot_succeeds');
 	operations_integration_expect($before_digest === $after_digest, 'tenant_a_snapshot_zero_database_mutation');
+	if (!$tenant_a_ready) {
+		throw new RuntimeException('tenant_a_snapshot_unavailable');
+	}
 
 	$summary = $tenant_a['data']['summary'];
 	operations_integration_expect($summary['pending_requests'] === 1 && $summary['accepted_requests'] === 5, 'tenant_a_request_counts_exact');
@@ -221,7 +230,11 @@ try {
 	operations_integration_expect(strpos($serialized_a, 'Nakes Tenant B') === false, 'tenant_b_staff_absent_from_tenant_a');
 
 	$tenant_b = $service->snapshot(operations_command_center_actor(20, 'PKM02'));
-	operations_integration_expect(!empty($tenant_b['ok']) && count($tenant_b['data']['staff']) === 1, 'tenant_b_snapshot_succeeds');
+	$tenant_b_ready = !empty($tenant_b['ok']) && isset($tenant_b['data']['staff']) && count($tenant_b['data']['staff']) === 1;
+	operations_integration_expect($tenant_b_ready, 'tenant_b_snapshot_succeeds');
+	if (!$tenant_b_ready) {
+		throw new RuntimeException('tenant_b_snapshot_unavailable');
+	}
 	operations_integration_expect($tenant_b['data']['staff'][0]['user_id'] === 201 && $tenant_b['data']['puskesmas_code'] === 'PKM02', 'tenant_b_scope_exact');
 	operations_integration_expect($tenant_b['data']['summary']['pending_requests'] === 1 && $tenant_b['data']['summary']['accepted_requests'] === 1, 'tenant_b_request_counts_exact');
 	operations_integration_expect(count($tenant_b['data']['exceptions']) === 0, 'tenant_b_has_no_tenant_a_exceptions');
