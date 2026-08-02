@@ -1,6 +1,7 @@
 <?php
 if (!defined('BASEPATH')) { define('BASEPATH', dirname(__DIR__, 3) . '/system/'); }
 if (!defined('APPPATH')) { define('APPPATH', dirname(__DIR__, 3) . '/application/'); }
+if (!defined('FCPATH')) { define('FCPATH', dirname(__DIR__, 3) . '/'); }
 if (!defined('ENVIRONMENT')) { define('ENVIRONMENT', 'testing'); }
 
 require_once BASEPATH . 'core/Common.php';

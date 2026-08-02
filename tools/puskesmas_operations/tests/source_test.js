@@ -48,6 +48,7 @@ expect(partial.includes('tidak menampilkan identitas pasien, isi klinis, atau ko
 expect(client.includes("textContent = text") && !client.includes('innerHTML'), 'browser_uses_text_nodes_only');
 expect(client.includes("addEventListener('pagehide'") && client.includes('visibilityState') && client.includes('AbortController'), 'browser_lifecycle_is_bounded');
 expect(integration.includes('MariaDbReadiness::wait') && integration.includes('doclinc_puskesmas_ops_test_') && integration.includes('DROP DATABASE IF EXISTS'), 'official_disposable_mariadb_integration_contract');
+expect(integration.includes("define('FCPATH', dirname(__DIR__, 3) . '/')") && integration.indexOf("define('FCPATH'") < integration.indexOf("require_once BASEPATH . 'core/Common.php'"), 'integration_defines_front_controller_path_before_ci_bootstrap');
 expect(integration.includes('tenant_b_staff_absent_from_tenant_a') && integration.includes('tenant_identifier_injection_fails_closed') && integration.includes('zero_database_mutation'), 'integration_covers_tenant_privacy_and_zero_mutation');
 expect(integrationRunner.includes("read -r -s -p 'Disposable MariaDB admin password: '") && integrationRunner.includes('unset DB_PASSWORD DOCLINC_TEST_DB_ADMIN_PASSWORD') && !integrationRunner.includes('DATABASE_NAME'), 'integration_runner_prompts_secret_and_rejects_database_target');
 
