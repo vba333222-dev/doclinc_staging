@@ -10,6 +10,13 @@ $clinical_suggestions_endpoint = base_url('clinical-suggestions');
 $master_gejala_keluhan_options = isset($master_gejala_keluhan_options) && is_array($master_gejala_keluhan_options)
 	? $master_gejala_keluhan_options
 	: array();
+$role_prerequisite_state = isset($role_prerequisite_state) && is_array($role_prerequisite_state) ? $role_prerequisite_state : array();
+$role_prerequisite_blocked = !empty($role_prerequisite_state['enforced']) && empty($role_prerequisite_state['allowed']);
+$role_prerequisite_labels = !empty($role_prerequisite_state['missing_labels']) && is_array($role_prerequisite_state['missing_labels'])
+	? array_slice($role_prerequisite_state['missing_labels'], 0, 3)
+	: array();
+$role_prerequisite_cta_url = !empty($role_prerequisite_state['cta_url']) ? (string) $role_prerequisite_state['cta_url'] : '';
+$role_prerequisite_cta_label = !empty($role_prerequisite_state['cta_label']) ? (string) $role_prerequisite_state['cta_label'] : '';
 foreach ($data_profile->result() as $x) {
 	$usia = $x->usia;
 }
@@ -1178,12 +1185,13 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				</div>
 				<div class="d-flex dl-profile-row">
 					<?php
+					$foto = '';
 					foreach ($data_profile->result() as $x) {
 						$foto = $x->foto;
 					}
 					?>
 					<div class="flex-shrink-0">
-						<img class="rounded-4 shadow dl-profile-photo" id="previewFoto" src="<?= doclinc_safe_profile_image_src($foto); ?>" alt="Foto Profil" style="width: 100px; height: 100px; object-fit: cover;">
+						<img class="rounded-4 shadow dl-profile-photo" id="previewFoto" src="<?= doclinc_profile_image_src((int) $this->session->userdata('id'), $foto); ?>" alt="Foto Profil" style="width: 100px; height: 100px; object-fit: cover;">
 					</div>
 					<div class="flex-grow-1 ms-3 text-white dl-profile-copy">
 						<small>Selamat Datang</small>
@@ -1212,11 +1220,30 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			</svg>
 			<div class="position-relative">
 				<div id="beranda" class="content active">
+					<?php if ($role_prerequisite_blocked) : ?>
+						<div class="alert alert-warning d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2" role="alert" data-role-prerequisite-alert>
+							<div>
+								<strong>Profil belum lengkap.</strong>
+								<span><?= html_escape(!empty($role_prerequisite_labels) ? implode(', ', $role_prerequisite_labels) . ' perlu dilengkapi.' : 'Lengkapi data profil untuk melanjutkan.'); ?></span>
+							</div>
+							<?php if ($role_prerequisite_cta_url !== '') : ?>
+								<a class="btn btn-warning btn-sm" href="#profile" onclick="showContent('profile')"><?= html_escape($role_prerequisite_cta_label !== '' ? $role_prerequisite_cta_label : 'Lengkapi profil'); ?></a>
+							<?php else : ?>
+								<span class="small fw-semibold">Hubungi pengelola DocLink.</span>
+							<?php endif; ?>
+						</div>
+					<?php endif; ?>
 					<section class="dl-hero">
 						<div class="dl-hero-content">
 							<h2 class="dl-hero-title">Mulai konsultasi</h2>
 							<p class="dl-hero-text">Ceritakan keluhan Anda kepada Nakes.</p>
-							<?php if ($doclinc_has_active_request) : ?>
+							<?php if ($role_prerequisite_blocked && $role_prerequisite_cta_url !== '') : ?>
+								<a href="#profile" class="dl-btn-secondary" onclick="showContent('profile')">
+									Lengkapi profil <i class="fas fa-user-edit"></i>
+								</a>
+							<?php elseif ($role_prerequisite_blocked) : ?>
+								<span class="dl-btn-secondary" aria-disabled="true">Hubungi pengelola <i class="fas fa-headset"></i></span>
+							<?php elseif ($doclinc_has_active_request) : ?>
 								<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">
 									Lihat konsultasi <i class="fas fa-clipboard-list"></i>
 								</a>
@@ -1403,7 +1430,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							data-link="<?= base_url('konsultasi'); ?>?nama=<?= $userId; ?>">
 							<div class="card-body p-3">
 								<div class="d-flex hero-card">
-									<img class="rounded-4" id="gambar" src="<?= doclinc_safe_profile_image_src($row->foto ?? ''); ?>" width="100px" height="auto" alt="Foto Profil">
+									<img class="rounded-4" id="gambar" src="<?= doclinc_profile_image_src((int) $row->userId, $row->foto ?? ''); ?>" width="100px" height="auto" alt="Foto Profil">
 									<div class="w-100 ms-2">
 										<div class="d-flex">
 											<p class="fw-bold mb-0 me-auto"><?= $nama_dokter; ?></p>
@@ -1794,12 +1821,14 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				<div id="profile" class="content">
 					<?php
 					$nama = '';
+					$email = '';
 					$tgl = '';
 					$jk = '';
 					$no_hp = '';
 					$alamat = '';
 					foreach ($data_profile->result() as $x) {
 						$nama = $x->nama;
+						$email = $x->email;
 						$tgl = $x->tgl;
 						$jk = $x->gender;
 						$no_hp = $x->no_hp;
@@ -1812,10 +1841,23 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							<h4>Profil pengguna</h4>
 							<span><?= html_escape($nama !== '' ? $nama : 'Pengguna DocLink'); ?></span>
 						</div>
+						<form id="wargaProfilePhotoForm" class="text-center px-3 pt-3" enctype="multipart/form-data">
+							<label for="wargaProfilePhotoInput" class="d-inline-block" style="cursor:pointer">
+								<img id="wargaProfilePhotoPreview" class="rounded-circle shadow-sm" src="<?= doclinc_profile_image_src((int) $this->session->userdata('id'), $foto); ?>" width="112" height="112" style="object-fit:cover" alt="Foto profil pasien">
+							</label>
+							<input id="wargaProfilePhotoInput" name="foto" type="file" accept="image/jpeg,image/png,image/webp" class="d-none">
+							<div class="small text-muted mt-2">Ketuk foto untuk memilih foto asli Anda.</div>
+							<div id="wargaProfilePhotoFeedback" class="small mt-2" role="status"></div>
+							<button type="submit" class="btn btn-outline-success btn-sm rounded-pill mt-2" disabled>Simpan foto</button>
+						</form>
 						<div class="dl-profile-fields">
 							<div class="dl-profile-field">
 								<label for="nama_lengkap"><i class="fas fa-user me-1"></i> Nama lengkap</label>
 								<input type="text" id="nama_lengkap" value="<?= html_escape($nama); ?>" placeholder="Nama Lengkap" readonly>
+							</div>
+							<div class="dl-profile-field">
+								<label for="email"><i class="fas fa-envelope me-1"></i> Email</label>
+								<input type="email" id="email" value="<?= html_escape($email); ?>" placeholder="Email" readonly>
 							</div>
 							<div class="dl-profile-field">
 								<label for="tgl"><i class="fas fa-calendar-alt me-1"></i> Tanggal lahir</label>
@@ -1835,7 +1877,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							</div>
 						</div>
 						<div class="dl-profile-actions">
-							<button type="button" class="btn btn-outline-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#modalProfil" hidden>
+							<button type="button" class="btn btn-outline-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#modalProfil">
 								<i class="fas fa-edit me-1"></i> Ubah profil
 							</button>
 							<button type="button" class="btn btn-outline-danger w-100" id="btn-logout">
@@ -1966,33 +2008,40 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					<h1 class="modal-title fs-5" id="modalProfilLabel">Ubah profil</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
-				<form action="" method="post">
+				<form id="wargaProfileForm">
 					<div class="modal-body">
 						<div class="form-floating mb-2">
-							<input type="text" class="form-control shadow border-success" id="nama_lengkap_edit" value="Muhammad Bani Husni" placeholder="Nama Lengkap">
+							<input type="text" class="form-control shadow border-success" id="nama_lengkap_edit" name="nama_lengkap" value="<?= html_escape($nama); ?>" placeholder="Nama Lengkap" maxlength="100" required>
 							<label for="nama_lengkap_edit">Nama Lengkap</label>
 						</div>
 						<div class="form-floating mb-2">
-							<input type="date" class="form-control shadow border-success" id="tgl_edit" value="20/07/1993" placeholder="Tanggal Lahir">
+							<input type="email" class="form-control shadow border-success" id="email_edit" name="email" value="<?= html_escape($email); ?>" placeholder="Email" maxlength="100" required>
+							<label for="email_edit">Email</label>
+						</div>
+						<div class="form-floating mb-2">
+							<input type="date" class="form-control shadow border-success" id="tgl_edit" name="tgl_lahir" value="<?= html_escape($tgl); ?>" max="<?= html_escape(date('Y-m-d')); ?>" placeholder="Tanggal Lahir" required>
 							<label for="tgl_edit">Tanggal Lahir</label>
 						</div>
 						<div class="form-floating mb-2">
-							<input type="text" class="form-control shadow border-success" id="jk_edit" value="Laki-laki" placeholder="Jenis Kelamin">
+							<select class="form-select shadow border-success" id="jk_edit" name="jk" required>
+								<option value="Laki-laki" <?= $jk === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
+								<option value="Perempuan" <?= $jk === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
+							</select>
 							<label for="jk_edit">Jenis Kelamin</label>
 						</div>
 						<div class="form-floating mb-2">
-							<input type="text" class="form-control shadow border-success" id="no_hp_edit" value="087775587778" placeholder="Nomor HP">
+							<input type="tel" class="form-control shadow border-success" id="no_hp_edit" name="no_hp" value="<?= html_escape($no_hp); ?>" placeholder="Nomor HP" inputmode="tel" maxlength="20" required>
 							<label for="no_hp_edit">Nomor HP</label>
 						</div>
 						<div class="form-floating mb-2">
-							<textarea class="form-control shadow border-success" placeholder="Alamat" id="alamat_edit" style="height: 100px">BCS Logistics Center Jl. Raya Merak KM. 115, Cilegon Banten, Indonesia - 42436
-	                </textarea>
+							<textarea class="form-control shadow border-success" placeholder="Alamat" id="alamat_edit" name="alamat" maxlength="500" required style="height: 100px"><?= html_escape($alamat); ?></textarea>
 							<label for="alamat_edit">Alamat</label>
 						</div>
+						<div id="wargaProfileFeedback" class="small" role="status" aria-live="polite"></div>
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-						<button type="submit" class="btn btn-success">Simpan</button>
+						<button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Simpan</button>
 					</div>
 				</form>
 			</div>
@@ -3655,28 +3704,114 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		}
 	</script>
 
+	<!-- pembaruan data profil warga -->
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const form = document.getElementById('wargaProfileForm');
+			const feedback = document.getElementById('wargaProfileFeedback');
+			const submit = form ? form.querySelector('button[type="submit"]') : null;
+			if (!form || !feedback || !submit) return;
+			let saving = false;
+
+			form.addEventListener('submit', function(event) {
+				event.preventDefault();
+				if (saving || !form.reportValidity()) return;
+				saving = true;
+				submit.disabled = true;
+				feedback.className = 'small text-muted';
+				feedback.textContent = 'Menyimpan profil...';
+
+				fetch(<?= json_encode(base_url('profile/update')); ?>, {
+					method: 'POST',
+					body: new FormData(form)
+				})
+					.then(response => response.json().then(body => ({ ok: response.ok, body })))
+					.then(result => {
+						if (!result.ok || !result.body || result.body.status !== 'success') {
+							throw new Error(result.body && result.body.message ? result.body.message : 'Profil belum dapat disimpan.');
+						}
+						feedback.className = 'small text-success';
+						feedback.textContent = result.body.message || 'Profil berhasil diperbarui.';
+						window.setTimeout(function() { window.location.reload(); }, 500);
+					})
+					.catch(error => {
+						feedback.className = 'small text-danger';
+						feedback.textContent = error && error.message ? error.message : 'Profil belum dapat disimpan.';
+						saving = false;
+						submit.disabled = false;
+					});
+			});
+		});
+	</script>
+
+	<!-- upload foto profil warga -->
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const form = document.getElementById('wargaProfilePhotoForm');
+			const input = document.getElementById('wargaProfilePhotoInput');
+			const preview = document.getElementById('wargaProfilePhotoPreview');
+			const feedback = document.getElementById('wargaProfilePhotoFeedback');
+			const submit = form ? form.querySelector('button[type="submit"]') : null;
+			if (!form || !input || !preview || !feedback || !submit) return;
+
+			input.addEventListener('change', function() {
+				const file = input.files && input.files[0];
+				feedback.textContent = '';
+				submit.disabled = true;
+				if (!file || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size < 1 || file.size > 5 * 1024 * 1024) {
+					feedback.textContent = file ? 'Gunakan JPG, PNG, atau WebP maksimal 5 MB.' : '';
+					input.value = '';
+					return;
+				}
+				preview.src = URL.createObjectURL(file);
+				submit.disabled = false;
+			});
+
+			form.addEventListener('submit', function(event) {
+				event.preventDefault();
+				if (submit.disabled) return;
+				submit.disabled = true;
+				feedback.textContent = 'Menyimpan foto...';
+				fetch(<?= json_encode(base_url('home/update_profile_photo')); ?>, { method: 'POST', body: new FormData(form) })
+					.then(response => response.json().then(body => ({ ok: response.ok, body })))
+					.then(result => {
+						if (!result.ok || !result.body || result.body.status !== 'success') throw new Error(result.body && result.body.message ? result.body.message : 'Foto belum dapat disimpan.');
+						feedback.textContent = 'Foto profil berhasil diperbarui.';
+						window.setTimeout(function() { window.location.reload(); }, 500);
+					})
+					.catch(error => {
+						feedback.textContent = error && error.message ? error.message : 'Foto belum dapat disimpan.';
+						submit.disabled = false;
+					});
+			});
+		});
+	</script>
+
 	<!-- rating dokter -->
 	<script>
 		var idUsers = "<?php echo $_SESSION['id']; ?>";
 		const reqIdRat = document.getElementById("reqIdRat");
 		var request_id = reqIdRat ? reqIdRat.value : "";
-		const profileUploadUrl = <?= json_encode(base_url('uploads/profile/')); ?>;
+		const profilePhotoUrl = <?= json_encode(base_url('profile/photo/')); ?>;
 		const defaultProfileUrl = <?= json_encode(base_url('assets/doclinc/img/default-profile.png')); ?>;
 
-		function safeProfileImageUrl(path) {
+		function safeProfileImageUrl(userId, path) {
+			userId = Number(userId || 0);
 			path = String(path || '').trim();
 
-			if (!path || /[<>"']/.test(path) || /(?:javascript|data)\s*:/i.test(path)) {
+			if (!Number.isInteger(userId) || userId < 1 || !path || /[<>"']/.test(path)) {
 				return defaultProfileUrl;
 			}
 
 			path = path.replace(/\\/g, '/').replace(/^\/+/, '');
 
-			if (path.indexOf('..') !== -1 || !/^[A-Za-z0-9._/-]+$/.test(path)) {
+			const privateKey = /^profile-images\/[a-f0-9]{16,64}\.(?:jpe?g|png|webp)$/i.test(path);
+			const legacyKey = path.length <= 176 && /^(?:uploads\/profile\/)?[A-Za-z0-9][A-Za-z0-9._-]*\.(?:jpe?g|png|webp)$/i.test(path);
+			if (path.indexOf('..') !== -1 || (!privateKey && !legacyKey)) {
 				return defaultProfileUrl;
 			}
 
-			return profileUploadUrl + path.split('/').map(encodeURIComponent).join('/');
+			return profilePhotoUrl + encodeURIComponent(String(userId));
 		}
 		// Ambil data dari node 'notif'
 		const notifRate = getFirebaseDatabase().ref("rating");
@@ -3706,7 +3841,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						success: function(response) {
 							const dataDokter = response[0];
 
-							document.getElementById('gambarDokter').src = safeProfileImageUrl(dataDokter.foto);
+							document.getElementById('gambarDokter').src = safeProfileImageUrl(dataDokter.userId, dataDokter.foto);
 							document.getElementById('namaDokter').textContent = dataDokter.nama;
 							document.getElementById('dokIds').value = idDokter;
 

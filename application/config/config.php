@@ -783,6 +783,34 @@ if (!is_string($chat_attachment_storage_path_env) || trim($chat_attachment_stora
 $config['chat_attachment_storage_path'] = trim($chat_attachment_storage_path_env);
 $config['chat_attachment_max_size_kb'] = 4096;
 
+$profile_image_storage_path_env = getenv('DOCLINC_PROFILE_IMAGE_STORAGE_PATH');
+if ($profile_image_storage_path_env === false || $profile_image_storage_path_env === '') {
+	$profile_image_storage_path_env = $_SERVER['DOCLINC_PROFILE_IMAGE_STORAGE_PATH'] ?? '';
+}
+if (!is_string($profile_image_storage_path_env) || trim($profile_image_storage_path_env) === '') {
+	$profile_image_storage_path_env = dirname(dirname(rtrim(FCPATH, '/\\')))
+		. DIRECTORY_SEPARATOR . 'private' . DIRECTORY_SEPARATOR . 'profile-images';
+}
+$config['profile_image_storage_path'] = trim($profile_image_storage_path_env);
+$config['profile_image_max_size_kb'] = 5120;
+
+$role_prerequisites_enabled_env = getenv('DOCLINC_ROLE_PREREQUISITES_ENABLED');
+if ($role_prerequisites_enabled_env === false || $role_prerequisites_enabled_env === '') {
+	$role_prerequisites_enabled_env = $_SERVER['DOCLINC_ROLE_PREREQUISITES_ENABLED'] ?? null;
+}
+$role_prerequisites_environment_env = getenv('DOCLINC_ROLE_PREREQUISITES_ENVIRONMENT');
+if ($role_prerequisites_environment_env === false || $role_prerequisites_environment_env === '') {
+	$role_prerequisites_environment_env = $_SERVER['DOCLINC_ROLE_PREREQUISITES_ENVIRONMENT'] ?? '';
+}
+$role_prerequisites_feature = Doclinc_feature_flags::resolve(
+	$role_prerequisites_enabled_env,
+	$role_prerequisites_environment_env,
+	$realtime_client_runtime_environment_env
+);
+$config['role_prerequisites_enabled'] = $role_prerequisites_feature['enabled'];
+$config['role_prerequisites_environment'] = $role_prerequisites_feature['environment'];
+$config['role_prerequisites_feature_reason'] = $role_prerequisites_feature['reason'];
+
 $additional_diagnoses_enabled_env = getenv('DOCLINC_ADDITIONAL_DIAGNOSES_ENABLED');
 if ($additional_diagnoses_enabled_env === false || $additional_diagnoses_enabled_env === '') {
 	$additional_diagnoses_enabled_env = $_SERVER['DOCLINC_ADDITIONAL_DIAGNOSES_ENABLED'] ?? null;

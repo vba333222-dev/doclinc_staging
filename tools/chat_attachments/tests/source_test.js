@@ -44,6 +44,10 @@ const controller = source('application/modules/chat/controllers/Chat.php');
 const model = source('application/modules/chat/models/Chat_m.php');
 const storage = source('application/libraries/Chat_attachment_storage.php');
 const client = source('application/modules/chat/views/thread_v.php');
+const migrator = source('tools/chat_attachments/LegacyChatAttachmentMigrator.php');
+const migrationCli = source('tools/chat_attachments/migrate_legacy.php');
+const migrationIntegration = source('tools/chat_attachments/tests/migration_integration.php');
+const nginxDeny = source('tools/chat_attachments/nginx/doclinc-chat-legacy-deny.conf');
 
 expect(config.includes("getenv('DOCLINC_CHAT_ATTACHMENT_STORAGE_PATH')"), 'storage_path_can_be_externalized');
 expect(config.includes("'private' . DIRECTORY_SEPARATOR . 'chat-attachments'"), 'default_storage_is_outside_site_root');
@@ -61,6 +65,15 @@ expect(storage.includes('path_is_within($this->storage_root, $this->public_root)
 expect(storage.includes("array('image/jpeg', 'image/png', 'image/webp')"), 'served_mime_is_allowlisted');
 expect(client.includes('/^\\/chat\\/attachment\\/[1-9][0-9]*\\/?$/'), 'client_accepts_authorized_route');
 expect(!client.includes("parsed.pathname.indexOf('/uploads/chat_images/')"), 'client_rejects_direct_public_upload_url');
+expect(migrator.includes('FOR UPDATE') && migrator.includes('begin_transaction()') && migrator.includes("$this->db->rollback()"), 'legacy_migration_locks_and_rolls_back');
+expect(migrator.includes("hash_file('sha256'") && migrator.includes("'status' => 'prepared'") && migrator.includes("$manifest['status'] = 'committed'"), 'legacy_migration_verifies_backup_and_manifest');
+expect(migrator.includes('restoreFiles($created_private, $moved_legacy)') && migrator.includes('migration_rollback_failed') && migrator.includes('legacy_rows_remaining'), 'legacy_migration_restores_files_on_failure');
+expect(migrator.includes('$commit_attempted = true') && migrator.includes('migration_commit_state_verification_required'), 'commit_boundary_failure_does_not_reverse_filesystem');
+expect(migrationCli.includes("'inspect', 'apply'") && migrationCli.includes('database_confirmation_mismatch') && migrationCli.includes('DOCLINC_CHAT_MIGRATION_ALLOWED_USERS'), 'migration_cli_requires_explicit_mode_confirmation_and_identity');
+expect(migrationCli.includes("hash_equals('doclinc-staging', $database)") && migrationCli.includes('doclinc_chat_attachment_test_'), 'migration_cli_limits_target_databases');
+expect(migrationCli.includes('DOCLINC_CHAT_MIGRATION_BACKUP_ROOT') && migrationCli.includes('backup_root_denied'), 'migration_cli_confines_backup_directory');
+expect(nginxDeny.includes('location ^~ /uploads/chat_images/') && nginxDeny.includes('return 404;'), 'nginx_template_denies_legacy_public_path');
+expect(migrationIntegration.includes('DOCLINC_CHAT_MIGRATION_DISPOSABLE_TEST') && migrationIntegration.includes('force_chat_attachment_update_failure') && migrationIntegration.includes('DROP DATABASE'), 'disposable_integration_covers_commit_and_rollback');
 
 const validatorSource = functionSource(client, 'isSafeImageUrl');
 const context = vm.createContext({ URL, window: { location: { origin: 'https://doclinc.example' } } });

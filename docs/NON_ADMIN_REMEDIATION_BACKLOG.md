@@ -42,8 +42,12 @@ Status: `IN PROGRESS`
 Masalah:
 
 - Login seluruh role dan session aktif sudah direvalidasi terhadap role/status database pada batch 1.
-- Prerequisite data role selain status akun belum terpusat.
-- Data wajib per role belum mempunyai satu validator/gate terpusat.
+- Batch lokal menambahkan `Role_prerequisite_service`, endpoint status privat, safe error contract, banner perbaikan profil, dan gate default-off pada sepuluh entry point workflow sensitif.
+- Gate sengaja tidak memblokir pembatalan, chat, riwayat, atau perbaikan profil agar pengguna tidak terjebak.
+- Discovery schema staging read-only pada MariaDB 10.11 sudah memverifikasi field canonical `users`, `puskesmas_staff`, serta alamat/latitude/longitude `m_puskesmas`; tidak ada pembacaan row pasien atau write.
+- Prasyarat kini membedakan data yang dapat diperbaiki sendiri (profil akun/foto) dari data yang dikelola pengelola (SIP, profesi, linkage staf, dan identitas/lokasi Puskesmas), sehingga CTA tidak mengarahkan pengguna ke form yang tidak mampu memperbaiki masalah.
+- Warga dapat memperbaiki nama, email, nomor HP, tanggal lahir, gender, dan alamat melalui endpoint POST tervalidasi. Form command-center hanya meminta field akun bersama, sedangkan field personal tetap khusus Nakes personal.
+- Aktivasi gate tetap menunggu audit kelengkapan agregat tanpa PII dan authenticated UAT; schema presence saja tidak membuktikan seluruh row operasional sudah lengkap.
 
 Acceptance criteria:
 
@@ -101,8 +105,9 @@ Status: `IN PROGRESS`
 Masalah:
 
 - Profil Nakes dan pasien belum mempunyai kelengkapan data minimum yang konsisten.
-- UI belum menjamin foto profil aktual muncul dengan fallback yang jelas.
-- Belum ada gate untuk mencegah actor menjalankan workflow saat data wajib belum lengkap.
+- Media profil privat batch lokal sudah menambah upload Warga/Nakes, validasi MIME berbasis isi file, storage di luar web root, endpoint baca terotorisasi, dan fallback lokal setelah authorization. Rollout storage/Nginx serta dynamic HTTP authorization regression belum dijalankan.
+- Dashboard, riwayat, chat, dan call sudah memakai endpoint foto berdasarkan subject identity. Assignment/monitoring yang belum membawa subject photo masih perlu ditutup saat read model datanya tersedia.
+- Gate terpusat default-off sudah tersedia untuk pembuatan request, accept, assign/clear PIC, penerbitan token/mulai panggilan, heartbeat Nakes, pembaruan lokasi/status kunjungan, dan completion. Rollout/activation belum dilakukan.
 
 Required role data minimum:
 
@@ -213,6 +218,8 @@ Masalah:
 - Response message hanya mengembalikan URL controller berbasis `message_id`; storage key tidak dikirim ke browser.
 - Download melakukan authorization ulang terhadap request, validasi MIME dari isi file, batas ukuran, dan header `private, no-store`/`nosniff`.
 - Row legacy `uploads/chat_images/` tetap dapat dibaca melalui controller untuk kompatibilitas, tetapi file fisik lama belum dimigrasikan dan URL statis lama belum diblokir pada Nginx.
+- Runner cutover legacy kini tersedia dengan mode inspect/apply, database allowlist, explicit confirmation, row lock, backup SHA-256, manifest, rollback database+filesystem, dan safe rerun. Runner belum dieksekusi terhadap staging.
+- Template Nginx deny untuk `/uploads/chat_images/` sudah tersedia, tetapi belum boleh dipasang sebelum hasil migration menunjukkan zero legacy row dan backup telah diverifikasi.
 - Media profil masih memakai jalur legacy dan belum termasuk remediation batch lampiran chat ini.
 
 Acceptance criteria:
@@ -405,6 +412,8 @@ Satu tahap remediation hanya boleh ditutup bila seluruh gate relevan lulus:
 - ROUTE-01 tetap `IN PROGRESS` sampai manifest method contract dieksekusi terhadap bootstrap/router CI3 sebenarnya (bukan source contract saja).
 - AUTH-01, XSS-01, dan ROUTE-01 belum `DONE` sampai seluruh controller/view/implicit route selesai diaudit dinamis.
 - UX-CLINICAL batch 3 implemented locally: WHO ICD-10 2019 canonical presenter, alias Indonesia sebagai search aid, official WHO title/code sebagai canonical selection, Fornas-only medicine presenter, fail-closed non-canonical/internal-brand filtering, no internal provenance pada browser API, dan retirement endpoint diagnosis legacy yang digantikan endpoint canonical. Final regression count dicatat pada handoff batch.
-- PRIV-01 batch 4 dimulai lokal: upload gambar chat baru berada di storage privat, browser hanya menerima endpoint download berizin berbasis message ID, dan storage key tidak lagi diekspos. Migrasi file legacy, Nginx deny rule, dynamic cross-role HTTP regression, serta media profil masih menjadi gate terbuka.
+- PRIV-01 batch 4 deployed: upload gambar chat baru berada di storage privat, browser hanya menerima endpoint download berizin berbasis message ID, dan storage key tidak lagi diekspos.
+- PRIV-01 batch 5 implemented locally: runner inspect/apply untuk file legacy, backup+manifest SHA-256, filesystem/database rollback, safe rerun, dan template Nginx deny tersedia. Execution terhadap staging, pemasangan Nginx deny, dynamic cross-role HTTP regression, serta media profil masih menjadi gate terbuka.
+- PRIV-01 batch 6 implemented locally: foto profil baru Warga/Nakes disimpan di private storage, akses foto memerlukan self/consultation/same-tenant relationship, Admin dan cross-tenant ditolak, dashboard/history/chat/call memakai endpoint terotorisasi, serta direct legacy URL mempunyai template Nginx deny. PHP 8.1 unit, authenticated HTTP matrix, deployment private directory, dan Nginx rollout masih menjadi gate terbuka.
 - Authenticated browser UAT, penetration test aktif, dan database staging mutation tidak dilakukan dalam audit.
 - Dokumen ini belum menyatakan remediation selesai.

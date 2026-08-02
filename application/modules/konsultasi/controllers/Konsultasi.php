@@ -12,6 +12,7 @@ class Konsultasi extends MX_Controller
 		$this->load->helper('notification');
 		$this->load->helper('request_realtime');
 		$this->load->helper('request_event');
+		$this->load->helper('role_prerequisite');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login', 'refresh');
 		}
@@ -76,6 +77,13 @@ class Konsultasi extends MX_Controller
 			$this->output->set_status_header(403);
 			doclinc_log_request_event('unauthorized_request_update', null, array('target' => 'create', 'role' => $role));
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
+			return;
+		}
+		$prerequisite_state = doclinc_role_prerequisite_state((int) $id_user, true);
+		if (empty($prerequisite_state['allowed'])) {
+			$this->output
+				->set_status_header(doclinc_role_prerequisite_http_status($prerequisite_state))
+				->set_output(json_encode(doclinc_role_prerequisite_error_payload($prerequisite_state)));
 			return;
 		}
 		if (doclinc_active_consultation_request($id_user)) {

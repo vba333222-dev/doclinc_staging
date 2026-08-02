@@ -22,6 +22,7 @@ if ($nakes_puskesmas_display !== '' && stripos($nakes_puskesmas_display, 'puskes
 						$this->load->view('partials/nakes_avatar_v', array(
 							'avatar_name' => $nakes_name,
 							'avatar_photo' => $nakes_photo,
+							'avatar_user_id' => (int) $this->session->userdata('id'),
 							'avatar_alt' => 'Foto akun Puskesmas',
 							'avatar_class' => 'nk-avatar--md nk-avatar--nakes',
 							'avatar_icon' => 'fas fa-user-md',

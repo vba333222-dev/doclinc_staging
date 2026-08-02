@@ -174,8 +174,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					<div class="modal-body nk-profile-modal__body">
 						<div class="nk-profile-modal__photo">
 							<label for="uploadFoto" class="nk-profile-modal__photo-picker">
-								<img id="previewFoto" src="<?= doclinc_safe_profile_image_src($profile['foto'] ?? ''); ?>" alt="Foto Profil">
-							<input type="file" id="uploadFoto" name="foto" accept="image/jpeg,image/png" class="d-none" onchange="previewImage(event)">
+								<img id="previewFoto" src="<?= doclinc_profile_image_src((int) $this->session->userdata('id'), $profile['foto'] ?? ''); ?>" alt="Foto Profil">
+							<input type="file" id="uploadFoto" name="foto" accept="image/jpeg,image/png,image/webp" class="d-none" onchange="previewImage(event)">
 							</label>
 							<small>Klik untuk mengubah foto</small>
 							<div id="profileImageFeedback" class="small text-danger mt-2 d-none" role="alert"></div>
@@ -184,6 +184,15 @@ if (!function_exists('doclinc_nakes_short_text')) {
 							<input type="text" class="form-control" id="nama_lengkap_edit" name="nama_lengkap" value="<?= html_escape((string) $this->session->userdata('nama')); ?>" placeholder="Nama Lengkap" maxlength="100" required>
 							<label for="nama_lengkap_edit"><i class="bi bi-person-fill me-2"></i>Nama lengkap</label>
 						</div>
+						<div class="form-floating nk-profile-modal__field">
+							<input type="email" class="form-control" id="email_edit" name="email" value="<?= html_escape((string) ($profile['email'] ?? $this->session->userdata('email'))); ?>" placeholder="Email" maxlength="100" required>
+							<label for="email_edit"><i class="bi bi-envelope-fill me-2"></i>Email</label>
+						</div>
+						<div class="form-floating nk-profile-modal__field">
+							<input type="tel" class="form-control" id="no_hp_edit" name="no_hp" value="<?= html_escape((string) ($profile['no_hp'] ?? '')); ?>" placeholder="Nomor HP" inputmode="tel" maxlength="20" required>
+							<label for="no_hp_edit"><i class="bi bi-telephone-fill me-2"></i>Nomor HP</label>
+						</div>
+						<?php if (!empty($nakes_is_personal)) : ?>
 						<div class="form-floating nk-profile-modal__field">
 							<input type="date" class="form-control" id="tgl_edit" name="tgl_lahir" value="<?= html_escape((string) ($profile['tgl'] ?? '')); ?>" placeholder="Tanggal Lahir" max="<?= html_escape(date('Y-m-d')); ?>" required>
 							<label for="tgl_edit"><i class="bi bi-calendar-event-fill me-2"></i>Tanggal lahir</label>
@@ -196,13 +205,10 @@ if (!function_exists('doclinc_nakes_short_text')) {
 							<label for="jk_edit"><i class="bi bi-gender-ambiguous me-2"></i>Jenis kelamin</label>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
-							<input type="tel" class="form-control" id="no_hp_edit" name="no_hp" value="<?= html_escape((string) ($profile['no_hp'] ?? '')); ?>" placeholder="Nomor HP" inputmode="tel" maxlength="20" required>
-							<label for="no_hp_edit"><i class="bi bi-telephone-fill me-2"></i>Nomor HP</label>
-						</div>
-						<div class="form-floating nk-profile-modal__field">
 							<textarea class="form-control" placeholder="Alamat" name="alamat" id="alamat_edit" maxlength="500" required><?= html_escape((string) ($profile['alamat'] ?? '')); ?></textarea>
 							<label for="alamat_edit"><i class="bi bi-geo-alt-fill me-2"></i>Alamat</label>
 						</div>
+						<?php endif; ?>
 					</div>
 					<div class="modal-footer nk-profile-modal__footer">
 						<button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle me-2"></i>Tutup</button>

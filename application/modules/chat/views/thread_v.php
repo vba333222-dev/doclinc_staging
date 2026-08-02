@@ -43,6 +43,12 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 	? 'Konsultasi sudah selesai. Riwayat chat hanya dapat dibaca.'
 	: 'Chat ini hanya dapat dibaca.';
 $asset_base = base_url('assets/doclinc_ui/chat/');
+$partner_user_id = $current_role === 'dokter'
+	? (isset($request->user_id) ? (int) $request->user_id : 0)
+	: (function_exists('doclinc_request_handling_nakes_id') ? (int) doclinc_request_handling_nakes_id($request) : 0);
+$partner_photo_src = $partner_user_id > 0
+	? base_url('profile/photo/' . $partner_user_id)
+	: $asset_base . 'doctor-placeholder.jpg';
 $partner_name = 'Petugas Puskesmas';
 $partner_subtitle = 'Konsultasi kesehatan';
 if ($current_role === 'dokter') {
@@ -828,7 +834,7 @@ if ($current_role === 'dokter') {
 			<a href="<?= html_escape($back_url); ?>" class="chat-back" aria-label="Kembali">
 				<img src="<?= html_escape($asset_base . 'icon-chat-back.svg'); ?>" alt="">
 			</a>
-			<img class="chat-avatar" src="<?= html_escape($asset_base . 'doctor-placeholder.jpg'); ?>" alt="Profil layanan">
+			<img class="chat-avatar" src="<?= html_escape($partner_photo_src); ?>" alt="Foto <?= html_escape($partner_name); ?>">
 			<div class="chat-title">
 				<p class="chat-title-text"><?= html_escape($partner_name); ?></p>
 				<p class="chat-title-subtext"><?= html_escape($status_label); ?> · <?= html_escape($queue_display); ?></p>
@@ -881,7 +887,7 @@ if ($current_role === 'dokter') {
 			<div class="doclinc-call-panel">
 				<div class="doclinc-call-head">
 					<div class="doclinc-call-context">
-						<img class="doclinc-call-avatar" src="<?= html_escape($asset_base . 'doctor-placeholder.jpg'); ?>" alt="Profil layanan">
+						<img class="doclinc-call-avatar" src="<?= html_escape($partner_photo_src); ?>" alt="Foto <?= html_escape($partner_name); ?>">
 						<div>
 							<h2 class="doclinc-call-title" id="doclincCallTitle"><?= html_escape($partner_name); ?></h2>
 							<div class="doclinc-call-status" id="doclincCallStatus">Siap bergabung</div>
@@ -892,7 +898,7 @@ if ($current_role === 'dokter') {
 				<div class="doclinc-call-stage">
 					<div class="doclinc-call-remote" id="doclincCallRemote">
 						<div class="doclinc-call-empty" id="doclincCallEmpty">
-							<img class="doclinc-call-empty-avatar" src="<?= html_escape($asset_base . 'doctor-placeholder.jpg'); ?>" alt="">
+							<img class="doclinc-call-empty-avatar" src="<?= html_escape($partner_photo_src); ?>" alt="">
 							<span class="doclinc-call-empty-name"><?= html_escape($partner_name); ?></span>
 							<span id="doclincCallEmptyText">Menunggu lawan bicara bergabung</span>
 						</div>
