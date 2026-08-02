@@ -24,6 +24,7 @@ expect(audit.includes('new Role_prerequisite_service') && audit.includes("$servi
 expect(audit.includes('Profile_image_storage') && audit.includes("$storage->allowed_mime($path) !== ''"), 'audit_validates_actual_profile_media');
 expect(audit.includes('readiness_file_owner_ready') && report.includes('storage_owner_ready'), 'storage_and_photo_ownership_matches_application_runtime');
 expect(audit.includes('information_schema.COLUMNS') && audit.includes('information_schema.STATISTICS'), 'identity_schema_and_indexes_verified');
+expect(audit.includes("strtoupper(trim((string) $row['COLUMN_DEFAULT'])) === 'NULL'"), 'mariadb_null_default_metadata_is_normalized');
 expect(audit.includes('readiness_operational_state') && audit.includes("where('status', 'aktif')->get('m_puskesmas')") && audit.includes("where('status', 'aktif')->get('puskesmas_staff')"), 'all_active_facilities_and_staff_are_counted_independently');
 expect(audit.includes('$resolver->commandCenterReady($facility->kode_pkm)') && report.includes('facility_command_center_ready'), 'every_active_facility_requires_canonical_command_center');
 expect(resolver.includes("account_type'] = 'command_center'") && resolver.includes("account_type'] = 'personal'") && resolver.includes("count($staff_rows) !== 1"), 'identity_projection_matches_canonical_roles');

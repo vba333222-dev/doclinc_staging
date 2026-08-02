@@ -119,7 +119,8 @@ function identity_integration_schema_ready(mysqli $db)
 		$stmt->bind_param('ss', $expected[0], $expected[1]); $stmt->execute();
 		$row = $stmt->get_result()->fetch_assoc(); $stmt->close();
 		if (!$row || strtolower((string) $row['COLUMN_TYPE']) !== $expected[2]
-			|| (string) $row['IS_NULLABLE'] !== 'YES' || $row['COLUMN_DEFAULT'] !== null
+			|| (string) $row['IS_NULLABLE'] !== 'YES'
+			|| !($row['COLUMN_DEFAULT'] === null || strtoupper(trim((string) $row['COLUMN_DEFAULT'])) === 'NULL')
 			|| strtolower((string) $row['CHARACTER_SET_NAME']) !== $expected[3]
 			|| strtolower((string) $row['COLLATION_NAME']) !== $expected[4]) { return false; }
 	}
@@ -162,6 +163,10 @@ try {
 	list($valid_name, $valid_db) = identity_integration_database($admin, 'valid');
 	$before = identity_integration_snapshot($valid_db);
 	$apply = identity_integration_run($valid_name, $backup_file, $backup_sha);
+	if ($apply['exit'] !== 0) {
+		$safe_code = preg_match('/SAFE_ERROR_CODE=([a-z0-9_]+)/', $apply['stderr'], $match) === 1 ? $match[1] : 'migration_apply_failed';
+		fwrite(STDERR, "DIAGNOSTIC_SAFE_ERROR_CODE={$safe_code}\n");
+	}
 	identity_integration_expect($apply['exit'] === 0 && strpos($apply['stdout'], 'MIGRATION_RESULT=PASS') !== false, 'actual_migration_apply_passes');
 	identity_integration_expect(strpos($apply['stdout'], 'DDL_STATEMENT_COUNT=2') !== false, 'actual_migration_executes_two_additive_alters');
 	identity_integration_expect(identity_integration_schema_ready($valid_db), 'exact_columns_and_unique_indexes_created');

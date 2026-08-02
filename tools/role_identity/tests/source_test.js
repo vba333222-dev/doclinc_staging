@@ -22,6 +22,7 @@ const dashboard = read('application/modules/home_nakes/views/partials/nakes_dash
 expect(migration.includes("if (PHP_SAPI !== 'cli')") && migration.includes('EXECUTION_MODE=PLAN'), 'migration_is_cli_and_plan_by_default');
 expect(migration.includes('schema_write_disabled') && migration.includes('backup_checksum_confirmation_mismatch') && migration.includes('GET_LOCK'), 'migration_requires_write_backup_and_lock');
 expect(migration.includes('NULL') && migration.includes('EXISTING_ROWS_CHANGED=false'), 'migration_preserves_existing_rows');
+expect(migration.includes('role_identity_default_is_null') && migration.includes("strtoupper(trim((string) $value)) === 'NULL'"), 'migration_accepts_mariadb_null_metadata_without_weakening_contract');
 expect(home.includes('Role_identity_policy') && home.includes('profile_identity_conflict'), 'warga_identity_validation_and_conflict_contract');
 expect(homeModel.includes("array('nik', 'nomor_bpjs_kis')") && homeModel.includes("where('userId !=', $user_id)"), 'warga_unique_lookup_is_scoped');
 expect(home.includes('array_intersect_key') && !home.includes("set_userdata(array_merge($data"), 'identity_values_not_stored_in_session');
