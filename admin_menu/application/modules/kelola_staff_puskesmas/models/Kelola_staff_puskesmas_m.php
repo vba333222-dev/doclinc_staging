@@ -35,6 +35,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			->from('puskesmas_staff');
 		$this->db->select($this->nip_schema_ready() ? 'puskesmas_staff.nip' : 'NULL AS nip', false);
 		$this->db->select($this->db->field_exists('penugasan', 'puskesmas_staff') ? 'puskesmas_staff.penugasan' : 'NULL AS penugasan', false);
+		$this->db->select('(SELECT COUNT(*) FROM ' . $this->db->dbprefix('puskesmas_staff') . ' linked_staff WHERE linked_staff.user_id = puskesmas_staff.user_id AND linked_staff.status = \'aktif\') AS active_user_link_count', false);
 
 		if ($has_puskesmas) {
 			$this->db->select('m_puskesmas.nama_puskesmas');
@@ -216,6 +217,66 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			&& $sip !== ''
 			&& preg_match('/^[0-9]{18}$/D', $nip) === 1
 			&& $this->puskesmas_is_active((string) ($staff->kode_pkm ?? ''));
+	}
+
+	public function personal_account_state($staff, $command_center_user_id)
+	{
+		$user_id = (int) ($staff->user_id ?? 0);
+		if ($user_id < 1) {
+			return 'unlinked';
+		}
+		$valid = (int) $command_center_user_id !== $user_id
+			&& (int) ($staff->active_user_link_count ?? 0) === 1
+			&& (string) ($staff->akun_role ?? '') === 'dokter'
+			&& (string) ($staff->akun_status ?? '') === 'aktif'
+			&& trim((string) ($staff->akun_remark ?? '')) === trim((string) ($staff->kode_pkm ?? ''));
+		return $valid ? 'linked' : 'invalid';
+	}
+
+	public function readiness_issues($staff)
+	{
+		$issues = array();
+		$name = trim((string) ($staff->nama ?? ''));
+		$phone = preg_replace('/[^0-9+]/', '', trim((string) ($staff->no_hp ?? '')));
+		$profession = trim((string) ($staff->profesi ?? ''));
+		if ($name === '' || $profession === '' || preg_match('/^\+?[0-9]{8,20}$/', $phone) !== 1) {
+			$issues[] = 'staff_core';
+		}
+		if (trim((string) ($staff->nomor_sip ?? '')) === '') {
+			$issues[] = 'staff_registration_number';
+		}
+		if (preg_match('/^[0-9]{18}$/D', trim((string) ($staff->nip ?? ''))) !== 1) {
+			$issues[] = 'staff_nip';
+		}
+		$account_state = (string) ($staff->personal_account_state ?? 'invalid');
+		if ($account_state !== 'linked') {
+			$issues[] = $account_state === 'unlinked' ? 'staff_account_unlinked' : 'staff_account_invalid';
+		}
+		if ((string) ($staff->puskesmas_status ?? '') !== 'aktif') {
+			$issues[] = 'staff_facility';
+		}
+		return $issues;
+	}
+
+	public function readiness_summary(array $rows)
+	{
+		$summary = array('total' => 0, 'ready' => 0, 'attention' => 0, 'issue_counts' => array());
+		foreach ($rows as $row) {
+			if ((string) ($row->status ?? '') !== 'aktif') {
+				continue;
+			}
+			$summary['total']++;
+			$issues = $this->readiness_issues($row);
+			if (empty($issues)) {
+				$summary['ready']++;
+			} else {
+				$summary['attention']++;
+			}
+			foreach ($issues as $issue) {
+				$summary['issue_counts'][$issue] = ($summary['issue_counts'][$issue] ?? 0) + 1;
+			}
+		}
+		return $summary;
 	}
 
 	public function get_active_puskesmas_options()

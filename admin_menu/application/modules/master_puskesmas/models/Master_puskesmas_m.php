@@ -111,16 +111,48 @@ class Master_puskesmas_m extends MX_Controller
 			->limit(1)
 			->get('m_puskesmas')
 			->row();
-		if (!$row || trim((string) $row->nama_puskesmas) === '' || trim((string) $row->alamat) === ''
-			|| !is_numeric($row->latitude) || !is_numeric($row->longitude)) {
-			return false;
+		return $row && empty($this->readiness_issues($row));
+	}
+
+	public function readiness_issues($row)
+	{
+		$issues = array();
+		if (!$row || !$this->readiness_text_valid($row->nama_puskesmas ?? '', 3)) {
+			$issues[] = 'facility_name';
 		}
+		if (!$row || !$this->readiness_text_valid($row->alamat ?? '', 5)) {
+			$issues[] = 'facility_address';
+		}
+		$latitude = $row ? trim((string) ($row->latitude ?? '')) : '';
+		$longitude = $row ? trim((string) ($row->longitude ?? '')) : '';
+		if ($latitude === '' || !is_numeric($latitude) || (float) $latitude < -90 || (float) $latitude > 90) {
+			$issues[] = 'facility_latitude';
+		}
+		if ($longitude === '' || !is_numeric($longitude) || (float) $longitude < -180 || (float) $longitude > 180) {
+			$issues[] = 'facility_longitude';
+		}
+		return $issues;
+	}
 
-		$latitude = (float) $row->latitude;
-		$longitude = (float) $row->longitude;
-
-		return $latitude >= -90 && $latitude <= 90
-			&& $longitude >= -180 && $longitude <= 180;
+	public function readiness_summary(array $rows)
+	{
+		$summary = array('total' => 0, 'ready' => 0, 'attention' => 0, 'issue_counts' => array());
+		foreach ($rows as $row) {
+			if ((string) ($row->status ?? '') !== 'aktif') {
+				continue;
+			}
+			$summary['total']++;
+			$issues = $this->readiness_issues($row);
+			if (empty($issues)) {
+				$summary['ready']++;
+			} else {
+				$summary['attention']++;
+			}
+			foreach ($issues as $issue) {
+				$summary['issue_counts'][$issue] = ($summary['issue_counts'][$issue] ?? 0) + 1;
+			}
+		}
+		return $summary;
 	}
 
 	private function filter_fields($data)
@@ -137,6 +169,14 @@ class Master_puskesmas_m extends MX_Controller
 		}
 
 		return $row;
+	}
+
+	private function readiness_text_valid($value, $minimum)
+	{
+		$value = trim(preg_replace('/\s+/u', ' ', strip_tags((string) $value)));
+		$length = function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value);
+		return $length >= (int) $minimum
+			&& !in_array(strtolower($value), array('n/a', 'na', '-', 'default', 'belum ditentukan'), true);
 	}
 
 	private function log_audit($action, $kode)

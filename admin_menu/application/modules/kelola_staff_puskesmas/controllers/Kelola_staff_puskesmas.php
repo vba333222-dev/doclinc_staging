@@ -241,8 +241,12 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$filters = array(
 			'kode_pkm' => trim((string) $this->input->{$filter_input}('kode_pkm', TRUE)),
 			'status' => trim((string) $this->input->{$filter_input}('status', TRUE)),
+			'readiness' => trim((string) $this->input->{$filter_input}('readiness', TRUE)),
 			'keyword' => trim((string) $this->input->{$filter_input}('keyword', TRUE)),
 		);
+		if (!in_array($filters['readiness'], array('', 'ready', 'attention', 'missing_sip', 'missing_nip', 'account'), true)) {
+			$filters['readiness'] = '';
+		}
 
 		$data = array(
 			'table_ready' => $this->Kelola_staff_puskesmas_m->table_ready(),
@@ -253,6 +257,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			'account_candidates_by_staff' => array(),
 			'command_center_user_ids' => array(),
 			'personal_account_eligibility_by_staff' => array(),
+			'staff_readiness_summary' => array('total' => 0, 'ready' => 0, 'attention' => 0, 'issue_counts' => array()),
 			'form_mode' => $form_mode,
 			'form_staff' => null,
 		);
@@ -260,14 +265,31 @@ class Kelola_staff_puskesmas extends MX_Controller
 		if ($data['table_ready']) {
 			$data['staff_rows'] = $this->Kelola_staff_puskesmas_m->get_all($filters);
 			foreach ($data['staff_rows'] as $staff_row) {
+				$kode_pkm = trim((string) ($staff_row->kode_pkm ?? ''));
+				if ($kode_pkm !== '' && !array_key_exists($kode_pkm, $data['command_center_user_ids'])) {
+					$data['command_center_user_ids'][$kode_pkm] = $this->Kelola_staff_puskesmas_m->get_command_center_user_id($kode_pkm);
+				}
+			}
+			foreach ($data['staff_rows'] as $staff_row) {
+				$kode_pkm = trim((string) ($staff_row->kode_pkm ?? ''));
+				$staff_row->personal_account_state = $this->Kelola_staff_puskesmas_m->personal_account_state(
+					$staff_row,
+					isset($data['command_center_user_ids'][$kode_pkm]) ? (int) $data['command_center_user_ids'][$kode_pkm] : 0
+				);
+				$staff_row->readiness_issues = $this->Kelola_staff_puskesmas_m->readiness_issues($staff_row);
+			}
+			$data['staff_readiness_summary'] = $this->Kelola_staff_puskesmas_m->readiness_summary($data['staff_rows']);
+			if ($filters['readiness'] !== '') {
+				$data['staff_rows'] = array_values(array_filter($data['staff_rows'], function ($staff_row) use ($filters) {
+					return $this->staff_matches_readiness_filter($staff_row, $filters['readiness']);
+				}));
+			}
+			foreach ($data['staff_rows'] as $staff_row) {
 				$current_staff_id = (int) ($staff_row->staff_id ?? 0);
 				$kode_pkm = trim((string) ($staff_row->kode_pkm ?? ''));
 				if ($current_staff_id > 0) {
 					$data['account_candidates_by_staff'][$current_staff_id] = $this->Kelola_staff_puskesmas_m->get_eligible_account_candidates($kode_pkm, $current_staff_id);
 					$data['personal_account_eligibility_by_staff'][$current_staff_id] = $this->Kelola_staff_puskesmas_m->get_personal_account_creation_eligibility($staff_row);
-				}
-				if ($kode_pkm !== '' && !array_key_exists($kode_pkm, $data['command_center_user_ids'])) {
-					$data['command_center_user_ids'][$kode_pkm] = $this->Kelola_staff_puskesmas_m->get_command_center_user_id($kode_pkm);
 				}
 			}
 			if ($form_mode === 'edit') {
@@ -283,6 +305,30 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$this->load->view('commons/header');
 		$this->load->view('kelola_staff_puskesmas_v', $data);
 		$this->load->view('commons/footer');
+	}
+
+	private function staff_matches_readiness_filter($staff, $filter)
+	{
+		if ($filter !== '' && (string) ($staff->status ?? '') !== 'aktif') {
+			return false;
+		}
+		$issues = isset($staff->readiness_issues) && is_array($staff->readiness_issues) ? $staff->readiness_issues : array();
+		if ($filter === 'ready') {
+			return empty($issues);
+		}
+		if ($filter === 'attention') {
+			return !empty($issues);
+		}
+		if ($filter === 'missing_sip') {
+			return in_array('staff_registration_number', $issues, true);
+		}
+		if ($filter === 'missing_nip') {
+			return in_array('staff_nip', $issues, true);
+		}
+		if ($filter === 'account') {
+			return in_array('staff_account_unlinked', $issues, true) || in_array('staff_account_invalid', $issues, true);
+		}
+		return true;
 	}
 
 	private function validated_payload($staff_id = 0)

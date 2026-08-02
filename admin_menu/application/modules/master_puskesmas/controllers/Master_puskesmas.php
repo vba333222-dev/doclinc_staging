@@ -20,6 +20,12 @@ class Master_puskesmas extends MX_Controller
 		$this->session->set_flashdata('title', 'Master Puskesmas');
 		$this->session->set_flashdata('active_tab_master_puskesmas', 'active');
 		$data['puskesmas'] = $this->Master_puskesmas_m->get_all();
+		$data['puskesmas_readiness_issues'] = array();
+		$puskesmas_rows = $data['puskesmas'] ? $data['puskesmas']->result() : array();
+		foreach ($puskesmas_rows as $puskesmas) {
+			$data['puskesmas_readiness_issues'][(string) $puskesmas->kode_pkm] = $this->Master_puskesmas_m->readiness_issues($puskesmas);
+		}
+		$data['puskesmas_readiness_summary'] = $this->Master_puskesmas_m->readiness_summary($puskesmas_rows);
 		$this->load->view('commons/header');
 		$this->load->view('master_puskesmas_v', $data);
 		$this->load->view('commons/footer');
@@ -49,6 +55,11 @@ class Master_puskesmas extends MX_Controller
 			redirect('master_puskesmas', 'refresh');
 			return;
 		}
+		if (($data['status'] ?? '') === 'aktif' && !empty($this->Master_puskesmas_m->readiness_issues((object) $data))) {
+			$this->session->set_flashdata('error', 'Puskesmas aktif wajib memiliki nama, alamat pelayanan lengkap, dan titik lokasi valid.');
+			redirect('master_puskesmas', 'refresh');
+			return;
+		}
 
 		if ($this->Master_puskesmas_m->create($data)) {
 			$this->session->set_flashdata('success', 'Puskesmas ditambahkan.');
@@ -73,6 +84,11 @@ class Master_puskesmas extends MX_Controller
 
 		if ($this->form_validation->run() === FALSE || !$this->valid_coordinates($data)) {
 			$this->session->set_flashdata('error', 'Data puskesmas belum valid.');
+			redirect('master_puskesmas', 'refresh');
+			return;
+		}
+		if (($data['status'] ?? '') === 'aktif' && !empty($this->Master_puskesmas_m->readiness_issues((object) $data))) {
+			$this->session->set_flashdata('error', 'Puskesmas aktif wajib memiliki nama, alamat pelayanan lengkap, dan titik lokasi valid.');
 			redirect('master_puskesmas', 'refresh');
 			return;
 		}
