@@ -101,6 +101,9 @@ const inventory = {
   'application/controllers/Profile_requirements.php': {
     status: 'GET',
   },
+  'application/controllers/Profile_completion.php': {
+    index: 'GET',
+  },
   'application/controllers/Clinical_suggestions.php': {
     search: 'GET',
   },

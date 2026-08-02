@@ -12,9 +12,13 @@ $master_gejala_keluhan_options = isset($master_gejala_keluhan_options) && is_arr
 	: array();
 $role_prerequisite_state = isset($role_prerequisite_state) && is_array($role_prerequisite_state) ? $role_prerequisite_state : array();
 $role_prerequisite_blocked = !empty($role_prerequisite_state['enforced']) && empty($role_prerequisite_state['allowed']);
+$role_prerequisite_incomplete = array_key_exists('complete', $role_prerequisite_state) && empty($role_prerequisite_state['complete']);
 $role_prerequisite_labels = !empty($role_prerequisite_state['missing_labels']) && is_array($role_prerequisite_state['missing_labels'])
 	? array_slice($role_prerequisite_state['missing_labels'], 0, 3)
 	: array();
+$role_prerequisite_extra_count = !empty($role_prerequisite_state['missing_labels']) && is_array($role_prerequisite_state['missing_labels'])
+	? max(0, count($role_prerequisite_state['missing_labels']) - count($role_prerequisite_labels))
+	: 0;
 $role_prerequisite_cta_url = !empty($role_prerequisite_state['cta_url']) ? (string) $role_prerequisite_state['cta_url'] : '';
 $role_prerequisite_cta_label = !empty($role_prerequisite_state['cta_label']) ? (string) $role_prerequisite_state['cta_label'] : '';
 foreach ($data_profile->result() as $x) {
@@ -1220,11 +1224,12 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			</svg>
 			<div class="position-relative">
 				<div id="beranda" class="content active">
-					<?php if ($role_prerequisite_blocked) : ?>
-						<div class="alert alert-warning d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2" role="alert" data-role-prerequisite-alert>
+					<?php if ($role_prerequisite_incomplete) : ?>
+						<div class="alert <?= $role_prerequisite_blocked ? 'alert-warning' : 'alert-info'; ?> d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2" role="<?= $role_prerequisite_blocked ? 'alert' : 'status'; ?>" data-role-prerequisite-alert data-enforced="<?= $role_prerequisite_blocked ? 'true' : 'false'; ?>">
 							<div>
-								<strong>Profil belum lengkap.</strong>
-								<span><?= html_escape(!empty($role_prerequisite_labels) ? implode(', ', $role_prerequisite_labels) . ' perlu dilengkapi.' : 'Lengkapi data profil untuk melanjutkan.'); ?></span>
+								<strong><?= $role_prerequisite_blocked ? 'Profil wajib dilengkapi.' : 'Profil Anda belum lengkap.'; ?></strong>
+								<span><?= html_escape(!empty($role_prerequisite_labels) ? implode(', ', $role_prerequisite_labels) . ($role_prerequisite_extra_count > 0 ? ' dan ' . $role_prerequisite_extra_count . ' data lainnya' : '') . ' perlu dilengkapi.' : 'Lengkapi data profil untuk melanjutkan.'); ?></span>
+								<?php if (!$role_prerequisite_blocked) : ?><span class="d-block small mt-1">Anda masih dapat memakai layanan selama tahap penyiapan data.</span><?php endif; ?>
 							</div>
 							<?php if ($role_prerequisite_cta_url !== '') : ?>
 								<a class="btn btn-warning btn-sm" href="#profile" onclick="showContent('profile')"><?= html_escape($role_prerequisite_cta_label !== '' ? $role_prerequisite_cta_label : 'Lengkapi profil'); ?></a>
@@ -1826,6 +1831,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					$jk = '';
 					$no_hp = '';
 					$alamat = '';
+					$nik = '';
+					$nomor_kk = '';
+					$nomor_bpjs_kis = '';
 					foreach ($data_profile->result() as $x) {
 						$nama = $x->nama;
 						$email = $x->email;
@@ -1833,8 +1841,15 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						$jk = $x->gender;
 						$no_hp = $x->no_hp;
 						$alamat = $x->alamat;
+						$nik = isset($x->nik) ? (string) $x->nik : '';
+						$nomor_kk = isset($x->nomor_kk) ? (string) $x->nomor_kk : '';
+						$nomor_bpjs_kis = isset($x->nomor_bpjs_kis) ? (string) $x->nomor_bpjs_kis : '';
 						$role = $x->role;
 					}
+					$mask_identity = static function ($value) {
+						$value = preg_replace('/\D+/', '', (string) $value);
+						return $value === '' ? 'Belum dilengkapi' : str_repeat('•', max(0, strlen($value) - 4)) . substr($value, -4);
+					};
 					?>
 					<div class="dl-profile-card dl-card">
 						<div class="dl-profile-card__head">
@@ -1874,6 +1889,18 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							<div class="dl-profile-field">
 								<label for="alamat"><i class="fas fa-map-marker-alt me-1"></i> Alamat</label>
 								<textarea id="alamat" readonly><?= html_escape($alamat); ?></textarea>
+							</div>
+							<div class="dl-profile-field">
+								<label for="nik_masked"><i class="fas fa-id-card me-1"></i> NIK</label>
+								<input type="text" id="nik_masked" value="<?= html_escape($mask_identity($nik)); ?>" readonly>
+							</div>
+							<div class="dl-profile-field">
+								<label for="kk_masked"><i class="fas fa-users me-1"></i> Nomor Kartu Keluarga</label>
+								<input type="text" id="kk_masked" value="<?= html_escape($mask_identity($nomor_kk)); ?>" readonly>
+							</div>
+							<div class="dl-profile-field">
+								<label for="bpjs_masked"><i class="fas fa-notes-medical me-1"></i> Nomor kartu BPJS/KIS</label>
+								<input type="text" id="bpjs_masked" value="<?= html_escape($mask_identity($nomor_bpjs_kis)); ?>" readonly>
 							</div>
 						</div>
 						<div class="dl-profile-actions">
@@ -2037,6 +2064,20 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							<textarea class="form-control shadow border-success" placeholder="Alamat" id="alamat_edit" name="alamat" maxlength="500" required style="height: 100px"><?= html_escape($alamat); ?></textarea>
 							<label for="alamat_edit">Alamat</label>
 						</div>
+						<?php if ($this->db->field_exists('nik', 'users') && $this->db->field_exists('nomor_kk', 'users') && $this->db->field_exists('nomor_bpjs_kis', 'users')) : ?>
+						<div class="form-floating mb-2">
+							<input type="text" class="form-control shadow border-success" id="nik_edit" name="nik" value="<?= html_escape($nik); ?>" placeholder="NIK" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" autocomplete="off" required>
+							<label for="nik_edit">NIK (16 angka)</label>
+						</div>
+						<div class="form-floating mb-2">
+							<input type="text" class="form-control shadow border-success" id="nomor_kk_edit" name="nomor_kk" value="<?= html_escape($nomor_kk); ?>" placeholder="Nomor Kartu Keluarga" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" autocomplete="off" required>
+							<label for="nomor_kk_edit">Nomor Kartu Keluarga (16 angka)</label>
+						</div>
+						<div class="form-floating mb-2">
+							<input type="text" class="form-control shadow border-success" id="nomor_bpjs_kis_edit" name="nomor_bpjs_kis" value="<?= html_escape($nomor_bpjs_kis); ?>" placeholder="Nomor kartu BPJS/KIS" inputmode="numeric" pattern="[0-9]{13}" minlength="13" maxlength="13" autocomplete="off" required>
+							<label for="nomor_bpjs_kis_edit">Nomor kartu BPJS/KIS (13 angka)</label>
+						</div>
+						<?php endif; ?>
 						<div id="wargaProfileFeedback" class="small" role="status" aria-live="polite"></div>
 					</div>
 					<div class="modal-footer">

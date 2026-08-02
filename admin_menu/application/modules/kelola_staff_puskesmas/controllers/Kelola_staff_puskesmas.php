@@ -85,7 +85,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return;
 		}
 
-		$data = $this->validated_payload();
+		$data = $this->validated_payload($staff_id);
 		if ($data === false) {
 			redirect('kelola_staff_puskesmas/edit/' . $staff_id, 'refresh');
 			return;
@@ -246,6 +246,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 
 		$data = array(
 			'table_ready' => $this->Kelola_staff_puskesmas_m->table_ready(),
+			'nip_schema_ready' => $this->Kelola_staff_puskesmas_m->nip_schema_ready(),
 			'filters' => $filters,
 			'staff_rows' => array(),
 			'puskesmas_options' => $this->Kelola_staff_puskesmas_m->get_active_puskesmas_options(),
@@ -284,11 +285,14 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$this->load->view('commons/footer');
 	}
 
-	private function validated_payload()
+	private function validated_payload($staff_id = 0)
 	{
 		$this->load->library('form_validation');
 		$this->form_validation->set_rules('kode_pkm', 'Puskesmas', 'trim|required', array('required' => 'Pilih Puskesmas.'));
 		$this->form_validation->set_rules('nama', 'Nama', 'trim|required', array('required' => 'Nama lengkap wajib diisi.'));
+		$this->form_validation->set_rules('no_hp', 'Nomor HP', 'trim|required', array('required' => 'Nomor HP staf wajib diisi.'));
+		$this->form_validation->set_rules('profesi', 'Profesi', 'trim|required', array('required' => 'Profesi staf wajib diisi.'));
+		$this->form_validation->set_rules('nomor_sip', 'Nomor SIP', 'trim|required', array('required' => 'Nomor SIP staf wajib diisi.'));
 		$this->form_validation->set_rules('status', 'Status', 'trim|required', array('required' => 'Pilih status staf.'));
 
 		$kode_pkm = trim((string) $this->input->post('kode_pkm', TRUE));
@@ -305,15 +309,38 @@ class Kelola_staff_puskesmas extends MX_Controller
 			$this->session->set_flashdata('error', strip_tags(validation_errors(' ', ' ')));
 			return false;
 		}
+		$phone = preg_replace('/[\s().-]+/', '', trim((string) $this->input->post('no_hp')));
+		if (preg_match('/^\+?[0-9]{8,20}$/', $phone) !== 1) {
+			$this->session->set_flashdata('error', 'Nomor HP staf belum valid.');
+			return false;
+		}
+		$nip = '';
+		if ($this->Kelola_staff_puskesmas_m->nip_schema_ready()) {
+			require_once dirname(APPPATH, 2) . '/application/libraries/Role_identity_policy.php';
+			$nip_result = (new Role_identity_policy())->nip($this->input->post('nip'));
+			if (!$nip_result['valid']) {
+				$this->session->set_flashdata('error', $nip_result['message']);
+				return false;
+			}
+			$nip = $nip_result['value'];
+			if (!$this->Kelola_staff_puskesmas_m->nip_available($nip, (int) $staff_id)) {
+				$this->session->set_flashdata('error', 'NIP sudah digunakan oleh staf lain.');
+				return false;
+			}
+		}
 
-		return array(
+		$data = array(
 			'kode_pkm' => $kode_pkm,
 			'nama' => trim((string) $this->input->post('nama', TRUE)),
-			'no_hp' => trim((string) $this->input->post('no_hp', TRUE)),
+			'no_hp' => $phone,
 			'profesi' => trim((string) $this->input->post('profesi', TRUE)),
 			'nomor_sip' => trim((string) $this->input->post('nomor_sip', TRUE)),
 			'status' => $status,
 		);
+		if ($this->Kelola_staff_puskesmas_m->nip_schema_ready()) {
+			$data['nip'] = $nip;
+		}
+		return $data;
 	}
 
 	private function set_status($staff_id, $status)
@@ -333,8 +360,14 @@ class Kelola_staff_puskesmas extends MX_Controller
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}
-		if (!$this->Kelola_staff_puskesmas_m->get_by_id($staff_id)) {
+		$staff = $this->Kelola_staff_puskesmas_m->get_by_id($staff_id);
+		if (!$staff) {
 			$this->session->set_flashdata('error', 'Staf tidak ditemukan.');
+			redirect('kelola_staff_puskesmas', 'refresh');
+			return;
+		}
+		if ($status === 'aktif' && !$this->Kelola_staff_puskesmas_m->staff_is_operationally_complete($staff)) {
+			$this->session->set_flashdata('error', 'Staf belum dapat diaktifkan. Lengkapi NIP, SIP, profesi, nomor HP, dan Puskesmas aktif terlebih dahulu.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}

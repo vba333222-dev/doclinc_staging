@@ -33,6 +33,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		$this->db
 			->select('puskesmas_staff.staff_id, puskesmas_staff.kode_pkm, puskesmas_staff.nama, puskesmas_staff.no_hp, puskesmas_staff.profesi, puskesmas_staff.nomor_sip, puskesmas_staff.user_id, puskesmas_staff.status')
 			->from('puskesmas_staff');
+		$this->db->select($this->nip_schema_ready() ? 'puskesmas_staff.nip' : 'NULL AS nip', false);
 		$this->db->select($this->db->field_exists('penugasan', 'puskesmas_staff') ? 'puskesmas_staff.penugasan' : 'NULL AS penugasan', false);
 
 		if ($has_puskesmas) {
@@ -69,8 +70,12 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 				->like('puskesmas_staff.nama', $keyword)
 				->or_like('puskesmas_staff.no_hp', $keyword)
 				->or_like('puskesmas_staff.profesi', $keyword)
-				->or_like('puskesmas_staff.nomor_sip', $keyword)
-				->group_end();
+				->or_like('puskesmas_staff.nomor_sip', $keyword);
+			$nip_keyword = preg_replace('/\D+/', '', $keyword);
+			if ($this->nip_schema_ready() && $nip_keyword !== '') {
+				$this->db->or_like('puskesmas_staff.nip', $nip_keyword);
+			}
+			$this->db->group_end();
 		}
 
 		if ($has_puskesmas) {
@@ -95,6 +100,29 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			->where('staff_id', $staff_id)
 			->get('puskesmas_staff')
 			->row();
+	}
+
+	public function nip_schema_ready()
+	{
+		return $this->db->table_exists('puskesmas_staff') && $this->db->field_exists('nip', 'puskesmas_staff');
+	}
+
+	public function nip_available($nip, $exclude_staff_id = 0)
+	{
+		$nip = preg_replace('/\D+/', '', trim((string) $nip));
+		$exclude_staff_id = (int) $exclude_staff_id;
+		if (!$this->nip_schema_ready() || preg_match('/^[0-9]{18}$/D', $nip) !== 1) {
+			return false;
+		}
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$this->db->where('nip', $nip);
+		if ($exclude_staff_id > 0) {
+			$this->db->where('staff_id !=', $exclude_staff_id);
+		}
+		$count = $this->db->count_all_results('puskesmas_staff');
+		$this->db->db_debug = $db_debug;
+		return $count !== false && (int) $count === 0;
 	}
 
 	public function insert($data)
@@ -171,6 +199,25 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			->update('puskesmas_staff', $row);
 	}
 
+	public function staff_is_operationally_complete($staff)
+	{
+		if (!$staff || !$this->nip_schema_ready()) {
+			return false;
+		}
+		$name = trim((string) ($staff->nama ?? ''));
+		$phone = preg_replace('/[\s().-]+/', '', trim((string) ($staff->no_hp ?? '')));
+		$profession = trim((string) ($staff->profesi ?? ''));
+		$sip = trim((string) ($staff->nomor_sip ?? ''));
+		$nip = trim((string) ($staff->nip ?? ''));
+
+		return $name !== ''
+			&& preg_match('/^\+?[0-9]{8,20}$/', $phone) === 1
+			&& $profession !== ''
+			&& $sip !== ''
+			&& preg_match('/^[0-9]{18}$/D', $nip) === 1
+			&& $this->puskesmas_is_active((string) ($staff->kode_pkm ?? ''));
+	}
+
 	public function get_active_puskesmas_options()
 	{
 		if (!$this->db->table_exists('m_puskesmas')) {
@@ -237,6 +284,12 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		}
 		if (($staff->status ?? '') !== 'aktif') {
 			return array('eligible' => false, 'message' => 'Aktifkan staf terlebih dahulu.');
+		}
+		if (!$this->nip_schema_ready() || preg_match('/^[0-9]{18}$/D', trim((string) ($staff->nip ?? ''))) !== 1) {
+			return array('eligible' => false, 'message' => 'Lengkapi NIP 18 angka sebelum membuat akun personal.');
+		}
+		if (trim((string) ($staff->nomor_sip ?? '')) === '' || trim((string) ($staff->profesi ?? '')) === '') {
+			return array('eligible' => false, 'message' => 'Lengkapi SIP dan profesi sebelum membuat akun personal.');
 		}
 		$staff_name = trim((string) ($staff->nama ?? ''));
 		if ($staff_name === '' || strlen($staff_name) > 100) {
@@ -326,6 +379,12 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			}
 			if (($staff->status ?? '') !== 'aktif') {
 				$abort('Aktifkan staf terlebih dahulu.');
+			}
+			if (!$this->nip_schema_ready() || preg_match('/^[0-9]{18}$/D', trim((string) ($staff->nip ?? ''))) !== 1) {
+				$abort('Lengkapi NIP 18 angka sebelum membuat akun personal.');
+			}
+			if (trim((string) ($staff->nomor_sip ?? '')) === '' || trim((string) ($staff->profesi ?? '')) === '') {
+				$abort('Lengkapi SIP dan profesi sebelum membuat akun personal.');
 			}
 			$staff_name = trim((string) ($staff->nama ?? ''));
 			if ($staff_name === '' || strlen($staff_name) > 100) {
@@ -532,6 +591,9 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		if (!$staff || !$user) {
 			return array('status' => 'error', 'message' => 'Staf atau akun personal tidak ditemukan.');
 		}
+		if ((string) ($staff->status ?? '') !== 'aktif' || !$this->staff_is_operationally_complete($staff)) {
+			return array('status' => 'error', 'message' => 'Lengkapi dan aktifkan data staf sebelum menghubungkan akun personal.');
+		}
 
 		$kode_pkm = trim((string) $staff->kode_pkm);
 		$user_remark = trim((string) ($user->remark ?? ''));
@@ -669,7 +731,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 	private function filter_staff_payload($data)
 	{
 		$row = array();
-		foreach (array('kode_pkm', 'nama', 'no_hp', 'profesi', 'nomor_sip', 'status') as $field) {
+		foreach (array('kode_pkm', 'nama', 'no_hp', 'profesi', 'nomor_sip', 'nip', 'status') as $field) {
 			if ($this->db->field_exists($field, 'puskesmas_staff') && array_key_exists($field, $data)) {
 				$row[$field] = trim((string) $data[$field]);
 			}

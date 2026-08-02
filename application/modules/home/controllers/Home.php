@@ -110,6 +110,7 @@ class Home extends MX_Controller
 				'status' => 'error',
 				'safe_error_code' => 'profile_validation_failed',
 				'message' => $validated['message'],
+				'field_errors' => isset($validated['field_errors']) ? $validated['field_errors'] : array(),
 			)));
 			return;
 		}
@@ -122,6 +123,17 @@ class Home extends MX_Controller
 			)));
 			return;
 		}
+		foreach (array('nik' => 'NIK', 'nomor_bpjs_kis' => 'Nomor kartu BPJS/KIS') as $field => $label) {
+			if (isset($data[$field]) && !$this->Home_m->identity_value_available($user_id, $field, $data[$field])) {
+				$this->output->set_status_header(409)->set_output(json_encode(array(
+					'status' => 'error',
+					'safe_error_code' => 'profile_identity_conflict',
+					'message' => $label . ' sudah digunakan akun lain.',
+					'field_errors' => array($field => $label . ' sudah terdaftar.'),
+				)));
+				return;
+			}
+		}
 		if (!$this->Home_m->update_profile($user_id, $data)) {
 			$this->output->set_status_header(500)->set_output(json_encode(array(
 				'status' => 'error',
@@ -131,7 +143,7 @@ class Home extends MX_Controller
 			return;
 		}
 
-		$this->session->set_userdata($data);
+		$this->session->set_userdata(array_intersect_key($data, array_flip(array('nama', 'email', 'no_hp', 'tgl', 'gender', 'alamat'))));
 		$this->output->set_output(json_encode(array(
 			'status' => 'success',
 			'message' => 'Profil berhasil diperbarui.',
@@ -923,14 +935,39 @@ class Home extends MX_Controller
 			return array('success' => false, 'message' => 'Alamat harus terdiri dari 5 sampai 500 karakter.');
 		}
 
-		return array('success' => true, 'data' => array(
+		$data = array(
 			'nama' => $name,
 			'email' => $email,
 			'no_hp' => $phone,
 			'tgl' => $birthdate,
 			'gender' => $gender,
 			'alamat' => $address,
-		));
+		);
+		$identity_fields = array('nik', 'nomor_kk', 'nomor_bpjs_kis');
+		$identity_schema_ready = true;
+		foreach ($identity_fields as $field) {
+			if (!$this->db->field_exists($field, 'users')) {
+				$identity_schema_ready = false;
+			}
+		}
+		if ($identity_schema_ready) {
+			require_once APPPATH . 'libraries/Role_identity_policy.php';
+			$identity = (new Role_identity_policy())->warga(array(
+				'nik' => $this->input->post('nik'),
+				'nomor_kk' => $this->input->post('nomor_kk'),
+				'nomor_bpjs_kis' => $this->input->post('nomor_bpjs_kis'),
+			));
+			if (!$identity['valid']) {
+				return array(
+					'success' => false,
+					'message' => reset($identity['field_errors']),
+					'field_errors' => $identity['field_errors'],
+				);
+			}
+			$data = array_merge($data, $identity['values']);
+		}
+
+		return array('success' => true, 'data' => $data);
 	}
 
 	private function profile_text_length($value)

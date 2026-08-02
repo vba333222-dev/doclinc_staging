@@ -7,6 +7,7 @@ $command_center_user_ids = isset($command_center_user_ids) && is_array($command_
 $personal_account_eligibility_by_staff = isset($personal_account_eligibility_by_staff) && is_array($personal_account_eligibility_by_staff) ? $personal_account_eligibility_by_staff : array();
 $form_mode = isset($form_mode) ? (string) $form_mode : '';
 $form_staff = isset($form_staff) ? $form_staff : null;
+$nip_schema_ready = !empty($nip_schema_ready);
 $is_form = in_array($form_mode, array('create', 'edit'), true);
 $form_action = $form_mode === 'edit' && $form_staff ? site_url('kelola_staff_puskesmas/update/' . (int) $form_staff->staff_id) : site_url('kelola_staff_puskesmas/store');
 $form_title = $form_mode === 'edit' ? 'Edit staf' : 'Tambah staf';
@@ -16,6 +17,7 @@ $form_values = array(
 	'profesi' => $form_staff ? (string) $form_staff->profesi : '',
 	'no_hp' => $form_staff ? (string) $form_staff->no_hp : '',
 	'nomor_sip' => $form_staff ? (string) $form_staff->nomor_sip : '',
+	'nip' => $form_staff && isset($form_staff->nip) ? (string) $form_staff->nip : '',
 	'status' => $form_staff ? (string) $form_staff->status : 'aktif',
 );
 ?>
@@ -37,7 +39,7 @@ $form_values = array(
 	<?php else: ?>
 		<div class="doclinc-staff-note shadow-sm">
 			<i class="fas fa-info-circle"></i>
-			<span>Staf dapat dipilih sebagai PIC layanan.</span>
+			<span>Data staf, NIP, SIP, status, dan hubungan akun hanya dikelola Administrator Dinas Kesehatan.</span>
 		</div>
 		<?php if ($is_form): ?>
 			<div class="card shadow mb-4 doclinc-filter-card">
@@ -73,13 +75,13 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Profesi</label>
-									<input type="text" class="form-control rounded-pill border-info" name="profesi" value="<?= html_escape($form_values['profesi']); ?>" placeholder="Profesi atau peran layanan">
+									<input type="text" class="form-control rounded-pill border-info" name="profesi" value="<?= html_escape($form_values['profesi']); ?>" placeholder="Profesi atau peran layanan" required>
 								</div>
 							</div>
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">No HP</label>
-									<input type="text" class="form-control rounded-pill border-info" name="no_hp" value="<?= html_escape($form_values['no_hp']); ?>" placeholder="Nomor kontak staf">
+									<input type="text" class="form-control rounded-pill border-info" name="no_hp" value="<?= html_escape($form_values['no_hp']); ?>" placeholder="Nomor kontak staf" required>
 								</div>
 							</div>
 						</div>
@@ -87,9 +89,18 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Nomor SIP</label>
-									<input type="text" class="form-control rounded-pill border-info" name="nomor_sip" value="<?= html_escape($form_values['nomor_sip']); ?>" placeholder="Nomor SIP jika ada">
+									<input type="text" class="form-control rounded-pill border-info" name="nomor_sip" value="<?= html_escape($form_values['nomor_sip']); ?>" placeholder="Nomor SIP" required>
 								</div>
 							</div>
+							<div class="col-md-6">
+								<div class="form-group">
+									<label class="text-info">NIP</label>
+									<input type="text" class="form-control rounded-pill border-info" name="nip" value="<?= html_escape($form_values['nip']); ?>" placeholder="NIP 18 angka" inputmode="numeric" pattern="[0-9]{18}" minlength="18" maxlength="18" autocomplete="off" <?= $nip_schema_ready ? 'required' : 'disabled'; ?>>
+									<small class="form-text <?= $nip_schema_ready ? 'text-muted' : 'text-danger'; ?>"><?= $nip_schema_ready ? 'Wajib untuk Nakes ASN.' : 'Kolom NIP belum tersedia; jalankan migrasi identitas terlebih dahulu.'; ?></small>
+								</div>
+							</div>
+						</div>
+						<div class="row">
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Status</label>
@@ -144,7 +155,7 @@ $form_values = array(
 						</div>
 						<div class="col-md-3 mb-2">
 							<label class="sr-only" for="staffFilterKeyword">Kata kunci</label>
-							<input type="text" name="keyword" id="staffFilterKeyword" class="form-control doclinc-account-search" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="Nama, no HP, profesi, SIP">
+							<input type="text" name="keyword" id="staffFilterKeyword" class="form-control doclinc-account-search" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="Nama, no HP, profesi, SIP, NIP">
 						</div>
 						<div class="col-md-2 mb-2">
 							<button type="submit" class="btn btn-info rounded-pill btn-block">Terapkan filter</button>
@@ -228,10 +239,14 @@ $form_values = array(
 													<span>No. Telepon</span>
 													<strong><?= html_escape($row->no_hp ?: '-'); ?></strong>
 												</div>
-												<div class="doclinc-account-field">
-													<span>SIP</span>
-													<strong><?= html_escape($row->nomor_sip ?: '-'); ?></strong>
-												</div>
+											<div class="doclinc-account-field">
+												<span>SIP</span>
+												<strong><?= html_escape($row->nomor_sip ?: '-'); ?></strong>
+											</div>
+											<div class="doclinc-account-field">
+												<span>NIP</span>
+												<strong><?= !empty($row->nip) ? html_escape(str_repeat('•', 14) . substr((string) $row->nip, -4)) : '-'; ?></strong>
+											</div>
 											</div>
 											<div class="doclinc-account-card__meta">
 												<span>Akun login personal</span>

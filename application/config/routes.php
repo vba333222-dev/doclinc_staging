@@ -56,6 +56,7 @@ $route['clinical-suggestions'] = 'clinical_suggestions/search';
 $route['chat/attachment/(:num)'] = 'chat/chat/attachment/$1';
 $route['profile/photo/(:num)'] = 'profile_media/photo/$1';
 $route['profile/requirements'] = 'profile_requirements/status';
+$route['profile/complete'] = 'profile_completion/index';
 $route['profile/update'] = 'home/update_profile';
 $route['realtime/connection-token'] = 'realtime_access/connection_token';
 $route['realtime/subscription-token'] = 'realtime_access/subscription_token';

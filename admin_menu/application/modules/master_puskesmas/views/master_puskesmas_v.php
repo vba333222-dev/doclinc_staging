@@ -15,7 +15,7 @@
 		<div class="card-header py-3 d-flex align-items-center justify-content-between">
 			<div>
 				<h6 class="m-0 font-weight-bold">Daftar Puskesmas</h6>
-				<div class="doclinc-muted-text mt-1">Kelola data Puskesmas aktif yang digunakan untuk routing dan koordinasi layanan DocLink.</div>
+				<div class="doclinc-muted-text mt-1">Kelola data Puskesmas aktif yang digunakan untuk routing dan koordinasi layanan DocLink. Nama, alamat lengkap, dan titik lokasi wajib lengkap sebelum fasilitas dapat diaktifkan.</div>
 			</div>
 			<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill doclinc-action-btn doclinc-action-primary" data-toggle="modal" data-target="#modalTambahPuskesmas">
 				<i class="fas fa-plus-circle mr-1"></i> Tambah Puskesmas
@@ -120,21 +120,22 @@
 													<label class="text-info">Nama Puskesmas</label>
 													<input type="text" class="form-control rounded-pill border-info" name="nama_puskesmas" value="<?= html_escape($row->nama_puskesmas ?? '') ?>" required>
 												</div>
-												<div class="form-group">
-													<label class="text-info">Alamat</label>
-													<textarea class="form-control border-info" name="alamat" rows="2"><?= html_escape($row->alamat ?? '') ?></textarea>
-												</div>
+										<div class="form-group">
+											<label class="text-info">Alamat</label>
+											<textarea class="form-control border-info" name="alamat" rows="2" required><?= html_escape($row->alamat ?? '') ?></textarea>
+											<small class="form-text text-muted">Gunakan alamat pelayanan yang lengkap dan mudah dikenali pengguna.</small>
+										</div>
 												<div class="row">
 													<div class="col-md-4">
 														<div class="form-group">
 															<label class="text-info">Latitude</label>
-															<input type="text" class="form-control rounded-pill border-info" name="latitude" value="<?= html_escape($row->latitude ?? '') ?>">
+														<input type="number" name="latitude" step="any" min="-90" max="90" class="form-control rounded-pill border-info" value="<?= html_escape($row->latitude ?? '') ?>" required>
 														</div>
 													</div>
 													<div class="col-md-4">
 														<div class="form-group">
 															<label class="text-info">Longitude</label>
-															<input type="text" class="form-control rounded-pill border-info" name="longitude" value="<?= html_escape($row->longitude ?? '') ?>">
+														<input type="number" name="longitude" step="any" min="-180" max="180" class="form-control rounded-pill border-info" value="<?= html_escape($row->longitude ?? '') ?>" required>
 														</div>
 													</div>
 													<div class="col-md-4">
@@ -228,20 +229,21 @@
 					</div>
 					<div class="form-group">
 						<label class="text-success">Alamat</label>
-						<textarea class="form-control border-success" name="alamat" rows="2"></textarea>
+						<textarea class="form-control border-success" name="alamat" rows="2" required></textarea>
+						<small class="form-text text-muted">Gunakan alamat pelayanan yang lengkap dan mudah dikenali pengguna.</small>
 					</div>
 					<div class="row">
 						<div class="col-md-4">
 							<div class="form-group">
 								<label class="text-success">Latitude</label>
-								<input type="text" class="form-control rounded-pill border-success" name="latitude" placeholder="-6.000000">
+								<input type="number" name="latitude" step="any" min="-90" max="90" class="form-control rounded-pill border-success" placeholder="-6.000000" required>
 								<small class="form-text text-muted">Latitude dan longitude dipakai untuk routing/monitoring lokasi.</small>
 							</div>
 						</div>
 						<div class="col-md-4">
 							<div class="form-group">
 								<label class="text-success">Longitude</label>
-								<input type="text" class="form-control rounded-pill border-success" name="longitude" placeholder="106.000000">
+								<input type="number" name="longitude" step="any" min="-180" max="180" class="form-control rounded-pill border-success" placeholder="106.000000" required>
 							</div>
 						</div>
 						<div class="col-md-4">

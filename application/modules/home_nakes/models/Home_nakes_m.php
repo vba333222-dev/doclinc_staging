@@ -1185,6 +1185,7 @@ class Home_nakes_m extends MX_Controller
 
 		$rows = $this->db
 			->select('staff_id, nama, no_hp, profesi, nomor_sip, user_id, status, kode_pkm')
+			->select($this->db->field_exists('nip', 'puskesmas_staff') ? "CASE WHEN nip REGEXP '^[0-9]{18}$' THEN 1 ELSE 0 END AS nip_ready" : '0 AS nip_ready', false)
 			->from('puskesmas_staff')
 			->where('kode_pkm', $kode_pkm)
 			->where('status', 'aktif')
