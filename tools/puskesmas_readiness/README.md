@@ -20,5 +20,6 @@ Run the unit test with PHP 8.1:
 
 ```bash
 php tools/puskesmas_readiness/tests/unit.php
+php tools/puskesmas_readiness/tests/admin_unit.php
 node tools/puskesmas_readiness/tests/admin_source_test.js
 ```

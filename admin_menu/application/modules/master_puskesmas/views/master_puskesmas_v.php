@@ -1,3 +1,13 @@
+<?php
+$puskesmas_readiness_issues = isset($puskesmas_readiness_issues) && is_array($puskesmas_readiness_issues) ? $puskesmas_readiness_issues : array();
+$puskesmas_readiness_summary = isset($puskesmas_readiness_summary) && is_array($puskesmas_readiness_summary) ? $puskesmas_readiness_summary : array('total' => 0, 'ready' => 0, 'attention' => 0);
+$puskesmas_readiness_labels = array(
+	'facility_name' => 'nama resmi',
+	'facility_address' => 'alamat pelayanan lengkap',
+	'facility_latitude' => 'titik latitude valid',
+	'facility_longitude' => 'titik longitude valid',
+);
+?>
 <div class="doclinc-admin-page doclinc-akun-page">
 	<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
 		<h1 class="doclinc-page-title mb-0"><i class="fas fa-fw fa-hospital"></i> Master Puskesmas</h1>
@@ -10,6 +20,14 @@
 	<?php if ($this->session->flashdata('error')): ?>
 		<div class="alert alert-danger shadow-sm"><?= html_escape($this->session->flashdata('error')); ?></div>
 	<?php endif; ?>
+	<div class="alert <?= (int) ($puskesmas_readiness_summary['attention'] ?? 0) > 0 ? 'alert-warning' : 'alert-success'; ?> shadow-sm" role="status">
+		<strong>Kesiapan Puskesmas aktif:</strong>
+		<?= html_escape((string) (int) ($puskesmas_readiness_summary['ready'] ?? 0)); ?> dari
+		<?= html_escape((string) (int) ($puskesmas_readiness_summary['total'] ?? 0)); ?> siap.
+		<?php if ((int) ($puskesmas_readiness_summary['attention'] ?? 0) > 0): ?>
+			<?= html_escape((string) (int) $puskesmas_readiness_summary['attention']); ?> Puskesmas perlu dilengkapi oleh Administrator Dinas Kesehatan.
+		<?php endif; ?>
+	</div>
 
 	<div class="card shadow mb-4 doclinc-table-card doclinc-account-list-card">
 		<div class="card-header py-3 d-flex align-items-center justify-content-between">
@@ -28,6 +46,14 @@
 						<label for="puskesmasCardSearch">Cari Puskesmas</label>
 						<input type="search" id="puskesmasCardSearch" class="form-control doclinc-account-search" placeholder="Nama, kode, alamat, atau status">
 					</div>
+					<div class="doclinc-account-toolbar__field">
+						<label for="puskesmasReadinessFilter">Kesiapan data</label>
+						<select id="puskesmasReadinessFilter" class="form-control doclinc-puskesmas-selector">
+							<option value="">Semua kesiapan</option>
+							<option value="attention">Perlu dilengkapi</option>
+							<option value="ready">Siap</option>
+						</select>
+					</div>
 				</div>
 				<?php $edit_modals = ''; ?>
 				<div class="doclinc-account-list">
@@ -39,8 +65,10 @@
 								$status_label = $is_default ? 'Perlu ditinjau' : ($status_labels[strtolower($status)] ?? 'Status belum tersedia');
 								$display_name = $is_default ? 'Puskesmas belum tersedia' : ($row->nama_puskesmas ?? 'Puskesmas belum tersedia');
 								$search_text = implode(' ', array($display_name, $row->kode_pkm ?? '', $row->alamat ?? '', $row->latitude ?? '', $row->longitude ?? '', $status_label));
+								$readiness_issues = $puskesmas_readiness_issues[(string) ($row->kode_pkm ?? '')] ?? array();
+								$readiness_state = $status === 'aktif' ? (empty($readiness_issues) ? 'ready' : 'attention') : 'inactive';
 								?>
-							<div class="doclinc-account-card" data-puskesmas-search="<?= html_escape($search_text); ?>">
+							<div class="doclinc-account-card" data-puskesmas-search="<?= html_escape($search_text); ?>" data-puskesmas-readiness="<?= html_escape($readiness_state); ?>">
 								<div class="doclinc-account-card__header">
 									<div>
 										<div class="doclinc-account-card__title"><?= html_escape($display_name); ?></div>
@@ -51,6 +79,19 @@
 								</div>
 
 								<div class="doclinc-account-card__body">
+									<?php if ($status !== 'aktif'): ?>
+										<div class="doclinc-account-card__note is-muted mb-3"><i class="fas fa-pause-circle mr-1"></i>Puskesmas nonaktif tidak dihitung dalam kesiapan operasional.</div>
+									<?php elseif (!empty($readiness_issues)): ?>
+										<div class="doclinc-account-card__note is-warning mb-3">
+											<i class="fas fa-exclamation-triangle mr-1"></i>
+											<strong>Lengkapi:</strong>
+											<?= html_escape(implode(', ', array_map(function ($issue) use ($puskesmas_readiness_labels) {
+												return $puskesmas_readiness_labels[$issue] ?? 'data Puskesmas';
+											}, $readiness_issues))); ?>
+										</div>
+									<?php else: ?>
+										<div class="doclinc-account-card__note is-muted mb-3"><i class="fas fa-check-circle mr-1"></i>Data operasional siap.</div>
+									<?php endif; ?>
 									<div class="doclinc-account-card__meta">
 										<span>Kode Puskesmas</span>
 										<strong><span class="doclinc-code-chip"><?= html_escape($row->kode_pkm ?? '-'); ?></span></strong>
@@ -174,20 +215,24 @@
 <script type="text/javascript">
 	document.addEventListener('DOMContentLoaded', function() {
 		var searchInput = document.getElementById('puskesmasCardSearch');
+		var readinessFilter = document.getElementById('puskesmasReadinessFilter');
 		var emptyState = document.getElementById('puskesmasCardSearchEmpty');
 		var cards = Array.prototype.slice.call(document.querySelectorAll('[data-puskesmas-search]'));
 
-		if (!searchInput || cards.length === 0) {
+		if (!searchInput || !readinessFilter || cards.length === 0) {
 			return;
 		}
 
-		searchInput.addEventListener('input', function() {
+		function applyFilters() {
 			var query = searchInput.value.toLocaleLowerCase().trim();
+			var readiness = readinessFilter.value;
 			var visibleCount = 0;
 
 			cards.forEach(function(card) {
 				var searchText = (card.getAttribute('data-puskesmas-search') || '').toLocaleLowerCase();
-				var isVisible = query === '' || searchText.indexOf(query) !== -1;
+				var cardReadiness = card.getAttribute('data-puskesmas-readiness') || '';
+				var isVisible = (query === '' || searchText.indexOf(query) !== -1)
+					&& (readiness === '' || readiness === cardReadiness);
 				card.classList.toggle('d-none', !isVisible);
 				if (isVisible) {
 					visibleCount += 1;
@@ -197,7 +242,9 @@
 			if (emptyState) {
 				emptyState.classList.toggle('d-none', visibleCount > 0);
 			}
-		});
+		}
+		searchInput.addEventListener('input', applyFilters);
+		readinessFilter.addEventListener('change', applyFilters);
 	});
 </script>
 

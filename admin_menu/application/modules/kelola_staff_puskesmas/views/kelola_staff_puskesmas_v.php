@@ -5,6 +5,15 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 $account_candidates_by_staff = isset($account_candidates_by_staff) && is_array($account_candidates_by_staff) ? $account_candidates_by_staff : array();
 $command_center_user_ids = isset($command_center_user_ids) && is_array($command_center_user_ids) ? $command_center_user_ids : array();
 $personal_account_eligibility_by_staff = isset($personal_account_eligibility_by_staff) && is_array($personal_account_eligibility_by_staff) ? $personal_account_eligibility_by_staff : array();
+$staff_readiness_summary = isset($staff_readiness_summary) && is_array($staff_readiness_summary) ? $staff_readiness_summary : array('total' => 0, 'ready' => 0, 'attention' => 0, 'issue_counts' => array());
+$staff_readiness_labels = array(
+	'staff_core' => 'Data inti staf belum lengkap',
+	'staff_registration_number' => 'Nomor SIP belum lengkap',
+	'staff_nip' => 'NIP 18 angka belum lengkap',
+	'staff_account_unlinked' => 'Akun personal belum terhubung',
+	'staff_account_invalid' => 'Relasi akun personal perlu diperiksa',
+	'staff_facility' => 'Puskesmas staf tidak aktif atau tidak valid',
+);
 $form_mode = isset($form_mode) ? (string) $form_mode : '';
 $form_staff = isset($form_staff) ? $form_staff : null;
 $nip_schema_ready = !empty($nip_schema_ready);
@@ -40,6 +49,14 @@ $form_values = array(
 		<div class="doclinc-staff-note shadow-sm">
 			<i class="fas fa-info-circle"></i>
 			<span>Data staf, NIP, SIP, status, dan hubungan akun hanya dikelola Administrator Dinas Kesehatan.</span>
+		</div>
+		<div class="alert <?= (int) ($staff_readiness_summary['attention'] ?? 0) > 0 ? 'alert-warning' : 'alert-success'; ?> shadow-sm" role="status">
+			<strong>Kesiapan staf aktif:</strong>
+			<?= html_escape((string) (int) ($staff_readiness_summary['ready'] ?? 0)); ?> dari
+			<?= html_escape((string) (int) ($staff_readiness_summary['total'] ?? 0)); ?> siap.
+			<?php if ((int) ($staff_readiness_summary['attention'] ?? 0) > 0): ?>
+				<?= html_escape((string) (int) $staff_readiness_summary['attention']); ?> staf perlu ditinjau sebelum gate profil diaktifkan.
+			<?php endif; ?>
 		</div>
 		<?php if ($is_form): ?>
 			<div class="card shadow mb-4 doclinc-filter-card">
@@ -96,7 +113,7 @@ $form_values = array(
 								<div class="form-group">
 									<label class="text-info">NIP</label>
 									<input type="text" class="form-control rounded-pill border-info" name="nip" value="<?= html_escape($form_values['nip']); ?>" placeholder="NIP 18 angka" inputmode="numeric" pattern="[0-9]{18}" minlength="18" maxlength="18" autocomplete="off" <?= $nip_schema_ready ? 'required' : 'disabled'; ?>>
-									<small class="form-text <?= $nip_schema_ready ? 'text-muted' : 'text-danger'; ?>"><?= $nip_schema_ready ? 'Wajib untuk Nakes ASN.' : 'Kolom NIP belum tersedia; jalankan migrasi identitas terlebih dahulu.'; ?></small>
+									<small class="form-text <?= $nip_schema_ready ? 'text-muted' : 'text-danger'; ?>"><?= $nip_schema_ready ? 'NIP 18 angka wajib untuk staf aktif. Gunakan data resmi; jangan mengisi nomor buatan.' : 'Kolom NIP belum tersedia; jalankan migrasi identitas terlebih dahulu.'; ?></small>
 								</div>
 							</div>
 						</div>
@@ -134,7 +151,7 @@ $form_values = array(
 			<div class="card-body doclinc-table-body">
 				<form method="post" action="<?= site_url('kelola_staff_puskesmas'); ?>" class="doclinc-account-toolbar doclinc-staff-filter-toolbar" id="staffPuskesmasFilterForm">
 					<div class="row">
-						<div class="col-md-4 mb-2">
+						<div class="col-md-3 mb-2">
 							<label class="sr-only" for="staffFilterPuskesmas">Puskesmas</label>
 							<select name="kode_pkm" id="staffFilterPuskesmas" class="form-control doclinc-puskesmas-selector">
 								<option value="">Semua Puskesmas</option>
@@ -145,12 +162,23 @@ $form_values = array(
 								<?php endforeach; ?>
 							</select>
 						</div>
-						<div class="col-md-3 mb-2">
+						<div class="col-md-2 mb-2">
 							<label class="sr-only" for="staffFilterStatus">Status</label>
 							<select name="status" id="staffFilterStatus" class="form-control doclinc-puskesmas-selector">
 								<option value="">Semua status</option>
 								<option value="aktif" <?= (isset($filters['status']) && $filters['status'] === 'aktif') ? 'selected' : ''; ?>>Aktif</option>
 								<option value="nonaktif" <?= (isset($filters['status']) && $filters['status'] === 'nonaktif') ? 'selected' : ''; ?>>Nonaktif</option>
+							</select>
+						</div>
+						<div class="col-md-2 mb-2">
+							<label class="sr-only" for="staffFilterReadiness">Kesiapan data</label>
+							<select name="readiness" id="staffFilterReadiness" class="form-control doclinc-puskesmas-selector">
+								<option value="">Semua kesiapan</option>
+								<option value="attention" <?= ($filters['readiness'] ?? '') === 'attention' ? 'selected' : ''; ?>>Perlu dilengkapi</option>
+								<option value="ready" <?= ($filters['readiness'] ?? '') === 'ready' ? 'selected' : ''; ?>>Siap</option>
+								<option value="missing_sip" <?= ($filters['readiness'] ?? '') === 'missing_sip' ? 'selected' : ''; ?>>SIP belum lengkap</option>
+								<option value="missing_nip" <?= ($filters['readiness'] ?? '') === 'missing_nip' ? 'selected' : ''; ?>>NIP belum lengkap</option>
+								<option value="account" <?= ($filters['readiness'] ?? '') === 'account' ? 'selected' : ''; ?>>Masalah akun personal</option>
 							</select>
 						</div>
 						<div class="col-md-3 mb-2">
@@ -207,6 +235,7 @@ $form_values = array(
 									$creation_eligibility = $personal_account_eligibility_by_staff[$staff_id] ?? array('eligible' => false, 'message' => 'Staf belum dapat dibuatkan akun personal.');
 									$can_create_personal_account = !empty($creation_eligibility['eligible']);
 									$creation_block_message = !empty($creation_eligibility['message']) ? $creation_eligibility['message'] : 'Staf belum dapat dibuatkan akun personal.';
+									$readiness_issues = isset($row->readiness_issues) && is_array($row->readiness_issues) ? $row->readiness_issues : array();
 									?>
 									<div class="doclinc-account-card">
 										<div class="doclinc-account-card__header">
@@ -219,6 +248,19 @@ $form_values = array(
 										</div>
 
 										<div class="doclinc-account-card__body">
+											<?php if (!$is_active): ?>
+												<div class="doclinc-account-card__note is-muted mb-3"><i class="fas fa-pause-circle mr-1"></i>Staf nonaktif tidak dihitung dalam kesiapan operasional.</div>
+											<?php elseif (!empty($readiness_issues)): ?>
+												<div class="doclinc-account-card__note is-warning mb-3">
+													<i class="fas fa-exclamation-triangle mr-1"></i>
+													<strong>Perlu dilengkapi:</strong>
+													<?= html_escape(implode(', ', array_map(function ($issue) use ($staff_readiness_labels) {
+														return $staff_readiness_labels[$issue] ?? 'Data perlu diperiksa';
+													}, $readiness_issues))); ?>
+												</div>
+											<?php else: ?>
+												<div class="doclinc-account-card__note is-muted mb-3"><i class="fas fa-check-circle mr-1"></i>Data operasional staf siap.</div>
+											<?php endif; ?>
 											<div class="doclinc-account-card__meta">
 												<span>Puskesmas</span>
 											<strong><?= html_escape($row->nama_puskesmas ?? 'Puskesmas belum tersedia'); ?></strong>
