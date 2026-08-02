@@ -22,6 +22,8 @@ const shell = read('application/modules/home_nakes/views/home_nakes_v.php');
 const navigation = read('application/modules/home_nakes/views/partials/nakes_bottom_nav_v.php');
 const partial = read('application/modules/home_nakes/views/partials/puskesmas_operations_v.php');
 const client = read('assets/js/doclinc-puskesmas-operations.js');
+const integration = read('tools/puskesmas_operations/tests/integration.php');
+const integrationRunner = read('tools/puskesmas_operations/run_disposable_integration.sh');
 
 expect(config.includes('DOCLINC_PUSKESMAS_OPERATIONS_ENABLED') && config.includes('DOCLINC_PUSKESMAS_OPERATIONS_ENVIRONMENT'), 'feature_flag_environment_bound');
 expect(config.includes("$config['role_prerequisites_enabled'] === true") && config.includes("$config['nakes_presence_enabled'] === true"), 'feature_requires_prerequisites_and_presence');
@@ -36,6 +38,7 @@ expect(
   'all_queries_tenant_scoped'
 );
 expect(service.includes("->where('request_status', 'Accepted')") && service.includes("->where('rsa.status', 'aktif')"), 'workload_uses_active_requests_and_assignments');
+expect(service.includes("->limit($staff_limit + 1)") && service.includes('count($staff_rows) > $staff_limit'), 'staff_overflow_fails_closed_without_truncation');
 expect(service.includes("->limit($request_limit + 1)") && service.includes("'code' => 'result_too_large'") && controller.includes("'result_too_large'"), 'bounded_snapshot_overflow_fails_closed');
 expect(!/(nik|no_kk|bpjs|nip|nomor_sip|no_hp|latitude|longitude|diagnosis|treatment|request_description)/i.test(service), 'service_has_no_identity_clinical_or_location_projection');
 expect(homeController.includes("$this->initial_section = 'operasional'") && homeController.includes("account_type'] ?? '') !== 'command_center'"), 'dedicated_page_rejects_non_command_center');
@@ -44,6 +47,9 @@ expect(navigation.includes("site_url('puskesmas/operations')") && navigation.inc
 expect(partial.includes('tidak menampilkan identitas pasien, isi klinis, atau koordinat') && partial.includes('Hanya pantau') && partial.includes('aria-live="polite"'), 'least_privilege_ui_contract');
 expect(client.includes("textContent = text") && !client.includes('innerHTML'), 'browser_uses_text_nodes_only');
 expect(client.includes("addEventListener('pagehide'") && client.includes('visibilityState') && client.includes('AbortController'), 'browser_lifecycle_is_bounded');
+expect(integration.includes('MariaDbReadiness::wait') && integration.includes('doclinc_puskesmas_ops_test_') && integration.includes('DROP DATABASE IF EXISTS'), 'official_disposable_mariadb_integration_contract');
+expect(integration.includes('tenant_b_staff_absent_from_tenant_a') && integration.includes('tenant_identifier_injection_fails_closed') && integration.includes('zero_database_mutation'), 'integration_covers_tenant_privacy_and_zero_mutation');
+expect(integrationRunner.includes("read -r -s -p 'Disposable MariaDB admin password: '") && integrationRunner.includes('unset DB_PASSWORD DOCLINC_TEST_DB_ADMIN_PASSWORD') && !integrationRunner.includes('DATABASE_NAME'), 'integration_runner_prompts_secret_and_rejects_database_target');
 
 process.stdout.write(`PUSKESMAS_OPERATIONS_SOURCE_PASSED=${passed}\n`);
 process.stdout.write(`PUSKESMAS_OPERATIONS_SOURCE_FAILED=${failed}\n`);

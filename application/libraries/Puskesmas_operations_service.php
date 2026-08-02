@@ -81,10 +81,14 @@ class Puskesmas_operations_service
 			->where('ps.user_id IS NOT NULL', null, false)
 			->order_by('ps.nama', 'ASC')
 			->order_by('ps.staff_id', 'ASC')
-			->limit($staff_limit)
+			->limit($staff_limit + 1)
 			->get();
 		if (!$staff_query) {
 			return array('ok' => false, 'code' => 'read_failed');
+		}
+		$staff_rows = $staff_query->result();
+		if (count($staff_rows) > $staff_limit) {
+			return array('ok' => false, 'code' => 'result_too_large');
 		}
 
 		$aggregate_query = $this->db
@@ -171,7 +175,7 @@ class Puskesmas_operations_service
 			'code' => 'ok',
 			'data' => $this->composeSnapshot(
 				$puskesmas_code,
-				$staff_query->result(),
+				$staff_rows,
 				$request_rows,
 				max(0, (int) $aggregate->pending_count),
 				time(),
