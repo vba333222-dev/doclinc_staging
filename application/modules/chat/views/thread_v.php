@@ -2269,8 +2269,8 @@ if ($current_role === 'dokter') {
 			try {
 				const parsed = new URL(value, window.location.origin);
 				return parsed.origin === window.location.origin &&
-					parsed.pathname.indexOf('/uploads/chat_images/') === 0 &&
-					/\.(jpe?g|png|webp)$/i.test(parsed.pathname);
+					/^\/chat\/attachment\/[1-9][0-9]*\/?$/.test(parsed.pathname) &&
+					parsed.search === '' && parsed.hash === '';
 			} catch (error) {
 				return false;
 			}

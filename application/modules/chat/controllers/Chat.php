@@ -11,6 +11,9 @@ class Chat extends MX_Controller
 		$this->load->helper('request_navigation');
 		$this->load->helper('notification');
 		if ($this->session->userdata('logged_in') != TRUE) {
+			if (strtolower((string) $this->router->fetch_method()) === 'attachment') {
+				show_404();
+			}
 			redirect('login');
 		}
 	}
@@ -136,12 +139,15 @@ class Chat extends MX_Controller
 		$request_id = (int) $this->input->post('request_id');
 		$user_id = (int) $this->session->userdata('id');
 		$config = $this->Chat_m->image_upload_config();
+		if ($config === false) {
+			log_message('error', 'Private chat attachment storage is unavailable.');
+			$this->output
+				->set_status_header(503)
+				->set_output(json_encode(['status' => 'error', 'message' => 'Penyimpanan gambar belum siap. Coba lagi.']));
+			return;
+		}
 
 		$this->load->library('upload', $config);
-
-		if (!is_dir($config['upload_path'])) {
-			mkdir($config['upload_path'], 0755, true);
-		}
 
 		if (!$this->upload->do_upload('foto')) {
 			$this->output
@@ -163,6 +169,41 @@ class Chat extends MX_Controller
 				'message' => $message
 			]));
 		}
+	}
+
+	public function attachment($message_id = 0)
+	{
+		if ($this->input->method(TRUE) !== 'GET') {
+			show_404();
+		}
+
+		$message_id = (int) $message_id;
+		$user_id = (int) $this->session->userdata('id');
+		$attachment = $this->Chat_m->get_attachment_for_user($message_id, $user_id);
+		if (!$attachment) {
+			doclinc_log_request_event('unauthorized_request_access', 0, array(
+				'target' => 'chat_attachment',
+				'message_id' => $message_id,
+			));
+			show_404();
+		}
+
+		$contents = @file_get_contents($attachment['path']);
+		if (!is_string($contents) || strlen($contents) !== (int) $attachment['size']) {
+			log_message('error', 'Chat attachment could not be read for message ' . $message_id . '.');
+			show_404();
+		}
+
+		$this->output
+			->set_status_header(200)
+			->set_content_type($attachment['mime'])
+			->set_header('Cache-Control: private, no-store, no-cache, must-revalidate, max-age=0')
+			->set_header('Pragma: no-cache')
+			->set_header('X-Content-Type-Options: nosniff')
+			->set_header('Cross-Origin-Resource-Policy: same-origin')
+			->set_header('Content-Length: ' . (int) $attachment['size'])
+			->set_header('Content-Disposition: inline; filename="' . $attachment['original_name'] . '"')
+			->set_output($contents);
 	}
 
 	public function video()
