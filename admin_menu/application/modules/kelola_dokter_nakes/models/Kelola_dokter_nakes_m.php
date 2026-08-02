@@ -112,7 +112,9 @@ class Kelola_dokter_nakes_m extends MX_Controller
 
 	public function create_dokter_nakes($data)
 	{
-		if (!$this->db->table_exists('users')) {
+		if (!$this->db->table_exists('users')
+			|| !$this->db->field_exists('must_change_password', 'users')
+			|| !$this->db->field_exists('password_changed_at', 'users')) {
 			return false;
 		}
 
@@ -124,6 +126,8 @@ class Kelola_dokter_nakes_m extends MX_Controller
 			'password' => $data['password'],
 			'role' => 'dokter',
 			'status' => in_array($data['status'], array('aktif', 'nonaktif'), TRUE) ? $data['status'] : 'aktif',
+			'must_change_password' => 1,
+			'password_changed_at' => null,
 		);
 
 		foreach (array('no_hp', 'remark', 'updated_by') as $field) {
@@ -247,7 +251,10 @@ class Kelola_dokter_nakes_m extends MX_Controller
 
 	public function update_dokter_nakes($id_user, $data)
 	{
-		if (!$this->db->table_exists('users')) {
+		if (!$this->db->table_exists('users')
+			|| (array_key_exists('password', $data)
+				&& (!$this->db->field_exists('must_change_password', 'users')
+					|| !$this->db->field_exists('password_changed_at', 'users')))) {
 			return false;
 		}
 
@@ -256,6 +263,10 @@ class Kelola_dokter_nakes_m extends MX_Controller
 			if ($this->db->field_exists($field, 'users') && array_key_exists($field, $data)) {
 				$allowed[$field] = $data[$field];
 			}
+		}
+		if (isset($allowed['password'])) {
+			$allowed['must_change_password'] = 1;
+			$allowed['password_changed_at'] = null;
 		}
 
 		if (empty($allowed)) {
