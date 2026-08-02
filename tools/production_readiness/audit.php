@@ -64,7 +64,8 @@ function readiness_schema_gaps($db, $database)
 			array($database, $contract[0], $contract[1])
 		)->row_array();
 		if (!$row || strtolower((string) $row['COLUMN_TYPE']) !== $contract[2]
-			|| (string) $row['IS_NULLABLE'] !== $contract[3] || $row['COLUMN_DEFAULT'] !== null
+			|| (string) $row['IS_NULLABLE'] !== $contract[3]
+			|| !($row['COLUMN_DEFAULT'] === null || strtoupper(trim((string) $row['COLUMN_DEFAULT'])) === 'NULL')
 			|| strtolower((string) $row['CHARACTER_SET_NAME']) !== $contract[4]
 			|| strtolower((string) $row['COLLATION_NAME']) !== $contract[5]) {
 			$gaps[] = $contract[0] . '.' . $contract[1] . '.contract';

@@ -64,6 +64,11 @@ function role_identity_index_state(mysqli $db, $database, $table, $index)
 	return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 
+function role_identity_default_is_null($value)
+{
+	return $value === null || strtoupper(trim((string) $value)) === 'NULL';
+}
+
 function role_identity_assert_base(mysqli $db, $database)
 {
 	foreach (array('users' => 'userId', 'puskesmas_staff' => 'staff_id') as $table => $primary) {
@@ -85,7 +90,7 @@ function role_identity_assert_target(mysqli $db, $database)
 			if (!$actual
 				|| strtolower((string) $actual['COLUMN_TYPE']) !== $expected[0]
 				|| (string) $actual['IS_NULLABLE'] !== 'YES'
-				|| $actual['COLUMN_DEFAULT'] !== null
+				|| !role_identity_default_is_null($actual['COLUMN_DEFAULT'])
 				|| strtolower((string) $actual['CHARACTER_SET_NAME']) !== $expected[1]
 				|| strtolower((string) $actual['COLLATION_NAME']) !== $expected[2]) {
 				throw new RuntimeException('target_column_mismatch');
