@@ -198,11 +198,12 @@ class Login extends MX_Controller
 
 	private function password_policy_message($code)
 	{
-		require_once APPPATH . 'libraries/Password_strength_policy.php';
-		$policy = new Password_strength_policy();
-		$message = $policy->message($code);
-		return $message === 'Password belum memenuhi ketentuan keamanan.'
-			? 'Password baru belum memenuhi ketentuan keamanan DocLink.'
-			: $message;
+		if ($code === 'confirmation_mismatch') {
+			return 'Konfirmasi password tidak sama.';
+		}
+		if ($code === 'invalid_length') {
+			return 'Password harus terdiri dari 10 sampai 72 karakter.';
+		}
+		return 'Password baru belum memenuhi ketentuan keamanan DocLink.';
 	}
 }

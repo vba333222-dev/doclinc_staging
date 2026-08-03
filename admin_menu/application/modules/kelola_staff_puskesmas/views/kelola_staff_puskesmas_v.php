@@ -451,12 +451,11 @@ $form_values = array(
 																<div class="row">
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Password sementara</label>
-																<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
-																<small class="text-muted">Minimal 8 karakter: huruf besar, huruf kecil, angka, dan karakter khusus.</small>
+																<input type="password" class="form-control rounded-pill border-info" name="password" minlength="10" maxlength="72" autocomplete="new-password" required>
 																	</div></div>
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Konfirmasi password</label>
-																<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
+																<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="10" maxlength="72" autocomplete="new-password" required>
 																	</div></div>
 																</div>
 															</div>

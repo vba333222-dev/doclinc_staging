@@ -24,12 +24,12 @@
 							<input type="hidden" name="password_change_token" value="<?= html_escape($form_token); ?>">
 							<div class="mb-3">
 								<label class="form-label" for="new_password">Password baru</label>
-								<input class="form-control" type="password" id="new_password" name="new_password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
-								<div class="form-text">Minimal 8 karakter: huruf besar, huruf kecil, angka, dan karakter khusus. Jangan gunakan nomor telepon atau identitas login.</div>
+								<input class="form-control" type="password" id="new_password" name="new_password" minlength="10" maxlength="72" autocomplete="new-password" required>
+								<div class="form-text">Gunakan minimal 10 karakter dan jangan gunakan nomor telepon atau identitas login.</div>
 							</div>
 							<div class="mb-4">
 								<label class="form-label" for="confirm_password">Konfirmasi password baru</label>
-								<input class="form-control" type="password" id="confirm_password" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
+								<input class="form-control" type="password" id="confirm_password" name="confirm_password" minlength="10" maxlength="72" autocomplete="new-password" required>
 							</div>
 							<button class="btn btn-success w-100" type="submit">Simpan dan Lanjutkan</button>
 						</form>

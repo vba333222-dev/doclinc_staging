@@ -383,9 +383,6 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		$email = trim((string) ($account['email'] ?? ''));
 		$password = (string) ($account['plain_password'] ?? '');
 		unset($account['plain_password']);
-		require_once APPPATH . 'libraries/Password_strength_policy.php';
-		$password_policy = new Password_strength_policy();
-		$password_error = $password_policy->validate($password);
 		if ($staff_id < 1
 			|| $username === ''
 			|| strlen($username) < 3
@@ -394,7 +391,8 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			|| $email === ''
 			|| strlen($email) > 100
 			|| !filter_var($email, FILTER_VALIDATE_EMAIL)
-			|| $password_error !== null
+			|| strlen($password) < 10
+			|| strlen($password) > 72
 			|| !$this->personal_account_creation_ready()) {
 			return array('status' => 'error', 'message' => 'Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
 		}

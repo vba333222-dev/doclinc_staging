@@ -32,11 +32,7 @@ Jalankan unit test bila PHP 8.1 tersedia:
 php8.1 tools/role_prerequisites/tests/unit.php
 ```
 
-Aktivasi staging dilakukan terpisah setelah endpoint penyelesaian profil dan
-storage foto lulus gate. Aktivasi ini dengan sengaja mengunci seluruh actor
-yang belum lengkap; kekurangan NIK/KK/BPJS/foto dapat diperbaiki sendiri,
-sedangkan NIP/SIP/link staf/data fasilitas hanya dapat diperbaiki Admin Dinas
-Kesehatan. Authenticated UAT tetap dicatat sebagai gate akhir pengembangan:
+Aktivasi staging dilakukan terpisah setelah schema discovery dan authenticated UAT:
 
 ```text
 DOCLINC_ROLE_PREREQUISITES_ENABLED=true

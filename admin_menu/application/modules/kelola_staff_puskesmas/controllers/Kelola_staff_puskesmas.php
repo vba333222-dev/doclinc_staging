@@ -182,11 +182,12 @@ class Kelola_staff_puskesmas extends MX_Controller
 			$this->personal_account_flash('Masukkan email yang valid.');
 			return;
 		}
-		require_once APPPATH . 'libraries/Password_strength_policy.php';
-		$password_policy = new Password_strength_policy();
-		$password_error = $password_policy->validate($password, $confirm_password);
-		if ($password_error !== null) {
-			$this->personal_account_flash($password_policy->message($password_error));
+		if (strlen($password) < 10 || strlen($password) > 72) {
+			$this->personal_account_flash('Password sementara harus terdiri dari 10 sampai 72 karakter.');
+			return;
+		}
+		if ($password !== $confirm_password) {
+			$this->personal_account_flash('Konfirmasi password tidak sama.');
 			return;
 		}
 		$this->load->helper('password_compat');

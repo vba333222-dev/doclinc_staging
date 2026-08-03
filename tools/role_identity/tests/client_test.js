@@ -38,7 +38,7 @@ function harness(options = {}) {
   const location = { assigned: '', reloadCount: 0, assign(url) { this.assigned = url; }, reload() { this.reloadCount += 1; } };
   const window = {
     DOCLINC_PROFILE_COMPLETION: {
-      role: options.role || 'warga', profileUpdateUrl: '/profile/update', photoUpdateUrl: '/profile/photo/update',
+      role: options.role || 'warga', profileUpdateUrl: '/profile/update', photoUpdateUrl: '/home/update_profile_photo',
       statusUrl: '/profile/requirements', redirectUrl: '/home', logoutUrl: '/login/logout',
     },
     location,
@@ -77,34 +77,16 @@ async function settle() {
   expect(complete.calls.map(call => call.url).join('|') === '/profile/update|/profile/requirements', 'warga_profile_then_authoritative_status');
   expect(complete.location.assigned === '/home', 'redirect_only_after_complete_status');
 
-  const wargaPhoto = harness({
-    data: { foto: { size: 120 } },
-    responses: [response(200, { status: 'success' }), response(200, { status: 'success' }), response(200, { success: true, data: { complete: true } })],
-  });
-  wargaPhoto.listeners.submit({ preventDefault() {} });
-  await settle();
-  expect(wargaPhoto.calls.map(call => call.url).join('|') === '/profile/update|/profile/photo/update|/profile/requirements', 'warga_profile_and_photo_use_separate_exact_boundaries');
-
-  const photoRejected = harness({
-    role: 'dokter',
-    data: { foto: { size: 120 } },
-    responses: [response(200, { status: 'success' }), response(422, { status: 'error', message: 'Isi file foto tidak valid.' })],
-  });
-  photoRejected.listeners.submit({ preventDefault() {} });
-  await settle();
-  expect(photoRejected.calls.length === 2 && photoRejected.location.assigned === '', 'photo_rejection_never_unlocks_application');
-  expect(photoRejected.feedback.textContent === 'Isi file foto tidak valid.', 'photo_rejection_safe_error_is_presented');
-
   const rejected = harness({ responses: [response(409, { status: 'error', message: 'Data identitas sudah terdaftar.' })] });
   rejected.listeners.submit({ preventDefault() {} });
   await settle();
   expect(rejected.calls.length === 1 && rejected.location.assigned === '', 'server_rejection_keeps_application_locked');
   expect(rejected.feedback.textContent === 'Data identitas sudah terdaftar.', 'safe_server_error_is_presented');
 
-  const nakes = harness({ role: 'dokter', data: { foto: { size: 120 } }, responses: [response(200, { status: 'success' }), response(200, { status: 'success' }), response(200, { success: true, data: { complete: false } })] });
+  const nakes = harness({ role: 'dokter', data: { foto: { size: 120 } }, responses: [response(200, { status: 'success' }), response(200, { success: true, data: { complete: false } })] });
   nakes.listeners.submit({ preventDefault() {} });
   await settle();
-  expect(nakes.calls.map(call => call.url).join('|') === '/profile/update|/profile/photo/update|/profile/requirements', 'nakes_profile_and_photo_use_separate_exact_boundaries');
+  expect(nakes.calls.length === 2 && nakes.calls[0].url === '/profile/update', 'nakes_uses_single_existing_multipart_profile_boundary');
   expect(nakes.location.assigned === '' && nakes.location.reloadCount === 1, 'managed_gap_remains_locked_and_refreshes_requirements');
 
   process.stdout.write(`ROLE_IDENTITY_CLIENT_PASSED=${passed}\n`);

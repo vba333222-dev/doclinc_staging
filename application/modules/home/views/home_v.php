@@ -3813,7 +3813,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				if (submit.disabled) return;
 				submit.disabled = true;
 				feedback.textContent = 'Menyimpan foto...';
-				fetch(<?= json_encode(base_url('profile/photo/update')); ?>, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+				fetch(<?= json_encode(base_url('home/update_profile_photo')); ?>, { method: 'POST', body: new FormData(form) })
 					.then(response => response.json().then(body => ({ ok: response.ok, body })))
 					.then(result => {
 						if (!result.ok || !result.body || result.body.status !== 'success') throw new Error(result.body && result.body.message ? result.body.message : 'Foto belum dapat disimpan.');

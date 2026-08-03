@@ -2347,9 +2347,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			const submitButton = form.querySelector('button[type="submit"]');
 			const originalButtonDisabled = submitButton ? submitButton.disabled : false;
 			const originalButtonContent = submitButton ? submitButton.innerHTML : '';
-			const formData = new FormData(form);
-			const profilePhoto = formData.get('foto');
-			formData.delete('foto');
+			const formData = new FormData(form); // Ambil semua input termasuk file
 			let profileUpdateSucceeded = false;
 			const restoreProfileSubmit = function() {
 				profileUpdateInFlight = false;
@@ -2387,35 +2385,17 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					});
 				})
 				.then(result => {
-					if (result.status !== 'success') {
+					if (result.status === 'success') {
+						profileUpdateSucceeded = true;
+						alert("Profil berhasil diperbarui!");
+						// Misalnya reload data user:
+						location.reload();
+					} else {
 						const safeMessage = typeof result.message === 'string' && result.message.trim() ?
 							result.message.trim() :
 							"Terjadi kesalahan. Coba lagi.";
-						return Promise.reject({ safeMessage: safeMessage });
+						alert("Profil belum diperbarui. " + safeMessage);
 					}
-					if (!profilePhoto || !profilePhoto.size) {
-						return result;
-					}
-					const photoData = new FormData();
-					photoData.append('foto', profilePhoto);
-					return fetch(<?= json_encode(base_url('profile/photo/update')); ?>, {
-						method: 'POST',
-						body: photoData,
-						headers: { Accept: 'application/json' },
-						credentials: 'same-origin'
-					}).then(response => response.json().then(photoResult => {
-						if (!response.ok || !photoResult || photoResult.status !== 'success') {
-							return Promise.reject({
-								safeMessage: photoResult && typeof photoResult.message === 'string' ? photoResult.message.trim() : ''
-							});
-						}
-						return photoResult;
-					}));
-				})
-				.then(() => {
-					profileUpdateSucceeded = true;
-					alert("Profil berhasil diperbarui!");
-					location.reload();
 				})
 				.catch(failure => {
 					const safeMessage = failure && typeof failure.safeMessage === 'string' && failure.safeMessage ?
