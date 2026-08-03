@@ -182,8 +182,8 @@ class Kelola_staff_puskesmas extends MX_Controller
 			$this->personal_account_flash('Masukkan email yang valid.');
 			return;
 		}
-		if (strlen($password) < 10 || strlen($password) > 72) {
-			$this->personal_account_flash('Password sementara harus terdiri dari 10 sampai 72 karakter.');
+		if (strlen($password) < 8) {
+			$this->personal_account_flash('Password minimal 8 karakter.');
 			return;
 		}
 		if ($password !== $confirm_password) {
@@ -326,9 +326,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return in_array('staff_nip', $issues, true);
 		}
 		if ($filter === 'account') {
-			return in_array('staff_account_unlinked', $issues, true)
-				|| in_array('staff_account_invalid', $issues, true)
-				|| in_array('staff_password_change_required', $issues, true);
+			return in_array('staff_account_unlinked', $issues, true) || in_array('staff_account_invalid', $issues, true);
 		}
 		return true;
 	}

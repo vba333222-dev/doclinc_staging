@@ -45,7 +45,6 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 							$puskesmas_status = $data->puskesmas_status ?? '';
 							$account_status = strtolower(trim((string) ($data->status ?? '')));
 							$is_active = $account_status === 'aktif';
-							$must_change_password = (int) ($data->must_change_password ?? 0) === 1;
 							$account_status_labels = array('aktif' => 'Aktif', 'valid' => 'Aktif', 'nonaktif' => 'Nonaktif', 'inactive' => 'Nonaktif');
 							$account_status_label = $account_status_labels[$account_status] ?? 'Status belum tersedia';
 							if ($kode_pkm !== '' && $nama_pkm !== '' && $puskesmas_status !== 'nonaktif') {
@@ -78,9 +77,6 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 									<div class="doclinc-account-card__note <?= $relationship_note === 'Puskesmas nonaktif' ? 'is-warning' : ($relationship_note === 'Belum terhubung ke Puskesmas aktif' ? 'is-muted' : ''); ?>">
 										<?= html_escape($relationship_note); ?>
 									</div>
-									<?php if ($is_active && $must_change_password): ?>
-										<div class="doclinc-account-card__note is-warning mt-2">Menunggu pengelola Puskesmas mengganti password sementara. Fitur lain tetap terkunci.</div>
-									<?php endif; ?>
 								</div>
 
 								<div class="doclinc-account-card__footer">
@@ -169,14 +165,14 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 														<option value="nonaktif" <?= ($data->status ?? '') === 'nonaktif' ? 'selected' : ''; ?>>Nonaktif</option>
 													</select>
 												</div>
-											<div class="form-group">
-												<label class="text-info"><i class="fas fa-lock mr-1"></i> Password Baru</label>
-												<input type="password" class="form-control rounded-pill border-info" name="password" minlength="10" maxlength="72" autocomplete="new-password">
-												<small class="text-muted">Biarkan kosong jika tidak ingin mereset. Jika diisi, ini menjadi password sementara dan pengguna wajib menggantinya saat login berikutnya.</small>
-											</div>
-											<div class="form-group">
-												<label class="text-info"><i class="fas fa-lock mr-1"></i> Konfirmasi Password Baru</label>
-												<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="10" maxlength="72" autocomplete="new-password">
+												<div class="form-group">
+													<label class="text-info"><i class="fas fa-lock mr-1"></i> Password Baru</label>
+													<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" autocomplete="new-password">
+													<small class="text-muted">Biarkan kosong jika tidak ingin mengganti password.</small>
+												</div>
+												<div class="form-group">
+													<label class="text-info"><i class="fas fa-lock mr-1"></i> Konfirmasi Password Baru</label>
+													<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" autocomplete="new-password">
 												</div>
 											</div>
 											<div class="modal-footer border-0 px-4 pb-4">
@@ -244,13 +240,13 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-lock mr-1"></i> Password</label>
-								<input type="password" class="form-control rounded-pill border-success" name="password" minlength="10" maxlength="72" required>
+								<input type="password" class="form-control rounded-pill border-success" name="password" minlength="8" required>
 							</div>
 						</div>
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-lock mr-1"></i> Konfirmasi Password</label>
-								<input type="password" class="form-control rounded-pill border-success" name="confirm_password" minlength="10" maxlength="72" required>
+								<input type="password" class="form-control rounded-pill border-success" name="confirm_password" minlength="8" required>
 							</div>
 						</div>
 					</div>
