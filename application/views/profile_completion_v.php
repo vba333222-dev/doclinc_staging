@@ -8,12 +8,11 @@ $missing_fields = isset($profile_state['missing_fields']) && is_array($profile_s
 $missing_labels = isset($profile_state['missing_labels']) && is_array($profile_state['missing_labels']) ? $profile_state['missing_labels'] : array();
 $self_service_fields = isset($profile_state['self_service_fields']) && is_array($profile_state['self_service_fields']) ? $profile_state['self_service_fields'] : array();
 $managed_fields = isset($profile_state['managed_fields']) && is_array($profile_state['managed_fields']) ? $profile_state['managed_fields'] : array();
-$photo_required = in_array('photo', $missing_fields, true);
 $is_warga = $profile_role === 'warga';
 $is_personal = $profile_account_type === 'personal';
 $can_edit_profile = $is_warga || ($profile_role === 'dokter' && in_array($profile_account_type, array('personal', 'command_center'), true));
 $profile_update_url = $is_warga ? base_url('profile/update') : base_url('home_nakes/updateprofile');
-$profile_photo_url = base_url('profile/photo/update');
+$profile_photo_url = $is_warga ? base_url('home/update_profile_photo') : '';
 $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 ?>
 <!doctype html>
@@ -68,7 +67,7 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 				<div class="completion-photo">
 					<img src="<?= doclinc_profile_image_src((int) ($profile_user['userId'] ?? 0), (string) ($profile_user['foto'] ?? '')); ?>" alt="Foto profil saat ini">
 					<label>Foto asli
-						<input type="file" name="foto" accept="image/jpeg,image/png,image/webp" <?= $photo_required ? 'required' : ''; ?>>
+						<input type="file" name="foto" accept="image/jpeg,image/png,image/webp" <?= $is_warga ? 'data-warga-photo' : ''; ?>>
 					</label>
 				</div>
 				<div class="completion-grid">

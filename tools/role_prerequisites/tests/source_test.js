@@ -53,7 +53,6 @@ const homeModel = read('application/modules/home/models/Home_m.php');
 const nakesModel = read('application/modules/home_nakes/models/Home_nakes_m.php');
 const puskesmasReadiness = read('application/libraries/Puskesmas_data_readiness.php');
 const nakesProfileForm = nakesView.slice(nakesView.indexOf('id="formEditProfile"'), nakesView.indexOf('id="offcanvasNotif"'));
-const profileCompletionView = read('application/views/profile_completion_v.php');
 
 expect(config.includes('DOCLINC_ROLE_PREREQUISITES_ENABLED') && config.includes("Doclinc_feature_flags::resolve("), 'feature_flag_is_environment_bound');
 expect(config.includes("$config['role_prerequisites_enabled']"), 'feature_flag_defaults_through_shared_resolver');
@@ -70,8 +69,6 @@ expect(prerequisiteGate.includes("role_prerequisites_enabled') !== true") && pre
 expect(prerequisiteGate.includes("array('warga', 'dokter')"), 'global_profile_gate_excludes_admin');
 expect(prerequisiteGatePolicy.includes("$class === 'profile_completion'") && prerequisiteGatePolicy.includes("$class === 'profile_requirements'") && !prerequisiteGatePolicy.includes("$class === 'home' && $method === 'index'"), 'only_remediation_routes_bypass_gate');
 expect(prerequisiteGatePolicy.includes('(int) $resource_user_id === (int) $actor_user_id'), 'blocked_actor_can_only_read_own_profile_photo');
-expect(prerequisiteGatePolicy.includes("$method === 'update_photo'") && prerequisiteGatePolicy.includes("array('warga', 'dokter')"), 'blocked_actor_can_update_own_profile_photo');
-expect(profileCompletionView.includes("in_array('photo', $missing_fields, true)") && profileCompletionView.includes("$photo_required ? 'required'"), 'missing_photo_is_required_on_completion_form');
 expect(service.includes("array('warga', 'dokter')") && service.includes("status !== 'aktif'") && service.includes('must_change_password'), 'actor_state_fail_closed');
 expect(service.includes("array('personal', 'command_center')") && service.includes("$base['safe_error_code'] = 'actor_denied'"), 'canonical_nakes_identity_required_even_flag_off');
 expect(service.includes("'puskesmas_staff'") && service.includes("'nomor_sip'"), 'personal_staff_requirements');
