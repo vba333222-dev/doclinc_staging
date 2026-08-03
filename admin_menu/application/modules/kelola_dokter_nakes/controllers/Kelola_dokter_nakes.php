@@ -34,7 +34,7 @@ class Kelola_dokter_nakes extends MX_Controller
 		$this->form_validation->set_rules('nama', 'Nama', 'trim|required', array('required' => 'Nama lengkap wajib diisi.'));
 		$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email', array('required' => 'Email wajib diisi.', 'valid_email' => 'Masukkan email yang valid.'));
 		$this->form_validation->set_rules('username', 'Username', 'trim|required', array('required' => 'Nama pengguna wajib diisi.'));
-		$this->form_validation->set_rules('password', 'Password', 'required|min_length[10]|max_length[72]', array('required' => 'Password wajib diisi.', 'min_length' => 'Password minimal 10 karakter.', 'max_length' => 'Password maksimal 72 karakter.'));
+		$this->form_validation->set_rules('password', 'Password', 'required|min_length[8]', array('required' => 'Password wajib diisi.', 'min_length' => 'Password minimal 8 karakter.'));
 		$this->form_validation->set_rules('confirm_password', 'Konfirmasi Password', 'required|matches[password]', array('required' => 'Konfirmasi password wajib diisi.', 'matches' => 'Konfirmasi password tidak sama.'));
 
 		$email = trim((string) $this->input->post('email', TRUE));
@@ -139,8 +139,8 @@ class Kelola_dokter_nakes extends MX_Controller
 			redirect('kelola_dokter_nakes', 'refresh');
 			return;
 		}
-		if ($password !== '' && (strlen($password) < 10 || strlen($password) > 72)) {
-			$this->session->set_flashdata('error', 'Password sementara harus terdiri dari 10 sampai 72 karakter.');
+		if ($password !== '' && strlen($password) < 8) {
+			$this->session->set_flashdata('error', 'Password minimal 8 karakter.');
 			redirect('kelola_dokter_nakes', 'refresh');
 			return;
 		}
