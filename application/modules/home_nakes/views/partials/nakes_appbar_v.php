@@ -14,22 +14,25 @@ $nakes_puskesmas_display = !$nakes_weak_value($appbar_puskesmas_name) ? $appbar_
 if ($nakes_puskesmas_display !== '' && stripos($nakes_puskesmas_display, 'puskesmas') !== 0) {
 	$nakes_puskesmas_display = 'Puskesmas ' . $nakes_puskesmas_display;
 }
+$nakes_header_name = !empty($nakes_is_command_center) && $nakes_puskesmas_display !== ''
+	? $nakes_puskesmas_display
+	: $nakes_name;
 ?>
 			<div class="hero bg-success p-3 overflow-hidden dl-appbar dl-nakes-appbar">
 				<div class="dl-nakes-appbar-top">
 					<div class="dl-nakes-header-profile">
 						<?php
 						$this->load->view('partials/nakes_avatar_v', array(
-							'avatar_name' => $nakes_name,
-							'avatar_photo' => $nakes_photo,
+							'avatar_name' => $nakes_header_name,
+							'avatar_photo' => !empty($nakes_is_personal) ? $nakes_photo : '',
 							'avatar_user_id' => (int) $this->session->userdata('id'),
-							'avatar_alt' => 'Foto akun Puskesmas',
+							'avatar_alt' => !empty($nakes_is_personal) ? 'Foto Nakes' : 'Identitas Puskesmas',
 							'avatar_class' => 'nk-avatar--md nk-avatar--nakes',
-							'avatar_icon' => 'fas fa-user-md',
+							'avatar_icon' => !empty($nakes_is_personal) ? 'fas fa-user-md' : 'fas fa-hospital',
 						));
 						?>
 						<div class="min-w-0">
-							<strong><?= html_escape($nakes_name); ?></strong>
+							<strong><?= html_escape($nakes_header_name); ?></strong>
 							<small><?= html_escape($appbar_account_label); ?><?= $nakes_puskesmas_display !== '' ? ' · ' . html_escape($nakes_puskesmas_display) : ' · Belum dikonfigurasi'; ?></small>
 						</div>
 					</div>

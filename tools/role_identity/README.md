@@ -15,6 +15,7 @@ Run:
 
 ```bash
 php tools/role_identity/tests/unit.php
+php tools/role_identity/tests/credential_policy_unit.php
 node tools/role_identity/tests/source_test.js
 node tools/role_identity/tests/client_test.js
 node tools/role_identity/tests/staging_runner_source_test.js
@@ -24,6 +25,12 @@ bash tools/role_identity/run_disposable_migration.sh
 
 NIK, KK, BPJS/KIS, and NIP must not be copied to session state, realtime payloads,
 notifications, Puskesmas dashboards, logs, or safe error bodies.
+
+For Nakes and Puskesmas accounts, `password_changed_at` is the evidence that the
+user has completed at least one private password change. A null or malformed
+value fails closed even when a legacy `must_change_password` flag is zero.
+First activation and post-Admin-reset states remain separate; resetting a
+previously activated account does not erase its last user-change evidence.
 
 ## Staging migration runner
 

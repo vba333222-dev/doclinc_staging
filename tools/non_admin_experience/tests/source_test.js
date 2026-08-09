@@ -1,0 +1,64 @@
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const root = path.resolve(__dirname, '../../..');
+const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
+let passed = 0;
+let failed = 0;
+function expect(condition, label) {
+  if (condition) {
+    passed += 1;
+    process.stdout.write(`PASS ${label}\n`);
+  } else {
+    failed += 1;
+    process.stderr.write(`FAIL ${label}\n`);
+  }
+}
+
+const prerequisites = read('application/libraries/Role_prerequisite_service.php');
+const nakesController = read('application/modules/home_nakes/controllers/Home_nakes.php');
+const nakesModel = read('application/modules/home_nakes/models/Home_nakes_m.php');
+const nakesShell = read('application/modules/home_nakes/views/home_nakes_v.php');
+const nakesDashboard = read('application/modules/home_nakes/views/partials/nakes_dashboard_v.php');
+const nakesProfile = read('application/modules/home_nakes/views/partials/nakes_profile_v.php');
+const nakesAppbar = read('application/modules/home_nakes/views/partials/nakes_appbar_v.php');
+const completionView = read('application/views/profile_completion_v.php');
+const presence = read('assets/js/doclinc-nakes-presence.js');
+const authz = read('application/helpers/request_authz_helper.php');
+const chatController = read('application/modules/chat/controllers/Chat.php');
+const chatModel = read('application/modules/chat/models/Chat_m.php');
+const chatView = read('application/modules/chat/views/thread_v.php');
+const homeView = read('application/modules/home/views/home_v.php');
+const style = read('assets/css/style.css');
+const notifications = read('assets/js/doclinc-notifications.js');
+
+expect(prerequisites.includes('facility_requirements($identity, $missing, $labels, $schema_gaps, false)')
+  && prerequisites.includes('Command-center accounts represent a health facility')
+  && !nakesController.match(/\$account_type === 'command_center'[\s\S]{0,350}'nama'/), 'puskesmas_profile_uses_facility_not_personal_identity');
+expect(nakesProfile.includes('Identitas dan kontak unit') && nakesProfile.includes('Kode Puskesmas')
+  && nakesProfile.includes('Alamat layanan'), 'puskesmas_profile_shows_natural_facility_fields');
+expect(nakesShell.includes('Nama, alamat, dan identitas unit Puskesmas dikelola')
+  && nakesShell.includes("if (!empty($nakes_is_personal))")
+  && completionView.includes('Akun Puskesmas tidak memerlukan foto pribadi'), 'puskesmas_editor_excludes_personal_demographics_and_photo');
+expect(!nakesDashboard.includes("'section_title' => 'Status Nakes'")
+  && (nakesDashboard.match(/'section_title' => 'Staf Puskesmas'/g) || []).length === 1
+  && nakesDashboard.includes('data-presence-roster="true"'), 'staff_and_presence_are_one_dashboard_roster');
+expect(nakesModel.includes('users.foto AS profile_photo')
+  && nakesDashboard.includes('data-presence-user-id')
+  && presence.includes('renderRoster'), 'staff_roster_has_photo_and_online_state');
+expect(nakesAppbar.includes("'avatar_photo' => !empty($nakes_is_personal) ? $nakes_photo : ''")
+  && homeView.includes('doclinc_profile_image_src((int) $this->session->userdata')
+  && chatModel.includes("'sender_photo_url' => base_url('profile/photo/'")
+  && chatView.includes('chat-message-avatar'), 'personal_photos_render_on_dashboards_and_chat');
+expect(style.includes('.dl-hero .history-empty-text') && style.includes('color: #ffffff'), 'patient_active_consultation_copy_has_high_contrast');
+expect(authz.includes("account_type'] ?? '') !== 'personal'")
+  && chatController.includes("'safe_error_code' => $read_only ? 'chat_read_only'")
+  && chatView.includes('Akun Puskesmas hanya dapat memantau percakapan'), 'puskesmas_chat_is_read_only_across_server_and_ui');
+expect(notifications.includes('this.soundEnabled = true')
+  && !notifications.includes('doclincNotificationSoundToggle')
+  && !notifications.includes('Aktifkan suara'), 'notification_sound_defaults_on_without_toggle_ui');
+
+process.stdout.write(`NON_ADMIN_EXPERIENCE_SOURCE_PASSED=${passed}\n`);
+process.stdout.write(`NON_ADMIN_EXPERIENCE_SOURCE_FAILED=${failed}\n`);
+process.exit(failed === 0 ? 0 : 1);

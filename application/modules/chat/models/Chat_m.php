@@ -260,6 +260,7 @@ class Chat_m extends CI_Model
 			'request_id' => (int) $row['request_id'],
 			'sender_user_id' => (int) $row['sender_user_id'],
 			'sender_role' => $row['sender_role'],
+			'sender_photo_url' => base_url('profile/photo/' . (int) $row['sender_user_id']),
 			'message_type' => $row['message_type'],
 			'message_text' => (string) $row['message_type'] === 'image' ? '' : $row['message_text'],
 			'attachment_url' => $attachment_path !== '' ? base_url('chat/attachment/' . (int) $row['message_id']) : '',

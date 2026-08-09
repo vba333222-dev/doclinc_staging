@@ -26,6 +26,8 @@ final class ProductionReadinessReport
 			'actor_incomplete' => 0,
 			'actor_denied' => 0,
 			'actor_password_change_required' => 0,
+			'actor_first_login_pending' => 0,
+			'actor_password_reset_pending' => 0,
 			'actor_identity_denied' => 0,
 			'actor_profile_evaluated' => 0,
 			'actor_self_service_gap_count' => 0,
@@ -102,6 +104,12 @@ final class ProductionReadinessReport
 			}
 			if ($denial_reason === 'password_change_required') {
 				$report['actor_password_change_required']++;
+				$credential_state = (string) ($state['audit_credential_state'] ?? '');
+				if ($credential_state === 'first_login_pending') {
+					$report['actor_first_login_pending']++;
+				} elseif ($credential_state === 'admin_reset_pending') {
+					$report['actor_password_reset_pending']++;
+				}
 			} else {
 				if ($denial_reason === 'identity_invalid') {
 					$report['actor_identity_denied']++;
@@ -175,6 +183,8 @@ final class ProductionReadinessReport
 			'ACTOR_INCOMPLETE=' . (int) $report['actor_incomplete'],
 			'ACTOR_DENIED=' . (int) $report['actor_denied'],
 			'ACTOR_PASSWORD_CHANGE_REQUIRED=' . (int) $report['actor_password_change_required'],
+			'ACTOR_FIRST_LOGIN_PENDING=' . (int) $report['actor_first_login_pending'],
+			'ACTOR_PASSWORD_RESET_PENDING=' . (int) $report['actor_password_reset_pending'],
 			'ACTOR_IDENTITY_DENIED=' . (int) $report['actor_identity_denied'],
 			'ACTOR_PROFILE_EVALUATED=' . (int) $report['actor_profile_evaluated'],
 			'ACTOR_SELF_SERVICE_GAP_COUNT=' . (int) $report['actor_self_service_gap_count'],

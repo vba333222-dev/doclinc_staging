@@ -9,6 +9,7 @@ $profile_phone = isset($profile['no_hp']) ? (string) $profile['no_hp'] : '';
 $profile_address = isset($profile['alamat']) ? (string) $profile['alamat'] : '';
 $profile_puskesmas_name = isset($nakes_puskesmas_name) ? trim((string) $nakes_puskesmas_name) : '';
 $profile_puskesmas_code = isset($nakes_puskesmas_code) ? trim((string) $nakes_puskesmas_code) : '';
+$profile_puskesmas_address = isset($profile['assigned_puskesmas_address']) ? trim((string) $profile['assigned_puskesmas_address']) : '';
 $profile_account_type = isset($nakes_account_type) ? (string) $nakes_account_type : 'unclassified';
 $profile_is_command_center = $profile_account_type === 'command_center';
 $profile_is_personal = $profile_account_type === 'personal';
@@ -26,12 +27,20 @@ if (isset($puskesmas_staff_options) && is_array($puskesmas_staff_options)) {
 		$profile_staff_account_states[(int) $staff_option->staff_id] = isset($staff_option->personal_account_state) ? (string) $staff_option->personal_account_state : 'invalid';
 	}
 }
-$profile_rows = array(
-	array('id' => 'nama_lengkap', 'label' => 'Nama lengkap', 'icon' => 'bi bi-person-fill', 'value' => $profile_name, 'type' => 'text'),
-	array('id' => 'email', 'label' => 'Email', 'icon' => 'bi bi-envelope-fill', 'value' => $profile_email, 'type' => 'email'),
-	array('id' => 'no_hp', 'label' => 'Nomor HP', 'icon' => 'bi bi-telephone-fill', 'value' => $profile_phone, 'type' => 'text'),
-);
-if ($profile_is_personal) {
+$profile_display_name = $profile_is_command_center ? $profile_puskesmas_display : $profile_name;
+if ($profile_is_command_center) {
+	$profile_rows = array(
+		array('id' => 'unit_name', 'label' => 'Nama unit', 'icon' => 'bi bi-hospital-fill', 'value' => $profile_puskesmas_display, 'type' => 'text'),
+		array('id' => 'unit_code', 'label' => 'Kode Puskesmas', 'icon' => 'bi bi-building', 'value' => $profile_puskesmas_code, 'type' => 'text'),
+		array('id' => 'email', 'label' => 'Email operasional', 'icon' => 'bi bi-envelope-fill', 'value' => $profile_email, 'type' => 'email'),
+		array('id' => 'no_hp', 'label' => 'Nomor kontak', 'icon' => 'bi bi-telephone-fill', 'value' => $profile_phone, 'type' => 'text'),
+	);
+} else {
+	$profile_rows = array(
+		array('id' => 'nama_lengkap', 'label' => 'Nama lengkap', 'icon' => 'bi bi-person-fill', 'value' => $profile_name, 'type' => 'text'),
+		array('id' => 'email', 'label' => 'Email', 'icon' => 'bi bi-envelope-fill', 'value' => $profile_email, 'type' => 'email'),
+		array('id' => 'no_hp', 'label' => 'Nomor HP', 'icon' => 'bi bi-telephone-fill', 'value' => $profile_phone, 'type' => 'text'),
+	);
 	array_splice($profile_rows, 2, 0, array(
 		array('id' => 'tgl', 'label' => 'Tanggal lahir', 'icon' => 'bi bi-calendar-event-fill', 'value' => $profile_birthdate, 'type' => 'date'),
 		array('id' => 'jk', 'label' => 'Jenis kelamin', 'icon' => 'bi bi-gender-ambiguous', 'value' => $profile_gender, 'type' => 'text'),
@@ -42,18 +51,18 @@ if ($profile_is_personal) {
 					<div class="dl-profile-stack">
 						<div class="dl-profile-summary-card">
 							<?php
-							$this->load->view('partials/nakes_avatar_v', array(
-								'avatar_name' => $profile_name,
-								'avatar_photo' => $profile_photo,
+						$this->load->view('partials/nakes_avatar_v', array(
+								'avatar_name' => $profile_display_name,
+								'avatar_photo' => $profile_is_personal ? $profile_photo : '',
 								'avatar_user_id' => (int) $this->session->userdata('id'),
 								'avatar_alt' => $profile_is_personal ? 'Foto Nakes' : 'Foto akun Puskesmas',
 								'avatar_class' => 'nk-avatar--lg nk-avatar--nakes',
-								'avatar_icon' => 'fas fa-user-md',
+								'avatar_icon' => $profile_is_personal ? 'fas fa-user-md' : 'fas fa-hospital',
 							));
 							?>
 							<div class="min-w-0">
 								<span><?= $profile_is_command_center ? 'Akun Puskesmas' : ($profile_is_personal ? 'Akun personal' : 'Status belum tersedia'); ?></span>
-								<strong><?= html_escape($profile_name); ?></strong>
+								<strong><?= html_escape($profile_display_name); ?></strong>
 								<small><?= $profile_is_command_center ? 'Akun Puskesmas' : ($profile_is_personal ? 'Akun personal' : 'Status belum tersedia'); ?></small>
 							</div>
 						</div>
@@ -115,7 +124,7 @@ if ($profile_is_personal) {
 						<?php endif; ?>
 
 						<div class="dl-profile-info-card">
-							<div class="dl-profile-section-title">Informasi kontak</div>
+							<div class="dl-profile-section-title"><?= $profile_is_command_center ? 'Identitas dan kontak unit' : 'Informasi kontak'; ?></div>
 							<?php foreach ($profile_rows as $profile_row) : ?>
 								<div class="dl-profile-field">
 									<div class="dl-profile-field-icon"><i class="<?= html_escape($profile_row['icon']); ?>"></i></div>
@@ -131,6 +140,14 @@ if ($profile_is_personal) {
 								<div class="dl-profile-field-body">
 									<label for="alamat">Alamat</label>
 									<textarea id="alamat" placeholder="Alamat" readonly><?= html_escape($profile_address); ?></textarea>
+								</div>
+							</div>
+							<?php elseif ($profile_is_command_center) : ?>
+							<div class="dl-profile-field dl-profile-field-address">
+								<div class="dl-profile-field-icon"><i class="bi bi-geo-alt-fill"></i></div>
+								<div class="dl-profile-field-body">
+									<label for="unit_address">Alamat layanan</label>
+									<textarea id="unit_address" placeholder="Dikelola Administrator Dinas Kesehatan" readonly><?= html_escape($profile_puskesmas_address !== '' ? $profile_puskesmas_address : 'Belum dilengkapi oleh Administrator Dinas Kesehatan'); ?></textarea>
 								</div>
 							</div>
 							<?php endif; ?>

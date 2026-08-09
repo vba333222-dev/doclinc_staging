@@ -1096,9 +1096,12 @@ class Home_nakes_m extends MX_Controller
 		$this->db->select('users.*');
 		if ($this->db->table_exists('m_puskesmas') && $this->db->field_exists('remark', 'users')) {
 			$this->db->select('m_puskesmas.nama_puskesmas AS assigned_puskesmas_name');
+			$this->db->select($this->db->field_exists('alamat', 'm_puskesmas') ? 'm_puskesmas.alamat AS assigned_puskesmas_address' : 'NULL AS assigned_puskesmas_address', false);
+			$this->db->select($this->db->field_exists('status', 'm_puskesmas') ? 'm_puskesmas.status AS assigned_puskesmas_status' : 'NULL AS assigned_puskesmas_status', false);
 			$this->db->join('m_puskesmas', 'm_puskesmas.kode_pkm = users.remark', 'left');
 		} else {
 			$this->db->select('NULL AS assigned_puskesmas_name', FALSE);
+			$this->db->select('NULL AS assigned_puskesmas_address, NULL AS assigned_puskesmas_status', FALSE);
 		}
 		foreach (['foto', 'tgl', 'gender', 'no_hp', 'alamat'] as $field) {
 			if (!$this->db->field_exists($field, 'users')) {
@@ -1137,15 +1140,23 @@ class Home_nakes_m extends MX_Controller
 			return array();
 		}
 
-		return $this->db
-			->select('staff_id, nama, no_hp, profesi, nomor_sip, user_id, status')
+		$has_profile_photo = $this->db->table_exists('users')
+			&& $this->db->field_exists('userId', 'users')
+			&& $this->db->field_exists('foto', 'users');
+		$this->db
+			->select('puskesmas_staff.staff_id, puskesmas_staff.nama, puskesmas_staff.no_hp, puskesmas_staff.profesi, puskesmas_staff.nomor_sip, puskesmas_staff.user_id, puskesmas_staff.status')
+			->select($has_profile_photo ? 'users.foto AS profile_photo' : 'NULL AS profile_photo', false)
+			->select($has_profile_photo ? 'users.userId AS profile_user_id' : 'NULL AS profile_user_id', false)
 			->from('puskesmas_staff')
-			->where('kode_pkm', $kode_pkm)
-			->where('status', 'aktif')
-			->order_by('nama', 'ASC')
-			->order_by('staff_id', 'ASC')
-			->get()
-			->result();
+			->where('puskesmas_staff.kode_pkm', $kode_pkm)
+			->where('puskesmas_staff.status', 'aktif');
+		if ($has_profile_photo) {
+			$this->db->join('users', "users.userId = puskesmas_staff.user_id AND users.role = 'dokter' AND users.status = 'aktif'", 'left', false);
+		}
+		return $this->db
+			->order_by('puskesmas_staff.nama', 'ASC')
+			->order_by('puskesmas_staff.staff_id', 'ASC')
+			->get()->result();
 	}
 
 	public function count_puskesmas_staff_by_code($kode_pkm)

@@ -18,6 +18,9 @@ to once per 45 seconds. A Nakes is derived as offline after 90 seconds without
 a persisted heartbeat. Snapshots contain only account/staff identity, profession,
 tenant, status, and last-seen time; they exclude contact, location, and clinical
 data. Monitoring uses bounded polling and does not publish directly to Centrifugo.
+Pada dashboard Puskesmas, snapshot ini memperbarui indikator pada daftar staf
+yang sama; tidak ada lagi kartu status Nakes terpisah. Foto berasal dari endpoint
+profil privat yang terotorisasi, bukan dari payload presence.
 
 Run the source-level tests:
 

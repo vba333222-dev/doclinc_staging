@@ -441,6 +441,13 @@ a.feature-menu {
     opacity: 0.92;
 }
 
+.dl-hero .history-empty-text {
+    color: #ffffff;
+    opacity: 0.96;
+    font-weight: 650;
+    text-shadow: 0 1px 1px rgba(0, 51, 34, 0.28);
+}
+
 .dl-btn-primary,
 .dl-btn-secondary {
     min-height: 40px;

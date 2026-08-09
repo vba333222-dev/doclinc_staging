@@ -37,6 +37,12 @@ CloudPanel root identity, revalidated after connect, and inspected inside
 
 - `0`: `PRODUCTION_ACTIVATION_READY=true` (the strict final state);
 - `3`: audit completed safely, but activation is blocked by data/readiness;
+
+When the profile-prerequisite feature is already enabled on staging, exit `3`
+still means the application is not production-ready. The runner reports
+`ROLE_PREREQUISITE_REMEDIATION_ENFORCEMENT_ACTIVE=true` to distinguish the
+intentional fail-closed remediation gate from production activation. It never
+turns the flag on or treats a locked remediation state as production-ready.
 - `1`: the audit itself failed.
 
 Exit `3` can therefore coexist with `CONTROLLED_ENFORCEMENT_READY=true`; that

@@ -78,6 +78,9 @@
         }
         var documentRef = container.ownerDocument;
         var rows = data && Array.isArray(data.rows) ? data.rows : [];
+		if (container.getAttribute && container.getAttribute('data-presence-roster') === 'true') {
+			return renderRoster(container, data || {}, rows);
+		}
         clearNode(container);
         container.setAttribute('aria-busy', 'false');
 
@@ -123,11 +126,51 @@
         return true;
     }
 
+	function renderRoster(container, data, rows) {
+		var documentRef = container.ownerDocument;
+		var summary = container.querySelector('[data-presence-summary]');
+		if (summary) {
+			clearNode(summary);
+			summary.appendChild(element(documentRef, 'span', 'doclinc-presence-count doclinc-presence-count--online', String(data.online_count || 0) + ' online'));
+			summary.appendChild(element(documentRef, 'span', 'doclinc-presence-count doclinc-presence-count--offline', String(data.offline_count || 0) + ' offline'));
+		}
+		var byUserId = {};
+		rows.forEach(function(row) {
+			var userId = row && row.user_id ? String(row.user_id) : '';
+			if (userId) {
+				byUserId[userId] = row;
+			}
+		});
+		var rosterRows = container.querySelectorAll('[data-presence-user-id]');
+		Array.prototype.forEach.call(rosterRows, function(item) {
+			var row = byUserId[String(item.getAttribute('data-presence-user-id') || '')] || null;
+			var online = !!(row && row.is_online === true);
+			var dot = item.querySelector('[data-presence-dot]');
+			var label = item.querySelector('[data-presence-label]');
+			var lastSeen = item.querySelector('[data-presence-last-seen]');
+			if (dot) {
+				dot.className = 'doclinc-presence-dot ' + (online ? 'is-online' : 'is-offline');
+			}
+			if (label) {
+				label.className = 'nk-staff-presence ' + (online ? 'is-online' : 'is-offline');
+				label.textContent = online ? 'Online' : 'Offline';
+			}
+			if (lastSeen) {
+				lastSeen.textContent = online ? 'Aktif sekarang' : (row && row.last_seen_at ? 'Terakhir ' + row.last_seen_at : 'Belum pernah online');
+			}
+		});
+		container.setAttribute('aria-busy', 'false');
+		return true;
+	}
+
     function renderError(container) {
         if (!container || !container.ownerDocument) {
             return;
         }
-        container.setAttribute('aria-busy', 'false');
+		container.setAttribute('aria-busy', 'false');
+		if (container.getAttribute && container.getAttribute('data-presence-roster') === 'true') {
+			return;
+		}
         clearNode(container);
         container.appendChild(element(container.ownerDocument, 'div', 'doclinc-presence-empty text-muted', 'Status Nakes belum dapat dimuat. Akan dicoba lagi.'));
     }

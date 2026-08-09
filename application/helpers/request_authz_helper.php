@@ -1102,10 +1102,34 @@ if (!function_exists('doclinc_can_view_chat')) {
 if (!function_exists('doclinc_can_send_chat')) {
 	function doclinc_can_send_chat($request_id, $user_id = null, $role = null)
 	{
+		$user_id = $user_id ?: doclinc_current_user_id();
+		$role = $role ?: doclinc_current_user_role();
+		if ($role === 'dokter') {
+			if (!function_exists('doclinc_dokter_identity_context')) {
+				return false;
+			}
+			$identity = doclinc_dokter_identity_context($user_id, true);
+			if (empty($identity['valid']) || (string) ($identity['account_type'] ?? '') !== 'personal') {
+				return false;
+			}
+		}
 		$request = doclinc_request_row($request_id);
 		return $request
 			&& $request->request_status === 'Accepted'
 			&& doclinc_can_view_chat($request_id, $user_id, $role);
+	}
+}
+
+if (!function_exists('doclinc_chat_actor_is_command_center')) {
+	function doclinc_chat_actor_is_command_center($user_id = null, $role = null)
+	{
+		$user_id = $user_id ?: doclinc_current_user_id();
+		$role = $role ?: doclinc_current_user_role();
+		if ($role !== 'dokter' || $user_id < 1 || !function_exists('doclinc_dokter_identity_context')) {
+			return false;
+		}
+		$identity = doclinc_dokter_identity_context($user_id, true);
+		return !empty($identity['valid']) && (string) ($identity['account_type'] ?? '') === 'command_center';
 	}
 }
 

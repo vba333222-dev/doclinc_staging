@@ -12,13 +12,13 @@ Saat aktif, gate berlaku pada:
 - perubahan status kunjungan;
 - penyelesaian konsultasi.
 
-Kontrak ini telah dicocokkan dengan schema staging Alibaba pada 2 Agustus 2026. Profil Warga memakai `users.nama`, `email`, `no_hp`, `alamat`, `tgl`, `gender`, `foto`, `nik`, `nomor_kk`, dan `nomor_bpjs_kis`. Nakes personal juga wajib memiliki link aktif `puskesmas_staff` dengan profesi, nomor SIP, dan NIP. Baik Nakes personal maupun command-center mensyaratkan `m_puskesmas` aktif dengan nama, alamat, latitude, dan longitude yang valid.
+Kontrak ini telah dicocokkan dengan schema staging Alibaba pada 2 Agustus 2026. Profil Warga memakai `users.nama`, `email`, `no_hp`, `alamat`, `tgl`, `gender`, `foto`, `nik`, `nomor_kk`, dan `nomor_bpjs_kis`. Nakes personal juga wajib memiliki link aktif `puskesmas_staff` dengan profesi, nomor SIP, dan NIP serta fasilitas aktif dengan data operasional lengkap. Command-center diperlakukan sebagai akun fasilitas, bukan individu: gate hanya membutuhkan identitas canonical, Puskesmas aktif bernama, email operasional, dan nomor kontak. Nama pribadi, tanggal lahir, jenis kelamin, alamat pribadi, dan foto personal tidak menjadi persyaratan command-center. Kekurangan alamat/koordinat fasilitas dan roster tetap ditampilkan sebagai readiness terkelola tanpa mengunci fungsi inti Puskesmas.
 
 Respons membedakan `self_service_fields` dari `managed_fields`. Data profil pengguna dapat diperbaiki dari halaman profil; link staf dan data fasilitas harus diperbaiki pengelola sehingga API tidak memberikan CTA profil yang menyesatkan.
 
 Kekurangan data tetap ditampilkan sebagai peringatan non-blocking ketika feature flag OFF. Command-center juga menerima ringkasan kesiapan tenant read-only untuk data fasilitas, SIP staf aktif, dan linkage akun personal. Ringkasan ini tidak mengubah row database dan tidak menggantikan validasi authoritative saat enforcement nantinya diaktifkan.
 
-Saat enforcement aktif, seluruh penggunaan aplikasi diblokir kecuali halaman penyelesaian profil, endpoint penyimpanan profil/foto, pemeriksaan status persyaratan, pembacaan foto terotorisasi, dan logout. Password-change gate tetap berjalan lebih dahulu. Error JSON memiliki kode aman dan request ID tanpa memuat nilai NIK, KK, BPJS/KIS, atau NIP.
+Saat enforcement aktif, Warga dan Nakes personal yang belum lengkap diblokir kecuali halaman penyelesaian profil, endpoint penyimpanan profil/foto, pemeriksaan status persyaratan, pembacaan foto terotorisasi, dan logout. Command-center hanya terkunci bila identitas fasilitas canonical atau kontak operasional minimumnya tidak valid; readiness unit/staf lainnya tetap non-blocking. Password-change gate tetap berjalan lebih dahulu. Error JSON memiliki kode aman dan request ID tanpa memuat nilai NIK, KK, BPJS/KIS, atau NIP.
 
 Jalankan kontrak source:
 
@@ -32,7 +32,11 @@ Jalankan unit test bila PHP 8.1 tersedia:
 php8.1 tools/role_prerequisites/tests/unit.php
 ```
 
-Aktivasi staging dilakukan terpisah setelah schema discovery dan authenticated UAT:
+Aktivasi staging dilakukan terpisah setelah endpoint penyelesaian profil dan
+storage foto lulus gate. Aktivasi ini dengan sengaja mengunci seluruh actor
+yang belum lengkap; kekurangan NIK/KK/BPJS/foto dapat diperbaiki sendiri,
+sedangkan NIP/SIP/link staf/data fasilitas hanya dapat diperbaiki Admin Dinas
+Kesehatan. Authenticated UAT tetap dicatat sebagai gate akhir pengembangan:
 
 ```text
 DOCLINC_ROLE_PREREQUISITES_ENABLED=true

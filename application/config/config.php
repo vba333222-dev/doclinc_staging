@@ -580,6 +580,20 @@ $config['firebase_enabled'] = filter_var(getenv('FIREBASE_ENABLED') ?: false, FI
 $config['legacy_superapp_url'] = getenv('LEGACY_SUPERAPP_URL') ?: '';
 $config['map_provider'] = getenv('MAP_PROVIDER') ?: 'none';
 $config['mapbox_public_token'] = getenv('MAPBOX_PUBLIC_TOKEN') ?: '';
+$reverse_geocoding_enabled_env = getenv('DOCLINC_REVERSE_GEOCODING_ENABLED');
+$config['reverse_geocoding_enabled'] = $reverse_geocoding_enabled_env === false || $reverse_geocoding_enabled_env === ''
+	? true
+	: filter_var($reverse_geocoding_enabled_env, FILTER_VALIDATE_BOOLEAN);
+$config['reverse_geocoding_endpoint'] = getenv('DOCLINC_REVERSE_GEOCODING_ENDPOINT') ?: 'https://nominatim.openstreetmap.org/reverse';
+$config['reverse_geocoding_user_agent'] = getenv('DOCLINC_REVERSE_GEOCODING_USER_AGENT') ?: 'Doclinc/1.0 (+https://doclinc.sectunnel.online)';
+$reverse_geocoding_allowed_hosts = getenv('DOCLINC_REVERSE_GEOCODING_ALLOWED_HOSTS') ?: 'nominatim.openstreetmap.org';
+$config['reverse_geocoding_allowed_hosts'] = array_values(array_filter(array_map('trim', explode(',', strtolower($reverse_geocoding_allowed_hosts)))));
+$reverse_geocoding_cache_path = getenv('DOCLINC_REVERSE_GEOCODING_CACHE_PATH');
+if ($reverse_geocoding_cache_path === false || $reverse_geocoding_cache_path === '') {
+	$reverse_geocoding_cache_path = rtrim(sys_get_temp_dir(), "/\\") . DIRECTORY_SEPARATOR
+		. 'doclinc-reverse-geocoding-' . substr(hash('sha256', FCPATH), 0, 12);
+}
+$config['reverse_geocoding_cache_path'] = rtrim($reverse_geocoding_cache_path, "/\\") . DIRECTORY_SEPARATOR;
 $routing_provider_env = getenv('ROUTING_PROVIDER');
 if ($routing_provider_env === false || $routing_provider_env === '') {
 	$routing_provider_env = isset($_SERVER['ROUTING_PROVIDER']) ? $_SERVER['ROUTING_PROVIDER'] : '';

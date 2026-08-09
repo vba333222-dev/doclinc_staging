@@ -32,17 +32,6 @@
 							<div class="alert alert-info mb-0" role="status">Hanya tugas Anda yang tampil di sini.</div>
 						<?php endif; ?>
 						<?php $this->load->view('partials/nakes_stat_cards_v', get_defined_vars()); ?>
-						<?php if (!empty($nakes_is_command_center) && !empty($nakes_presence_enabled)) : ?>
-							<?php $this->load->view('partials/nakes_section_header_v', array(
-								'section_title' => 'Status Nakes',
-								'section_meta' => 'Diperbarui otomatis',
-							)); ?>
-							<div class="dl-nakes-card dl-dashboard-section doclinc-presence-panel">
-								<div id="doclincNakesPresence" aria-live="polite" aria-busy="true">
-									<div class="doclinc-presence-empty">Memuat status Nakes...</div>
-								</div>
-							</div>
-						<?php endif; ?>
 						<?php if (!empty($nakes_is_command_center)) : ?>
 						<?php
 						$puskesmas_readiness = isset($puskesmas_data_readiness) && is_array($puskesmas_data_readiness) ? $puskesmas_data_readiness : array();
@@ -90,28 +79,44 @@
 							<div class="nk-readiness-foot"><span>Hanya data Puskesmas Anda. Nomor identitas dan data klinis tidak ditampilkan.</span><a href="#req_konsul" onclick="showContent('req_konsul')">Buka antrian</a></div>
 						</div>
 						<?php
-						$dashboard_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_list) ? array_slice($puskesmas_staff_list, 0, 3) : array();
+						$dashboard_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_list) ? $puskesmas_staff_list : array();
 						$dashboard_staff_count = isset($puskesmas_staff_count) ? (int) $puskesmas_staff_count : count($dashboard_staff_rows);
 						$this->load->view('partials/nakes_section_header_v', array(
 							'section_title' => 'Staf Puskesmas',
-							'section_meta' => (string) $dashboard_staff_count . ' terdaftar',
+							'section_meta' => !empty($nakes_presence_enabled) ? 'Status diperbarui otomatis' : (string) $dashboard_staff_count . ' terdaftar',
 						));
 						?>
-						<div class="dl-nakes-card dl-dashboard-section nk-staff-card">
+						<div class="dl-nakes-card dl-dashboard-section nk-staff-card doclinc-presence-panel" id="doclincNakesPresence" data-presence-roster="true" aria-live="polite" aria-busy="<?= !empty($nakes_presence_enabled) ? 'true' : 'false'; ?>">
+							<div class="doclinc-presence-summary" data-presence-summary>
+								<span class="doclinc-presence-count doclinc-presence-count--online">0 online</span>
+								<span class="doclinc-presence-count doclinc-presence-count--offline"><?= html_escape((string) $dashboard_staff_count); ?> offline</span>
+							</div>
 							<?php if (empty($dashboard_staff_rows)) : ?>
 								<div class="nk-staff-empty">Belum ada staf.</div>
 							<?php else : ?>
-								<div class="nk-staff-list">
+								<div class="nk-staff-list nk-staff-list--presence">
 									<?php foreach ($dashboard_staff_rows as $staff) :
 										$staff_name = trim((string) (isset($staff->nama) ? $staff->nama : ''));
 										$staff_profesi = trim((string) (isset($staff->profesi) ? $staff->profesi : ''));
 										$staff_phone = trim((string) (isset($staff->no_hp) ? $staff->no_hp : ''));
 										$staff_sip = trim((string) (isset($staff->nomor_sip) ? $staff->nomor_sip : ''));
+										$staff_user_id = isset($staff->profile_user_id) ? (int) $staff->profile_user_id : (isset($staff->user_id) ? (int) $staff->user_id : 0);
+										$staff_photo = isset($staff->profile_photo) ? trim((string) $staff->profile_photo) : '';
 									?>
-										<div class="nk-staff-item">
+										<div class="nk-staff-item nk-staff-item--presence" data-presence-user-id="<?= html_escape((string) $staff_user_id); ?>">
+											<?php $this->load->view('partials/nakes_avatar_v', array(
+												'avatar_name' => $staff_name,
+												'avatar_photo' => $staff_photo,
+												'avatar_user_id' => $staff_user_id,
+												'avatar_alt' => 'Foto ' . ($staff_name !== '' ? $staff_name : 'Nakes'),
+												'avatar_class' => 'nk-avatar--sm nk-avatar--nakes',
+												'avatar_icon' => 'fas fa-user-md',
+											)); ?>
 											<div class="nk-staff-main">
-												<strong><?= html_escape($staff_name !== '' ? $staff_name : 'Nama belum diisi'); ?></strong>
+												<strong><?= html_escape($staff_name !== '' ? $staff_name : 'Nama belum diisi'); ?> <span class="doclinc-presence-dot is-offline" data-presence-dot aria-hidden="true"></span></strong>
 												<?php if ($staff_profesi !== '') : ?><span><?= html_escape($staff_profesi); ?></span><?php endif; ?>
+												<small class="nk-staff-presence is-offline" data-presence-label>Offline</small>
+												<small class="nk-staff-last-seen" data-presence-last-seen>Belum pernah online</small>
 											</div>
 											<?php if ($staff_phone !== '' || $staff_sip !== '') : ?>
 												<div class="nk-staff-meta">
@@ -124,9 +129,6 @@
 										</div>
 									<?php endforeach; ?>
 								</div>
-								<?php if ($dashboard_staff_count > count($dashboard_staff_rows)) : ?>
-									<div class="nk-staff-more"><?= html_escape((string) ($dashboard_staff_count - count($dashboard_staff_rows))); ?> staf lainnya ada di profil.</div>
-								<?php endif; ?>
 							<?php endif; ?>
 						</div>
 						<?php endif; ?>

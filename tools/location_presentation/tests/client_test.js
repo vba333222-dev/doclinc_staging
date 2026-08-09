@@ -48,6 +48,13 @@ async function run() {
 	}], 'OK');
 	expect(google.available && google.provider === 'google', 'google_address_presented');
 	expect(google.locality === 'Kecamatan Purwakarta', 'google_most_precise_locality_presented');
+	const server = api.fromEndpoint({ success: true, data: {
+		available: true,
+		address: 'Jalan Ahmad Yani, Jombang Wetan, Cilegon, Banten',
+		locality: 'Jombang Wetan',
+		provider: 'openstreetmap'
+	} });
+	expect(server.available && server.address.indexOf('Jalan Ahmad Yani') === 0, 'server_precise_address_presented');
 
 	const mapUrl = api.mapUrl({ latitude: -6.01, longitude: 106.05 });
 	expect(mapUrl.indexOf('https://www.openstreetmap.org/') === 0, 'map_link_uses_https_openstreetmap');
@@ -71,6 +78,25 @@ async function run() {
 	expect(fetchCount === 1, 'coordinate_cell_cache_prevents_duplicate_request');
 	expect(lastUrl.indexOf('language=id') !== -1 && lastUrl.indexOf('limit=1') !== -1, 'mapbox_request_is_bounded_and_indonesian');
 	expect(lastUrl.indexOf('public-test-token') !== -1, 'mapbox_public_token_used');
+
+	let proxyRequest = null;
+	const proxyResolver = api.create({
+		provider: 'none',
+		endpoint: '/location/address',
+		minIntervalMs: 1,
+		fetch: function (url, options) {
+			proxyRequest = { url, options };
+			return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ success: true, data: {
+				available: true, address: 'Jalan Lingkar Selatan, Cilegon, Banten', locality: 'Cilegon', provider: 'openstreetmap', attribution: '© OpenStreetMap contributors'
+			} }); } });
+		}
+	});
+	const proxied = await proxyResolver.resolve({ lat: -6.03, lng: 106.04 });
+	expect(proxied.available && proxied.provider === 'openstreetmap', 'server_fallback_resolves_without_paid_provider');
+	expect(proxied.attribution === '© OpenStreetMap contributors', 'openstreetmap_attribution_propagated');
+	expect(proxyRequest.url === '/location/address' && proxyRequest.options.method === 'POST', 'server_fallback_uses_post_without_coordinates_in_url');
+	expect(proxyRequest.options.credentials === 'same-origin' && proxyRequest.options.cache === 'no-store', 'server_fallback_is_authenticated_and_uncached_by_browser');
+	expect(proxyRequest.options.body.indexOf('latitude=') === 0 && proxyRequest.options.body.indexOf('&longitude=') > 0, 'server_fallback_sends_exact_coordinate_fields');
 
 	const failingResolver = api.create({
 		provider: 'mapbox',
