@@ -682,6 +682,23 @@ if ($realtime_client_runtime_environment_env === false || $realtime_client_runti
 		? $_SERVER['DOCLINC_REALTIME_CLIENT_RUNTIME_ENVIRONMENT']
 		: '';
 }
+$nakes_credential_enforcement_enabled_env = getenv('DOCLINC_NAKES_CREDENTIAL_ENFORCEMENT_ENABLED');
+if ($nakes_credential_enforcement_enabled_env === false || $nakes_credential_enforcement_enabled_env === '') {
+	$nakes_credential_enforcement_enabled_env = $_SERVER['DOCLINC_NAKES_CREDENTIAL_ENFORCEMENT_ENABLED'] ?? null;
+}
+$nakes_credential_enforcement_environment_env = getenv('DOCLINC_NAKES_CREDENTIAL_ENFORCEMENT_ENVIRONMENT');
+if ($nakes_credential_enforcement_environment_env === false || $nakes_credential_enforcement_environment_env === '') {
+	$nakes_credential_enforcement_environment_env = $_SERVER['DOCLINC_NAKES_CREDENTIAL_ENFORCEMENT_ENVIRONMENT'] ?? '';
+}
+require_once APPPATH . 'libraries/Doclinc_feature_flags.php';
+$nakes_credential_enforcement_feature = Doclinc_feature_flags::resolve(
+	$nakes_credential_enforcement_enabled_env,
+	$nakes_credential_enforcement_environment_env,
+	$realtime_client_runtime_environment_env
+);
+$config['nakes_credential_enforcement_enabled'] = $nakes_credential_enforcement_feature['enabled'];
+$config['nakes_credential_enforcement_environment'] = $nakes_credential_enforcement_feature['environment'];
+$config['nakes_credential_enforcement_feature_reason'] = $nakes_credential_enforcement_feature['reason'];
 $realtime_public_websocket_url_env = getenv('DOCLINC_REALTIME_PUBLIC_WEBSOCKET_URL');
 if ($realtime_public_websocket_url_env === false || $realtime_public_websocket_url_env === '') {
 	$realtime_public_websocket_url_env = isset($_SERVER['DOCLINC_REALTIME_PUBLIC_WEBSOCKET_URL'])

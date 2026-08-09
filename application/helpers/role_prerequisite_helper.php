@@ -20,6 +20,7 @@ if (!function_exists('doclinc_role_prerequisite_state')) {
 			'public_root' => FCPATH,
 		));
 		$service = new Role_prerequisite_service($CI->db, array(
+			'credential_enforcement_enabled' => $CI->config->item('nakes_credential_enforcement_enabled') === true,
 			'photo_validator' => function ($stored_key) use ($storage) {
 				$path = $storage->resolve_stored_file($stored_key);
 				return $path !== false && $storage->allowed_mime($path) !== '';

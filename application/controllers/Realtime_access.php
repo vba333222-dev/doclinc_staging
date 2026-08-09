@@ -106,13 +106,17 @@ class Realtime_access extends CI_Controller
 		$db_debug = $this->db->db_debug;
 		$this->db->db_debug = false;
 		try {
-			if (!$this->db->field_exists('must_change_password', 'users')) {
+			if (!$this->db->field_exists('must_change_password', 'users')
+				|| !doclinc_nakes_credential_schema_allows_runtime($this->db)) {
 				$this->db->db_debug = $db_debug;
 				$this->respond(503, false, null, 'account_contract_unavailable');
 				return null;
 			}
 			$query = $this->db
-				->select('userId, role, status, must_change_password')
+				->select(
+					'userId, role, status, must_change_password, ' . doclinc_nakes_password_changed_at_projection($this->db),
+					false
+				)
 				->where('userId', $user_id)
 				->limit(1)
 				->get('users');
@@ -131,7 +135,12 @@ class Realtime_access extends CI_Controller
 			$this->respond(403, false, null, 'access_denied');
 			return null;
 		}
-		if ((int) $user->must_change_password === 1 || (int) $this->session->userdata('must_change_password') === 1) {
+		$must_change_password = doclinc_nakes_password_change_blocked(
+			$user->role,
+			$user->must_change_password,
+			$user->password_changed_at
+		);
+		if ($must_change_password) {
 			$this->respond(403, false, null, 'password_change_required');
 			return null;
 		}
@@ -141,7 +150,7 @@ class Realtime_access extends CI_Controller
 			'user_id' => $user_id,
 			'role' => $session_role,
 			'status' => 'aktif',
-			'must_change_password' => false,
+			'must_change_password' => $must_change_password,
 			'identity' => null,
 		);
 		if ($session_role === 'dokter') {

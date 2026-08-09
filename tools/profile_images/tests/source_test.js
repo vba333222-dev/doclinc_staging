@@ -42,7 +42,11 @@ expect(!helper.includes("base_url(rtrim($uploadBase"), 'helper_never_builds_publ
 expect(controller.includes("$policy->can_view($actor, $target)"), 'controller_enforces_policy');
 expect(controller.includes('public function update_photo()') && controller.includes("array('warga', 'dokter')"), 'unified_self_upload_endpoint_present');
 expect(controller.includes("->where('userId', $user_id)") && controller.includes("->where('role', $role)") && controller.includes("->where('status', 'aktif')"), 'unified_upload_update_is_actor_scoped');
-expect(controller.includes("where('foto IS NULL', null, false)") && controller.includes("where('foto', (string) $actor->foto)"), 'concurrent_photo_replacement_uses_compare_and_swap');
+expect(controller.includes("where('foto IS NULL', null, false)") && controller.includes("where('foto', (string) $locked_actor->foto)"), 'concurrent_photo_replacement_uses_compare_and_swap');
+expect(controller.includes('FOR UPDATE') && controller.includes('trans_begin()')
+	&& controller.includes('apply_effective_credential_state($locked_actor)')
+	&& !controller.includes("where('must_change_password'")
+	&& !controller.includes('password_changed_at IS NOT NULL'), 'photo_update_revalidates_authoritative_effective_policy_under_lock');
 expect(controller.includes("set_userdata(array('foto' => $stored_key, 'picture' => $stored_key))"), 'unified_upload_refreshes_session_photo');
 expect(controller.includes('$storage->remove_private_file($previous_key)'), 'replaced_private_photo_is_cleaned_after_update');
 expect(controller.includes("Cache-Control: private, no-store"), 'controller_private_no_store');

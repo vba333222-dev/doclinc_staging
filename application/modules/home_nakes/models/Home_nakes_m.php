@@ -152,13 +152,16 @@ class Home_nakes_m extends MX_Controller
 		$puskesmas_code = $this->normalize_puskesmas_code($puskesmas_code);
 		if ($user_id < 1 || $puskesmas_code === '' || !$request
 			|| !$this->db->field_exists('must_change_password', 'users')
+			|| !doclinc_nakes_credential_schema_allows_runtime($this->db)
 			|| !$this->db->field_exists('status', 'm_puskesmas')
 			|| !$this->request_matches_command_center_tenant($request, $user_id, $puskesmas_code)) {
 			return null;
 		}
 
 		$user_query = $this->db->query(
-			'SELECT userId, role, status, remark, must_change_password FROM ' . $this->db->dbprefix('users')
+			'SELECT userId, role, status, remark, must_change_password, '
+				. doclinc_nakes_password_changed_at_projection($this->db)
+				. ' FROM ' . $this->db->dbprefix('users')
 				. ' WHERE userId = ? FOR UPDATE',
 			array($user_id)
 		);
@@ -167,7 +170,7 @@ class Home_nakes_m extends MX_Controller
 			|| (int) $user->userId !== $user_id
 			|| (string) $user->role !== 'dokter'
 			|| (string) $user->status !== 'aktif'
-			|| (int) $user->must_change_password !== 0
+			|| doclinc_nakes_password_change_blocked($user->role, $user->must_change_password, $user->password_changed_at)
 			|| $this->normalize_puskesmas_code($user->remark) !== $puskesmas_code) {
 			return null;
 		}

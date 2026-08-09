@@ -30,13 +30,19 @@ class Location_address extends CI_Controller
 			$this->respond(401, 'session_required');
 			return;
 		}
-		if (!$this->db->table_exists('users') || !$this->db->field_exists('must_change_password', 'users')) {
+		if (!$this->db->table_exists('users')
+			|| !$this->db->field_exists('must_change_password', 'users')
+			|| !doclinc_nakes_credential_schema_allows_runtime($this->db)) {
 			$this->respond(503, 'actor_schema_unavailable');
 			return;
 		}
-		$actor = $this->db->select('userId, role, status, must_change_password')
+		$actor = $this->db->select(
+			'userId, role, status, must_change_password, ' . doclinc_nakes_password_changed_at_projection($this->db),
+			false
+		)
 			->where('userId', $user_id)->limit(1)->get('users')->row();
-		if (!$actor || (string) $actor->role !== $role || (string) $actor->status !== 'aktif' || (int) $actor->must_change_password === 1) {
+		if (!$actor || (string) $actor->role !== $role || (string) $actor->status !== 'aktif'
+			|| doclinc_nakes_password_change_blocked($actor->role, $actor->must_change_password, $actor->password_changed_at)) {
 			$this->respond(403, 'actor_denied');
 			return;
 		}

@@ -162,22 +162,25 @@ if (!function_exists('doclinc_notification_realtime_bootstrap')) {
 		require_once APPPATH . 'libraries/Notification_realtime_policy.php';
 		if ($CI->config->item('realtime_notifications_enabled') !== true
 			|| $CI->config->item('realtime_client_enabled') !== true
-			|| $CI->session->userdata('logged_in') != true
-			|| (int) $CI->session->userdata('must_change_password') === 1) {
+			|| $CI->session->userdata('logged_in') != true) {
 			return null;
 		}
 		$user_id = (int) $CI->session->userdata('id');
 		$role = (string) $CI->session->userdata('role');
 		if ($user_id < 1 || !in_array($role, array('warga', 'dokter'), true)
-			|| !$CI->db->field_exists('must_change_password', 'users')) {
+			|| !$CI->db->field_exists('must_change_password', 'users')
+			|| !doclinc_nakes_credential_schema_allows_runtime($CI->db)) {
 			return null;
 		}
-		$user = $CI->db->select('userId, role, status, must_change_password')
+		$user = $CI->db->select(
+			'userId, role, status, must_change_password, ' . doclinc_nakes_password_changed_at_projection($CI->db),
+			false
+		)
 			->where('userId', $user_id)->limit(1)->get('users')->row();
-		if (!$user || (string) $user->role !== $role || (string) $user->status !== 'aktif'
-			|| (int) $user->must_change_password === 1) {
+		if (!$user || (string) $user->role !== $role || (string) $user->status !== 'aktif') {
 			return null;
 		}
+		$must_change_password = doclinc_nakes_password_change_blocked($user->role, $user->must_change_password, $user->password_changed_at);
 		$identity = null;
 		if ($role === 'dokter') {
 			$CI->load->helper('request_authz');
@@ -189,7 +192,7 @@ if (!function_exists('doclinc_notification_realtime_bootstrap')) {
 			'user_id' => $user_id,
 			'role' => $role,
 			'status' => (string) $user->status,
-			'must_change_password' => (int) $user->must_change_password === 1,
+			'must_change_password' => $must_change_password,
 			'identity' => $identity,
 		))) {
 			return null;

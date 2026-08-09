@@ -143,7 +143,8 @@ $routesSource = file_get_contents(APPPATH . 'config/routes.php');
 check(strpos($controllerSource, "method(true) !== 'GET'") !== false, 'connection_get_only_source');
 check(strpos($controllerSource, "method(true) !== 'POST'") !== false, 'subscription_post_only_source');
 check(strpos($controllerSource, 'Cache-Control: no-store') !== false, 'no_store_source');
-check(strpos($controllerSource, "select('userId, role, status, must_change_password')") !== false, 'database_identity_source');
+check(strpos($controllerSource, 'doclinc_nakes_password_changed_at_projection') !== false
+	&& strpos($controllerSource, 'doclinc_nakes_credential_schema_allows_runtime') !== false, 'database_identity_source');
 check(strpos($routesSource, "realtime/connection-token") !== false && strpos($routesSource, "realtime/subscription-token") !== false, 'routes_present');
 check(strpos($controllerSource, 'log_message') === false || strpos($controllerSource, "log_message('error', 'Realtime") !== false, 'logs_use_constant_messages');
 
