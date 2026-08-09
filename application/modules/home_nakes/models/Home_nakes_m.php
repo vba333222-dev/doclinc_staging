@@ -1198,13 +1198,26 @@ class Home_nakes_m extends MX_Controller
 		}
 
 		$rows = $this->db
-			->select('staff_id, nama, no_hp, profesi, nomor_sip, user_id, status, kode_pkm')
-			->select($this->db->field_exists('nip', 'puskesmas_staff') ? "CASE WHEN nip REGEXP '^[0-9]{18}$' THEN 1 ELSE 0 END AS nip_ready" : '0 AS nip_ready', false)
+			->select('puskesmas_staff.staff_id, puskesmas_staff.nama, puskesmas_staff.no_hp, puskesmas_staff.profesi, puskesmas_staff.nomor_sip, puskesmas_staff.user_id, puskesmas_staff.status, puskesmas_staff.kode_pkm')
+			->select($this->db->field_exists('gelar', 'puskesmas_staff') ? 'puskesmas_staff.gelar' : 'NULL AS gelar', false)
+			->select($this->db->field_exists('sip_expired_at', 'puskesmas_staff') ? 'puskesmas_staff.sip_expired_at' : 'NULL AS sip_expired_at', false)
 			->from('puskesmas_staff')
-			->where('kode_pkm', $kode_pkm)
-			->where('status', 'aktif')
-			->order_by('nama', 'ASC')
-			->order_by('staff_id', 'ASC')
+			->where('puskesmas_staff.kode_pkm', $kode_pkm)
+			->where('puskesmas_staff.status', 'aktif')
+			->order_by('puskesmas_staff.nama', 'ASC')
+			->order_by('puskesmas_staff.staff_id', 'ASC');
+		if ($this->db->table_exists('users')) {
+			$this->db
+				->select($this->db->field_exists('nama', 'users') ? 'staff_account.nama AS account_name' : 'NULL AS account_name', false)
+				->select($this->db->field_exists('no_hp', 'users') ? 'staff_account.no_hp AS account_phone' : 'NULL AS account_phone', false)
+				->select($this->db->field_exists('tgl', 'users') ? 'staff_account.tgl AS account_birthdate' : 'NULL AS account_birthdate', false)
+				->select($this->db->field_exists('gender', 'users') ? 'staff_account.gender AS account_gender' : 'NULL AS account_gender', false)
+				->select($this->db->field_exists('status', 'users') ? 'staff_account.status AS account_status' : 'NULL AS account_status', false)
+				->join('users AS staff_account', 'staff_account.userId = puskesmas_staff.user_id', 'left');
+		} else {
+			$this->db->select('NULL AS account_name, NULL AS account_phone, NULL AS account_birthdate, NULL AS account_gender, NULL AS account_status', false);
+		}
+		$rows = $this->db
 			->get()
 			->result();
 

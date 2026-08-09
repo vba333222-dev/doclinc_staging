@@ -275,20 +275,21 @@ class Kelola_staff_puskesmas extends MX_Controller
 			'readiness' => trim((string) $this->input->{$filter_input}('readiness', TRUE)),
 			'keyword' => trim((string) $this->input->{$filter_input}('keyword', TRUE)),
 		);
-		if (!in_array($filters['readiness'], array('', 'ready', 'attention', 'missing_sip', 'missing_nip', 'account', 'first_login', 'password_reset'), true)) {
+		if (!in_array($filters['readiness'], array('', 'ready', 'attention', 'missing_sip', 'sip_expiring', 'sip_expired', 'account', 'first_login', 'password_reset'), true)) {
 			$filters['readiness'] = '';
 		}
 
 		$data = array(
 			'table_ready' => $this->Kelola_staff_puskesmas_m->table_ready(),
 			'nip_schema_ready' => $this->Kelola_staff_puskesmas_m->nip_schema_ready(),
+			'nakes_profile_schema_ready' => $this->Kelola_staff_puskesmas_m->nakes_profile_schema_ready(),
 			'filters' => $filters,
 			'staff_rows' => array(),
 			'puskesmas_options' => $this->Kelola_staff_puskesmas_m->get_active_puskesmas_options(),
 			'account_candidates_by_staff' => array(),
 			'command_center_user_ids' => array(),
 			'personal_account_eligibility_by_staff' => array(),
-			'staff_readiness_summary' => array('total' => 0, 'ready' => 0, 'attention' => 0, 'issue_counts' => array()),
+			'staff_readiness_summary' => array('total' => 0, 'ready' => 0, 'warning' => 0, 'attention' => 0, 'issue_counts' => array()),
 			'form_mode' => $form_mode,
 			'form_staff' => null,
 		);
@@ -345,7 +346,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 		}
 		$issues = isset($staff->readiness_issues) && is_array($staff->readiness_issues) ? $staff->readiness_issues : array();
 		if ($filter === 'ready') {
-			return empty($issues);
+			return empty(array_diff($issues, array('staff_sip_expiring')));
 		}
 		if ($filter === 'attention') {
 			return !empty($issues);
@@ -353,8 +354,11 @@ class Kelola_staff_puskesmas extends MX_Controller
 		if ($filter === 'missing_sip') {
 			return in_array('staff_registration_number', $issues, true);
 		}
-		if ($filter === 'missing_nip') {
-			return in_array('staff_nip', $issues, true);
+		if ($filter === 'sip_expiring') {
+			return in_array('staff_sip_expiring', $issues, true);
+		}
+		if ($filter === 'sip_expired') {
+			return in_array('staff_sip_expired', $issues, true);
 		}
 		if ($filter === 'account') {
 			return in_array('staff_account_unlinked', $issues, true)
@@ -380,6 +384,10 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$this->form_validation->set_rules('profesi', 'Profesi', 'trim|required', array('required' => 'Profesi staf wajib diisi.'));
 		$this->form_validation->set_rules('nomor_sip', 'Nomor SIP', 'trim|required', array('required' => 'Nomor SIP staf wajib diisi.'));
 		$this->form_validation->set_rules('status', 'Status', 'trim|required', array('required' => 'Pilih status staf.'));
+		if ($this->Kelola_staff_puskesmas_m->nakes_profile_schema_ready()) {
+			$this->form_validation->set_rules('gelar', 'Gelar', 'trim|required', array('required' => 'Gelar staf wajib diisi.'));
+			$this->form_validation->set_rules('sip_expired_at', 'Masa berlaku SIP', 'trim|required', array('required' => 'Masa berlaku SIP wajib diisi.'));
+		}
 
 		$kode_pkm = trim((string) $this->input->post('kode_pkm', TRUE));
 		$status = trim((string) $this->input->post('status', TRUE));
@@ -403,14 +411,26 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$nip = '';
 		if ($this->Kelola_staff_puskesmas_m->nip_schema_ready()) {
 			require_once dirname(APPPATH, 2) . '/application/libraries/Role_identity_policy.php';
-			$nip_result = (new Role_identity_policy())->nip($this->input->post('nip'));
-			if (!$nip_result['valid']) {
-				$this->session->set_flashdata('error', $nip_result['message']);
-				return false;
+			$nip_input = trim((string) $this->input->post('nip'));
+			if ($nip_input !== '') {
+				$nip_result = (new Role_identity_policy())->nip($nip_input);
+				if (!$nip_result['valid']) {
+					$this->session->set_flashdata('error', $nip_result['message']);
+					return false;
+				}
+				$nip = $nip_result['value'];
+				if (!$this->Kelola_staff_puskesmas_m->nip_available($nip, (int) $staff_id)) {
+					$this->session->set_flashdata('error', 'NIP sudah digunakan oleh staf lain.');
+					return false;
+				}
 			}
-			$nip = $nip_result['value'];
-			if (!$this->Kelola_staff_puskesmas_m->nip_available($nip, (int) $staff_id)) {
-				$this->session->set_flashdata('error', 'NIP sudah digunakan oleh staf lain.');
+		}
+		$sip_expired_at = '';
+		if ($this->Kelola_staff_puskesmas_m->nakes_profile_schema_ready()) {
+			$sip_expired_at = trim((string) $this->input->post('sip_expired_at'));
+			$sip_expiry = DateTime::createFromFormat('!Y-m-d', $sip_expired_at);
+			if (!$sip_expiry || $sip_expiry->format('Y-m-d') !== $sip_expired_at) {
+				$this->session->set_flashdata('error', 'Masa berlaku SIP belum valid.');
 				return false;
 			}
 		}
@@ -423,8 +443,12 @@ class Kelola_staff_puskesmas extends MX_Controller
 			'nomor_sip' => trim((string) $this->input->post('nomor_sip', TRUE)),
 			'status' => $status,
 		);
+		if ($this->Kelola_staff_puskesmas_m->nakes_profile_schema_ready()) {
+			$data['gelar'] = trim((string) $this->input->post('gelar', TRUE));
+			$data['sip_expired_at'] = $sip_expired_at;
+		}
 		if ($this->Kelola_staff_puskesmas_m->nip_schema_ready()) {
-			$data['nip'] = $nip;
+			$data['nip'] = $nip === '' ? null : $nip;
 		}
 		return $data;
 	}
@@ -453,7 +477,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return;
 		}
 		if ($status === 'aktif' && !$this->Kelola_staff_puskesmas_m->staff_is_operationally_complete($staff)) {
-			$this->session->set_flashdata('error', 'Staf belum dapat diaktifkan. Lengkapi NIP, SIP, profesi, nomor HP, dan Puskesmas aktif terlebih dahulu.');
+			$this->session->set_flashdata('error', 'Staf belum dapat diaktifkan. Lengkapi nama, gelar, profesi, nomor HP, SIP, masa berlaku SIP, dan Puskesmas aktif terlebih dahulu. NIP tidak wajib untuk semua staf.');
 			redirect('kelola_staff_puskesmas', 'refresh');
 			return;
 		}

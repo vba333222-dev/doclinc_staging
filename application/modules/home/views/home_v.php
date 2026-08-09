@@ -2042,8 +2042,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							<label for="nama_lengkap_edit">Nama Lengkap</label>
 						</div>
 						<div class="form-floating mb-2">
-							<input type="email" class="form-control shadow border-success" id="email_edit" name="email" value="<?= html_escape($email); ?>" placeholder="Email" maxlength="100" required>
-							<label for="email_edit">Email</label>
+							<input type="email" class="form-control shadow border-success" id="email_edit" name="email" value="<?= html_escape($email); ?>" placeholder="Email akun (opsional untuk kesiapan profil)" maxlength="100">
+							<label for="email_edit">Email akun (opsional untuk kesiapan profil)</label>
 						</div>
 						<div class="form-floating mb-2">
 							<input type="date" class="form-control shadow border-success" id="tgl_edit" name="tgl_lahir" value="<?= html_escape($tgl); ?>" max="<?= html_escape(date('Y-m-d')); ?>" placeholder="Tanggal Lahir" required>
@@ -2061,21 +2061,25 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							<label for="no_hp_edit">Nomor HP</label>
 						</div>
 						<div class="form-floating mb-2">
-							<textarea class="form-control shadow border-success" placeholder="Alamat" id="alamat_edit" name="alamat" maxlength="500" required style="height: 100px"><?= html_escape($alamat); ?></textarea>
-							<label for="alamat_edit">Alamat</label>
+							<textarea class="form-control shadow border-success" placeholder="Alamat (opsional)" id="alamat_edit" name="alamat" maxlength="500" style="height: 100px"><?= html_escape($alamat); ?></textarea>
+							<label for="alamat_edit">Alamat (opsional)</label>
 						</div>
-						<?php if ($this->db->field_exists('nik', 'users') && $this->db->field_exists('nomor_kk', 'users') && $this->db->field_exists('nomor_bpjs_kis', 'users')) : ?>
+						<?php if ($this->db->field_exists('nik', 'users')) : ?>
 						<div class="form-floating mb-2">
 							<input type="text" class="form-control shadow border-success" id="nik_edit" name="nik" value="<?= html_escape($nik); ?>" placeholder="NIK" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" autocomplete="off" required>
 							<label for="nik_edit">NIK (16 angka)</label>
 						</div>
+						<?php endif; ?>
+						<?php if ($this->db->field_exists('nomor_kk', 'users')) : ?>
 						<div class="form-floating mb-2">
-							<input type="text" class="form-control shadow border-success" id="nomor_kk_edit" name="nomor_kk" value="<?= html_escape($nomor_kk); ?>" placeholder="Nomor Kartu Keluarga" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" autocomplete="off" required>
-							<label for="nomor_kk_edit">Nomor Kartu Keluarga (16 angka)</label>
+							<input type="text" class="form-control shadow border-success" id="nomor_kk_edit" name="nomor_kk" value="<?= html_escape($nomor_kk); ?>" placeholder="Nomor Kartu Keluarga (opsional)" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" autocomplete="off">
+							<label for="nomor_kk_edit">Nomor Kartu Keluarga (opsional)</label>
 						</div>
+						<?php endif; ?>
+						<?php if ($this->db->field_exists('nomor_bpjs_kis', 'users')) : ?>
 						<div class="form-floating mb-2">
-							<input type="text" class="form-control shadow border-success" id="nomor_bpjs_kis_edit" name="nomor_bpjs_kis" value="<?= html_escape($nomor_bpjs_kis); ?>" placeholder="Nomor kartu BPJS/KIS" inputmode="numeric" pattern="[0-9]{13}" minlength="13" maxlength="13" autocomplete="off" required>
-							<label for="nomor_bpjs_kis_edit">Nomor kartu BPJS/KIS (13 angka)</label>
+							<input type="text" class="form-control shadow border-success" id="nomor_bpjs_kis_edit" name="nomor_bpjs_kis" value="<?= html_escape($nomor_bpjs_kis); ?>" placeholder="BPJS/JKN/Taspen (opsional)" inputmode="numeric" pattern="[0-9]{13}" minlength="13" maxlength="13" autocomplete="off">
+							<label for="nomor_bpjs_kis_edit">BPJS/JKN/Taspen (opsional)</label>
 						</div>
 						<?php endif; ?>
 						<div id="wargaProfileFeedback" class="small" role="status" aria-live="polite"></div>

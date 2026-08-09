@@ -24,12 +24,14 @@ class Role_identity_policy
 		if (preg_match('/^[0-9 .-]+$/D', $raw['nik']) !== 1 || preg_match('/^[0-9]{16}$/D', $normalized['nik']) !== 1) {
 			$errors['nik'] = 'NIK harus terdiri dari 16 angka.';
 		}
-		if (preg_match('/^[0-9 .-]+$/D', $raw['nomor_kk']) !== 1 || preg_match('/^[0-9]{16}$/D', $normalized['nomor_kk']) !== 1) {
+		if ($raw['nomor_kk'] !== '' && (preg_match('/^[0-9 .-]+$/D', $raw['nomor_kk']) !== 1 || preg_match('/^[0-9]{16}$/D', $normalized['nomor_kk']) !== 1)) {
 			$errors['nomor_kk'] = 'Nomor Kartu Keluarga harus terdiri dari 16 angka.';
 		}
-		if (preg_match('/^[0-9 .-]+$/D', $raw['nomor_bpjs_kis']) !== 1 || preg_match('/^[0-9]{13}$/D', $normalized['nomor_bpjs_kis']) !== 1) {
+		if ($raw['nomor_bpjs_kis'] !== '' && (preg_match('/^[0-9 .-]+$/D', $raw['nomor_bpjs_kis']) !== 1 || preg_match('/^[0-9]{13}$/D', $normalized['nomor_bpjs_kis']) !== 1)) {
 			$errors['nomor_bpjs_kis'] = 'Nomor kartu BPJS/KIS harus terdiri dari 13 angka.';
 		}
+		$normalized['nomor_kk'] = $raw['nomor_kk'] === '' ? null : $normalized['nomor_kk'];
+		$normalized['nomor_bpjs_kis'] = $raw['nomor_bpjs_kis'] === '' ? null : $normalized['nomor_bpjs_kis'];
 
 		return array('valid' => empty($errors), 'values' => $normalized, 'field_errors' => $errors);
 	}

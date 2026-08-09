@@ -8,12 +8,14 @@ final class ProductionReadinessReport
 	private const MANAGED_GAPS = array(
 		'facility_name', 'facility_address', 'facility_latitude', 'facility_longitude',
 		'facility_command_center', 'staff_name', 'staff_phone', 'staff_profession',
-		'staff_registration_number', 'staff_nip', 'staff_identity',
+		'staff_title', 'staff_birthdate', 'staff_gender', 'staff_registration_number',
+		'staff_registration_expiry', 'staff_sip_expiring', 'staff_sip_expired', 'staff_identity',
 	);
 	private const SAFE_FIELDS = array(
 		'name', 'email', 'phone', 'address', 'birthdate', 'gender', 'photo',
 		'nik', 'family_card_number', 'bpjs_number', 'nakes_identity', 'staff_link',
-		'staff_name', 'staff_phone', 'profession', 'registration_number', 'nip',
+		'staff_name', 'staff_phone', 'title', 'profession', 'registration_number',
+		'registration_expiry', 'registration_expired', 'staff_status', 'account_status',
 		'puskesmas', 'facility_name', 'facility_address', 'facility_latitude',
 		'facility_longitude',
 	);

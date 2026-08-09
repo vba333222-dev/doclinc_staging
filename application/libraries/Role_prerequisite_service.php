@@ -7,6 +7,7 @@ class Role_prerequisite_service
 	private $identity_resolver;
 	private $photo_validator;
 	private $credential_enforcement_policy;
+	private $nakes_profile_policy;
 
 	public function __construct($db = null, array $options = array())
 	{
@@ -18,8 +19,13 @@ class Role_prerequisite_service
 			? $options['photo_validator']
 			: null;
 		require_once __DIR__ . '/Nakes_credential_enforcement_policy.php';
+		require_once __DIR__ . '/Nakes_profile_readiness_policy.php';
 		$this->credential_enforcement_policy = new Nakes_credential_enforcement_policy(
 			isset($options['credential_enforcement_enabled']) && $options['credential_enforcement_enabled'] === true
+		);
+		$this->nakes_profile_policy = new Nakes_profile_readiness_policy(
+			$options['today'] ?? null,
+			$options['sip_expiring_days'] ?? Nakes_profile_readiness_policy::DEFAULT_EXPIRING_DAYS
 		);
 	}
 
@@ -30,6 +36,8 @@ class Role_prerequisite_service
 			'enforced' => (bool) $enforced,
 			'allowed' => false,
 			'complete' => false,
+			'readiness_state' => 'INCOMPLETE',
+			'sip_state' => 'NOT_APPLICABLE',
 			'actor_type' => 'denied',
 			'safe_error_code' => 'actor_denied',
 			'missing_fields' => array(),
@@ -82,17 +90,16 @@ class Role_prerequisite_service
 		}
 
 		$actor_type = (string) $user->role === 'warga' ? 'warga' : 'unclassified';
+		$readiness_state = 'INCOMPLETE';
+		$sip_state = 'NOT_APPLICABLE';
 		$missing = array();
 		$labels = array();
 		if ((string) $user->role === 'warga') {
 			$this->require_text($user->nama, 'name', 'Nama lengkap', 2, $missing, $labels);
-			$this->require_email($user->email, $missing, $labels);
-			$this->collect_user_schema_gaps(array('no_hp', 'alamat', 'tgl', 'gender', 'foto', 'nik', 'nomor_kk', 'nomor_bpjs_kis'), $schema_gaps);
+			$this->collect_user_schema_gaps(array('no_hp', 'tgl', 'gender', 'nik'), $schema_gaps);
 			$this->require_phone($user->no_hp, $missing, $labels);
-			$this->require_text($user->alamat, 'address', 'Alamat', 5, $missing, $labels);
 			$this->require_birthdate($user->tgl, $missing, $labels);
 			$this->require_gender($user->gender, $missing, $labels);
-			$this->require_photo($user->foto, $missing, $labels);
 			$this->warga_identity_requirements($user, $missing, $labels);
 		} else {
 			$identity = $this->resolve_identity($user_id);
@@ -108,22 +115,22 @@ class Role_prerequisite_service
 			} else {
 				$actor_type = (string) $identity['account_type'];
 				$this->collect_user_schema_gaps(array('no_hp'), $schema_gaps);
-				$this->require_email($user->email, $missing, $labels);
 				$this->require_phone($user->no_hp, $missing, $labels);
 				if ($actor_type === 'personal') {
 					$this->require_text($user->nama, 'name', 'Nama lengkap', 2, $missing, $labels);
-					$this->collect_user_schema_gaps(array('alamat', 'tgl', 'gender', 'foto'), $schema_gaps);
-					$this->require_text($user->alamat, 'address', 'Alamat', 5, $missing, $labels);
+					$this->collect_user_schema_gaps(array('tgl', 'gender'), $schema_gaps);
 					$this->require_birthdate($user->tgl, $missing, $labels);
 					$this->require_gender($user->gender, $missing, $labels);
-					$this->require_photo($user->foto, $missing, $labels);
-					$this->personal_requirements($identity, $missing, $labels, $schema_gaps);
-					$this->facility_requirements($identity, $missing, $labels, $schema_gaps, true);
+					$personal_state = $this->personal_requirements($user, $identity, $missing, $labels, $schema_gaps);
+					$readiness_state = $personal_state['state'];
+					$sip_state = $personal_state['sip_state'];
+					$this->facility_requirements($identity, $missing, $labels, $schema_gaps, false);
 				} else {
 					// Command-center accounts represent a health facility, not a person.
 					// Keep the global gate limited to an active canonical facility and
 					// operational contact. Address/coordinates and roster readiness stay
 					// visible to Dinkes/Puskesmas as non-blocking managed remediation.
+					$this->require_email($user->email, $missing, $labels);
 					$this->facility_requirements($identity, $missing, $labels, $schema_gaps, false);
 				}
 			}
@@ -135,8 +142,15 @@ class Role_prerequisite_service
 		$missing = array_values($missing);
 		$labels = array_values($labels);
 		$complete = empty($missing) && empty($schema_gaps);
+		if ($actor_type === 'warga') {
+			$readiness_state = $complete ? 'COMPLETE' : 'INCOMPLETE';
+		} elseif ($actor_type === 'command_center') {
+			$readiness_state = $complete ? 'FACILITY_READY' : 'FACILITY_WARNING';
+		} elseif ($actor_type === 'personal' && !$complete && in_array($readiness_state, array('COMPLETE', 'SIP_EXPIRING'), true)) {
+			$readiness_state = 'INCOMPLETE';
+		}
 		$allowed = !$enforced || $complete;
-		$self_service_codes = array('name', 'email', 'phone', 'address', 'birthdate', 'gender', 'photo', 'nik', 'family_card_number', 'bpjs_number');
+		$self_service_codes = array('name', 'email', 'phone', 'birthdate', 'gender', 'nik');
 		$self_service_fields = array_values(array_intersect($missing, $self_service_codes));
 		$managed_fields = array_values(array_diff($missing, $self_service_codes));
 		$remediation_mode = 'none';
@@ -152,6 +166,8 @@ class Role_prerequisite_service
 			'enforced' => (bool) $enforced,
 			'allowed' => $allowed,
 			'complete' => $complete,
+			'readiness_state' => $readiness_state,
+			'sip_state' => $sip_state,
 			'actor_type' => $actor_type,
 			'safe_error_code' => $allowed ? '' : (!empty($schema_gaps) ? 'profile_schema_unavailable' : 'profile_prerequisites_missing'),
 			'missing_fields' => $missing,
@@ -165,17 +181,18 @@ class Role_prerequisite_service
 		);
 	}
 
-	private function personal_requirements(array $identity, array &$missing, array &$labels, array &$schema_gaps)
+	private function personal_requirements($user, array $identity, array &$missing, array &$labels, array &$schema_gaps)
 	{
+		$empty_state = array('state' => Nakes_profile_readiness_policy::INCOMPLETE, 'sip_state' => Nakes_profile_readiness_policy::SIP_STATE_MISSING);
 		$staff_id = (int) ($identity['staff_id'] ?? 0);
 		if ($staff_id < 1 || !$this->db->table_exists('puskesmas_staff')) {
 			$this->add_missing('staff_link', 'Data staf', $missing, $labels);
 			if (!$this->db->table_exists('puskesmas_staff')) {
 				$schema_gaps[] = 'puskesmas_staff';
 			}
-			return;
+			return $empty_state;
 		}
-		$fields = array('staff_id', 'kode_pkm', 'nama', 'no_hp', 'profesi', 'nomor_sip', 'nip', 'user_id', 'status');
+		$fields = array('staff_id', 'kode_pkm', 'nama', 'gelar', 'no_hp', 'profesi', 'nomor_sip', 'sip_expired_at', 'user_id', 'status');
 		$select = array();
 		foreach ($fields as $field) {
 			if ($this->db->field_exists($field, 'puskesmas_staff')) {
@@ -188,13 +205,36 @@ class Role_prerequisite_service
 		$staff = $this->db->select(implode(', ', $select), false)->where('staff_id', $staff_id)->limit(1)->get('puskesmas_staff')->row();
 		if (!$staff || (int) $staff->user_id !== (int) $identity['user_id'] || (string) $staff->status !== 'aktif' || (string) $staff->kode_pkm !== (string) $identity['puskesmas_code']) {
 			$this->add_missing('staff_link', 'Data staf', $missing, $labels);
-			return;
+			return $empty_state;
 		}
-		$this->require_text($staff->nama, 'staff_name', 'Nama staf', 2, $missing, $labels);
-		$this->require_phone($staff->no_hp, $missing, $labels, 'staff_phone', 'Kontak staf');
-		$this->require_text($staff->profesi, 'profession', 'Profesi', 2, $missing, $labels);
-		$this->require_text($staff->nomor_sip, 'registration_number', 'Nomor SIP', 3, $missing, $labels);
-		$this->require_nip($staff->nip, $missing, $labels);
+		$state = $this->nakes_profile_policy->evaluate(array(
+			'name' => $user->nama,
+			'title' => $staff->gelar,
+			'birthdate' => $user->tgl,
+			'gender' => $user->gender,
+			'profession' => $staff->profesi,
+			'registration_number' => $staff->nomor_sip,
+			'registration_expires_at' => $staff->sip_expired_at,
+			'phone' => $user->no_hp,
+			'account_state' => 'linked',
+			'staff_status' => $staff->status,
+			'account_status' => $user->status,
+			'facility_status' => 'aktif',
+		));
+		$labels_by_field = array(
+			'name' => 'Nama lengkap', 'title' => 'Gelar', 'birthdate' => 'Tanggal lahir',
+			'gender' => 'Jenis kelamin', 'profession' => 'Profesi', 'phone' => 'Nomor HP',
+			'registration_number' => 'Nomor SIP', 'registration_expiry' => 'Masa berlaku SIP',
+			'staff_link' => 'Akun personal', 'staff_status' => 'Status staf',
+			'account_status' => 'Status akun', 'puskesmas' => 'Data Puskesmas',
+		);
+		foreach ($state['missing_fields'] as $field) {
+			$this->add_missing($field, $labels_by_field[$field] ?? 'Data Nakes', $missing, $labels);
+		}
+		if ($state['sip_state'] === Nakes_profile_readiness_policy::SIP_STATE_EXPIRED) {
+			$this->add_missing('registration_expired', 'SIP sudah kedaluwarsa', $missing, $labels);
+		}
+		return $state;
 	}
 
 	private function warga_identity_requirements($user, array &$missing, array &$labels)
@@ -205,26 +245,8 @@ class Role_prerequisite_service
 			'nomor_kk' => isset($user->nomor_kk) ? $user->nomor_kk : '',
 			'nomor_bpjs_kis' => isset($user->nomor_bpjs_kis) ? $user->nomor_bpjs_kis : '',
 		));
-		$labels_by_field = array(
-			'nik' => 'NIK',
-			'nomor_kk' => 'Nomor Kartu Keluarga',
-			'nomor_bpjs_kis' => 'Nomor kartu BPJS/KIS',
-		);
-		$codes = array(
-			'nik' => 'nik',
-			'nomor_kk' => 'family_card_number',
-			'nomor_bpjs_kis' => 'bpjs_number',
-		);
-		foreach (array_keys($result['field_errors']) as $field) {
-			$this->add_missing($codes[$field], $labels_by_field[$field], $missing, $labels);
-		}
-	}
-
-	private function require_nip($value, array &$missing, array &$labels)
-	{
-		require_once __DIR__ . '/Role_identity_policy.php';
-		if (!(new Role_identity_policy())->nip($value)['valid']) {
-			$this->add_missing('nip', 'NIP', $missing, $labels);
+		if (isset($result['field_errors']['nik'])) {
+			$this->add_missing('nik', 'NIK', $missing, $labels);
 		}
 	}
 

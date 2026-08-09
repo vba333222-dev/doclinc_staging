@@ -94,11 +94,11 @@ production_readiness_expect($operations_blocked['activation_ready'] === false &&
 $managed_gaps = ProductionReadinessReport::compile($complete, array(), array('ready' => true, 'private' => true, 'mode_0700' => true, 'owner_ready' => true), array(
 	'facility_total' => 2, 'facility_complete' => 1, 'facility_command_center_ready' => 1,
 	'staff_total' => 3, 'staff_ready' => 2,
-	'managed_gap_counts' => array('facility_address' => 1, 'facility_command_center' => 1, 'staff_nip' => 9),
+	'managed_gap_counts' => array('facility_address' => 1, 'facility_command_center' => 1, 'staff_title' => 9),
 ));
 $managed_rendered = implode("\n", ProductionReadinessReport::lines($managed_gaps));
 production_readiness_expect($managed_gaps['managed_data_ready'] === false && $managed_gaps['controlled_enforcement_ready'] === false, 'managed_operational_gap_blocks_both_early_gates');
-production_readiness_expect($managed_gaps['managed_gap_counts']['staff_nip'] === 3 && strpos($managed_rendered, 'MANAGED_GAP_FACILITY_ADDRESS=1') !== false, 'managed_gap_counts_are_safe_exact_and_clamped');
+production_readiness_expect($managed_gaps['managed_gap_counts']['staff_title'] === 3 && strpos($managed_rendered, 'MANAGED_GAP_FACILITY_ADDRESS=1') !== false, 'managed_gap_counts_are_safe_exact_and_clamped');
 production_readiness_expect($managed_gaps['managed_gap_total'] === 5 && strpos($managed_rendered, 'MANAGED_GAP_TOTAL=5') !== false, 'managed_gap_total_is_exact_and_rendered');
 $managed_actor = $complete;
 $managed_actor[] = array(

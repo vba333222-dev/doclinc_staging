@@ -1,5 +1,6 @@
 <?php
 if (!defined('BASEPATH')) { define('BASEPATH', __DIR__ . '/'); }
+if (!defined('APPPATH')) { define('APPPATH', dirname(__DIR__, 3) . '/admin_menu/application/'); }
 if (!class_exists('MX_Controller')) { class MX_Controller {} }
 
 require_once dirname(__DIR__, 3) . '/admin_menu/application/modules/master_puskesmas/models/Master_puskesmas_m.php';
@@ -33,10 +34,11 @@ admin_readiness_expect($facility_summary['total'] === 2 && $facility_summary['re
 admin_readiness_expect(($facility_summary['issue_counts']['facility_address'] ?? 0) === 1, 'facility_summary_issue_count_exact');
 
 $valid_staff = (object) array(
-	'nama' => 'Nakes Uji', 'no_hp' => '081234567890', 'profesi' => 'Dokter',
-	'nomor_sip' => 'SIP-001', 'nip' => '198001012010011001', 'user_id' => 12,
+	'nama' => 'Nakes Uji', 'gelar' => 'dr.', 'no_hp' => '081234567890', 'profesi' => 'Dokter',
+	'nomor_sip' => 'SIP-001', 'sip_expired_at' => '2027-12-31', 'nip' => null, 'user_id' => 12,
 	'active_user_link_count' => 1, 'akun_role' => 'dokter', 'akun_status' => 'aktif',
 	'akun_remark' => 'PKM01', 'kode_pkm' => 'PKM01', 'puskesmas_status' => 'aktif', 'status' => 'aktif',
+	'akun_nama' => 'Nakes Uji', 'akun_no_hp' => '081234567890', 'akun_tgl' => '1990-01-01', 'akun_gender' => 'Perempuan',
 	'akun_must_change_password' => 0,
 	'akun_password_changed_at' => '2026-08-03 03:30:00',
 	'personal_account_state' => 'linked',
@@ -61,12 +63,20 @@ $invalid_staff = clone $valid_staff;
 $invalid_staff->nomor_sip = '';
 $invalid_staff->nip = '';
 $invalid_staff->personal_account_state = 'invalid';
-admin_readiness_expect($staff_model->readiness_issues($invalid_staff) === array('staff_registration_number', 'staff_nip', 'staff_account_invalid'), 'staff_issue_codes_exact');
+admin_readiness_expect($staff_model->readiness_issues($invalid_staff) === array('staff_registration_number', 'staff_account_invalid'), 'staff_issue_codes_exact');
+$expired_staff = clone $valid_staff;
+$expired_staff->sip_expired_at = '2026-01-01';
+admin_readiness_expect(in_array('staff_sip_expired', $staff_model->readiness_issues($expired_staff), true), 'expired_sip_requires_attention');
+$expiring_staff = clone $valid_staff;
+$expiring_staff->sip_expired_at = date('Y-m-d', strtotime('+30 days'));
+admin_readiness_expect(in_array('staff_sip_expiring', $staff_model->readiness_issues($expiring_staff), true), 'expiring_sip_warning_explicit');
+$expiring_summary = $staff_model->readiness_summary(array($expiring_staff));
+admin_readiness_expect($expiring_summary['ready'] === 1 && $expiring_summary['warning'] === 1 && $expiring_summary['attention'] === 0, 'expiring_sip_remains_ready_with_warning');
 $inactive_staff = clone $invalid_staff;
 $inactive_staff->status = 'nonaktif';
 $staff_summary = $staff_model->readiness_summary(array($valid_staff, $password_pending_staff, $reset_pending_staff, $invalid_staff, $inactive_staff));
 admin_readiness_expect($staff_summary['total'] === 4 && $staff_summary['ready'] === 1 && $staff_summary['attention'] === 3, 'staff_summary_counts_active_only');
-admin_readiness_expect(($staff_summary['issue_counts']['staff_nip'] ?? 0) === 1, 'staff_summary_issue_count_exact');
+admin_readiness_expect(($staff_summary['issue_counts']['staff_registration_number'] ?? 0) === 1, 'staff_summary_issue_count_exact');
 admin_readiness_expect(($staff_summary['issue_counts']['staff_first_login_pending'] ?? 0) === 1, 'first_login_issue_count_exact');
 admin_readiness_expect(($staff_summary['issue_counts']['staff_password_reset_pending'] ?? 0) === 1, 'password_reset_issue_count_exact');
 

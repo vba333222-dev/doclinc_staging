@@ -67,6 +67,9 @@ if (!function_exists('doclinc_dokter_identity_context')) {
 			'staff_id' => null,
 			'staff_status' => null,
 			'staff_profesi' => null,
+			'staff_gelar' => null,
+			'staff_nomor_sip' => null,
+			'staff_sip_expired_at' => null,
 			'is_command_center' => false,
 			'is_personal' => false,
 			'errors' => array(),
@@ -199,6 +202,11 @@ if (!function_exists('doclinc_dokter_identity_context')) {
 		if ($db->field_exists('profesi', 'puskesmas_staff')) {
 			$staff_select[] = 'profesi';
 		}
+		foreach (array('gelar', 'nomor_sip', 'sip_expired_at') as $profile_field) {
+			if ($db->field_exists($profile_field, 'puskesmas_staff')) {
+				$staff_select[] = $profile_field;
+			}
+		}
 		$staff_query = $db
 			->select(implode(', ', $staff_select))
 			->where('user_id', $user_id)
@@ -239,6 +247,9 @@ if (!function_exists('doclinc_dokter_identity_context')) {
 		$context['staff_id'] = isset($staff->staff_id) ? (int) $staff->staff_id : null;
 		$context['staff_status'] = isset($staff->status) ? (string) $staff->status : null;
 		$context['staff_profesi'] = isset($staff->profesi) ? (string) $staff->profesi : null;
+		$context['staff_gelar'] = isset($staff->gelar) ? (string) $staff->gelar : null;
+		$context['staff_nomor_sip'] = isset($staff->nomor_sip) ? (string) $staff->nomor_sip : null;
+		$context['staff_sip_expired_at'] = isset($staff->sip_expired_at) ? (string) $staff->sip_expired_at : null;
 		if ($context['staff_status'] !== 'aktif') {
 			$context['errors'][] = 'personal_staff_inactive';
 			return $finish($context);

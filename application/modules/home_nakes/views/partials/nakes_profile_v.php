@@ -84,6 +84,24 @@ if ($profile_is_command_center) {
 									<strong class="nk-info-value"><?= html_escape($profile_identity_staff['staff_profesi']); ?></strong>
 								</div>
 								<?php endif; ?>
+								<?php if ($profile_is_personal) : ?>
+								<div class="nk-info-row">
+									<span class="nk-info-label">Gelar</span>
+									<strong class="nk-info-value"><?= html_escape((string) (!empty($profile_identity_staff['staff_gelar']) ? $profile_identity_staff['staff_gelar'] : 'Belum dilengkapi')); ?></strong>
+								</div>
+								<div class="nk-info-row">
+									<span class="nk-info-label">SIP</span>
+									<strong class="nk-info-value"><?= html_escape((string) (!empty($profile_identity_staff['staff_nomor_sip']) ? $profile_identity_staff['staff_nomor_sip'] : 'Belum dilengkapi')); ?></strong>
+								</div>
+								<div class="nk-info-row">
+									<span class="nk-info-label">Masa berlaku SIP</span>
+									<strong class="nk-info-value"><?= html_escape((string) (!empty($profile_identity_staff['staff_sip_expired_at']) ? $profile_identity_staff['staff_sip_expired_at'] : 'Belum dilengkapi')); ?></strong>
+								</div>
+								<div class="nk-info-row">
+									<span class="nk-info-label">Readiness profil</span>
+									<strong class="nk-info-value"><?= html_escape((string) (($role_prerequisite_state['readiness_state'] ?? 'INCOMPLETE'))); ?></strong>
+								</div>
+								<?php endif; ?>
 								<div class="nk-info-row">
 									<span class="nk-info-label">Jadwal unit</span>
 									<strong class="nk-info-value">Belum dikonfigurasi</strong>
