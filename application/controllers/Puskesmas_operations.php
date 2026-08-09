@@ -68,10 +68,14 @@ class Puskesmas_operations extends CI_Controller
 			'identity' => array(),
 		);
 		if ($user_id < 1 || !$this->db->table_exists('users')
-			|| !$this->db->field_exists('must_change_password', 'users')) {
+			|| !$this->db->field_exists('must_change_password', 'users')
+			|| !doclinc_nakes_credential_schema_allows_runtime($this->db)) {
 			return $actor;
 		}
-		$user = $this->db->select('userId, role, status, must_change_password')
+		$user = $this->db->select(
+			'userId, role, status, must_change_password, ' . doclinc_nakes_password_changed_at_projection($this->db),
+			false
+		)
 			->where('userId', $user_id)
 			->limit(1)
 			->get('users')
@@ -80,7 +84,11 @@ class Puskesmas_operations extends CI_Controller
 			return $actor;
 		}
 		$actor['status'] = (string) $user->status;
-		$actor['must_change_password'] = (int) $user->must_change_password === 1;
+		$actor['must_change_password'] = doclinc_nakes_password_change_blocked(
+			$user->role,
+			$user->must_change_password,
+			$user->password_changed_at
+		);
 		if ($actor['role'] === 'dokter') {
 			$actor['identity'] = doclinc_dokter_identity_context($user_id, true);
 		}

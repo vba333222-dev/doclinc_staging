@@ -35,20 +35,24 @@ if (!function_exists('doclinc_request_realtime_bootstrap')) {
 	function doclinc_request_realtime_bootstrap()
 	{
 		$CI = &get_instance();
-		if (!doclinc_realtime_requests_enabled() || $CI->session->userdata('logged_in') != true
-			|| (int) $CI->session->userdata('must_change_password') === 1) {
+		if (!doclinc_realtime_requests_enabled() || $CI->session->userdata('logged_in') != true) {
 			return null;
 		}
 		$user_id = (int) $CI->session->userdata('id');
 		$role = (string) $CI->session->userdata('role');
 		if ($user_id < 1 || !in_array($role, array('warga', 'dokter'), true)
-			|| !$CI->db->field_exists('must_change_password', 'users')) {
+			|| !$CI->db->field_exists('must_change_password', 'users')
+			|| !doclinc_nakes_credential_schema_allows_runtime($CI->db)) {
 			return null;
 		}
-		$user = $CI->db->select('userId, role, status, must_change_password')->where('userId', $user_id)->limit(1)->get('users')->row();
-		if (!$user || (string) $user->role !== $role || (string) $user->status !== 'aktif' || (int) $user->must_change_password === 1) {
+		$user = $CI->db->select(
+			'userId, role, status, must_change_password, ' . doclinc_nakes_password_changed_at_projection($CI->db),
+			false
+		)->where('userId', $user_id)->limit(1)->get('users')->row();
+		if (!$user || (string) $user->role !== $role || (string) $user->status !== 'aktif') {
 			return null;
 		}
+		$must_change_password = doclinc_nakes_password_change_blocked($user->role, $user->must_change_password, $user->password_changed_at);
 		$identity = null;
 		if ($role === 'dokter') {
 			$CI->load->helper('request_authz');
@@ -57,7 +61,7 @@ if (!function_exists('doclinc_request_realtime_bootstrap')) {
 		require_once APPPATH . 'libraries/Request_realtime_policy.php';
 		$policy = new Request_realtime_policy();
 		$actor = array('authenticated' => true, 'user_id' => $user_id, 'role' => $role,
-			'status' => (string) $user->status, 'must_change_password' => false, 'identity' => $identity);
+			'status' => (string) $user->status, 'must_change_password' => $must_change_password, 'identity' => $identity);
 		$channel = $policy->channel($actor);
 		if ($channel === null) {
 			return null;

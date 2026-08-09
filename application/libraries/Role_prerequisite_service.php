@@ -6,6 +6,7 @@ class Role_prerequisite_service
 	private $db;
 	private $identity_resolver;
 	private $photo_validator;
+	private $credential_enforcement_policy;
 
 	public function __construct($db = null, array $options = array())
 	{
@@ -16,6 +17,10 @@ class Role_prerequisite_service
 		$this->photo_validator = isset($options['photo_validator']) && is_callable($options['photo_validator'])
 			? $options['photo_validator']
 			: null;
+		require_once __DIR__ . '/Nakes_credential_enforcement_policy.php';
+		$this->credential_enforcement_policy = new Nakes_credential_enforcement_policy(
+			isset($options['credential_enforcement_enabled']) && $options['credential_enforcement_enabled'] === true
+		);
 	}
 
 	public function evaluate($user_id, $enforced = false)
@@ -37,8 +42,11 @@ class Role_prerequisite_service
 			'cta_label' => 'Lengkapi profil',
 		);
 
-		$required_user_fields = array('userId', 'nama', 'email', 'role', 'status', 'must_change_password', 'no_hp', 'alamat', 'tgl', 'gender', 'foto', 'remark', 'nik', 'nomor_kk', 'nomor_bpjs_kis');
+		$required_user_fields = array('userId', 'nama', 'email', 'role', 'status', 'must_change_password', 'password_changed_at', 'no_hp', 'alamat', 'tgl', 'gender', 'foto', 'remark', 'nik', 'nomor_kk', 'nomor_bpjs_kis');
 		$core_user_fields = array('userId', 'nama', 'email', 'role', 'status', 'must_change_password');
+		if ($this->credential_enforcement_policy->enabled()) {
+			$core_user_fields[] = 'password_changed_at';
+		}
 		if ($user_id < 1 || !$this->db->table_exists('users')) {
 			$base['safe_error_code'] = 'profile_schema_unavailable';
 			$base['schema_gaps'][] = 'users';
@@ -64,7 +72,12 @@ class Role_prerequisite_service
 			}
 		}
 		$user = $this->db->select(implode(', ', $select), false)->where('userId', $user_id)->limit(1)->get('users')->row();
-		if (!$user || !in_array((string) $user->role, array('warga', 'dokter'), true) || (string) $user->status !== 'aktif' || (int) $user->must_change_password === 1) {
+		if (!$user || !in_array((string) $user->role, array('warga', 'dokter'), true) || (string) $user->status !== 'aktif'
+			|| $this->credential_enforcement_policy->blocks(
+				$user->role,
+				$user->must_change_password,
+				property_exists($user, 'password_changed_at') ? $user->password_changed_at : null
+			)) {
 			return $base;
 		}
 

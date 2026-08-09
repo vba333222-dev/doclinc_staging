@@ -68,17 +68,22 @@ class Notifikasi extends MX_Controller
 		$user_id = (int) $this->session->userdata('id');
 		$session_role = (string) $this->session->userdata('role');
 		if ($user_id < 1 || !in_array($session_role, array('warga', 'dokter'), true)
-			|| !$this->db->field_exists('must_change_password', 'users')) {
+			|| !$this->db->field_exists('must_change_password', 'users')
+			|| !doclinc_nakes_credential_schema_allows_runtime($this->db)) {
 			$this->snapshot_error(403, 'access_denied');
 			return;
 		}
-		$user = $this->db->select('userId, role, status, must_change_password')
+		$user = $this->db->select(
+			'userId, role, status, must_change_password, ' . doclinc_nakes_password_changed_at_projection($this->db),
+			false
+		)
 			->where('userId', $user_id)->limit(1)->get('users')->row();
 		if (!$user || (string) $user->role !== $session_role || (string) $user->status !== 'aktif') {
 			$this->snapshot_error(403, 'access_denied');
 			return;
 		}
-		if ((int) $user->must_change_password === 1 || (int) $this->session->userdata('must_change_password') === 1) {
+		$must_change_password = doclinc_nakes_password_change_blocked($user->role, $user->must_change_password, $user->password_changed_at);
+		if ($must_change_password) {
 			$this->snapshot_error(403, 'password_change_required');
 			return;
 		}
@@ -89,7 +94,7 @@ class Notifikasi extends MX_Controller
 			'user_id' => $user_id,
 			'role' => $session_role,
 			'status' => (string) $user->status,
-			'must_change_password' => (int) $user->must_change_password === 1,
+			'must_change_password' => $must_change_password,
 			'identity' => isset($user_context['identity']) ? $user_context['identity'] : null,
 		))) {
 			$this->snapshot_error(403, 'access_denied');

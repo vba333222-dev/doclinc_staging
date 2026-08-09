@@ -52,20 +52,13 @@ class Home extends MX_Controller
 			'authenticated' => $this->session->userdata('is_login') == true,
 			'role' => 'admin',
 			'status' => '',
-			'must_change_password' => true,
+			'must_change_password' => false,
 		);
 		if ($email !== '' && $this->db->table_exists('users')) {
-			$select = 'userId, role, status';
-			if ($this->db->field_exists('must_change_password', 'users')) {
-				$select .= ', must_change_password';
-			}
-			$user = $this->db->select($select)->where('email', $email)->limit(1)->get('users')->row();
+			$user = $this->db->select('userId, role, status')->where('email', $email)->limit(1)->get('users')->row();
 			if ($user && (string) $user->role === 'admin') {
 				$actor['user_id'] = (int) $user->userId;
 				$actor['status'] = (string) $user->status;
-				$actor['must_change_password'] = isset($user->must_change_password)
-					? (int) $user->must_change_password === 1
-					: true;
 			}
 		}
 

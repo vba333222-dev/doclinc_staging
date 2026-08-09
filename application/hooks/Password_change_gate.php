@@ -42,13 +42,11 @@ class Password_change_gate
 			$this->deny($CI, $policy, 'session_not_allowed');
 		}
 
-		require_once APPPATH . 'libraries/Nakes_credential_policy.php';
-		$credential_policy = new Nakes_credential_policy();
-		$must_change_password = $has_password_gate && $credential_policy->requiresChange(
+		$must_change_password = doclinc_nakes_effective_must_change_password(
 			(string) $user->role,
-			(int) $user->must_change_password,
-			$user->password_changed_at
-		) ? 1 : 0;
+			$has_password_gate ? (int) $user->must_change_password : 0,
+			$has_password_gate ? $user->password_changed_at : null
+		);
 		if ((int) $CI->session->userdata('must_change_password') !== $must_change_password) {
 			$CI->session->set_userdata('must_change_password', $must_change_password);
 		}

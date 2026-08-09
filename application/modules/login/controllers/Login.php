@@ -46,13 +46,11 @@ class Login extends MX_Controller
 		$user = $auth->num_rows() > 0 ? $auth->row() : null;
 		$actor_is_allowed = $user && (string) ($user->status ?? '') === 'aktif';
 		if ($actor_is_allowed && doclinc_password_verify($password, (string) $user->password)) {
-			require_once APPPATH . 'libraries/Nakes_credential_policy.php';
-			$credential_policy = new Nakes_credential_policy();
-			$must_change_password = $credential_policy->requiresChange(
+			$must_change_password = doclinc_nakes_effective_must_change_password(
 				(string) $user->role,
 				property_exists($user, 'must_change_password') ? (int) $user->must_change_password : 0,
 				property_exists($user, 'password_changed_at') ? $user->password_changed_at : null
-			) ? 1 : 0;
+			);
 			if ($must_change_password === 1 && $this->config->item('first_login_password_change_enabled') !== true) {
 				$this->Login_m->log_login_event('login_restricted', $user->userId, array('reason' => 'password_change_unavailable'));
 				echo "0";
@@ -141,7 +139,9 @@ class Login extends MX_Controller
 			return;
 		}
 		if (!$this->password_change_session_allowed()) {
-			$this->session->sess_destroy();
+			if ($this->config->item('nakes_credential_enforcement_enabled') === true) {
+				$this->session->sess_destroy();
+			}
 			redirect('login');
 			return;
 		}
@@ -192,7 +192,8 @@ class Login extends MX_Controller
 
 	private function password_change_session_allowed()
 	{
-		return $this->config->item('first_login_password_change_enabled') === true
+		return $this->config->item('nakes_credential_enforcement_enabled') === true
+			&& $this->config->item('first_login_password_change_enabled') === true
 			&& $this->session->userdata('logged_in') == TRUE
 			&& $this->session->userdata('role') === 'dokter'
 			&& (int) $this->session->userdata('must_change_password') === 1;

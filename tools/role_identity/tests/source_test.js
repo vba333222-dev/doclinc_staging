@@ -24,9 +24,38 @@ const commandCenterView = read('admin_menu/application/modules/kelola_dokter_nak
 const publicPasswordPolicy = read('application/libraries/Password_strength_policy.php');
 const adminPasswordPolicy = read('admin_menu/application/libraries/Password_strength_policy.php');
 const credentialPolicy = read('application/libraries/Nakes_credential_policy.php');
+const credentialEnforcementPolicy = read('application/libraries/Nakes_credential_enforcement_policy.php');
+const credentialEnforcementHelper = read('application/helpers/nakes_credential_enforcement_helper.php');
+const config = read('application/config/config.php');
 const loginController = read('application/modules/login/controllers/Login.php');
 const loginModel = read('application/modules/login/models/Login_m.php');
 const passwordGate = read('application/hooks/Password_change_gate.php');
+const productionReadinessAudit = read('tools/production_readiness/audit.php');
+const runtimeCredentialConsumers = [
+	'application/controllers/Location_address.php',
+	'application/controllers/Profile_media.php',
+	'application/controllers/Puskesmas_operations.php',
+	'application/controllers/Realtime_access.php',
+	'application/controllers/Realtime_requests.php',
+	'application/helpers/notification_helper.php',
+	'application/helpers/request_realtime_helper.php',
+	'application/libraries/Role_prerequisite_service.php',
+	'application/modules/home_nakes/controllers/Home_nakes.php',
+	'application/modules/home_nakes/models/Home_nakes_m.php',
+	'application/modules/notifikasi/controllers/Notifikasi.php',
+].map(read);
+const schemaAwareRuntimeCredentialConsumers = [
+	'application/controllers/Location_address.php',
+	'application/controllers/Profile_media.php',
+	'application/controllers/Puskesmas_operations.php',
+	'application/controllers/Realtime_access.php',
+	'application/controllers/Realtime_requests.php',
+	'application/helpers/notification_helper.php',
+	'application/helpers/request_realtime_helper.php',
+	'application/modules/home_nakes/controllers/Home_nakes.php',
+	'application/modules/home_nakes/models/Home_nakes_m.php',
+	'application/modules/notifikasi/controllers/Notifikasi.php',
+].map(read);
 const resetPersonalMethod = adminModel.slice(
 	adminModel.indexOf('public function reset_personal_password'),
 	adminModel.indexOf('public function get_command_center_user_id')
@@ -76,9 +105,32 @@ expect(publicPasswordPolicy.includes('strlen($password) < 8') && adminPasswordPo
 	&& publicPasswordPolicy.includes("preg_match('/[^A-Za-z0-9\\s]/'"), 'all_password_paths_share_minimum_complexity_contract');
 expect(credentialPolicy.includes('FIRST_LOGIN_PENDING') && credentialPolicy.includes('ADMIN_RESET_PENDING')
 	&& credentialPolicy.includes('validChangedAt') && credentialPolicy.includes("(string) $role !== 'dokter'"), 'nakes_credential_state_has_one_fail_closed_policy');
-expect(loginController.includes('Nakes_credential_policy') && passwordGate.includes('Nakes_credential_policy')
+expect(config.includes('DOCLINC_NAKES_CREDENTIAL_ENFORCEMENT_ENABLED')
+	&& config.includes('DOCLINC_NAKES_CREDENTIAL_ENFORCEMENT_ENVIRONMENT')
+	&& config.includes("$config['nakes_credential_enforcement_enabled']")
+	&& config.includes('Doclinc_feature_flags::resolve')
+	&& config.includes('$nakes_credential_enforcement_environment_env,\n\t$realtime_client_runtime_environment_env'), 'credential_enforcement_flag_uses_distinct_actual_runtime_environment');
+expect(credentialEnforcementPolicy.includes('Nakes_credential_policy')
+	&& credentialEnforcementPolicy.includes('$this->enabled')
+	&& credentialEnforcementPolicy.includes('requiresChange')
+	&& credentialEnforcementHelper.includes("nakes_credential_enforcement_enabled"), 'effective_enforcement_delegates_to_raw_credential_policy');
+expect(loginController.includes('doclinc_nakes_effective_must_change_password') && passwordGate.includes('doclinc_nakes_effective_must_change_password')
 	&& loginModel.includes('Nakes_credential_policy')
 	&& loginModel.includes('must_change_password, password_changed_at'), 'login_and_request_gate_use_effective_credential_state');
+expect(passwordGate.indexOf("status !== 'aktif'") < passwordGate.indexOf('doclinc_nakes_effective_must_change_password')
+	&& passwordGate.indexOf('role !== $session_role') < passwordGate.indexOf('doclinc_nakes_effective_must_change_password'), 'session_identity_and_active_status_remain_independent_denials');
+expect(loginController.includes("nakes_credential_enforcement_enabled') === true")
+	&& loginController.includes("first_login_password_change_enabled') === true")
+	&& loginController.includes("if ($this->config->item('nakes_credential_enforcement_enabled') === true)"), 'remediation_availability_is_not_the_master_enforcement_switch');
+expect(runtimeCredentialConsumers.every(source => source.includes('doclinc_nakes_credential')
+	|| source.includes('doclinc_nakes_password_change_blocked')
+	|| source.includes('doclinc_nakes_effective_must_change_password')
+	|| source.includes('credential_enforcement_policy')), 'ordinary_runtime_credential_consumers_use_effective_state');
+expect(schemaAwareRuntimeCredentialConsumers.every(source => source.includes('doclinc_nakes_credential_schema_allows_runtime')
+	&& source.includes('doclinc_nakes_password_changed_at_projection')), 'runtime_credential_schema_is_optional_only_when_enforcement_is_off');
+expect(productionReadinessAudit.includes('Nakes_credential_policy')
+	&& productionReadinessAudit.includes('must_change_password, password_changed_at')
+	&& adminModel.includes('Nakes_credential_policy'), 'audit_and_admin_readiness_keep_raw_credential_state');
 expect(loginController.includes('if ($must_change_password === 0)') && loginController.includes('save_location'), 'credential_remediation_login_does_not_write_location');
 expect(adminController.includes('public function reset_personal_password')
 	&& adminController.includes("$this->require_post()")

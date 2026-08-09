@@ -28,18 +28,23 @@ class Realtime_requests extends CI_Controller
 		$user_id = (int) $this->session->userdata('id');
 		$role = (string) $this->session->userdata('role');
 		if ($user_id < 1 || !in_array($role, array('warga', 'dokter'), true)
-			|| !$this->db->field_exists('must_change_password', 'users')) {
+			|| !$this->db->field_exists('must_change_password', 'users')
+			|| !doclinc_nakes_credential_schema_allows_runtime($this->db)) {
 			return $this->respond(403, 'actor_denied');
 		}
-		$user = $this->db->select('userId, role, status, must_change_password')->where('userId', $user_id)->limit(1)->get('users')->row();
-		if (!$user || (string) $user->role !== $role || (string) $user->status !== 'aktif' || (int) $user->must_change_password === 1) {
+		$user = $this->db->select(
+			'userId, role, status, must_change_password, ' . doclinc_nakes_password_changed_at_projection($this->db),
+			false
+		)->where('userId', $user_id)->limit(1)->get('users')->row();
+		if (!$user || (string) $user->role !== $role || (string) $user->status !== 'aktif') {
 			return $this->respond(403, 'actor_denied');
 		}
+		$must_change_password = doclinc_nakes_password_change_blocked($user->role, $user->must_change_password, $user->password_changed_at);
 		$identity = $role === 'dokter' ? doclinc_dokter_identity_context($user_id, true) : null;
 		require_once APPPATH . 'libraries/Request_realtime_policy.php';
 		$policy = new Request_realtime_policy();
 		$actor = array('authenticated' => true, 'user_id' => $user_id, 'role' => $role,
-			'status' => (string) $user->status, 'must_change_password' => false, 'identity' => $identity);
+			'status' => (string) $user->status, 'must_change_password' => $must_change_password, 'identity' => $identity);
 		if (!$policy->actorAllowed($actor)) {
 			return $this->respond(403, 'actor_denied');
 		}

@@ -111,7 +111,8 @@ request_expect(strpos($assignment_source, "? 'pic_reassigned' : 'pic_assigned'")
 	&& strpos($assignment_source, '$transition, $request_id, $new_assignment_id') !== false
 	&& strpos($assignment_source, "'pic_cleared', \$request_id, (int) \$previous_assignment->assignment_id") !== false, 'pic_idempotency_uses_persisted_assignment_identity');
 request_expect(strpos($assignment_source, 'locked_command_center_context') !== false
-	&& strpos($assignment_source, 'SELECT userId, role, status, remark, must_change_password') !== false
+	&& strpos($assignment_source, 'doclinc_nakes_password_changed_at_projection') !== false
+	&& strpos($assignment_source, 'doclinc_nakes_credential_schema_allows_runtime') !== false
 	&& strpos($assignment_source, "(string) \$puskesmas->status !== 'aktif'") !== false
 	&& strpos($assignment_source, 'ORDER BY userId ASC LIMIT 1 FOR UPDATE') !== false,
 	'post_lock_identity_revalidation_contract');
