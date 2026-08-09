@@ -182,12 +182,11 @@ class Kelola_staff_puskesmas extends MX_Controller
 			$this->personal_account_flash('Masukkan email yang valid.');
 			return;
 		}
-		if (strlen($password) < 8) {
-			$this->personal_account_flash('Password minimal 8 karakter.');
-			return;
-		}
-		if ($password !== $confirm_password) {
-			$this->personal_account_flash('Konfirmasi password tidak sama.');
+		require_once APPPATH . 'libraries/Password_strength_policy.php';
+		$password_policy = new Password_strength_policy();
+		$password_error = $password_policy->validate($password, $confirm_password);
+		if ($password_error !== null) {
+			$this->personal_account_flash($password_policy->message($password_error));
 			return;
 		}
 		$this->load->helper('password_compat');
@@ -202,6 +201,38 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$this->session->set_flashdata(
 			$is_success ? 'success' : 'error',
 			!empty($result['message']) ? $result['message'] : 'Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.'
+		);
+		redirect('kelola_staff_puskesmas', 'refresh');
+	}
+
+	public function reset_personal_password()
+	{
+		if (!$this->require_post()) {
+			return;
+		}
+		$staff_id = (int) $this->input->post('staff_id');
+		$password = (string) $this->input->post('password');
+		$confirmation = (string) $this->input->post('confirm_password');
+		require_once APPPATH . 'libraries/Password_strength_policy.php';
+		$policy = new Password_strength_policy();
+		$error = $policy->validate($password, $confirmation);
+		if ($staff_id < 1 || $error !== null) {
+			$this->session->set_flashdata('error', $staff_id < 1 ? 'Pilih staf yang valid.' : $policy->message($error));
+			redirect('kelola_staff_puskesmas', 'refresh');
+			return;
+		}
+
+		$this->load->helper('password_compat');
+		$result = $this->Kelola_staff_puskesmas_m->reset_personal_password(
+			$staff_id,
+			$password,
+			(string) $this->session->userdata('username')
+		);
+		$password = null;
+		$confirmation = null;
+		$this->session->set_flashdata(
+			!empty($result['status']) && $result['status'] === 'success' ? 'success' : 'error',
+			!empty($result['message']) ? $result['message'] : 'Password sementara belum dapat direset.'
 		);
 		redirect('kelola_staff_puskesmas', 'refresh');
 	}
@@ -244,7 +275,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			'readiness' => trim((string) $this->input->{$filter_input}('readiness', TRUE)),
 			'keyword' => trim((string) $this->input->{$filter_input}('keyword', TRUE)),
 		);
-		if (!in_array($filters['readiness'], array('', 'ready', 'attention', 'missing_sip', 'missing_nip', 'account'), true)) {
+		if (!in_array($filters['readiness'], array('', 'ready', 'attention', 'missing_sip', 'missing_nip', 'account', 'first_login', 'password_reset'), true)) {
 			$filters['readiness'] = '';
 		}
 
@@ -326,7 +357,16 @@ class Kelola_staff_puskesmas extends MX_Controller
 			return in_array('staff_nip', $issues, true);
 		}
 		if ($filter === 'account') {
-			return in_array('staff_account_unlinked', $issues, true) || in_array('staff_account_invalid', $issues, true);
+			return in_array('staff_account_unlinked', $issues, true)
+				|| in_array('staff_account_invalid', $issues, true)
+				|| in_array('staff_first_login_pending', $issues, true)
+				|| in_array('staff_password_reset_pending', $issues, true);
+		}
+		if ($filter === 'first_login') {
+			return in_array('staff_first_login_pending', $issues, true);
+		}
+		if ($filter === 'password_reset') {
+			return in_array('staff_password_reset_pending', $issues, true);
 		}
 		return true;
 	}

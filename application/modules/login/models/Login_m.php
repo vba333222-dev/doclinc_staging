@@ -21,14 +21,21 @@
 			if (!$this->db->field_exists('must_change_password', 'users') || !$this->db->field_exists('password_changed_at', 'users')) {
 				return null;
 			}
-			return $this->db
-				->select('userId, username, email, no_hp, password, role, status, must_change_password')
+			$user = $this->db
+				->select('userId, username, email, no_hp, password, role, status, must_change_password, password_changed_at')
 				->where('userId', (int) $user_id)
 				->where('role', 'dokter')
 				->where('status', 'aktif')
-				->where('must_change_password', 1)
 				->get('users')
 				->row_array();
+			if (!$user) {
+				return null;
+			}
+			require_once APPPATH . 'libraries/Nakes_credential_policy.php';
+			$policy = new Nakes_credential_policy();
+			return $policy->requiresChange($user['role'], $user['must_change_password'], $user['password_changed_at'])
+				? $user
+				: null;
 		}
 		public function complete_required_password_change($user_id, $password_hash, $expected_current_hash)
 		{
@@ -40,17 +47,19 @@
 			}
 			$this->db->trans_begin();
 			$locked = $this->db->query(
-				'SELECT userId, password, role, status, must_change_password FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ? FOR UPDATE',
+				'SELECT userId, password, role, status, must_change_password, password_changed_at FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ? FOR UPDATE',
 				array((int) $user_id)
 			)->row();
-			if (!$locked || $locked->role !== 'dokter' || $locked->status !== 'aktif' || (int) $locked->must_change_password !== 1
+			require_once APPPATH . 'libraries/Nakes_credential_policy.php';
+			$policy = new Nakes_credential_policy();
+			if (!$locked || $locked->role !== 'dokter' || $locked->status !== 'aktif'
+				|| !$policy->requiresChange($locked->role, $locked->must_change_password, $locked->password_changed_at)
 				|| !hash_equals($expected_current_hash, (string) $locked->password)) {
 				$this->db->trans_rollback();
 				return false;
 			}
 			$updated = $this->db
 				->where('userId', (int) $user_id)
-				->where('must_change_password', 1)
 				->update('users', array(
 					'password' => $password_hash,
 					'must_change_password' => 0,

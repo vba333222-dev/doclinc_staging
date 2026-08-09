@@ -8,11 +8,13 @@ $missing_fields = isset($profile_state['missing_fields']) && is_array($profile_s
 $missing_labels = isset($profile_state['missing_labels']) && is_array($profile_state['missing_labels']) ? $profile_state['missing_labels'] : array();
 $self_service_fields = isset($profile_state['self_service_fields']) && is_array($profile_state['self_service_fields']) ? $profile_state['self_service_fields'] : array();
 $managed_fields = isset($profile_state['managed_fields']) && is_array($profile_state['managed_fields']) ? $profile_state['managed_fields'] : array();
+$photo_required = in_array('photo', $missing_fields, true);
 $is_warga = $profile_role === 'warga';
 $is_personal = $profile_account_type === 'personal';
+$is_command_center = $profile_account_type === 'command_center';
 $can_edit_profile = $is_warga || ($profile_role === 'dokter' && in_array($profile_account_type, array('personal', 'command_center'), true));
 $profile_update_url = $is_warga ? base_url('profile/update') : base_url('home_nakes/updateprofile');
-$profile_photo_url = $is_warga ? base_url('home/update_profile_photo') : '';
+$profile_photo_url = base_url('profile/photo/update');
 $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 ?>
 <!doctype html>
@@ -31,7 +33,7 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 			<header class="completion-head">
 				<div class="completion-brand">DocLink</div>
 				<h1 id="completionTitle">Lengkapi data sebelum melanjutkan</h1>
-				<p>Data ini dibutuhkan untuk keamanan identitas, penugasan, dan layanan kesehatan. Fitur aplikasi tetap terkunci sampai seluruh data wajib valid.</p>
+				<p><?= $is_command_center ? 'Lengkapi kontak operasional Puskesmas. Data unit dan staf lainnya dikelola Administrator Dinas Kesehatan tanpa mengunci fungsi inti Puskesmas.' : 'Data ini dibutuhkan untuk keamanan identitas, penugasan, dan layanan kesehatan. Fitur aplikasi tetap terkunci sampai seluruh data wajib valid.'; ?></p>
 			</header>
 			<?php if (!empty($profile_state['schema_gaps'])) : ?>
 			<div class="completion-notice" role="alert">
@@ -64,16 +66,22 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 			<?php if ($can_edit_profile) : ?>
 			<form id="profileCompletionForm" class="completion-form" enctype="multipart/form-data" novalidate>
 				<h2>Data profil</h2>
+				<?php if ($is_warga || $is_personal) : ?>
 				<div class="completion-photo">
 					<img src="<?= doclinc_profile_image_src((int) ($profile_user['userId'] ?? 0), (string) ($profile_user['foto'] ?? '')); ?>" alt="Foto profil saat ini">
 					<label>Foto asli
-						<input type="file" name="foto" accept="image/jpeg,image/png,image/webp" <?= $is_warga ? 'data-warga-photo' : ''; ?>>
+						<input type="file" name="foto" accept="image/jpeg,image/png,image/webp" <?= $photo_required ? 'required' : ''; ?>>
 					</label>
 				</div>
+				<?php else : ?>
+				<div class="completion-notice" role="status"><strong>Akun fasilitas</strong><span>Akun Puskesmas tidak memerlukan foto pribadi, nama lengkap personal, tanggal lahir, atau jenis kelamin.</span></div>
+				<?php endif; ?>
 				<div class="completion-grid">
+					<?php if ($is_warga || $is_personal) : ?>
 					<label>Nama lengkap<input type="text" name="nama_lengkap" maxlength="100" value="<?= html_escape((string) ($profile_user['nama'] ?? '')); ?>" required></label>
-					<label>Email<input type="email" name="email" maxlength="100" value="<?= html_escape((string) ($profile_user['email'] ?? '')); ?>" required></label>
-					<label>Nomor HP<input type="tel" name="no_hp" maxlength="20" inputmode="tel" value="<?= html_escape((string) ($profile_user['no_hp'] ?? '')); ?>" required></label>
+					<?php endif; ?>
+					<label><?= $is_command_center ? 'Email operasional' : 'Email'; ?><input type="email" name="email" maxlength="100" value="<?= html_escape((string) ($profile_user['email'] ?? '')); ?>" required></label>
+					<label><?= $is_command_center ? 'Nomor kontak Puskesmas' : 'Nomor HP'; ?><input type="tel" name="no_hp" maxlength="20" inputmode="tel" value="<?= html_escape((string) ($profile_user['no_hp'] ?? '')); ?>" required></label>
 					<?php if ($is_warga || $is_personal) : ?>
 					<label>Tanggal lahir<input type="date" name="tgl_lahir" max="<?= html_escape(date('Y-m-d')); ?>" value="<?= html_escape((string) ($profile_user['tgl'] ?? '')); ?>" required></label>
 					<label>Jenis kelamin<select name="jk" required><option value="">Pilih</option><option value="Laki-laki" <?= (string) ($profile_user['gender'] ?? '') === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option><option value="Perempuan" <?= (string) ($profile_user['gender'] ?? '') === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option></select></label>

@@ -2672,3 +2672,29 @@
 				grid-template-columns: 1fr;
 			}
 		}
+.nk-staff-list--presence {
+	max-height: 30rem;
+	overflow-y: auto;
+}
+
+.nk-staff-item--presence {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: .75rem;
+}
+
+.nk-staff-item--presence .nk-staff-main strong {
+	display: flex;
+	align-items: center;
+	gap: .45rem;
+}
+
+.nk-staff-presence {
+	display: inline-block;
+	font-weight: 800;
+}
+
+.nk-staff-presence.is-online { color: #087a55; }
+.nk-staff-presence.is-offline { color: #667085; }
+.nk-staff-last-seen { color: #667085; }

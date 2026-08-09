@@ -21,7 +21,7 @@ const roleService = read('application/libraries/Role_prerequisite_service.php');
 expect(audit.includes("$database !== 'doclinc-staging'") && audit.includes('connected_database_mismatch'), 'database_target_is_exact_and_revalidated');
 expect(audit.includes("START TRANSACTION READ ONLY") && audit.includes("$db->query('ROLLBACK')") && audit.includes('DATABASE_WRITE_EXECUTED=false'), 'database_session_is_read_only_and_rolled_back');
 expect(audit.includes('new Role_prerequisite_service') && audit.includes("$service->evaluate((int) $actor->userId, true)"), 'audit_executes_production_prerequisite_service');
-expect(audit.includes("select('userId, must_change_password')") && audit.includes("'password_change_required'") && audit.includes("'identity_invalid'"), 'password_gate_and_identity_denial_are_classified_without_pii');
+expect(audit.includes("select('userId, role, must_change_password, password_changed_at')") && audit.includes('Nakes_credential_policy') && audit.includes("'password_change_required'") && audit.includes("'identity_invalid'"), 'effective_password_gate_and_identity_denial_are_classified_without_pii');
 expect(audit.includes('Profile_image_storage') && audit.includes("$storage->allowed_mime($path) !== ''"), 'audit_validates_actual_profile_media');
 expect(audit.includes('readiness_file_owner_ready') && report.includes('storage_owner_ready'), 'storage_and_photo_ownership_matches_application_runtime');
 expect(audit.includes('information_schema.COLUMNS') && audit.includes('information_schema.STATISTICS'), 'identity_schema_and_indexes_verified');
@@ -32,13 +32,14 @@ expect(audit.includes("managed_gap_counts['facility_address']++") && audit.inclu
 expect(resolver.includes("account_type'] = 'command_center'") && resolver.includes("account_type'] = 'personal'") && resolver.includes("count($staff_rows) !== 1"), 'identity_projection_matches_canonical_roles');
 expect(report.includes('SAFE_FIELDS') && report.includes('unknown_missing_field_count') && report.includes('safeCodes'), 'report_output_uses_safe_allowlists');
 expect(report.includes('DENIAL_REASONS') && report.includes('MANAGED_GAPS') && report.includes('actor_profile_evaluated'), 'audit_only_classifications_use_fixed_allowlists');
+expect(report.includes('ACTOR_FIRST_LOGIN_PENDING=') && report.includes('ACTOR_PASSWORD_RESET_PENDING='), 'password_lifecycle_states_are_reported_separately');
 expect(report.includes("'managed_data_ready'") && report.includes("'controlled_enforcement_ready'") && report.includes("'activation_ready'"), 'three_readiness_levels_are_explicit');
 expect(report.includes('MANAGED_DATA_READY=') && report.includes('CONTROLLED_ENFORCEMENT_READY=') && report.includes('PRODUCTION_ACTIVATION_READY='), 'three_readiness_levels_are_rendered');
 expect(!report.includes('missing_labels') && !audit.includes("select('nama") && !audit.includes("select('email"), 'report_does_not_project_identity_values');
 expect(runner.includes("DOCLINC_READINESS_DB_HOST='127.0.0.1'") && runner.includes("DOCLINC_READINESS_DB_NAME='doclinc-staging'") && runner.includes("DOCLINC_READINESS_DB_USER='root'") && !runner.includes('DB_NAME:-'), 'runner_has_no_database_target_override');
 expect(runner.includes('read -r -s -p') && runner.includes('unset DB_PASSWORD DOCLINC_READINESS_DB_PASSWORD'), 'runner_hides_and_cleans_password');
 expect(runner.includes('BLOCKED_DATA') && audit.includes("$exit_code = $report['activation_ready'] ? 0 : 3") && audit.trim().endsWith('exit($exit_code);'), 'incomplete_data_has_distinct_blocked_exit_after_cleanup');
-expect(runner.includes('ROLE_PREREQUISITE_FLAG_TRUE_COUNT') && runner.includes('FAIL_FEATURE_ENABLED_WHILE_BLOCKED'), 'blocked_data_rejects_premature_feature_activation');
+expect(runner.includes('ROLE_PREREQUISITE_FLAG_TRUE_COUNT') && runner.includes('ROLE_PREREQUISITE_REMEDIATION_ENFORCEMENT_ACTIVE=true') && !runner.includes('FAIL_FEATURE_ENABLED_WHILE_BLOCKED'), 'active_remediation_gate_is_reported_without_claiming_production_readiness');
 expect(runner.includes("['\\\"]?(true|1|on|yes)['\\\"]?"), 'quoted_and_unquoted_true_feature_values_are_detected');
 expect(roleService.includes("'nik', 'nomor_kk', 'nomor_bpjs_kis'") && roleService.includes("'nomor_sip', 'nip'"), 'gate_tracks_current_production_identity_contract');
 

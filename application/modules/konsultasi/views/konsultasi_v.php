@@ -1,5 +1,6 @@
 <?php
 $map_provider = $this->config->item('map_provider') ?: 'none';
+$mapbox_public_token = $this->config->item('mapbox_public_token') ?: '';
 $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
@@ -546,6 +547,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-plus.svg'); ?>" alt="">
 					</div>
 					<textarea id="address" name="alamat" class="consult-field consult-field-address form-control" placeholder="Alamat"></textarea>
+					<small class="text-muted">Alamat otomatis menggunakan © OpenStreetMap contributors.</small>
 					<input type="text" class="d-none" name="lat" id="latitude" placeholder="Latitude">
 					<input type="text" class="d-none" name="lng" id="longitude" placeholder="Longitude">
 					<div id="map"></div>
@@ -638,6 +640,7 @@ Lama keluhan:
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-location-address.js')); ?>"></script>
 	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
 		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
 	<?php endif; ?>
@@ -655,7 +658,16 @@ Lama keluhan:
 
 	<script>
 		const mapProvider = <?= json_encode($map_provider); ?>;
+		const mapboxPublicToken = <?= json_encode($mapbox_public_token); ?>;
 		const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
+		let consultationAddressSequence = 0;
+		const consultationAddressResolver = window.DoclincLocationAddress ? window.DoclincLocationAddress.create({
+			provider: mapProvider,
+			mapboxToken: mapboxPublicToken,
+			endpoint: <?= json_encode(base_url('location/address')); ?>,
+			googleMaps: window.google && window.google.maps ? window.google.maps : null,
+			fetch: window.fetch
+		}) : null;
 
 		function hasGoogleMaps() {
 			return mapProvider === 'google' && window.google && window.google.maps;
@@ -1018,11 +1030,6 @@ Lama keluhan:
 				timeout: 8000
 			});
 
-			navigator.geolocation.watchPosition(updateLocation, function() {}, {
-				enableHighAccuracy: true,
-				maximumAge: 30000,
-				timeout: 10000
-			});
 		}
 
 		function initMap() {
@@ -1055,6 +1062,7 @@ Lama keluhan:
 			};
 
 			setConsultationCoordinates(newLocation.lat, newLocation.lng);
+			getAddress(newLocation);
 
 			if (!hasGoogleMaps() || !marker || !map) return;
 
@@ -1062,8 +1070,6 @@ Lama keluhan:
 			marker.setPosition(newLocation);
 			map.setCenter(newLocation);
 
-			// Mendapatkan alamat dengan Geocoder
-			getAddress(newLocation);
 		}
 
 		function sendData() {
@@ -1090,20 +1096,16 @@ Lama keluhan:
 		}
 
 		function getAddress(location) {
-			if (!hasGoogleMaps() || !geocoder) return;
-
-			geocoder.geocode({
-				location: location
-			}, (results, status) => {
-				if (status === "OK") {
-					if (results[0]) {
-						document.getElementById("address").value = results[0].formatted_address;
-					} else {
-						document.getElementById("address").value = "Alamat belum ditemukan.";
-					}
-				} else {
-					document.getElementById("address").value = "Alamat belum ditemukan.";
-				}
+			const addressInput = document.getElementById('address');
+			const sequence = ++consultationAddressSequence;
+			if (addressInput) addressInput.value = 'Mencari alamat lokasi Anda...';
+			if (!consultationAddressResolver) {
+				if (addressInput) addressInput.value = '';
+				return;
+			}
+			consultationAddressResolver.resolve(location).then(function(result) {
+				if (sequence !== consultationAddressSequence || !addressInput) return;
+				addressInput.value = result && result.available ? result.address : '';
 			});
 		}
 

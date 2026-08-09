@@ -175,6 +175,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				</div>
 				<form id="formEditProfile" enctype="multipart/form-data">
 					<div class="modal-body nk-profile-modal__body">
+						<?php if (!empty($nakes_is_personal)) : ?>
 						<div class="nk-profile-modal__photo">
 							<label for="uploadFoto" class="nk-profile-modal__photo-picker">
 								<img id="previewFoto" src="<?= doclinc_profile_image_src((int) $this->session->userdata('id'), $profile['foto'] ?? ''); ?>" alt="Foto Profil">
@@ -183,17 +184,22 @@ if (!function_exists('doclinc_nakes_short_text')) {
 							<small>Klik untuk mengubah foto</small>
 							<div id="profileImageFeedback" class="small text-danger mt-2 d-none" role="alert"></div>
 						</div>
+						<?php else : ?>
+						<div class="alert alert-info small" role="status">Nama, alamat, dan identitas unit Puskesmas dikelola oleh Administrator Dinas Kesehatan. Akun ini hanya mengubah kontak operasional.</div>
+						<?php endif; ?>
+						<?php if (!empty($nakes_is_personal)) : ?>
 						<div class="form-floating nk-profile-modal__field">
 							<input type="text" class="form-control" id="nama_lengkap_edit" name="nama_lengkap" value="<?= html_escape((string) $this->session->userdata('nama')); ?>" placeholder="Nama Lengkap" maxlength="100" required>
 							<label for="nama_lengkap_edit"><i class="bi bi-person-fill me-2"></i>Nama lengkap</label>
 						</div>
+						<?php endif; ?>
 						<div class="form-floating nk-profile-modal__field">
 							<input type="email" class="form-control" id="email_edit" name="email" value="<?= html_escape((string) ($profile['email'] ?? $this->session->userdata('email'))); ?>" placeholder="Email" maxlength="100" required>
-							<label for="email_edit"><i class="bi bi-envelope-fill me-2"></i>Email</label>
+							<label for="email_edit"><i class="bi bi-envelope-fill me-2"></i><?= !empty($nakes_is_command_center) ? 'Email operasional' : 'Email'; ?></label>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
 							<input type="tel" class="form-control" id="no_hp_edit" name="no_hp" value="<?= html_escape((string) ($profile['no_hp'] ?? '')); ?>" placeholder="Nomor HP" inputmode="tel" maxlength="20" required>
-							<label for="no_hp_edit"><i class="bi bi-telephone-fill me-2"></i>Nomor HP</label>
+							<label for="no_hp_edit"><i class="bi bi-telephone-fill me-2"></i><?= !empty($nakes_is_command_center) ? 'Nomor kontak Puskesmas' : 'Nomor HP'; ?></label>
 						</div>
 						<?php if (!empty($nakes_is_personal)) : ?>
 						<div class="form-floating nk-profile-modal__field">
@@ -2347,7 +2353,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			const submitButton = form.querySelector('button[type="submit"]');
 			const originalButtonDisabled = submitButton ? submitButton.disabled : false;
 			const originalButtonContent = submitButton ? submitButton.innerHTML : '';
-			const formData = new FormData(form); // Ambil semua input termasuk file
+			const formData = new FormData(form);
+			const profilePhoto = formData.get('foto');
+			formData.delete('foto');
 			let profileUpdateSucceeded = false;
 			const restoreProfileSubmit = function() {
 				profileUpdateInFlight = false;
@@ -2385,17 +2393,35 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					});
 				})
 				.then(result => {
-					if (result.status === 'success') {
-						profileUpdateSucceeded = true;
-						alert("Profil berhasil diperbarui!");
-						// Misalnya reload data user:
-						location.reload();
-					} else {
+					if (result.status !== 'success') {
 						const safeMessage = typeof result.message === 'string' && result.message.trim() ?
 							result.message.trim() :
 							"Terjadi kesalahan. Coba lagi.";
-						alert("Profil belum diperbarui. " + safeMessage);
+						return Promise.reject({ safeMessage: safeMessage });
 					}
+					if (!profilePhoto || !profilePhoto.size) {
+						return result;
+					}
+					const photoData = new FormData();
+					photoData.append('foto', profilePhoto);
+					return fetch(<?= json_encode(base_url('profile/photo/update')); ?>, {
+						method: 'POST',
+						body: photoData,
+						headers: { Accept: 'application/json' },
+						credentials: 'same-origin'
+					}).then(response => response.json().then(photoResult => {
+						if (!response.ok || !photoResult || photoResult.status !== 'success') {
+							return Promise.reject({
+								safeMessage: photoResult && typeof photoResult.message === 'string' ? photoResult.message.trim() : ''
+							});
+						}
+						return photoResult;
+					}));
+				})
+				.then(() => {
+					profileUpdateSucceeded = true;
+					alert("Profil berhasil diperbarui!");
+					location.reload();
 				})
 				.catch(failure => {
 					const safeMessage = failure && typeof failure.safeMessage === 'string' && failure.safeMessage ?

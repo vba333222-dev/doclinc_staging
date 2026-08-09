@@ -3,9 +3,11 @@ $request_id = isset($request_id) ? (int) $request_id : 0;
 $can_send = !empty($can_send);
 $current_user_id = isset($current_user_id) ? (int) $current_user_id : 0;
 $current_role = isset($current_role) ? (string) $current_role : '';
+$is_command_center = !empty($is_command_center);
 $request_status = isset($request->request_status) ? (string) $request->request_status : '';
 $is_nakes_role = in_array($current_role, array('dokter', 'nakes'), true);
 $can_start_call = $is_nakes_role
+	&& !$is_command_center
 	&& $request_status === 'Accepted'
 	&& function_exists('doclinc_request_is_handled_by_nakes')
 	&& doclinc_request_is_handled_by_nakes($request, $current_user_id);
@@ -41,21 +43,22 @@ if ($request_status === 'Accepted') {
 }
 $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), true)
 	? 'Konsultasi sudah selesai. Riwayat chat hanya dapat dibaca.'
-	: 'Chat ini hanya dapat dibaca.';
+	: ($is_command_center ? 'Akun Puskesmas hanya dapat memantau percakapan. Pengiriman pesan dan berkas hanya tersedia untuk pasien dan Nakes personal.' : 'Chat ini hanya dapat dibaca.');
 $asset_base = base_url('assets/doclinc_ui/chat/');
 $partner_user_id = $current_role === 'dokter'
 	? (isset($request->user_id) ? (int) $request->user_id : 0)
 	: (function_exists('doclinc_request_handling_nakes_id') ? (int) doclinc_request_handling_nakes_id($request) : 0);
+$profile_photo_fallback = $asset_base . 'doctor-placeholder.jpg';
 $partner_photo_src = $partner_user_id > 0
 	? base_url('profile/photo/' . $partner_user_id)
-	: $asset_base . 'doctor-placeholder.jpg';
+	: $profile_photo_fallback;
 $partner_name = 'Petugas Puskesmas';
 $partner_subtitle = 'Konsultasi kesehatan';
 if ($current_role === 'dokter') {
 	$partner_name = isset($request->nama) && $request->nama !== '' ? $request->nama : 'Pasien';
 	$partner_subtitle = isset($request->assigned_puskesmas_name) && $request->assigned_puskesmas_name !== '' ? $request->assigned_puskesmas_name : 'Permintaan konsultasi';
 } else {
-	$partner_name = isset($request->assigned_puskesmas_name) && $request->assigned_puskesmas_name !== '' ? $request->assigned_puskesmas_name : (isset($request->nama_dokter) && $request->nama_dokter !== '' ? $request->nama_dokter : 'Petugas Puskesmas');
+	$partner_name = isset($request->nama_dokter) && $request->nama_dokter !== '' ? $request->nama_dokter : (isset($request->assigned_puskesmas_name) && $request->assigned_puskesmas_name !== '' ? $request->assigned_puskesmas_name : 'Petugas Puskesmas');
 	$partner_subtitle = 'Nakes akan membantu konsultasi Anda';
 }
 ?>
@@ -185,6 +188,16 @@ if ($current_role === 'dokter') {
 			gap: 14px;
 			margin-bottom: 21px;
 			width: 100%;
+		}
+
+		.chat-message-avatar {
+			width: 30px;
+			height: 30px;
+			border-radius: 50%;
+			object-fit: cover;
+			background: #e8efec;
+			flex: 0 0 30px;
+			align-self: flex-end;
 		}
 
 		.chat-message-row.mine {
@@ -834,7 +847,7 @@ if ($current_role === 'dokter') {
 			<a href="<?= html_escape($back_url); ?>" class="chat-back" aria-label="Kembali">
 				<img src="<?= html_escape($asset_base . 'icon-chat-back.svg'); ?>" alt="">
 			</a>
-			<img class="chat-avatar" src="<?= html_escape($partner_photo_src); ?>" alt="Foto <?= html_escape($partner_name); ?>">
+			<img class="chat-avatar js-profile-photo" src="<?= html_escape($partner_photo_src); ?>" data-fallback-src="<?= html_escape($profile_photo_fallback); ?>" alt="Foto <?= html_escape($partner_name); ?>">
 			<div class="chat-title">
 				<p class="chat-title-text"><?= html_escape($partner_name); ?></p>
 				<p class="chat-title-subtext"><?= html_escape($status_label); ?> · <?= html_escape($queue_display); ?></p>
@@ -887,7 +900,7 @@ if ($current_role === 'dokter') {
 			<div class="doclinc-call-panel">
 				<div class="doclinc-call-head">
 					<div class="doclinc-call-context">
-						<img class="doclinc-call-avatar" src="<?= html_escape($partner_photo_src); ?>" alt="Foto <?= html_escape($partner_name); ?>">
+						<img class="doclinc-call-avatar js-profile-photo" src="<?= html_escape($partner_photo_src); ?>" data-fallback-src="<?= html_escape($profile_photo_fallback); ?>" alt="Foto <?= html_escape($partner_name); ?>">
 						<div>
 							<h2 class="doclinc-call-title" id="doclincCallTitle"><?= html_escape($partner_name); ?></h2>
 							<div class="doclinc-call-status" id="doclincCallStatus">Siap bergabung</div>
@@ -2282,6 +2295,18 @@ if ($current_role === 'dokter') {
 			}
 		}
 
+		function isSafeProfilePhotoUrl(value) {
+			if (!value) {
+				return false;
+			}
+			try {
+				const parsed = new URL(value, window.location.origin);
+				return parsed.origin === window.location.origin && /^\/profile\/photo\/[1-9][0-9]*\/?$/.test(parsed.pathname) && parsed.search === '' && parsed.hash === '';
+			} catch (error) {
+				return false;
+			}
+		}
+
 		function appendMessage(message) {
 			const list = document.getElementById('chatMessages');
 			if (!list) {
@@ -2298,6 +2323,15 @@ if ($current_role === 'dokter') {
 
 			const bubble = document.createElement('div');
 			bubble.className = 'chat-bubble' + (isMine ? ' mine' : '');
+			const avatar = document.createElement('img');
+			avatar.className = 'chat-message-avatar';
+			avatar.alt = isMine ? 'Foto Anda' : 'Foto lawan bicara';
+			avatar.src = isSafeProfilePhotoUrl(message.sender_photo_url) ? message.sender_photo_url : <?= json_encode($profile_photo_fallback); ?>;
+			avatar.addEventListener('error', function() {
+				if (avatar.src !== <?= json_encode($profile_photo_fallback); ?>) {
+					avatar.src = <?= json_encode($profile_photo_fallback); ?>;
+				}
+			}, { once: true });
 
 			const time = document.createElement('div');
 			time.className = 'chat-time';
@@ -2325,7 +2359,9 @@ if ($current_role === 'dokter') {
 			if (isMine) {
 				row.appendChild(time);
 				row.appendChild(bubble);
+				row.appendChild(avatar);
 			} else {
+				row.appendChild(avatar);
 				row.appendChild(bubble);
 				row.appendChild(time);
 			}
@@ -2393,6 +2429,14 @@ if ($current_role === 'dokter') {
 		}
 
 		document.addEventListener('DOMContentLoaded', function() {
+			document.querySelectorAll('.js-profile-photo').forEach(function(image) {
+				image.addEventListener('error', function() {
+					const fallback = image.getAttribute('data-fallback-src');
+					if (fallback && image.src !== fallback) {
+						image.src = fallback;
+					}
+				}, { once: true });
+			});
 			loadMessages();
 			markRead();
 			if (isReadOnly) {

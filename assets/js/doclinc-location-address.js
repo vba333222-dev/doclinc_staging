@@ -86,6 +86,22 @@
 		};
 	}
 
+	function fromEndpoint(payload) {
+		var data = payload && payload.success === true && payload.data && typeof payload.data === 'object'
+			? payload.data
+			: null;
+		var address = safeText(data && data.address, 500);
+		if (!data || data.available !== true || !address) return unavailable(true);
+		return {
+			available: true,
+			location_found: true,
+			address: address,
+			locality: safeText(data.locality, 120),
+			provider: safeText(data.provider, 40) || 'server'
+			, attribution: safeText(data.attribution, 120)
+		};
+	}
+
 	function mapUrl(location) {
 		var normalized = normalizeLocation(location);
 		if (!normalized) return '';
@@ -98,6 +114,7 @@
 		options = options || {};
 		var provider = String(options.provider || '').toLowerCase();
 		var mapboxToken = String(options.mapboxToken || '').trim();
+		var endpoint = String(options.endpoint || '').trim();
 		var fetchImpl = options.fetch || window.fetch;
 		var googleMaps = options.googleMaps || null;
 		var now = options.now || Date.now;
@@ -189,9 +206,38 @@
 			});
 		}
 
+		function endpointRequest(location) {
+			if (!endpoint || typeof fetchImpl !== 'function') return Promise.resolve(unavailable(true));
+			var body = 'latitude=' + encodeURIComponent(location.lat) + '&longitude=' + encodeURIComponent(location.lng);
+			return fetchImpl(endpoint, {
+				method: 'POST',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+				},
+				body: body,
+				credentials: 'same-origin',
+				cache: 'no-store',
+				redirect: 'error'
+			}).then(function (response) {
+				if (!response || !response.ok) throw new Error('reverse_geocode_proxy_unavailable');
+				return response.json();
+			}).then(fromEndpoint).catch(function () {
+				return unavailable(true);
+			});
+		}
+
+		function providerRequest(location) {
+			if (provider === 'google') return googleRequest(location);
+			if (provider === 'mapbox') return mapboxRequest(location);
+			return Promise.resolve(unavailable(true));
+		}
+
 		function execute(location) {
 			lastStartedAt = now();
-			return provider === 'google' ? googleRequest(location) : mapboxRequest(location);
+			return providerRequest(location).then(function (result) {
+				return result && result.available ? result : endpointRequest(location);
+			});
 		}
 
 		function resolve(location) {
@@ -222,6 +268,7 @@
 		create: create,
 		fromMapbox: fromMapbox,
 		fromGoogle: fromGoogle,
+		fromEndpoint: fromEndpoint,
 		normalizeLocation: normalizeLocation,
 		mapUrl: mapUrl,
 		unavailable: unavailable

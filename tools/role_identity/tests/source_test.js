@@ -18,6 +18,19 @@ const adminController = read('admin_menu/application/modules/kelola_staff_puskes
 const adminModel = read('admin_menu/application/modules/kelola_staff_puskesmas/models/Kelola_staff_puskesmas_m.php');
 const adminView = read('admin_menu/application/modules/kelola_staff_puskesmas/views/kelola_staff_puskesmas_v.php');
 const dashboard = read('application/modules/home_nakes/views/partials/nakes_dashboard_v.php');
+const commandCenterController = read('admin_menu/application/modules/kelola_dokter_nakes/controllers/Kelola_dokter_nakes.php');
+const commandCenterModel = read('admin_menu/application/modules/kelola_dokter_nakes/models/Kelola_dokter_nakes_m.php');
+const commandCenterView = read('admin_menu/application/modules/kelola_dokter_nakes/views/kelola_dokter_nakes_v.php');
+const publicPasswordPolicy = read('application/libraries/Password_strength_policy.php');
+const adminPasswordPolicy = read('admin_menu/application/libraries/Password_strength_policy.php');
+const credentialPolicy = read('application/libraries/Nakes_credential_policy.php');
+const loginController = read('application/modules/login/controllers/Login.php');
+const loginModel = read('application/modules/login/models/Login_m.php');
+const passwordGate = read('application/hooks/Password_change_gate.php');
+const resetPersonalMethod = adminModel.slice(
+	adminModel.indexOf('public function reset_personal_password'),
+	adminModel.indexOf('public function get_command_center_user_id')
+);
 
 expect(migration.includes("if (PHP_SAPI !== 'cli')") && migration.includes('EXECUTION_MODE=PLAN'), 'migration_is_cli_and_plan_by_default');
 expect(migration.includes('schema_write_disabled') && migration.includes('backup_checksum_confirmation_mismatch') && migration.includes('GET_LOCK'), 'migration_requires_write_backup_and_lock');
@@ -32,11 +45,55 @@ expect(adminController.includes("$status === 'aktif' && !$this->Kelola_staff_pus
 expect(adminModel.includes("(string) ($staff->status ?? '') !== 'aktif' || !$this->staff_is_operationally_complete($staff)"), 'incomplete_or_inactive_staff_cannot_be_linked');
 expect(adminModel.includes('function personal_account_state') && adminModel.includes('active_user_link_count') && adminModel.includes("return $valid ? 'linked' : 'invalid'"), 'staff_account_readiness_rejects_duplicate_mismatched_and_command_center_links');
 expect(adminModel.includes('function readiness_issues') && adminModel.includes("'staff_registration_number'") && adminModel.includes("'staff_nip'"), 'staff_readiness_uses_safe_action_codes');
+expect(adminModel.includes('staff_user.must_change_password AS akun_must_change_password')
+	&& adminModel.includes('staff_user.password_changed_at AS akun_password_changed_at')
+	&& adminModel.includes("'staff_first_login_pending'")
+	&& adminModel.includes("'staff_password_reset_pending'")
+	&& adminView.includes('Belum pernah mengganti password bawaan'), 'admin_queue_separates_first_activation_and_reset_waiting_states');
 expect(adminController.includes("'readiness' =>") && adminController.includes('staff_matches_readiness_filter') && adminController.includes("'missing_sip'") && adminController.includes("'missing_nip'"), 'admin_staff_queue_has_bounded_server_side_filters');
 expect(adminController.includes("$filter !== '' && (string) ($staff->status ?? '') !== 'aktif'"), 'inactive_staff_excluded_from_readiness_filter');
 expect(adminView.includes('staffFilterReadiness') && adminView.includes('Kesiapan staf aktif') && adminView.includes('Relasi akun personal perlu diperiksa'), 'admin_staff_view_exposes_actionable_readiness_without_raw_identity_export');
 expect(adminView.includes('Gunakan data resmi; jangan mengisi nomor buatan.'), 'admin_staff_form_forbids_fabricated_nip');
 expect(adminView.includes('Data staf, NIP, SIP, status, dan hubungan akun hanya dikelola Administrator Dinas Kesehatan.'), 'admin_ownership_is_explicit');
+expect(adminModel.includes("'must_change_password' => 1") && adminModel.includes("'password_changed_at' => null")
+  && adminModel.includes("'must_change_password', 'password_changed_at'"), 'personal_account_creation_forces_first_login_password_change');
+expect(adminController.includes('Password_strength_policy') && adminModel.includes('Password_strength_policy')
+	&& adminView.includes('wajib membuat password baru saat login pertama')
+	&& adminController.includes('reset_personal_password')
+	&& adminModel.includes('reset_personal_password')
+	&& (adminView.match(/minlength="8" maxlength="72"/g) || []).length === 4, 'personal_create_and_reset_temporary_password_contract_is_explicit');
+expect(commandCenterModel.includes("'must_change_password' => 1") && commandCenterModel.includes("'password_changed_at' => null")
+	&& commandCenterModel.includes("if (isset($allowed['password']))")
+	&& !commandCenterModel.includes("$allowed['password_changed_at'] = null"), 'command_center_creation_is_unactivated_but_admin_reset_preserves_prior_change_evidence');
+expect(commandCenterController.includes('required|min_length[8]|max_length[72]')
+	&& commandCenterController.includes('Password_strength_policy')
+	&& (commandCenterView.match(/minlength="8" maxlength="72"/g) || []).length === 4
+	&& commandCenterView.includes('Belum pernah mengganti password bawaan'), 'command_center_temporary_password_is_bounded');
+expect(publicPasswordPolicy.includes('strlen($password) < 8') && adminPasswordPolicy.includes('strlen($password) < 8')
+  && publicPasswordPolicy.includes("preg_match('/[A-Z]/'")
+  && publicPasswordPolicy.includes("preg_match('/[a-z]/'")
+  && publicPasswordPolicy.includes("preg_match('/[0-9]/'")
+	&& publicPasswordPolicy.includes("preg_match('/[^A-Za-z0-9\\s]/'"), 'all_password_paths_share_minimum_complexity_contract');
+expect(credentialPolicy.includes('FIRST_LOGIN_PENDING') && credentialPolicy.includes('ADMIN_RESET_PENDING')
+	&& credentialPolicy.includes('validChangedAt') && credentialPolicy.includes("(string) $role !== 'dokter'"), 'nakes_credential_state_has_one_fail_closed_policy');
+expect(loginController.includes('Nakes_credential_policy') && passwordGate.includes('Nakes_credential_policy')
+	&& loginModel.includes('Nakes_credential_policy')
+	&& loginModel.includes('must_change_password, password_changed_at'), 'login_and_request_gate_use_effective_credential_state');
+expect(loginController.includes('if ($must_change_password === 0)') && loginController.includes('save_location'), 'credential_remediation_login_does_not_write_location');
+expect(adminController.includes('public function reset_personal_password')
+	&& adminController.includes("$this->require_post()")
+	&& adminController.includes("$policy->validate($password, $confirmation)"), 'personal_password_reset_is_post_only_and_uses_authoritative_policy');
+expect(resetPersonalMethod.includes('FOR UPDATE')
+	&& resetPersonalMethod.includes('trans_begin()')
+	&& resetPersonalMethod.includes('trans_commit()')
+	&& resetPersonalMethod.includes("'must_change_password' => 1")
+	&& !resetPersonalMethod.includes("'password_changed_at' => null"), 'personal_password_reset_is_atomic_and_preserves_prior_change_evidence');
+expect(resetPersonalMethod.includes('get_command_center_user_id')
+	&& resetPersonalMethod.includes('account_linked_to_other_active_staff')
+	&& resetPersonalMethod.includes('admin_reset_personal_nakes_password'), 'personal_password_reset_revalidates_identity_and_is_audited');
+expect(adminView.includes('Gunakan password sementara unik untuk akun ini')
+	&& adminView.includes("site_url('kelola_staff_puskesmas/reset_personal_password')")
+	&& !adminView.includes('value="password"'), 'admin_reset_ui_never_replays_temporary_password');
 expect(dashboard.includes('Nomor identitas dan data klinis tidak ditampilkan.') && !dashboard.includes('nomor_bpjs_kis'), 'puskesmas_dashboard_excludes_identity_values');
 
 process.stdout.write(`ROLE_IDENTITY_SOURCE_PASSED=${passed}\n`);

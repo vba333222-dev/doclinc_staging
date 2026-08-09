@@ -12,6 +12,8 @@ $staff_readiness_labels = array(
 	'staff_nip' => 'NIP 18 angka belum lengkap',
 	'staff_account_unlinked' => 'Akun personal belum terhubung',
 	'staff_account_invalid' => 'Relasi akun personal perlu diperiksa',
+	'staff_first_login_pending' => 'Nakes belum pernah mengganti password bawaan',
+	'staff_password_reset_pending' => 'Nakes belum mengganti password setelah reset Admin',
 	'staff_facility' => 'Puskesmas staf tidak aktif atau tidak valid',
 );
 $form_mode = isset($form_mode) ? (string) $form_mode : '';
@@ -58,6 +60,12 @@ $form_values = array(
 				<?= html_escape((string) (int) $staff_readiness_summary['attention']); ?> staf perlu ditinjau sebelum gate profil diaktifkan.
 			<?php endif; ?>
 		</div>
+		<?php if ((int) (($staff_readiness_summary['issue_counts'] ?? array())['staff_first_login_pending'] ?? 0) > 0): ?>
+			<div class="alert alert-danger shadow-sm" role="alert">
+				<strong>Password bawaan belum diganti:</strong>
+				<?= html_escape((string) (int) $staff_readiness_summary['issue_counts']['staff_first_login_pending']); ?> akun Nakes belum pernah menyelesaikan aktivasi pertama. Jangan anggap akun ini siap operasional dan jangan membagikan satu password bawaan yang sama ke banyak pengguna.
+			</div>
+		<?php endif; ?>
 		<?php if ($is_form): ?>
 			<div class="card shadow mb-4 doclinc-filter-card">
 				<div class="card-header py-3 d-flex align-items-center justify-content-between">
@@ -179,6 +187,8 @@ $form_values = array(
 								<option value="missing_sip" <?= ($filters['readiness'] ?? '') === 'missing_sip' ? 'selected' : ''; ?>>SIP belum lengkap</option>
 								<option value="missing_nip" <?= ($filters['readiness'] ?? '') === 'missing_nip' ? 'selected' : ''; ?>>NIP belum lengkap</option>
 								<option value="account" <?= ($filters['readiness'] ?? '') === 'account' ? 'selected' : ''; ?>>Masalah akun personal</option>
+								<option value="first_login" <?= ($filters['readiness'] ?? '') === 'first_login' ? 'selected' : ''; ?>>Belum pernah aktivasi</option>
+								<option value="password_reset" <?= ($filters['readiness'] ?? '') === 'password_reset' ? 'selected' : ''; ?>>Menunggu setelah reset</option>
 							</select>
 						</div>
 						<div class="col-md-3 mb-2">
@@ -227,6 +237,7 @@ $form_values = array(
 									$linked_account_status = strtolower(trim((string) ($row->akun_status ?? '')));
 									$linked_account_status_label = $account_status_labels[$linked_account_status] ?? 'Status belum tersedia';
 									$linked_account_is_active = $linked_account_status === 'aktif';
+									$linked_account_credential_state = $this->Kelola_staff_puskesmas_m->credential_state($row);
 									$puskesmas_status = $row->puskesmas_status ?? null;
 									$puskesmas_is_valid = trim($kode_pkm) !== ''
 										&& strtoupper(trim($kode_pkm)) !== 'DEFAULT'
@@ -308,6 +319,11 @@ $form_values = array(
 												<?php if (!$linked_account_is_active): ?>
 													<small class="text-danger mt-1">Akun belum dapat digunakan untuk login.</small>
 												<?php endif; ?>
+											<?php if ($linked_account_is_active && $linked_account_credential_state === Nakes_credential_policy::FIRST_LOGIN_PENDING): ?>
+												<small class="text-danger mt-1">Belum pernah mengganti password bawaan. Hanya alur aktivasi password yang boleh diakses.</small>
+											<?php elseif ($linked_account_is_active && $linked_account_credential_state === Nakes_credential_policy::ADMIN_RESET_PENDING): ?>
+												<small class="text-warning mt-1">Menunggu Nakes membuat password baru setelah reset Admin. Fitur lain tetap terkunci.</small>
+												<?php endif; ?>
 												<?php if ($is_command_center_link): ?>
 													<div class="doclinc-account-card__note is-warning mt-2"><i class="fas fa-exclamation-triangle mr-1"></i> Akun ini terlihat sebagai akun koordinator Puskesmas. Periksa ulang sebelum digunakan sebagai akun personal.</div>
 												<?php endif; ?>
@@ -336,8 +352,13 @@ $form_values = array(
 														</button>
 													</form>
 												<?php endif; ?>
-												<?php if ($linked_user_id > 0): ?>
-													<form action="<?= site_url('kelola_staff_puskesmas/unbind_account'); ?>" method="post">
+										<?php if ($linked_user_id > 0): ?>
+											<?php if ($linked_account_is_active && !$is_command_center_link): ?>
+												<button type="button" class="btn doclinc-action-btn doclinc-action-btn--warning" data-toggle="modal" data-target="#modalResetPersonalPassword<?= (int) $staff_id; ?>">
+													<i class="fas fa-key"></i> Reset password
+												</button>
+											<?php endif; ?>
+											<form action="<?= site_url('kelola_staff_puskesmas/unbind_account'); ?>" method="post">
 														<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
 														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--warning" onclick="return confirm('Lepas akun? Akun personal tetap tersimpan.');">
 															<i class="fas fa-unlink"></i> Lepas akun
@@ -360,6 +381,38 @@ $form_values = array(
 											</div>
 										</div>
 									</div>
+									<?php if ($linked_user_id > 0 && $linked_account_is_active && !$is_command_center_link): ?>
+										<?php ob_start(); ?>
+										<div class="modal fade" id="modalResetPersonalPassword<?= (int) $staff_id; ?>" tabindex="-1" role="dialog" aria-labelledby="modalResetPersonalPasswordLabel<?= (int) $staff_id; ?>" aria-hidden="true">
+											<div class="modal-dialog modal-dialog-centered" role="document">
+												<div class="modal-content border-0 shadow-sm">
+													<form action="<?= site_url('kelola_staff_puskesmas/reset_personal_password'); ?>" method="post">
+														<div class="modal-header bg-warning text-dark">
+															<h5 class="modal-title" id="modalResetPersonalPasswordLabel<?= (int) $staff_id; ?>"><i class="fas fa-key mr-2"></i>Reset password sementara</h5>
+															<button type="button" class="close" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
+														</div>
+														<div class="modal-body bg-light">
+															<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
+															<div class="alert alert-warning">Gunakan password sementara unik untuk akun ini. Password tidak ditampilkan kembali dan Nakes wajib menggantinya saat login.</div>
+															<div class="form-group">
+																<label class="text-info">Password sementara baru</label>
+																<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
+															</div>
+															<div class="form-group">
+																<label class="text-info">Konfirmasi password</label>
+																<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
+															</div>
+														</div>
+														<div class="modal-footer border-0">
+															<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
+															<button type="submit" class="btn btn-warning rounded-pill" onclick="return confirm('Reset password sementara akun ini? Semua sesi lama akan ditolak oleh gate pada request berikutnya.');">Reset password</button>
+														</div>
+													</form>
+												</div>
+											</div>
+										</div>
+										<?php $account_modals .= ob_get_clean(); ?>
+									<?php endif; ?>
 									<?php if ($linked_user_id < 1): ?>
 										<?php ob_start(); ?>
 										<div class="modal fade" id="modalBindAccount<?= (int) $staff_id; ?>" tabindex="-1" role="dialog" aria-labelledby="modalBindAccountLabel<?= (int) $staff_id; ?>" aria-hidden="true">
@@ -432,7 +485,7 @@ $form_values = array(
 																	<div class="small text-muted"><?= html_escape($profession_label); ?></div>
 																	<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? '-'); ?> (<?= html_escape($row->kode_pkm ?? '-'); ?>)</div>
 																</div>
-																		<div class="alert alert-info">Password tidak ditampilkan kembali.</div>
+														<div class="alert alert-info">Password sementara tidak ditampilkan kembali. Nakes wajib membuat password baru saat login pertama dan tidak dapat memakai fitur lain sebelum selesai.</div>
 																		<div class="row">
 																			<div class="col-md-6"><div class="form-group">
 																				<label class="text-info">Username</label>
@@ -446,11 +499,12 @@ $form_values = array(
 																<div class="row">
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Password sementara</label>
-																		<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" autocomplete="new-password" required>
+																<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
+																<small class="text-muted">Minimal 8 karakter: huruf besar, huruf kecil, angka, dan karakter khusus.</small>
 																	</div></div>
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Konfirmasi password</label>
-																		<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" autocomplete="new-password" required>
+																<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
 																	</div></div>
 																</div>
 															</div>

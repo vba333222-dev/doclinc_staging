@@ -138,6 +138,7 @@ $facility_service = new Role_prerequisite_service($facility_db, array(
 ));
 $facility_personal = $facility_service->evaluate(201, true);
 prerequisite_expect($facility_personal['allowed'] === false && in_array('facility_address', $facility_personal['managed_fields'], true), 'personal_requires_complete_assigned_facility');
+prerequisite_expect($facility_service->evaluate(202, true)['allowed'] === true, 'command_center_facility_operational_gaps_are_non_blocking');
 prerequisite_expect(count($facility_personal['missing_fields']) === count($facility_personal['missing_labels']), 'missing_field_labels_remain_positionally_aligned');
 prerequisite_expect($facility_personal['remediation_mode'] === 'managed' && $facility_personal['cta_url'] === '' && $facility_personal['cta_label'] === 'Hubungi pengelola', 'managed_facility_gap_has_no_misleading_profile_cta');
 $mixed_db = unserialize(serialize($facility_db));

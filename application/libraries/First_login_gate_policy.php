@@ -10,6 +10,7 @@ class First_login_gate_policy
 		'puskesmas_operations' => array('snapshot'),
 		'profile_media' => array('photo'),
 		'profile_requirements' => array('status'),
+		'location_address' => array('address'),
 		'chat' => array('messages', 'send', 'mark_read', 'foto', 'video'),
 		'upload' => array('foto', 'video'),
 		'notifikasi' => array('list_json', 'snapshot', 'mark_read'),

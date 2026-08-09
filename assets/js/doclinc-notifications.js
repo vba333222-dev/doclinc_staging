@@ -49,9 +49,10 @@
 		this.audioElement = null;
 		this.soundPrimed = false;
 		this.initialSnapshotReceived = false;
-		this.soundEnabled = this._readPreference();
+		// Sound is an application default, not a per-screen toggle. Browser audio
+		// still primes on the first trusted interaction as required by autoplay policy.
+		this.soundEnabled = true;
 		this.seenIds = this._readSeenIds();
-		this.soundButton = null;
 		this.pagehideHandler = null;
 		this.audioUnlockHandler = null;
 	}
@@ -61,7 +62,7 @@
 			return false;
 		}
 		if (this.client) { return true; }
-		this._installSoundControl();
+		this._writePreference();
 		this._bindAudioUnlock();
 		this.client = new this.RealtimeClient({
 			enabled: true,
@@ -124,24 +125,6 @@
 		return true;
 	};
 
-	NotificationRuntime.prototype.toggleSound = async function () {
-		if (this.soundEnabled) {
-			this.soundEnabled = false;
-			this._stopAudioElement();
-			this._writePreference();
-			this._updateSoundControl();
-			return false;
-		}
-		this.soundEnabled = true;
-		this.soundPrimed = await this._primeAudio();
-		if (!this.soundPrimed) {
-			this.soundEnabled = false;
-		}
-		this._writePreference();
-		this._updateSoundControl();
-		return this.soundEnabled;
-	};
-
 	NotificationRuntime.prototype.teardown = function () {
 		this._unbindPagehide();
 		this._unbindAudioUnlock();
@@ -170,7 +153,6 @@
 			if (self.soundEnabled && !self.soundPrimed) {
 				self._primeAudio().then(function (primed) {
 					self.soundPrimed = primed;
-					self._updateSoundControl();
 				});
 			}
 		};
@@ -201,17 +183,6 @@
 			this.lifecycleTarget.removeEventListener('pagehide', this.pagehideHandler);
 		}
 		this.pagehideHandler = null;
-	};
-
-	NotificationRuntime.prototype._readPreference = function () {
-		if (!this.storage) {
-			return true;
-		}
-		try {
-			return this.storage.getItem(PREFERENCE_KEY) !== '0';
-		} catch (error) {
-			return true;
-		}
 	};
 
 	NotificationRuntime.prototype._writePreference = function () {
@@ -361,35 +332,6 @@
 		} catch (error) {
 			return false;
 		}
-	};
-
-	NotificationRuntime.prototype._installSoundControl = function () {
-		if (!this.document || typeof this.document.createElement !== 'function') {
-			return;
-		}
-		var header = this.document.querySelector('#offcanvasNotif .offcanvas-header');
-		if (!header || this.document.getElementById('doclincNotificationSoundToggle')) {
-			return;
-		}
-		var self = this;
-		var button = this.document.createElement('button');
-		button.type = 'button';
-		button.id = 'doclincNotificationSoundToggle';
-		button.className = 'btn btn-sm btn-outline-secondary ms-auto me-2';
-		button.addEventListener('click', function () { self.toggleSound(); });
-		header.insertBefore(button, header.querySelector('.btn-close'));
-		this.soundButton = button;
-		this._updateSoundControl();
-	};
-
-	NotificationRuntime.prototype._updateSoundControl = function () {
-		if (!this.soundButton) {
-			return;
-		}
-		var active = this.soundEnabled;
-		this.soundButton.textContent = active ? 'Suara aktif' : 'Aktifkan suara';
-		this.soundButton.setAttribute('aria-label', active ? 'Nonaktifkan suara notifikasi' : 'Aktifkan suara notifikasi');
-		this.soundButton.setAttribute('aria-pressed', active ? 'true' : 'false');
 	};
 
 	function startFromDocument(root, document) {

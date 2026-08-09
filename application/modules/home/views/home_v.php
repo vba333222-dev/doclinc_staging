@@ -1180,7 +1180,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				</a>
 				<div class="text-white mb-2 dl-location-row">
 					<i class="fas fa-map-marker-alt me-2"></i><small><label for="" id="userLocationAddress">Menunggu lokasi...</label></small>
-					<a id="userLocationMapLink" class="small text-white ms-2 d-none" href="#" target="_blank" rel="noopener noreferrer">Buka peta</a>
+					<a id="userLocationMapLink" class="small text-white ms-2 d-none" href="#" target="_blank" rel="noopener noreferrer">Buka peta · © OpenStreetMap</a>
 
 					<input type="hidden" id="id_user" value="<?= $this->session->userdata('id'); ?>">
 					<input type="hidden" id="id_kabupaten" value="<?= $this->session->userdata('remark'); ?>">
@@ -2996,6 +2996,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		const locationAddressResolver = window.DoclincLocationAddress ? window.DoclincLocationAddress.create({
 			provider: mapProvider,
 			mapboxToken: mapboxPublicToken,
+			endpoint: <?= json_encode(base_url('location/address')); ?>,
 			googleMaps: window.google && window.google.maps ? window.google.maps : null,
 			fetch: window.fetch
 		}) : null;
@@ -3041,7 +3042,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				setLocationText('', '');
 
 				if (navigator.geolocation) {
-					navigator.geolocation.watchPosition(function(position) {
+					navigator.geolocation.getCurrentPosition(function(position) {
 						const newLocation = {
 							lat: position.coords.latitude,
 							lng: position.coords.longitude,
@@ -3049,7 +3050,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 						setLocationFields(newLocation);
 						getAddress(newLocation);
-					}, showError);
+					}, showError, { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 });
 				}
 				return;
 			}
@@ -3071,7 +3072,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 			// Mendapatkan lokasi pengguna
 			if (navigator.geolocation) {
-				navigator.geolocation.watchPosition(updateLocation, showError);
+				navigator.geolocation.getCurrentPosition(updateLocation, showError, { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 });
 			} else {
 				Swal.fire({
 					title: "Lokasi belum tersedia",
@@ -3813,7 +3814,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				if (submit.disabled) return;
 				submit.disabled = true;
 				feedback.textContent = 'Menyimpan foto...';
-				fetch(<?= json_encode(base_url('home/update_profile_photo')); ?>, { method: 'POST', body: new FormData(form) })
+				fetch(<?= json_encode(base_url('profile/photo/update')); ?>, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' }, credentials: 'same-origin' })
 					.then(response => response.json().then(body => ({ ok: response.ok, body })))
 					.then(result => {
 						if (!result.ok || !result.body || result.body.status !== 'success') throw new Error(result.body && result.body.message ? result.body.message : 'Foto belum dapat disimpan.');

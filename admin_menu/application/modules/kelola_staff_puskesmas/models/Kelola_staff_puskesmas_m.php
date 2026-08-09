@@ -50,9 +50,11 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			$this->db->select($this->db->field_exists('status', 'users') ? 'staff_user.status AS akun_status' : 'NULL AS akun_status', false);
 			$this->db->select($this->db->field_exists('role', 'users') ? 'staff_user.role AS akun_role' : 'NULL AS akun_role', false);
 			$this->db->select($this->db->field_exists('remark', 'users') ? 'staff_user.remark AS akun_remark' : 'NULL AS akun_remark', false);
+			$this->db->select($this->db->field_exists('must_change_password', 'users') ? 'staff_user.must_change_password AS akun_must_change_password' : 'NULL AS akun_must_change_password', false);
+			$this->db->select($this->db->field_exists('password_changed_at', 'users') ? 'staff_user.password_changed_at AS akun_password_changed_at' : 'NULL AS akun_password_changed_at', false);
 			$this->db->join('users staff_user', 'staff_user.userId = puskesmas_staff.user_id', 'left');
 		} else {
-			$this->db->select('NULL AS akun_nama, NULL AS akun_username, NULL AS akun_email, NULL AS akun_status, NULL AS akun_role, NULL AS akun_remark', FALSE);
+			$this->db->select('NULL AS akun_nama, NULL AS akun_username, NULL AS akun_email, NULL AS akun_status, NULL AS akun_role, NULL AS akun_remark, NULL AS akun_must_change_password, NULL AS akun_password_changed_at', FALSE);
 		}
 
 		$kode_pkm = isset($filters['kode_pkm']) ? trim((string) $filters['kode_pkm']) : '';
@@ -251,11 +253,29 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		$account_state = (string) ($staff->personal_account_state ?? 'invalid');
 		if ($account_state !== 'linked') {
 			$issues[] = $account_state === 'unlinked' ? 'staff_account_unlinked' : 'staff_account_invalid';
+		} else {
+			$credential_state = $this->credential_state($staff);
+			if ($credential_state === Nakes_credential_policy::FIRST_LOGIN_PENDING) {
+				$issues[] = 'staff_first_login_pending';
+			} elseif ($credential_state === Nakes_credential_policy::ADMIN_RESET_PENDING) {
+				$issues[] = 'staff_password_reset_pending';
+			}
 		}
 		if ((string) ($staff->puskesmas_status ?? '') !== 'aktif') {
 			$issues[] = 'staff_facility';
 		}
 		return $issues;
+	}
+
+	public function credential_state($staff)
+	{
+		require_once dirname(APPPATH, 2) . '/application/libraries/Nakes_credential_policy.php';
+		$policy = new Nakes_credential_policy();
+		return $policy->state(
+			(string) ($staff->akun_role ?? ''),
+			(int) ($staff->akun_must_change_password ?? 0),
+			$staff->akun_password_changed_at ?? null
+		);
 	}
 
 	public function readiness_summary(array $rows)
@@ -316,7 +336,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			return false;
 		}
 
-		foreach (array('userId', 'nama', 'email', 'username', 'password', 'role', 'status', 'remark') as $field) {
+		foreach (array('userId', 'nama', 'email', 'username', 'password', 'role', 'status', 'remark', 'must_change_password', 'password_changed_at') as $field) {
 			if (!$this->db->field_exists($field, 'users')) {
 				return false;
 			}
@@ -380,6 +400,9 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		$email = trim((string) ($account['email'] ?? ''));
 		$password = (string) ($account['plain_password'] ?? '');
 		unset($account['plain_password']);
+		require_once APPPATH . 'libraries/Password_strength_policy.php';
+		$password_policy = new Password_strength_policy();
+		$password_error = $password_policy->validate($password);
 		if ($staff_id < 1
 			|| $username === ''
 			|| strlen($username) < 3
@@ -388,7 +411,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			|| $email === ''
 			|| strlen($email) > 100
 			|| !filter_var($email, FILTER_VALIDATE_EMAIL)
-			|| strlen($password) < 8
+			|| $password_error !== null
 			|| !$this->personal_account_creation_ready()) {
 			return array('status' => 'error', 'message' => 'Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
 		}
@@ -505,6 +528,8 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 				'role' => 'dokter',
 				'status' => 'aktif',
 				'remark' => $kode_pkm,
+				'must_change_password' => 1,
+				'password_changed_at' => null,
 			);
 			if ($this->db->field_exists('created_at', 'users')) {
 				$user_row['created_at'] = $now;
@@ -551,7 +576,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			$transaction_started = false;
 			$result = array(
 				'status' => 'success',
-				'message' => 'Akun personal dibuat dan dihubungkan.',
+				'message' => 'Akun personal dibuat dan dihubungkan. Nakes wajib mengganti password sementara saat login pertama.',
 			);
 		} catch (RuntimeException $e) {
 			if ($e->getMessage() !== 'personal_account_creation_aborted') {
@@ -572,6 +597,90 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		}
 
 		return $result;
+	}
+
+	public function reset_personal_password($staff_id, $password, $updated_by)
+	{
+		$staff_id = (int) $staff_id;
+		$password = is_string($password) ? $password : '';
+		require_once APPPATH . 'libraries/Password_strength_policy.php';
+		$policy = new Password_strength_policy();
+		if ($staff_id < 1 || $policy->validate($password) !== null
+			|| !$this->personal_account_creation_ready()) {
+			return array('status' => 'error', 'message' => 'Password sementara belum dapat direset.');
+		}
+		if (!function_exists('doclinc_password_hash')) {
+			$this->load->helper('password_compat');
+		}
+		$password_hash = function_exists('doclinc_password_hash') ? doclinc_password_hash($password) : false;
+		$password = null;
+		if (!$password_hash) {
+			return array('status' => 'error', 'message' => 'Password sementara belum dapat direset.');
+		}
+
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$transaction_started = false;
+		try {
+			if (!$this->db->trans_begin()) {
+				throw new RuntimeException('transaction_failed');
+			}
+			$transaction_started = true;
+			$staff_query = $this->db->query(
+				'SELECT staff_id, user_id, kode_pkm, status FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE staff_id = ? FOR UPDATE',
+				array($staff_id)
+			);
+			$staff = $staff_query ? $staff_query->row() : null;
+			if (!$staff || (string) $staff->status !== 'aktif' || (int) $staff->user_id < 1) {
+				throw new RuntimeException('staff_not_eligible');
+			}
+
+			$user_query = $this->db->query(
+				'SELECT userId, role, status, remark, password_changed_at FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ? FOR UPDATE',
+				array((int) $staff->user_id)
+			);
+			$user = $user_query ? $user_query->row() : null;
+			$kode_pkm = trim((string) $staff->kode_pkm);
+			if (!$user || (string) $user->role !== 'dokter' || (string) $user->status !== 'aktif'
+				|| trim((string) $user->remark) !== $kode_pkm
+				|| $this->get_command_center_user_id($kode_pkm) === (int) $user->userId
+				|| $this->account_linked_to_other_active_staff((int) $user->userId, $staff_id)) {
+				throw new RuntimeException('account_not_eligible');
+			}
+
+			$update = array(
+				'password' => $password_hash,
+				'must_change_password' => 1,
+			);
+			if ($this->db->field_exists('updated_at', 'users')) {
+				$update['updated_at'] = date('Y-m-d H:i:s');
+			}
+			if ($this->db->field_exists('updated_by', 'users')) {
+				$update['updated_by'] = trim((string) $updated_by);
+			}
+			$updated = $this->db->where('userId', (int) $user->userId)->update('users', $update);
+			$password_hash = null;
+			if (!$updated || $this->db->affected_rows() !== 1 || $this->db->trans_status() === false) {
+				throw new RuntimeException('password_update_failed');
+			}
+			if (!$this->db->trans_commit()) {
+				throw new RuntimeException('commit_failed');
+			}
+			$transaction_started = false;
+			$this->log_account_audit('admin_reset_personal_nakes_password', (int) $user->userId, $staff_id);
+			return array(
+				'status' => 'success',
+				'message' => 'Password sementara direset. Nakes wajib membuat password pribadi saat login berikutnya.',
+			);
+		} catch (Throwable $e) {
+			if ($transaction_started) {
+				$this->db->trans_rollback();
+			}
+			$password_hash = null;
+			return array('status' => 'error', 'message' => 'Password sementara belum dapat direset.');
+		} finally {
+			$this->db->db_debug = $db_debug;
+		}
 	}
 
 	public function get_command_center_user_id($kode_pkm)
@@ -824,5 +933,26 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			->row();
 
 		return $user ? (int) $user->userId : null;
+	}
+
+	private function log_account_audit($action, $target_user_id, $staff_id)
+	{
+		if (!$this->db->table_exists('audit_logs')) {
+			return false;
+		}
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$result = $this->db->insert('audit_logs', array(
+			'actor_user_id' => $this->current_admin_id(),
+			'action' => $action,
+			'entity_type' => 'users',
+			'entity_id' => (int) $target_user_id,
+			'ip_address' => $this->input->ip_address(),
+			'user_agent' => substr((string) $this->input->user_agent(), 0, 255),
+			'metadata_json' => json_encode(array('staff_id' => (int) $staff_id, 'credential_state' => 'change_required')),
+			'created_at' => date('Y-m-d H:i:s'),
+		));
+		$this->db->db_debug = $db_debug;
+		return $result;
 	}
 }

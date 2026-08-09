@@ -244,8 +244,9 @@ foreach (array('home/views/home_v.php', 'home_nakes/views/home_nakes_v.php') as 
 	notification_expect(strpos($view, 'is_array($notification_realtime_bootstrap)') !== false, 'assets_conditionally_loaded_' . md5($view_path));
 }
 $browser_source = file_get_contents(dirname(__DIR__, 3) . '/assets/js/doclinc-notifications.js');
-notification_expect(strpos($browser_source, "setAttribute('aria-label'") !== false
-	&& strpos($browser_source, "setAttribute('aria-pressed'") !== false, 'sound_control_accessible_state');
+notification_expect(strpos($browser_source, 'doclincNotificationSoundToggle') === false
+	&& strpos($browser_source, 'Aktifkan suara') === false
+	&& strpos($browser_source, 'this.soundEnabled = true') !== false, 'sound_default_on_without_page_toggle');
 notification_expect(strpos($helper, "'sound_url' => \$base_path . '/assets/audio/doclinc-notification.wav'") !== false
 	&& strpos($browser_source, 'this.createAudio(this.config.sound_url)') !== false,
 	'natural_local_notification_sound_contract');

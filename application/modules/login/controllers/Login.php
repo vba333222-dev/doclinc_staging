@@ -46,7 +46,13 @@ class Login extends MX_Controller
 		$user = $auth->num_rows() > 0 ? $auth->row() : null;
 		$actor_is_allowed = $user && (string) ($user->status ?? '') === 'aktif';
 		if ($actor_is_allowed && doclinc_password_verify($password, (string) $user->password)) {
-			$must_change_password = property_exists($user, 'must_change_password') ? (int) $user->must_change_password : 0;
+			require_once APPPATH . 'libraries/Nakes_credential_policy.php';
+			$credential_policy = new Nakes_credential_policy();
+			$must_change_password = $credential_policy->requiresChange(
+				(string) $user->role,
+				property_exists($user, 'must_change_password') ? (int) $user->must_change_password : 0,
+				property_exists($user, 'password_changed_at') ? $user->password_changed_at : null
+			) ? 1 : 0;
 			if ($must_change_password === 1 && $this->config->item('first_login_password_change_enabled') !== true) {
 				$this->Login_m->log_login_event('login_restricted', $user->userId, array('reason' => 'password_change_unavailable'));
 				echo "0";
@@ -74,7 +80,9 @@ class Login extends MX_Controller
 			
 			$id = $this->session->userdata('id');
 			$username = $this->session->userdata('username');		
-			$this->Login_m->save_location($id,$username,$location, $lattitude,$longitude);
+			if ($must_change_password === 0) {
+				$this->Login_m->save_location($id,$username,$location, $lattitude,$longitude);
+			}
 			$this->Login_m->log_login_event('login_success', $user->userId, array('role' => $user->role));
 			// echo "OK";
 			echo "1";
@@ -198,12 +206,11 @@ class Login extends MX_Controller
 
 	private function password_policy_message($code)
 	{
-		if ($code === 'confirmation_mismatch') {
-			return 'Konfirmasi password tidak sama.';
-		}
-		if ($code === 'invalid_length') {
-			return 'Password harus terdiri dari 10 sampai 72 karakter.';
-		}
-		return 'Password baru belum memenuhi ketentuan keamanan DocLink.';
+		require_once APPPATH . 'libraries/Password_strength_policy.php';
+		$policy = new Password_strength_policy();
+		$message = $policy->message($code);
+		return $message === 'Password belum memenuhi ketentuan keamanan.'
+			? 'Password baru belum memenuhi ketentuan keamanan DocLink.'
+			: $message;
 	}
 }

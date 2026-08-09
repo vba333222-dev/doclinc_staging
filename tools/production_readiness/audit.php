@@ -13,6 +13,7 @@ require_once BASEPATH . 'database/DB.php';
 require_once APPPATH . 'libraries/Profile_image_storage.php';
 require_once APPPATH . 'libraries/Role_prerequisite_service.php';
 require_once APPPATH . 'libraries/Role_identity_policy.php';
+require_once APPPATH . 'libraries/Nakes_credential_policy.php';
 require_once __DIR__ . '/ProductionReadinessReport.php';
 require_once __DIR__ . '/ReadinessIdentityResolver.php';
 
@@ -35,7 +36,7 @@ function readiness_env($name, $fallback = '')
 function readiness_schema_gaps($db, $database)
 {
 	$requirements = array(
-		'users' => array('userId', 'nama', 'email', 'role', 'status', 'must_change_password', 'no_hp', 'alamat', 'tgl', 'gender', 'foto', 'remark', 'nik', 'nomor_kk', 'nomor_bpjs_kis'),
+		'users' => array('userId', 'nama', 'email', 'role', 'status', 'must_change_password', 'password_changed_at', 'no_hp', 'alamat', 'tgl', 'gender', 'foto', 'remark', 'nik', 'nomor_kk', 'nomor_bpjs_kis'),
 		'puskesmas_staff' => array('staff_id', 'kode_pkm', 'nama', 'no_hp', 'profesi', 'nomor_sip', 'nip', 'user_id', 'status'),
 		'm_puskesmas' => array('kode_pkm', 'nama_puskesmas', 'alamat', 'latitude', 'longitude', 'status'),
 	);
@@ -228,7 +229,7 @@ try {
 	$operational_state = array();
 	if (empty($schema_gaps)) {
 		$stage = 'actor_projection';
-		$actors = $db->select('userId, must_change_password')->where_in('role', array('warga', 'dokter'))->where('status', 'aktif')
+		$actors = $db->select('userId, role, must_change_password, password_changed_at')->where_in('role', array('warga', 'dokter'))->where('status', 'aktif')
 			->order_by('userId', 'ASC')->limit(10001)->get('users')->result();
 		if (count($actors) > 10000) { throw new RuntimeException('actor_result_too_large'); }
 		$resolver = new ReadinessIdentityResolver($db);
@@ -243,9 +244,28 @@ try {
 					&& $storage->allowed_mime($path) !== '';
 			},
 		));
+		$credential_policy = new Nakes_credential_policy();
 		foreach ($actors as $actor) {
 			$state = $service->evaluate((int) $actor->userId, true);
-			$state['audit_denial_reason'] = (int) $actor->must_change_password === 1
+			$credential_state = $credential_policy->state(
+				(string) $actor->role,
+				(int) $actor->must_change_password,
+				$actor->password_changed_at
+			);
+			if ($credential_policy->requiresChange($actor->role, $actor->must_change_password, $actor->password_changed_at)) {
+				$state = array(
+					'complete' => false,
+					'actor_type' => 'denied',
+					'safe_error_code' => 'actor_denied',
+					'missing_fields' => array(),
+					'schema_gaps' => array(),
+					'self_service_fields' => array(),
+					'managed_fields' => array(),
+					'remediation_mode' => 'none',
+				);
+			}
+			$state['audit_credential_state'] = $credential_state;
+			$state['audit_denial_reason'] = $credential_policy->requiresChange($actor->role, $actor->must_change_password, $actor->password_changed_at)
 				? 'password_change_required'
 				: (((string) ($state['actor_type'] ?? '') === 'denied'
 					|| (string) ($state['safe_error_code'] ?? '') === 'actor_denied') ? 'identity_invalid' : '');

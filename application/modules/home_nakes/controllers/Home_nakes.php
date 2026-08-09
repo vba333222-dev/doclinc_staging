@@ -1146,9 +1146,6 @@ class Home_nakes extends MX_Controller
 		$address = trim(strip_tags((string) $this->input->post('alamat')));
 		$address = preg_replace('/[\t ]+/u', ' ', $address);
 
-		if ($name === '' || $this->profile_text_length($name) < 2 || $this->profile_text_length($name) > 100) {
-			return ['success' => false, 'message' => 'Nama lengkap harus terdiri dari 2 sampai 100 karakter.'];
-		}
 		if (filter_var($email, FILTER_VALIDATE_EMAIL) === false || strlen($email) > 100) {
 			return ['success' => false, 'message' => 'Email belum valid.'];
 		}
@@ -1159,7 +1156,6 @@ class Home_nakes extends MX_Controller
 			return [
 				'success' => true,
 				'data' => [
-					'nama' => $name,
 					'email' => $email,
 					'no_hp' => $phone,
 				],
@@ -1167,6 +1163,9 @@ class Home_nakes extends MX_Controller
 		}
 		if ($account_type !== 'personal') {
 			return ['success' => false, 'message' => 'Identitas akun belum valid.'];
+		}
+		if ($name === '' || $this->profile_text_length($name) < 2 || $this->profile_text_length($name) > 100) {
+			return ['success' => false, 'message' => 'Nama lengkap harus terdiri dari 2 sampai 100 karakter.'];
 		}
 		$birthdate_value = DateTime::createFromFormat('!Y-m-d', $birthdate);
 		if (!$birthdate_value || $birthdate_value->format('Y-m-d') !== $birthdate || $birthdate_value > new DateTime('today')) {

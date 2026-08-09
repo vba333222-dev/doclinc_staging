@@ -36,11 +36,22 @@ $password_gate[] = array(
 	'complete' => false, 'actor_type' => 'denied', 'safe_error_code' => 'actor_denied',
 	'missing_fields' => array(), 'schema_gaps' => array(), 'remediation_mode' => 'none',
 	'self_service_fields' => array(), 'managed_fields' => array(),
-	'audit_denial_reason' => 'password_change_required',
+	'audit_denial_reason' => 'password_change_required', 'audit_credential_state' => 'first_login_pending',
 );
 $password_report = ProductionReadinessReport::compile($password_gate, array(), array('ready' => true, 'private' => true, 'mode_0700' => true, 'owner_ready' => true), $operations_ready);
 production_readiness_expect($password_report['controlled_enforcement_ready'] === true && $password_report['activation_ready'] === false, 'password_gate_allows_controlled_enforcement_only');
 production_readiness_expect($password_report['actor_password_change_required'] === 1 && $password_report['actor_identity_denied'] === 0 && $password_report['actor_profile_evaluated'] === 3, 'password_gate_denial_classified_without_profile_distortion');
+production_readiness_expect($password_report['actor_first_login_pending'] === 1 && $password_report['actor_password_reset_pending'] === 0, 'first_login_password_gate_counted_separately');
+
+$password_reset_gate = $complete;
+$password_reset_gate[] = array(
+	'complete' => false, 'actor_type' => 'denied', 'safe_error_code' => 'actor_denied',
+	'missing_fields' => array(), 'schema_gaps' => array(), 'remediation_mode' => 'none',
+	'self_service_fields' => array(), 'managed_fields' => array(),
+	'audit_denial_reason' => 'password_change_required', 'audit_credential_state' => 'admin_reset_pending',
+);
+$password_reset_report = ProductionReadinessReport::compile($password_reset_gate, array(), array('ready' => true, 'private' => true, 'mode_0700' => true, 'owner_ready' => true), $operations_ready);
+production_readiness_expect($password_reset_report['actor_password_reset_pending'] === 1 && $password_reset_report['actor_first_login_pending'] === 0, 'admin_reset_password_gate_counted_separately');
 
 $blocked = $complete;
 $blocked[] = array(

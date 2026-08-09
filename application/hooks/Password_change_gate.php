@@ -25,10 +25,11 @@ class Password_change_gate
 			$this->deny($CI, $policy, 'session_not_allowed');
 		}
 
-		$has_password_gate = $CI->db->field_exists('must_change_password', 'users');
+		$has_password_gate = $CI->db->field_exists('must_change_password', 'users')
+			&& $CI->db->field_exists('password_changed_at', 'users');
 		$select = 'userId, role, status';
 		if ($has_password_gate) {
-			$select .= ', must_change_password';
+			$select .= ', must_change_password, password_changed_at';
 		}
 		$user = $CI->db
 			->select($select)
@@ -41,7 +42,13 @@ class Password_change_gate
 			$this->deny($CI, $policy, 'session_not_allowed');
 		}
 
-		$must_change_password = $has_password_gate ? (int) $user->must_change_password : 0;
+		require_once APPPATH . 'libraries/Nakes_credential_policy.php';
+		$credential_policy = new Nakes_credential_policy();
+		$must_change_password = $has_password_gate && $credential_policy->requiresChange(
+			(string) $user->role,
+			(int) $user->must_change_password,
+			$user->password_changed_at
+		) ? 1 : 0;
 		if ((int) $CI->session->userdata('must_change_password') !== $must_change_password) {
 			$CI->session->set_userdata('must_change_password', $must_change_password);
 		}

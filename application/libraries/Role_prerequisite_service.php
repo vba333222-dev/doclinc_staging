@@ -71,10 +71,9 @@ class Role_prerequisite_service
 		$actor_type = (string) $user->role === 'warga' ? 'warga' : 'unclassified';
 		$missing = array();
 		$labels = array();
-		$this->require_text($user->nama, 'name', 'Nama lengkap', 2, $missing, $labels);
-		$this->require_email($user->email, $missing, $labels);
-
 		if ((string) $user->role === 'warga') {
+			$this->require_text($user->nama, 'name', 'Nama lengkap', 2, $missing, $labels);
+			$this->require_email($user->email, $missing, $labels);
 			$this->collect_user_schema_gaps(array('no_hp', 'alamat', 'tgl', 'gender', 'foto', 'nik', 'nomor_kk', 'nomor_bpjs_kis'), $schema_gaps);
 			$this->require_phone($user->no_hp, $missing, $labels);
 			$this->require_text($user->alamat, 'address', 'Alamat', 5, $missing, $labels);
@@ -95,17 +94,25 @@ class Role_prerequisite_service
 				return $base;
 			} else {
 				$actor_type = (string) $identity['account_type'];
-				$this->collect_user_schema_gaps(array('no_hp', 'foto'), $schema_gaps);
+				$this->collect_user_schema_gaps(array('no_hp'), $schema_gaps);
+				$this->require_email($user->email, $missing, $labels);
 				$this->require_phone($user->no_hp, $missing, $labels);
-				$this->require_photo($user->foto, $missing, $labels);
 				if ($actor_type === 'personal') {
-					$this->collect_user_schema_gaps(array('alamat', 'tgl', 'gender'), $schema_gaps);
+					$this->require_text($user->nama, 'name', 'Nama lengkap', 2, $missing, $labels);
+					$this->collect_user_schema_gaps(array('alamat', 'tgl', 'gender', 'foto'), $schema_gaps);
 					$this->require_text($user->alamat, 'address', 'Alamat', 5, $missing, $labels);
 					$this->require_birthdate($user->tgl, $missing, $labels);
 					$this->require_gender($user->gender, $missing, $labels);
+					$this->require_photo($user->foto, $missing, $labels);
 					$this->personal_requirements($identity, $missing, $labels, $schema_gaps);
+					$this->facility_requirements($identity, $missing, $labels, $schema_gaps, true);
+				} else {
+					// Command-center accounts represent a health facility, not a person.
+					// Keep the global gate limited to an active canonical facility and
+					// operational contact. Address/coordinates and roster readiness stay
+					// visible to Dinkes/Puskesmas as non-blocking managed remediation.
+					$this->facility_requirements($identity, $missing, $labels, $schema_gaps, false);
 				}
-				$this->facility_requirements($identity, $missing, $labels, $schema_gaps);
 			}
 		}
 
@@ -208,7 +215,7 @@ class Role_prerequisite_service
 		}
 	}
 
-	private function facility_requirements(array $identity, array &$missing, array &$labels, array &$schema_gaps)
+	private function facility_requirements(array $identity, array &$missing, array &$labels, array &$schema_gaps, $strict_operational = true)
 	{
 		$code = trim((string) ($identity['puskesmas_code'] ?? ''));
 		if ($code === '' || !$this->db->table_exists('m_puskesmas')) {
@@ -218,7 +225,10 @@ class Role_prerequisite_service
 			}
 			return;
 		}
-		$fields = array('kode_pkm', 'nama_puskesmas', 'alamat', 'latitude', 'longitude', 'status');
+		$fields = array('kode_pkm', 'nama_puskesmas', 'status');
+		if ($strict_operational) {
+			$fields = array_merge($fields, array('alamat', 'latitude', 'longitude'));
+		}
 		$select = array();
 		foreach ($fields as $field) {
 			if ($this->db->field_exists($field, 'm_puskesmas')) {
@@ -234,9 +244,11 @@ class Role_prerequisite_service
 			return;
 		}
 		$this->require_text($puskesmas->nama_puskesmas, 'facility_name', 'Nama Puskesmas', 3, $missing, $labels);
-		$this->require_text($puskesmas->alamat, 'facility_address', 'Alamat Puskesmas', 5, $missing, $labels);
-		$this->require_coordinate($puskesmas->latitude, 'facility_latitude', 'Lokasi Puskesmas', -90, 90, $missing, $labels);
-		$this->require_coordinate($puskesmas->longitude, 'facility_longitude', 'Lokasi Puskesmas', -180, 180, $missing, $labels);
+		if ($strict_operational) {
+			$this->require_text($puskesmas->alamat, 'facility_address', 'Alamat Puskesmas', 5, $missing, $labels);
+			$this->require_coordinate($puskesmas->latitude, 'facility_latitude', 'Lokasi Puskesmas', -90, 90, $missing, $labels);
+			$this->require_coordinate($puskesmas->longitude, 'facility_longitude', 'Lokasi Puskesmas', -180, 180, $missing, $labels);
+		}
 	}
 
 	private function resolve_identity($user_id)

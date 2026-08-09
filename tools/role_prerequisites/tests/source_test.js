@@ -53,6 +53,7 @@ const homeModel = read('application/modules/home/models/Home_m.php');
 const nakesModel = read('application/modules/home_nakes/models/Home_nakes_m.php');
 const puskesmasReadiness = read('application/libraries/Puskesmas_data_readiness.php');
 const nakesProfileForm = nakesView.slice(nakesView.indexOf('id="formEditProfile"'), nakesView.indexOf('id="offcanvasNotif"'));
+const profileCompletionView = read('application/views/profile_completion_v.php');
 
 expect(config.includes('DOCLINC_ROLE_PREREQUISITES_ENABLED') && config.includes("Doclinc_feature_flags::resolve("), 'feature_flag_is_environment_bound');
 expect(config.includes("$config['role_prerequisites_enabled']"), 'feature_flag_defaults_through_shared_resolver');
@@ -69,6 +70,11 @@ expect(prerequisiteGate.includes("role_prerequisites_enabled') !== true") && pre
 expect(prerequisiteGate.includes("array('warga', 'dokter')"), 'global_profile_gate_excludes_admin');
 expect(prerequisiteGatePolicy.includes("$class === 'profile_completion'") && prerequisiteGatePolicy.includes("$class === 'profile_requirements'") && !prerequisiteGatePolicy.includes("$class === 'home' && $method === 'index'"), 'only_remediation_routes_bypass_gate');
 expect(prerequisiteGatePolicy.includes('(int) $resource_user_id === (int) $actor_user_id'), 'blocked_actor_can_only_read_own_profile_photo');
+expect(prerequisiteGatePolicy.includes("$method === 'update_photo'") && prerequisiteGatePolicy.includes("array('warga', 'dokter')"), 'blocked_actor_can_update_own_profile_photo');
+expect(profileCompletionView.includes("in_array('photo', $missing_fields, true)") && profileCompletionView.includes("$photo_required ? 'required'"), 'missing_photo_is_required_on_completion_form');
+expect(profileCompletionView.includes("$is_command_center = $profile_account_type === 'command_center'")
+  && profileCompletionView.includes('Akun Puskesmas tidak memerlukan foto pribadi')
+  && profileCompletionView.includes("if ($is_warga || $is_personal)"), 'command_center_completion_excludes_personal_fields');
 expect(service.includes("array('warga', 'dokter')") && service.includes("status !== 'aktif'") && service.includes('must_change_password'), 'actor_state_fail_closed');
 expect(service.includes("array('personal', 'command_center')") && service.includes("$base['safe_error_code'] = 'actor_denied'"), 'canonical_nakes_identity_required_even_flag_off');
 expect(service.includes("'puskesmas_staff'") && service.includes("'nomor_sip'"), 'personal_staff_requirements');
@@ -77,7 +83,13 @@ expect(identityPolicy.includes("^[0-9]{16}$") && identityPolicy.includes("^[0-9]
 expect(identityMigration.includes('ADD COLUMN `nik`') && identityMigration.includes('ADD COLUMN `nomor_kk`') && identityMigration.includes('ADD COLUMN `nomor_bpjs_kis`') && identityMigration.includes('ADD COLUMN `nip`'), 'identity_migration_adds_only_required_nullable_columns');
 expect(identityMigration.includes('uq_users_nik') && identityMigration.includes('uq_users_nomor_bpjs_kis') && identityMigration.includes('uq_puskesmas_staff_nip'), 'identity_uniqueness_is_schema_enforced');
 expect(service.includes("'m_puskesmas'") && service.includes("'nama_puskesmas'") && service.includes("'facility_address'") && service.includes("'facility_latitude'") && service.includes("'facility_longitude'"), 'assigned_facility_requirements');
-expect(methodBody(service, 'facility_requirements').includes("array('kode_pkm', 'nama_puskesmas', 'alamat', 'latitude', 'longitude', 'status')"), 'facility_contract_matches_discovered_schema');
+expect(methodBody(service, 'facility_requirements').includes("array('kode_pkm', 'nama_puskesmas', 'status')")
+  && methodBody(service, 'facility_requirements').includes("array('alamat', 'latitude', 'longitude')")
+  && methodBody(service, 'facility_requirements').includes('if ($strict_operational)'), 'facility_contract_matches_role_specific_schema');
+expect(service.includes("$actor_type === 'personal'") && service.includes('facility_requirements($identity, $missing, $labels, $schema_gaps, false)')
+  && !methodBody(nakes, 'validated_profile_input').match(/\$account_type === 'command_center'[\s\S]{0,350}'nama'/), 'command_center_uses_facility_identity_without_personal_demographics');
+expect(nakesProfileForm.includes('Nama, alamat, dan identitas unit Puskesmas dikelola')
+  && nakesProfileForm.includes("if (!empty($nakes_is_personal))"), 'command_center_profile_form_excludes_personal_photo_and_demographics');
 expect(service.includes("$allowed = !$enforced || $complete"), 'missing_profile_compatibility_mode');
 expect(service.includes("'self_service_fields'") && service.includes("'managed_fields'") && service.includes("'remediation_mode'"), 'remediation_ownership_is_explicit');
 expect(!service.includes('$labels = array_values(array_unique($labels))'), 'missing_field_labels_preserve_positional_alignment');
@@ -121,7 +133,9 @@ expect(methodBody(homeModel, 'email_available_for_user').includes("$query !== fa
 expect(wargaView.includes('id="wargaProfileForm"') && wargaView.includes('name="email"') && wargaView.includes('name="alamat"') && !wargaView.includes('Muhammad Bani Husni'), 'warga_profile_form_uses_persisted_values');
 expect(methodBody(nakes, 'validated_profile_input').includes("$account_type === 'command_center'") && methodBody(nakes, 'updateprofile').includes('email_available_for_user'), 'nakes_profile_validation_is_identity_aware');
 expect(methodBody(nakesModel, 'update_profile').includes("array('nama', 'email', 'no_hp', 'tgl', 'gender', 'alamat', 'foto')") && methodBody(nakesModel, 'update_profile').includes("where('role', 'dokter')"), 'nakes_profile_model_has_exact_field_and_role_scope');
-expect(nakesProfileForm.includes('name="email"') && nakesProfileForm.includes('name="no_hp"') && nakesProfileForm.indexOf('name="no_hp"') < nakesProfileForm.indexOf("if (!empty($nakes_is_personal))"), 'command_center_can_remediate_shared_profile_fields');
+expect(nakesProfileForm.includes('name="email"') && nakesProfileForm.includes('name="no_hp"')
+  && nakesProfileForm.includes("? 'Email operasional' : 'Email'")
+  && nakesProfileForm.includes("? 'Nomor kontak Puskesmas' : 'Nomor HP'"), 'command_center_can_remediate_shared_profile_fields');
 expect(helper.includes("'safe_error_code'") && helper.includes("'missing_fields'") && helper.includes("'cta_url'"), 'stable_json_error_contract');
 expect(helper.includes("!empty($state['cta_url'])") && !helper.includes("base_url(isset($state['cta_url'])"), 'managed_gap_does_not_fall_back_to_profile_cta');
 expect(helper.includes("$code === 'actor_denied' ? 403") && helper.includes("$code === 'profile_schema_unavailable' ? 503"), 'http_status_matches_error_class');

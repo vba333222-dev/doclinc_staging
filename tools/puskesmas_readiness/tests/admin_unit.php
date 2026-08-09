@@ -37,10 +37,19 @@ $valid_staff = (object) array(
 	'nomor_sip' => 'SIP-001', 'nip' => '198001012010011001', 'user_id' => 12,
 	'active_user_link_count' => 1, 'akun_role' => 'dokter', 'akun_status' => 'aktif',
 	'akun_remark' => 'PKM01', 'kode_pkm' => 'PKM01', 'puskesmas_status' => 'aktif', 'status' => 'aktif',
+	'akun_must_change_password' => 0,
+	'akun_password_changed_at' => '2026-08-03 03:30:00',
 	'personal_account_state' => 'linked',
 );
 admin_readiness_expect($staff_model->personal_account_state($valid_staff, 10) === 'linked', 'canonical_personal_account_linked');
 admin_readiness_expect($staff_model->readiness_issues($valid_staff) === array(), 'valid_staff_ready');
+$password_pending_staff = clone $valid_staff;
+$password_pending_staff->akun_must_change_password = 1;
+$password_pending_staff->akun_password_changed_at = null;
+admin_readiness_expect($staff_model->readiness_issues($password_pending_staff) === array('staff_first_login_pending'), 'never_activated_password_state_requires_attention');
+$reset_pending_staff = clone $valid_staff;
+$reset_pending_staff->akun_must_change_password = 1;
+admin_readiness_expect($staff_model->readiness_issues($reset_pending_staff) === array('staff_password_reset_pending'), 'admin_reset_password_state_requires_attention');
 admin_readiness_expect($staff_model->personal_account_state($valid_staff, 12) === 'invalid', 'command_center_link_rejected');
 $duplicate_staff = clone $valid_staff;
 $duplicate_staff->active_user_link_count = 2;
@@ -55,9 +64,11 @@ $invalid_staff->personal_account_state = 'invalid';
 admin_readiness_expect($staff_model->readiness_issues($invalid_staff) === array('staff_registration_number', 'staff_nip', 'staff_account_invalid'), 'staff_issue_codes_exact');
 $inactive_staff = clone $invalid_staff;
 $inactive_staff->status = 'nonaktif';
-$staff_summary = $staff_model->readiness_summary(array($valid_staff, $invalid_staff, $inactive_staff));
-admin_readiness_expect($staff_summary['total'] === 2 && $staff_summary['ready'] === 1 && $staff_summary['attention'] === 1, 'staff_summary_counts_active_only');
+$staff_summary = $staff_model->readiness_summary(array($valid_staff, $password_pending_staff, $reset_pending_staff, $invalid_staff, $inactive_staff));
+admin_readiness_expect($staff_summary['total'] === 4 && $staff_summary['ready'] === 1 && $staff_summary['attention'] === 3, 'staff_summary_counts_active_only');
 admin_readiness_expect(($staff_summary['issue_counts']['staff_nip'] ?? 0) === 1, 'staff_summary_issue_count_exact');
+admin_readiness_expect(($staff_summary['issue_counts']['staff_first_login_pending'] ?? 0) === 1, 'first_login_issue_count_exact');
+admin_readiness_expect(($staff_summary['issue_counts']['staff_password_reset_pending'] ?? 0) === 1, 'password_reset_issue_count_exact');
 
 echo "ADMIN_DATA_READINESS_UNIT_PASSED={$passed}\n";
 echo "ADMIN_DATA_READINESS_UNIT_FAILED={$failed}\n";

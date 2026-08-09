@@ -1,10 +1,26 @@
 <?php
+require_once dirname(APPPATH, 2) . '/application/libraries/Nakes_credential_policy.php';
+$credential_policy = new Nakes_credential_policy();
 $puskesmas_options = isset($puskesmas_options) ? $puskesmas_options : array();
 $puskesmas_names = array();
 foreach ($puskesmas_options as $puskesmas) {
 	$puskesmas_names[(string) $puskesmas->kode_pkm] = $puskesmas->nama_puskesmas;
 }
 $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array();
+$credential_counts = array('first_login_pending' => 0, 'admin_reset_pending' => 0, 'active' => 0);
+foreach ($account_rows as $account_row) {
+	if ((string) ($account_row->status ?? '') !== 'aktif') {
+		continue;
+	}
+	$state = $credential_policy->state(
+		(string) ($account_row->role ?? ''),
+		(int) ($account_row->must_change_password ?? 0),
+		$account_row->password_changed_at ?? null
+	);
+	if (array_key_exists($state, $credential_counts)) {
+		$credential_counts[$state]++;
+	}
+}
 ?>
 <div class="doclinc-admin-page doclinc-akun-page">
 	<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
@@ -12,6 +28,12 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 	</div>
 
 	<div class="container-fluid">
+		<?php if ($credential_counts['first_login_pending'] > 0): ?>
+			<div class="alert alert-danger shadow-sm" role="alert">
+				<strong>Akun Puskesmas belum diaktivasi:</strong>
+				<?= html_escape((string) $credential_counts['first_login_pending']); ?> akun aktif belum pernah mengganti password bawaan. Akses operasional tetap dikunci sampai pengelola membuat password pribadinya.
+			</div>
+		<?php endif; ?>
 		<div class="card shadow mb-4 doclinc-table-card doclinc-account-list-card">
 			<div class="card-header py-3 d-flex align-items-center justify-content-between">
 				<div>
@@ -45,6 +67,11 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 							$puskesmas_status = $data->puskesmas_status ?? '';
 							$account_status = strtolower(trim((string) ($data->status ?? '')));
 							$is_active = $account_status === 'aktif';
+							$credential_state = $credential_policy->state(
+								(string) ($data->role ?? ''),
+								(int) ($data->must_change_password ?? 0),
+								$data->password_changed_at ?? null
+							);
 							$account_status_labels = array('aktif' => 'Aktif', 'valid' => 'Aktif', 'nonaktif' => 'Nonaktif', 'inactive' => 'Nonaktif');
 							$account_status_label = $account_status_labels[$account_status] ?? 'Status belum tersedia';
 							if ($kode_pkm !== '' && $nama_pkm !== '' && $puskesmas_status !== 'nonaktif') {
@@ -77,6 +104,11 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 									<div class="doclinc-account-card__note <?= $relationship_note === 'Puskesmas nonaktif' ? 'is-warning' : ($relationship_note === 'Belum terhubung ke Puskesmas aktif' ? 'is-muted' : ''); ?>">
 										<?= html_escape($relationship_note); ?>
 									</div>
+									<?php if ($is_active && $credential_state === Nakes_credential_policy::FIRST_LOGIN_PENDING): ?>
+										<div class="doclinc-account-card__note is-warning mt-2">Belum pernah mengganti password bawaan. Hanya halaman aktivasi password yang dapat diakses.</div>
+									<?php elseif ($is_active && $credential_state === Nakes_credential_policy::ADMIN_RESET_PENDING): ?>
+										<div class="doclinc-account-card__note is-warning mt-2">Password di-reset Admin. Menunggu pengelola Puskesmas membuat password baru.</div>
+									<?php endif; ?>
 								</div>
 
 								<div class="doclinc-account-card__footer">
@@ -165,14 +197,14 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 														<option value="nonaktif" <?= ($data->status ?? '') === 'nonaktif' ? 'selected' : ''; ?>>Nonaktif</option>
 													</select>
 												</div>
-												<div class="form-group">
-													<label class="text-info"><i class="fas fa-lock mr-1"></i> Password Baru</label>
-													<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" autocomplete="new-password">
-													<small class="text-muted">Biarkan kosong jika tidak ingin mengganti password.</small>
-												</div>
-												<div class="form-group">
-													<label class="text-info"><i class="fas fa-lock mr-1"></i> Konfirmasi Password Baru</label>
-													<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" autocomplete="new-password">
+											<div class="form-group">
+												<label class="text-info"><i class="fas fa-lock mr-1"></i> Password Baru</label>
+												<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password">
+												<small class="text-muted">Biarkan kosong jika tidak ingin mereset. Jika diisi, gunakan minimal 8 karakter dengan huruf besar, huruf kecil, angka, dan karakter khusus. Pengguna wajib menggantinya saat login berikutnya.</small>
+											</div>
+											<div class="form-group">
+												<label class="text-info"><i class="fas fa-lock mr-1"></i> Konfirmasi Password Baru</label>
+												<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password">
 												</div>
 											</div>
 											<div class="modal-footer border-0 px-4 pb-4">
@@ -240,13 +272,14 @@ $account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-lock mr-1"></i> Password</label>
-								<input type="password" class="form-control rounded-pill border-success" name="password" minlength="8" required>
+								<input type="password" class="form-control rounded-pill border-success" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
+								<small class="text-muted">Minimal 8 karakter: huruf besar, huruf kecil, angka, dan karakter khusus.</small>
 							</div>
 						</div>
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-lock mr-1"></i> Konfirmasi Password</label>
-								<input type="password" class="form-control rounded-pill border-success" name="confirm_password" minlength="8" required>
+								<input type="password" class="form-control rounded-pill border-success" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
 							</div>
 						</div>
 					</div>

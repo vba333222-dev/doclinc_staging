@@ -130,6 +130,12 @@ try {
 	$identity = array('username' => 'test-login', 'email' => 'test-login@staging.doclinc.local', 'no_hp' => $e164Phone);
 	$current = password_hash($localPhone, PASSWORD_DEFAULT);
 	test_expect($policy->validate($acceptablePassword, $acceptablePassword, $identity, $current) === null, 'password_valid');
+	test_expect($policy->validate('Abcdef1!', 'Abcdef1!', $identity, $current) === null, 'password_minimum_eight');
+	test_expect($policy->validate('abcdef1!', 'abcdef1!', $identity, $current) === 'uppercase_required', 'password_requires_uppercase');
+	test_expect($policy->validate('ABCDEF1!', 'ABCDEF1!', $identity, $current) === 'lowercase_required', 'password_requires_lowercase');
+	test_expect($policy->validate('Abcdefg!', 'Abcdefg!', $identity, $current) === 'number_required', 'password_requires_number');
+	test_expect($policy->validate('Abcdef12', 'Abcdef12', $identity, $current) === 'special_required', 'password_requires_special');
+	test_expect($policy->validate('Abc 12!!', 'Abc 12!!', $identity, $current) === 'whitespace_not_allowed', 'password_rejects_whitespace');
 	test_expect($policy->validate($localPhone, $localPhone, $identity, $current) !== null, 'local_phone_reuse');
 	test_expect($policy->validate($e164Phone, $e164Phone, $identity, $current) !== null, 'e164_reuse');
 	test_expect($policy->validate('test-login', 'test-login', $identity, $current) !== null, 'username_reuse');

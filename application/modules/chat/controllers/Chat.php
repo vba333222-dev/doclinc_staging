@@ -35,12 +35,14 @@ class Chat extends MX_Controller
 			return;
 		}
 		$current_role = doclinc_current_user_role();
+		$is_command_center = doclinc_chat_actor_is_command_center();
 		$this->load->view('thread_v', array(
 			'request' => $request,
 			'request_id' => $request_id,
 			'can_send' => doclinc_can_send_chat($request_id),
 			'current_user_id' => doclinc_current_user_id(),
 			'current_role' => $current_role,
+			'is_command_center' => $is_command_center,
 			'back_url' => doclinc_request_return_url(
 				$current_role,
 				isset($request->request_status) ? $request->request_status : ''
@@ -90,9 +92,14 @@ class Chat extends MX_Controller
 		$user_id = (int) $this->session->userdata('id');
 		if ($request_id < 1 || !doclinc_can_send_chat($request_id, $user_id)) {
 			doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'chat_send'));
+			$read_only = doclinc_chat_actor_is_command_center($user_id);
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(array('status' => 'error', 'message' => 'Anda tidak memiliki akses.')));
+				->set_output(json_encode(array(
+					'status' => 'error',
+					'safe_error_code' => $read_only ? 'chat_read_only' : 'actor_denied',
+					'message' => $read_only ? 'Akun Puskesmas hanya dapat membaca percakapan.' : 'Anda tidak memiliki akses.',
+				)));
 			return;
 		}
 
@@ -227,9 +234,14 @@ class Chat extends MX_Controller
 		$request_id = (int) $this->input->post('request_id');
 		if ($request_id < 1 || !doclinc_can_send_chat($request_id)) {
 			doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'chat_upload'));
+			$read_only = doclinc_chat_actor_is_command_center();
 			$this->output
 				->set_status_header(403)
-				->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
+				->set_output(json_encode([
+					'status' => 'error',
+					'safe_error_code' => $read_only ? 'chat_read_only' : 'actor_denied',
+					'message' => $read_only ? 'Akun Puskesmas hanya dapat membaca percakapan.' : 'Anda tidak memiliki akses.',
+				]));
 			return false;
 		}
 
