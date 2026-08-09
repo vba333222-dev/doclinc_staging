@@ -78,10 +78,13 @@ expect(adminModel.includes('staff_user.must_change_password AS akun_must_change_
 	&& adminModel.includes('staff_user.password_changed_at AS akun_password_changed_at')
 	&& adminModel.includes("'staff_first_login_pending'")
 	&& adminModel.includes("'staff_password_reset_pending'")
-	&& adminView.includes('Belum pernah mengganti password bawaan'), 'admin_queue_separates_first_activation_and_reset_waiting_states');
+	&& adminView.includes('Password bawaan belum pernah diganti.')
+	&& adminView.includes('Nakes belum membuat password baru setelah reset Admin.')
+	&& !adminView.includes('Hanya alur aktivasi password yang boleh diakses')
+	&& !adminView.includes('Fitur lain tetap terkunci'), 'admin_queue_separates_first_activation_and_reset_waiting_states');
 expect(adminController.includes("'readiness' =>") && adminController.includes('staff_matches_readiness_filter') && adminController.includes("'missing_sip'") && adminController.includes("'sip_expiring'") && adminController.includes("'sip_expired'"), 'admin_staff_queue_has_bounded_server_side_filters');
 expect(adminController.includes("$filter !== '' && (string) ($staff->status ?? '') !== 'aktif'"), 'inactive_staff_excluded_from_readiness_filter');
-expect(adminView.includes('staffFilterReadiness') && adminView.includes('Kesiapan staf aktif') && adminView.includes('Relasi akun personal perlu diperiksa'), 'admin_staff_view_exposes_actionable_readiness_without_raw_identity_export');
+expect(adminView.includes('staffFilterReadiness') && adminView.includes('Kelengkapan data staf aktif') && adminView.includes('Relasi akun personal perlu diperiksa'), 'admin_staff_view_exposes_actionable_readiness_without_raw_identity_export');
 expect(adminView.includes('Kosongkan bila staf bukan ASN/tidak memerlukan NIP. Jangan membuat nomor pengganti.'), 'admin_staff_form_forbids_fabricated_nip');
 expect(adminView.includes('Data staf, gelar, SIP, masa berlaku SIP, status, dan hubungan akun hanya dikelola Administrator Dinas Kesehatan.'), 'admin_ownership_is_explicit');
 expect(adminModel.includes("'must_change_password' => 1") && adminModel.includes("'password_changed_at' => null")
@@ -146,7 +149,7 @@ expect(resetPersonalMethod.includes('get_command_center_user_id')
 expect(adminView.includes('Gunakan password sementara unik untuk akun ini')
 	&& adminView.includes("site_url('kelola_staff_puskesmas/reset_personal_password')")
 	&& !adminView.includes('value="password"'), 'admin_reset_ui_never_replays_temporary_password');
-expect(dashboard.includes('Nomor identitas dan data klinis tidak ditampilkan.') && !dashboard.includes('nomor_bpjs_kis'), 'puskesmas_dashboard_excludes_identity_values');
+expect(!dashboard.includes('nomor_bpjs_kis') && !dashboard.includes('nomor_kk') && !dashboard.includes("['nik']"), 'puskesmas_dashboard_excludes_identity_values');
 
 process.stdout.write(`ROLE_IDENTITY_SOURCE_PASSED=${passed}\n`);
 process.stdout.write(`ROLE_IDENTITY_SOURCE_FAILED=${failed}\n`);

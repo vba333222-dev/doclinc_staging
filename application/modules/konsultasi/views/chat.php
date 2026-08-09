@@ -257,6 +257,7 @@ $chat_back_url = !empty($legacy_superapp_url) ? rtrim($legacy_superapp_url, '/')
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-browser-notification.js')); ?>"></script>
 
 	<?php if ($firebase_enabled) : ?>
 		<script src="https://www.gstatic.com/firebasejs/8.6.1/firebase.js"></script>
@@ -281,10 +282,6 @@ $chat_back_url = !empty($legacy_superapp_url) ? rtrim($legacy_superapp_url, '/')
 		}
 
 		document.addEventListener("DOMContentLoaded", () => {
-			if ("Notification" in window && Notification.permission !== "granted") {
-				Notification.requestPermission();
-			}
-
 			if (!getFirebaseDatabase()) {
 				const chatBox = document.getElementById("chat-box");
 				if (chatBox) {
@@ -367,21 +364,8 @@ $chat_back_url = !empty($legacy_superapp_url) ? rtrim($legacy_superapp_url, '/')
 		}
 
 		function showNotification(message) {
-
-			if (!("Notification" in window)) {
-			} else if (Notification.permission === "granted") {
-				const notification = new Notification("New Message", {
-					body: message
-				});
-			} else if (Notification.permission !== "denied") {
-				Notification.requestPermission().then((permission) => {
-					if (permission === "granted") {
-						const notification = new Notification("New Message", {
-							body: message
-						});
-					}
-				});
-			} else {
+			if (window.DoclincBrowserNotification) {
+				window.DoclincBrowserNotification.showIfGranted("Pesan baru", { body: message });
 			}
 		}
 

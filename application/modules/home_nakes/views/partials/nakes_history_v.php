@@ -89,13 +89,13 @@ $staff_assignment_error = $this->session->flashdata('staff_assignment_error');
 $history_event_label = static function ($event) {
 	$event_type = isset($event->event_type) ? (string) $event->event_type : '';
 	if ($event_type === 'pic_assigned') {
-		return 'PIC ditetapkan';
+		return 'Penanggung jawab ditetapkan';
 	}
 	if ($event_type === 'pic_changed') {
-		return 'PIC diganti';
+		return 'Penanggung jawab diganti';
 	}
 	if ($event_type === 'pic_cleared') {
-		return 'PIC dilepas';
+		return 'Penanggung jawab dihapus';
 	}
 	$event_labels = array(
 		'request_created' => 'Menunggu konfirmasi Puskesmas',
@@ -232,10 +232,10 @@ $history_event_time = static function ($event) {
 											</div>
 											<?php if ($can_coordinate_staff) : ?>
 											<div class="nk-action-panel nk-action-panel--pic nk-card-section" data-pic-panel data-request-id="<?= html_escape((int) $x->request_id); ?>">
-												<div class="nk-action-panel__title">PIC</div>
+												<div class="nk-action-panel__title">Penanggung jawab layanan</div>
 												<div class="nk-action-panel__body">
 													<div class="nk-pic-current">
-														<span>Status PIC</span>
+														<span>Status penugasan</span>
 														<strong data-pic-name>
 															<?php if ($pic_assignment) : ?>
 																<?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_profesi) ? ' · ' . html_escape($pic_assignment->staff_profesi) : ''; ?>
@@ -246,7 +246,7 @@ $history_event_time = static function ($event) {
 														<small data-pic-contact <?= !$pic_assignment || empty($pic_assignment->staff_no_hp) ? 'hidden' : ''; ?>><?= $pic_assignment && !empty($pic_assignment->staff_no_hp) ? html_escape($pic_assignment->staff_no_hp) : ''; ?></small>
 													</div>
 													<?php if (!$staff_assignment_ready) : ?>
-														<p class="nk-pic-muted">Fitur PIC belum tersedia.</p>
+														<p class="nk-pic-muted">Pengaturan penanggung jawab belum tersedia.</p>
 													<?php elseif (empty($puskesmas_staff_options)) : ?>
 														<p class="nk-pic-muted">Belum ada staf aktif.</p>
 													<?php else : ?>
@@ -260,14 +260,14 @@ $history_event_time = static function ($event) {
 																	</option>
 																<?php endforeach; ?>
 															</select>
-															<input type="text" name="note" class="form-control form-control-sm" maxlength="255" placeholder="Catatan opsional">
-															<div class="nk-pic-actions">
-																<button type="submit" class="btn btn-outline-success btn-sm rounded-pill" data-pic-submit><?= $pic_assignment ? 'Ganti PIC' : 'Tetapkan PIC'; ?></button>
+														<input type="text" name="note" class="form-control form-control-sm" maxlength="255" placeholder="Catatan opsional">
+														<div class="nk-pic-actions">
+															<button type="submit" class="btn btn-outline-success btn-sm rounded-pill" data-pic-submit><?= $pic_assignment ? 'Ganti penanggung jawab' : 'Tetapkan penanggung jawab'; ?></button>
 															</div>
 														</form>
-														<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form" <?= $pic_assignment ? '' : 'hidden'; ?>>
-															<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
-															<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Lepas PIC</button>
+													<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form" <?= $pic_assignment ? '' : 'hidden'; ?>>
+														<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
+														<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Hapus penugasan</button>
 														</form>
 														<div class="nk-pic-native-feedback" data-pic-feedback role="status" aria-live="polite" hidden></div>
 													<?php endif; ?>
@@ -308,9 +308,9 @@ $history_event_time = static function ($event) {
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="en_route" <?= $visit_next_status[$visit_status] === 'en_route' ? '' : 'disabled'; ?>>Mulai perjalanan</button>
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived" <?= $visit_next_status[$visit_status] === 'arrived' ? '' : 'disabled'; ?>>Tiba di lokasi</button>
 														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="in_service" <?= $visit_next_status[$visit_status] === 'in_service' ? '' : 'disabled'; ?>>Mulai penanganan</button>
-														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="completed" <?= $visit_next_status[$visit_status] === 'completed' ? '' : 'disabled'; ?>>Selesaikan kunjungan</button>
-													</div><?php else : ?>
-														<div class="small text-muted">Status diperbarui oleh PIC. Puskesmas hanya memonitor perjalanan.</div>
+													<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="completed" <?= $visit_next_status[$visit_status] === 'completed' ? '' : 'disabled'; ?>>Selesaikan kunjungan</button>
+												</div><?php else : ?>
+													<div class="small text-muted">Status perjalanan diperbarui oleh petugas. Puskesmas dapat memantau perjalanannya.</div>
 													<?php endif; ?>
 												</div>
 												<div class="small mt-2 visit-workflow-message" data-visit-workflow-message="<?= html_escape((int) $x->request_id); ?>"></div>
@@ -414,9 +414,9 @@ $history_event_time = static function ($event) {
 												<?php endif; ?>
 												<?php if ($puskesmas !== '') : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Puskesmas</span><strong class="nk-info-value"><?= doclinc_history_safe_text($puskesmas); ?></strong></div>
-												<?php endif; ?>
-												<?php if ($can_coordinate_staff && $pic_assignment) : ?>
-													<div class="nk-info-row"><span class="nk-info-label">PIC</span><strong class="nk-info-value"><?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_profesi) ? ' · ' . html_escape($pic_assignment->staff_profesi) : ''; ?><?= !empty($pic_assignment->staff_no_hp) ? ' · ' . html_escape($pic_assignment->staff_no_hp) : ''; ?></strong></div>
+											<?php endif; ?>
+											<?php if ($can_coordinate_staff && $pic_assignment) : ?>
+													<div class="nk-info-row"><span class="nk-info-label">Penanggung jawab layanan</span><strong class="nk-info-value"><?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_profesi) ? ' · ' . html_escape($pic_assignment->staff_profesi) : ''; ?><?= !empty($pic_assignment->staff_no_hp) ? ' · ' . html_escape($pic_assignment->staff_no_hp) : ''; ?></strong></div>
 												<?php endif; ?>
 												<?php if ($completed_preview !== '') : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Hasil</span><strong class="nk-info-value"><?= html_escape($completed_preview); ?></strong></div>

@@ -12,13 +12,13 @@
 		$primary_event_label = static function ($event) {
 			$event_type = isset($event->event_type) ? (string) $event->event_type : '';
 			if ($event_type === 'pic_assigned') {
-				return 'PIC ditetapkan';
+				return 'Penanggung jawab ditetapkan';
 			}
 			if ($event_type === 'pic_changed') {
-				return 'PIC diganti';
+				return 'Penanggung jawab diganti';
 			}
 			if ($event_type === 'pic_cleared') {
-				return 'PIC dilepas';
+				return 'Penanggung jawab dihapus';
 			}
 			$event_labels = array(
 				'request_created' => 'Menunggu konfirmasi Puskesmas',
@@ -45,7 +45,7 @@
 		</div>
 		<?php if (!empty($can_coordinate_staff)) : ?>
 		<div class="nk-pic-inline" data-pic-summary data-request-id="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
-			<span>PIC</span>
+			<span>Penanggung jawab layanan</span>
 			<strong data-pic-name>
 				<?php if ($primary_pic_assignment) : ?>
 					<?= html_escape($primary_pic_assignment->staff_nama); ?><?= !empty($primary_pic_assignment->staff_profesi) ? ' · ' . html_escape($primary_pic_assignment->staff_profesi) : ''; ?>
@@ -55,10 +55,10 @@
 			</strong>
 		</div>
 		<div class="nk-action-panel nk-action-panel--pic nk-card-section nk-pic-dashboard-panel" data-pic-panel data-request-id="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
-			<div class="nk-action-panel__title">PIC</div>
+			<div class="nk-action-panel__title">Penanggung jawab layanan</div>
 			<div class="nk-action-panel__body">
 				<?php if (!$primary_staff_assignment_ready) : ?>
-					<p class="nk-pic-muted">Fitur PIC belum tersedia.</p>
+					<p class="nk-pic-muted">Pengaturan penanggung jawab belum tersedia.</p>
 				<?php elseif (empty($primary_staff_options)) : ?>
 					<p class="nk-pic-muted">Belum ada staf aktif.</p>
 				<?php else : ?>
@@ -74,12 +74,12 @@
 						</select>
 						<input type="text" name="note" class="form-control form-control-sm" maxlength="255" placeholder="Catatan opsional">
 						<div class="nk-pic-actions">
-							<button type="submit" class="btn btn-outline-success btn-sm rounded-pill" data-pic-submit><?= $primary_pic_assignment ? 'Ganti PIC' : 'Tetapkan PIC'; ?></button>
+							<button type="submit" class="btn btn-outline-success btn-sm rounded-pill" data-pic-submit><?= $primary_pic_assignment ? 'Ganti penanggung jawab' : 'Tetapkan penanggung jawab'; ?></button>
 						</div>
 					</form>
 					<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form" <?= $primary_pic_assignment ? '' : 'hidden'; ?>>
 						<input type="hidden" name="request_id" value="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
-						<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Lepas PIC</button>
+						<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Hapus penugasan</button>
 					</form>
 					<div class="nk-pic-native-feedback" data-pic-feedback role="status" aria-live="polite" hidden></div>
 				<?php endif; ?>

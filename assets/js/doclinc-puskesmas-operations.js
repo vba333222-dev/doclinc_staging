@@ -98,7 +98,7 @@
         var metrics = element(documentRef, 'div', 'dl-operations-summary');
         [
             ['Menunggu diterima', summary.pending_requests],
-            ['Tanpa PIC', summary.unassigned_requests],
+			['Belum ada penanggung jawab', summary.unassigned_requests],
             ['Nakes siap', summary.available_staff],
             ['Tugas berjalan', summary.accepted_requests]
         ].forEach(function(item) {
@@ -132,13 +132,13 @@
         var exceptionSection = section(documentRef, 'Perlu perhatian', String(data.exceptions.length) + ' item operasional');
         var exceptionList = element(documentRef, 'div', 'dl-operations-exceptions');
         if (!data.exceptions.length) {
-            exceptionList.appendChild(element(documentRef, 'div', 'dl-operations-empty', 'Tidak ada konflik assignment atau permintaan tanpa PIC.'));
+			exceptionList.appendChild(element(documentRef, 'div', 'dl-operations-empty', 'Tidak ada penugasan yang perlu diperiksa.'));
         } else {
             data.exceptions.forEach(function(row) {
                 var item = element(documentRef, 'div', 'dl-operations-exception-item');
                 item.setAttribute('data-request-id', String(row.request_id || ''));
                 var copy = element(documentRef, 'div', 'dl-operations-exception-copy');
-                var title = row.type === 'ambiguous_assignment' ? 'Assignment perlu diperiksa' : 'PIC belum ditentukan';
+				var title = row.type === 'ambiguous_assignment' ? 'Penugasan perlu diperiksa' : 'Penanggung jawab belum ditentukan';
                 copy.appendChild(element(documentRef, 'strong', '', title + ' · Permintaan #' + String(row.request_id || '')));
                 copy.appendChild(element(documentRef, 'span', '', String(row.visit_status_label || 'Belum dimulai')));
                 item.appendChild(copy);

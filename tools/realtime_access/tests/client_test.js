@@ -1,6 +1,8 @@
 'use strict';
 
 const assert = require('assert');
+const fs = require('fs');
+const vm = require('vm');
 const RealtimeClient = require('../../../assets/js/doclinc-realtime-client.js');
 
 class MockSubscription {
@@ -61,6 +63,55 @@ async function flush() {
 	let passed = 0;
 	const check = (condition, message) => { assert.ok(condition, message); passed += 1; };
 
+	const nativeTimers = new Map();
+	let nativeTimerId = 0;
+	let nativeSetReceiverCount = 0;
+	let nativeClearReceiverCount = 0;
+	const browserWindow = {
+		doclincWindowReceiver: true,
+		setTimeout(callback, delay) {
+			assert.strictEqual(this.doclincWindowReceiver, true, 'native setTimeout receiver must be Window');
+			nativeSetReceiverCount += 1;
+			nativeTimerId += 1;
+			nativeTimers.set(nativeTimerId, { callback, delay });
+			return nativeTimerId;
+		},
+		clearTimeout(id) {
+			assert.strictEqual(this.doclincWindowReceiver, true, 'native clearTimeout receiver must be Window');
+			nativeClearReceiverCount += 1;
+			nativeTimers.delete(id);
+		}
+	};
+	browserWindow.self = browserWindow;
+	browserWindow.globalThis = browserWindow;
+	vm.runInNewContext(
+		fs.readFileSync(require.resolve('../../../assets/js/doclinc-realtime-client.js'), 'utf8'),
+		browserWindow,
+		{ filename: 'doclinc-realtime-client.js' }
+	);
+	const BrowserRealtimeClient = browserWindow.DoclincRealtimeClient;
+	const browserClient = new BrowserRealtimeClient({
+		enabled: true,
+		websocketUrl: 'wss://staging.example.invalid/connection/websocket',
+		connectionTokenUrl: '/realtime/connection-token',
+		subscriptionTokenUrl: '/realtime/subscription-token',
+		fetch: async () => response(200, { success: true, data: { token: 'token' } }),
+		Centrifuge: MockCentrifuge
+	});
+	browserClient.subscribe('user:909', { snapshotUrl: '/snapshot/user', pollIntervalMs: 5000 });
+	let browserStartResult = false;
+	let browserStartError = null;
+	try { browserStartResult = browserClient.start(); } catch (error) { browserStartError = error; }
+	check(browserStartError === null && browserStartResult === true && nativeSetReceiverCount === 1,
+		'native receiver-sensitive timer does not escape start');
+	const browserSdk = MockCentrifuge.instances[MockCentrifuge.instances.length - 1];
+	browserSdk.emit('connected', {});
+	check(nativeClearReceiverCount === 1 && nativeTimers.size === 0, 'connected state clears native timer with Window receiver');
+	browserSdk.emit('disconnected', {});
+	check(nativeSetReceiverCount === 2 && nativeTimers.size === 1, 'disconnected state starts native polling');
+	browserClient.teardown();
+	check(nativeClearReceiverCount === 2 && nativeTimers.size === 0, 'teardown clears native polling timer with Window receiver');
+
 	let disabledFetches = 0;
 	const disabled = new RealtimeClient({
 		enabled: false,
@@ -97,6 +148,7 @@ async function flush() {
 		onSnapshot: (data, context) => snapshots.push({ data, context })
 	});
 	check(client.start() === true, 'enabled client starts');
+	check(timerId === 1 && timers.size === 1, 'injected fake timers remain supported');
 	const sdk = MockCentrifuge.instances[MockCentrifuge.instances.length - 1];
 	check(sdk.url === 'wss://staging.example.invalid/connection/websocket', 'websocket URL passed exactly');
 	check(sdk.options.minReconnectDelay === 500 && sdk.options.maxReconnectDelay === 10000, 'bounded SDK reconnect configured');

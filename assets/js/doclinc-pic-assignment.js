@@ -83,7 +83,7 @@
                 Array.prototype.slice.call(rootNode.querySelectorAll ? rootNode.querySelectorAll('.nk-pic-form select[name="staff_id"]') : [])
                     .forEach(function (select) { select.value = selectedStaffId ? String(selectedStaffId) : ''; });
                 Array.prototype.slice.call(rootNode.querySelectorAll ? rootNode.querySelectorAll('[data-pic-submit]') : [])
-                    .forEach(function (button) { button.textContent = selectedStaffId ? 'Ganti PIC' : 'Tetapkan PIC'; });
+					.forEach(function (button) { button.textContent = selectedStaffId ? 'Ganti penanggung jawab' : 'Tetapkan penanggung jawab'; });
                 Array.prototype.slice.call(rootNode.querySelectorAll ? rootNode.querySelectorAll('.nk-pic-clear-form') : [])
                     .forEach(function (form) { form.hidden = !selectedStaffId; });
                 if (selectedStaffId) {
@@ -128,7 +128,7 @@
             var restore = lockRequest(requestId);
             var abortController = typeof AbortController === 'function' ? new AbortController() : null;
             inFlight.set(requestId, { restore: restore, abortController: abortController });
-            setFeedback(requestId, form.classList.contains('nk-pic-clear-form') ? 'Melepas PIC...' : 'Memperbarui PIC...', false);
+			setFeedback(requestId, form.classList.contains('nk-pic-clear-form') ? 'Menghapus penugasan...' : 'Memperbarui penanggung jawab...', false);
             try {
                 var response = await fetchImpl(form.action, {
                     method: 'POST',
@@ -154,15 +154,15 @@
                 if (!response.ok || !validBody || data.status !== 'success') {
                     var message = validBody && typeof data.message === 'string' && data.message.trim()
                         ? data.message.trim()
-                        : 'PIC belum dapat diperbarui. Coba lagi.';
+						: 'Penanggung jawab belum dapat diperbarui. Coba lagi.';
                     throw new Error(message);
                 }
                 updateState(requestId, data.assignment || null);
-                setFeedback(requestId, typeof data.message === 'string' ? data.message : 'PIC diperbarui.', false);
+				setFeedback(requestId, typeof data.message === 'string' ? data.message : 'Penanggung jawab diperbarui.', false);
                 return true;
             } catch (error) {
                 if (!released && (!error || error.name !== 'AbortError')) {
-                    setFeedback(requestId, error && error.message ? error.message : 'PIC belum dapat diperbarui. Coba lagi.', true);
+					setFeedback(requestId, error && error.message ? error.message : 'Penanggung jawab belum dapat diperbarui. Coba lagi.', true);
                 }
                 return false;
             } finally {

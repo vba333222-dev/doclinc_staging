@@ -1,10 +1,14 @@
 # Role identity foundation
 
-This package validates the mandatory identity fields used by the global Warga and
-Nakes prerequisite gate:
+This package validates identity field formats used by the Warga and personal
+Nakes profile contracts.
 
-- Warga: NIK (16 digits), Kartu Keluarga (16 digits), BPJS/KIS (13 digits).
-- Personal Nakes: NIP (18 digits), managed only by Administrator Dinas Kesehatan.
+- Warga mandatory profile data: NIK (16 digits), full name, date of birth,
+  gender, and phone number.
+- Warga optional profile data: Kartu Keluarga, BPJS/JKN/Taspen, address, email,
+  and profile photo. These fields do not determine profile completion.
+- Personal Nakes NIP: nullable, relevant only for ASN or another applicable
+  administrative context, and not a universal Nakes readiness prerequisite.
 
 The migration is plan-only unless all explicit write, environment, database,
 backup, and writer identity confirmations are supplied. New columns are nullable
@@ -23,7 +27,7 @@ php application/migrations/20260802000100_role_identity_foundation.php
 bash tools/role_identity/run_disposable_migration.sh
 ```
 
-NIK, KK, BPJS/KIS, and NIP must not be copied to session state, realtime payloads,
+NIK, KK, BPJS/JKN/Taspen, and NIP must not be copied to session state, realtime payloads,
 notifications, Puskesmas dashboards, logs, or safe error bodies.
 
 For Nakes and Puskesmas accounts, `password_changed_at` is the evidence that the

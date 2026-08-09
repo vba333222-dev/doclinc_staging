@@ -899,8 +899,8 @@ class Home extends MX_Controller
 			'assigned_pic_profesi' => $pic_profesi,
 			'assigned_pic_no_hp' => $pic_no_hp,
 			'assigned_pic_label' => $pic_name !== ''
-				? 'PIC layanan: ' . $pic_name . ($pic_profesi !== '' ? ' - ' . $pic_profesi : '')
-				: 'PIC layanan belum ditentukan',
+				? 'Penanggung jawab layanan: ' . $pic_name . ($pic_profesi !== '' ? ' - ' . $pic_profesi : '')
+				: 'Penanggung jawab layanan belum ditentukan',
 		);
 	}
 

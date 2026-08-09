@@ -1,4 +1,5 @@
 <?php
+require_once dirname(APPPATH, 2) . '/application/helpers/profile_readiness_presentation_helper.php';
 $filters = isset($filters) && is_array($filters) ? $filters : array();
 $staff_rows = isset($staff_rows) && is_array($staff_rows) ? $staff_rows : array();
 $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ? $puskesmas_options : array();
@@ -60,24 +61,24 @@ $form_values = array(
 			<span>Data staf, gelar, SIP, masa berlaku SIP, status, dan hubungan akun hanya dikelola Administrator Dinas Kesehatan. NIP bersifat opsional sesuai kebutuhan administratif.</span>
 		</div>
 		<div class="alert <?= (int) ($staff_readiness_summary['attention'] ?? 0) > 0 ? 'alert-warning' : 'alert-success'; ?> shadow-sm" role="status">
-			<strong>Kesiapan staf aktif:</strong>
+			<strong>Kelengkapan data staf aktif:</strong>
 			<?= html_escape((string) (int) ($staff_readiness_summary['ready'] ?? 0)); ?> dari
-			<?= html_escape((string) (int) ($staff_readiness_summary['total'] ?? 0)); ?> siap.
+			<?= html_escape((string) (int) ($staff_readiness_summary['total'] ?? 0)); ?> memiliki data lengkap.
 			<?php if ((int) ($staff_readiness_summary['warning'] ?? 0) > 0): ?>
-				<?= html_escape((string) (int) $staff_readiness_summary['warning']); ?> siap dengan peringatan masa berlaku SIP.
+				<?= html_escape((string) (int) $staff_readiness_summary['warning']); ?> memiliki SIP yang mendekati kedaluwarsa.
 			<?php endif; ?>
 			<?php if ((int) ($staff_readiness_summary['attention'] ?? 0) > 0): ?>
-				<?= html_escape((string) (int) $staff_readiness_summary['attention']); ?> staf perlu ditinjau sebelum gate profil diaktifkan.
+				<?= html_escape((string) (int) $staff_readiness_summary['attention']); ?> data staf perlu dilengkapi.
 			<?php endif; ?>
 		</div>
 		<?php if ((int) (($staff_readiness_summary['issue_counts'] ?? array())['staff_first_login_pending'] ?? 0) > 0): ?>
 			<div class="alert alert-danger shadow-sm" role="alert">
 				<strong>Password bawaan belum diganti:</strong>
-				<?= html_escape((string) (int) $staff_readiness_summary['issue_counts']['staff_first_login_pending']); ?> akun Nakes belum pernah menyelesaikan aktivasi pertama. Jangan anggap akun ini siap operasional dan jangan membagikan satu password bawaan yang sama ke banyak pengguna.
+				<?= html_escape((string) (int) $staff_readiness_summary['issue_counts']['staff_first_login_pending']); ?> akun Nakes belum menyelesaikan aktivasi pertama. Jangan membagikan satu password bawaan yang sama ke banyak pengguna.
 			</div>
 		<?php endif; ?>
 		<?php if (!$nakes_profile_schema_ready): ?>
-			<div class="alert alert-warning shadow-sm" role="alert">Kolom gelar dan masa berlaku SIP belum tersedia. Readiness personal Nakes tetap incomplete sampai migrasi additive Phase 1 diterapkan melalui prosedur terpisah.</div>
+			<div class="alert alert-warning shadow-sm" role="alert">Gelar dan masa berlaku SIP belum dapat dicatat. Data profesi Nakes tetap belum lengkap sampai pembaruan penyimpanan data selesai.</div>
 		<?php endif; ?>
 		<?php if ($is_form): ?>
 			<div class="card shadow mb-4 doclinc-filter-card">
@@ -149,7 +150,7 @@ $form_values = array(
 								<div class="form-group">
 									<label class="text-info">NIP (opsional/administratif)</label>
 									<input type="text" class="form-control rounded-pill border-info" name="nip" value="<?= html_escape($form_values['nip']); ?>" placeholder="NIP 18 angka bila relevan" inputmode="numeric" pattern="[0-9]{18}" minlength="18" maxlength="18" autocomplete="off" <?= $nip_schema_ready ? '' : 'disabled'; ?>>
-									<small class="form-text <?= $nip_schema_ready ? 'text-muted' : 'text-danger'; ?>"><?= $nip_schema_ready ? 'Kosongkan bila staf bukan ASN/tidak memerlukan NIP. Jangan membuat nomor pengganti.' : 'Kolom NIP belum tersedia; jalankan migrasi identitas terlebih dahulu.'; ?></small>
+									<small class="form-text <?= $nip_schema_ready ? 'text-muted' : 'text-danger'; ?>"><?= $nip_schema_ready ? 'Kosongkan bila staf bukan ASN/tidak memerlukan NIP. Jangan membuat nomor pengganti.' : 'Pengisian NIP belum tersedia.'; ?></small>
 								</div>
 							</div>
 						</div>
@@ -161,7 +162,7 @@ $form_values = array(
 										<option value="aktif" <?= $form_values['status'] === 'aktif' ? 'selected' : ''; ?>>Aktif</option>
 										<option value="nonaktif" <?= $form_values['status'] === 'nonaktif' ? 'selected' : ''; ?>>Nonaktif</option>
 									</select>
-									<small class="form-text text-muted">Staf aktif dapat dipilih sebagai PIC.</small>
+									<small class="form-text text-muted">Staf aktif dapat dipilih untuk menangani layanan.</small>
 								</div>
 							</div>
 						</div>
@@ -207,11 +208,11 @@ $form_values = array(
 							</select>
 						</div>
 						<div class="col-md-2 mb-2">
-							<label class="sr-only" for="staffFilterReadiness">Kesiapan data</label>
+							<label class="sr-only" for="staffFilterReadiness">Kelengkapan data</label>
 							<select name="readiness" id="staffFilterReadiness" class="form-control doclinc-puskesmas-selector">
 								<option value="">Semua kesiapan</option>
 								<option value="attention" <?= ($filters['readiness'] ?? '') === 'attention' ? 'selected' : ''; ?>>Perlu dilengkapi</option>
-								<option value="ready" <?= ($filters['readiness'] ?? '') === 'ready' ? 'selected' : ''; ?>>Siap</option>
+								<option value="ready" <?= ($filters['readiness'] ?? '') === 'ready' ? 'selected' : ''; ?>>Data lengkap</option>
 								<option value="missing_sip" <?= ($filters['readiness'] ?? '') === 'missing_sip' ? 'selected' : ''; ?>>SIP belum lengkap</option>
 								<option value="sip_expiring" <?= ($filters['readiness'] ?? '') === 'sip_expiring' ? 'selected' : ''; ?>>SIP mendekati kedaluwarsa</option>
 								<option value="sip_expired" <?= ($filters['readiness'] ?? '') === 'sip_expired' ? 'selected' : ''; ?>>SIP kedaluwarsa</option>
@@ -289,7 +290,7 @@ $form_values = array(
 
 										<div class="doclinc-account-card__body">
 											<?php if (!$is_active): ?>
-												<div class="doclinc-account-card__note is-muted mb-3"><i class="fas fa-pause-circle mr-1"></i>Staf nonaktif tidak dihitung dalam kesiapan operasional.</div>
+												<div class="doclinc-account-card__note is-muted mb-3"><i class="fas fa-pause-circle mr-1"></i>Staf nonaktif tidak termasuk dalam ringkasan kelengkapan data.</div>
 											<?php elseif (!empty($readiness_issues)): ?>
 												<div class="doclinc-account-card__note is-warning mb-3">
 													<i class="fas fa-exclamation-triangle mr-1"></i>
@@ -299,7 +300,7 @@ $form_values = array(
 													}, $readiness_issues))); ?>
 												</div>
 											<?php else: ?>
-												<div class="doclinc-account-card__note is-muted mb-3"><i class="fas fa-check-circle mr-1"></i>Data operasional staf siap.</div>
+												<div class="doclinc-account-card__note is-muted mb-3"><i class="fas fa-check-circle mr-1"></i>Data staf lengkap.</div>
 											<?php endif; ?>
 											<div class="doclinc-account-card__meta">
 												<span>Puskesmas</span>
@@ -327,7 +328,7 @@ $form_values = array(
 											</div>
 											<div class="doclinc-account-field">
 												<span>Status SIP</span>
-												<strong><?= html_escape((string) ($row->sip_state ?? 'MISSING')); ?></strong>
+												<strong><?= html_escape(doclinc_sip_state_label($row->sip_state ?? '')); ?></strong>
 												<small><?= !empty($row->sip_expired_at) ? html_escape((string) $row->sip_expired_at) : 'Masa berlaku belum tersedia'; ?></small>
 											</div>
 											<div class="doclinc-account-field">
@@ -336,8 +337,8 @@ $form_values = array(
 											</div>
 											</div>
 											<div class="doclinc-account-card__meta">
-												<span>Readiness profil personal</span>
-												<strong><?= html_escape((string) ($row->profile_readiness_state ?? 'INCOMPLETE')); ?></strong>
+												<span>Kelengkapan profil personal</span>
+												<strong><?= html_escape(doclinc_profile_readiness_label($row->profile_readiness_state ?? '')); ?></strong>
 											</div>
 											<div class="doclinc-account-card__meta">
 												<span>Akun login personal</span>
@@ -349,18 +350,18 @@ $form_values = array(
 												<?php if (!empty($row->akun_email) && !$technical_login_email): ?>
 													<small><?= html_escape($row->akun_email); ?></small>
 												<?php elseif ($technical_login_email): ?>
-													<small>Email akun teknis staging, bukan email kontak.</small>
+													<small>Email ini digunakan untuk masuk, bukan sebagai kontak.</small>
 												<?php endif; ?>
 												<span class="doclinc-status-chip <?= $linked_account_is_active ? 'is-active' : 'is-inactive'; ?> mt-2">
 													<?= html_escape($linked_account_status_label); ?>
 												</span>
 												<?php if (!$linked_account_is_active): ?>
-													<small class="text-danger mt-1">Akun belum dapat digunakan untuk login.</small>
+													<small class="text-danger mt-1">Akun belum dapat digunakan untuk masuk.</small>
 												<?php endif; ?>
-											<?php if ($linked_account_is_active && $linked_account_credential_state === Nakes_credential_policy::FIRST_LOGIN_PENDING): ?>
-												<small class="text-danger mt-1">Belum pernah mengganti password bawaan. Hanya alur aktivasi password yang boleh diakses.</small>
-											<?php elseif ($linked_account_is_active && $linked_account_credential_state === Nakes_credential_policy::ADMIN_RESET_PENDING): ?>
-												<small class="text-warning mt-1">Menunggu Nakes membuat password baru setelah reset Admin. Fitur lain tetap terkunci.</small>
+												<?php if ($linked_account_is_active && $linked_account_credential_state === Nakes_credential_policy::FIRST_LOGIN_PENDING): ?>
+													<small class="text-danger mt-1">Password bawaan belum pernah diganti.</small>
+												<?php elseif ($linked_account_is_active && $linked_account_credential_state === Nakes_credential_policy::ADMIN_RESET_PENDING): ?>
+													<small class="text-warning mt-1">Nakes belum membuat password baru setelah reset Admin.</small>
 												<?php endif; ?>
 												<?php if ($is_command_center_link): ?>
 													<div class="doclinc-account-card__note is-warning mt-2"><i class="fas fa-exclamation-triangle mr-1"></i> Akun ini terlihat sebagai akun koordinator Puskesmas. Periksa ulang sebelum digunakan sebagai akun personal.</div>
@@ -379,7 +380,7 @@ $form_values = array(
 												</a>
 												<?php if (($row->status ?? '') === 'aktif'): ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/deactivate/' . (int) $row->staff_id); ?>" method="post">
-														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan staf? Riwayat dan penetapan PIC tetap tersimpan.');">
+													<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan staf? Riwayat dan penetapan penanggung jawab tetap tersimpan.');">
 															<i class="fas fa-ban"></i> Nonaktifkan
 														</button>
 													</form>
@@ -443,7 +444,7 @@ $form_values = array(
 														</div>
 														<div class="modal-footer border-0">
 															<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
-															<button type="submit" class="btn btn-warning rounded-pill" onclick="return confirm('Reset password sementara akun ini? Semua sesi lama akan ditolak oleh gate pada request berikutnya.');">Reset password</button>
+																<button type="submit" class="btn btn-warning rounded-pill" onclick="return confirm('Reset password sementara akun ini? Semua sesi lama akan dihentikan saat permintaan berikutnya.');">Reset password</button>
 														</div>
 													</form>
 												</div>

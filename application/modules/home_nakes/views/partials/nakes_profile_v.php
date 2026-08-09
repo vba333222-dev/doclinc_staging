@@ -1,5 +1,6 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 <?php
+require_once APPPATH . 'helpers/profile_readiness_presentation_helper.php';
 $profile_name = (string) $this->session->userdata('nama');
 $profile_email = isset($profile['email']) ? trim((string) $profile['email']) : (string) $this->session->userdata('email');
 $profile_photo = isset($profile['foto']) ? trim((string) $profile['foto']) : '';
@@ -98,8 +99,8 @@ if ($profile_is_command_center) {
 									<strong class="nk-info-value"><?= html_escape((string) (!empty($profile_identity_staff['staff_sip_expired_at']) ? $profile_identity_staff['staff_sip_expired_at'] : 'Belum dilengkapi')); ?></strong>
 								</div>
 								<div class="nk-info-row">
-									<span class="nk-info-label">Readiness profil</span>
-									<strong class="nk-info-value"><?= html_escape((string) (($role_prerequisite_state['readiness_state'] ?? 'INCOMPLETE'))); ?></strong>
+									<span class="nk-info-label">Status data profesi</span>
+									<strong class="nk-info-value"><?= html_escape(doclinc_profile_readiness_label($role_prerequisite_state['readiness_state'] ?? '')); ?></strong>
 								</div>
 								<?php endif; ?>
 								<div class="nk-info-row">
@@ -131,7 +132,7 @@ if ($profile_is_command_center) {
 											<div class="nk-staff-meta">
 												<?php if ($staff_phone !== '') : ?><span><?= html_escape($staff_phone); ?></span><?php endif; ?>
 												<?php if ($staff_sip !== '') : ?><span>SIP <?= html_escape($staff_sip); ?></span><?php else : ?><span class="is-warning">SIP belum dilengkapi</span><?php endif; ?>
-												<?php if ($staff_account_state === 'linked') : ?><span>Akun personal terhubung</span><?php elseif ($staff_account_state === 'unlinked') : ?><span class="is-warning">Belum ada akun personal</span><?php else : ?><span class="is-danger">Akun perlu ditinjau</span><?php endif; ?>
+								<?php if ($staff_account_state === 'linked') : ?><span>Akun personal terhubung</span><?php elseif ($staff_account_state === 'unlinked') : ?><span class="is-warning">Belum ada akun personal</span><?php else : ?><span class="is-danger">Akun staf perlu diperiksa</span><?php endif; ?>
 											</div>
 										</div>
 									<?php endforeach; ?>

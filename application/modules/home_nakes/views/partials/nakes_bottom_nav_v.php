@@ -23,7 +23,7 @@
 				<span>Riwayat</span>
 			</a>
 			<?php endif; ?>
-			<a href="#" id="profile-tab" class="menu-item" onclick="showContent('profile')" aria-label="Profil">
+			<a href="#profile" id="profile-tab" class="menu-item" onclick="event.preventDefault(); showContent('profile')" aria-controls="profile" aria-label="Profil">
 				<i class="fas fa-user"></i>
 				<span>Profil</span>
 			</a>

@@ -32,7 +32,7 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 			<header class="completion-head">
 				<div class="completion-brand">DocLink</div>
 				<h1 id="completionTitle">Lengkapi data sebelum melanjutkan</h1>
-				<p><?= $is_command_center ? 'Lengkapi kontak operasional Puskesmas. Data unit dan staf lainnya dikelola Administrator Dinas Kesehatan tanpa mengunci fungsi inti Puskesmas.' : 'Data ini dibutuhkan untuk keamanan identitas, penugasan, dan layanan kesehatan. Fitur aplikasi tetap terkunci sampai seluruh data wajib valid.'; ?></p>
+				<p><?= $is_command_center ? 'Lengkapi kontak operasional Puskesmas. Data unit dan staf lainnya dikelola Admin Dinas Kesehatan.' : 'Lengkapi data untuk mendukung identitas, penugasan, dan layanan kesehatan.'; ?></p>
 			</header>
 			<?php if (!empty($profile_state['schema_gaps'])) : ?>
 			<div class="completion-notice" role="alert">
@@ -58,7 +58,7 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 			<?php if (!empty($managed_fields)) : ?>
 			<div class="completion-notice" role="status">
 				<strong>Perlu tindakan Admin Dinas Kesehatan</strong>
-				<span>Data kepegawaian Nakes, gelar, SIP, masa berlaku SIP, profesi, linkage akun, dan data fasilitas dikelola Administrator Dinas Kesehatan. NIP bersifat opsional sesuai konteks administratif.</span>
+				<span>Data kepegawaian Nakes, gelar, SIP, masa berlaku SIP, profesi, hubungan akun personal, dan data fasilitas dikelola Admin Dinas Kesehatan. NIP bersifat opsional sesuai kebutuhan administratif.</span>
 			</div>
 			<?php endif; ?>
 
@@ -79,7 +79,7 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 					<?php if ($is_warga || $is_personal) : ?>
 					<label>Nama lengkap<input type="text" name="nama_lengkap" maxlength="100" value="<?= html_escape((string) ($profile_user['nama'] ?? '')); ?>" required></label>
 					<?php endif; ?>
-					<label><?= $is_command_center ? 'Email operasional' : ($is_personal ? 'Email akun' : 'Email akun (opsional untuk kesiapan profil)'); ?><input type="email" name="email" maxlength="100" value="<?= html_escape((string) ($profile_user['email'] ?? '')); ?>" <?= ($is_command_center || $is_personal) ? 'required' : ''; ?>></label>
+					<label><?= $is_command_center ? 'Email operasional' : ($is_personal ? 'Email akun' : 'Email (opsional)'); ?><input type="email" name="email" maxlength="100" value="<?= html_escape((string) ($profile_user['email'] ?? '')); ?>" <?= ($is_command_center || $is_personal) ? 'required' : ''; ?>></label>
 					<label><?= $is_command_center ? 'Nomor kontak Puskesmas' : 'Nomor HP'; ?><input type="tel" name="no_hp" maxlength="20" inputmode="tel" value="<?= html_escape((string) ($profile_user['no_hp'] ?? '')); ?>" required></label>
 					<?php if ($is_warga || $is_personal) : ?>
 					<label>Tanggal lahir<input type="date" name="tgl_lahir" max="<?= html_escape(date('Y-m-d')); ?>" value="<?= html_escape((string) ($profile_user['tgl'] ?? '')); ?>" required></label>
@@ -90,8 +90,8 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 					<?php endif; ?>
 				</div>
 				<?php if ($is_warga) : ?>
-				<h2>Data opsional/sekunder</h2>
-				<p>Data berikut tidak menghalangi login, penyelesaian profil, atau alur layanan.</p>
+				<h2>Data tambahan (opsional)</h2>
+				<p>Isi data berikut bila tersedia.</p>
 				<div class="completion-grid">
 					<label>Nomor Kartu Keluarga (opsional)<input type="text" name="nomor_kk" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" value="<?= html_escape((string) ($profile_user['nomor_kk'] ?? '')); ?>" autocomplete="off"></label>
 					<label>BPJS/JKN/Taspen (opsional)<input type="text" name="nomor_bpjs_kis" inputmode="numeric" pattern="[0-9]{13}" minlength="13" maxlength="13" value="<?= html_escape((string) ($profile_user['nomor_bpjs_kis'] ?? '')); ?>" autocomplete="off"></label>

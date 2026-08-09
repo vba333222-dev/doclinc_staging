@@ -29,6 +29,27 @@ function methodBody(source, name) {
   return '';
 }
 
+function staticVisibleText(source) {
+  return source
+    .replace(/<\?[\s\S]*?\?>/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function cssBlock(source, selector) {
+  const start = source.indexOf(selector);
+  if (start < 0) return '';
+  const open = source.indexOf('{', start + selector.length);
+  if (open < 0) return '';
+  let depth = 0;
+  for (let index = open; index < source.length; index += 1) {
+    if (source[index] === '{') depth += 1;
+    if (source[index] === '}' && --depth === 0) return source.slice(open + 1, index);
+  }
+  return '';
+}
+
 const config = read('application/config/config.php');
 const routes = read('application/config/routes.php');
 const firstLogin = read('application/libraries/First_login_gate_policy.php');
@@ -51,6 +72,11 @@ const completion = read('application/modules/konsultasi_nakes/controllers/Konsul
 const wargaView = read('application/modules/home/views/home_v.php');
 const nakesDashboard = read('application/modules/home_nakes/views/partials/nakes_dashboard_v.php');
 const nakesView = read('application/modules/home_nakes/views/home_nakes_v.php');
+const nakesBottomNav = read('application/modules/home_nakes/views/partials/nakes_bottom_nav_v.php');
+const nakesProfile = read('application/modules/home_nakes/views/partials/nakes_profile_v.php');
+const nakesCss = read('assets/css/nakes-dashboard.css');
+const profilePresenter = read('application/helpers/profile_readiness_presentation_helper.php');
+const adminStaffView = read('admin_menu/application/modules/kelola_staff_puskesmas/views/kelola_staff_puskesmas_v.php');
 const homeModel = read('application/modules/home/models/Home_m.php');
 const nakesModel = read('application/modules/home_nakes/models/Home_nakes_m.php');
 const puskesmasReadiness = read('application/libraries/Puskesmas_data_readiness.php');
@@ -123,12 +149,12 @@ expect(completeBody.indexOf('doclinc_role_prerequisite_state') < completeBody.in
 expect(!methodBody(nakes, 'cancel_request').includes('require_role_prerequisites') && prerequisiteGatePolicy.includes("'cancel_request'"), 'command_center_cancel_is_owned_by_global_gate');
 expect(!methodBody(home, 'cancel_request').includes('role_prerequisite') && prerequisiteGatePolicy.includes("'home' => array") && prerequisiteGatePolicy.includes("'cancel_request'"), 'warga_cancel_is_owned_by_global_gate');
 expect(wargaView.includes('data-role-prerequisite-alert') && wargaView.includes("showContent('profile')"), 'warga_banner_has_profile_cta');
-expect(nakesDashboard.includes('data-role-prerequisite-alert') && nakesDashboard.includes("showContent('profile')") && nakesDashboard.includes('Hubungi pengelola DocLink.'), 'nakes_banner_distinguishes_self_service_and_managed_remediation');
-expect(wargaView.includes('$role_prerequisite_incomplete') && wargaView.includes('data-enforced=') && wargaView.includes('tahap penyiapan data'), 'warga_incomplete_profile_is_visible_before_enforcement');
+expect(nakesDashboard.includes('data-role-prerequisite-alert') && nakesDashboard.includes("showContent('profile')") && nakesDashboard.includes('Hubungi Admin Dinas Kesehatan.'), 'nakes_banner_distinguishes_self_service_and_managed_remediation');
+expect(wargaView.includes('$role_prerequisite_incomplete') && wargaView.includes('data-enforced=') && wargaView.includes('sementara data diperbarui'), 'warga_incomplete_profile_is_visible_before_enforcement');
 expect(nakesDashboard.includes('$role_prerequisite_incomplete') && nakesDashboard.includes('data-puskesmas-readiness') && nakesDashboard.includes('SIP belum dilengkapi'), 'nakes_readiness_is_visible_before_enforcement');
 expect(puskesmasReadiness.includes("'facility_complete'") && puskesmasReadiness.includes("'staff_missing_sip'") && puskesmasReadiness.includes("'staff_invalid_account'"), 'puskesmas_readiness_has_exact_safe_counts');
-expect(nakesDashboard.includes('data-puskesmas-exception-board') && nakesDashboard.includes('Diterima tanpa PIC'), 'puskesmas_has_advanced_safe_exception_board');
-expect(profileCompletionView.includes('Data opsional/sekunder') && profileCompletionView.includes('BPJS/JKN/Taspen (opsional)') && profileCompletionView.includes('Alamat (opsional)'), 'warga_optional_fields_are_visually_distinct');
+expect(nakesDashboard.includes('data-puskesmas-exception-board') && nakesDashboard.includes('Belum ada penanggung jawab layanan'), 'puskesmas_has_advanced_safe_exception_board');
+expect(profileCompletionView.includes('Data tambahan (opsional)') && profileCompletionView.includes('BPJS/JKN/Taspen (opsional)') && profileCompletionView.includes('Alamat (opsional)'), 'warga_optional_fields_are_visually_distinct');
 expect(methodBody(nakes, 'index').includes("$d['puskesmas_staff_options']") && methodBody(nakes, 'index').includes("$d['puskesmas_data_readiness']"), 'command_center_readiness_uses_tenant_staff_projection');
 expect(methodBody(home, 'update_profile').includes('require_post_json') && methodBody(home, 'require_post_json').includes("method(TRUE) === 'POST'") && methodBody(home, 'update_profile').includes('email_available_for_user') && methodBody(home, 'update_profile').includes('Home_m->update_profile'), 'warga_profile_update_is_validated_post');
 expect(methodBody(home, 'validated_warga_profile_input').includes('Role_identity_policy') && methodBody(home, 'update_profile').includes('identity_value_available'), 'warga_identity_is_canonically_validated_and_unique');
@@ -144,6 +170,55 @@ expect(nakesProfileForm.includes('name="email"') && nakesProfileForm.includes('n
 expect(helper.includes("'safe_error_code'") && helper.includes("'missing_fields'") && helper.includes("'cta_url'"), 'stable_json_error_contract');
 expect(helper.includes("!empty($state['cta_url'])") && !helper.includes("base_url(isset($state['cta_url'])"), 'managed_gap_does_not_fall_back_to_profile_cta');
 expect(helper.includes("$code === 'actor_denied' ? 403") && helper.includes("$code === 'profile_schema_unavailable' ? 503"), 'http_status_matches_error_class');
+
+const logoutBinding = nakesView.slice(nakesView.indexOf("$('#btn-logout').click"), nakesView.indexOf('var jumlah_request'));
+const bottomNavRule = cssBlock(nakesCss, '.dl-bottom-nav');
+const bottomNavItemRule = cssBlock(nakesCss, '.dl-bottom-nav .menu-item');
+const dashboardContentRule = cssBlock(nakesCss, '.dl-nakes-dashboard .content');
+const appbarRule = cssBlock(nakesCss, '.dl-nakes-appbar');
+const presenceStaffRule = cssBlock(nakesCss, '.nk-staff-item--presence');
+const presenceMetaRule = cssBlock(nakesCss, '.nk-staff-item--presence .nk-staff-meta');
+const staffNameRule = cssBlock(nakesCss, '.nk-staff-main strong');
+const showContentBody = nakesView.slice(nakesView.indexOf('function showContent(tab)'), nakesView.indexOf('function navigateNakesSection'));
+expect(nakesBottomNav.includes('id="profile-tab"') && nakesBottomNav.includes('href="#profile"')
+  && nakesBottomNav.includes("event.preventDefault(); showContent('profile')") && nakesBottomNav.includes('aria-controls="profile"'), 'command_center_profile_tab_has_stable_section_target');
+expect(nakesProfile.includes('id="profile"') && nakesProfile.includes('id="btn-logout"'), 'profile_section_and_logout_control_exist');
+expect(showContentBody.includes("document.querySelectorAll('.content.active')")
+  && showContentBody.includes("document.querySelectorAll('.nav-bottom-wrapper .menu a.active')")
+  && showContentBody.includes('document.getElementById(tab)')
+  && showContentBody.includes("document.getElementById(tab + '-tab')"), 'profile_activation_clears_stale_section_and_menu_state');
+expect(logoutBinding.includes('Swal.fire') && logoutBinding.includes('window.DoclincCsrf.submitPost')
+  && logoutBinding.includes("base_url('login/logout')") && !logoutBinding.includes('window.location'), 'logout_remains_csrf_post_without_get_navigation');
+expect(bottomNavRule.includes('position: fixed;') && bottomNavRule.includes('z-index: 1030;')
+  && bottomNavRule.includes('isolation: isolate;') && bottomNavRule.includes('pointer-events: auto;')
+  && bottomNavItemRule.includes('pointer-events: auto;')
+  && dashboardContentRule.includes('calc(86px + env(safe-area-inset-bottom, 0px))')
+  && appbarRule.includes('z-index: 1010;'), 'bottom_navigation_owns_a_clickable_top_layer');
+expect(presenceStaffRule.includes('grid-template-columns: auto minmax(0, 1fr);')
+  && presenceMetaRule.includes('grid-column: 1 / -1;')
+  && staffNameRule.includes('overflow-wrap: break-word;')
+  && staffNameRule.includes('word-break: normal;'), 'staff_card_layout_prevents_mobile_identity_collapse');
+expect(profilePresenter.includes("'SIP_MISSING' => 'Belum lengkap'")
+  && profilePresenter.includes("'MISSING' => 'Belum tercatat'")
+  && nakesProfile.includes('doclinc_profile_readiness_label')
+  && adminStaffView.includes('doclinc_sip_state_label')
+  && adminStaffView.includes('doclinc_profile_readiness_label'), 'machine_states_use_shared_presentation_boundary');
+expect(!nakesProfile.includes("html_escape((string) (($role_prerequisite_state['readiness_state']")
+  && !adminStaffView.includes("html_escape((string) ($row->sip_state")
+  && !adminStaffView.includes("html_escape((string) ($row->profile_readiness_state"), 'phase1_views_do_not_render_raw_readiness_codes');
+const phaseOnePresentation = [wargaView, nakesDashboard, nakesProfile, profileCompletionView, adminStaffView].join('\n').toLowerCase();
+const forbiddenPresentationPhrases = [
+  'readiness profil', 'readiness personal', 'data tenant', 'gate profil',
+  'migrasi additive', 'tahap penyiapan data', 'operationally ready',
+  'raw state'
+];
+const phaseOneStaticText = [wargaView, nakesDashboard, nakesProfile, profileCompletionView, adminStaffView]
+  .map(staticVisibleText).join(' ');
+expect(forbiddenPresentationPhrases.every(phrase => !phaseOnePresentation.includes(phrase))
+  && !/\b(tenant|schema|readiness|enforcement|account_type)\b/.test(phaseOneStaticText), 'normal_phase1_copy_excludes_implementation_vocabulary');
+expect(wargaView.includes('Lokasi terdeteksi')
+  && wargaView.includes('Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.')
+  && !wargaView.includes('Lokasi perangkat ditemukan'), 'warga_uat_copy_is_natural_and_concise');
 
 process.stdout.write(`ROLE_PREREQUISITE_SOURCE_PASSED=${passed}\n`);
 process.stdout.write(`ROLE_PREREQUISITE_SOURCE_FAILED=${failed}\n`);

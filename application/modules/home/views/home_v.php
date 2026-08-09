@@ -961,10 +961,14 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			height: calc(100% - 59px);
 			padding: 10px 12px 14px;
 			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
 		}
 
 		.dl-notification-list {
-			height: 100%;
+			min-height: 0;
+			flex: 1 1 auto;
 			display: grid;
 			align-content: start;
 			gap: 8px;
@@ -1229,12 +1233,12 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							<div>
 								<strong><?= $role_prerequisite_blocked ? 'Profil wajib dilengkapi.' : 'Profil Anda belum lengkap.'; ?></strong>
 								<span><?= html_escape(!empty($role_prerequisite_labels) ? implode(', ', $role_prerequisite_labels) . ($role_prerequisite_extra_count > 0 ? ' dan ' . $role_prerequisite_extra_count . ' data lainnya' : '') . ' perlu dilengkapi.' : 'Lengkapi data profil untuk melanjutkan.'); ?></span>
-								<?php if (!$role_prerequisite_blocked) : ?><span class="d-block small mt-1">Anda masih dapat memakai layanan selama tahap penyiapan data.</span><?php endif; ?>
+								<?php if (!$role_prerequisite_blocked) : ?><span class="d-block small mt-1">Anda tetap dapat menggunakan aplikasi sementara data diperbarui.</span><?php endif; ?>
 							</div>
 							<?php if ($role_prerequisite_cta_url !== '') : ?>
 								<a class="btn btn-warning btn-sm" href="#profile" onclick="showContent('profile')"><?= html_escape($role_prerequisite_cta_label !== '' ? $role_prerequisite_cta_label : 'Lengkapi profil'); ?></a>
 							<?php else : ?>
-								<span class="small fw-semibold">Hubungi pengelola DocLink.</span>
+								<span class="small fw-semibold">Hubungi Admin Dinas Kesehatan.</span>
 							<?php endif; ?>
 						</div>
 					<?php endif; ?>
@@ -1252,7 +1256,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">
 									Lihat konsultasi <i class="fas fa-clipboard-list"></i>
 								</a>
-								<p class="history-empty-text mt-2 mb-0">Selesaikan atau batalkan konsultasi aktif terlebih dahulu.</p>
+								<p class="history-empty-text mt-2 mb-0">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.</p>
 							<?php else : ?>
 								<a href="#" class="dl-btn-secondary" onclick="showContent('konsultasi_kesehatan')">
 									Buat permintaan <i class="fas fa-plus-circle"></i>
@@ -1300,7 +1304,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$dl_status_label = isset($dlCurrentRequest->warga_top_status_label) ? $dlCurrentRequest->warga_top_status_label : ($dl_current_status === 'Pending' ? 'Menunggu konfirmasi Puskesmas' : $dl_visit_label);
 								$dl_visit_updated = !empty($dlCurrentRequest->warga_visit_updated_at) && strtotime($dlCurrentRequest->warga_visit_updated_at) ? date('d M Y H:i', strtotime($dlCurrentRequest->warga_visit_updated_at)) : '';
 								$dl_visit_timeline = isset($dlCurrentRequest->warga_visit_timeline) ? $dlCurrentRequest->warga_visit_timeline : array();
-								$dl_pic_label = !empty($dlCurrentRequest->assigned_pic_label) ? $dlCurrentRequest->assigned_pic_label : 'PIC belum dipilih.';
+								$dl_pic_label = !empty($dlCurrentRequest->assigned_pic_label) ? $dlCurrentRequest->assigned_pic_label : 'Penanggung jawab layanan belum dipilih.';
 							?>
 								<div class="dl-card p-3" data-request-id="<?= (int) $dlCurrentRequest->request_id; ?>">
 									<div class="d-flex justify-content-between align-items-start gap-3 mb-3">
@@ -1384,7 +1388,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					<h2 class="dl-section-title mb-3">Buat permintaan</h2>
 					<?php if ($doclinc_has_active_request) : ?>
 						<div class="dl-empty-state text-center">
-							<p class="history-empty-text mb-3">Selesaikan atau batalkan konsultasi aktif terlebih dahulu.</p>
+							<p class="history-empty-text mb-3">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.</p>
 							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat konsultasi</a>
 						</div>
 					<?php else : ?>
@@ -1563,7 +1567,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$mode_label = doclinc_consultation_mode_label($consultation_mode);
 								$handling_nakes_name = doclinc_request_handling_nakes_name($data);
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Nakes belum tersedia.';
-								$pic_label = !empty($data->assigned_pic_label) ? $data->assigned_pic_label : 'PIC belum dipilih.';
+								$pic_label = !empty($data->assigned_pic_label) ? $data->assigned_pic_label : 'Penanggung jawab layanan belum dipilih.';
 
 								// jadikan tanggal di atas formatnya jadi 11 November 2024
 								$tanggal = date('d F Y', strtotime($tanggal));
@@ -2103,6 +2107,11 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			<button type="button" class="btn-close dl-notification-close" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
 		</div>
 		<div class="offcanvas-body dl-notification-body">
+			<div class="alert alert-light border p-2 mb-0" data-browser-notification-optin hidden>
+				<strong class="d-block small">Notifikasi perangkat</strong>
+				<small class="d-block text-muted" data-browser-notification-status></small>
+				<button type="button" class="btn btn-success btn-sm w-100 mt-2" data-browser-notification-enable>Aktifkan notifikasi perangkat</button>
+			</div>
 			<div id="notificationList" class="notification-list dl-notification-list"></div>
 		</div>
 	</div>
@@ -2151,6 +2160,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-browser-notification.js')); ?>"></script>
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 	<script src="<?= html_escape(base_url('assets/js/doclinc-location-address.js')); ?>"></script>
 	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
@@ -3011,7 +3021,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				return;
 			}
 			const normalized = window.DoclincLocationAddress && window.DoclincLocationAddress.normalizeLocation(location);
-			coordinateEl.textContent = normalized ? 'Lokasi perangkat ditemukan' : 'Lokasi belum ditemukan. Coba lagi.';
+			coordinateEl.textContent = normalized ? 'Lokasi terdeteksi' : 'Lokasi belum ditemukan. Coba lagi.';
 		}
 
 		function setLocationFields(location) {
@@ -3195,9 +3205,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 		function getAddress(location) {
 			const sequence = ++locationAddressSequence;
-			setLocationText('Mencari alamat...', 'Lokasi perangkat ditemukan');
+			setLocationText('Mencari alamat...', 'Lokasi terdeteksi');
 			if (!locationAddressResolver) {
-				setLocationText('Alamat belum dapat dikenali', 'Lokasi perangkat ditemukan');
+				setLocationText('Alamat belum dapat dikenali', 'Lokasi terdeteksi');
 				return;
 			}
 

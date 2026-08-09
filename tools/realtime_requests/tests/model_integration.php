@@ -475,8 +475,8 @@ function model_integration_expected_response($operation, $request_id)
 		return array('status' => 'success', 'message' => 'Permintaan dibatalkan.', 'request_id' => $request_id, 'request_status' => 'Cancelled');
 	}
 	if ($operation === 'complete') { return array('status' => 'success', 'message' => 'Konsultasi selesai.'); }
-	if ($operation === 'assign' || $operation === 'reassign') { return array('status' => 'success', 'message' => 'PIC diperbarui.'); }
-	if ($operation === 'clear') { return array('status' => 'success', 'message' => 'PIC dilepas.'); }
+	if ($operation === 'assign' || $operation === 'reassign') { return array('status' => 'success', 'message' => 'Penanggung jawab diperbarui.'); }
+	if ($operation === 'clear') { return array('status' => 'success', 'message' => 'Penugasan dihapus.'); }
 	throw new InvalidArgumentException('expected_response_unknown');
 }
 
@@ -1163,7 +1163,7 @@ try {
 		$first = model_integration_invoke_operation('assign', $context, $models);
 		$before_retry = model_integration_full_digest($db);
 		$second = model_integration_invoke_operation('assign', $context, $models);
-		model_integration_expect(($first['message'] ?? '') === 'PIC diperbarui.' && ($second['message'] ?? '') === 'PIC tetap sama.',
+		model_integration_expect(($first['message'] ?? '') === 'Penanggung jawab diperbarui.' && ($second['message'] ?? '') === 'Penanggung jawab tetap sama.',
 			$stage . '_explicit_result_contract');
 		model_integration_expect(model_integration_full_digest($db) === $before_retry && !model_integration_in_transaction($db),
 			$stage . '_zero_duplicate_assignment_notification_event');
@@ -1175,8 +1175,8 @@ try {
 		$first = model_integration_invoke_operation('clear', $context, $models);
 		$before_retry = model_integration_full_digest($db);
 		$second = model_integration_invoke_operation('clear', $context, $models);
-		model_integration_expect(($first['status'] ?? '') === 'success' && ($first['message'] ?? '') === 'PIC dilepas.'
-			&& ($second['status'] ?? '') === 'error' && ($second['message'] ?? '') === 'PIC aktif tidak ditemukan.',
+		model_integration_expect(($first['status'] ?? '') === 'success' && ($first['message'] ?? '') === 'Penugasan dihapus.'
+			&& ($second['status'] ?? '') === 'error' && ($second['message'] ?? '') === 'Penanggung jawab aktif tidak ditemukan.',
 			$stage . '_explicit_result_contract');
 		model_integration_expect(model_integration_full_digest($db) === $before_retry && !model_integration_in_transaction($db),
 			$stage . '_zero_duplicate_mutation_notification_event');
@@ -1196,7 +1196,7 @@ try {
 	$same_pic = model_integration_invoke_operation('assign', $context, $models);
 	model_integration_expect(model_integration_operation_succeeded('assign', $first_assign)
 		&& model_integration_operation_succeeded('assign', $same_pic)
-		&& ($same_pic['message'] ?? '') === 'PIC tetap sama.', 'same_pic_return_contract_stable');
+		&& ($same_pic['message'] ?? '') === 'Penanggung jawab tetap sama.', 'same_pic_return_contract_stable');
 	model_integration_expect(model_integration_count($db, 'request_staff_assignments') === $assignment_count
 		&& model_integration_count($db, 'request_events') === $event_count
 		&& model_integration_count($db, 'notifications') === $notification_count
