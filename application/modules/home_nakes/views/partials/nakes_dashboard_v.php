@@ -53,7 +53,8 @@
 								<div><span>Data unit</span><strong><?= !empty($puskesmas_readiness['facility_complete']) ? 'Lengkap' : 'Perlu dilengkapi'; ?></strong></div>
 								<div><span>Staf siap</span><strong><?= html_escape((string) $readiness_staff_ready); ?> / <?= html_escape((string) $readiness_staff_total); ?></strong></div>
 								<div><span>SIP belum lengkap</span><strong><?= html_escape((string) (isset($puskesmas_readiness['staff_missing_sip']) ? (int) $puskesmas_readiness['staff_missing_sip'] : 0)); ?></strong></div>
-								<div><span>NIP belum lengkap</span><strong><?= html_escape((string) (isset($puskesmas_readiness['staff_missing_nip']) ? (int) $puskesmas_readiness['staff_missing_nip'] : 0)); ?></strong></div>
+								<div><span>SIP mendekati kedaluwarsa</span><strong><?= html_escape((string) (isset($puskesmas_readiness['staff_sip_expiring']) ? (int) $puskesmas_readiness['staff_sip_expiring'] : 0)); ?></strong></div>
+								<div><span>SIP kedaluwarsa</span><strong><?= html_escape((string) (isset($puskesmas_readiness['staff_sip_expired']) ? (int) $puskesmas_readiness['staff_sip_expired'] : 0)); ?></strong></div>
 								<div><span>Akun perlu ditinjau</span><strong><?= html_escape((string) ((isset($puskesmas_readiness['staff_unlinked']) ? (int) $puskesmas_readiness['staff_unlinked'] : 0) + (isset($puskesmas_readiness['staff_invalid_account']) ? (int) $puskesmas_readiness['staff_invalid_account'] : 0))); ?></strong></div>
 							</div>
 							<div class="nk-readiness-foot">

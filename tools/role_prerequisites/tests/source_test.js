@@ -41,6 +41,8 @@ const prerequisiteGatePolicy = read('application/libraries/Role_prerequisite_gat
 const hooks = read('application/config/hooks.php');
 const identityPolicy = read('application/libraries/Role_identity_policy.php');
 const identityMigration = read('application/migrations/20260802000100_role_identity_foundation.php');
+const profilePolicy = read('application/libraries/Nakes_profile_readiness_policy.php');
+const profileMigration = read('application/migrations/20260810000100_nakes_profile_v2_foundation.php');
 const storage = read('application/libraries/Profile_image_storage.php');
 const warga = read('application/modules/konsultasi/controllers/Konsultasi.php');
 const home = read('application/modules/home/controllers/Home.php');
@@ -71,14 +73,16 @@ expect(prerequisiteGate.includes("array('warga', 'dokter')"), 'global_profile_ga
 expect(prerequisiteGatePolicy.includes("$class === 'profile_completion'") && prerequisiteGatePolicy.includes("$class === 'profile_requirements'") && !prerequisiteGatePolicy.includes("$class === 'home' && $method === 'index'"), 'only_remediation_routes_bypass_gate');
 expect(prerequisiteGatePolicy.includes('(int) $resource_user_id === (int) $actor_user_id'), 'blocked_actor_can_only_read_own_profile_photo');
 expect(prerequisiteGatePolicy.includes("$method === 'update_photo'") && prerequisiteGatePolicy.includes("array('warga', 'dokter')"), 'blocked_actor_can_update_own_profile_photo');
-expect(profileCompletionView.includes("in_array('photo', $missing_fields, true)") && profileCompletionView.includes("$photo_required ? 'required'"), 'missing_photo_is_required_on_completion_form');
+expect(profileCompletionView.includes('Foto profil <small>(opsional)</small>') && !profileCompletionView.includes("$photo_required ? 'required'"), 'photo_is_optional_on_completion_form');
 expect(profileCompletionView.includes("$is_command_center = $profile_account_type === 'command_center'")
   && profileCompletionView.includes('Akun Puskesmas tidak memerlukan foto pribadi')
   && profileCompletionView.includes("if ($is_warga || $is_personal)"), 'command_center_completion_excludes_personal_fields');
 expect(service.includes("array('warga', 'dokter')") && service.includes("status !== 'aktif'") && service.includes('must_change_password'), 'actor_state_fail_closed');
 expect(service.includes("array('personal', 'command_center')") && service.includes("$base['safe_error_code'] = 'actor_denied'"), 'canonical_nakes_identity_required_even_flag_off');
 expect(service.includes("'puskesmas_staff'") && service.includes("'nomor_sip'"), 'personal_staff_requirements');
-expect(service.includes("'nik'") && service.includes("'nomor_kk'") && service.includes("'nomor_bpjs_kis'") && service.includes("'nip'"), 'role_identity_requirements_are_enforced');
+expect(service.includes("array('no_hp', 'tgl', 'gender', 'nik')") && !methodBody(service, 'personal_requirements').includes('require_nip'), 'latest_role_identity_requirements_are_enforced');
+expect(profilePolicy.includes("const SIP_STATE_ACTIVE") && profilePolicy.includes("const SIP_STATE_EXPIRING") && profilePolicy.includes("const SIP_STATE_EXPIRED") && profilePolicy.includes('DEFAULT_EXPIRING_DAYS'), 'sip_lifecycle_states_are_centralized');
+expect(profileMigration.includes('ADD COLUMN `gelar`') && profileMigration.includes('ADD COLUMN `sip_expired_at`') && profileMigration.includes('EXECUTION_MODE=PLAN'), 'nakes_profile_schema_is_additive_and_plan_only_by_default');
 expect(identityPolicy.includes("^[0-9]{16}$") && identityPolicy.includes("^[0-9]{13}$") && identityPolicy.includes("^[0-9]{18}$"), 'canonical_identity_lengths_are_explicit');
 expect(identityMigration.includes('ADD COLUMN `nik`') && identityMigration.includes('ADD COLUMN `nomor_kk`') && identityMigration.includes('ADD COLUMN `nomor_bpjs_kis`') && identityMigration.includes('ADD COLUMN `nip`'), 'identity_migration_adds_only_required_nullable_columns');
 expect(identityMigration.includes('uq_users_nik') && identityMigration.includes('uq_users_nomor_bpjs_kis') && identityMigration.includes('uq_puskesmas_staff_nip'), 'identity_uniqueness_is_schema_enforced');
@@ -123,7 +127,8 @@ expect(nakesDashboard.includes('data-role-prerequisite-alert') && nakesDashboard
 expect(wargaView.includes('$role_prerequisite_incomplete') && wargaView.includes('data-enforced=') && wargaView.includes('tahap penyiapan data'), 'warga_incomplete_profile_is_visible_before_enforcement');
 expect(nakesDashboard.includes('$role_prerequisite_incomplete') && nakesDashboard.includes('data-puskesmas-readiness') && nakesDashboard.includes('SIP belum dilengkapi'), 'nakes_readiness_is_visible_before_enforcement');
 expect(puskesmasReadiness.includes("'facility_complete'") && puskesmasReadiness.includes("'staff_missing_sip'") && puskesmasReadiness.includes("'staff_invalid_account'"), 'puskesmas_readiness_has_exact_safe_counts');
-expect(puskesmasReadiness.includes("'staff_missing_nip'") && nakesDashboard.includes('data-puskesmas-exception-board') && nakesDashboard.includes('Diterima tanpa PIC'), 'puskesmas_has_advanced_safe_exception_board');
+expect(nakesDashboard.includes('data-puskesmas-exception-board') && nakesDashboard.includes('Diterima tanpa PIC'), 'puskesmas_has_advanced_safe_exception_board');
+expect(profileCompletionView.includes('Data opsional/sekunder') && profileCompletionView.includes('BPJS/JKN/Taspen (opsional)') && profileCompletionView.includes('Alamat (opsional)'), 'warga_optional_fields_are_visually_distinct');
 expect(methodBody(nakes, 'index').includes("$d['puskesmas_staff_options']") && methodBody(nakes, 'index').includes("$d['puskesmas_data_readiness']"), 'command_center_readiness_uses_tenant_staff_projection');
 expect(methodBody(home, 'update_profile').includes('require_post_json') && methodBody(home, 'require_post_json').includes("method(TRUE) === 'POST'") && methodBody(home, 'update_profile').includes('email_available_for_user') && methodBody(home, 'update_profile').includes('Home_m->update_profile'), 'warga_profile_update_is_validated_post');
 expect(methodBody(home, 'validated_warga_profile_input').includes('Role_identity_policy') && methodBody(home, 'update_profile').includes('identity_value_available'), 'warga_identity_is_canonically_validated_and_unique');

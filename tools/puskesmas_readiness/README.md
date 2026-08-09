@@ -1,12 +1,13 @@
 # Puskesmas data readiness
 
 Read-only readiness projection for the command-center dashboard. It summarizes the
-current tenant facility prerequisite state, NIP/SIP readiness, active staff
+current tenant facility prerequisite state, explicit SIP lifecycle readiness, active staff
 completeness, and operational exception counts without
 changing feature flags or database rows.
 
 The projection deliberately does not expose NIP values and does not fabricate
-missing addresses, NIP/SIP numbers, profile photos, or account links. The
+missing addresses, NIP/SIP data, titles, profile data, or account links. NIP is
+nullable and does not universally block personnel readiness. The
 command-center exception board is tenant-scoped and shows pending requests,
 accepted requests without an active PIC, and readiness counts. It remains
 informational while role prerequisite enforcement is disabled.

@@ -214,8 +214,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 							<label for="jk_edit"><i class="bi bi-gender-ambiguous me-2"></i>Jenis kelamin</label>
 						</div>
 						<div class="form-floating nk-profile-modal__field">
-							<textarea class="form-control" placeholder="Alamat" name="alamat" id="alamat_edit" maxlength="500" required><?= html_escape((string) ($profile['alamat'] ?? '')); ?></textarea>
-							<label for="alamat_edit"><i class="bi bi-geo-alt-fill me-2"></i>Alamat</label>
+							<textarea class="form-control" placeholder="Alamat (opsional)" name="alamat" id="alamat_edit" maxlength="500"><?= html_escape((string) ($profile['alamat'] ?? '')); ?></textarea>
+							<label for="alamat_edit"><i class="bi bi-geo-alt-fill me-2"></i>Alamat (opsional)</label>
 						</div>
 						<?php endif; ?>
 					</div>

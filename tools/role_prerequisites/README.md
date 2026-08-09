@@ -2,7 +2,7 @@
 
 Boundary ini memusatkan pemeriksaan kelengkapan profil sebelum workflow sensitif dijalankan oleh Warga, Nakes personal, atau command-center Puskesmas.
 
-Feature default-off dan hanya dapat aktif pada environment runtime yang sama dengan `DOCLINC_ROLE_PREREQUISITES_ENVIRONMENT`. Saat off, kekurangan data profil dilaporkan oleh `GET /profile/requirements` tanpa memblokir workflow lama. Actor nonaktif, wajib ganti password, role tidak didukung, dan identitas Nakes yang tidak canonical tetap ditolak.
+Feature default-off dan hanya dapat aktif pada environment runtime yang sama dengan `DOCLINC_ROLE_PREREQUISITES_ENVIRONMENT`. Saat off, kekurangan data profil dilaporkan tanpa memblokir workflow lama. Actor nonaktif, role tidak didukung, dan identitas Nakes yang tidak canonical tetap ditolak. Credential lifecycle diperiksa oleh policy terpisah dan hanya memblokir bila feature credential enforcement tersendiri aktif.
 
 Saat aktif, gate berlaku pada:
 
@@ -12,7 +12,7 @@ Saat aktif, gate berlaku pada:
 - perubahan status kunjungan;
 - penyelesaian konsultasi.
 
-Kontrak ini telah dicocokkan dengan schema staging Alibaba pada 2 Agustus 2026. Profil Warga memakai `users.nama`, `email`, `no_hp`, `alamat`, `tgl`, `gender`, `foto`, `nik`, `nomor_kk`, dan `nomor_bpjs_kis`. Nakes personal juga wajib memiliki link aktif `puskesmas_staff` dengan profesi, nomor SIP, dan NIP serta fasilitas aktif dengan data operasional lengkap. Command-center diperlakukan sebagai akun fasilitas, bukan individu: gate hanya membutuhkan identitas canonical, Puskesmas aktif bernama, email operasional, dan nomor kontak. Nama pribadi, tanggal lahir, jenis kelamin, alamat pribadi, dan foto personal tidak menjadi persyaratan command-center. Kekurangan alamat/koordinat fasilitas dan roster tetap ditampilkan sebagai readiness terkelola tanpa mengunci fungsi inti Puskesmas.
+Kontrak UAT 4 Agustus 2026 mewajibkan Warga memiliki NIK, nama, tanggal lahir, gender, dan nomor telepon. KK, BPJS/JKN/Taspen, alamat, email, dan foto tidak menentukan readiness. Nakes personal wajib memiliki link canonical `puskesmas_staff.user_id`, nama, gelar, tanggal lahir, gender, profesi, SIP beserta masa berlaku, nomor telepon, Puskesmas, dan status aktif. NIP nullable dan hanya divalidasi bila diisi. State SIP dibedakan menjadi `MISSING`, `ACTIVE`, `EXPIRING`, dan `EXPIRED`; ambang `EXPIRING` berada pada `Nakes_profile_readiness_policy::DEFAULT_EXPIRING_DAYS`. Command-center tetap merupakan akun fasilitas dan tidak mewarisi persyaratan profil personal.
 
 Respons membedakan `self_service_fields` dari `managed_fields`. Data profil pengguna dapat diperbaiki dari halaman profil; link staf dan data fasilitas harus diperbaiki pengelola sehingga API tidak memberikan CTA profil yang menyesatkan.
 
@@ -32,11 +32,10 @@ Jalankan unit test bila PHP 8.1 tersedia:
 php8.1 tools/role_prerequisites/tests/unit.php
 ```
 
-Aktivasi staging dilakukan terpisah setelah endpoint penyelesaian profil dan
-storage foto lulus gate. Aktivasi ini dengan sengaja mengunci seluruh actor
-yang belum lengkap; kekurangan NIK/KK/BPJS/foto dapat diperbaiki sendiri,
-sedangkan NIP/SIP/link staf/data fasilitas hanya dapat diperbaiki Admin Dinas
-Kesehatan. Authenticated UAT tetap dicatat sebagai gate akhir pengembangan:
+Aktivasi staging dilakukan terpisah setelah kontrak profil, schema additive,
+dan authenticated UAT diterima. NIK dan data profil wajib Warga dapat diperbaiki
+sendiri; gelar, SIP, masa berlaku SIP, link staf, status, dan data fasilitas
+dikelola Admin Dinas Kesehatan. NIP tidak boleh dibuat untuk memenuhi gate.
 
 ```text
 DOCLINC_ROLE_PREREQUISITES_ENABLED=true

@@ -5,11 +5,15 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 $account_candidates_by_staff = isset($account_candidates_by_staff) && is_array($account_candidates_by_staff) ? $account_candidates_by_staff : array();
 $command_center_user_ids = isset($command_center_user_ids) && is_array($command_center_user_ids) ? $command_center_user_ids : array();
 $personal_account_eligibility_by_staff = isset($personal_account_eligibility_by_staff) && is_array($personal_account_eligibility_by_staff) ? $personal_account_eligibility_by_staff : array();
-$staff_readiness_summary = isset($staff_readiness_summary) && is_array($staff_readiness_summary) ? $staff_readiness_summary : array('total' => 0, 'ready' => 0, 'attention' => 0, 'issue_counts' => array());
+$staff_readiness_summary = isset($staff_readiness_summary) && is_array($staff_readiness_summary) ? $staff_readiness_summary : array('total' => 0, 'ready' => 0, 'warning' => 0, 'attention' => 0, 'issue_counts' => array());
 $staff_readiness_labels = array(
 	'staff_core' => 'Data inti staf belum lengkap',
+	'staff_title' => 'Gelar belum lengkap',
+	'staff_profession' => 'Profesi belum lengkap',
 	'staff_registration_number' => 'Nomor SIP belum lengkap',
-	'staff_nip' => 'NIP 18 angka belum lengkap',
+	'staff_registration_expiry' => 'Masa berlaku SIP belum lengkap/valid',
+	'staff_sip_expiring' => 'SIP mendekati masa kedaluwarsa',
+	'staff_sip_expired' => 'SIP sudah kedaluwarsa',
 	'staff_account_unlinked' => 'Akun personal belum terhubung',
 	'staff_account_invalid' => 'Relasi akun personal perlu diperiksa',
 	'staff_first_login_pending' => 'Nakes belum pernah mengganti password bawaan',
@@ -19,15 +23,18 @@ $staff_readiness_labels = array(
 $form_mode = isset($form_mode) ? (string) $form_mode : '';
 $form_staff = isset($form_staff) ? $form_staff : null;
 $nip_schema_ready = !empty($nip_schema_ready);
+$nakes_profile_schema_ready = !empty($nakes_profile_schema_ready);
 $is_form = in_array($form_mode, array('create', 'edit'), true);
 $form_action = $form_mode === 'edit' && $form_staff ? site_url('kelola_staff_puskesmas/update/' . (int) $form_staff->staff_id) : site_url('kelola_staff_puskesmas/store');
 $form_title = $form_mode === 'edit' ? 'Edit staf' : 'Tambah staf';
 $form_values = array(
 	'kode_pkm' => $form_staff ? (string) $form_staff->kode_pkm : '',
 	'nama' => $form_staff ? (string) $form_staff->nama : '',
+	'gelar' => $form_staff && isset($form_staff->gelar) ? (string) $form_staff->gelar : '',
 	'profesi' => $form_staff ? (string) $form_staff->profesi : '',
 	'no_hp' => $form_staff ? (string) $form_staff->no_hp : '',
 	'nomor_sip' => $form_staff ? (string) $form_staff->nomor_sip : '',
+	'sip_expired_at' => $form_staff && isset($form_staff->sip_expired_at) ? (string) $form_staff->sip_expired_at : '',
 	'nip' => $form_staff && isset($form_staff->nip) ? (string) $form_staff->nip : '',
 	'status' => $form_staff ? (string) $form_staff->status : 'aktif',
 );
@@ -50,12 +57,15 @@ $form_values = array(
 	<?php else: ?>
 		<div class="doclinc-staff-note shadow-sm">
 			<i class="fas fa-info-circle"></i>
-			<span>Data staf, NIP, SIP, status, dan hubungan akun hanya dikelola Administrator Dinas Kesehatan.</span>
+			<span>Data staf, gelar, SIP, masa berlaku SIP, status, dan hubungan akun hanya dikelola Administrator Dinas Kesehatan. NIP bersifat opsional sesuai kebutuhan administratif.</span>
 		</div>
 		<div class="alert <?= (int) ($staff_readiness_summary['attention'] ?? 0) > 0 ? 'alert-warning' : 'alert-success'; ?> shadow-sm" role="status">
 			<strong>Kesiapan staf aktif:</strong>
 			<?= html_escape((string) (int) ($staff_readiness_summary['ready'] ?? 0)); ?> dari
 			<?= html_escape((string) (int) ($staff_readiness_summary['total'] ?? 0)); ?> siap.
+			<?php if ((int) ($staff_readiness_summary['warning'] ?? 0) > 0): ?>
+				<?= html_escape((string) (int) $staff_readiness_summary['warning']); ?> siap dengan peringatan masa berlaku SIP.
+			<?php endif; ?>
 			<?php if ((int) ($staff_readiness_summary['attention'] ?? 0) > 0): ?>
 				<?= html_escape((string) (int) $staff_readiness_summary['attention']); ?> staf perlu ditinjau sebelum gate profil diaktifkan.
 			<?php endif; ?>
@@ -65,6 +75,9 @@ $form_values = array(
 				<strong>Password bawaan belum diganti:</strong>
 				<?= html_escape((string) (int) $staff_readiness_summary['issue_counts']['staff_first_login_pending']); ?> akun Nakes belum pernah menyelesaikan aktivasi pertama. Jangan anggap akun ini siap operasional dan jangan membagikan satu password bawaan yang sama ke banyak pengguna.
 			</div>
+		<?php endif; ?>
+		<?php if (!$nakes_profile_schema_ready): ?>
+			<div class="alert alert-warning shadow-sm" role="alert">Kolom gelar dan masa berlaku SIP belum tersedia. Readiness personal Nakes tetap incomplete sampai migrasi additive Phase 1 diterapkan melalui prosedur terpisah.</div>
 		<?php endif; ?>
 		<?php if ($is_form): ?>
 			<div class="card shadow mb-4 doclinc-filter-card">
@@ -99,6 +112,12 @@ $form_values = array(
 						<div class="row">
 							<div class="col-md-6">
 								<div class="form-group">
+									<label class="text-info">Gelar</label>
+									<input type="text" class="form-control rounded-pill border-info" name="gelar" value="<?= html_escape($form_values['gelar']); ?>" placeholder="Gelar profesional" <?= $nakes_profile_schema_ready ? 'required' : 'disabled'; ?>>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="form-group">
 									<label class="text-info">Profesi</label>
 									<input type="text" class="form-control rounded-pill border-info" name="profesi" value="<?= html_escape($form_values['profesi']); ?>" placeholder="Profesi atau peran layanan" required>
 								</div>
@@ -119,9 +138,18 @@ $form_values = array(
 							</div>
 							<div class="col-md-6">
 								<div class="form-group">
-									<label class="text-info">NIP</label>
-									<input type="text" class="form-control rounded-pill border-info" name="nip" value="<?= html_escape($form_values['nip']); ?>" placeholder="NIP 18 angka" inputmode="numeric" pattern="[0-9]{18}" minlength="18" maxlength="18" autocomplete="off" <?= $nip_schema_ready ? 'required' : 'disabled'; ?>>
-									<small class="form-text <?= $nip_schema_ready ? 'text-muted' : 'text-danger'; ?>"><?= $nip_schema_ready ? 'NIP 18 angka wajib untuk staf aktif. Gunakan data resmi; jangan mengisi nomor buatan.' : 'Kolom NIP belum tersedia; jalankan migrasi identitas terlebih dahulu.'; ?></small>
+									<label class="text-info">Masa berlaku SIP</label>
+									<input type="date" class="form-control rounded-pill border-info" name="sip_expired_at" value="<?= html_escape($form_values['sip_expired_at']); ?>" <?= $nakes_profile_schema_ready ? 'required' : 'disabled'; ?>>
+									<small class="form-text text-muted">Menentukan state SIP aktif, mendekati kedaluwarsa, atau kedaluwarsa.</small>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6">
+								<div class="form-group">
+									<label class="text-info">NIP (opsional/administratif)</label>
+									<input type="text" class="form-control rounded-pill border-info" name="nip" value="<?= html_escape($form_values['nip']); ?>" placeholder="NIP 18 angka bila relevan" inputmode="numeric" pattern="[0-9]{18}" minlength="18" maxlength="18" autocomplete="off" <?= $nip_schema_ready ? '' : 'disabled'; ?>>
+									<small class="form-text <?= $nip_schema_ready ? 'text-muted' : 'text-danger'; ?>"><?= $nip_schema_ready ? 'Kosongkan bila staf bukan ASN/tidak memerlukan NIP. Jangan membuat nomor pengganti.' : 'Kolom NIP belum tersedia; jalankan migrasi identitas terlebih dahulu.'; ?></small>
 								</div>
 							</div>
 						</div>
@@ -185,7 +213,8 @@ $form_values = array(
 								<option value="attention" <?= ($filters['readiness'] ?? '') === 'attention' ? 'selected' : ''; ?>>Perlu dilengkapi</option>
 								<option value="ready" <?= ($filters['readiness'] ?? '') === 'ready' ? 'selected' : ''; ?>>Siap</option>
 								<option value="missing_sip" <?= ($filters['readiness'] ?? '') === 'missing_sip' ? 'selected' : ''; ?>>SIP belum lengkap</option>
-								<option value="missing_nip" <?= ($filters['readiness'] ?? '') === 'missing_nip' ? 'selected' : ''; ?>>NIP belum lengkap</option>
+								<option value="sip_expiring" <?= ($filters['readiness'] ?? '') === 'sip_expiring' ? 'selected' : ''; ?>>SIP mendekati kedaluwarsa</option>
+								<option value="sip_expired" <?= ($filters['readiness'] ?? '') === 'sip_expired' ? 'selected' : ''; ?>>SIP kedaluwarsa</option>
 								<option value="account" <?= ($filters['readiness'] ?? '') === 'account' ? 'selected' : ''; ?>>Masalah akun personal</option>
 								<option value="first_login" <?= ($filters['readiness'] ?? '') === 'first_login' ? 'selected' : ''; ?>>Belum pernah aktivasi</option>
 								<option value="password_reset" <?= ($filters['readiness'] ?? '') === 'password_reset' ? 'selected' : ''; ?>>Menunggu setelah reset</option>
@@ -297,9 +326,18 @@ $form_values = array(
 												<strong><?= html_escape($row->nomor_sip ?: '-'); ?></strong>
 											</div>
 											<div class="doclinc-account-field">
+												<span>Status SIP</span>
+												<strong><?= html_escape((string) ($row->sip_state ?? 'MISSING')); ?></strong>
+												<small><?= !empty($row->sip_expired_at) ? html_escape((string) $row->sip_expired_at) : 'Masa berlaku belum tersedia'; ?></small>
+											</div>
+											<div class="doclinc-account-field">
 												<span>NIP</span>
 												<strong><?= !empty($row->nip) ? html_escape(str_repeat('•', 14) . substr((string) $row->nip, -4)) : '-'; ?></strong>
 											</div>
+											</div>
+											<div class="doclinc-account-card__meta">
+												<span>Readiness profil personal</span>
+												<strong><?= html_escape((string) ($row->profile_readiness_state ?? 'INCOMPLETE')); ?></strong>
 											</div>
 											<div class="doclinc-account-card__meta">
 												<span>Akun login personal</span>

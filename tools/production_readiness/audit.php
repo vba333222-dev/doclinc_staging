@@ -14,6 +14,7 @@ require_once APPPATH . 'libraries/Profile_image_storage.php';
 require_once APPPATH . 'libraries/Role_prerequisite_service.php';
 require_once APPPATH . 'libraries/Role_identity_policy.php';
 require_once APPPATH . 'libraries/Nakes_credential_policy.php';
+require_once APPPATH . 'libraries/Nakes_profile_readiness_policy.php';
 require_once __DIR__ . '/ProductionReadinessReport.php';
 require_once __DIR__ . '/ReadinessIdentityResolver.php';
 
@@ -37,7 +38,7 @@ function readiness_schema_gaps($db, $database)
 {
 	$requirements = array(
 		'users' => array('userId', 'nama', 'email', 'role', 'status', 'must_change_password', 'password_changed_at', 'no_hp', 'alamat', 'tgl', 'gender', 'foto', 'remark', 'nik', 'nomor_kk', 'nomor_bpjs_kis'),
-		'puskesmas_staff' => array('staff_id', 'kode_pkm', 'nama', 'no_hp', 'profesi', 'nomor_sip', 'nip', 'user_id', 'status'),
+		'puskesmas_staff' => array('staff_id', 'kode_pkm', 'nama', 'gelar', 'no_hp', 'profesi', 'nomor_sip', 'sip_expired_at', 'nip', 'user_id', 'status'),
 		'm_puskesmas' => array('kode_pkm', 'nama_puskesmas', 'alamat', 'latitude', 'longitude', 'status'),
 	);
 	$gaps = array();
@@ -58,6 +59,7 @@ function readiness_schema_gaps($db, $database)
 		array('users', 'nomor_kk', 'char(16)', 'YES', 'ascii', 'ascii_bin'),
 		array('users', 'nomor_bpjs_kis', 'varchar(13)', 'YES', 'ascii', 'ascii_bin'),
 		array('puskesmas_staff', 'nip', 'char(18)', 'YES', 'ascii', 'ascii_bin'),
+		array('puskesmas_staff', 'gelar', 'varchar(100)', 'YES', 'utf8mb4', 'utf8mb4_unicode_ci'),
 	);
 	foreach ($column_contracts as $contract) {
 		$row = $db->query(
@@ -71,6 +73,15 @@ function readiness_schema_gaps($db, $database)
 			|| strtolower((string) $row['COLLATION_NAME']) !== $contract[5]) {
 			$gaps[] = $contract[0] . '.' . $contract[1] . '.contract';
 		}
+	}
+	$sip_expiry = $db->query(
+		'SELECT COLUMN_TYPE,IS_NULLABLE,COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?',
+		array($database, 'puskesmas_staff', 'sip_expired_at')
+	)->row_array();
+	if (!$sip_expiry || strtolower((string) $sip_expiry['COLUMN_TYPE']) !== 'date'
+		|| (string) $sip_expiry['IS_NULLABLE'] !== 'YES'
+		|| !($sip_expiry['COLUMN_DEFAULT'] === null || strtoupper(trim((string) $sip_expiry['COLUMN_DEFAULT'])) === 'NULL')) {
+		$gaps[] = 'puskesmas_staff.sip_expired_at.contract';
 	}
 	$indexes = array(
 		array('users', 'uq_users_nik', 'nik'),
@@ -134,7 +145,9 @@ function readiness_operational_state($db, ReadinessIdentityResolver $resolver)
 		'facility_name' => 0, 'facility_address' => 0, 'facility_latitude' => 0,
 		'facility_longitude' => 0, 'facility_command_center' => 0,
 		'staff_name' => 0, 'staff_phone' => 0, 'staff_profession' => 0,
-		'staff_registration_number' => 0, 'staff_nip' => 0, 'staff_identity' => 0,
+		'staff_title' => 0, 'staff_birthdate' => 0, 'staff_gender' => 0,
+		'staff_registration_number' => 0, 'staff_registration_expiry' => 0,
+		'staff_sip_expiring' => 0, 'staff_sip_expired' => 0, 'staff_identity' => 0,
 	);
 	$facilities = $db->select('kode_pkm, nama_puskesmas, alamat, latitude, longitude')->where('status', 'aktif')->get('m_puskesmas')->result();
 	$facility_complete = 0;
@@ -161,28 +174,42 @@ function readiness_operational_state($db, ReadinessIdentityResolver $resolver)
 		}
 	}
 
-	$staff_rows = $db->select('staff_id, kode_pkm, nama, no_hp, profesi, nomor_sip, nip, user_id')->where('status', 'aktif')->get('puskesmas_staff')->result();
+	$staff_rows = $db
+		->select('ps.staff_id, ps.kode_pkm, ps.nama, ps.no_hp, ps.profesi, ps.nomor_sip, ps.user_id, ps.status, staff_user.nama AS account_name, staff_user.no_hp AS account_phone, staff_user.tgl AS account_birthdate, staff_user.gender AS account_gender, staff_user.status AS account_status')
+		->select($db->field_exists('gelar', 'puskesmas_staff') ? 'ps.gelar' : 'NULL AS gelar', false)
+		->select($db->field_exists('sip_expired_at', 'puskesmas_staff') ? 'ps.sip_expired_at' : 'NULL AS sip_expired_at', false)
+		->from('puskesmas_staff AS ps')
+		->join('users AS staff_user', 'staff_user.userId = ps.user_id', 'left')
+		->where('ps.status', 'aktif')
+		->get()->result();
 	$staff_ready = 0;
-	$identity_policy = new Role_identity_policy();
+	$profile_policy = new Nakes_profile_readiness_policy();
 	foreach ($staff_rows as $staff) {
-		$phone = preg_replace('/[^0-9+]/', '', trim((string) $staff->no_hp));
 		$identity = $resolver->resolve((int) $staff->user_id);
-		$name_ready = readiness_text_valid($staff->nama, 2);
-		$phone_ready = preg_match('/^\+?[0-9]{8,20}$/', $phone) === 1;
-		$profession_ready = readiness_text_valid($staff->profesi, 2);
-		$registration_ready = readiness_text_valid($staff->nomor_sip, 3);
-		$nip_ready = !empty($identity_policy->nip($staff->nip)['valid']);
 		$identity_ready = !empty($identity['valid'])
 			&& (string) $identity['account_type'] === 'personal'
 			&& (int) $identity['staff_id'] === (int) $staff->staff_id
 			&& (string) $identity['puskesmas_code'] === trim((string) $staff->kode_pkm);
-		if (!$name_ready) { $managed_gap_counts['staff_name']++; }
-		if (!$phone_ready) { $managed_gap_counts['staff_phone']++; }
-		if (!$profession_ready) { $managed_gap_counts['staff_profession']++; }
-		if (!$registration_ready) { $managed_gap_counts['staff_registration_number']++; }
-		if (!$nip_ready) { $managed_gap_counts['staff_nip']++; }
+		$state = $profile_policy->evaluate(array(
+			'name' => $staff->account_name, 'title' => $staff->gelar,
+			'birthdate' => $staff->account_birthdate, 'gender' => $staff->account_gender,
+			'profession' => $staff->profesi, 'registration_number' => $staff->nomor_sip,
+			'registration_expires_at' => $staff->sip_expired_at, 'phone' => $staff->account_phone,
+			'account_state' => $identity_ready ? 'linked' : 'invalid', 'staff_status' => $staff->status,
+			'account_status' => $staff->account_status, 'facility_status' => $identity_ready ? 'aktif' : '',
+		));
+		if (in_array('name', $state['missing_fields'], true)) { $managed_gap_counts['staff_name']++; }
+		if (in_array('phone', $state['missing_fields'], true)) { $managed_gap_counts['staff_phone']++; }
+		if (in_array('title', $state['missing_fields'], true)) { $managed_gap_counts['staff_title']++; }
+		if (in_array('birthdate', $state['missing_fields'], true)) { $managed_gap_counts['staff_birthdate']++; }
+		if (in_array('gender', $state['missing_fields'], true)) { $managed_gap_counts['staff_gender']++; }
+		if (in_array('profession', $state['missing_fields'], true)) { $managed_gap_counts['staff_profession']++; }
+		if (in_array('registration_number', $state['missing_fields'], true)) { $managed_gap_counts['staff_registration_number']++; }
+		if (in_array('registration_expiry', $state['missing_fields'], true)) { $managed_gap_counts['staff_registration_expiry']++; }
+		if ($state['sip_state'] === Nakes_profile_readiness_policy::SIP_STATE_EXPIRING) { $managed_gap_counts['staff_sip_expiring']++; }
+		if ($state['sip_state'] === Nakes_profile_readiness_policy::SIP_STATE_EXPIRED) { $managed_gap_counts['staff_sip_expired']++; }
 		if (!$identity_ready) { $managed_gap_counts['staff_identity']++; }
-		if ($name_ready && $phone_ready && $profession_ready && $registration_ready && $nip_ready && $identity_ready) {
+		if ($state['operationally_ready'] && $identity_ready) {
 			$staff_ready++;
 		}
 	}

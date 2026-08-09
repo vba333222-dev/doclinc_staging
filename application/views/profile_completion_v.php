@@ -8,7 +8,6 @@ $missing_fields = isset($profile_state['missing_fields']) && is_array($profile_s
 $missing_labels = isset($profile_state['missing_labels']) && is_array($profile_state['missing_labels']) ? $profile_state['missing_labels'] : array();
 $self_service_fields = isset($profile_state['self_service_fields']) && is_array($profile_state['self_service_fields']) ? $profile_state['self_service_fields'] : array();
 $managed_fields = isset($profile_state['managed_fields']) && is_array($profile_state['managed_fields']) ? $profile_state['managed_fields'] : array();
-$photo_required = in_array('photo', $missing_fields, true);
 $is_warga = $profile_role === 'warga';
 $is_personal = $profile_account_type === 'personal';
 $is_command_center = $profile_account_type === 'command_center';
@@ -59,40 +58,49 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 			<?php if (!empty($managed_fields)) : ?>
 			<div class="completion-notice" role="status">
 				<strong>Perlu tindakan Admin Dinas Kesehatan</strong>
-				<span>Data kepegawaian Nakes, NIP, SIP, profesi, linkage akun, dan data fasilitas tidak dapat diubah oleh Nakes atau Puskesmas.</span>
+				<span>Data kepegawaian Nakes, gelar, SIP, masa berlaku SIP, profesi, linkage akun, dan data fasilitas dikelola Administrator Dinas Kesehatan. NIP bersifat opsional sesuai konteks administratif.</span>
 			</div>
 			<?php endif; ?>
 
 			<?php if ($can_edit_profile) : ?>
 			<form id="profileCompletionForm" class="completion-form" enctype="multipart/form-data" novalidate>
-				<h2>Data profil</h2>
 				<?php if ($is_warga || $is_personal) : ?>
 				<div class="completion-photo">
 					<img src="<?= doclinc_profile_image_src((int) ($profile_user['userId'] ?? 0), (string) ($profile_user['foto'] ?? '')); ?>" alt="Foto profil saat ini">
-					<label>Foto asli
-						<input type="file" name="foto" accept="image/jpeg,image/png,image/webp" <?= $photo_required ? 'required' : ''; ?>>
+					<label>Foto profil <small>(opsional)</small>
+						<input type="file" name="foto" accept="image/jpeg,image/png,image/webp">
 					</label>
 				</div>
 				<?php else : ?>
 				<div class="completion-notice" role="status"><strong>Akun fasilitas</strong><span>Akun Puskesmas tidak memerlukan foto pribadi, nama lengkap personal, tanggal lahir, atau jenis kelamin.</span></div>
 				<?php endif; ?>
+				<h2><?= $is_warga ? 'Data wajib' : 'Data profil'; ?></h2>
 				<div class="completion-grid">
 					<?php if ($is_warga || $is_personal) : ?>
 					<label>Nama lengkap<input type="text" name="nama_lengkap" maxlength="100" value="<?= html_escape((string) ($profile_user['nama'] ?? '')); ?>" required></label>
 					<?php endif; ?>
-					<label><?= $is_command_center ? 'Email operasional' : 'Email'; ?><input type="email" name="email" maxlength="100" value="<?= html_escape((string) ($profile_user['email'] ?? '')); ?>" required></label>
+					<label><?= $is_command_center ? 'Email operasional' : ($is_personal ? 'Email akun' : 'Email akun (opsional untuk kesiapan profil)'); ?><input type="email" name="email" maxlength="100" value="<?= html_escape((string) ($profile_user['email'] ?? '')); ?>" <?= ($is_command_center || $is_personal) ? 'required' : ''; ?>></label>
 					<label><?= $is_command_center ? 'Nomor kontak Puskesmas' : 'Nomor HP'; ?><input type="tel" name="no_hp" maxlength="20" inputmode="tel" value="<?= html_escape((string) ($profile_user['no_hp'] ?? '')); ?>" required></label>
 					<?php if ($is_warga || $is_personal) : ?>
 					<label>Tanggal lahir<input type="date" name="tgl_lahir" max="<?= html_escape(date('Y-m-d')); ?>" value="<?= html_escape((string) ($profile_user['tgl'] ?? '')); ?>" required></label>
 					<label>Jenis kelamin<select name="jk" required><option value="">Pilih</option><option value="Laki-laki" <?= (string) ($profile_user['gender'] ?? '') === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option><option value="Perempuan" <?= (string) ($profile_user['gender'] ?? '') === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option></select></label>
-					<label class="full">Alamat<textarea name="alamat" maxlength="500" required><?= html_escape((string) ($profile_user['alamat'] ?? '')); ?></textarea></label>
 					<?php endif; ?>
 					<?php if ($is_warga) : ?>
 					<label>NIK<input type="text" name="nik" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" value="<?= html_escape((string) ($profile_user['nik'] ?? '')); ?>" autocomplete="off" required></label>
-					<label>Nomor Kartu Keluarga<input type="text" name="nomor_kk" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" value="<?= html_escape((string) ($profile_user['nomor_kk'] ?? '')); ?>" autocomplete="off" required></label>
-					<label>Nomor kartu BPJS/KIS<input type="text" name="nomor_bpjs_kis" inputmode="numeric" pattern="[0-9]{13}" minlength="13" maxlength="13" value="<?= html_escape((string) ($profile_user['nomor_bpjs_kis'] ?? '')); ?>" autocomplete="off" required></label>
 					<?php endif; ?>
 				</div>
+				<?php if ($is_warga) : ?>
+				<h2>Data opsional/sekunder</h2>
+				<p>Data berikut tidak menghalangi login, penyelesaian profil, atau alur layanan.</p>
+				<div class="completion-grid">
+					<label>Nomor Kartu Keluarga (opsional)<input type="text" name="nomor_kk" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" value="<?= html_escape((string) ($profile_user['nomor_kk'] ?? '')); ?>" autocomplete="off"></label>
+					<label>BPJS/JKN/Taspen (opsional)<input type="text" name="nomor_bpjs_kis" inputmode="numeric" pattern="[0-9]{13}" minlength="13" maxlength="13" value="<?= html_escape((string) ($profile_user['nomor_bpjs_kis'] ?? '')); ?>" autocomplete="off"></label>
+					<label class="full">Alamat (opsional)<textarea name="alamat" maxlength="500"><?= html_escape((string) ($profile_user['alamat'] ?? '')); ?></textarea></label>
+				</div>
+				<?php elseif ($is_personal) : ?>
+				<h2>Data opsional</h2>
+				<div class="completion-grid"><label class="full">Alamat (opsional)<textarea name="alamat" maxlength="500"><?= html_escape((string) ($profile_user['alamat'] ?? '')); ?></textarea></label></div>
+				<?php endif; ?>
 				<div id="profileCompletionFeedback" class="completion-feedback" role="alert" aria-live="polite"></div>
 				<button type="submit" class="completion-primary">Simpan dan periksa kembali</button>
 			</form>

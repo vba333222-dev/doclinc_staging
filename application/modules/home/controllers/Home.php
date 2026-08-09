@@ -115,7 +115,7 @@ class Home extends MX_Controller
 			return;
 		}
 		$data = $validated['data'];
-		if (!$this->Home_m->email_available_for_user($user_id, $data['email'])) {
+		if (isset($data['email']) && !$this->Home_m->email_available_for_user($user_id, $data['email'])) {
 			$this->output->set_status_header(409)->set_output(json_encode(array(
 				'status' => 'error',
 				'safe_error_code' => 'profile_email_conflict',
@@ -124,7 +124,7 @@ class Home extends MX_Controller
 			return;
 		}
 		foreach (array('nik' => 'NIK', 'nomor_bpjs_kis' => 'Nomor kartu BPJS/KIS') as $field => $label) {
-			if (isset($data[$field]) && !$this->Home_m->identity_value_available($user_id, $field, $data[$field])) {
+			if (!empty($data[$field]) && !$this->Home_m->identity_value_available($user_id, $field, $data[$field])) {
 				$this->output->set_status_header(409)->set_output(json_encode(array(
 					'status' => 'error',
 					'safe_error_code' => 'profile_identity_conflict',
@@ -918,7 +918,7 @@ class Home extends MX_Controller
 		if ($this->profile_text_length($name) < 2 || $this->profile_text_length($name) > 100) {
 			return array('success' => false, 'message' => 'Nama lengkap harus terdiri dari 2 sampai 100 karakter.');
 		}
-		if (filter_var($email, FILTER_VALIDATE_EMAIL) === false || strlen($email) > 100) {
+		if ($email !== '' && (filter_var($email, FILTER_VALIDATE_EMAIL) === false || strlen($email) > 100)) {
 			return array('success' => false, 'message' => 'Email belum valid.');
 		}
 		if (!preg_match('/^\+?[0-9]{8,20}$/', $phone)) {
@@ -931,26 +931,22 @@ class Home extends MX_Controller
 		if (!in_array($gender, array('Laki-laki', 'Perempuan'), true)) {
 			return array('success' => false, 'message' => 'Jenis kelamin belum valid.');
 		}
-		if ($this->profile_text_length($address) < 5 || $this->profile_text_length($address) > 500) {
+		if ($address !== '' && ($this->profile_text_length($address) < 5 || $this->profile_text_length($address) > 500)) {
 			return array('success' => false, 'message' => 'Alamat harus terdiri dari 5 sampai 500 karakter.');
 		}
 
 		$data = array(
 			'nama' => $name,
-			'email' => $email,
 			'no_hp' => $phone,
 			'tgl' => $birthdate,
 			'gender' => $gender,
 			'alamat' => $address,
 		);
-		$identity_fields = array('nik', 'nomor_kk', 'nomor_bpjs_kis');
-		$identity_schema_ready = true;
-		foreach ($identity_fields as $field) {
-			if (!$this->db->field_exists($field, 'users')) {
-				$identity_schema_ready = false;
-			}
+		if ($email !== '') {
+			$data['email'] = $email;
 		}
-		if ($identity_schema_ready) {
+		$identity_fields = array('nik', 'nomor_kk', 'nomor_bpjs_kis');
+		if ($this->db->field_exists('nik', 'users')) {
 			require_once APPPATH . 'libraries/Role_identity_policy.php';
 			$identity = (new Role_identity_policy())->warga(array(
 				'nik' => $this->input->post('nik'),
@@ -964,7 +960,11 @@ class Home extends MX_Controller
 					'field_errors' => $identity['field_errors'],
 				);
 			}
-			$data = array_merge($data, $identity['values']);
+			foreach ($identity_fields as $field) {
+				if ($this->db->field_exists($field, 'users')) {
+					$data[$field] = $identity['values'][$field];
+				}
+			}
 		}
 
 		return array('success' => true, 'data' => $data);

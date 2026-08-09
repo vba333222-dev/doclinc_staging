@@ -26,9 +26,11 @@ expect(audit.includes('Profile_image_storage') && audit.includes("$storage->allo
 expect(audit.includes('readiness_file_owner_ready') && report.includes('storage_owner_ready'), 'storage_and_photo_ownership_matches_application_runtime');
 expect(audit.includes('information_schema.COLUMNS') && audit.includes('information_schema.STATISTICS'), 'identity_schema_and_indexes_verified');
 expect(audit.includes("strtoupper(trim((string) $row['COLUMN_DEFAULT'])) === 'NULL'"), 'mariadb_null_default_metadata_is_normalized');
-expect(audit.includes('readiness_operational_state') && audit.includes("where('status', 'aktif')->get('m_puskesmas')") && audit.includes("where('status', 'aktif')->get('puskesmas_staff')"), 'all_active_facilities_and_staff_are_counted_independently');
+expect(audit.includes("field_exists('gelar', 'puskesmas_staff') ? 'ps.gelar' : 'NULL AS gelar'")
+	&& audit.includes("field_exists('sip_expired_at', 'puskesmas_staff') ? 'ps.sip_expired_at' : 'NULL AS sip_expired_at'"), 'profile_v2_audit_projection_is_safe_before_migration');
+expect(audit.includes('readiness_operational_state') && audit.includes("where('status', 'aktif')->get('m_puskesmas')") && audit.includes("where('ps.status', 'aktif')"), 'all_active_facilities_and_staff_are_counted_independently');
 expect(audit.includes('$resolver->commandCenterReady($facility->kode_pkm)') && report.includes('facility_command_center_ready'), 'every_active_facility_requires_canonical_command_center');
-expect(audit.includes("managed_gap_counts['facility_address']++") && audit.includes("managed_gap_counts['staff_nip']++") && audit.includes("managed_gap_counts['staff_identity']++"), 'managed_facility_and_staff_gaps_are_counted_independently');
+expect(audit.includes("managed_gap_counts['facility_address']++") && audit.includes("managed_gap_counts['staff_registration_expiry']++") && audit.includes("managed_gap_counts['staff_identity']++"), 'managed_facility_and_staff_gaps_are_counted_independently');
 expect(resolver.includes("account_type'] = 'command_center'") && resolver.includes("account_type'] = 'personal'") && resolver.includes("count($staff_rows) !== 1"), 'identity_projection_matches_canonical_roles');
 expect(report.includes('SAFE_FIELDS') && report.includes('unknown_missing_field_count') && report.includes('safeCodes'), 'report_output_uses_safe_allowlists');
 expect(report.includes('DENIAL_REASONS') && report.includes('MANAGED_GAPS') && report.includes('actor_profile_evaluated'), 'audit_only_classifications_use_fixed_allowlists');
@@ -41,7 +43,7 @@ expect(runner.includes('read -r -s -p') && runner.includes('unset DB_PASSWORD DO
 expect(runner.includes('BLOCKED_DATA') && audit.includes("$exit_code = $report['activation_ready'] ? 0 : 3") && audit.trim().endsWith('exit($exit_code);'), 'incomplete_data_has_distinct_blocked_exit_after_cleanup');
 expect(runner.includes('ROLE_PREREQUISITE_FLAG_TRUE_COUNT') && runner.includes('ROLE_PREREQUISITE_REMEDIATION_ENFORCEMENT_ACTIVE=true') && !runner.includes('FAIL_FEATURE_ENABLED_WHILE_BLOCKED'), 'active_remediation_gate_is_reported_without_claiming_production_readiness');
 expect(runner.includes("['\\\"]?(true|1|on|yes)['\\\"]?"), 'quoted_and_unquoted_true_feature_values_are_detected');
-expect(roleService.includes("'nik', 'nomor_kk', 'nomor_bpjs_kis'") && roleService.includes("'nomor_sip', 'nip'"), 'gate_tracks_current_production_identity_contract');
+expect(roleService.includes("array('no_hp', 'tgl', 'gender', 'nik')") && roleService.includes("'nomor_sip', 'sip_expired_at'") && !roleService.includes('require_nip('), 'gate_tracks_current_production_identity_contract');
 
 process.stdout.write(`PRODUCTION_READINESS_SOURCE_PASSED=${passed}\n`);
 process.stdout.write(`PRODUCTION_READINESS_SOURCE_FAILED=${failed}\n`);

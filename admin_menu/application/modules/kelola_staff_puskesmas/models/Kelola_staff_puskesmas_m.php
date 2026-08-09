@@ -33,6 +33,8 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		$this->db
 			->select('puskesmas_staff.staff_id, puskesmas_staff.kode_pkm, puskesmas_staff.nama, puskesmas_staff.no_hp, puskesmas_staff.profesi, puskesmas_staff.nomor_sip, puskesmas_staff.user_id, puskesmas_staff.status')
 			->from('puskesmas_staff');
+		$this->db->select($this->db->field_exists('gelar', 'puskesmas_staff') ? 'puskesmas_staff.gelar' : 'NULL AS gelar', false);
+		$this->db->select($this->db->field_exists('sip_expired_at', 'puskesmas_staff') ? 'puskesmas_staff.sip_expired_at' : 'NULL AS sip_expired_at', false);
 		$this->db->select($this->nip_schema_ready() ? 'puskesmas_staff.nip' : 'NULL AS nip', false);
 		$this->db->select($this->db->field_exists('penugasan', 'puskesmas_staff') ? 'puskesmas_staff.penugasan' : 'NULL AS penugasan', false);
 		$this->db->select('(SELECT COUNT(*) FROM ' . $this->db->dbprefix('puskesmas_staff') . ' linked_staff WHERE linked_staff.user_id = puskesmas_staff.user_id AND linked_staff.status = \'aktif\') AS active_user_link_count', false);
@@ -52,9 +54,12 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			$this->db->select($this->db->field_exists('remark', 'users') ? 'staff_user.remark AS akun_remark' : 'NULL AS akun_remark', false);
 			$this->db->select($this->db->field_exists('must_change_password', 'users') ? 'staff_user.must_change_password AS akun_must_change_password' : 'NULL AS akun_must_change_password', false);
 			$this->db->select($this->db->field_exists('password_changed_at', 'users') ? 'staff_user.password_changed_at AS akun_password_changed_at' : 'NULL AS akun_password_changed_at', false);
+			$this->db->select($this->db->field_exists('no_hp', 'users') ? 'staff_user.no_hp AS akun_no_hp' : 'NULL AS akun_no_hp', false);
+			$this->db->select($this->db->field_exists('tgl', 'users') ? 'staff_user.tgl AS akun_tgl' : 'NULL AS akun_tgl', false);
+			$this->db->select($this->db->field_exists('gender', 'users') ? 'staff_user.gender AS akun_gender' : 'NULL AS akun_gender', false);
 			$this->db->join('users staff_user', 'staff_user.userId = puskesmas_staff.user_id', 'left');
 		} else {
-			$this->db->select('NULL AS akun_nama, NULL AS akun_username, NULL AS akun_email, NULL AS akun_status, NULL AS akun_role, NULL AS akun_remark, NULL AS akun_must_change_password, NULL AS akun_password_changed_at', FALSE);
+			$this->db->select('NULL AS akun_nama, NULL AS akun_username, NULL AS akun_email, NULL AS akun_status, NULL AS akun_role, NULL AS akun_remark, NULL AS akun_must_change_password, NULL AS akun_password_changed_at, NULL AS akun_no_hp, NULL AS akun_tgl, NULL AS akun_gender', FALSE);
 		}
 
 		$kode_pkm = isset($filters['kode_pkm']) ? trim((string) $filters['kode_pkm']) : '';
@@ -108,6 +113,13 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 	public function nip_schema_ready()
 	{
 		return $this->db->table_exists('puskesmas_staff') && $this->db->field_exists('nip', 'puskesmas_staff');
+	}
+
+	public function nakes_profile_schema_ready()
+	{
+		return $this->db->table_exists('puskesmas_staff')
+			&& $this->db->field_exists('gelar', 'puskesmas_staff')
+			&& $this->db->field_exists('sip_expired_at', 'puskesmas_staff');
 	}
 
 	public function nip_available($nip, $exclude_staff_id = 0)
@@ -204,21 +216,20 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 
 	public function staff_is_operationally_complete($staff)
 	{
-		if (!$staff || !$this->nip_schema_ready()) {
+		if (!$staff) {
 			return false;
 		}
-		$name = trim((string) ($staff->nama ?? ''));
-		$phone = preg_replace('/[\s().-]+/', '', trim((string) ($staff->no_hp ?? '')));
-		$profession = trim((string) ($staff->profesi ?? ''));
-		$sip = trim((string) ($staff->nomor_sip ?? ''));
-		$nip = trim((string) ($staff->nip ?? ''));
-
-		return $name !== ''
-			&& preg_match('/^\+?[0-9]{8,20}$/', $phone) === 1
-			&& $profession !== ''
-			&& $sip !== ''
-			&& preg_match('/^[0-9]{18}$/D', $nip) === 1
-			&& $this->puskesmas_is_active((string) ($staff->kode_pkm ?? ''));
+		require_once dirname(APPPATH, 2) . '/application/libraries/Nakes_profile_readiness_policy.php';
+		$state = (new Nakes_profile_readiness_policy())->evaluateStaffRecord(array(
+			'name' => $staff->nama ?? '',
+			'title' => $staff->gelar ?? '',
+			'phone' => $staff->no_hp ?? '',
+			'profession' => $staff->profesi ?? '',
+			'registration_number' => $staff->nomor_sip ?? '',
+			'registration_expires_at' => $staff->sip_expired_at ?? '',
+			'facility_status' => $this->puskesmas_is_active((string) ($staff->kode_pkm ?? '')) ? 'aktif' : 'nonaktif',
+		));
+		return $state['operationally_ready'] === true;
 	}
 
 	public function personal_account_state($staff, $command_center_user_id)
@@ -238,19 +249,44 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 	public function readiness_issues($staff)
 	{
 		$issues = array();
-		$name = trim((string) ($staff->nama ?? ''));
-		$phone = preg_replace('/[^0-9+]/', '', trim((string) ($staff->no_hp ?? '')));
-		$profession = trim((string) ($staff->profesi ?? ''));
-		if ($name === '' || $profession === '' || preg_match('/^\+?[0-9]{8,20}$/', $phone) !== 1) {
+		$account_state = (string) ($staff->personal_account_state ?? 'invalid');
+		require_once dirname(APPPATH, 2) . '/application/libraries/Nakes_profile_readiness_policy.php';
+		$readiness = (new Nakes_profile_readiness_policy())->evaluate(array(
+			'name' => $staff->akun_nama ?? '',
+			'title' => $staff->gelar ?? '',
+			'birthdate' => $staff->akun_tgl ?? '',
+			'gender' => $staff->akun_gender ?? '',
+			'profession' => $staff->profesi ?? '',
+			'registration_number' => $staff->nomor_sip ?? '',
+			'registration_expires_at' => $staff->sip_expired_at ?? '',
+			'phone' => $staff->akun_no_hp ?? '',
+			'account_state' => $account_state,
+			'staff_status' => $staff->status ?? '',
+			'account_status' => $staff->akun_status ?? '',
+			'facility_status' => $staff->puskesmas_status ?? '',
+		));
+		$staff->profile_readiness_state = $readiness['state'];
+		$staff->sip_state = $readiness['sip_state'];
+		$core_fields = array('name', 'birthdate', 'gender', 'phone');
+		if (array_intersect($core_fields, $readiness['missing_fields'])) {
 			$issues[] = 'staff_core';
 		}
-		if (trim((string) ($staff->nomor_sip ?? '')) === '') {
+		if (in_array('title', $readiness['missing_fields'], true)) {
+			$issues[] = 'staff_title';
+		}
+		if (in_array('profession', $readiness['missing_fields'], true)) {
+			$issues[] = 'staff_profession';
+		}
+		if (in_array('registration_number', $readiness['missing_fields'], true)) {
 			$issues[] = 'staff_registration_number';
 		}
-		if (preg_match('/^[0-9]{18}$/D', trim((string) ($staff->nip ?? ''))) !== 1) {
-			$issues[] = 'staff_nip';
+		if (in_array('registration_expiry', $readiness['missing_fields'], true)) {
+			$issues[] = 'staff_registration_expiry';
+		} elseif ($readiness['sip_state'] === Nakes_profile_readiness_policy::SIP_STATE_EXPIRED) {
+			$issues[] = 'staff_sip_expired';
+		} elseif ($readiness['sip_state'] === Nakes_profile_readiness_policy::SIP_STATE_EXPIRING) {
+			$issues[] = 'staff_sip_expiring';
 		}
-		$account_state = (string) ($staff->personal_account_state ?? 'invalid');
 		if ($account_state !== 'linked') {
 			$issues[] = $account_state === 'unlinked' ? 'staff_account_unlinked' : 'staff_account_invalid';
 		} else {
@@ -280,15 +316,19 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 
 	public function readiness_summary(array $rows)
 	{
-		$summary = array('total' => 0, 'ready' => 0, 'attention' => 0, 'issue_counts' => array());
+		$summary = array('total' => 0, 'ready' => 0, 'warning' => 0, 'attention' => 0, 'issue_counts' => array());
 		foreach ($rows as $row) {
 			if ((string) ($row->status ?? '') !== 'aktif') {
 				continue;
 			}
 			$summary['total']++;
 			$issues = $this->readiness_issues($row);
-			if (empty($issues)) {
+			$blocking_issues = array_values(array_diff($issues, array('staff_sip_expiring')));
+			if (empty($blocking_issues)) {
 				$summary['ready']++;
+				if (in_array('staff_sip_expiring', $issues, true)) {
+					$summary['warning']++;
+				}
 			} else {
 				$summary['attention']++;
 			}
@@ -365,9 +405,6 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		}
 		if (($staff->status ?? '') !== 'aktif') {
 			return array('eligible' => false, 'message' => 'Aktifkan staf terlebih dahulu.');
-		}
-		if (!$this->nip_schema_ready() || preg_match('/^[0-9]{18}$/D', trim((string) ($staff->nip ?? ''))) !== 1) {
-			return array('eligible' => false, 'message' => 'Lengkapi NIP 18 angka sebelum membuat akun personal.');
 		}
 		if (trim((string) ($staff->nomor_sip ?? '')) === '' || trim((string) ($staff->profesi ?? '')) === '') {
 			return array('eligible' => false, 'message' => 'Lengkapi SIP dan profesi sebelum membuat akun personal.');
@@ -463,9 +500,6 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			}
 			if (($staff->status ?? '') !== 'aktif') {
 				$abort('Aktifkan staf terlebih dahulu.');
-			}
-			if (!$this->nip_schema_ready() || preg_match('/^[0-9]{18}$/D', trim((string) ($staff->nip ?? ''))) !== 1) {
-				$abort('Lengkapi NIP 18 angka sebelum membuat akun personal.');
 			}
 			if (trim((string) ($staff->nomor_sip ?? '')) === '' || trim((string) ($staff->profesi ?? '')) === '') {
 				$abort('Lengkapi SIP dan profesi sebelum membuat akun personal.');
@@ -901,9 +935,9 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 	private function filter_staff_payload($data)
 	{
 		$row = array();
-		foreach (array('kode_pkm', 'nama', 'no_hp', 'profesi', 'nomor_sip', 'nip', 'status') as $field) {
+		foreach (array('kode_pkm', 'nama', 'gelar', 'no_hp', 'profesi', 'nomor_sip', 'sip_expired_at', 'nip', 'status') as $field) {
 			if ($this->db->field_exists($field, 'puskesmas_staff') && array_key_exists($field, $data)) {
-				$row[$field] = trim((string) $data[$field]);
+				$row[$field] = $field === 'nip' && $data[$field] === null ? null : trim((string) $data[$field]);
 			}
 		}
 		if (isset($row['status']) && !in_array($row['status'], array('aktif', 'nonaktif'), true)) {

@@ -5,6 +5,8 @@ class Puskesmas_data_readiness
 {
 	public function summarize(array $role_state, array $staff_rows)
 	{
+		require_once __DIR__ . '/Nakes_profile_readiness_policy.php';
+		$profile_policy = new Nakes_profile_readiness_policy();
 		$managed_fields = isset($role_state['managed_fields']) && is_array($role_state['managed_fields'])
 			? array_values(array_unique($role_state['managed_fields']))
 			: array();
@@ -18,8 +20,11 @@ class Puskesmas_data_readiness
 			'staff_total' => count($staff_rows),
 			'staff_ready' => 0,
 			'staff_missing_sip' => 0,
-			'staff_missing_nip' => 0,
+			'staff_sip_active' => 0,
+			'staff_sip_expiring' => 0,
+			'staff_sip_expired' => 0,
 			'staff_missing_core_data' => 0,
+			'staff_missing_title' => 0,
 			'staff_linked' => 0,
 			'staff_unlinked' => 0,
 			'staff_invalid_account' => 0,
@@ -28,22 +33,35 @@ class Puskesmas_data_readiness
 		);
 
 		foreach ($staff_rows as $staff) {
-			$name = $this->value($staff, 'nama');
-			$phone = preg_replace('/[^0-9+]/', '', $this->value($staff, 'no_hp'));
-			$profession = $this->value($staff, 'profesi');
-			$sip = $this->value($staff, 'nomor_sip');
-			$nip_ready = (int) $this->value($staff, 'nip_ready') === 1;
 			$account_state = $this->value($staff, 'personal_account_state');
-			$core_ready = $name !== '' && $profession !== '' && preg_match('/^\+?[0-9]{8,20}$/', $phone) === 1;
-
-			if (!$core_ready) {
+			$state = $profile_policy->evaluate(array(
+				'name' => $this->value($staff, 'account_name'),
+				'title' => $this->value($staff, 'gelar'),
+				'birthdate' => $this->value($staff, 'account_birthdate'),
+				'gender' => $this->value($staff, 'account_gender'),
+				'profession' => $this->value($staff, 'profesi'),
+				'registration_number' => $this->value($staff, 'nomor_sip'),
+				'registration_expires_at' => $this->value($staff, 'sip_expired_at'),
+				'phone' => $this->value($staff, 'account_phone'),
+				'account_state' => $account_state,
+				'staff_status' => $this->value($staff, 'status'),
+				'account_status' => $this->value($staff, 'account_status'),
+				'facility_status' => 'aktif',
+			));
+			if (array_intersect(array('name', 'birthdate', 'gender', 'phone', 'profession'), $state['missing_fields'])) {
 				$summary['staff_missing_core_data']++;
 			}
-			if ($sip === '') {
-				$summary['staff_missing_sip']++;
+			if (in_array('title', $state['missing_fields'], true)) {
+				$summary['staff_missing_title']++;
 			}
-			if (!$nip_ready) {
-				$summary['staff_missing_nip']++;
+			if ($state['sip_state'] === Nakes_profile_readiness_policy::SIP_STATE_MISSING || $state['sip_state'] === Nakes_profile_readiness_policy::SIP_STATE_INVALID) {
+				$summary['staff_missing_sip']++;
+			} elseif ($state['sip_state'] === Nakes_profile_readiness_policy::SIP_STATE_EXPIRED) {
+				$summary['staff_sip_expired']++;
+			} elseif ($state['sip_state'] === Nakes_profile_readiness_policy::SIP_STATE_EXPIRING) {
+				$summary['staff_sip_expiring']++;
+			} elseif ($state['sip_state'] === Nakes_profile_readiness_policy::SIP_STATE_ACTIVE) {
+				$summary['staff_sip_active']++;
 			}
 			if ($account_state === 'linked') {
 				$summary['staff_linked']++;
@@ -53,14 +71,16 @@ class Puskesmas_data_readiness
 				$summary['staff_invalid_account']++;
 			}
 
-			if ($core_ready && $sip !== '' && $nip_ready && $account_state === 'linked') {
+			if ($state['operationally_ready']) {
 				$summary['staff_ready']++;
 			}
 		}
 
 		$summary['attention_count'] += $summary['staff_missing_sip']
-			+ $summary['staff_missing_nip']
+			+ $summary['staff_sip_expiring']
+			+ $summary['staff_sip_expired']
 			+ $summary['staff_missing_core_data']
+			+ $summary['staff_missing_title']
 			+ $summary['staff_unlinked']
 			+ $summary['staff_invalid_account'];
 		$summary['complete'] = $summary['facility_complete']

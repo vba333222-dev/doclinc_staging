@@ -368,6 +368,9 @@ class Home_nakes extends MX_Controller
 			'staff_id' => isset($identity_context['staff_id']) ? $identity_context['staff_id'] : null,
 			'staff_status' => isset($identity_context['staff_status']) ? $identity_context['staff_status'] : null,
 			'staff_profesi' => isset($identity_context['staff_profesi']) ? $identity_context['staff_profesi'] : null,
+			'staff_gelar' => isset($identity_context['staff_gelar']) ? $identity_context['staff_gelar'] : null,
+			'staff_nomor_sip' => isset($identity_context['staff_nomor_sip']) ? $identity_context['staff_nomor_sip'] : null,
+			'staff_sip_expired_at' => isset($identity_context['staff_sip_expired_at']) ? $identity_context['staff_sip_expired_at'] : null,
 		);
 		$d['nakes_puskesmas_code'] = $puskesmas_code;
 		$d['nakes_puskesmas_name'] = !empty($identity_context['puskesmas_name']) ? (string) $identity_context['puskesmas_name'] : '';
@@ -1182,7 +1185,7 @@ class Home_nakes extends MX_Controller
 		if (!in_array($gender, ['Laki-laki', 'Perempuan'], true)) {
 			return ['success' => false, 'message' => 'Jenis kelamin belum valid.'];
 		}
-		if ($this->profile_text_length($address) < 5 || $this->profile_text_length($address) > 500) {
+		if ($address !== '' && ($this->profile_text_length($address) < 5 || $this->profile_text_length($address) > 500)) {
 			return ['success' => false, 'message' => 'Alamat harus terdiri dari 5 sampai 500 karakter.'];
 		}
 
