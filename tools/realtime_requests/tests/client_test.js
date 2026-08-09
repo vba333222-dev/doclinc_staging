@@ -146,6 +146,46 @@ const notificationSnapshot = { success: true, data: { unread_count: 0, notificat
 	const off = new requests.RequestRuntime({ config: { enabled: false }, RealtimeClient, fetch: fetcher });
 	expect(off.start() === false, 'request_flag_off_zero_connection');
 
+	let receiverTimer = null;
+	let receiverTimerId = 0;
+	let receiverSetCalls = 0;
+	let receiverClearCalls = 0;
+	let receiverObserver = null;
+	const receiverSharedClient = {
+		connected: false,
+		acquireSubscription() { return { release() { return true; } }; },
+		observe(channel, callbacks) { receiverObserver = callbacks; return 1; },
+		unobserve() {},
+		hasSubscriptionOwners() { return true; }
+	};
+	function receiverSensitiveSetTimer(callback, delay) {
+		if (this !== undefined) { throw new TypeError('set_timer_receiver_invalid'); }
+		receiverSetCalls += 1;
+		receiverTimerId += 1;
+		receiverTimer = { id: receiverTimerId, callback, delay };
+		return receiverTimerId;
+	}
+	function receiverSensitiveClearTimer(id) {
+		if (this !== undefined) { throw new TypeError('clear_timer_receiver_invalid'); }
+		receiverClearCalls += 1;
+		if (receiverTimer && receiverTimer.id === id) { receiverTimer = null; }
+	}
+	const receiverRequest = new requests.RequestRuntime({
+		config: { enabled: true, channel: 'puskesmas:PKM09:ops', snapshot_url: '/realtime/requests/snapshot', poll_interval_ms: 30000 },
+		RealtimeClient, sharedClient: receiverSharedClient, fetch: fetcher,
+		setTimeout: receiverSensitiveSetTimer, clearTimeout: receiverSensitiveClearTimer
+	});
+	let receiverStartError = null;
+	try { receiverRequest.start(); } catch (error) { receiverStartError = error; }
+	expect(receiverStartError === null && receiverSetCalls === 1 && receiverTimer !== null,
+		'request_polling_accepts_receiver_sensitive_injected_timer');
+	receiverObserver.connected();
+	expect(receiverClearCalls === 1 && receiverTimer === null, 'request_connected_state_clears_receiver_sensitive_timer');
+	receiverObserver.disconnected();
+	expect(receiverSetCalls === 2 && receiverTimer !== null, 'request_disconnected_state_restarts_receiver_sensitive_timer');
+	receiverRequest.teardown();
+	expect(receiverClearCalls === 2 && receiverTimer === null, 'request_teardown_clears_receiver_sensitive_timer');
+
 	function notificationFor(target, channel, customFetch, ui) {
 		return new notifications.NotificationRuntime({
 			config: { enabled: true, websocket_url: 'wss://example.invalid/connection/websocket', connection_token_url: '/realtime/connection-token', subscription_token_url: '/realtime/subscription-token', snapshot_url: '/notifications/snapshot', channel, poll_interval_ms: 30000 },

@@ -1453,10 +1453,10 @@ class Home_nakes_m extends MX_Controller
 		$note = trim((string) $note);
 
 		if ($request_id < 1 || $staff_id < 1 || $assigned_by_user_id < 1 || $kode_pkm === '') {
-			return array('status' => 'error', 'message' => 'Data PIC tidak valid.');
+			return array('status' => 'error', 'message' => 'Data penanggung jawab tidak valid.');
 		}
 		if (!$this->staff_assignment_table_ready()) {
-			return array('status' => 'error', 'message' => 'Penugasan PIC belum tersedia.');
+			return array('status' => 'error', 'message' => 'Pengaturan penanggung jawab belum tersedia.');
 		}
 		if (!is_array($identity_context)
 			|| empty($identity_context['valid'])
@@ -1468,7 +1468,7 @@ class Home_nakes_m extends MX_Controller
 
 		$db_debug = $this->db->db_debug;
 		$this->db->db_debug = false;
-		$result = array('status' => 'error', 'message' => 'Gagal memperbarui PIC.');
+		$result = array('status' => 'error', 'message' => 'Gagal memperbarui penanggung jawab.');
 		$transaction_started = false;
 		$committed = false;
 		$staff = null;
@@ -1482,7 +1482,7 @@ class Home_nakes_m extends MX_Controller
 
 		try {
 			if (!$this->db->trans_begin()) {
-				$abort('Gagal memperbarui PIC.');
+				$abort('Gagal memperbarui penanggung jawab.');
 			}
 			$transaction_started = true;
 
@@ -1502,20 +1502,20 @@ class Home_nakes_m extends MX_Controller
 				$abort('Permintaan tidak dapat diakses.');
 			}
 			if ((string) $request->request_status !== 'Accepted') {
-				$abort('PIC hanya dapat dipilih saat konsultasi aktif.');
+				$abort('Penanggung jawab hanya dapat dipilih saat konsultasi aktif.');
 			}
 
 			$active_assignments = $this->locked_active_staff_assignments($request_id);
 			if ($active_assignments === false) {
-				$abort('Gagal memperbarui PIC.');
+				$abort('Gagal memperbarui penanggung jawab.');
 			}
 			if (count($active_assignments) > 1) {
-				$abort('Data PIC aktif perlu diperiksa.', 'ambiguous_active_assignments');
+				$abort('Data penanggung jawab aktif perlu diperiksa.', 'ambiguous_active_assignments');
 			}
 			foreach ($active_assignments as $active_assignment) {
 				if ((string) $active_assignment->kode_pkm !== $kode_pkm
 					|| (string) $active_assignment->staff_kode_pkm !== $kode_pkm) {
-					$abort('Data PIC tidak valid.');
+					$abort('Data penanggung jawab tidak valid.');
 				}
 			}
 			$previous_assignment = !empty($active_assignments) ? $active_assignments[0] : null;
@@ -1534,7 +1534,7 @@ class Home_nakes_m extends MX_Controller
 
 			$owner = $this->staff_personal_owner_context($staff, true);
 			if (!$owner['valid']) {
-				$abort('Akun perlu dicek. PIC tidak diubah.');
+				$abort('Akun perlu diperiksa. Penanggung jawab tidak diubah.');
 			}
 			$target_owner_user_id = $owner['user_id'] ?: $assigned_by_user_id;
 			$same_staff_selection = count($active_assignments) === 1
@@ -1554,7 +1554,7 @@ class Home_nakes_m extends MX_Controller
 						'updated_at' => $now,
 					));
 				if ($this->db->affected_rows() !== count($active_assignments)) {
-					$abort('Gagal memperbarui PIC.');
+					$abort('Gagal memperbarui penanggung jawab.');
 				}
 			}
 
@@ -1570,14 +1570,14 @@ class Home_nakes_m extends MX_Controller
 					'created_at' => $now,
 					'updated_at' => $now,
 				))) {
-					$abort('Gagal memperbarui PIC.');
+					$abort('Gagal memperbarui penanggung jawab.');
 				}
 				$new_assignment_id = (int) $this->db->insert_id();
-				if ($new_assignment_id < 1) { $abort('Gagal memperbarui PIC.'); }
+				if ($new_assignment_id < 1) { $abort('Gagal memperbarui penanggung jawab.'); }
 			}
 
 			if (!$this->synchronize_request_staff_owner($request_id, $kode_pkm, $target_owner_user_id, $assigned_by_user_id)) {
-				$abort('Gagal memperbarui PIC.');
+				$abort('Gagal memperbarui penanggung jawab.');
 			}
 			if (!$this->request_staff_assignment_state_matches(
 				$request_id,
@@ -1587,7 +1587,7 @@ class Home_nakes_m extends MX_Controller
 				$target_owner_user_id,
 				$assigned_by_user_id
 			) || $this->db->trans_status() === false) {
-				$abort('Gagal memperbarui PIC.');
+				$abort('Gagal memperbarui penanggung jawab.');
 			}
 			if ($assignment_event !== null && function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled()) {
 				$audiences = array(
@@ -1600,28 +1600,28 @@ class Home_nakes_m extends MX_Controller
 				$transition = $assignment_event === 'pic_changed' ? 'pic_reassigned' : 'pic_assigned';
 				if (!doclinc_request_realtime_delivery($this->db)->deliver(
 					$transition, $request_id, $new_assignment_id, $audiences, array($kode_pkm)
-				)) { $abort('Gagal memperbarui PIC.'); }
+				)) { $abort('Gagal memperbarui penanggung jawab.'); }
 			}
 
 			if (!$this->db->trans_commit()) {
 				$this->db->trans_rollback();
 				$transaction_started = false;
-				$abort('Gagal memperbarui PIC.');
+				$abort('Gagal memperbarui penanggung jawab.');
 			}
 			$transaction_started = false;
 			$committed = true;
 			$result = array(
 				'status' => 'success',
 				'message' => $same_staff_selection
-					? 'PIC tetap sama.'
-					: 'PIC diperbarui.',
+					? 'Penanggung jawab tetap sama.'
+					: 'Penanggung jawab diperbarui.',
 			);
 		} catch (RuntimeException $e) {
 			if ($e->getMessage() !== 'staff_assignment_aborted') {
-				$result = array('status' => 'error', 'message' => 'Gagal memperbarui PIC.');
+				$result = array('status' => 'error', 'message' => 'Gagal memperbarui penanggung jawab.');
 			}
 		} catch (Throwable $e) {
-			$result = array('status' => 'error', 'message' => 'Gagal memperbarui PIC.');
+			$result = array('status' => 'error', 'message' => 'Gagal memperbarui penanggung jawab.');
 		} finally {
 			if ($transaction_started) {
 				$this->db->trans_rollback();
@@ -1638,7 +1638,7 @@ class Home_nakes_m extends MX_Controller
 				'actor_user_id' => $assigned_by_user_id,
 				'actor_staff_id' => $staff_id,
 				'actor_role' => 'dokter',
-				'message' => 'PIC diganti.',
+				'message' => 'Penanggung jawab diganti.',
 				'metadata' => array(
 					'previous_staff_id' => (int) $previous_assignment->staff_id,
 					'previous_staff_name' => (string) $previous_assignment->staff_nama,
@@ -1653,7 +1653,7 @@ class Home_nakes_m extends MX_Controller
 				'actor_user_id' => $assigned_by_user_id,
 				'actor_staff_id' => $staff_id,
 				'actor_role' => 'dokter',
-				'message' => 'PIC ditetapkan.',
+				'message' => 'Penanggung jawab ditetapkan.',
 				'metadata' => array(
 					'staff_id' => $staff_id,
 					'staff_name' => (string) $staff->nama,
@@ -1672,10 +1672,10 @@ class Home_nakes_m extends MX_Controller
 		$kode_pkm = $this->normalize_staff_puskesmas_code($kode_pkm);
 
 		if ($request_id < 1 || $assigned_by_user_id < 1 || $kode_pkm === '') {
-			return array('status' => 'error', 'message' => 'Data PIC tidak valid.');
+			return array('status' => 'error', 'message' => 'Data penanggung jawab tidak valid.');
 		}
 		if (!$this->staff_assignment_table_ready()) {
-			return array('status' => 'error', 'message' => 'Penugasan PIC belum tersedia.');
+			return array('status' => 'error', 'message' => 'Pengaturan penanggung jawab belum tersedia.');
 		}
 		if (!is_array($identity_context)
 			|| empty($identity_context['valid'])
@@ -1687,7 +1687,7 @@ class Home_nakes_m extends MX_Controller
 
 		$db_debug = $this->db->db_debug;
 		$this->db->db_debug = false;
-		$result = array('status' => 'error', 'message' => 'Gagal melepas PIC.');
+		$result = array('status' => 'error', 'message' => 'Gagal menghapus penugasan.');
 		$transaction_started = false;
 		$committed = false;
 		$previous_assignment = null;
@@ -1698,7 +1698,7 @@ class Home_nakes_m extends MX_Controller
 
 		try {
 			if (!$this->db->trans_begin()) {
-				$abort('Gagal melepas PIC.');
+				$abort('Gagal menghapus penugasan.');
 			}
 			$transaction_started = true;
 			$request_query = $this->db->query(
@@ -1717,7 +1717,7 @@ class Home_nakes_m extends MX_Controller
 				$abort('Permintaan tidak dapat diakses.');
 			}
 			if ((string) $request->request_status !== 'Accepted') {
-				$abort('PIC hanya dapat dilepas saat konsultasi aktif.');
+				$abort('Penugasan hanya dapat dihapus saat konsultasi aktif.');
 			}
 
 			$active_assignments = $this->locked_active_staff_assignments($request_id);
@@ -1725,7 +1725,7 @@ class Home_nakes_m extends MX_Controller
 				|| count($active_assignments) !== 1
 				|| (string) $active_assignments[0]->kode_pkm !== $kode_pkm
 				|| (string) $active_assignments[0]->staff_kode_pkm !== $kode_pkm) {
-				$abort('PIC aktif tidak ditemukan.');
+				$abort('Penanggung jawab aktif tidak ditemukan.');
 			}
 			$previous_assignment = $active_assignments[0];
 			$now = date('Y-m-d H:i:s');
@@ -1739,7 +1739,7 @@ class Home_nakes_m extends MX_Controller
 				));
 			if ($this->db->affected_rows() !== 1
 				|| !$this->synchronize_request_staff_owner($request_id, $kode_pkm, $assigned_by_user_id, $assigned_by_user_id)) {
-				$abort('Gagal melepas PIC.');
+				$abort('Gagal menghapus penugasan.');
 			}
 			if (!$this->request_staff_assignment_state_matches(
 				$request_id,
@@ -1749,7 +1749,7 @@ class Home_nakes_m extends MX_Controller
 				$assigned_by_user_id,
 				$assigned_by_user_id
 			) || $this->db->trans_status() === false) {
-				$abort('Gagal melepas PIC.');
+				$abort('Gagal menghapus penugasan.');
 			}
 			if (function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled()) {
 				$audiences = array(
@@ -1760,23 +1760,23 @@ class Home_nakes_m extends MX_Controller
 				if ($previous_user_id > 0) { $audiences[] = 'user:' . $previous_user_id; }
 				if (!doclinc_request_realtime_delivery($this->db)->deliver(
 					'pic_cleared', $request_id, (int) $previous_assignment->assignment_id, $audiences, array($kode_pkm)
-				)) { $abort('Gagal melepas PIC.'); }
+				)) { $abort('Gagal menghapus penugasan.'); }
 			}
 
 			if (!$this->db->trans_commit()) {
 				$this->db->trans_rollback();
 				$transaction_started = false;
-				$abort('Gagal melepas PIC.');
+				$abort('Gagal menghapus penugasan.');
 			}
 			$transaction_started = false;
 			$committed = true;
-			$result = array('status' => 'success', 'message' => 'PIC dilepas.');
+			$result = array('status' => 'success', 'message' => 'Penugasan dihapus.');
 		} catch (RuntimeException $e) {
 			if ($e->getMessage() !== 'staff_unassignment_aborted') {
-				$result = array('status' => 'error', 'message' => 'Gagal melepas PIC.');
+				$result = array('status' => 'error', 'message' => 'Gagal menghapus penugasan.');
 			}
 		} catch (Throwable $e) {
-			$result = array('status' => 'error', 'message' => 'Gagal melepas PIC.');
+			$result = array('status' => 'error', 'message' => 'Gagal menghapus penugasan.');
 		} finally {
 			if ($transaction_started) {
 				$this->db->trans_rollback();
@@ -1791,7 +1791,7 @@ class Home_nakes_m extends MX_Controller
 				'actor_user_id' => $assigned_by_user_id,
 				'actor_staff_id' => (int) $previous_assignment->staff_id,
 				'actor_role' => 'dokter',
-				'message' => 'PIC dilepas.',
+				'message' => 'Penugasan dihapus.',
 				'metadata' => array(
 					'previous_staff_id' => (int) $previous_assignment->staff_id,
 					'previous_staff_name' => (string) $previous_assignment->staff_nama,

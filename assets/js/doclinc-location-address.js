@@ -28,7 +28,7 @@
 			available: false,
 			location_found: !!locationFound,
 			address: locationFound ? 'Alamat belum dapat dikenali' : 'Lokasi belum ditemukan',
-			locality: locationFound ? 'Lokasi perangkat ditemukan' : 'Periksa izin lokasi perangkat',
+			locality: locationFound ? 'Lokasi terdeteksi' : 'Periksa izin lokasi perangkat',
 			provider: ''
 		};
 	}

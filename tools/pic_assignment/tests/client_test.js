@@ -151,7 +151,7 @@ function buildFixture(requestId) {
             return {
                 ok: true,
                 json: async () => ({
-                    status: 'success', message: 'PIC diperbarui.', request_id: 77,
+                    status: 'success', message: 'Penanggung jawab diperbarui.', request_id: 77,
                     assignment: { staff_id: 4, staff_name: 'Dr. Sari', staff_profession: 'Dokter', staff_contact: 'contact-ref' }
                 })
             };
@@ -169,12 +169,12 @@ function buildFixture(requestId) {
     expect(fixture.contact.textContent === 'contact-ref' && !fixture.contact.hidden,
         'authorized_contact_updated_as_text');
     expect(fixture.selectOne.value === '4' && fixture.selectTwo.value === '4'
-        && fixture.submitOne.textContent === 'Ganti PIC' && fixture.submitTwo.textContent === 'Ganti PIC',
+        && fixture.submitOne.textContent === 'Ganti penanggung jawab' && fixture.submitTwo.textContent === 'Ganti penanggung jawab',
         'all_matching_controls_reconciled');
     expect(!fixture.clearOne.hidden && !fixture.clearTwo.hidden
         && fixture.noteOne.value === '' && fixture.noteTwo.value === '', 'clear_action_shown_and_notes_reset');
     expect(!fixture.submitOne.disabled && !fixture.submitTwo.disabled
-        && fixture.feedbackOne.textContent === 'PIC diperbarui.' && !fixture.feedbackOne.hidden,
+        && fixture.feedbackOne.textContent === 'Penanggung jawab diperbarui.' && !fixture.feedbackOne.hidden,
         'success_unlocks_and_announces');
 
     controller.release();
@@ -185,25 +185,25 @@ function buildFixture(requestId) {
         documentRoot: clearFixture.documentRoot,
         windowObject: {},
         formDataFactory,
-        fetchImpl: async () => ({ ok: true, json: async () => ({ status: 'success', message: 'PIC dilepas.', request_id: 78, assignment: null }) })
+        fetchImpl: async () => ({ ok: true, json: async () => ({ status: 'success', message: 'Penugasan dihapus.', request_id: 78, assignment: null }) })
     });
     clearController.start();
     expect(await clearFixture.clearFormOne.submit() === true, 'native_clear_success');
     expect(clearFixture.nameOne.textContent === 'Belum ditentukan'
         && clearFixture.selectOne.value === '' && clearFixture.clearOne.hidden
-        && clearFixture.submitOne.textContent === 'Tetapkan PIC', 'clear_reconciles_exact_empty_state');
+        && clearFixture.submitOne.textContent === 'Tetapkan penanggung jawab', 'clear_reconciles_exact_empty_state');
 
     const failureFixture = buildFixture(79);
     const failureController = runtime.create({
         documentRoot: failureFixture.documentRoot,
         windowObject: {},
         formDataFactory,
-        fetchImpl: async () => ({ ok: false, json: async () => ({ status: 'error', message: 'Data PIC aktif perlu diperiksa.', request_id: 79 }) })
+        fetchImpl: async () => ({ ok: false, json: async () => ({ status: 'error', message: 'Data penanggung jawab aktif perlu diperiksa.', request_id: 79 }) })
     });
     failureController.start();
     expect(await failureFixture.assignOne.submit() === false, 'server_failure_returns_false');
     expect(failureFixture.nameOne.textContent === 'Belum ditentukan'
-        && failureFixture.feedbackOne.textContent === 'Data PIC aktif perlu diperiksa.'
+        && failureFixture.feedbackOne.textContent === 'Data penanggung jawab aktif perlu diperiksa.'
         && failureFixture.feedbackOne.roles.includes('alert'), 'failure_preserves_state_and_announces_safe_message');
 
     expect(clearController.release() === true && clearController.release() === false,

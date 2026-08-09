@@ -4,7 +4,7 @@
 	} else {
 		root.DoclincRealtimeClient = factory(root);
 	}
-}(typeof self !== 'undefined' ? self : this, function (root) {
+}(typeof self !== 'undefined' ? self : (typeof globalThis !== 'undefined' ? globalThis : this), function (root) {
 	'use strict';
 
 	var DEFAULT_POLL_INTERVAL = 30000;
@@ -35,6 +35,8 @@
 
 	function RealtimeClient(options) {
 		options = options || {};
+		var injectedSetTimer = options.setTimeout;
+		var injectedClearTimer = options.clearTimeout;
 		this.enabled = options.enabled === true;
 		this.websocketUrl = typeof options.websocketUrl === 'string' ? options.websocketUrl : '';
 		this.connectionTokenUrl = options.connectionTokenUrl || '/realtime/connection-token';
@@ -44,8 +46,12 @@
 		this.UnauthorizedError = options.UnauthorizedError
 			|| (this.Centrifuge && this.Centrifuge.UnauthorizedError)
 			|| (root && root.UnauthorizedError);
-		this.setTimer = options.setTimeout || setTimeout;
-		this.clearTimer = options.clearTimeout || clearTimeout;
+		this.setTimer = typeof injectedSetTimer === 'function'
+			? function (callback, delay) { return injectedSetTimer(callback, delay); }
+			: function (callback, delay) { return root.setTimeout(callback, delay); };
+		this.clearTimer = typeof injectedClearTimer === 'function'
+			? function (timer) { return injectedClearTimer(timer); }
+			: function (timer) { return root.clearTimeout(timer); };
 		this.onError = typeof options.onError === 'function' ? options.onError : function () {};
 		this.client = null;
 		this.connected = false;

@@ -17,14 +17,14 @@
 						<?php if ($role_prerequisite_incomplete) : ?>
 							<div class="alert <?= $role_prerequisite_blocked ? 'alert-warning' : 'alert-info'; ?> d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 mb-0" role="<?= $role_prerequisite_blocked ? 'alert' : 'status'; ?>" data-role-prerequisite-alert data-enforced="<?= $role_prerequisite_blocked ? 'true' : 'false'; ?>">
 								<div>
-									<strong><?= $role_prerequisite_blocked ? 'Profil wajib dilengkapi.' : 'Kesiapan profil belum lengkap.'; ?></strong>
-									<span><?= html_escape(!empty($role_prerequisite_labels) ? implode(', ', $role_prerequisite_labels) . ($role_prerequisite_extra_count > 0 ? ' dan ' . $role_prerequisite_extra_count . ' data lainnya' : '') . ' perlu dilengkapi.' : 'Lengkapi data profil untuk melanjutkan.'); ?></span>
-									<?php if (!$role_prerequisite_blocked) : ?><span class="d-block small mt-1">Layanan tetap dapat digunakan selama tahap penyiapan data.</span><?php endif; ?>
+									<strong><?= $role_prerequisite_blocked ? 'Data profil wajib dilengkapi.' : (!empty($nakes_is_command_center) ? 'Data Puskesmas belum lengkap.' : 'Data profesi Anda belum lengkap.'); ?></strong>
+									<span><?= html_escape(!empty($role_prerequisite_labels) ? 'Data yang belum tercatat: ' . implode(', ', $role_prerequisite_labels) . ($role_prerequisite_extra_count > 0 ? ', serta ' . $role_prerequisite_extra_count . ' data lainnya' : '') . '.' : 'Lengkapi data profil untuk melanjutkan.'); ?></span>
+									<?php if (!$role_prerequisite_blocked) : ?><span class="d-block small mt-1">Anda tetap dapat menggunakan aplikasi sementara data diperbarui.</span><?php endif; ?>
 								</div>
 								<?php if ($role_prerequisite_cta_url !== '') : ?>
 									<a class="btn btn-warning btn-sm" href="#profile" onclick="showContent('profile')"><?= html_escape($role_prerequisite_cta_label !== '' ? $role_prerequisite_cta_label : 'Lengkapi profil'); ?></a>
 								<?php else : ?>
-									<span class="small fw-semibold">Hubungi pengelola DocLink.</span>
+									<span class="small fw-semibold">Hubungi Admin Dinas Kesehatan.</span>
 								<?php endif; ?>
 							</div>
 						<?php endif; ?>
@@ -42,23 +42,22 @@
 						<div class="dl-nakes-card dl-dashboard-section nk-readiness-card" data-puskesmas-readiness>
 							<div class="nk-readiness-head">
 								<div>
-									<strong>Kesiapan data Puskesmas</strong>
+									<strong>Kelengkapan data Puskesmas</strong>
 									<span>Ringkasan data unit dan staf aktif</span>
 								</div>
 								<span class="nk-readiness-state <?= !empty($puskesmas_readiness['complete']) ? 'is-ready' : 'needs-attention'; ?>">
-									<?= !empty($puskesmas_readiness['complete']) ? 'Lengkap' : html_escape((string) $readiness_attention_count . ' perlu ditinjau'); ?>
+									<?= !empty($puskesmas_readiness['complete']) ? 'Lengkap' : html_escape((string) $readiness_attention_count . ' data perlu dilengkapi'); ?>
 								</span>
 							</div>
 							<div class="nk-readiness-grid">
 								<div><span>Data unit</span><strong><?= !empty($puskesmas_readiness['facility_complete']) ? 'Lengkap' : 'Perlu dilengkapi'; ?></strong></div>
-								<div><span>Staf siap</span><strong><?= html_escape((string) $readiness_staff_ready); ?> / <?= html_escape((string) $readiness_staff_total); ?></strong></div>
+								<div><span>Data staf lengkap</span><strong><?= html_escape((string) $readiness_staff_ready); ?> / <?= html_escape((string) $readiness_staff_total); ?></strong></div>
 								<div><span>SIP belum lengkap</span><strong><?= html_escape((string) (isset($puskesmas_readiness['staff_missing_sip']) ? (int) $puskesmas_readiness['staff_missing_sip'] : 0)); ?></strong></div>
 								<div><span>SIP mendekati kedaluwarsa</span><strong><?= html_escape((string) (isset($puskesmas_readiness['staff_sip_expiring']) ? (int) $puskesmas_readiness['staff_sip_expiring'] : 0)); ?></strong></div>
 								<div><span>SIP kedaluwarsa</span><strong><?= html_escape((string) (isset($puskesmas_readiness['staff_sip_expired']) ? (int) $puskesmas_readiness['staff_sip_expired'] : 0)); ?></strong></div>
-								<div><span>Akun perlu ditinjau</span><strong><?= html_escape((string) ((isset($puskesmas_readiness['staff_unlinked']) ? (int) $puskesmas_readiness['staff_unlinked'] : 0) + (isset($puskesmas_readiness['staff_invalid_account']) ? (int) $puskesmas_readiness['staff_invalid_account'] : 0))); ?></strong></div>
+								<div><span>Akun staf perlu diperiksa</span><strong><?= html_escape((string) ((isset($puskesmas_readiness['staff_unlinked']) ? (int) $puskesmas_readiness['staff_unlinked'] : 0) + (isset($puskesmas_readiness['staff_invalid_account']) ? (int) $puskesmas_readiness['staff_invalid_account'] : 0))); ?></strong></div>
 							</div>
 							<div class="nk-readiness-foot">
-								<span>Panel ini hanya membaca data tenant Anda dan belum memblokir layanan.</span>
 								<a href="#profile" onclick="showContent('profile')">Lihat rincian</a>
 							</div>
 						</div>
@@ -69,15 +68,15 @@
 						?>
 						<div class="dl-nakes-card dl-dashboard-section nk-readiness-card" data-puskesmas-exception-board>
 							<div class="nk-readiness-head">
-								<div><strong>Perlu perhatian</strong><span>Prioritas operasional Puskesmas saat ini</span></div>
-								<span class="nk-readiness-state <?= ($pending_attention + $without_pic_attention) > 0 ? 'needs-attention' : 'is-ready'; ?>"><?= html_escape((string) ($pending_attention + $without_pic_attention)); ?> item</span>
+							<div><strong>Yang perlu ditangani</strong><span>Ringkasan permintaan saat ini</span></div>
+							<span class="nk-readiness-state <?= ($pending_attention + $without_pic_attention) > 0 ? 'needs-attention' : 'is-ready'; ?>"><?= html_escape((string) ($pending_attention + $without_pic_attention)); ?> permintaan</span>
 							</div>
 							<div class="nk-readiness-grid">
 								<div><span>Permintaan menunggu</span><strong><?= html_escape((string) $pending_attention); ?></strong></div>
-								<div><span>Diterima tanpa PIC</span><strong><?= html_escape((string) $without_pic_attention); ?></strong></div>
+							<div><span>Belum ada penanggung jawab layanan</span><strong><?= html_escape((string) $without_pic_attention); ?></strong></div>
 								<div><span>Data staf/unit</span><strong><?= html_escape((string) (isset($operation_exceptions['staff_data_attention']) ? (int) $operation_exceptions['staff_data_attention'] : 0)); ?></strong></div>
 							</div>
-							<div class="nk-readiness-foot"><span>Hanya data Puskesmas Anda. Nomor identitas dan data klinis tidak ditampilkan.</span><a href="#req_konsul" onclick="showContent('req_konsul')">Buka antrian</a></div>
+						<div class="nk-readiness-foot"><a href="#req_konsul" onclick="showContent('req_konsul')">Buka antrian</a></div>
 						</div>
 						<?php
 						$dashboard_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_list) ? $puskesmas_staff_list : array();

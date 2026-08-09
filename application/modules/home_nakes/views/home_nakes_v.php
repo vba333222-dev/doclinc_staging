@@ -238,6 +238,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			<button type="button" class="btn-close nk-notification-close" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
 		</div>
 		<div class="offcanvas-body nk-notification-body">
+			<div class="alert alert-light border p-2 mb-0" data-browser-notification-optin hidden>
+				<strong class="d-block small">Notifikasi perangkat</strong>
+				<small class="d-block text-muted" data-browser-notification-status></small>
+				<button type="button" class="btn btn-success btn-sm w-100 mt-2" data-browser-notification-enable>Aktifkan notifikasi perangkat</button>
+			</div>
 			<div id="notificationList" class="notification-list nk-notification-list"></div>
 		</div>
 	</div>
@@ -383,6 +388,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-browser-notification.js')); ?>"></script>
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 	<script src="<?= html_escape(base_url('assets/js/doclinc-location-address.js')); ?>"></script>
 	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
@@ -512,9 +518,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		});
 
 		function showContent(tab) {
-			let currentActiveContent = document.querySelector('.content.active');
-			if (currentActiveContent) {
-				currentActiveContent.classList.remove('active');
+			let activeContents = document.querySelectorAll('.content.active');
+			for (let contentIndex = 0; contentIndex < activeContents.length; contentIndex++) {
+				activeContents[contentIndex].classList.remove('active');
 			}
 
 			let targetContent = document.getElementById(tab);
@@ -522,9 +528,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				targetContent.classList.add('active');
 			}
 
-			let currentActiveMenu = document.querySelector('.nav-bottom-wrapper .menu a.active');
-			if (currentActiveMenu) {
-				currentActiveMenu.classList.remove('active');
+			let activeMenus = document.querySelectorAll('.nav-bottom-wrapper .menu a.active');
+			for (let menuIndex = 0; menuIndex < activeMenus.length; menuIndex++) {
+				activeMenus[menuIndex].classList.remove('active');
 			}
 
 			let targetMenu = document.getElementById(tab + '-tab');
@@ -889,7 +895,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 			function setViewerMode(canUpdate) {
 				setTextById('nakesVisitMapTitle', canUpdate ? 'Rute Anda ke Pasien' : 'Monitoring Rute Nakes');
-				setTextById('nakesVisitRouteTitle', canUpdate ? 'Rute Anda ke pasien' : 'Rute PIC menuju pasien');
+				setTextById('nakesVisitRouteTitle', canUpdate ? 'Rute Anda ke pasien' : 'Rute petugas menuju pasien');
 				const arrivalNotice = document.getElementById('nakesVisitArrivalNotice');
 				if (arrivalNotice && !canUpdate) arrivalNotice.classList.add('d-none');
 			}
@@ -1909,12 +1915,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		let pasien;
 		let button;
 
-		document.addEventListener("DOMContentLoaded", () => {
-			if (Notification.permission !== "granted") {
-				Notification.requestPermission();
-			}
-		});
-
 		// Mengambil parameter URL
 		const params = new URLSearchParams(window.location.search);
 		// const dokter = prompt("Masukkan Dokter");
@@ -1993,21 +1993,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			});
 
 			function showNotification(message) {
-
-				if (!("Notification" in window)) {
-				} else if (Notification.permission === "granted") {
-					const notification = new Notification("New Message", {
-						body: message
-					});
-				} else if (Notification.permission !== "denied") {
-					Notification.requestPermission().then((permission) => {
-						if (permission === "granted") {
-							const notification = new Notification("New Message", {
-								body: message
-							});
-						}
-					});
-				} else {
+				if (window.DoclincBrowserNotification) {
+					window.DoclincBrowserNotification.showIfGranted("Pesan baru", { body: message });
 				}
 			}
 

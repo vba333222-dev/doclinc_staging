@@ -527,7 +527,7 @@ class Home_nakes extends MX_Controller
 		}
 
 		$result = $this->Home_nakes_m->assign_staff_to_request($request_id, $staff_id, $puskesmas_code, $user_id, $note, $identity_context);
-		$message = !empty($result['message']) ? $result['message'] : 'Gagal memperbarui PIC.';
+		$message = !empty($result['message']) ? $result['message'] : 'Gagal memperbarui penanggung jawab.';
 		if ($this->staff_assignment_json_requested()) {
 			$result['message'] = $message;
 			$this->respond_staff_assignment_json(
@@ -577,7 +577,7 @@ class Home_nakes extends MX_Controller
 		}
 
 		$result = $this->Home_nakes_m->clear_staff_assignment($request_id, $puskesmas_code, $user_id, $identity_context);
-		$message = !empty($result['message']) ? $result['message'] : 'Gagal melepas PIC.';
+		$message = !empty($result['message']) ? $result['message'] : 'Gagal menghapus penugasan.';
 		if ($this->staff_assignment_json_requested()) {
 			$result['message'] = $message;
 			$this->respond_staff_assignment_json(
@@ -1284,7 +1284,7 @@ class Home_nakes extends MX_Controller
 			if (!$snapshot_valid) {
 				$success = false;
 				$http_status = 500;
-				$result['message'] = 'PIC berhasil diproses. Muat ulang untuk melihat status terbaru.';
+				$result['message'] = 'Penanggung jawab berhasil diproses. Muat ulang untuk melihat status terbaru.';
 			}
 			if ($current) {
 				$assignment = array(
@@ -1298,7 +1298,7 @@ class Home_nakes extends MX_Controller
 
 		$body = array(
 			'status' => $success ? 'success' : 'error',
-			'message' => isset($result['message']) ? (string) $result['message'] : ($success ? 'PIC diperbarui.' : 'Gagal memperbarui PIC.'),
+			'message' => isset($result['message']) ? (string) $result['message'] : ($success ? 'Penanggung jawab diperbarui.' : 'Gagal memperbarui penanggung jawab.'),
 			'request_id' => (int) $request_id,
 			'assignment' => $assignment,
 		);

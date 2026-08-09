@@ -1,14 +1,16 @@
 (function (root, factory) {
 	if (typeof module === 'object' && module.exports) {
-		module.exports = factory();
+		module.exports = factory(root);
 	} else {
-		root.DoclincRequests = factory();
+		root.DoclincRequests = factory(root);
 	}
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : (typeof globalThis !== 'undefined' ? globalThis : this), function (root) {
 	'use strict';
 
 	function RequestRuntime(options) {
 		options = options || {};
+		var injectedSetTimer = options.setTimeout;
+		var injectedClearTimer = options.clearTimeout;
 		this.config = options.config || {};
 		this.RealtimeClient = options.RealtimeClient;
 		this.Centrifuge = options.Centrifuge;
@@ -25,8 +27,12 @@
 		this.fingerprint = '';
 		this.destroyed = false;
 		this.pagehideHandler = null;
-		this.setTimer = options.setTimeout || setTimeout;
-		this.clearTimer = options.clearTimeout || clearTimeout;
+		this.setTimer = typeof injectedSetTimer === 'function'
+			? function (callback, delay) { return injectedSetTimer(callback, delay); }
+			: function (callback, delay) { return root.setTimeout(callback, delay); };
+		this.clearTimer = typeof injectedClearTimer === 'function'
+			? function (timer) { return injectedClearTimer(timer); }
+			: function (timer) { return root.clearTimeout(timer); };
 		this.onChange = options.onChange || function () {
 			if (root && root.location && typeof root.location.reload === 'function') {
 				root.location.reload();
