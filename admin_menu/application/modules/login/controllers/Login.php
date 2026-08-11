@@ -16,7 +16,9 @@
 				// }
 				redirect('/home');
 			}else{
-				$this->load->view('login_v');
+				$this->load->view('login_v', array(
+					'session_message' => (string) $this->input->get('session', true) === 'expired' ? 'Sesi berakhir. Masuk lagi.' : '',
+				));
 			}
 		}
 
@@ -29,16 +31,37 @@
 		    $user_query = $this->Login_m->get_admin_by_email($email);
 		    if ($user_query->num_rows() > 0 && doclinc_password_verify($password, (string) $user_query->row()->password)) {
 				$user = $user_query->row();
-				if (doclinc_password_needs_rehash((string) $user->password)) {
-					$this->Login_m->update_password($user->userId, doclinc_password_hash($password));
+				$login_password_hash = (string) $user->password;
+				if (doclinc_password_needs_rehash($login_password_hash)
+					&& $this->config->item('single_active_session_enabled') !== true) {
+					$login_password_hash = doclinc_password_hash($password);
+					$this->Login_m->update_password($user->userId, $login_password_hash);
 				}
 				$this->session->sess_regenerate(TRUE);
+				$normal_session_token = null;
+				if ($this->config->item('single_active_session_enabled') === true) {
+					$service_file = dirname(APPPATH, 2) . '/application/libraries/Session_binding_service.php';
+					if (!is_file($service_file)) {
+						return $this->output->set_output('0');
+					}
+					require_once $service_file;
+					$normal_session_token = (new Session_binding_service($this->db))->issue((int) $user->userId, $login_password_hash);
+					if (!is_string($normal_session_token)) {
+						$this->session->sess_destroy();
+						return $this->output->set_output('0');
+					}
+				}
 		    	$data_session = array(
+					'id' => (int) $user->userId,
 					'email' => $user->email,
 					'username' => $user->username,
 					'level' => $user->role,
-					'is_login' => 'TRUE'
+					'is_login' => 'TRUE',
+					'admin_logout_token' => bin2hex(random_bytes(32)),
 				);
+				if ($normal_session_token !== null) {
+					$data_session['normal_session_token'] = $normal_session_token;
+				}
 				$this->session->set_userdata($data_session);
 				$this->Login_m->log_login_event('login_success', $user->userId, array('role' => $user->role, 'area' => 'admin'));
 				return $this->output->set_output('1');
@@ -79,7 +102,11 @@
             }
             $encrypted = doclinc_password_hash($randomString);
 	    	$email = $this->input->post('email_cust');
-	    	$this->Login_m->reset_password($email,$encrypted);
+			if (!$this->Login_m->reset_password($email,$encrypted)) {
+				$this->session->set_flashdata('info', '<div class="alert alert-danger" role="alert">Password belum dapat direset. Coba lagi.</div>');
+				redirect('login','refresh');
+				return;
+			}
 	    	$this->send_mail($email,$randomString);
 
 	    	$info = '<div class="alert alert-success alert-dismissible fade show shadow border border-success animated fadeInDown" style="z-index:auto;" role="alert">
@@ -92,7 +119,27 @@
 			redirect('login','refresh');
 	    }
 		public function logout(){
-		    $this->session->sess_destroy();
-		    redirect('/','refresh');
+			if ($this->input->method(TRUE) !== 'POST') {
+				show_404();
+				return;
+			}
+			$expected = $this->session->userdata('admin_logout_token');
+			$submitted = $this->input->post('_logout_token', false);
+			if (!is_string($expected) || !is_string($submitted) || !hash_equals($expected, $submitted)) {
+				show_error('Form sudah tidak berlaku.', 403, 'Coba lagi');
+				return;
+			}
+			if ($this->config->item('single_active_session_enabled') === true) {
+				$service_file = dirname(APPPATH, 2) . '/application/libraries/Session_binding_service.php';
+				if (is_file($service_file)) {
+					require_once $service_file;
+					(new Session_binding_service($this->db))->revokeCurrent(
+						(int) $this->session->userdata('id'),
+						$this->session->userdata('normal_session_token')
+					);
+				}
+			}
+			$this->session->sess_destroy();
+			redirect('/','refresh');
 		}
 	}

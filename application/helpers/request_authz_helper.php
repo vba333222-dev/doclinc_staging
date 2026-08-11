@@ -566,6 +566,13 @@ if (!function_exists('doclinc_request_handling_nakes_id')) {
 if (!function_exists('doclinc_request_is_handled_by_nakes')) {
 	function doclinc_request_is_handled_by_nakes($request, $nakes_user_id)
 	{
+		$CI = &get_instance();
+		if ($CI->config->item('care_team_workflow_enabled') === true
+			&& $request && isset($request->request_id)) {
+			require_once APPPATH . 'libraries/Care_team_service.php';
+			$context = (new Care_team_service($CI->db))->requestContext((int) $request->request_id, (int) $nakes_user_id);
+			return !empty($context['can_assess']) || !empty($context['can_visit']);
+		}
 		$handling_nakes_id = doclinc_request_handling_nakes_id($request);
 		return doclinc_request_matches_user_puskesmas($request, $nakes_user_id)
 			&& $handling_nakes_id !== null
@@ -728,7 +735,7 @@ if (!function_exists('doclinc_nakes_request_access_context')) {
 
 		$CI = &get_instance();
 		$fields = array('request_id', 'request_status', 'assigned_puskesmas_code', 'dokter_id');
-		foreach (array('accepted_by_user_id', 'assigned_nakes_user_id') as $optional_field) {
+		foreach (array('accepted_by_user_id', 'assigned_nakes_user_id', 'responsible_doctor_user_id', 'visit_performer_user_id', 'consultation_mode') as $optional_field) {
 			if ($CI->db->field_exists($optional_field, 'requests')) {
 				$fields[] = $optional_field;
 			}
@@ -752,6 +759,31 @@ if (!function_exists('doclinc_nakes_request_access_context')) {
 		$legacy_tenant = $request_code === '';
 		if (!$explicit_tenant_match && !$legacy_tenant) {
 			$context['errors'][] = 'tenant_mismatch';
+			return $context;
+		}
+		if ($CI->config->item('care_team_workflow_enabled') === true) {
+			require_once APPPATH . 'libraries/Care_team_service.php';
+			$care_team = new Care_team_service($CI->db);
+			if (!$care_team->schemaReady()) {
+				$context['errors'][] = 'care_team_unavailable';
+				return $context;
+			}
+			if ($context['account_type'] === 'command_center') {
+				$context['tenant_match'] = $explicit_tenant_match
+					|| ($legacy_tenant && isset($request->dokter_id) && (int) $request->dokter_id === $user_id);
+				$context['can_view'] = $context['tenant_match'];
+				$context['valid'] = $context['can_view'];
+				return $context;
+			}
+			$team_context = $care_team->requestContext($request_id, $user_id);
+			$context['tenant_match'] = $explicit_tenant_match;
+			$context['can_view'] = !empty($team_context['valid']);
+			$context['can_handle'] = !empty($team_context['can_assess']) || !empty($team_context['can_visit']);
+			$context['is_responsible_doctor'] = !empty($team_context['is_responsible_doctor']);
+			$context['is_visit_performer'] = !empty($team_context['is_visit_performer']);
+			$context['can_assess'] = !empty($team_context['can_assess']);
+			$context['can_visit'] = !empty($team_context['can_visit']);
+			$context['valid'] = $context['can_view'];
 			return $context;
 		}
 

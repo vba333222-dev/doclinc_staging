@@ -200,10 +200,13 @@
 									Pengaturan
 								</a>
 								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" href="<?php echo site_url('login/logout'); ?>">
-									<i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-									Keluar
-								</a>
+								<form method="post" action="<?php echo site_url('login/logout'); ?>">
+									<input type="hidden" name="_logout_token" value="<?= html_escape((string) $this->session->userdata('admin_logout_token')); ?>">
+									<button type="submit" class="dropdown-item">
+										<i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+										Keluar
+									</button>
+								</form>
 							</div>
 						</li>
 					</ul>

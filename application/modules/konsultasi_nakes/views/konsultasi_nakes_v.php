@@ -1,5 +1,6 @@
 <?php
 $kriteria = isset($kriteria) ? $kriteria : '';
+$care_team_workflow_enabled = !empty($care_team_workflow_enabled);
 $map_provider = $this->config->item('map_provider') ?: 'none';
 $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
@@ -800,27 +801,29 @@ if (!function_exists('formatComplaintText')) {
 		<input type="hidden" name="userid" id="userId" value="<?= html_escape($userid) ?>">
 		<input type="hidden" name="dokterid" id="dokterId" value="<?= html_escape($_SESSION['id']) ?>">
 		<?php if (!$can_handle_request) : ?>
-			<div class="alert alert-info" role="status">Permintaan ini dapat dilihat, tetapi tindakan klinis telah ditugaskan kepada Staff lain.</div>
+			<div class="alert alert-info" role="status">Permintaan ini dapat dilihat, tetapi penanganan dilakukan oleh Nakes lain.</div>
 		<?php endif; ?>
 		<form id="form_konsul_nakes" enctype="multipart/form-data" data-can-handle="<?= $can_handle_request ? '1' : '0'; ?>">
 			<input type="hidden" name="request_id" id="idReq" value="<?= html_escape($request_id) ?>">
 			<fieldset <?= $can_handle_request ? '' : 'disabled'; ?>>
 			<?php if ($clinical_suggestions_enabled && !$anamnesis_schema_ready) : ?>
-				<div class="alert alert-warning" role="alert">Penyimpanan anamnesis belum siap. Konsultasi tidak dapat diselesaikan sampai administrator memverifikasi schema.</div>
+				<div class="alert alert-warning" role="alert">Penyimpanan anamnesis belum tersedia. Coba lagi setelah Admin memperbaruinya.</div>
 			<?php endif; ?>
 			<section class="consult-card service-decision-card">
-				<h2 class="section-heading"><i class="bi bi-signpost-split"></i> Tentukan Jenis Layanan</h2>
-				<p class="service-decision-helper">Pilih setelah komunikasi awal dengan warga selesai dilakukan.</p>
-				<div class="service-decision-options" role="group" aria-label="Tentukan jenis layanan">
+				<h2 class="section-heading"><i class="bi bi-signpost-split"></i> Layanan</h2>
+				<?php if (!$care_team_workflow_enabled) : ?>
+				<p class="service-decision-helper">Pilih setelah komunikasi awal dengan warga.</p>
+				<div class="service-decision-options" role="group" aria-label="Pilih layanan">
 					<button type="button" class="service-decision-option" data-kriteria="Kunjungan Nakes" data-label="Visit / Kunjungan">
-						<strong>Visit / Kunjungan</strong>
+						<strong>Kunjungan</strong>
 						<span>Nakes melakukan kunjungan langsung ke lokasi warga.</span>
 					</button>
 					<button type="button" class="service-decision-option" data-kriteria="Selesai Konsultasi" data-label="Non-Visit / Konsultasi Jarak Jauh">
-						<strong>Non-Visit / Konsultasi Jarak Jauh</strong>
+						<strong>Tanpa kunjungan</strong>
 						<span>Konsultasi diselesaikan jarak jauh setelah asesmen awal.</span>
 					</button>
 				</div>
+				<?php endif; ?>
 				<p class="service-decision-state">Pilihan: <strong id="selectedServiceLabel"><?= html_escape($kriteria !== '' ? $kriteria : 'Belum ditentukan'); ?></strong></p>
 				<input type="hidden" id="kriteria" name="kriteria" value="<?= html_escape($kriteria) ?>">
 			</section>

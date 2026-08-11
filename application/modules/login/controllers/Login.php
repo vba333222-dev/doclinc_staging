@@ -16,7 +16,7 @@ class Login extends MX_Controller
 				redirect('login/change-password');
 				return;
 			}
-			$this->session->unset_userdata(array('credential_activation_user_id', 'credential_activation_mode', 'password_change_session_binding', 'password_change_token_state'));
+			$this->session->unset_userdata(array('credential_activation_user_id', 'credential_activation_mode', 'password_change_session_binding', 'password_change_token_state', 'normal_session_token'));
 		}
 		if ($this->session->userdata('logged_in') == TRUE) {
 			if ((int) $this->session->userdata('must_change_password') === 1) {
@@ -34,9 +34,12 @@ class Login extends MX_Controller
 				echo 'Akun tidak dapat diproses.';
 			}
 		} else {
+			$session_message = (string) $this->input->get('session', true) === 'expired'
+				? 'Sesi berakhir. Masuk lagi.'
+				: '';
 			$this->load->view('login_v', array(
 				'activation_available' => $this->config->item('first_login_password_change_enabled') === true,
-				'success_message' => (string) $this->session->flashdata('login_success'),
+				'success_message' => $session_message !== '' ? $session_message : (string) $this->session->flashdata('login_success'),
 			));
 		}
 	}
@@ -99,7 +102,7 @@ class Login extends MX_Controller
 		$this->session->sess_regenerate(TRUE);
 		$this->session->unset_userdata(array(
 			'id', 'username', 'nama', 'email', 'role', 'remark', 'picture', 'logged_in',
-			'must_change_password', 'password_change_token_state',
+			'must_change_password', 'password_change_token_state', 'normal_session_token',
 		));
 		$binding = bin2hex(random_bytes(16));
 		$this->session->set_userdata(array(
@@ -138,10 +141,23 @@ class Login extends MX_Controller
 				echo "0";
 				return;
 			}
-			if (doclinc_password_needs_rehash((string) $user->password)) {
-				$this->Login_m->update_password($user->userId, doclinc_password_hash($password));
+			$login_password_hash = (string) $user->password;
+			if (doclinc_password_needs_rehash($login_password_hash)
+				&& $this->config->item('single_active_session_enabled') !== true) {
+				$login_password_hash = doclinc_password_hash($password);
+				$this->Login_m->update_password($user->userId, $login_password_hash);
 			}
 			$this->session->sess_regenerate(TRUE);
+			$normal_session_token = null;
+			if ($this->config->item('single_active_session_enabled') === true) {
+				$this->load->library('Session_binding_service');
+				$normal_session_token = $this->session_binding_service->issue((int) $user->userId, $login_password_hash);
+				if (!is_string($normal_session_token)) {
+					$this->session->sess_destroy();
+					echo "0";
+					return;
+				}
+			}
 			$session_data = [
 				'id' => $user->userId,
 				'username' => $user->username,
@@ -153,6 +169,9 @@ class Login extends MX_Controller
 				'logged_in' => TRUE,
 				'must_change_password' => $must_change_password,
 			];
+			if ($normal_session_token !== null) {
+				$session_data['normal_session_token'] = $normal_session_token;
+			}
 			if ($must_change_password === 1) {
 				$session_data['password_change_session_binding'] = bin2hex(random_bytes(16));
 			}
@@ -179,7 +198,14 @@ class Login extends MX_Controller
 			show_404();
 			return;
 		}
-		$this->session->unset_userdata(array('password_change_token_state', 'password_change_session_binding', 'credential_activation_user_id', 'credential_activation_mode'));
+		if ($this->config->item('single_active_session_enabled') === true) {
+			$this->load->library('Session_binding_service');
+			$this->session_binding_service->revokeCurrent(
+				(int) $this->session->userdata('id'),
+				$this->session->userdata('normal_session_token')
+			);
+		}
+		$this->session->unset_userdata(array('password_change_token_state', 'password_change_session_binding', 'credential_activation_user_id', 'credential_activation_mode', 'normal_session_token'));
 		$this->session->sess_destroy();
 		redirect('login');
 	}
@@ -265,7 +291,21 @@ class Login extends MX_Controller
 			return;
 		}
 		$new_hash = doclinc_password_hash($new_password);
-		if (!is_string($new_hash) || !$this->Login_m->complete_required_password_change((int) $user['userId'], $new_hash, (string) $user['password'])) {
+		$rotate_normal_session = $context['mode'] === 'enforcement'
+			&& $this->config->item('single_active_session_enabled') === true;
+		$current_session_token = $rotate_normal_session ? $this->session->userdata('normal_session_token') : null;
+		if ($rotate_normal_session && !is_string($current_session_token)) {
+			$this->session->sess_destroy();
+			redirect('login?session=expired');
+			return;
+		}
+		$completion = is_string($new_hash) ? $this->Login_m->complete_required_password_change(
+			(int) $user['userId'],
+			$new_hash,
+			(string) $user['password'],
+			$current_session_token
+		) : false;
+		if (!$completion) {
 			$new_hash = null;
 			$this->password_change_failure('Password belum dapat diperbarui. Silakan coba lagi.');
 			return;
@@ -275,6 +315,21 @@ class Login extends MX_Controller
 		$confirmation = null;
 		$submitted_token = null;
 		$this->session->unset_userdata(array('password_change_token_state', 'password_change_session_binding', 'credential_activation_user_id', 'credential_activation_mode'));
+		if (is_string($current_session_token)) {
+			try {
+				$this->session->set_userdata('normal_session_token', $completion);
+				$stored_token = $this->session->userdata('normal_session_token');
+				if (!is_string($stored_token) || !hash_equals($completion, $stored_token)) {
+					throw new RuntimeException('session_update_failed');
+				}
+			} catch (Throwable $exception) {
+				$this->session->sess_destroy();
+				redirect('login?session=expired');
+				return;
+			}
+		} else {
+			$this->session->unset_userdata('normal_session_token');
+		}
 		$this->session->sess_regenerate(TRUE);
 		$this->Login_m->log_login_event('credential_activation_completed', (int) $user['userId'], array('mode' => $context['mode']));
 		if ($context['mode'] === 'activation') {

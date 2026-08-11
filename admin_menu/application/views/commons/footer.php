@@ -39,7 +39,10 @@
 				<div class="modal-body">Anda perlu masuk kembali.</div>
         			<div class="modal-footer">
 					<button class="btn btn-secondary" type="button" data-dismiss="modal">Batal</button>
-					<a class="btn btn-primary" href="<?php echo site_url('login/logout'); ?>">Keluar</a>
+					<form method="post" action="<?php echo site_url('login/logout'); ?>">
+						<input type="hidden" name="_logout_token" value="<?= html_escape((string) $this->session->userdata('admin_logout_token')); ?>">
+						<button type="submit" class="btn btn-primary">Keluar</button>
+					</form>
         			</div>
         		</div>
         	</div>
@@ -158,6 +161,7 @@
             <script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($googleMapsApiKey); ?>&language=id&libraries=places"></script>
         <?php endif; ?>
 
-        </body>
+	<script src="<?= base_url('../assets/js/doclinc-password-mask.js'); ?>"></script>
+</body>
 
         </html>

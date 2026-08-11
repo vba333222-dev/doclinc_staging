@@ -17,7 +17,7 @@ class Home_nakes extends MX_Controller
 		$this->load->helper('role_prerequisite');
 		$this->load->library('Visit_monitoring_policy');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment'), true)) {
+			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment', 'assign_responsible_doctor', 'choose_service_mode', 'assign_visit_performer'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -294,7 +294,15 @@ class Home_nakes extends MX_Controller
 			'status' => '',
 			'must_change_password' => true,
 			'identity' => array(),
+			'session_binding_valid' => $this->config->item('single_active_session_enabled') !== true,
 		);
+		if ($this->config->item('single_active_session_enabled') === true) {
+			$this->load->library('Session_binding_service');
+			$actor['session_binding_valid'] = $this->session_binding_service->validate(
+				$user_id,
+				$this->session->userdata('normal_session_token')
+			);
+		}
 		if ($user_id < 1 || !$this->db->table_exists('users')
 			|| !$this->db->field_exists('must_change_password', 'users')
 			|| !doclinc_nakes_credential_schema_allows_runtime($this->db)) {
@@ -396,6 +404,7 @@ class Home_nakes extends MX_Controller
 			'containerId' => 'doclincPuskesmasOperations',
 		);
 		$d['profile'] = $this->Home_nakes_m->get_profile_by_id($uid);
+		$d['care_team_workflow_enabled'] = $this->config->item('care_team_workflow_enabled') === true;
 		$d['role_prerequisite_state'] = doclinc_role_prerequisite_state($uid, true);
 		if (!is_array($d['profile'])) {
 			$d['profile'] = array();
@@ -466,6 +475,9 @@ class Home_nakes extends MX_Controller
 		} elseif ($account_type === 'personal') {
 			$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept_personal($identity_context);
 			$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed_personal($identity_context);
+			if ($d['care_team_workflow_enabled']) {
+				$d['puskesmas_staff_options'] = $this->Home_nakes_m->get_active_staff_options_by_code($puskesmas_code);
+			}
 		}
 
 		$d['data_user'] = $d['nakes_identity_valid']
@@ -541,6 +553,105 @@ class Home_nakes extends MX_Controller
 		$this->session->set_flashdata(
 			isset($result['status']) && $result['status'] === 'success' ? 'staff_assignment_success' : 'staff_assignment_error',
 			$message
+		);
+		redirect('home_nakes#riwayat_konsul');
+	}
+
+	public function assign_responsible_doctor()
+	{
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->care_team_response(405, array('status' => 'error', 'message' => 'Metode tidak diizinkan.'));
+			return;
+		}
+		if (!$this->care_team_post_ready()) {
+			return;
+		}
+		$user_id = (int) $this->session->userdata('id');
+		$identity = doclinc_dokter_identity_context($user_id, true);
+		if (empty($identity['valid']) || $identity['account_type'] !== 'command_center') {
+			$this->care_team_response(403, array('status' => 'error', 'message' => 'Anda tidak memiliki akses.'));
+			return;
+		}
+		$this->load->library('Care_team_service');
+		$result = $this->care_team_service->assignResponsibleDoctor(
+			(int) $this->input->post('request_id'),
+			(int) $this->input->post('staff_id'),
+			$user_id,
+			$this->session->userdata('normal_session_token'),
+			$this->config->item('single_active_session_enabled') === true
+		);
+		$this->care_team_response(!empty($result['ok']) ? 200 : 409, $result);
+	}
+
+	public function choose_service_mode()
+	{
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->care_team_response(405, array('status' => 'error', 'message' => 'Metode tidak diizinkan.'));
+			return;
+		}
+		if (!$this->care_team_post_ready()) {
+			return;
+		}
+		$user_id = (int) $this->session->userdata('id');
+		$this->load->library('Care_team_service');
+		$result = $this->care_team_service->chooseMode(
+			(int) $this->input->post('request_id'),
+			$this->input->post('service_mode', true),
+			$user_id,
+			$this->session->userdata('normal_session_token'),
+			$this->config->item('single_active_session_enabled') === true
+		);
+		$this->care_team_response(!empty($result['ok']) ? 200 : 409, $result);
+	}
+
+	public function assign_visit_performer()
+	{
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->care_team_response(405, array('status' => 'error', 'message' => 'Metode tidak diizinkan.'));
+			return;
+		}
+		if (!$this->care_team_post_ready()) {
+			return;
+		}
+		$user_id = (int) $this->session->userdata('id');
+		$this->load->library('Care_team_service');
+		$result = $this->care_team_service->assignVisitPerformer(
+			(int) $this->input->post('request_id'),
+			(int) $this->input->post('staff_id'),
+			$user_id,
+			$this->session->userdata('normal_session_token'),
+			$this->config->item('single_active_session_enabled') === true
+		);
+		$this->care_team_response(!empty($result['ok']) ? 200 : 409, $result);
+	}
+
+	private function care_team_post_ready()
+	{
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->care_team_response(405, array('status' => 'error', 'message' => 'Metode tidak diizinkan.'));
+			return false;
+		}
+		if ($this->config->item('care_team_workflow_enabled') !== true) {
+			$this->care_team_response(403, array('status' => 'error', 'message' => 'Layanan belum tersedia.'));
+			return false;
+		}
+		if (!$this->require_dokter_session()) {
+			return false;
+		}
+		return true;
+	}
+
+	private function care_team_response($status, array $result)
+	{
+		if ($this->input->is_ajax_request()
+			|| strpos(strtolower((string) $this->input->server('HTTP_ACCEPT')), 'application/json') !== false) {
+			$this->output->set_content_type('application/json')->set_header('Cache-Control: no-store')
+				->set_status_header((int) $status)->set_output(json_encode($result));
+			return;
+		}
+		$this->session->set_flashdata(
+			!empty($result['ok']) ? 'care_team_success' : 'care_team_error',
+			(string) ($result['message'] ?? 'Coba lagi.')
 		);
 		redirect('home_nakes#riwayat_konsul');
 	}
@@ -840,7 +951,10 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 		$access_context = doclinc_nakes_request_access_context($request, $identity_context);
-		if (empty($access_context['can_handle'])) {
+		$can_visit = $this->config->item('care_team_workflow_enabled') === true
+			? !empty($access_context['can_visit'])
+			: !empty($access_context['can_handle']);
+		if (!$can_visit) {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(['status' => 'error', 'success' => false, 'message' => 'Anda tidak memiliki akses.']));
@@ -954,7 +1068,10 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 		$access_context = doclinc_nakes_request_access_context($request, $identity_context);
-		if (empty($access_context['can_handle'])) {
+		$can_visit = $this->config->item('care_team_workflow_enabled') === true
+			? !empty($access_context['can_visit'])
+			: !empty($access_context['can_handle']);
+		if (!$can_visit) {
 			if (function_exists('doclinc_log_request_event')) {
 				doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'visit_status', 'visit_status' => $visit_status));
 			}

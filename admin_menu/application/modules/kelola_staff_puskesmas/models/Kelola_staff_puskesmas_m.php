@@ -733,6 +733,17 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			if (!$updated || $this->db->affected_rows() !== 1 || $this->db->trans_status() === false) {
 				throw new RuntimeException('password_update_failed');
 			}
+			if ($this->config->item('single_active_session_enabled') === true) {
+				$service_file = dirname(APPPATH, 2) . '/application/libraries/Session_binding_service.php';
+				if (!is_file($service_file)) {
+					throw new RuntimeException('session_service_unavailable');
+				}
+				require_once $service_file;
+				$binding_service = new Session_binding_service($this->db);
+				if (!$binding_service->schemaReady() || !$binding_service->revokeLocked((int) $user->userId)) {
+					throw new RuntimeException('session_revoke_failed');
+				}
+			}
 			if (!$this->db->trans_commit()) {
 				throw new RuntimeException('commit_failed');
 			}
