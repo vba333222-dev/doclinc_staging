@@ -136,14 +136,19 @@ try {
 	$stage = 'schema';
 	$ddl = array(
 		"CREATE TABLE users(userId int NOT NULL,nama varchar(100) NOT NULL,no_hp varchar(32) NULL,nik varchar(16) NULL,role enum('admin','dokter','warga','') NOT NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(userId)) ENGINE=InnoDB",
-		"CREATE TABLE m_puskesmas(kode_pkm varchar(100) NOT NULL,nama_puskesmas varchar(150) NOT NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(kode_pkm)) ENGINE=InnoDB",
-		"CREATE TABLE puskesmas_staff(staff_id int NOT NULL,kode_pkm varchar(100) NOT NULL,nama varchar(150) NOT NULL,profesi varchar(100) NULL,nomor_sip varchar(100) NULL,nip varchar(18) NULL,user_id int NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(staff_id)) ENGINE=InnoDB",
-		"CREATE TABLE nakes_presence(user_id int NOT NULL,puskesmas_code varchar(100) NOT NULL,last_seen_at datetime(6) NOT NULL,PRIMARY KEY(user_id),KEY idx_presence_tenant(puskesmas_code,last_seen_at,user_id)) ENGINE=InnoDB",
+		"CREATE TABLE m_puskesmas(kode_pkm varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,nama_puskesmas varchar(150) NOT NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(kode_pkm)) ENGINE=InnoDB",
+		"CREATE TABLE puskesmas_staff(staff_id int NOT NULL,kode_pkm varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,nama varchar(150) NOT NULL,profesi varchar(100) NULL,nomor_sip varchar(100) NULL,nip varchar(18) NULL,user_id int NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(staff_id)) ENGINE=InnoDB",
+		"CREATE TABLE nakes_presence(user_id int NOT NULL,puskesmas_code varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,last_seen_at datetime(6) NOT NULL,PRIMARY KEY(user_id),KEY idx_presence_tenant(puskesmas_code,last_seen_at,user_id)) ENGINE=InnoDB",
 		"CREATE TABLE requests(request_id int NOT NULL,user_id int NOT NULL,request_description text NULL,request_status enum('Pending','Accepted','Completed','Cancelled') NOT NULL,assigned_puskesmas_code varchar(100) NOT NULL,assigned_nakes_user_id int NULL,visit_status varchar(32) NULL,PRIMARY KEY(request_id),KEY idx_request_tenant_status(assigned_puskesmas_code,request_status,request_id)) ENGINE=InnoDB",
 	);
 	foreach ($ddl as $sql) {
 		$db->query($sql);
 	}
+	$collations = $db->query("SELECT TABLE_NAME,COLUMN_NAME,COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND (TABLE_NAME,COLUMN_NAME) IN (('puskesmas_staff','kode_pkm'),('nakes_presence','puskesmas_code')) ORDER BY TABLE_NAME,COLUMN_NAME")->result_array();
+	operations_integration_expect($collations === array(
+		array('TABLE_NAME' => 'nakes_presence', 'COLUMN_NAME' => 'puskesmas_code', 'COLLATION_NAME' => 'utf8mb4_unicode_ci'),
+		array('TABLE_NAME' => 'puskesmas_staff', 'COLUMN_NAME' => 'kode_pkm', 'COLLATION_NAME' => 'utf8mb4_general_ci'),
+	), 'presence_fixture_uses_real_mixed_collations');
 
 	$service = new Puskesmas_operations_service($db, 90);
 	operations_integration_expect(!$service->schemaReady(), 'missing_assignment_schema_fails_closed');

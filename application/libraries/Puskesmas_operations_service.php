@@ -75,7 +75,7 @@ class Puskesmas_operations_service
 			->select("CASE WHEN np.last_seen_at IS NOT NULL AND np.last_seen_at >= DATE_SUB(NOW(6), INTERVAL {$timeout} SECOND) THEN 1 ELSE 0 END AS is_online", false)
 			->from('puskesmas_staff ps')
 			->join('users u', "u.userId = ps.user_id AND u.role = 'dokter' AND u.status = 'aktif'", 'inner', false)
-			->join('nakes_presence np', 'np.user_id = ps.user_id AND np.puskesmas_code = ps.kode_pkm', 'left')
+			->join('nakes_presence np', 'np.user_id = ps.user_id AND np.puskesmas_code COLLATE utf8mb4_unicode_ci = CONVERT(ps.kode_pkm USING utf8mb4) COLLATE utf8mb4_unicode_ci', 'left', false)
 			->where('ps.kode_pkm', $puskesmas_code)
 			->where('ps.status', 'aktif')
 			->where('ps.user_id IS NOT NULL', null, false)

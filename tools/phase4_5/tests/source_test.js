@@ -33,6 +33,13 @@ const adminHome = source('admin_menu/application/modules/home/controllers/Home.p
 const commandCenterModel = source('admin_menu/application/modules/kelola_dokter_nakes/models/Kelola_dokter_nakes_m.php');
 const homeNakesController = source('application/modules/home_nakes/controllers/Home_nakes.php');
 const homeNakesModel = source('application/modules/home_nakes/models/Home_nakes_m.php');
+const facilityJoinModels = [
+  'admin_menu/application/modules/home/models/Home_m.php',
+  'admin_menu/application/modules/konsultasi_kesehatan/models/Konsultasi_kesehatan_m.php',
+  'admin_menu/application/modules/laporan/models/Laporan_m.php',
+  'admin_menu/application/modules/notifikasi_admin/models/Notifikasi_admin_m.php',
+  'admin_menu/application/modules/rekam_medis/models/Rekam_medis_m.php'
+].map(source);
 const consultationController = source('application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php');
 const consultationModel = source('application/modules/konsultasi_nakes/models/Konsultasi_nakes_m.php');
 const consultationView = source('application/modules/konsultasi_nakes/views/konsultasi_nakes_v.php');
@@ -79,6 +86,10 @@ expect(care.includes('request_visit_performer_assignments') && care.includes('vi
   && !care.includes('request_staff_assignments'), 'visit_performer_has_distinct_canonical_history');
 expect(!care.includes('nakes_presence') && !source('application/libraries/Care_team_policy.php').includes('nakes_presence'), 'presence_is_not_care_team_authorization');
 expect(homeNakesModel.includes('AS is_online') && homeNakesModel.includes("nakes_presence_enabled') === true") && homeNakesModel.includes("select('NULL AS is_online'") && activeTask.includes("'Online' : 'Offline'") && history.includes("'Online' : 'Offline'"), 'presence_is_optional_selection_information');
+expect(homeNakesModel.includes('staff_presence.puskesmas_code COLLATE utf8mb4_unicode_ci = CONVERT(puskesmas_staff.kode_pkm USING utf8mb4) COLLATE utf8mb4_unicode_ci'), 'staff_options_normalize_presence_join_collation');
+expect(homeNakesModel.includes('m_puskesmas.kode_pkm COLLATE utf8mb4_general_ci = CONVERT(users.remark USING utf8mb4) COLLATE utf8mb4_general_ci')
+  && commandCenterModel.includes('m_puskesmas.kode_pkm COLLATE utf8mb4_general_ci = CONVERT(users.remark USING utf8mb4) COLLATE utf8mb4_general_ci'), 'legacy_user_facility_joins_normalize_charset');
+expect(facilityJoinModels.every(model => model.includes('CONVERT(NULLIF(TRIM(requests.assigned_puskesmas_code)') || model.includes('CONVERT(NULLIF(TRIM($request_alias.assigned_puskesmas_code)')), 'legacy_request_facility_joins_normalize_charset');
 expect(care.includes("account_type'] !== 'command_center") === false && care.includes('commandCenterEligible'), 'command_center_checked_by_policy');
 expect(care.includes("consultation_mode !== Care_team_policy::VISIT") && care.includes('responsible_doctor_user_id'), 'visit_assignment_requires_decision_and_responsible_doctor');
 expect(homeNakesController.includes("method(TRUE) !== 'POST'") && homeNakesController.includes('assign_responsible_doctor')

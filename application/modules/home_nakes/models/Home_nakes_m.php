@@ -1147,7 +1147,7 @@ class Home_nakes_m extends MX_Controller
 			$this->db->select('m_puskesmas.nama_puskesmas AS assigned_puskesmas_name');
 			$this->db->select($this->db->field_exists('alamat', 'm_puskesmas') ? 'm_puskesmas.alamat AS assigned_puskesmas_address' : 'NULL AS assigned_puskesmas_address', false);
 			$this->db->select($this->db->field_exists('status', 'm_puskesmas') ? 'm_puskesmas.status AS assigned_puskesmas_status' : 'NULL AS assigned_puskesmas_status', false);
-			$this->db->join('m_puskesmas', 'm_puskesmas.kode_pkm = users.remark', 'left');
+			$this->db->join('m_puskesmas', 'm_puskesmas.kode_pkm COLLATE utf8mb4_general_ci = CONVERT(users.remark USING utf8mb4) COLLATE utf8mb4_general_ci', 'left', false);
 		} else {
 			$this->db->select('NULL AS assigned_puskesmas_name', FALSE);
 			$this->db->select('NULL AS assigned_puskesmas_address, NULL AS assigned_puskesmas_status', FALSE);
@@ -1272,7 +1272,7 @@ class Home_nakes_m extends MX_Controller
 			$online_timeout = max(30, min(300, (int) $this->config->item('nakes_presence_online_timeout_seconds')));
 			$this->db
 				->select("CASE WHEN staff_presence.last_seen_at IS NOT NULL AND staff_presence.last_seen_at >= DATE_SUB(NOW(6), INTERVAL {$online_timeout} SECOND) THEN 1 ELSE 0 END AS is_online", false)
-				->join('nakes_presence AS staff_presence', 'staff_presence.user_id = puskesmas_staff.user_id AND staff_presence.puskesmas_code = puskesmas_staff.kode_pkm', 'left');
+				->join('nakes_presence AS staff_presence', 'staff_presence.user_id = puskesmas_staff.user_id AND staff_presence.puskesmas_code COLLATE utf8mb4_unicode_ci = CONVERT(puskesmas_staff.kode_pkm USING utf8mb4) COLLATE utf8mb4_unicode_ci', 'left', false);
 		} else {
 			$this->db->select('NULL AS is_online', false);
 		}

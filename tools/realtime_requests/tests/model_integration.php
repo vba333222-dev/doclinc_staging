@@ -567,15 +567,19 @@ try {
 	$GLOBALS['request_model_application']->db = $db;
 	$GLOBALS['request_model_application']->config->set('realtime_client_enabled', true);
 	$GLOBALS['request_model_application']->config->set('realtime_notifications_enabled', true);
+	$GLOBALS['request_model_application']->config->set('nakes_presence_enabled', true);
+	$GLOBALS['request_model_application']->config->set('nakes_presence_online_timeout_seconds', 90);
+	$GLOBALS['request_model_application']->config->set('care_team_workflow_enabled', false);
 	$GLOBALS['request_model_application']->config->set('visit_proof_location_max_age_seconds', 120);
 	$GLOBALS['request_model_application']->config->set('visit_location_max_accuracy_meters', 100);
 	$GLOBALS['request_model_application']->config->set('visit_arrival_radius_meters', 75);
 
 	$ddl = array(
-		"CREATE TABLE users (userId int NOT NULL AUTO_INCREMENT,password varchar(100) NOT NULL,role enum('admin','dokter','warga','') NOT NULL,status enum('aktif','nonaktif') NULL,remark varchar(100) NULL,must_change_password tinyint(1) NOT NULL DEFAULT 0,PRIMARY KEY(userId)) ENGINE=InnoDB",
-		"CREATE TABLE m_puskesmas (kode_pkm varchar(100) NOT NULL,nama_puskesmas varchar(150) NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(kode_pkm)) ENGINE=InnoDB",
-		"CREATE TABLE puskesmas_staff (staff_id int(10) unsigned NOT NULL AUTO_INCREMENT,kode_pkm varchar(100) NOT NULL,user_id int NULL,nama varchar(150) NOT NULL,no_hp varchar(30) NULL,profesi varchar(100) NULL,nomor_sip varchar(100) NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(staff_id)) ENGINE=InnoDB",
-		"CREATE TABLE requests (request_id int NOT NULL AUTO_INCREMENT,user_id int NOT NULL,dokter_id int NOT NULL,request_description text NULL,request_status enum('Pending','Accepted','Completed','Cancelled') NOT NULL DEFAULT 'Pending',location text NULL,lattitude varchar(50) NULL,longitude varchar(50) NULL,patient_latitude decimal(10,7) NULL,patient_longitude decimal(10,7) NULL,lattitude_dokter varchar(100) NULL,longitude_dokter varchar(100) NULL,assigned_puskesmas_code varchar(100) NULL,assigned_puskesmas_name varchar(150) NULL,assigned_nakes_user_id int NULL,accepted_by_user_id int NULL,assigned_nakes_by_user_id int NULL,visit_status varchar(30) NULL,consultation_mode varchar(30) NULL,visit_completed_at datetime NULL,created_at datetime NULL,updated_at datetime NULL,PRIMARY KEY(request_id)) ENGINE=InnoDB",
+		"CREATE TABLE users (userId int NOT NULL AUTO_INCREMENT,password varchar(100) NOT NULL,role enum('admin','dokter','warga','') NOT NULL,status enum('aktif','nonaktif') NULL,remark varchar(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL,must_change_password tinyint(1) NOT NULL DEFAULT 0,PRIMARY KEY(userId)) ENGINE=InnoDB",
+		"CREATE TABLE m_puskesmas (kode_pkm varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,nama_puskesmas varchar(150) NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(kode_pkm)) ENGINE=InnoDB",
+		"CREATE TABLE puskesmas_staff (staff_id int(10) unsigned NOT NULL AUTO_INCREMENT,kode_pkm varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,user_id int NULL,nama varchar(150) NOT NULL,no_hp varchar(30) NULL,profesi varchar(100) NULL,nomor_sip varchar(100) NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(staff_id)) ENGINE=InnoDB",
+		"CREATE TABLE nakes_presence (user_id int NOT NULL,puskesmas_code varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,last_seen_at datetime(6) NOT NULL,PRIMARY KEY(user_id),KEY idx_presence_tenant(puskesmas_code,last_seen_at,user_id)) ENGINE=InnoDB",
+		"CREATE TABLE requests (request_id int NOT NULL AUTO_INCREMENT,user_id int NOT NULL,dokter_id int NOT NULL,request_description text NULL,request_status enum('Pending','Accepted','Completed','Cancelled') NOT NULL DEFAULT 'Pending',location text NULL,lattitude varchar(50) NULL,longitude varchar(50) NULL,patient_latitude decimal(10,7) NULL,patient_longitude decimal(10,7) NULL,lattitude_dokter varchar(100) NULL,longitude_dokter varchar(100) NULL,assigned_puskesmas_code varchar(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL,assigned_puskesmas_name varchar(150) NULL,assigned_nakes_user_id int NULL,accepted_by_user_id int NULL,assigned_nakes_by_user_id int NULL,visit_status varchar(30) NULL,consultation_mode varchar(30) NULL,visit_completed_at datetime NULL,created_at datetime NULL,updated_at datetime NULL,PRIMARY KEY(request_id)) ENGINE=InnoDB",
 		"CREATE TABLE request_staff_assignments (assignment_id int(10) unsigned NOT NULL AUTO_INCREMENT,request_id int NOT NULL,staff_id int(10) unsigned NOT NULL,kode_pkm varchar(100) NOT NULL,assigned_by_user_id int NOT NULL,status enum('aktif','diganti','dibatalkan') NOT NULL DEFAULT 'aktif',note text NULL,assigned_at datetime NOT NULL DEFAULT current_timestamp(),ended_at datetime NULL,created_at datetime NOT NULL DEFAULT current_timestamp(),updated_at datetime NULL DEFAULT NULL ON UPDATE current_timestamp(),PRIMARY KEY(assignment_id),KEY idx_request_status(request_id,status)) ENGINE=InnoDB",
 		"CREATE TABLE notifications (notification_id int NOT NULL AUTO_INCREMENT,recipient_user_id int NULL,recipient_role varchar(32) NULL,recipient_puskesmas_code varchar(100) NULL,actor_user_id int NULL,event_type varchar(64) NOT NULL,entity_type varchar(64) NOT NULL,entity_id varchar(64) NOT NULL,title varchar(160) NOT NULL,message text NULL,is_read tinyint(1) NOT NULL DEFAULT 0,created_at datetime NOT NULL,PRIMARY KEY(notification_id)) ENGINE=InnoDB",
 		"CREATE TABLE realtime_outbox (outbox_id bigint unsigned NOT NULL AUTO_INCREMENT,event_type varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,aggregate_type varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,aggregate_id varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,audience_type varchar(20) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,audience_key varchar(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,payload_json longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,event_version bigint unsigned NOT NULL DEFAULT 1,idempotency_key char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,state varchar(16) NOT NULL DEFAULT 'pending',attempt_count smallint unsigned NOT NULL DEFAULT 0,available_at datetime(6) NOT NULL DEFAULT current_timestamp(6),claimed_at datetime(6) NULL,published_at datetime(6) NULL,last_error_code varchar(64) NULL,created_at datetime(6) NOT NULL DEFAULT current_timestamp(6),updated_at datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),PRIMARY KEY(outbox_id),UNIQUE KEY uq_realtime_outbox_idempotency(idempotency_key)) ENGINE=InnoDB",
@@ -593,6 +597,7 @@ try {
 	$db->query("INSERT INTO users(userId,password,role,status,remark,must_change_password) VALUES (10,'unchanged-command','dokter','aktif','PKM01',0),(101,'unchanged-owner','warga','aktif',NULL,0),(201,'unchanged-personal-one','dokter','aktif','PKM01',0),(202,'unchanged-personal-two','dokter','aktif','PKM01',0)");
 	$db->query("INSERT INTO m_puskesmas(kode_pkm,nama_puskesmas,status) VALUES ('PKM01','Synthetic clinic','aktif'),('PKM02','Synthetic alternate','aktif')");
 	$db->query("INSERT INTO puskesmas_staff(staff_id,kode_pkm,user_id,nama,profesi,status) VALUES (1,'PKM01',201,'Synthetic staff one','Dokter','aktif'),(2,'PKM01',202,'Synthetic staff two','Dokter','aktif')");
+	$db->query("INSERT INTO nakes_presence(user_id,puskesmas_code,last_seen_at) VALUES (201,'PKM01',NOW(6)),(202,'PKM01',DATE_SUB(NOW(6),INTERVAL 5 MINUTE))");
 	$GLOBALS['request_model_identity'][10] = array('valid' => true, 'account_type' => 'command_center', 'user_id' => 10, 'role' => 'dokter', 'user_status' => 'aktif', 'puskesmas_code' => 'PKM01');
 	$GLOBALS['request_model_identity'][201] = array('valid' => true, 'account_type' => 'personal', 'user_id' => 201, 'role' => 'dokter', 'user_status' => 'aktif', 'puskesmas_code' => 'PKM01', 'staff_id' => 1);
 
@@ -601,6 +606,35 @@ try {
 	$konsultasi = model_integration_model('Konsultasi_m', $db);
 	$completion = model_integration_model('Konsultasi_nakes_m', $db);
 	$command_identity = $GLOBALS['request_model_identity'][10];
+	$collations = $db->query("SELECT TABLE_NAME,COLUMN_NAME,COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND (TABLE_NAME,COLUMN_NAME) IN (('users','remark'),('m_puskesmas','kode_pkm'),('puskesmas_staff','kode_pkm'),('nakes_presence','puskesmas_code'),('requests','assigned_puskesmas_code'))")->result_array();
+	$collation_map = array();
+	foreach ($collations as $collation) {
+		$collation_map[$collation['TABLE_NAME'] . '.' . $collation['COLUMN_NAME']] = $collation['COLLATION_NAME'];
+	}
+	ksort($collation_map);
+	model_integration_expect($collation_map === array(
+		'm_puskesmas.kode_pkm' => 'utf8mb4_general_ci',
+		'nakes_presence.puskesmas_code' => 'utf8mb4_unicode_ci',
+		'puskesmas_staff.kode_pkm' => 'utf8mb4_general_ci',
+		'requests.assigned_puskesmas_code' => 'latin1_swedish_ci',
+		'users.remark' => 'latin1_swedish_ci',
+	), 'facility_code_fixture_uses_real_collation_boundaries');
+	$command_staff_options = $home_nakes->get_active_staff_options_by_code('PKM01');
+	model_integration_expect(count($command_staff_options) === 2
+		&& (int) $command_staff_options[0]->is_online === 1
+		&& (int) $command_staff_options[1]->is_online === 0, 'command_center_staff_options_join_mixed_presence_collations');
+	$GLOBALS['request_model_application']->config->set('care_team_workflow_enabled', true);
+	$personal_staff_options = $home_nakes->get_active_staff_options_by_code('PKM01');
+	model_integration_expect(count($personal_staff_options) === 2, 'personal_staff_options_queryable_with_care_team_enabled');
+	$GLOBALS['request_model_application']->config->set('care_team_workflow_enabled', false);
+	$GLOBALS['request_model_application']->config->set('nakes_presence_enabled', false);
+	$presence_disabled_options = $home_nakes->get_active_staff_options_by_code('PKM01');
+	model_integration_expect(count($presence_disabled_options) === 2
+		&& $presence_disabled_options[0]->is_online === null
+		&& $presence_disabled_options[1]->is_online === null, 'presence_disabled_staff_options_keep_null_fallback');
+	$GLOBALS['request_model_application']->config->set('nakes_presence_enabled', true);
+	$profile = $home_nakes->get_profile_by_id(10);
+	model_integration_expect(is_array($profile) && ($profile['assigned_puskesmas_name'] ?? '') === 'Synthetic clinic', 'profile_join_handles_latin1_remark_and_utf8mb4_facility_code');
 
 	$created_id = $konsultasi->save_konsultasi(101, 10, 'Synthetic history', 'Synthetic request', 'Synthetic location', '', '', '2026-01-01', null, null, array('assigned_puskesmas_code' => 'PKM01', 'assigned_puskesmas_name' => 'Synthetic clinic'));
 	model_integration_expect(is_int($created_id) && $created_id > 0, 'actual_create_request_succeeds');
