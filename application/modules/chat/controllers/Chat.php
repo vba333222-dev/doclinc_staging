@@ -10,6 +10,7 @@ class Chat extends MX_Controller
 		$this->load->helper('request_authz');
 		$this->load->helper('request_navigation');
 		$this->load->helper('notification');
+		$this->load->helper('nakes_presence_client');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			if (strtolower((string) $this->router->fetch_method()) === 'attachment') {
 				show_404();
@@ -36,6 +37,9 @@ class Chat extends MX_Controller
 		}
 		$current_role = doclinc_current_user_role();
 		$is_command_center = doclinc_chat_actor_is_command_center();
+		$identity_context = $current_role === 'dokter'
+			? doclinc_dokter_identity_context(doclinc_current_user_id())
+			: array();
 		$this->load->view('thread_v', array(
 			'request' => $request,
 			'request_id' => $request_id,
@@ -43,6 +47,7 @@ class Chat extends MX_Controller
 			'current_user_id' => doclinc_current_user_id(),
 			'current_role' => $current_role,
 			'is_command_center' => $is_command_center,
+			'nakes_presence_bootstrap' => doclinc_nakes_presence_client_bootstrap($identity_context),
 			'back_url' => doclinc_request_return_url(
 				$current_role,
 				isset($request->request_status) ? $request->request_status : ''

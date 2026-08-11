@@ -3,6 +3,54 @@ define('BASEPATH', dirname(__DIR__, 3) . '/system/');
 
 require_once dirname(__DIR__, 3) . '/application/libraries/Nakes_presence_policy.php';
 
+class Presence_client_test_config
+{
+	private $enabled;
+
+	public function __construct($enabled)
+	{
+		$this->enabled = $enabled;
+	}
+
+	public function item($key)
+	{
+		if ($key === 'nakes_presence_enabled') {
+			return $this->enabled;
+		}
+		if ($key === 'nakes_presence_heartbeat_seconds') {
+			return 30;
+		}
+		return null;
+	}
+}
+
+class Presence_client_test_ci
+{
+	public $config;
+
+	public function __construct($enabled)
+	{
+		$this->config = new Presence_client_test_config($enabled);
+	}
+}
+
+$presence_client_test_ci = new Presence_client_test_ci(true);
+if (!function_exists('get_instance')) {
+	function &get_instance()
+	{
+		global $presence_client_test_ci;
+		return $presence_client_test_ci;
+	}
+}
+if (!function_exists('base_url')) {
+	function base_url($path = '')
+	{
+		return 'https://example.test/' . ltrim((string) $path, '/');
+	}
+}
+
+require_once dirname(__DIR__, 3) . '/application/helpers/nakes_presence_client_helper.php';
+
 $passed = 0;
 $failed = 0;
 function presence_expect($condition, $name)
@@ -65,6 +113,17 @@ presence_expect($policy->snapshotScope(array('authenticated' => true, 'role' => 
 presence_expect(empty($policy->snapshotScope(array('authenticated' => false, 'role' => 'admin', 'status' => 'aktif'))['allowed']), 'anonymous_admin_denied');
 presence_expect(empty($policy->snapshotScope(array('authenticated' => true, 'role' => 'admin', 'status' => 'nonaktif'))['allowed']), 'inactive_admin_denied');
 
+$personal_bootstrap = doclinc_nakes_presence_client_bootstrap($personal['identity']);
+$command_monitor_bootstrap = doclinc_nakes_presence_client_bootstrap($command['identity'], true);
+$command_work_bootstrap = doclinc_nakes_presence_client_bootstrap($command['identity']);
+presence_expect($personal_bootstrap['enabled'] === true && $personal_bootstrap['mode'] === 'heartbeat', 'personal_client_heartbeat_mode');
+presence_expect($command_monitor_bootstrap['enabled'] === true && $command_monitor_bootstrap['mode'] === 'monitor', 'command_center_monitor_mode');
+presence_expect($command_work_bootstrap['enabled'] === false && $command_work_bootstrap['mode'] === 'disabled', 'command_center_work_surface_no_heartbeat');
+$presence_client_test_ci->config = new Presence_client_test_config(false);
+$disabled_bootstrap = doclinc_nakes_presence_client_bootstrap($personal['identity']);
+presence_expect($disabled_bootstrap['enabled'] === false && $disabled_bootstrap['mode'] === 'disabled', 'disabled_client_emits_nothing');
+$presence_client_test_ci->config = new Presence_client_test_config(true);
+
 $service_source = file_get_contents(dirname(__DIR__, 3) . '/application/libraries/Nakes_presence_service.php');
 $main_controller = file_get_contents(dirname(__DIR__, 3) . '/application/modules/home_nakes/controllers/Home_nakes.php');
 $admin_controller = file_get_contents(dirname(__DIR__, 3) . '/admin_menu/application/modules/home/controllers/Home.php');
@@ -73,6 +132,13 @@ $main_config = file_get_contents(dirname(__DIR__, 3) . '/application/config/conf
 $admin_config = file_get_contents(dirname(__DIR__, 3) . '/admin_menu/application/config/config.php');
 $first_login = file_get_contents(dirname(__DIR__, 3) . '/application/libraries/First_login_gate_policy.php');
 $integration_source = file_get_contents(__DIR__ . '/integration.php');
+$client_helper = file_get_contents(dirname(__DIR__, 3) . '/application/helpers/nakes_presence_client_helper.php');
+$runtime_view = file_get_contents(dirname(__DIR__, 3) . '/application/views/nakes_presence_runtime_v.php');
+$consultation_controller = file_get_contents(dirname(__DIR__, 3) . '/application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php');
+$consultation_view = file_get_contents(dirname(__DIR__, 3) . '/application/modules/konsultasi_nakes/views/konsultasi_nakes_v.php');
+$chat_controller = file_get_contents(dirname(__DIR__, 3) . '/application/modules/chat/controllers/Chat.php');
+$chat_view = file_get_contents(dirname(__DIR__, 3) . '/application/modules/chat/views/thread_v.php');
+$home_view = file_get_contents(dirname(__DIR__, 3) . '/application/modules/home/views/home_v.php');
 presence_expect(strpos($service_source, 'FOR UPDATE') !== false && strpos($service_source, 'write_throttle_seconds') !== false, 'database_write_throttled_under_lock');
 presence_expect(strpos($service_source, 'trans_active()') === false
 	&& strpos($service_source, 'if (!$this->db->trans_begin())') !== false, 'ci3_balanced_transaction_level_contract');
@@ -81,8 +147,24 @@ presence_expect(strpos($service_source, 'no_hp') === false && strpos($service_so
 presence_expect(strpos($service_source, 'latitude') === false && strpos($service_source, 'diagnosis') === false, 'snapshot_excludes_location_and_clinical_fields');
 presence_expect(strpos($main_controller, "method(TRUE) !== 'POST'") !== false && strpos($main_controller, 'presence_actor()') !== false, 'heartbeat_post_and_fresh_actor_contract');
 presence_expect(strpos($admin_controller, 'Nakes_presence_service') !== false && strpos($admin_controller, '->touch(') === false, 'admin_read_only_contract');
-presence_expect(strpos($client_source, "visibilityState !== 'hidden'") !== false && strpos($client_source, "addEventListener('pagehide'") !== false, 'browser_lifecycle_contract');
+presence_expect(strpos($client_source, 'if (stopped || cachePaused || heartbeatPending)') !== false
+	&& strpos($client_source, 'if (stopped || heartbeatPending || !visible())') === false
+	&& strpos($client_source, "addEventListener('pagehide'") !== false
+	&& strpos($client_source, "addEventListener('pageshow'") !== false, 'browser_lifecycle_contract');
 presence_expect(strpos($client_source, 'setInterval(heartbeat') !== false && strpos($client_source, 'setInterval(snapshot') !== false, 'bounded_polling_contract');
+presence_expect(strpos($main_controller, 'doclinc_nakes_presence_client_bootstrap($identity_context, true)') !== false
+	&& strpos($consultation_controller, 'doclinc_nakes_presence_client_bootstrap($identity_context)') !== false
+	&& strpos($chat_controller, "\$current_role === 'dokter'") !== false
+	&& substr_count($runtime_view, 'doclinc-nakes-presence.js') === 1, 'shared_presence_bootstrap_contract');
+presence_expect(strpos($main_controller, 'doclinc_nakes_presence_client_bootstrap($identity_context, true)') !== false
+	&& strpos($consultation_view, "load->view('nakes_presence_runtime_v'") !== false
+	&& strpos($chat_view, "load->view('nakes_presence_runtime_v'") !== false, 'personal_nakes_surface_coverage');
+presence_expect(strpos($client_helper, "\$account_type === 'personal'") !== false
+	&& strpos($client_helper, "\$account_type === 'command_center'") !== false
+	&& strpos($home_view, 'nakes_presence_runtime_v') === false
+	&& strpos($admin_controller, 'doclinc_nakes_presence_client_bootstrap') === false, 'warga_admin_do_not_emit_personal_heartbeat');
+presence_expect(strpos($main_config, "\$config['nakes_presence_write_throttle_seconds'] = 45;") !== false
+	&& strpos($main_config, "\$config['nakes_presence_online_timeout_seconds'] = 90;") !== false, 'server_timing_contract_unchanged');
 presence_expect(strpos($main_config, "getenv('DOCLINC_NAKES_PRESENCE_ENABLED')") !== false
 	&& strpos($main_config, 'Doclinc_feature_flags::resolve') !== false, 'main_feature_default_off_resolver_contract');
 presence_expect(strpos($admin_config, "getenv('DOCLINC_NAKES_PRESENCE_ENABLED')") !== false

@@ -178,6 +178,8 @@
     function create(rawConfig) {
         var config = normalizedConfig(rawConfig);
         var stopped = false;
+        var cachePaused = false;
+        var begun = false;
         var heartbeatTimer = null;
         var snapshotTimer = null;
         var heartbeatPending = false;
@@ -189,7 +191,7 @@
         }
 
         function heartbeat() {
-            if (stopped || heartbeatPending || !visible()) {
+            if (stopped || cachePaused || heartbeatPending) {
                 return Promise.resolve(false);
             }
             heartbeatPending = true;
@@ -200,7 +202,7 @@
         }
 
         function snapshot() {
-            if (stopped || snapshotPending || !visible()) {
+            if (stopped || cachePaused || snapshotPending || !visible()) {
                 return Promise.resolve(false);
             }
             snapshotPending = true;
@@ -224,7 +226,7 @@
         }
 
         function onVisibilityChange() {
-            if (!visible() || stopped) {
+            if (!visible() || stopped || cachePaused) {
                 return;
             }
             if (config.mode === 'heartbeat' || config.mode === 'both') {
@@ -235,40 +237,90 @@
             }
         }
 
+        function clearTimers() {
+            if (heartbeatTimer !== null) {
+                root.clearInterval(heartbeatTimer);
+                heartbeatTimer = null;
+            }
+            if (snapshotTimer !== null) {
+                root.clearInterval(snapshotTimer);
+                snapshotTimer = null;
+            }
+        }
+
+        function startTimers() {
+            if (config.mode === 'heartbeat' || config.mode === 'both') {
+                heartbeat();
+                if (heartbeatTimer === null) {
+                    heartbeatTimer = root.setInterval(heartbeat, config.heartbeatIntervalMs);
+                }
+            }
+            if (config.mode === 'monitor' || config.mode === 'both') {
+                snapshot();
+                if (snapshotTimer === null) {
+                    snapshotTimer = root.setInterval(snapshot, config.snapshotIntervalMs);
+                }
+            }
+        }
+
+        function pauseForCache() {
+            if (stopped || cachePaused || !begun) {
+                return false;
+            }
+            cachePaused = true;
+            clearTimers();
+            if (root.document) {
+                root.document.removeEventListener('visibilitychange', onVisibilityChange);
+            }
+            return true;
+        }
+
+        function resumeFromCache() {
+            if (stopped || !cachePaused || !begun) {
+                return false;
+            }
+            cachePaused = false;
+            if (root.document) {
+                root.document.addEventListener('visibilitychange', onVisibilityChange);
+            }
+            startTimers();
+            return true;
+        }
+
+        function onPageHide(event) {
+            return event && event.persisted === true ? pauseForCache() : teardown();
+        }
+
+        function onPageShow(event) {
+            return event && event.persisted === true ? resumeFromCache() : false;
+        }
+
         function teardown() {
             if (stopped) {
                 return false;
             }
             stopped = true;
-            if (heartbeatTimer !== null) {
-                root.clearInterval(heartbeatTimer);
-            }
-            if (snapshotTimer !== null) {
-                root.clearInterval(snapshotTimer);
-            }
+            cachePaused = false;
+            clearTimers();
             if (root.document) {
                 root.document.removeEventListener('visibilitychange', onVisibilityChange);
             }
-            root.removeEventListener('pagehide', teardown);
+            root.removeEventListener('pagehide', onPageHide);
+            root.removeEventListener('pageshow', onPageShow);
             return true;
         }
 
         function begin() {
-            if (!config.enabled || config.mode === 'disabled') {
+            if (!config.enabled || config.mode === 'disabled' || begun || stopped) {
                 return false;
             }
+            begun = true;
             if (root.document) {
                 root.document.addEventListener('visibilitychange', onVisibilityChange);
             }
-            root.addEventListener('pagehide', teardown);
-            if (config.mode === 'heartbeat' || config.mode === 'both') {
-                heartbeat();
-                heartbeatTimer = root.setInterval(heartbeat, config.heartbeatIntervalMs);
-            }
-            if (config.mode === 'monitor' || config.mode === 'both') {
-                snapshot();
-                snapshotTimer = root.setInterval(snapshot, config.snapshotIntervalMs);
-            }
+            root.addEventListener('pagehide', onPageHide);
+            root.addEventListener('pageshow', onPageShow);
+            startTimers();
             return true;
         }
 

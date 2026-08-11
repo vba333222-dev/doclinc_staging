@@ -2444,10 +2444,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<?php if (is_array($request_realtime_bootstrap)) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-requests.js')); ?>"></script>
 	<?php endif; ?>
-	<?php if (!empty($nakes_presence_enabled)) : ?>
-		<script>window.DoclincNakesPresenceConfig = <?= json_encode($nakes_presence_bootstrap, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
-		<script src="<?= html_escape(base_url('assets/js/doclinc-nakes-presence.js')); ?>"></script>
-	<?php endif; ?>
+	<?php $this->load->view('nakes_presence_runtime_v', array('nakes_presence_bootstrap' => $nakes_presence_bootstrap)); ?>
 	<?php if (!empty($puskesmas_operations_enabled)) : ?>
 		<script>window.DoclincPuskesmasOperationsConfig = <?= json_encode($puskesmas_operations_bootstrap, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-puskesmas-operations.js')); ?>"></script>
