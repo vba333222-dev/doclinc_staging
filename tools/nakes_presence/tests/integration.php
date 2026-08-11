@@ -1,6 +1,7 @@
 <?php
 if (!defined('BASEPATH')) { define('BASEPATH', dirname(__DIR__, 3) . '/system/'); }
 if (!defined('APPPATH')) { define('APPPATH', dirname(__DIR__, 3) . '/application/'); }
+if (!defined('FCPATH')) { define('FCPATH', dirname(__DIR__, 3) . '/'); }
 if (!defined('ENVIRONMENT')) { define('ENVIRONMENT', 'testing'); }
 require_once BASEPATH . 'core/Common.php';
 require_once BASEPATH . 'database/DB.php';
@@ -74,6 +75,7 @@ try {
 		"CREATE TABLE m_puskesmas(kode_pkm varchar(100) NOT NULL,nama_puskesmas varchar(150) NOT NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(kode_pkm)) ENGINE=InnoDB",
 		"CREATE TABLE puskesmas_staff(staff_id int NOT NULL,kode_pkm varchar(100) NOT NULL,nama varchar(150) NOT NULL,profesi varchar(100) NULL,user_id int NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(staff_id)) ENGINE=InnoDB",
 		"CREATE TABLE nakes_presence(user_id int NOT NULL,puskesmas_code varchar(100) NOT NULL,last_seen_at datetime(6) NOT NULL,last_transition_at datetime(6) NULL,last_persisted_at datetime(6) NOT NULL,updated_at datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),PRIMARY KEY(user_id),KEY idx_presence_tenant(puskesmas_code,last_seen_at,user_id)) ENGINE=InnoDB",
+		"CREATE TABLE presence_test_marker(marker_id int NOT NULL,PRIMARY KEY(marker_id)) ENGINE=InnoDB",
 	);
 	foreach ($ddl as $sql) { $db->query($sql); }
 	$db->query("INSERT INTO users VALUES (1,'Admin','admin','aktif',0),(10,'Command A','dokter','aktif',0),(20,'Command B','dokter','aktif',0),(201,'Nakes A','dokter','aktif',0),(202,'Nakes B','dokter','aktif',0),(203,'Nakes C','dokter','aktif',0),(204,'Inactive','dokter','nonaktif',0)");
@@ -85,10 +87,48 @@ try {
 	presence_integration_expect($service->schemaReady(), 'schema_ready');
 	$first = $service->touch(presence_personal_actor(201, 'PKM01'));
 	presence_integration_expect(!empty($first['ok']) && !empty($first['persisted']), 'first_heartbeat_persisted');
+	$standalone_transaction = $db->query('SELECT @@in_transaction AS active')->row();
+	presence_integration_expect((int) $standalone_transaction->active === 0, 'standalone_heartbeat_closes_transaction');
 	$first_row = $db->query('SELECT last_seen_at,last_persisted_at,last_transition_at FROM nakes_presence WHERE user_id=201')->row_array();
 	$second = $service->touch(presence_personal_actor(201, 'PKM01'));
 	$second_row = $db->query('SELECT last_seen_at,last_persisted_at,last_transition_at FROM nakes_presence WHERE user_id=201')->row_array();
 	presence_integration_expect(!empty($second['ok']) && empty($second['persisted']) && $first_row === $second_row, 'second_heartbeat_throttled_without_write');
+	$throttled_transaction = $db->query('SELECT @@in_transaction AS active')->row();
+	presence_integration_expect((int) $throttled_transaction->active === 0, 'throttled_heartbeat_closes_transaction');
+
+	$db->query("CREATE TRIGGER fail_presence_insert BEFORE INSERT ON nakes_presence FOR EACH ROW BEGIN IF NEW.user_id = 202 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'synthetic_presence_write_failure'; END IF; END");
+	$failed_standalone = $service->touch(presence_personal_actor(202, 'PKM01'));
+	$failed_transaction = $db->query('SELECT @@in_transaction AS active')->row();
+	presence_integration_expect(empty($failed_standalone['ok']) && $failed_standalone['code'] === 'write_failed', 'standalone_write_failure_returned');
+	presence_integration_expect((int) $db->where('user_id', 202)->count_all_results('nakes_presence') === 0
+		&& (int) $failed_transaction->active === 0, 'standalone_write_failure_rolled_back_and_closed');
+	$db->query('DROP TRIGGER fail_presence_insert');
+
+	$db->trans_begin();
+	$db->query('INSERT INTO presence_test_marker(marker_id) VALUES (1)');
+	$nested_success = $service->touch(presence_personal_actor(202, 'PKM01'));
+	$nested_success_transaction = $db->query('SELECT @@in_transaction AS active')->row();
+	presence_integration_expect(!empty($nested_success['ok']) && !empty($nested_success['persisted'])
+		&& (int) $nested_success_transaction->active === 1, 'nested_success_keeps_caller_transaction_open');
+	$db->trans_rollback();
+	$nested_success_closed = $db->query('SELECT @@in_transaction AS active')->row();
+	presence_integration_expect((int) $db->count_all('presence_test_marker') === 0
+		&& (int) $db->where('user_id', 202)->count_all_results('nakes_presence') === 0
+		&& (int) $nested_success_closed->active === 0, 'outer_rollback_reverts_successful_nested_touch');
+
+	$db->query("CREATE TRIGGER fail_presence_insert BEFORE INSERT ON nakes_presence FOR EACH ROW BEGIN IF NEW.user_id = 202 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'synthetic_presence_nested_failure'; END IF; END");
+	$db->trans_begin();
+	$db->query('INSERT INTO presence_test_marker(marker_id) VALUES (2)');
+	$nested_failure = $service->touch(presence_personal_actor(202, 'PKM01'));
+	$nested_failure_transaction = $db->query('SELECT @@in_transaction AS active')->row();
+	presence_integration_expect(empty($nested_failure['ok']) && $nested_failure['code'] === 'write_failed'
+		&& (int) $nested_failure_transaction->active === 1, 'nested_failure_propagates_without_closing_caller_transaction');
+	$db->trans_rollback();
+	$nested_failure_closed = $db->query('SELECT @@in_transaction AS active')->row();
+	presence_integration_expect((int) $db->count_all('presence_test_marker') === 0
+		&& (int) $db->where('user_id', 202)->count_all_results('nakes_presence') === 0
+		&& (int) $nested_failure_closed->active === 0, 'caller_rollback_after_nested_failure_is_effective');
+	$db->query('DROP TRIGGER fail_presence_insert');
 
 	$denied_actor = presence_personal_actor(202, 'PKM01');
 	$denied_actor['identity']['valid'] = false;

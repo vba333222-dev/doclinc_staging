@@ -74,6 +74,8 @@ $admin_config = file_get_contents(dirname(__DIR__, 3) . '/admin_menu/application
 $first_login = file_get_contents(dirname(__DIR__, 3) . '/application/libraries/First_login_gate_policy.php');
 $integration_source = file_get_contents(__DIR__ . '/integration.php');
 presence_expect(strpos($service_source, 'FOR UPDATE') !== false && strpos($service_source, 'write_throttle_seconds') !== false, 'database_write_throttled_under_lock');
+presence_expect(strpos($service_source, 'trans_active()') === false
+	&& strpos($service_source, 'if (!$this->db->trans_begin())') !== false, 'ci3_balanced_transaction_level_contract');
 presence_expect(strpos($service_source, "ps.kode_pkm', (string) \$scope['puskesmas_code']") !== false, 'tenant_filter_applied');
 presence_expect(strpos($service_source, 'no_hp') === false && strpos($service_source, 'nomor_sip') === false, 'snapshot_excludes_contact_fields');
 presence_expect(strpos($service_source, 'latitude') === false && strpos($service_source, 'diagnosis') === false, 'snapshot_excludes_location_and_clinical_fields');
@@ -87,6 +89,8 @@ presence_expect(strpos($admin_config, "getenv('DOCLINC_NAKES_PRESENCE_ENABLED')"
 	&& strpos($admin_config, "'resolver_unavailable'") !== false, 'admin_feature_fail_closed_contract');
 presence_expect(strpos($first_login, "'presence_heartbeat', 'presence_snapshot'") !== false, 'first_login_json_gate_contract');
 presence_expect(strpos($integration_source, 'second_heartbeat_throttled_without_write') !== false
+	&& strpos($integration_source, 'nested_success_keeps_caller_transaction_open') !== false
+	&& strpos($integration_source, 'caller_rollback_after_nested_failure_is_effective') !== false
 	&& strpos($integration_source, 'tenant_snapshot_cannot_cross_puskesmas') !== false
 	&& strpos($integration_source, 'snapshot_exact_safe_keys') !== false, 'official_mariadb_integration_contract');
 
