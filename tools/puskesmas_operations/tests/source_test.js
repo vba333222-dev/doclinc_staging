@@ -38,6 +38,7 @@ expect(
   'all_queries_tenant_scoped'
 );
 expect(service.includes("->where('request_status', 'Accepted')") && service.includes("->where('rsa.status', 'aktif')"), 'workload_uses_active_requests_and_assignments');
+expect(service.includes('np.puskesmas_code COLLATE utf8mb4_unicode_ci = CONVERT(ps.kode_pkm USING utf8mb4) COLLATE utf8mb4_unicode_ci'), 'presence_join_normalizes_real_collation_boundary');
 expect(service.includes("->limit($staff_limit + 1)") && service.includes('count($staff_rows) > $staff_limit'), 'staff_overflow_fails_closed_without_truncation');
 expect(service.includes("->limit($request_limit + 1)") && service.includes("'code' => 'result_too_large'") && controller.includes("'result_too_large'"), 'bounded_snapshot_overflow_fails_closed');
 expect(!/(nik|no_kk|bpjs|nip|nomor_sip|no_hp|latitude|longitude|diagnosis|treatment|request_description)/i.test(service), 'service_has_no_identity_clinical_or_location_projection');
@@ -50,6 +51,7 @@ expect(client.includes("addEventListener('pagehide'") && client.includes('visibi
 expect(integration.includes('MariaDbReadiness::wait') && integration.includes('doclinc_puskesmas_ops_test_') && integration.includes('DROP DATABASE IF EXISTS'), 'official_disposable_mariadb_integration_contract');
 expect(integration.includes("define('FCPATH', dirname(__DIR__, 3) . '/')") && integration.indexOf("define('FCPATH'") < integration.indexOf("require_once BASEPATH . 'core/Common.php'"), 'integration_defines_front_controller_path_before_ci_bootstrap');
 expect(integration.includes('$db->data_cache = array();') && integration.includes("throw new RuntimeException('tenant_a_snapshot_unavailable')"), 'integration_refreshes_schema_cache_and_stops_after_primary_failure');
+expect(integration.includes('utf8mb4_general_ci') && integration.includes('utf8mb4_unicode_ci') && integration.includes('presence_fixture_uses_real_mixed_collations'), 'integration_reproduces_real_presence_collations');
 expect(integration.includes('tenant_b_staff_absent_from_tenant_a') && integration.includes('tenant_identifier_injection_fails_closed') && integration.includes('zero_database_mutation'), 'integration_covers_tenant_privacy_and_zero_mutation');
 expect(integrationRunner.includes("read -r -s -p 'Disposable MariaDB admin password: '") && integrationRunner.includes('unset DB_PASSWORD DOCLINC_TEST_DB_ADMIN_PASSWORD') && !integrationRunner.includes('DATABASE_NAME'), 'integration_runner_prompts_secret_and_rejects_database_target');
 

@@ -207,7 +207,7 @@ class Konsultasi_kesehatan_m extends MX_Controller
 		$has_assigned_puskesmas_code = $this->db->field_exists('assigned_puskesmas_code', 'requests');
 		$has_assigned_puskesmas_name = $this->db->field_exists('assigned_puskesmas_name', 'requests');
 		$assigned_puskesmas_name_expr = $has_assigned_puskesmas_name ? "NULLIF(TRIM(requests.assigned_puskesmas_name), '')" : 'NULL';
-		$assigned_puskesmas_code_expr = $has_assigned_puskesmas_code ? "NULLIF(TRIM(requests.assigned_puskesmas_code), '')" : 'NULL';
+		$assigned_puskesmas_code_expr = $has_assigned_puskesmas_code ? "CONVERT(NULLIF(TRIM(requests.assigned_puskesmas_code), '') USING utf8mb4) COLLATE utf8mb4_general_ci" : 'NULL';
 		$routed_puskesmas_code_expr = "CASE WHEN UPPER($assigned_puskesmas_code_expr) = 'DEFAULT' THEN NULL ELSE $assigned_puskesmas_code_expr END";
 		$assigned_puskesmas_name_clean_expr = "CASE WHEN UPPER(COALESCE($assigned_puskesmas_name_expr, '')) IN ('DEFAULT', 'PUSKESMAS DEFAULT') THEN NULL ELSE $assigned_puskesmas_name_expr END";
 		$has_puskesmas = $this->db->table_exists('m_puskesmas') && $this->db->field_exists('kode_pkm', 'm_puskesmas') && $this->db->field_exists('nama_puskesmas', 'm_puskesmas');

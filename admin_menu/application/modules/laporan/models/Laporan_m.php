@@ -238,7 +238,7 @@ class Laporan_m extends MX_Controller
 			$diagnosa_expr = 'medicalrecords.diagnosis';
 		}
 		$assigned_puskesmas_name_expr = $has_assigned_puskesmas_name ? "NULLIF(TRIM(requests.assigned_puskesmas_name), '')" : 'NULL';
-		$assigned_puskesmas_code_expr = $has_assigned_puskesmas_code ? "NULLIF(TRIM(requests.assigned_puskesmas_code), '')" : 'NULL';
+		$assigned_puskesmas_code_expr = $has_assigned_puskesmas_code ? "CONVERT(NULLIF(TRIM(requests.assigned_puskesmas_code), '') USING utf8mb4) COLLATE utf8mb4_general_ci" : 'NULL';
 		$routed_puskesmas_code_expr = "CASE WHEN UPPER($assigned_puskesmas_code_expr) = 'DEFAULT' THEN NULL ELSE $assigned_puskesmas_code_expr END";
 		$assigned_puskesmas_name_clean_expr = "CASE WHEN UPPER(COALESCE($assigned_puskesmas_name_expr, '')) IN ('DEFAULT', 'PUSKESMAS DEFAULT') THEN NULL ELSE $assigned_puskesmas_name_expr END";
 		$puskesmas_expr = $has_puskesmas

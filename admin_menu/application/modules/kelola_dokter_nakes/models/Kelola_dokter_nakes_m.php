@@ -15,7 +15,7 @@ class Kelola_dokter_nakes_m extends MX_Controller
 		$this->db->select('users.*, m_puskesmas.nama_puskesmas, m_puskesmas.status AS puskesmas_status');
 		$this->db->from('users');
 		if ($this->db->table_exists('m_puskesmas') && $this->db->field_exists('remark', 'users')) {
-			$this->db->join('m_puskesmas', 'm_puskesmas.kode_pkm = users.remark', 'left');
+			$this->db->join('m_puskesmas', 'm_puskesmas.kode_pkm COLLATE utf8mb4_general_ci = CONVERT(users.remark USING utf8mb4) COLLATE utf8mb4_general_ci', 'left', false);
 		}
 		$this->db->where('users.role', 'dokter');
 		if ($this->db->table_exists('puskesmas_staff') && $this->db->field_exists('user_id', 'puskesmas_staff')) {

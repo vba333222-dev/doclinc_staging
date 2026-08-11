@@ -20,7 +20,7 @@ class Home_m extends MX_Controller
 	private function assigned_puskesmas_code_expr($request_alias = 'requests')
 	{
 		$raw = $this->db->field_exists('assigned_puskesmas_code', 'requests')
-			? "NULLIF(TRIM($request_alias.assigned_puskesmas_code), '')"
+			? "CONVERT(NULLIF(TRIM($request_alias.assigned_puskesmas_code), '') USING utf8mb4) COLLATE utf8mb4_general_ci"
 			: 'NULL';
 
 		return "CASE WHEN UPPER(COALESCE($raw, '')) = 'DEFAULT' THEN NULL ELSE $raw END";
