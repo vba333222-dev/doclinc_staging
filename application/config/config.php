@@ -699,6 +699,39 @@ $nakes_credential_enforcement_feature = Doclinc_feature_flags::resolve(
 $config['nakes_credential_enforcement_enabled'] = $nakes_credential_enforcement_feature['enabled'];
 $config['nakes_credential_enforcement_environment'] = $nakes_credential_enforcement_feature['environment'];
 $config['nakes_credential_enforcement_feature_reason'] = $nakes_credential_enforcement_feature['reason'];
+$single_active_session_enabled_env = getenv('DOCLINC_SINGLE_ACTIVE_SESSION_ENABLED');
+if ($single_active_session_enabled_env === false || $single_active_session_enabled_env === '') {
+	$single_active_session_enabled_env = $_SERVER['DOCLINC_SINGLE_ACTIVE_SESSION_ENABLED'] ?? null;
+}
+$single_active_session_environment_env = getenv('DOCLINC_SINGLE_ACTIVE_SESSION_ENVIRONMENT');
+if ($single_active_session_environment_env === false || $single_active_session_environment_env === '') {
+	$single_active_session_environment_env = $_SERVER['DOCLINC_SINGLE_ACTIVE_SESSION_ENVIRONMENT'] ?? '';
+}
+$single_active_session_feature = Doclinc_feature_flags::resolve(
+	$single_active_session_enabled_env,
+	$single_active_session_environment_env,
+	$realtime_client_runtime_environment_env
+);
+$config['single_active_session_enabled'] = $single_active_session_feature['enabled'];
+$config['single_active_session_environment'] = $single_active_session_feature['environment'];
+$config['single_active_session_feature_reason'] = $single_active_session_feature['reason'];
+
+$care_team_workflow_enabled_env = getenv('DOCLINC_CARE_TEAM_WORKFLOW_ENABLED');
+if ($care_team_workflow_enabled_env === false || $care_team_workflow_enabled_env === '') {
+	$care_team_workflow_enabled_env = $_SERVER['DOCLINC_CARE_TEAM_WORKFLOW_ENABLED'] ?? null;
+}
+$care_team_workflow_environment_env = getenv('DOCLINC_CARE_TEAM_WORKFLOW_ENVIRONMENT');
+if ($care_team_workflow_environment_env === false || $care_team_workflow_environment_env === '') {
+	$care_team_workflow_environment_env = $_SERVER['DOCLINC_CARE_TEAM_WORKFLOW_ENVIRONMENT'] ?? '';
+}
+$care_team_workflow_feature = Doclinc_feature_flags::resolve(
+	$care_team_workflow_enabled_env,
+	$care_team_workflow_environment_env,
+	$realtime_client_runtime_environment_env
+);
+$config['care_team_workflow_enabled'] = $care_team_workflow_feature['enabled'];
+$config['care_team_workflow_environment'] = $care_team_workflow_feature['environment'];
+$config['care_team_workflow_feature_reason'] = $care_team_workflow_feature['reason'];
 $realtime_public_websocket_url_env = getenv('DOCLINC_REALTIME_PUBLIC_WEBSOCKET_URL');
 if ($realtime_public_websocket_url_env === false || $realtime_public_websocket_url_env === '') {
 	$realtime_public_websocket_url_env = isset($_SERVER['DOCLINC_REALTIME_PUBLIC_WEBSOCKET_URL'])

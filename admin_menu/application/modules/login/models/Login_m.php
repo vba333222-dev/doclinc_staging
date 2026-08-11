@@ -31,9 +31,39 @@
                 ->update('users', $data);
         }
         public function reset_password($email,$encrypted){
-           return $this->db
-                ->where('email', $email)
-                ->update('users', array('password' => $encrypted, 'updated_at' => date('Y-m-d H:i:s')));
+            if ($this->config->item('single_active_session_enabled') !== true) {
+                return $this->db
+                    ->where('email', $email)
+                    ->update('users', array('password' => $encrypted, 'updated_at' => date('Y-m-d H:i:s')));
+            }
+            $service_file = dirname(APPPATH, 2) . '/application/libraries/Session_binding_service.php';
+            if (!is_file($service_file)) {
+                return false;
+            }
+            require_once $service_file;
+            $service = new Session_binding_service($this->db);
+            if (!$service->schemaReady() || !$this->db->trans_begin()) {
+                return false;
+            }
+            try {
+                $query = $this->db->query(
+                    'SELECT userId FROM ' . $this->db->dbprefix('users') . ' WHERE email = ? FOR UPDATE',
+                    array($email)
+                );
+                $user = $query ? $query->row() : null;
+                if (!$user
+                    || !$this->db->where('userId', (int) $user->userId)->update('users', array('password' => $encrypted, 'updated_at' => date('Y-m-d H:i:s')))
+                    || !$service->revokeLocked((int) $user->userId)
+                    || $this->db->trans_status() === false
+                    || !$this->db->trans_commit()) {
+                    $this->db->trans_rollback();
+                    return false;
+                }
+                return true;
+            } catch (Throwable $exception) {
+                $this->db->trans_rollback();
+                return false;
+            }
         }
         public function update_password($user_id, $password_hash)
         {

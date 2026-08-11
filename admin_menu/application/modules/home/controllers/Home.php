@@ -92,11 +92,40 @@ class Home extends MX_Controller
 	public function change_password()
 	{
 		$email = $this->session->userdata('email');
+		$user_id = (int) $this->session->userdata('id');
 		$password = (string) $this->input->post('old_password');
 		$new_password = doclinc_password_hash((string) $this->input->post('new_password'));
 		$user_query = $this->Home_m->get_user_by_email($email);
 		if ($user_query->num_rows() > 0 && doclinc_password_verify($password, (string) $user_query->row()->password)) {
-			$this->Home_m->change_password($email, $new_password);
+			$updated = false;
+			if ($this->config->item('single_active_session_enabled') === true) {
+				$service_file = dirname(APPPATH, 2) . '/application/libraries/Session_binding_service.php';
+				if (is_file($service_file)) {
+					require_once $service_file;
+					$token = (new Session_binding_service($this->db))->rotatePassword(
+						$user_id,
+						$this->session->userdata('normal_session_token'),
+						(string) $user_query->row()->password,
+						$new_password
+					);
+					if (is_string($token)) {
+						try {
+							$this->session->set_userdata('normal_session_token', $token);
+							$stored_token = $this->session->userdata('normal_session_token');
+							$updated = is_string($stored_token) && hash_equals($token, $stored_token);
+						} catch (Throwable $exception) {
+							$updated = false;
+						}
+					}
+				}
+			} else {
+				$updated = $this->Home_m->change_password($user_id, $new_password);
+			}
+			if (!$updated) {
+				$this->session->sess_destroy();
+				redirect('login?session=expired', 'refresh');
+				return;
+			}
 			$info = '<div class="alert alert-success alert-dismissible fade show shadow-sm border border-success animate__animated animate__bounceInUp" role="alert">
 		                    <button type="button" class="close" data-dismiss="alert" aria-label="Tutup">
 		                        <span aria-hidden="true">&times;</span>

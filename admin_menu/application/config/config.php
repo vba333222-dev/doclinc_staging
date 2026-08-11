@@ -119,7 +119,7 @@ $config['charset'] = 'UTF-8';
 | setting this variable to TRUE (boolean).  See the user guide for details.
 |
 */
-$config['enable_hooks'] = FALSE;
+$config['enable_hooks'] = TRUE;
 
 /*
 |--------------------------------------------------------------------------
@@ -602,3 +602,21 @@ $config['nakes_presence_enabled'] = !empty($nakes_presence_feature['enabled']);
 $config['nakes_presence_environment'] = (string) ($nakes_presence_feature['environment'] ?? '');
 $config['nakes_presence_feature_reason'] = (string) ($nakes_presence_feature['reason'] ?? 'disabled');
 $config['nakes_presence_online_timeout_seconds'] = 90;
+$single_active_session_enabled_env = getenv('DOCLINC_SINGLE_ACTIVE_SESSION_ENABLED');
+if ($single_active_session_enabled_env === false || $single_active_session_enabled_env === '') {
+	$single_active_session_enabled_env = $_SERVER['DOCLINC_SINGLE_ACTIVE_SESSION_ENABLED'] ?? null;
+}
+$single_active_session_environment_env = getenv('DOCLINC_SINGLE_ACTIVE_SESSION_ENVIRONMENT');
+if ($single_active_session_environment_env === false || $single_active_session_environment_env === '') {
+	$single_active_session_environment_env = $_SERVER['DOCLINC_SINGLE_ACTIVE_SESSION_ENVIRONMENT'] ?? '';
+}
+$single_active_session_feature = class_exists('Doclinc_feature_flags')
+	? Doclinc_feature_flags::resolve(
+		$single_active_session_enabled_env,
+		$single_active_session_environment_env,
+		$nakes_presence_runtime_env
+	)
+	: array('enabled' => false, 'environment' => '', 'reason' => 'resolver_unavailable');
+$config['single_active_session_enabled'] = !empty($single_active_session_feature['enabled']);
+$config['single_active_session_environment'] = (string) ($single_active_session_feature['environment'] ?? '');
+$config['single_active_session_feature_reason'] = (string) ($single_active_session_feature['reason'] ?? 'disabled');

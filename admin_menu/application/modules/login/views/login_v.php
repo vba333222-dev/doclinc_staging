@@ -70,6 +70,9 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 						<div class="info text-center mb-3">
 							<?php echo $this->session->flashdata('info'); ?>
 						</div>
+						<?php if (!empty($session_message)): ?>
+							<div class="alert alert-info" role="status"><?= html_escape($session_message); ?></div>
+						<?php endif; ?>
 						<form class="user">
 							<div class="form-group mb-4">
 								<label for="email" class="text-primary font-weight-bold">Email</label>
@@ -227,6 +230,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 	<!-- Custom scripts for all pages-->
 	<script src="<?php echo base_url(); ?>assets/js/sb-admin-2.min.js"></script>
 
+	<script src="<?= base_url('../assets/js/doclinc-password-mask.js'); ?>"></script>
 </body>
 
 </html>

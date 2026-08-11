@@ -47,5 +47,6 @@
 			</div>
 		</div>
 	</div>
+	<script src="<?= base_url('assets/js/doclinc-password-mask.js'); ?>"></script>
 </body>
 </html>

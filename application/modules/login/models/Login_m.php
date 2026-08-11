@@ -86,7 +86,7 @@
 			$user['credential_state'] = $result['state'];
 			return $user;
 		}
-		public function complete_required_password_change($user_id, $password_hash, $expected_current_hash)
+		public function complete_required_password_change($user_id, $password_hash, $expected_current_hash, $current_session_token = null)
 		{
 			if (!is_string($password_hash) || $password_hash === ''
 				|| !is_string($expected_current_hash) || $expected_current_hash === ''
@@ -151,8 +151,26 @@
 				$this->db->trans_rollback();
 				return false;
 			}
-			$this->db->trans_commit();
-			return $this->db->trans_status() !== false;
+			$new_session_token = true;
+			if ($this->config->item('single_active_session_enabled') === true) {
+				require_once APPPATH . 'libraries/Session_binding_service.php';
+				$binding_service = new Session_binding_service($this->db);
+				$rotate_session = is_string($current_session_token);
+				$new_session_token = $rotate_session
+					? $binding_service->rotateLocked((int) $user_id, $current_session_token)
+					: $binding_service->revokeLocked((int) $user_id);
+				if (!$binding_service->schemaReady()
+					|| ($rotate_session && !is_string($new_session_token))
+					|| (!$rotate_session && $new_session_token !== true)) {
+					$this->db->trans_rollback();
+					return false;
+				}
+			}
+			if ($this->db->trans_status() === false || !$this->db->trans_commit()) {
+				$this->db->trans_rollback();
+				return false;
+			}
+			return $new_session_token;
 		}
 
 		private function personal_activation_schema_ready()

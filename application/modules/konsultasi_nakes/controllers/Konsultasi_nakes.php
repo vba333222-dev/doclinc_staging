@@ -57,8 +57,15 @@ class Konsultasi_nakes extends MX_Controller
 		$x['completed_return_url'] = doclinc_request_return_url('dokter', 'Completed');
 		$x['tgl_lahir'] = !empty($request->tgl) ? $request->tgl : null;
 		$x['umur'] = '-';
-		$x['kriteria'] = '';
-		$x['can_handle_request'] = !empty($access_context['can_handle']);
+		$x['care_team_workflow_enabled'] = $this->config->item('care_team_workflow_enabled') === true;
+		$x['kriteria'] = $x['care_team_workflow_enabled']
+			? ((string) ($request->consultation_mode ?? '') === 'visit'
+				? 'Kunjungan Nakes'
+				: ((string) ($request->consultation_mode ?? '') === 'non_visit' ? 'Selesai Konsultasi' : ''))
+			: '';
+		$x['can_handle_request'] = $x['care_team_workflow_enabled']
+			? !empty($access_context['can_assess'])
+			: !empty($access_context['can_handle']);
 		$x['visit_proof_required'] = doclinc_visit_proof_required();
 		$x['additional_diagnoses_enabled'] = (bool) $this->config->item('additional_diagnoses_enabled');
 		$x['anamnesis_schema_ready'] = false;
@@ -221,7 +228,10 @@ class Konsultasi_nakes extends MX_Controller
 			return;
 		}
 		$access_context = doclinc_nakes_request_access_context($request_id, $identity_context);
-		if (empty($access_context['can_handle'])) {
+		$can_assess = $this->config->item('care_team_workflow_enabled') === true
+			? !empty($access_context['can_assess'])
+			: !empty($access_context['can_handle']);
+		if (!$can_assess) {
 			$this->output->set_status_header(403);
 			doclinc_log_request_event('unauthorized_request_update', $request_id, array('target' => 'complete'));
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));

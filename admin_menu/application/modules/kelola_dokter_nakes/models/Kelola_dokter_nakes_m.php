@@ -272,9 +272,31 @@ class Kelola_dokter_nakes_m extends MX_Controller
 			return false;
 		}
 
+		$revoke = isset($allowed['password']) && $this->config->item('single_active_session_enabled') === true;
+		$binding_service = $revoke ? $this->session_binding_service() : null;
+		if ($revoke && (!$binding_service || !$this->db->trans_begin())) {
+			return false;
+		}
+		if ($revoke) {
+			$locked = $this->db->query(
+				'SELECT userId FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ? AND role = ? FOR UPDATE',
+				array((int) $id_user, 'dokter')
+			);
+			if (!$locked || !$locked->row()) {
+				$this->db->trans_rollback();
+				return false;
+			}
+		}
 		$this->db->where('userId', $id_user);
 		$this->db->where('role', 'dokter');
 		$result = $this->db->update('users', $allowed);
+		if ($revoke) {
+			if (!$result || !$binding_service->revokeLocked((int) $id_user)
+				|| $this->db->trans_status() === false || !$this->db->trans_commit()) {
+				$this->db->trans_rollback();
+				return false;
+			}
+		}
 		if ($result) {
 			$this->log_audit('admin_update_puskesmas_nakes_user', $id_user);
 			if (isset($allowed['password'])) {
@@ -303,14 +325,47 @@ class Kelola_dokter_nakes_m extends MX_Controller
 			}
 		}
 
+		$revoke = $status === 'nonaktif' && $this->config->item('single_active_session_enabled') === true;
+		$binding_service = $revoke ? $this->session_binding_service() : null;
+		if ($revoke && (!$binding_service || !$this->db->trans_begin())) {
+			return false;
+		}
+		if ($revoke) {
+			$locked = $this->db->query(
+				'SELECT userId FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ? AND role = ? FOR UPDATE',
+				array((int) $id_user, 'dokter')
+			);
+			if (!$locked || !$locked->row()) {
+				$this->db->trans_rollback();
+				return false;
+			}
+		}
 		$this->db->where('userId', $id_user);
 		$this->db->where('role', 'dokter');
 		$result = $this->db->update('users', $data);
+		if ($revoke) {
+			if (!$result || !$binding_service->revokeLocked((int) $id_user)
+				|| $this->db->trans_status() === false || !$this->db->trans_commit()) {
+				$this->db->trans_rollback();
+				return false;
+			}
+		}
 		if ($result) {
 			$this->log_audit($status === 'aktif' ? 'admin_enable_puskesmas_nakes_user' : 'admin_disable_puskesmas_nakes_user', $id_user);
 		}
 
 		return $result;
+	}
+
+	private function session_binding_service()
+	{
+		$service_file = dirname(APPPATH, 2) . '/application/libraries/Session_binding_service.php';
+		if (!is_file($service_file)) {
+			return null;
+		}
+		require_once $service_file;
+		$service = new Session_binding_service($this->db);
+		return $service->schemaReady() ? $service : null;
 	}
 
 	private function log_audit($action, $target_user_id)

@@ -87,6 +87,14 @@ class Konsultasi_nakes_m extends MX_Controller
 	private function where_handling_nakes_owner($user_id, $prefix = '')
 	{
 		$this->db->group_start();
+		if ($this->config->item('care_team_workflow_enabled') === true
+			&& $this->db->field_exists('responsible_doctor_user_id', 'requests')
+			&& $this->db->field_exists('visit_performer_user_id', 'requests')) {
+			$this->db->where($prefix . 'responsible_doctor_user_id', $user_id);
+			$this->db->or_where($prefix . 'visit_performer_user_id', $user_id);
+			$this->db->group_end();
+			return;
+		}
 		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
 			$this->db->where($prefix . 'assigned_nakes_user_id', $user_id);
 			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
@@ -173,7 +181,10 @@ class Konsultasi_nakes_m extends MX_Controller
 		$access_context = $request && function_exists('doclinc_nakes_request_access_context')
 			? doclinc_nakes_request_access_context($request_id, $database_identity)
 			: null;
-		if (!$request || empty($access_context['can_handle']) || (string) $request->request_status !== 'Accepted') {
+		$can_assess = $this->config->item('care_team_workflow_enabled') === true
+			? !empty($access_context['can_assess'])
+			: !empty($access_context['can_handle']);
+		if (!$request || !$can_assess || (string) $request->request_status !== 'Accepted') {
 			$this->last_failure_code = 'request_not_completable';
 			$this->db->trans_rollback();
 			return false;
@@ -209,6 +220,23 @@ class Konsultasi_nakes_m extends MX_Controller
 		}
 
 		$consultation_mode = $this->consultation_mode_from_kriteria($kriteria);
+		if ($this->config->item('care_team_workflow_enabled') === true) {
+			$stored_mode = isset($request->consultation_mode) ? (string) $request->consultation_mode : '';
+			if ($stored_mode === '' || $consultation_mode !== $stored_mode) {
+				$this->last_failure_code = 'service_mode_mismatch';
+				$this->db->trans_rollback();
+				return false;
+			}
+			if ($stored_mode === 'visit') {
+				$performer_count = $this->db->where('request_id', (int) $request_id)
+					->where('status', 'aktif')->count_all_results('request_visit_performer_assignments');
+				if ($performer_count !== 1 || empty($request->visit_performer_user_id)) {
+					$this->last_failure_code = 'visit_performer_required';
+					$this->db->trans_rollback();
+					return false;
+				}
+			}
+		}
 		if ($visit_proof_required && $consultation_mode === null) {
 			$this->last_failure_code = 'visit_mode_invalid';
 			$this->db->trans_rollback();
@@ -386,8 +414,12 @@ class Konsultasi_nakes_m extends MX_Controller
 		if (function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled()) {
 			$puskesmas_code = $this->request_assigned_puskesmas_code($request);
 			$audiences = array('user:' . (int) $request->user_id);
-			$handler_id = isset($request->assigned_nakes_user_id) ? (int) $request->assigned_nakes_user_id : 0;
+			$handler_id = $this->config->item('care_team_workflow_enabled') === true
+				? (isset($request->visit_performer_user_id) ? (int) $request->visit_performer_user_id : 0)
+				: (isset($request->assigned_nakes_user_id) ? (int) $request->assigned_nakes_user_id : 0);
 			if ($handler_id > 0) { $audiences[] = 'user:' . $handler_id; }
+			$responsible_id = isset($request->responsible_doctor_user_id) ? (int) $request->responsible_doctor_user_id : 0;
+			if ($responsible_id > 0) { $audiences[] = 'user:' . $responsible_id; }
 			if ($puskesmas_code !== '') { $audiences[] = 'puskesmas:' . $puskesmas_code . ':ops'; }
 			$notification = array(
 				'recipient_user_id' => (int) $request->user_id, 'recipient_role' => 'warga',

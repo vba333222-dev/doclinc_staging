@@ -23,11 +23,19 @@ class Home_nakes_m extends MX_Controller
 	{
 		$this->db->select('requests.*, users.nama');
 		$handler_name_parts = array();
+		if ($this->config->item('care_team_workflow_enabled') === true
+			&& $this->db->field_exists('visit_performer_user_id', 'requests')) {
+			$handler_name_parts[] = 'visit_performer_user.nama';
+		}
 		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
 			$handler_name_parts[] = 'assigned_nakes_user.nama';
 		}
 		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
 			$handler_name_parts[] = 'accepted_nakes_user.nama';
+		}
+		if ($this->config->item('care_team_workflow_enabled') === true
+			&& $this->db->field_exists('responsible_doctor_user_id', 'requests')) {
+			$this->db->select('responsible_doctor_user.nama AS responsible_doctor_name');
 		}
 		$explicit_handler_name_expr = !empty($handler_name_parts) ? 'COALESCE(' . implode(', ', $handler_name_parts) . ')' : 'NULL';
 		$legacy_handler_name_expr = 'COALESCE(' . implode(', ', array_merge($handler_name_parts, array('dokter_user.nama'))) . ')';
@@ -39,11 +47,19 @@ class Home_nakes_m extends MX_Controller
 
 	private function join_handling_nakes_display()
 	{
+		if ($this->config->item('care_team_workflow_enabled') === true
+			&& $this->db->field_exists('visit_performer_user_id', 'requests')) {
+			$this->db->join('users AS visit_performer_user', 'requests.visit_performer_user_id = visit_performer_user.userId', 'left');
+		}
 		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
 			$this->db->join('users AS assigned_nakes_user', 'requests.assigned_nakes_user_id = assigned_nakes_user.userId', 'left');
 		}
 		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
 			$this->db->join('users AS accepted_nakes_user', 'requests.accepted_by_user_id = accepted_nakes_user.userId', 'left');
+		}
+		if ($this->config->item('care_team_workflow_enabled') === true
+			&& $this->db->field_exists('responsible_doctor_user_id', 'requests')) {
+			$this->db->join('users AS responsible_doctor_user', 'requests.responsible_doctor_user_id = responsible_doctor_user.userId', 'left');
 		}
 		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
 	}
@@ -285,6 +301,14 @@ class Home_nakes_m extends MX_Controller
 	private function where_handling_nakes_owner($id, $prefix = '')
 	{
 		$this->db->group_start();
+		if ($this->config->item('care_team_workflow_enabled') === true
+			&& $this->db->field_exists('responsible_doctor_user_id', 'requests')
+			&& $this->db->field_exists('visit_performer_user_id', 'requests')) {
+			$this->db->where($prefix . 'responsible_doctor_user_id', $id);
+			$this->db->or_where($prefix . 'visit_performer_user_id', $id);
+			$this->db->group_end();
+			return;
+		}
 		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
 			$this->db->where($prefix . 'assigned_nakes_user_id', $id);
 			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
@@ -396,6 +420,15 @@ class Home_nakes_m extends MX_Controller
 		}
 
 		$this->db->where('TRIM(requests.assigned_puskesmas_code) = ' . $this->db->escape($puskesmas_code), null, false);
+		if ($this->config->item('care_team_workflow_enabled') === true
+			&& $this->db->field_exists('responsible_doctor_user_id', 'requests')
+			&& $this->db->field_exists('visit_performer_user_id', 'requests')) {
+			$this->db->group_start()
+				->where('requests.responsible_doctor_user_id', $user_id)
+				->or_where('requests.visit_performer_user_id', $user_id)
+				->group_end();
+			return;
+		}
 		$direct_assignment = $this->db->field_exists('assigned_nakes_user_id', 'requests')
 			? 'COALESCE(requests.assigned_nakes_user_id, 0)'
 			: '0';
@@ -681,6 +714,13 @@ class Home_nakes_m extends MX_Controller
 		if (!$this->command_center_identity_matches($identity_context, $id_user, $puskesmas_code)) {
 			return array('status' => 'error', 'message' => 'Anda tidak memiliki akses.');
 		}
+		$care_team_enabled = $this->config->item('care_team_workflow_enabled') === true;
+		if ($care_team_enabled) {
+			require_once APPPATH . 'libraries/Care_team_service.php';
+			if (!(new Care_team_service($this->db))->schemaReady()) {
+				return array('status' => 'error', 'message' => 'Layanan belum tersedia.');
+			}
+		}
 
 		$realtime_enabled = function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled();
 		if ($realtime_enabled && !$this->db->trans_begin()) {
@@ -729,13 +769,13 @@ class Home_nakes_m extends MX_Controller
 			$data['accepted_by_user_id'] = $id_user;
 		}
 		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
-			$data['assigned_nakes_user_id'] = $id_user;
+			$data['assigned_nakes_user_id'] = $care_team_enabled ? null : $id_user;
 		}
 		if ($this->db->field_exists('assigned_nakes_at', 'requests')) {
 			$data['assigned_nakes_at'] = date('Y-m-d H:i:s');
 		}
 		if ($this->db->field_exists('assigned_nakes_by_user_id', 'requests')) {
-			$data['assigned_nakes_by_user_id'] = $id_user;
+			$data['assigned_nakes_by_user_id'] = $care_team_enabled ? null : $id_user;
 		}
 		if ($this->db->field_exists('visit_status', 'requests')) {
 			$data['visit_status'] = 'not_started';
@@ -931,7 +971,10 @@ class Home_nakes_m extends MX_Controller
 		$access_context = function_exists('doclinc_nakes_request_access_context')
 			? doclinc_nakes_request_access_context($request_id, $database_identity)
 			: null;
-		if (empty($access_context['can_handle'])) {
+		$can_visit = $this->config->item('care_team_workflow_enabled') === true
+			? !empty($access_context['can_visit'])
+			: !empty($access_context['can_handle']);
+		if (!$can_visit) {
 			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Status kunjungan tidak dapat diperbarui');
 		}
@@ -1045,7 +1088,10 @@ class Home_nakes_m extends MX_Controller
 		$access_context = $request && function_exists('doclinc_nakes_request_access_context')
 			? doclinc_nakes_request_access_context($request_id, $database_identity)
 			: null;
-		if (!$request || empty($access_context['can_handle']) || (string) $request->request_status !== 'Accepted') {
+		$can_visit = $this->config->item('care_team_workflow_enabled') === true
+			? !empty($access_context['can_visit'])
+			: !empty($access_context['can_handle']);
+		if (!$request || !$can_visit || (string) $request->request_status !== 'Accepted') {
 			$this->db->trans_rollback();
 			return false;
 		}
@@ -1216,6 +1262,19 @@ class Home_nakes_m extends MX_Controller
 				->join('users AS staff_account', 'staff_account.userId = puskesmas_staff.user_id', 'left');
 		} else {
 			$this->db->select('NULL AS account_name, NULL AS account_phone, NULL AS account_birthdate, NULL AS account_gender, NULL AS account_status', false);
+		}
+		$presence_ready = $this->config->item('nakes_presence_enabled') === true
+			&& $this->db->table_exists('nakes_presence')
+			&& $this->db->field_exists('user_id', 'nakes_presence')
+			&& $this->db->field_exists('puskesmas_code', 'nakes_presence')
+			&& $this->db->field_exists('last_seen_at', 'nakes_presence');
+		if ($presence_ready) {
+			$online_timeout = max(30, min(300, (int) $this->config->item('nakes_presence_online_timeout_seconds')));
+			$this->db
+				->select("CASE WHEN staff_presence.last_seen_at IS NOT NULL AND staff_presence.last_seen_at >= DATE_SUB(NOW(6), INTERVAL {$online_timeout} SECOND) THEN 1 ELSE 0 END AS is_online", false)
+				->join('nakes_presence AS staff_presence', 'staff_presence.user_id = puskesmas_staff.user_id AND staff_presence.puskesmas_code = puskesmas_staff.kode_pkm', 'left');
+		} else {
+			$this->db->select('NULL AS is_online', false);
 		}
 		$rows = $this->db
 			->get()

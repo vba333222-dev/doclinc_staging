@@ -565,13 +565,14 @@ class Home_m extends MX_Controller
 		}
 	}
 
-	public function change_password($email, $new_password)
+	public function change_password($user_id, $new_password)
 	{
-		if (!$this->db->table_exists('users')) {
+		$user_id = (int) $user_id;
+		if ($user_id < 1 || !$this->db->table_exists('users')) {
 			return false;
 		}
 
-		$this->db->where('email', $email);
+		$this->db->where('userId', $user_id);
 		return $this->db->update('users', array('password' => $new_password, 'updated_at' => date('Y-m-d H:i:s')));
 	}
 

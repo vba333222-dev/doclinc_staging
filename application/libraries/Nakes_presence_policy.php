@@ -7,6 +7,7 @@ class Nakes_presence_policy
 	{
 		$identity = isset($actor['identity']) && is_array($actor['identity']) ? $actor['identity'] : array();
 		return !empty($actor['authenticated'])
+			&& (!array_key_exists('session_binding_valid', $actor) || !empty($actor['session_binding_valid']))
 			&& (int) ($actor['user_id'] ?? 0) > 0
 			&& (string) ($actor['role'] ?? '') === 'dokter'
 			&& (string) ($actor['status'] ?? '') === 'aktif'

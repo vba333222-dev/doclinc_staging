@@ -12,6 +12,13 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |
 */
 $hook['post_controller_constructor'][] = array(
+	'class' => 'Session_binding_gate',
+	'function' => 'enforce',
+	'filename' => 'Session_binding_gate.php',
+	'filepath' => 'hooks',
+	'params' => array(),
+);
+$hook['post_controller_constructor'][] = array(
 	'class' => 'Password_change_gate',
 	'function' => 'enforce',
 	'filename' => 'Password_change_gate.php',
