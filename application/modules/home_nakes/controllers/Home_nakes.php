@@ -15,6 +15,7 @@ class Home_nakes extends MX_Controller
 		$this->load->helper('notification');
 		$this->load->helper('request_realtime');
 		$this->load->helper('role_prerequisite');
+		$this->load->helper('nakes_presence_client');
 		$this->load->library('Visit_monitoring_policy');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment', 'assign_responsible_doctor', 'choose_service_mode', 'assign_visit_performer'), true)) {
@@ -382,17 +383,8 @@ class Home_nakes extends MX_Controller
 		);
 		$d['nakes_puskesmas_code'] = $puskesmas_code;
 		$d['nakes_puskesmas_name'] = !empty($identity_context['puskesmas_name']) ? (string) $identity_context['puskesmas_name'] : '';
-		$d['nakes_presence_enabled'] = $this->config->item('nakes_presence_enabled') === true
-			&& !empty($identity_context['valid'])
-			&& in_array($account_type, array('personal', 'command_center'), true);
-		$d['nakes_presence_bootstrap'] = array(
-			'enabled' => $d['nakes_presence_enabled'],
-			'mode' => $account_type === 'personal' ? 'heartbeat' : ($account_type === 'command_center' ? 'monitor' : 'disabled'),
-			'heartbeatUrl' => base_url('home_nakes/presence_heartbeat'),
-			'snapshotUrl' => base_url('home_nakes/presence_snapshot'),
-			'heartbeatIntervalMs' => max(15000, (int) $this->config->item('nakes_presence_heartbeat_seconds') * 1000),
-			'snapshotIntervalMs' => 30000,
-		);
+		$d['nakes_presence_bootstrap'] = doclinc_nakes_presence_client_bootstrap($identity_context, true);
+		$d['nakes_presence_enabled'] = !empty($d['nakes_presence_bootstrap']['enabled']);
 		$d['puskesmas_operations_enabled'] = $this->config->item('puskesmas_operations_enabled') === true
 			&& $account_type === 'command_center'
 			&& !empty($identity_context['valid']);

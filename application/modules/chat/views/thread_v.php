@@ -2970,6 +2970,7 @@ if ($current_role === 'dokter') {
 			}
 		}
 	</script>
+	<?php $this->load->view('nakes_presence_runtime_v', array('nakes_presence_bootstrap' => $nakes_presence_bootstrap)); ?>
 </body>
 
 </html>

@@ -1823,6 +1823,7 @@ if (!function_exists('formatComplaintText')) {
 	<?php if ($clinical_suggestions_enabled) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-suggestions.js')); ?>"></script>
 	<?php endif; ?>
+	<?php $this->load->view('nakes_presence_runtime_v', array('nakes_presence_bootstrap' => $nakes_presence_bootstrap)); ?>
 </body>
 
 </html>

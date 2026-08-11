@@ -12,6 +12,7 @@ class Konsultasi_nakes extends MX_Controller
 		$this->load->helper('request_realtime');
 		$this->load->helper(array('visit_routing', 'visit_proof', 'request_navigation'));
 		$this->load->helper('role_prerequisite');
+		$this->load->helper('nakes_presence_client');
 		$this->load->library('Clinical_anamnesis');
 		$this->load->library('Visit_proof_service');
 		$this->load->library('Medicalrecord_diagnosis_service');
@@ -33,6 +34,7 @@ class Konsultasi_nakes extends MX_Controller
 		$x['request_id'] = $this->uri->segment(3);
 		$doctor_id = (int) $this->session->userdata('id');
 		$identity_context = doclinc_dokter_identity_context($doctor_id);
+		$x['nakes_presence_bootstrap'] = doclinc_nakes_presence_client_bootstrap($identity_context);
 		$access_context = doclinc_nakes_request_access_context($x['request_id'], $identity_context);
 		if (empty($access_context['can_view'])) {
 			redirect(doclinc_request_return_target('dokter'));
