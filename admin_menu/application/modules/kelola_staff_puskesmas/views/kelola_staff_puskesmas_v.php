@@ -1,5 +1,6 @@
 <?php
 require_once dirname(APPPATH, 2) . '/application/helpers/profile_readiness_presentation_helper.php';
+require_once dirname(APPPATH, 2) . '/application/helpers/nakes_account_presentation_helper.php';
 $filters = isset($filters) && is_array($filters) ? $filters : array();
 $staff_rows = isset($staff_rows) && is_array($staff_rows) ? $staff_rows : array();
 $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ? $puskesmas_options : array();
@@ -25,6 +26,7 @@ $form_mode = isset($form_mode) ? (string) $form_mode : '';
 $form_staff = isset($form_staff) ? $form_staff : null;
 $nip_schema_ready = !empty($nip_schema_ready);
 $nakes_profile_schema_ready = !empty($nakes_profile_schema_ready);
+$provisioning_csrf_token = isset($provisioning_csrf_token) ? (string) $provisioning_csrf_token : '';
 $is_form = in_array($form_mode, array('create', 'edit'), true);
 $form_action = $form_mode === 'edit' && $form_staff ? site_url('kelola_staff_puskesmas/update/' . (int) $form_staff->staff_id) : site_url('kelola_staff_puskesmas/store');
 $form_title = $form_mode === 'edit' ? 'Edit staf' : 'Tambah staf';
@@ -87,6 +89,7 @@ $form_values = array(
 					<a href="<?= site_url('kelola_staff_puskesmas'); ?>" class="btn btn-sm btn-light rounded-pill border">Batal</a>
 				</div>
 				<form action="<?= $form_action; ?>" method="post">
+					<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
 					<div class="card-body bg-light">
 						<div class="row">
 							<div class="col-md-6">
@@ -268,6 +271,7 @@ $form_values = array(
 									$linked_account_status_label = $account_status_labels[$linked_account_status] ?? 'Status belum tersedia';
 									$linked_account_is_active = $linked_account_status === 'aktif';
 									$linked_account_credential_state = $this->Kelola_staff_puskesmas_m->credential_state($row);
+									$provisioning_account_state = (string) ($row->provisioning_account_state ?? Nakes_personal_account_policy::INVALID);
 									$puskesmas_status = $row->puskesmas_status ?? null;
 									$puskesmas_is_valid = trim($kode_pkm) !== ''
 										&& strtoupper(trim($kode_pkm)) !== 'DEFAULT'
@@ -340,10 +344,11 @@ $form_values = array(
 												<span>Kelengkapan profil personal</span>
 												<strong><?= html_escape(doclinc_profile_readiness_label($row->profile_readiness_state ?? '')); ?></strong>
 											</div>
-											<div class="doclinc-account-card__meta">
-												<span>Akun login personal</span>
-											<?php if ($linked_user_id > 0): ?>
-												<strong><?= html_escape($akun_label); ?></strong>
+										<div class="doclinc-account-card__meta">
+											<span>Akun login personal</span>
+											<strong><?= html_escape(doclinc_nakes_account_label($provisioning_account_state)); ?></strong>
+										<?php if ($linked_user_id > 0): ?>
+											<small><?= html_escape($akun_label); ?></small>
 												<?php if (!empty($row->akun_username) && $akun_label !== $row->akun_username): ?>
 													<small><?= html_escape($row->akun_username); ?></small>
 												<?php endif; ?>
@@ -380,12 +385,14 @@ $form_values = array(
 												</a>
 												<?php if (($row->status ?? '') === 'aktif'): ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/deactivate/' . (int) $row->staff_id); ?>" method="post">
+														<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
 													<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan staf? Riwayat dan penetapan penanggung jawab tetap tersimpan.');">
 															<i class="fas fa-ban"></i> Nonaktifkan
 														</button>
 													</form>
 												<?php else: ?>
 													<form action="<?= site_url('kelola_staff_puskesmas/activate/' . (int) $row->staff_id); ?>" method="post">
+														<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
 														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan staf?');">
 															<i class="fas fa-check"></i> Aktifkan
 														</button>
@@ -393,11 +400,15 @@ $form_values = array(
 												<?php endif; ?>
 										<?php if ($linked_user_id > 0): ?>
 											<?php if ($linked_account_is_active && !$is_command_center_link): ?>
+												<button type="button" class="btn doclinc-action-btn doclinc-action-btn--secondary" data-toggle="modal" data-target="#modalPersonalProfile<?= (int) $staff_id; ?>">
+													<i class="fas fa-id-card"></i> Data personal
+												</button>
 												<button type="button" class="btn doclinc-action-btn doclinc-action-btn--warning" data-toggle="modal" data-target="#modalResetPersonalPassword<?= (int) $staff_id; ?>">
 													<i class="fas fa-key"></i> Reset password
 												</button>
 											<?php endif; ?>
 											<form action="<?= site_url('kelola_staff_puskesmas/unbind_account'); ?>" method="post">
+												<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
 														<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
 														<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--warning" onclick="return confirm('Lepas akun? Akun personal tetap tersimpan.');">
 															<i class="fas fa-unlink"></i> Lepas akun
@@ -422,10 +433,44 @@ $form_values = array(
 									</div>
 									<?php if ($linked_user_id > 0 && $linked_account_is_active && !$is_command_center_link): ?>
 										<?php ob_start(); ?>
+										<div class="modal fade" id="modalPersonalProfile<?= (int) $staff_id; ?>" tabindex="-1" role="dialog" aria-labelledby="modalPersonalProfileLabel<?= (int) $staff_id; ?>" aria-hidden="true">
+											<div class="modal-dialog modal-dialog-centered" role="document">
+												<div class="modal-content border-0 shadow-sm">
+													<form action="<?= site_url('kelola_staff_puskesmas/update_personal_profile'); ?>" method="post">
+														<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
+														<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
+														<div class="modal-header bg-info text-white">
+															<h5 class="modal-title" id="modalPersonalProfileLabel<?= (int) $staff_id; ?>">Data personal Nakes</h5>
+															<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
+														</div>
+														<div class="modal-body bg-light">
+															<p class="small text-muted">Nama dan nomor HP mengikuti data staf. Perubahan ini hanya berlaku untuk akun personal yang terhubung.</p>
+															<div class="form-group">
+																<label class="text-info">Tanggal lahir</label>
+																<input type="date" class="form-control rounded-pill border-info" name="birthdate" value="<?= html_escape((string) ($row->akun_tgl ?? '')); ?>" max="<?= html_escape(date('Y-m-d')); ?>" required>
+															</div>
+															<div class="form-group">
+																<label class="text-info">Jenis kelamin</label>
+																<select class="form-control rounded-pill border-info" name="gender" required>
+																	<option value="">Pilih jenis kelamin</option>
+																	<option value="Laki-laki" <?= (string) ($row->akun_gender ?? '') === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
+																	<option value="Perempuan" <?= (string) ($row->akun_gender ?? '') === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
+																</select>
+															</div>
+														</div>
+														<div class="modal-footer border-0">
+															<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
+															<button type="submit" class="btn btn-info rounded-pill">Simpan data personal</button>
+														</div>
+													</form>
+												</div>
+											</div>
+										</div>
 										<div class="modal fade" id="modalResetPersonalPassword<?= (int) $staff_id; ?>" tabindex="-1" role="dialog" aria-labelledby="modalResetPersonalPasswordLabel<?= (int) $staff_id; ?>" aria-hidden="true">
 											<div class="modal-dialog modal-dialog-centered" role="document">
 												<div class="modal-content border-0 shadow-sm">
-													<form action="<?= site_url('kelola_staff_puskesmas/reset_personal_password'); ?>" method="post">
+															<form action="<?= site_url('kelola_staff_puskesmas/reset_personal_password'); ?>" method="post">
+																<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
 														<div class="modal-header bg-warning text-dark">
 															<h5 class="modal-title" id="modalResetPersonalPasswordLabel<?= (int) $staff_id; ?>"><i class="fas fa-key mr-2"></i>Reset password sementara</h5>
 															<button type="button" class="close" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
@@ -457,7 +502,8 @@ $form_values = array(
 										<div class="modal fade" id="modalBindAccount<?= (int) $staff_id; ?>" tabindex="-1" role="dialog" aria-labelledby="modalBindAccountLabel<?= (int) $staff_id; ?>" aria-hidden="true">
 											<div class="modal-dialog" role="document">
 												<div class="modal-content">
-													<form action="<?= site_url('kelola_staff_puskesmas/bind_account'); ?>" method="post">
+															<form action="<?= site_url('kelola_staff_puskesmas/bind_account'); ?>" method="post">
+																<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
 														<div class="modal-header">
 															<h5 class="modal-title" id="modalBindAccountLabel<?= (int) $staff_id; ?>">Hubungkan akun personal</h5>
 															<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
@@ -512,7 +558,8 @@ $form_values = array(
 											<div class="modal fade" id="modalCreatePersonalAccount<?= (int) $staff_id; ?>" tabindex="-1" role="dialog" aria-labelledby="modalCreatePersonalAccountLabel<?= (int) $staff_id; ?>" aria-hidden="true">
 												<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
 													<div class="modal-content border-0 shadow-sm">
-														<form action="<?= site_url('kelola_staff_puskesmas/create_personal_account'); ?>" method="post">
+																<form action="<?= site_url('kelola_staff_puskesmas/create_personal_account'); ?>" method="post">
+																	<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
 															<div class="modal-header bg-info text-white">
 																<h5 class="modal-title" id="modalCreatePersonalAccountLabel<?= (int) $staff_id; ?>"><i class="fas fa-user-plus mr-2"></i>Buat akun personal</h5>
 																<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
@@ -524,8 +571,8 @@ $form_values = array(
 																	<div class="small text-muted"><?= html_escape($profession_label); ?></div>
 																	<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? '-'); ?> (<?= html_escape($row->kode_pkm ?? '-'); ?>)</div>
 																</div>
-														<div class="alert alert-info">Password sementara tidak ditampilkan kembali. Nakes wajib membuat password baru saat login pertama dan tidak dapat memakai fitur lain sebelum selesai.</div>
-																		<div class="row">
+														<div class="alert alert-info">Berikan password sementara hanya kepada Nakes yang bersangkutan. Password tidak disimpan dalam bentuk teks dan harus diganti melalui halaman aktivasi akun.</div>
+																<div class="row">
 																			<div class="col-md-6"><div class="form-group">
 																				<label class="text-info">Username</label>
 																				<input type="text" class="form-control rounded-pill border-info" name="username" minlength="3" maxlength="100" pattern="[A-Za-z0-9._-]+" autocomplete="username" required>
@@ -534,8 +581,22 @@ $form_values = array(
 																				<label class="text-info">Email</label>
 																				<input type="email" class="form-control rounded-pill border-info" name="email" maxlength="100" autocomplete="email" required>
 																			</div></div>
-																		</div>
+																</div>
 																<div class="row">
+																	<div class="col-md-6"><div class="form-group">
+																		<label class="text-info">Tanggal lahir</label>
+																		<input type="date" class="form-control rounded-pill border-info" name="birthdate" max="<?= html_escape(date('Y-m-d')); ?>" required>
+																	</div></div>
+																	<div class="col-md-6"><div class="form-group">
+																		<label class="text-info">Jenis kelamin</label>
+																		<select class="form-control rounded-pill border-info" name="gender" required>
+																			<option value="">Pilih jenis kelamin</option>
+																			<option value="Laki-laki">Laki-laki</option>
+																			<option value="Perempuan">Perempuan</option>
+																		</select>
+																	</div></div>
+																</div>
+														<div class="row">
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Password sementara</label>
 																<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>

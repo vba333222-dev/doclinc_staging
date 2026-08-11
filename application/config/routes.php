@@ -68,3 +68,5 @@ $route['notifications/snapshot'] = 'notifikasi/snapshot';
 $route['realtime/requests/snapshot'] = 'realtime_requests/snapshot';
 $route['login/change-password'] = 'login/change_password';
 $route['login/change-password/submit'] = 'login/update_password';
+$route['login/activate'] = 'login/activate';
+$route['login/activate/auth'] = 'login/activate_auth';
