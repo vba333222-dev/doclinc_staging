@@ -73,7 +73,8 @@ const inventory = {
   'application/modules/home_nakes/controllers/Home_nakes.php': {
     livekit_token: 'POST_LIVEKIT', start_livekit_call: 'POST_LIVEKIT', end_livekit_call: 'POST_LIVEKIT',
     livekit_call_status: 'POST_LIVEKIT', presence_heartbeat: 'POST', presence_snapshot: 'GET', index: 'READ',
-    assign_staff: 'POST', clear_staff_assignment: 'POST', tes_save_lokasi: 'TOMBSTONE', save_location: 'TOMBSTONE',
+	assign_staff: 'POST', clear_staff_assignment: 'POST', tes_save_lokasi: 'TOMBSTONE', save_location: 'TOMBSTONE',
+	assign_responsible_doctor: 'POST', choose_service_mode: 'POST', assign_visit_performer: 'POST',
     accept_request: 'POST', cancel_request: 'POST_HELPER', visit_location: 'GET', update_visit_location: 'POST',
     update_visit_status: 'POST', get_location_user: 'TOMBSTONE', updateprofile: 'POST_HELPER', operations: 'READ',
   },
