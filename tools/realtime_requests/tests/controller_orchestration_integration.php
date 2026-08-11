@@ -148,6 +148,7 @@ $GLOBALS['controller_visit_proof_required'] = false;
 function base_url($path = '') { return 'https://fixture.invalid/' . ltrim((string) $path, '/'); }
 function log_message($level, $message) { return true; }
 function redirect($uri = '', $method = 'auto', $code = null) { $GLOBALS['controller_trace'][] = 'redirect'; }
+function doclinc_role_prerequisite_state($user_id, $fresh = false) { return array('allowed' => (int) $user_id > 0, 'enforced' => false, 'fresh' => (bool) $fresh); }
 function doclinc_realtime_requests_enabled() { return false; }
 function doclinc_visit_proof_required() { return $GLOBALS['controller_visit_proof_required'] === true; }
 function doclinc_visit_proof_is_visit($criteria) {
