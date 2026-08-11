@@ -54,61 +54,66 @@ class Nakes_presence_service
 
 		$user_id = (int) $actor['user_id'];
 		$puskesmas_code = trim((string) $actor['identity']['puskesmas_code']);
-		$owns_transaction = !$this->db->trans_active();
-		if ($owns_transaction) {
-			$this->db->trans_begin();
-		}
-
-		$lock_query = $this->db->query(
-			'SELECT user_id, puskesmas_code, last_seen_at, '
-			. 'TIMESTAMPDIFF(SECOND, last_persisted_at, NOW(6)) AS seconds_since_persist, '
-			. 'TIMESTAMPDIFF(SECOND, last_seen_at, NOW(6)) AS seconds_since_seen '
-			. 'FROM ' . $this->db->dbprefix('nakes_presence') . ' WHERE user_id = ? FOR UPDATE',
-			array($user_id)
-		);
-		if (!$lock_query) {
-			if ($owns_transaction) {
-				$this->db->trans_rollback();
-			}
+		// CI3 exposes nested transaction levels through balanced public calls,
+		// but has no public transaction-state inspector. The service therefore
+		// owns exactly one level for every touch and never commits an outer level.
+		if (!$this->db->trans_begin()) {
 			return array('ok' => false, 'code' => 'write_failed', 'persisted' => false);
 		}
-		$row = $lock_query->row();
 
-		if ($row && (int) $row->seconds_since_persist < $this->write_throttle_seconds
-			&& hash_equals((string) $row->puskesmas_code, $puskesmas_code)) {
-			if ($owns_transaction) {
-				$this->db->trans_commit();
-			}
-			return array('ok' => true, 'code' => 'throttled', 'persisted' => false);
-		}
-
-		if ($row) {
-			$transition = (int) $row->seconds_since_seen >= $this->online_timeout_seconds
-				|| !hash_equals((string) $row->puskesmas_code, $puskesmas_code);
-			$sql = 'UPDATE ' . $this->db->dbprefix('nakes_presence')
-				. ' SET puskesmas_code = ?, last_seen_at = NOW(6), last_persisted_at = NOW(6)'
-				. ($transition ? ', last_transition_at = NOW(6)' : '')
-				. ' WHERE user_id = ?';
-			$written = $this->db->query($sql, array($puskesmas_code, $user_id));
-		} else {
-			$written = $this->db->query(
-				'INSERT INTO ' . $this->db->dbprefix('nakes_presence')
-				. ' (user_id, puskesmas_code, last_seen_at, last_transition_at, last_persisted_at) '
-				. 'VALUES (?, ?, NOW(6), NOW(6), NOW(6))',
-				array($user_id, $puskesmas_code)
+		try {
+			$lock_query = $this->db->query(
+				'SELECT user_id, puskesmas_code, last_seen_at, '
+				. 'TIMESTAMPDIFF(SECOND, last_persisted_at, NOW(6)) AS seconds_since_persist, '
+				. 'TIMESTAMPDIFF(SECOND, last_seen_at, NOW(6)) AS seconds_since_seen '
+				. 'FROM ' . $this->db->dbprefix('nakes_presence') . ' WHERE user_id = ? FOR UPDATE',
+				array($user_id)
 			);
-		}
-
-		if (!$written || $this->db->trans_status() === false) {
-			if ($owns_transaction) {
+			if (!$lock_query) {
 				$this->db->trans_rollback();
+				return array('ok' => false, 'code' => 'write_failed', 'persisted' => false);
 			}
+			$row = $lock_query->row();
+
+			if ($row && (int) $row->seconds_since_persist < $this->write_throttle_seconds
+				&& hash_equals((string) $row->puskesmas_code, $puskesmas_code)) {
+				if (!$this->db->trans_commit()) {
+					$this->db->trans_rollback();
+					return array('ok' => false, 'code' => 'write_failed', 'persisted' => false);
+				}
+				return array('ok' => true, 'code' => 'throttled', 'persisted' => false);
+			}
+
+			if ($row) {
+				$transition = (int) $row->seconds_since_seen >= $this->online_timeout_seconds
+					|| !hash_equals((string) $row->puskesmas_code, $puskesmas_code);
+				$sql = 'UPDATE ' . $this->db->dbprefix('nakes_presence')
+					. ' SET puskesmas_code = ?, last_seen_at = NOW(6), last_persisted_at = NOW(6)'
+					. ($transition ? ', last_transition_at = NOW(6)' : '')
+					. ' WHERE user_id = ?';
+				$written = $this->db->query($sql, array($puskesmas_code, $user_id));
+			} else {
+				$written = $this->db->query(
+					'INSERT INTO ' . $this->db->dbprefix('nakes_presence')
+					. ' (user_id, puskesmas_code, last_seen_at, last_transition_at, last_persisted_at) '
+					. 'VALUES (?, ?, NOW(6), NOW(6), NOW(6))',
+					array($user_id, $puskesmas_code)
+				);
+			}
+
+			if (!$written || $this->db->trans_status() === false) {
+				$this->db->trans_rollback();
+				return array('ok' => false, 'code' => 'write_failed', 'persisted' => false);
+			}
+			if (!$this->db->trans_commit()) {
+				$this->db->trans_rollback();
+				return array('ok' => false, 'code' => 'write_failed', 'persisted' => false);
+			}
+			return array('ok' => true, 'code' => 'persisted', 'persisted' => true);
+		} catch (Throwable $exception) {
+			$this->db->trans_rollback();
 			return array('ok' => false, 'code' => 'write_failed', 'persisted' => false);
 		}
-		if ($owns_transaction) {
-			$this->db->trans_commit();
-		}
-		return array('ok' => true, 'code' => 'persisted', 'persisted' => true);
 	}
 
 	public function snapshot(array $actor, $limit = 500)

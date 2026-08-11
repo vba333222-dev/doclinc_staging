@@ -9,6 +9,7 @@ require_once APPPATH . 'libraries/Request_realtime_delivery.php';
 require_once APPPATH . 'libraries/Request_transition_orchestrator.php';
 require_once APPPATH . 'helpers/visit_routing_helper.php';
 require_once APPPATH . 'helpers/visit_proof_helper.php';
+require_once APPPATH . 'helpers/nakes_credential_enforcement_helper.php';
 require_once __DIR__ . '/MariaDbReadiness.php';
 
 class MX_Controller {}
@@ -142,7 +143,11 @@ require_once APPPATH . 'modules/konsultasi/models/Konsultasi_m.php';
 require_once APPPATH . 'modules/konsultasi_nakes/models/Konsultasi_nakes_m.php';
 require_once APPPATH . 'helpers/notification_helper.php';
 
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+// CI3's mysqli driver contract reports a failed query as FALSE and marks the
+// transaction failed. Keep mysqli error reporting and MariaDB strict SQL mode,
+// but do not convert the suite's intentional fault-injection queries to PHP
+// exceptions before CI3 can exercise that contract.
+mysqli_report(MYSQLI_REPORT_ERROR);
 $passed = 0;
 $failed = 0;
 $database_name = '';
@@ -569,7 +574,7 @@ try {
 		"CREATE TABLE users (userId int NOT NULL AUTO_INCREMENT,password varchar(100) NOT NULL,role enum('admin','dokter','warga','') NOT NULL,status enum('aktif','nonaktif') NULL,remark varchar(100) NULL,must_change_password tinyint(1) NOT NULL DEFAULT 0,PRIMARY KEY(userId)) ENGINE=InnoDB",
 		"CREATE TABLE m_puskesmas (kode_pkm varchar(100) NOT NULL,nama_puskesmas varchar(150) NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(kode_pkm)) ENGINE=InnoDB",
 		"CREATE TABLE puskesmas_staff (staff_id int(10) unsigned NOT NULL AUTO_INCREMENT,kode_pkm varchar(100) NOT NULL,user_id int NULL,nama varchar(150) NOT NULL,no_hp varchar(30) NULL,profesi varchar(100) NULL,nomor_sip varchar(100) NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(staff_id)) ENGINE=InnoDB",
-		"CREATE TABLE requests (request_id int NOT NULL AUTO_INCREMENT,user_id int NOT NULL,dokter_id int NOT NULL,request_description text NULL,request_status enum('Pending','Accepted','Completed','Cancelled') NOT NULL DEFAULT 'Pending',location text NULL,lattitude varchar(50) NULL,longitude varchar(50) NULL,patient_latitude decimal(10,7) NULL,patient_longitude decimal(10,7) NULL,lattitude_dokter decimal(10,7) NULL,longitude_dokter decimal(10,7) NULL,assigned_puskesmas_code varchar(100) NULL,assigned_puskesmas_name varchar(150) NULL,assigned_nakes_user_id int NULL,accepted_by_user_id int NULL,assigned_nakes_by_user_id int NULL,visit_status varchar(30) NULL,consultation_mode varchar(30) NULL,visit_completed_at datetime NULL,created_at datetime NULL,updated_at datetime NULL,PRIMARY KEY(request_id)) ENGINE=InnoDB",
+		"CREATE TABLE requests (request_id int NOT NULL AUTO_INCREMENT,user_id int NOT NULL,dokter_id int NOT NULL,request_description text NULL,request_status enum('Pending','Accepted','Completed','Cancelled') NOT NULL DEFAULT 'Pending',location text NULL,lattitude varchar(50) NULL,longitude varchar(50) NULL,patient_latitude decimal(10,7) NULL,patient_longitude decimal(10,7) NULL,lattitude_dokter varchar(100) NULL,longitude_dokter varchar(100) NULL,assigned_puskesmas_code varchar(100) NULL,assigned_puskesmas_name varchar(150) NULL,assigned_nakes_user_id int NULL,accepted_by_user_id int NULL,assigned_nakes_by_user_id int NULL,visit_status varchar(30) NULL,consultation_mode varchar(30) NULL,visit_completed_at datetime NULL,created_at datetime NULL,updated_at datetime NULL,PRIMARY KEY(request_id)) ENGINE=InnoDB",
 		"CREATE TABLE request_staff_assignments (assignment_id int(10) unsigned NOT NULL AUTO_INCREMENT,request_id int NOT NULL,staff_id int(10) unsigned NOT NULL,kode_pkm varchar(100) NOT NULL,assigned_by_user_id int NOT NULL,status enum('aktif','diganti','dibatalkan') NOT NULL DEFAULT 'aktif',note text NULL,assigned_at datetime NOT NULL DEFAULT current_timestamp(),ended_at datetime NULL,created_at datetime NOT NULL DEFAULT current_timestamp(),updated_at datetime NULL DEFAULT NULL ON UPDATE current_timestamp(),PRIMARY KEY(assignment_id),KEY idx_request_status(request_id,status)) ENGINE=InnoDB",
 		"CREATE TABLE notifications (notification_id int NOT NULL AUTO_INCREMENT,recipient_user_id int NULL,recipient_role varchar(32) NULL,recipient_puskesmas_code varchar(100) NULL,actor_user_id int NULL,event_type varchar(64) NOT NULL,entity_type varchar(64) NOT NULL,entity_id varchar(64) NOT NULL,title varchar(160) NOT NULL,message text NULL,is_read tinyint(1) NOT NULL DEFAULT 0,created_at datetime NOT NULL,PRIMARY KEY(notification_id)) ENGINE=InnoDB",
 		"CREATE TABLE realtime_outbox (outbox_id bigint unsigned NOT NULL AUTO_INCREMENT,event_type varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,aggregate_type varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,aggregate_id varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,audience_type varchar(20) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,audience_key varchar(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,payload_json longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,event_version bigint unsigned NOT NULL DEFAULT 1,idempotency_key char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,state varchar(16) NOT NULL DEFAULT 'pending',attempt_count smallint unsigned NOT NULL DEFAULT 0,available_at datetime(6) NOT NULL DEFAULT current_timestamp(6),claimed_at datetime(6) NULL,published_at datetime(6) NULL,last_error_code varchar(64) NULL,created_at datetime(6) NOT NULL DEFAULT current_timestamp(6),updated_at datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),PRIMARY KEY(outbox_id),UNIQUE KEY uq_realtime_outbox_idempotency(idempotency_key)) ENGINE=InnoDB",
@@ -600,6 +605,7 @@ try {
 	model_integration_expect(is_int($created_id) && $created_id > 0, 'actual_create_request_succeeds');
 	model_integration_expect(model_integration_event_audiences($db, 'request.created', $created_id) === array('puskesmas:PKM01:ops', 'user:101'), 'actual_create_exact_audiences');
 
+	$stage = 'actual_accept_request';
 	$accept_result = $home_nakes->accept_request($created_id, 10, '', '', 'PKM01', $command_identity);
 	model_integration_expect(($accept_result['status'] ?? '') === 'success' && $db->where('request_id', $created_id)->get('requests')->row()->request_status === 'Accepted', 'actual_accept_commits_domain');
 	model_integration_expect(model_integration_event_audiences($db, 'request.accepted', $created_id) === array('puskesmas:PKM01:ops', 'user:101'), 'actual_accept_exact_audiences');
@@ -623,6 +629,10 @@ try {
 	$cleared = $home_nakes->clear_staff_assignment($assignment_id, 'PKM01', 10, $command_identity);
 	model_integration_expect(($cleared['status'] ?? '') === 'success', 'actual_clear_pic_succeeds');
 	model_integration_expect(model_integration_event_audiences($db, 'request.pic_cleared', $assignment_id) === array('puskesmas:PKM01:ops', 'user:101', 'user:202'), 'actual_clear_pic_exact_audiences');
+	foreach (array('request.pic_assigned' => 3, 'request.pic_reassigned' => 4, 'request.pic_cleared' => 3) as $event_type => $expected_rows) {
+		$row = $db->query('SELECT COUNT(1) AS total, COUNT(DISTINCT idempotency_key) AS unique_total FROM realtime_outbox WHERE event_type = ? AND aggregate_id = ?', array($event_type, (string) $assignment_id))->row();
+		model_integration_expect((int) $row->total === $expected_rows && (int) $row->unique_total === $expected_rows, str_replace('.', '_', $event_type) . '_audience_idempotency_unique');
+	}
 
 	$completion_id = model_integration_insert_request($db, 'Accepted', 101, 201);
 	$db->query("UPDATE requests SET assigned_nakes_user_id=201,accepted_by_user_id=10,assigned_nakes_by_user_id=10 WHERE request_id=?", array($completion_id));
@@ -849,7 +859,6 @@ try {
 
 	foreach (array(
 		'inactive' => function ($db) { $db->query("UPDATE users SET status='nonaktif' WHERE userId=10"); },
-		'must_change' => function ($db) { $db->query('UPDATE users SET must_change_password=1 WHERE userId=10'); },
 		'cross_tenant' => function ($db) { $db->query("UPDATE users SET remark='PKM02' WHERE userId=10"); },
 		'noncanonical' => function ($db) { $db->query("INSERT INTO users(userId,password,role,status,remark,must_change_password) VALUES(5,'unchanged-lower','dokter','aktif','PKM01',0)"); },
 	) as $state => $mutation) {
@@ -861,6 +870,11 @@ try {
 		$result = $home_nakes->accept_request($request_id, 10, '', '', 'PKM01', $command_identity);
 		model_integration_expect(($result['status'] ?? '') === 'error' && model_integration_digest($db, $request_id) === $before, 'post_lock_' . $state . '_rejected_zero_write');
 	}
+	$db->query("DELETE FROM users WHERE userId=5");
+	$db->query("UPDATE users SET status='aktif',remark='PKM01',must_change_password=1 WHERE userId=10");
+	$raw_pending_id = model_integration_insert_request($db, 'Pending');
+	$raw_pending = $home_nakes->accept_request($raw_pending_id, 10, '', '', 'PKM01', $command_identity);
+	model_integration_expect(($raw_pending['status'] ?? '') === 'success', 'post_lock_raw_credential_pending_allowed_when_enforcement_off');
 	$db->query("DELETE FROM users WHERE userId=5");
 	$db->query("UPDATE users SET status='aktif',remark='PKM01',must_change_password=0 WHERE userId=10");
 	$positive_id = model_integration_insert_request($db, 'Pending');
@@ -887,11 +901,6 @@ try {
 	$failure_result = $home_nakes->accept_request($failure_id, 10, '', '', 'PKM01', $command_identity);
 	model_integration_expect(($failure_result['status'] ?? '') === 'error' && model_integration_digest($db, $failure_id) === $failure_before, 'actual_enqueue_failure_rolls_back_domain_notification_outbox');
 	$db->query('DROP TRIGGER fail_realtime_outbox');
-
-	foreach (array('request.pic_assigned' => 3, 'request.pic_reassigned' => 4, 'request.pic_cleared' => 3) as $event_type => $expected_rows) {
-		$row = $db->query('SELECT COUNT(1) AS total, COUNT(DISTINCT idempotency_key) AS unique_total FROM realtime_outbox WHERE event_type = ? AND aggregate_id = ?', array($event_type, (string) $assignment_id))->row();
-		model_integration_expect((int) $row->total === $expected_rows && (int) $row->unique_total === $expected_rows, str_replace('.', '_', $event_type) . '_audience_idempotency_unique');
-	}
 
 	$models = array('home' => $home, 'nakes' => $home_nakes, 'create' => $konsultasi, 'complete' => $completion);
 	$operations = array('create','accept','cancel_warga','cancel_command_center','complete','assign','reassign','clear');
@@ -1257,7 +1266,9 @@ try {
 	echo "REALTIME_REQUEST_MODEL_INTEGRATION_PASSED={$passed}\nREALTIME_REQUEST_MODEL_INTEGRATION_FAILED={$failed}\n";
 } catch (Throwable $exception) {
 	$failed++;
-	fwrite(STDERR, "FAIL model_integration_safe_error\nSAFE_ERROR_STAGE={$stage}\nSAFE_EXCEPTION_CLASS=" . get_class($exception) . "\nSAFE_EXCEPTION_CODE=" . (int) $exception->getCode() . "\nSAFE_EXCEPTION_FILE=" . basename($exception->getFile()) . "\nSAFE_EXCEPTION_LINE=" . (int) $exception->getLine() . "\n");
+	$sql_state = method_exists($exception, 'getSqlState') ? (string) $exception->getSqlState() : '';
+	$safe_message = preg_replace('/[\r\n]+/', ' ', (string) $exception->getMessage());
+	fwrite(STDERR, "FAIL model_integration_safe_error\nSAFE_ERROR_STAGE={$stage}\nSAFE_EXCEPTION_CLASS=" . get_class($exception) . "\nSAFE_EXCEPTION_CODE=" . (int) $exception->getCode() . "\nSAFE_SQLSTATE={$sql_state}\nSAFE_DB_MESSAGE={$safe_message}\nSAFE_EXCEPTION_FILE=" . basename($exception->getFile()) . "\nSAFE_EXCEPTION_LINE=" . (int) $exception->getLine() . "\n");
 } finally {
 	if (is_object($db) && method_exists($db, 'close')) { $db->close(); }
 	if ($admin instanceof mysqli) {
