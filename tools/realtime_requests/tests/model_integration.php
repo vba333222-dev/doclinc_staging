@@ -12,7 +12,7 @@ require_once APPPATH . 'helpers/visit_proof_helper.php';
 require_once APPPATH . 'helpers/nakes_credential_enforcement_helper.php';
 require_once __DIR__ . '/MariaDbReadiness.php';
 
-class MX_Controller {}
+class MX_Controller { public $config; }
 
 class ModelIntegrationConfig
 {
@@ -186,6 +186,7 @@ function model_integration_model($class, $db)
 	} else {
 		$model->db = $db;
 	}
+	$model->config = $GLOBALS['request_model_application']->config;
 	return $model;
 }
 
