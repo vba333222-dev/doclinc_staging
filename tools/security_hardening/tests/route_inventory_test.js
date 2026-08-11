@@ -49,7 +49,7 @@ function methodBody(contents, methodName) {
 
 const inventory = {
   'application/modules/login/controllers/Login.php': {
-    index: 'READ', auth: 'POST', logout: 'POST', change_password: 'GET', update_password: 'POST',
+    index: 'READ', auth: 'POST', logout: 'POST', activate: 'GET', activate_auth: 'POST', change_password: 'GET', update_password: 'POST',
   },
   'application/modules/sign_up/controllers/Sign_up.php': {
     index: 'READ', save_user: 'POST',

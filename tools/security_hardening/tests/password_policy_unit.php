@@ -21,7 +21,11 @@ function password_expect($condition, $label)
 }
 
 $policy = new Password_strength_policy();
-password_expect(is_string($public_source) && hash_equals(hash('sha256', $public_source), hash('sha256', $admin_source)), 'public_and_admin_policy_are_exactly_aligned');
+password_expect(is_string($public_source)
+	&& is_string($admin_source)
+	&& strpos($admin_source, "require_once dirname(APPPATH, 2) . '/application/libraries/Password_strength_policy.php';") !== false
+	&& strpos($admin_source, 'class Password_strength_policy') === false,
+	'admin_policy_delegates_to_single_canonical_policy');
 password_expect($policy->validate('Abcdef1!', 'Abcdef1!') === null, 'minimum_valid_password');
 password_expect($policy->validate('Ab1!defghijklmnopqrstuvwxyz', 'Ab1!defghijklmnopqrstuvwxyz') === null, 'long_valid_password');
 password_expect($policy->validate('Abcde1!', 'Abcde1!') === 'invalid_length', 'seven_characters_rejected');

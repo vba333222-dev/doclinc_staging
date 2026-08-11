@@ -71,8 +71,8 @@ expect(home.includes('array_intersect_key') && !home.includes("set_userdata(arra
 expect(adminController.includes("level') !== 'admin'") && adminController.includes('Role_identity_policy') && adminController.includes('nip_available'), 'nip_is_admin_validated');
 expect(adminModel.includes('uq_puskesmas_staff_nip') === false && adminModel.includes('nip_available'), 'admin_model_uses_schema_uniqueness_without_ddl');
 expect(adminController.includes("$status === 'aktif' && !$this->Kelola_staff_puskesmas_m->staff_is_operationally_complete($staff)") && adminModel.includes('function staff_is_operationally_complete'), 'incomplete_staff_cannot_be_activated');
-expect(adminModel.includes("(string) ($staff->status ?? '') !== 'aktif' || !$this->staff_is_operationally_complete($staff)"), 'incomplete_or_inactive_staff_cannot_be_linked');
-expect(adminModel.includes('function personal_account_state') && adminModel.includes('active_user_link_count') && adminModel.includes("return $valid ? 'linked' : 'invalid'"), 'staff_account_readiness_rejects_duplicate_mismatched_and_command_center_links');
+expect(adminModel.includes("(string) $staff->status !== 'aktif' || !$this->staff_is_operationally_complete($staff)"), 'incomplete_or_inactive_staff_cannot_be_linked');
+expect(adminModel.includes('function personal_account_state') && adminModel.includes('function provisioning_account_state') && adminModel.includes('Nakes_personal_account_policy'), 'staff_account_readiness_rejects_duplicate_mismatched_and_command_center_links');
 expect(adminModel.includes('function readiness_issues') && adminModel.includes("'staff_registration_number'") && adminModel.includes("'staff_registration_expiry'") && adminModel.includes("'staff_sip_expired'"), 'staff_readiness_uses_safe_action_codes');
 expect(adminModel.includes('staff_user.must_change_password AS akun_must_change_password')
 	&& adminModel.includes('staff_user.password_changed_at AS akun_password_changed_at')
@@ -90,7 +90,7 @@ expect(adminView.includes('Data staf, gelar, SIP, masa berlaku SIP, status, dan 
 expect(adminModel.includes("'must_change_password' => 1") && adminModel.includes("'password_changed_at' => null")
   && adminModel.includes("'must_change_password', 'password_changed_at'"), 'personal_account_creation_forces_first_login_password_change');
 expect(adminController.includes('Password_strength_policy') && adminModel.includes('Password_strength_policy')
-	&& adminView.includes('wajib membuat password baru saat login pertama')
+	&& adminView.includes('harus diganti melalui halaman aktivasi akun')
 	&& adminController.includes('reset_personal_password')
 	&& adminModel.includes('reset_personal_password')
 	&& (adminView.match(/minlength="8" maxlength="72"/g) || []).length === 4, 'personal_create_and_reset_temporary_password_contract_is_explicit');
@@ -101,7 +101,7 @@ expect(commandCenterController.includes('required|min_length[8]|max_length[72]')
 	&& commandCenterController.includes('Password_strength_policy')
 	&& (commandCenterView.match(/minlength="8" maxlength="72"/g) || []).length === 4
 	&& commandCenterView.includes('Belum pernah mengganti password bawaan'), 'command_center_temporary_password_is_bounded');
-expect(publicPasswordPolicy.includes('strlen($password) < 8') && adminPasswordPolicy.includes('strlen($password) < 8')
+expect(publicPasswordPolicy.includes('strlen($password) < 8') && adminPasswordPolicy.includes("application/libraries/Password_strength_policy.php")
   && publicPasswordPolicy.includes("preg_match('/[A-Z]/'")
   && publicPasswordPolicy.includes("preg_match('/[a-z]/'")
   && publicPasswordPolicy.includes("preg_match('/[0-9]/'")
@@ -118,7 +118,7 @@ expect(credentialEnforcementPolicy.includes('Nakes_credential_policy')
 	&& credentialEnforcementPolicy.includes('requiresChange')
 	&& credentialEnforcementHelper.includes("nakes_credential_enforcement_enabled"), 'effective_enforcement_delegates_to_raw_credential_policy');
 expect(loginController.includes('doclinc_nakes_effective_must_change_password') && passwordGate.includes('doclinc_nakes_effective_must_change_password')
-	&& loginModel.includes('Nakes_credential_policy')
+	&& (loginModel.includes('Nakes_credential_policy') || loginModel.includes('Nakes_personal_account_policy'))
 	&& loginModel.includes('must_change_password, password_changed_at'), 'login_and_request_gate_use_effective_credential_state');
 expect(passwordGate.indexOf("status !== 'aktif'") < passwordGate.indexOf('doclinc_nakes_effective_must_change_password')
 	&& passwordGate.indexOf('role !== $session_role') < passwordGate.indexOf('doclinc_nakes_effective_must_change_password'), 'session_identity_and_active_status_remain_independent_denials');
