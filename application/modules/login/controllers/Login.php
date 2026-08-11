@@ -11,6 +11,13 @@ class Login extends MX_Controller
 
 	public function index()
 	{
+		if ((int) $this->session->userdata('credential_activation_user_id') > 0) {
+			if ($this->config->item('first_login_password_change_enabled') === true) {
+				redirect('login/change-password');
+				return;
+			}
+			$this->session->unset_userdata(array('credential_activation_user_id', 'credential_activation_mode', 'password_change_session_binding', 'password_change_token_state'));
+		}
 		if ($this->session->userdata('logged_in') == TRUE) {
 			if ((int) $this->session->userdata('must_change_password') === 1) {
 				redirect('login/change-password');
@@ -27,8 +34,83 @@ class Login extends MX_Controller
 				echo 'Akun tidak dapat diproses.';
 			}
 		} else {
-			$this->load->view('login_v');
+			$this->load->view('login_v', array(
+				'activation_available' => $this->config->item('first_login_password_change_enabled') === true,
+				'success_message' => (string) $this->session->flashdata('login_success'),
+			));
 		}
+	}
+
+	public function activate()
+	{
+		if ($this->input->method(TRUE) !== 'GET') {
+			$this->output->set_status_header(405);
+			return;
+		}
+		if ($this->session->userdata('logged_in') == TRUE) {
+			redirect('login');
+			return;
+		}
+		if ($this->config->item('first_login_password_change_enabled') !== true) {
+			$this->session->set_flashdata('login_success', 'Aktivasi akun belum tersedia. Hubungi Admin Dinas Kesehatan.');
+			redirect('login');
+			return;
+		}
+		if ((int) $this->session->userdata('credential_activation_user_id') > 0) {
+			redirect('login/change-password');
+			return;
+		}
+		$this->output->set_header('Cache-Control: no-store, private');
+		$this->load->view('activate_account_v', array(
+			'error_message' => (string) $this->session->flashdata('activation_error'),
+		));
+	}
+
+	public function activate_auth()
+	{
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output->set_status_header(405);
+			return;
+		}
+		if ($this->config->item('first_login_password_change_enabled') !== true
+			|| $this->session->userdata('logged_in') == TRUE) {
+			$this->activation_failure('Aktivasi akun belum dapat dilanjutkan.');
+			return;
+		}
+		$username = trim((string) $this->input->post('username', TRUE));
+		$password = $this->input->post('password', false);
+		if ($username === '' || !is_string($password) || $password === '') {
+			$this->activation_failure('Nama pengguna atau password sementara belum sesuai.');
+			return;
+		}
+		$auth = $this->Login_m->auth($username);
+		$user = $auth->num_rows() > 0 ? $auth->row() : null;
+		$identity = $user && (string) ($user->status ?? '') === 'aktif'
+			&& doclinc_password_verify($password, (string) ($user->password ?? ''))
+			? $this->Login_m->get_personal_activation_identity((int) $user->userId)
+			: null;
+		$password = null;
+		if (!$identity || (int) ($identity['must_change_password'] ?? 0) !== 1) {
+			$this->Login_m->log_login_event('credential_activation_failed', $user ? (int) $user->userId : null, array('area' => 'activation'));
+			$this->activation_failure('Nama pengguna atau password sementara belum sesuai.');
+			return;
+		}
+
+		$this->session->sess_regenerate(TRUE);
+		$this->session->unset_userdata(array(
+			'id', 'username', 'nama', 'email', 'role', 'remark', 'picture', 'logged_in',
+			'must_change_password', 'password_change_token_state',
+		));
+		$binding = bin2hex(random_bytes(16));
+		$this->session->set_userdata(array(
+			'credential_activation_user_id' => (int) $identity['userId'],
+			'credential_activation_mode' => (string) $identity['credential_state'],
+			'password_change_session_binding' => $binding,
+		));
+		$this->Login_m->log_login_event('credential_activation_authenticated', (int) $identity['userId'], array(
+			'credential_state' => (string) $identity['credential_state'],
+		));
+		redirect('login/change-password');
 	}
 
 	public function auth()
@@ -97,14 +179,20 @@ class Login extends MX_Controller
 			show_404();
 			return;
 		}
-		$this->session->unset_userdata(array('password_change_token_state', 'password_change_session_binding'));
+		$this->session->unset_userdata(array('password_change_token_state', 'password_change_session_binding', 'credential_activation_user_id', 'credential_activation_mode'));
 		$this->session->sess_destroy();
 		redirect('login');
 	}
 
 	public function change_password()
 	{
-		if (!$this->password_change_session_allowed()) {
+		$context = $this->password_change_context();
+		if (!$context) {
+			redirect('login');
+			return;
+		}
+		if (!$this->Login_m->get_personal_activation_identity((int) $context['user_id'])) {
+			$this->session->sess_destroy();
 			redirect('login');
 			return;
 		}
@@ -118,7 +206,7 @@ class Login extends MX_Controller
 			$this->session->set_userdata('password_change_session_binding', $binding);
 		}
 		$this->load->library('First_login_token_policy');
-		$issued = $this->first_login_token_policy->issue((int) $this->session->userdata('id'), $binding);
+		$issued = $this->first_login_token_policy->issue((int) $context['user_id'], $binding);
 		if (!is_array($issued)) {
 			$this->session->sess_destroy();
 			redirect('login');
@@ -129,6 +217,7 @@ class Login extends MX_Controller
 		$this->load->view('change_password_v', array(
 			'form_token' => $issued['token'],
 			'error_message' => (string) $this->session->flashdata('password_change_error'),
+			'activation_mode' => $context['mode'] === 'activation',
 		));
 	}
 
@@ -138,7 +227,8 @@ class Login extends MX_Controller
 			$this->output->set_status_header(405);
 			return;
 		}
-		if (!$this->password_change_session_allowed()) {
+		$context = $this->password_change_context();
+		if (!$context) {
 			if ($this->config->item('nakes_credential_enforcement_enabled') === true) {
 				$this->session->sess_destroy();
 			}
@@ -150,7 +240,7 @@ class Login extends MX_Controller
 		$binding = $this->session->userdata('password_change_session_binding');
 		$this->session->unset_userdata('password_change_token_state');
 		$this->load->library('First_login_token_policy');
-		if (!$this->first_login_token_policy->validate($submitted_token, $token_state, (int) $this->session->userdata('id'), $binding)) {
+		if (!$this->first_login_token_policy->consume($submitted_token, $token_state, (int) $context['user_id'], $binding)) {
 			$submitted_token = null;
 			$this->password_change_failure('Form sudah tidak berlaku. Silakan coba lagi.');
 			return;
@@ -162,7 +252,7 @@ class Login extends MX_Controller
 			$this->password_change_failure('Password baru belum memenuhi ketentuan.');
 			return;
 		}
-		$user = $this->Login_m->get_password_change_identity((int) $this->session->userdata('id'));
+		$user = $this->Login_m->get_personal_activation_identity((int) $context['user_id']);
 		if (!$user) {
 			$this->session->sess_destroy();
 			redirect('login');
@@ -184,25 +274,46 @@ class Login extends MX_Controller
 		$new_password = null;
 		$confirmation = null;
 		$submitted_token = null;
-		$this->session->unset_userdata(array('password_change_token_state', 'password_change_session_binding'));
+		$this->session->unset_userdata(array('password_change_token_state', 'password_change_session_binding', 'credential_activation_user_id', 'credential_activation_mode'));
 		$this->session->sess_regenerate(TRUE);
+		$this->Login_m->log_login_event('credential_activation_completed', (int) $user['userId'], array('mode' => $context['mode']));
+		if ($context['mode'] === 'activation') {
+			$this->session->set_flashdata('login_success', 'Password baru berhasil dibuat. Silakan masuk dengan password tersebut.');
+			redirect('login');
+			return;
+		}
 		$this->session->set_userdata('must_change_password', 0);
 		redirect('home_nakes');
 	}
 
-	private function password_change_session_allowed()
+	private function password_change_context()
 	{
-		return $this->config->item('nakes_credential_enforcement_enabled') === true
-			&& $this->config->item('first_login_password_change_enabled') === true
+		if ($this->config->item('first_login_password_change_enabled') !== true) {
+			return null;
+		}
+		$activation_user_id = (int) $this->session->userdata('credential_activation_user_id');
+		if ($activation_user_id > 0 && $this->session->userdata('logged_in') != TRUE) {
+			return array('user_id' => $activation_user_id, 'mode' => 'activation');
+		}
+		if ($this->config->item('nakes_credential_enforcement_enabled') === true
 			&& $this->session->userdata('logged_in') == TRUE
 			&& $this->session->userdata('role') === 'dokter'
-			&& (int) $this->session->userdata('must_change_password') === 1;
+			&& (int) $this->session->userdata('must_change_password') === 1) {
+			return array('user_id' => (int) $this->session->userdata('id'), 'mode' => 'enforcement');
+		}
+		return null;
 	}
 
 	private function password_change_failure($message)
 	{
 		$this->session->set_flashdata('password_change_error', $message);
 		redirect('login/change-password');
+	}
+
+	private function activation_failure($message)
+	{
+		$this->session->set_flashdata('activation_error', $message);
+		redirect('login/activate');
 	}
 
 	private function password_policy_message($code)

@@ -29,6 +29,17 @@ class Password_strength_policy
 		if (preg_match('/[^A-Za-z0-9\s]/', $password) !== 1) {
 			return 'special_required';
 		}
+		$normalized = strtolower($password);
+		if (in_array($normalized, array(
+			'password1!',
+			'admin123!',
+			'doclinc1!',
+			'changeme1!',
+			'gantipassword1!',
+			'sementara1!',
+		), true)) {
+			return 'placeholder_not_allowed';
+		}
 		return null;
 	}
 
@@ -54,6 +65,9 @@ class Password_strength_policy
 		}
 		if ($code === 'special_required') {
 			return 'Password harus memiliki setidaknya satu karakter khusus.';
+		}
+		if ($code === 'placeholder_not_allowed') {
+			return 'Gunakan password unik, bukan password contoh atau password bawaan umum.';
 		}
 		return 'Password belum memenuhi ketentuan keamanan.';
 	}

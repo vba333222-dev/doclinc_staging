@@ -13,6 +13,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 		if ($this->session->userdata('level') !== 'admin') {
 			redirect('home', 'refresh');
 		}
+		$this->ensure_provisioning_csrf_token();
 	}
 
 	public function index()
@@ -149,6 +150,8 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$staff_id = (int) $this->input->post('staff_id');
 		$username = trim((string) $this->input->post('username', TRUE));
 		$email = trim((string) $this->input->post('email', TRUE));
+		$birthdate = trim((string) $this->input->post('birthdate', TRUE));
+		$gender = trim((string) $this->input->post('gender', TRUE));
 		$password = (string) $this->input->post('password');
 		$confirm_password = (string) $this->input->post('confirm_password');
 
@@ -182,7 +185,16 @@ class Kelola_staff_puskesmas extends MX_Controller
 			$this->personal_account_flash('Masukkan email yang valid.');
 			return;
 		}
-		require_once APPPATH . 'libraries/Password_strength_policy.php';
+		$birthdate_value = DateTime::createFromFormat('!Y-m-d', $birthdate);
+		if (!$birthdate_value || $birthdate_value->format('Y-m-d') !== $birthdate || $birthdate > date('Y-m-d')) {
+			$this->personal_account_flash('Masukkan tanggal lahir yang valid.');
+			return;
+		}
+		if (!in_array($gender, array('Laki-laki', 'Perempuan'), true)) {
+			$this->personal_account_flash('Pilih jenis kelamin yang valid.');
+			return;
+		}
+		require_once dirname(APPPATH, 2) . '/application/libraries/Password_strength_policy.php';
 		$password_policy = new Password_strength_policy();
 		$password_error = $password_policy->validate($password, $confirm_password);
 		if ($password_error !== null) {
@@ -193,6 +205,8 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$result = $this->Kelola_staff_puskesmas_m->create_and_link_personal_account($staff_id, array(
 			'username' => $username,
 			'email' => $email,
+			'birthdate' => $birthdate,
+			'gender' => $gender,
 			'plain_password' => $password,
 			'updated_by' => (string) $this->session->userdata('username'),
 		));
@@ -213,7 +227,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$staff_id = (int) $this->input->post('staff_id');
 		$password = (string) $this->input->post('password');
 		$confirmation = (string) $this->input->post('confirm_password');
-		require_once APPPATH . 'libraries/Password_strength_policy.php';
+		require_once dirname(APPPATH, 2) . '/application/libraries/Password_strength_policy.php';
 		$policy = new Password_strength_policy();
 		$error = $policy->validate($password, $confirmation);
 		if ($staff_id < 1 || $error !== null) {
@@ -233,6 +247,34 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$this->session->set_flashdata(
 			!empty($result['status']) && $result['status'] === 'success' ? 'success' : 'error',
 			!empty($result['message']) ? $result['message'] : 'Password sementara belum dapat direset.'
+		);
+		redirect('kelola_staff_puskesmas', 'refresh');
+	}
+
+	public function update_personal_profile()
+	{
+		if (!$this->require_post()) {
+			return;
+		}
+		$staff_id = (int) $this->input->post('staff_id');
+		$birthdate = trim((string) $this->input->post('birthdate', TRUE));
+		$gender = trim((string) $this->input->post('gender', TRUE));
+		$birthdate_value = DateTime::createFromFormat('!Y-m-d', $birthdate);
+		if ($staff_id < 1 || !$birthdate_value || $birthdate_value->format('Y-m-d') !== $birthdate
+			|| $birthdate > date('Y-m-d') || !in_array($gender, array('Laki-laki', 'Perempuan'), true)) {
+			$this->session->set_flashdata('error', 'Data personal Nakes belum valid.');
+			redirect('kelola_staff_puskesmas', 'refresh');
+			return;
+		}
+		$result = $this->Kelola_staff_puskesmas_m->update_linked_personal_profile(
+			$staff_id,
+			$birthdate,
+			$gender,
+			(string) $this->session->userdata('username')
+		);
+		$this->session->set_flashdata(
+			!empty($result['status']) && $result['status'] === 'success' ? 'success' : 'error',
+			!empty($result['message']) ? $result['message'] : 'Data personal Nakes belum dapat diperbarui.'
 		);
 		redirect('kelola_staff_puskesmas', 'refresh');
 	}
@@ -292,6 +334,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			'staff_readiness_summary' => array('total' => 0, 'ready' => 0, 'warning' => 0, 'attention' => 0, 'issue_counts' => array()),
 			'form_mode' => $form_mode,
 			'form_staff' => null,
+			'provisioning_csrf_token' => (string) $this->session->userdata('nakes_provisioning_csrf_token'),
 		);
 
 		if ($data['table_ready']) {
@@ -321,6 +364,11 @@ class Kelola_staff_puskesmas extends MX_Controller
 				$kode_pkm = trim((string) ($staff_row->kode_pkm ?? ''));
 				if ($current_staff_id > 0) {
 					$data['account_candidates_by_staff'][$current_staff_id] = $this->Kelola_staff_puskesmas_m->get_eligible_account_candidates($kode_pkm, $current_staff_id);
+					$staff_row->provisioning_account_state = $this->Kelola_staff_puskesmas_m->provisioning_account_state(
+						$staff_row,
+						isset($data['command_center_user_ids'][$kode_pkm]) ? (int) $data['command_center_user_ids'][$kode_pkm] : 0,
+						!empty($data['account_candidates_by_staff'][$current_staff_id])
+					);
 					$data['personal_account_eligibility_by_staff'][$current_staff_id] = $this->Kelola_staff_puskesmas_m->get_personal_account_creation_eligibility($staff_row);
 				}
 			}
@@ -493,13 +541,31 @@ class Kelola_staff_puskesmas extends MX_Controller
 	private function require_post()
 	{
 		if ($this->input->method(TRUE) === 'POST') {
-			return true;
+			$expected = $this->session->userdata('nakes_provisioning_csrf_token');
+			$submitted = $this->input->post('_provisioning_csrf_token', false);
+			if (is_string($expected) && is_string($submitted)
+				&& preg_match('/\A[a-f0-9]{64}\z/', $expected) === 1
+				&& hash_equals($expected, $submitted)) {
+				return true;
+			}
+			$this->output->set_status_header(403);
+			$this->session->set_flashdata('error', 'Form sudah tidak berlaku. Muat ulang halaman lalu coba kembali.');
+			redirect('kelola_staff_puskesmas', 'refresh');
+			return false;
 		}
 
 		$this->output->set_status_header(405);
 		$this->session->set_flashdata('error', 'Metode tidak diizinkan.');
 		redirect('kelola_staff_puskesmas', 'refresh');
 		return false;
+	}
+
+	private function ensure_provisioning_csrf_token()
+	{
+		$token = $this->session->userdata('nakes_provisioning_csrf_token');
+		if (!is_string($token) || preg_match('/\A[a-f0-9]{64}\z/', $token) !== 1) {
+			$this->session->set_userdata('nakes_provisioning_csrf_token', bin2hex(random_bytes(32)));
+		}
 	}
 
 	private function personal_account_flash($message)

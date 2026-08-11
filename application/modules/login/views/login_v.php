@@ -20,6 +20,9 @@
 				</center>
 				<div class="card shadow-lg mt-3" style="border-radius: 10px; overflow: hidden;">
 					<div class="card-body" style="background-color: #e0f2f1;">
+						<?php if (!empty($success_message)): ?>
+							<div class="alert alert-success" role="status"><?= html_escape($success_message); ?></div>
+						<?php endif; ?>
 
 						<!-- Form Login Modern -->
 						<form id="loginForm">
@@ -42,6 +45,9 @@
 						<hr>
 						<div class="text-center">
 							<p class="text-muted mb-0" style="color: #004d40;">Belum punya akun? <a href="<?= site_url('sign_up'); ?>" style="color: #00796b;">Daftar di sini</a></p>
+							<?php if (!empty($activation_available)): ?>
+								<p class="text-muted mt-2 mb-0"><a href="<?= html_escape(site_url('login/activate')); ?>" style="color: #00796b;">Aktivasi akun Nakes</a></p>
+							<?php endif; ?>
 						</div>
 					</div>
 				</div>

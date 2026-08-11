@@ -16,7 +16,7 @@
 				<div class="card shadow-lg border-0" style="border-radius: 12px;">
 					<div class="card-body p-4">
 						<h1 class="h3 mb-3">Perbarui Password</h1>
-						<p class="text-muted">Untuk keamanan akun dan data pasien, buat password baru sebelum melanjutkan.</p>
+						<p class="text-muted"><?= !empty($activation_mode) ? 'Buat password pribadi untuk menyelesaikan aktivasi akun.' : 'Untuk keamanan akun dan data pasien, buat password baru sebelum melanjutkan.'; ?></p>
 						<?php if (!empty($error_message)) : ?>
 							<div class="alert alert-danger" role="alert"><?= html_escape($error_message); ?></div>
 						<?php endif; ?>
@@ -33,9 +33,15 @@
 							</div>
 							<button class="btn btn-success w-100" type="submit">Simpan dan Lanjutkan</button>
 						</form>
-						<form method="post" action="<?= html_escape(site_url('login/logout')); ?>" class="mt-3 text-center">
-							<button type="submit" class="btn btn-link text-secondary">Keluar</button>
-						</form>
+						<?php if (empty($activation_mode)): ?>
+							<form method="post" action="<?= html_escape(site_url('login/logout')); ?>" class="mt-3 text-center">
+								<button type="submit" class="btn btn-link text-secondary">Keluar</button>
+							</form>
+						<?php else: ?>
+							<form method="post" action="<?= html_escape(site_url('login/logout')); ?>" class="mt-3 text-center">
+								<button type="submit" class="btn btn-link text-secondary">Batalkan aktivasi</button>
+							</form>
+						<?php endif; ?>
 					</div>
 				</div>
 			</div>

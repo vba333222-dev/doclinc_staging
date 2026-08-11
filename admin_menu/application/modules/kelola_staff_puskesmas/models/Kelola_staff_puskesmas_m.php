@@ -234,16 +234,36 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 
 	public function personal_account_state($staff, $command_center_user_id)
 	{
-		$user_id = (int) ($staff->user_id ?? 0);
-		if ($user_id < 1) {
+		$provisioning = $this->provisioning_account_state($staff, $command_center_user_id);
+		if ($provisioning === Nakes_personal_account_policy::STAFF_ONLY
+			|| $provisioning === Nakes_personal_account_policy::STAFF_WITH_UNLINKED_ACCOUNT) {
 			return 'unlinked';
 		}
-		$valid = (int) $command_center_user_id !== $user_id
-			&& (int) ($staff->active_user_link_count ?? 0) === 1
-			&& (string) ($staff->akun_role ?? '') === 'dokter'
-			&& (string) ($staff->akun_status ?? '') === 'aktif'
-			&& trim((string) ($staff->akun_remark ?? '')) === trim((string) ($staff->kode_pkm ?? ''));
-		return $valid ? 'linked' : 'invalid';
+		return $provisioning === Nakes_personal_account_policy::INVALID ? 'invalid' : 'linked';
+	}
+
+	public function provisioning_account_state($staff, $command_center_user_id, $unlinked_account_available = false)
+	{
+		require_once dirname(APPPATH, 2) . '/application/libraries/Nakes_personal_account_policy.php';
+		$policy = new Nakes_personal_account_policy();
+		$result = $policy->evaluate(array(
+			'staff_exists' => !empty($staff),
+			'staff_status' => $staff->status ?? '',
+			'staff_facility' => $staff->kode_pkm ?? '',
+			'facility_status' => $staff->puskesmas_status ?? '',
+			'user_id' => $staff->user_id ?? 0,
+			'user_exists' => (int) ($staff->user_id ?? 0) > 0 && isset($staff->akun_role),
+			'user_role' => $staff->akun_role ?? '',
+			'user_status' => $staff->akun_status ?? '',
+			'user_facility' => $staff->akun_remark ?? '',
+			'active_link_count' => $staff->active_user_link_count ?? 0,
+			'is_command_center' => (int) ($staff->user_id ?? 0) > 0
+				&& (int) $command_center_user_id === (int) ($staff->user_id ?? 0),
+			'must_change_password' => $staff->akun_must_change_password ?? 0,
+			'password_changed_at' => $staff->akun_password_changed_at ?? null,
+			'unlinked_account_available' => $unlinked_account_available,
+		));
+		return $result['state'];
 	}
 
 	public function readiness_issues($staff)
@@ -376,7 +396,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			return false;
 		}
 
-		foreach (array('userId', 'nama', 'email', 'username', 'password', 'role', 'status', 'remark', 'must_change_password', 'password_changed_at') as $field) {
+		foreach (array('userId', 'nama', 'email', 'username', 'password', 'role', 'status', 'remark', 'must_change_password', 'password_changed_at', 'tgl', 'gender', 'no_hp') as $field) {
 			if (!$this->db->field_exists($field, 'users')) {
 				return false;
 			}
@@ -406,8 +426,8 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		if (($staff->status ?? '') !== 'aktif') {
 			return array('eligible' => false, 'message' => 'Aktifkan staf terlebih dahulu.');
 		}
-		if (trim((string) ($staff->nomor_sip ?? '')) === '' || trim((string) ($staff->profesi ?? '')) === '') {
-			return array('eligible' => false, 'message' => 'Lengkapi SIP dan profesi sebelum membuat akun personal.');
+		if (!$this->staff_is_operationally_complete($staff)) {
+			return array('eligible' => false, 'message' => 'Lengkapi gelar, profesi, nomor HP, SIP, masa berlaku SIP, dan Puskesmas aktif sebelum membuat akun personal.');
 		}
 		$staff_name = trim((string) ($staff->nama ?? ''));
 		if ($staff_name === '' || strlen($staff_name) > 100) {
@@ -435,11 +455,14 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		$staff_id = (int) $staff_id;
 		$username = trim((string) ($account['username'] ?? ''));
 		$email = trim((string) ($account['email'] ?? ''));
+		$birthdate = trim((string) ($account['birthdate'] ?? ''));
+		$gender = trim((string) ($account['gender'] ?? ''));
 		$password = (string) ($account['plain_password'] ?? '');
 		unset($account['plain_password']);
-		require_once APPPATH . 'libraries/Password_strength_policy.php';
+		require_once dirname(APPPATH, 2) . '/application/libraries/Password_strength_policy.php';
 		$password_policy = new Password_strength_policy();
 		$password_error = $password_policy->validate($password);
+		$birthdate_value = DateTime::createFromFormat('!Y-m-d', $birthdate);
 		if ($staff_id < 1
 			|| $username === ''
 			|| strlen($username) < 3
@@ -448,6 +471,10 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			|| $email === ''
 			|| strlen($email) > 100
 			|| !filter_var($email, FILTER_VALIDATE_EMAIL)
+			|| !$birthdate_value
+			|| $birthdate_value->format('Y-m-d') !== $birthdate
+			|| $birthdate > date('Y-m-d')
+			|| !in_array($gender, array('Laki-laki', 'Perempuan'), true)
 			|| $password_error !== null
 			|| !$this->personal_account_creation_ready()) {
 			return array('status' => 'error', 'message' => 'Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
@@ -501,8 +528,8 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			if (($staff->status ?? '') !== 'aktif') {
 				$abort('Aktifkan staf terlebih dahulu.');
 			}
-			if (trim((string) ($staff->nomor_sip ?? '')) === '' || trim((string) ($staff->profesi ?? '')) === '') {
-				$abort('Lengkapi SIP dan profesi sebelum membuat akun personal.');
+			if (!$this->staff_is_operationally_complete($staff)) {
+				$abort('Lengkapi gelar, profesi, nomor HP, SIP, masa berlaku SIP, dan Puskesmas aktif sebelum membuat akun personal.');
 			}
 			$staff_name = trim((string) ($staff->nama ?? ''));
 			if ($staff_name === '' || strlen($staff_name) > 100) {
@@ -557,6 +584,9 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			$user_row = array(
 				'nama' => $staff_name,
 				'email' => $email,
+				'no_hp' => trim((string) ($staff->no_hp ?? '')),
+				'tgl' => $birthdate,
+				'gender' => $gender,
 				'username' => $username,
 				'password' => $password_hash,
 				'role' => 'dokter',
@@ -608,6 +638,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 				$abort('Akun personal gagal dibuat. Tidak ada perubahan data yang disimpan.');
 			}
 			$transaction_started = false;
+			$this->log_account_audit('create_personal_nakes_account', $user_id, $staff_id, array('credential_state' => 'change_required'));
 			$result = array(
 				'status' => 'success',
 				'message' => 'Akun personal dibuat dan dihubungkan. Nakes wajib mengganti password sementara saat login pertama.',
@@ -637,7 +668,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 	{
 		$staff_id = (int) $staff_id;
 		$password = is_string($password) ? $password : '';
-		require_once APPPATH . 'libraries/Password_strength_policy.php';
+		require_once dirname(APPPATH, 2) . '/application/libraries/Password_strength_policy.php';
 		$policy = new Password_strength_policy();
 		if ($staff_id < 1 || $policy->validate($password) !== null
 			|| !$this->personal_account_creation_ready()) {
@@ -647,8 +678,8 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			$this->load->helper('password_compat');
 		}
 		$password_hash = function_exists('doclinc_password_hash') ? doclinc_password_hash($password) : false;
-		$password = null;
 		if (!$password_hash) {
+			$password = null;
 			return array('status' => 'error', 'message' => 'Password sementara belum dapat direset.');
 		}
 
@@ -670,7 +701,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			}
 
 			$user_query = $this->db->query(
-				'SELECT userId, role, status, remark, password_changed_at FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ? FOR UPDATE',
+				'SELECT userId, role, status, remark, password, password_changed_at FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ? FOR UPDATE',
 				array((int) $staff->user_id)
 			);
 			$user = $user_query ? $user_query->row() : null;
@@ -681,6 +712,11 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 				|| $this->account_linked_to_other_active_staff((int) $user->userId, $staff_id)) {
 				throw new RuntimeException('account_not_eligible');
 			}
+			if (password_verify($password, (string) $user->password)) {
+				$password = null;
+				throw new RuntimeException('temporary_password_reused');
+			}
+			$password = null;
 
 			$update = array(
 				'password' => $password_hash,
@@ -701,17 +737,91 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 				throw new RuntimeException('commit_failed');
 			}
 			$transaction_started = false;
-			$this->log_account_audit('admin_reset_personal_nakes_password', (int) $user->userId, $staff_id);
+			$this->log_account_audit('admin_reset_personal_nakes_password', (int) $user->userId, $staff_id, array('credential_state' => 'change_required'));
 			return array(
 				'status' => 'success',
 				'message' => 'Password sementara direset. Nakes wajib membuat password pribadi saat login berikutnya.',
 			);
 		} catch (Throwable $e) {
+			$password = null;
 			if ($transaction_started) {
 				$this->db->trans_rollback();
 			}
 			$password_hash = null;
 			return array('status' => 'error', 'message' => 'Password sementara belum dapat direset.');
+		} finally {
+			$this->db->db_debug = $db_debug;
+		}
+	}
+
+	public function update_linked_personal_profile($staff_id, $birthdate, $gender, $updated_by)
+	{
+		$staff_id = (int) $staff_id;
+		$birthdate = trim((string) $birthdate);
+		$gender = trim((string) $gender);
+		$birthdate_value = DateTime::createFromFormat('!Y-m-d', $birthdate);
+		if ($staff_id < 1 || !$birthdate_value || $birthdate_value->format('Y-m-d') !== $birthdate
+			|| $birthdate > date('Y-m-d') || !in_array($gender, array('Laki-laki', 'Perempuan'), true)
+			|| !$this->personal_account_creation_ready()) {
+			return array('status' => 'error', 'message' => 'Data personal Nakes belum dapat diperbarui.');
+		}
+
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$transaction_started = false;
+		try {
+			if (!$this->db->trans_begin()) {
+				throw new RuntimeException('transaction_failed');
+			}
+			$transaction_started = true;
+			$staff_query = $this->db->query(
+				'SELECT staff_id, user_id, kode_pkm, nama, no_hp, status FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE staff_id = ? FOR UPDATE',
+				array($staff_id)
+			);
+			$staff = $staff_query ? $staff_query->row() : null;
+			if (!$staff || (string) $staff->status !== 'aktif' || (int) $staff->user_id < 1
+				|| trim((string) $staff->nama) === '' || trim((string) $staff->no_hp) === '') {
+				throw new RuntimeException('staff_invalid');
+			}
+			$user_query = $this->db->query(
+				'SELECT userId, role, status, remark FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ? FOR UPDATE',
+				array((int) $staff->user_id)
+			);
+			$user = $user_query ? $user_query->row() : null;
+			$kode_pkm = trim((string) $staff->kode_pkm);
+			if (!$user || (string) $user->role !== 'dokter' || (string) $user->status !== 'aktif'
+				|| trim((string) $user->remark) !== $kode_pkm || !$this->puskesmas_is_active($kode_pkm)
+				|| $this->get_command_center_user_id($kode_pkm) === (int) $user->userId
+				|| $this->account_linked_to_other_active_staff((int) $user->userId, $staff_id)) {
+				throw new RuntimeException('identity_invalid');
+			}
+			$update = array(
+				'nama' => trim((string) $staff->nama),
+				'no_hp' => trim((string) $staff->no_hp),
+				'tgl' => $birthdate,
+				'gender' => $gender,
+			);
+			if ($this->db->field_exists('updated_at', 'users')) {
+				$update['updated_at'] = date('Y-m-d H:i:s');
+			}
+			if ($this->db->field_exists('updated_by', 'users')) {
+				$update['updated_by'] = trim((string) $updated_by);
+			}
+			if (!$this->db->where('userId', (int) $user->userId)->update('users', $update)
+				|| $this->db->affected_rows() > 1 || $this->db->trans_status() === false) {
+				throw new RuntimeException('profile_update_failed');
+			}
+			if (!$this->db->trans_commit()) {
+				throw new RuntimeException('commit_failed');
+			}
+			$transaction_started = false;
+			$this->log_account_audit('update_personal_nakes_profile', (int) $user->userId, $staff_id);
+			return array('status' => 'success', 'message' => 'Data personal Nakes diperbarui.');
+		} catch (Throwable $e) {
+			if ($transaction_started) {
+				$this->db->trans_rollback();
+			}
+			return array('status' => 'error', 'message' => 'Data personal Nakes belum dapat diperbarui.');
 		} finally {
 			$this->db->db_debug = $db_debug;
 		}
@@ -755,7 +865,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		$has_user_status = $this->db->field_exists('status', 'users');
 
 		$this->db
-			->select('userId, nama, username, email, remark')
+			->select('userId, nama, username, email, remark, no_hp, tgl, gender')
 			->from('users')
 			->where('role', 'dokter')
 			->where('TRIM(remark) =', $kode_pkm);
@@ -771,6 +881,10 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		if (!empty($linked_user_ids)) {
 			$this->db->where_not_in('userId', $linked_user_ids);
 		}
+		$this->db
+			->where('tgl IS NOT NULL', null, false)
+			->where("TRIM(no_hp) != ''", null, false)
+			->where_in('gender', array('Laki-laki', 'Perempuan'));
 
 		return $this->db
 			->order_by('nama', 'ASC')
@@ -783,66 +897,128 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 	{
 		$staff_id = (int) $staff_id;
 		$user_id = (int) $user_id;
-		if ($staff_id < 1 || $user_id < 1) {
+		if ($staff_id < 1 || $user_id < 1 || !$this->table_ready()) {
 			return array('status' => 'error', 'message' => 'Pilih staf dan akun yang valid.');
 		}
-		if (!$this->table_ready()) {
-			return array('status' => 'error', 'message' => 'Data staf belum tersedia.');
-		}
 
-		$staff = $this->get_by_id($staff_id);
-		$user = $this->get_dokter_account_by_id($user_id);
-		if (!$staff || !$user) {
-			return array('status' => 'error', 'message' => 'Staf atau akun personal tidak ditemukan.');
+		$lock_name = 'doclinc_staff_personal_account_link';
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$transaction_started = false;
+		$lock_acquired = false;
+		try {
+			$lock_query = $this->db->query('SELECT GET_LOCK(?, 5) AS acquired', array($lock_name));
+			$lock_row = $lock_query ? $lock_query->row() : null;
+			$lock_acquired = $lock_row && ($lock_row->acquired === 1 || $lock_row->acquired === '1');
+			if (!$lock_acquired || !$this->db->trans_begin()) {
+				throw new RuntimeException('lock_failed');
+			}
+			$transaction_started = true;
+			$staff_query = $this->db->query(
+				'SELECT * FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE staff_id = ? FOR UPDATE',
+				array($staff_id)
+			);
+			$user_query = $this->db->query(
+				'SELECT userId, role, status, remark, no_hp, tgl, gender FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ? FOR UPDATE',
+				array($user_id)
+			);
+			$staff = $staff_query ? $staff_query->row() : null;
+			$user = $user_query ? $user_query->row() : null;
+			if (!$staff || !$user || (int) ($staff->user_id ?? 0) > 0
+				|| (string) $staff->status !== 'aktif' || !$this->staff_is_operationally_complete($staff)) {
+				throw new RuntimeException('identity_invalid');
+			}
+			$kode_pkm = trim((string) $staff->kode_pkm);
+			if ($kode_pkm === '' || trim((string) $user->remark) !== $kode_pkm
+				|| (string) $user->role !== 'dokter' || (string) $user->status !== 'aktif'
+				|| trim((string) $user->no_hp) === '' || empty($user->tgl)
+				|| !in_array((string) $user->gender, array('Laki-laki', 'Perempuan'), true)
+				|| !$this->puskesmas_is_active($kode_pkm)
+				|| $this->get_command_center_user_id($kode_pkm) === $user_id) {
+				throw new RuntimeException('identity_invalid');
+			}
+			$link_query = $this->db->query(
+				'SELECT staff_id FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE user_id = ? AND status = ? FOR UPDATE',
+				array($user_id, 'aktif')
+			);
+			if (!$link_query || $link_query->num_rows() > 0) {
+				throw new RuntimeException('duplicate_link');
+			}
+			$updated = $this->db
+				->where('staff_id', $staff_id)
+				->group_start()->where('user_id IS NULL', null, false)->or_where('user_id', 0)->group_end()
+				->update('puskesmas_staff', array('user_id' => $user_id));
+			if (!$updated || $this->db->affected_rows() !== 1 || $this->db->trans_status() === false
+				|| !$this->db->trans_commit()) {
+				throw new RuntimeException('link_failed');
+			}
+			$transaction_started = false;
+			$this->log_account_audit('link_personal_nakes_account', $user_id, $staff_id);
+			return array('status' => 'success', 'message' => 'Akun personal dihubungkan.');
+		} catch (Throwable $e) {
+			if ($transaction_started) {
+				$this->db->trans_rollback();
+			}
+			return array('status' => 'error', 'message' => 'Akun login belum dapat dihubungkan. Periksa status akun, Puskesmas, dan hubungan staf.');
+		} finally {
+			if ($lock_acquired) {
+				$this->db->query('SELECT RELEASE_LOCK(?) AS released', array($lock_name));
+			}
+			$this->db->db_debug = $db_debug;
 		}
-		if ((string) ($staff->status ?? '') !== 'aktif' || !$this->staff_is_operationally_complete($staff)) {
-			return array('status' => 'error', 'message' => 'Lengkapi dan aktifkan data staf sebelum menghubungkan akun personal.');
-		}
-
-		$kode_pkm = trim((string) $staff->kode_pkm);
-		$user_remark = trim((string) ($user->remark ?? ''));
-		if ($kode_pkm === '' || $user_remark !== $kode_pkm) {
-			return array('status' => 'error', 'message' => 'Akun tidak berasal dari Puskesmas ini.');
-		}
-		if (isset($user->status) && $user->status !== 'aktif') {
-			return array('status' => 'error', 'message' => 'Pilih akun yang aktif.');
-		}
-		if ($this->get_command_center_user_id($kode_pkm) === $user_id) {
-			return array('status' => 'error', 'message' => 'Akun Puskesmas tidak dapat dihubungkan sebagai akun personal staf.');
-		}
-		if ($this->account_linked_to_other_active_staff($user_id, $staff_id)) {
-			return array('status' => 'error', 'message' => 'Akun sudah terhubung ke staf lain.');
-		}
-
-		$updated = $this->db
-			->where('staff_id', $staff_id)
-			->update('puskesmas_staff', array('user_id' => $user_id));
-
-		return $updated
-			? array('status' => 'success', 'message' => 'Akun personal dihubungkan.')
-			: array('status' => 'error', 'message' => 'Akun login belum dapat dihubungkan.');
 	}
 
 	public function unbind_staff_account($staff_id)
 	{
 		$staff_id = (int) $staff_id;
-		if ($staff_id < 1) {
+		if ($staff_id < 1 || !$this->table_ready()) {
 			return array('status' => 'error', 'message' => 'Pilih staf yang valid.');
 		}
-		if (!$this->table_ready()) {
-			return array('status' => 'error', 'message' => 'Data staf belum tersedia.');
-		}
-		if (!$this->get_by_id($staff_id)) {
-			return array('status' => 'error', 'message' => 'Staf tidak ditemukan.');
-		}
 
-		$updated = $this->db
-			->where('staff_id', $staff_id)
-			->update('puskesmas_staff', array('user_id' => null));
-
-		return $updated
-			? array('status' => 'success', 'message' => 'Akun personal dilepas. Akun tidak dihapus.')
-			: array('status' => 'error', 'message' => 'Akun login belum dapat dilepas.');
+		$lock_name = 'doclinc_staff_personal_account_link';
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = false;
+		$transaction_started = false;
+		$lock_acquired = false;
+		try {
+			$lock_query = $this->db->query('SELECT GET_LOCK(?, 5) AS acquired', array($lock_name));
+			$lock_row = $lock_query ? $lock_query->row() : null;
+			$lock_acquired = $lock_row && ($lock_row->acquired === 1 || $lock_row->acquired === '1');
+			if (!$lock_acquired || !$this->db->trans_begin()) {
+				throw new RuntimeException('lock_failed');
+			}
+			$transaction_started = true;
+			$staff_query = $this->db->query(
+				'SELECT staff_id, user_id FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE staff_id = ? FOR UPDATE',
+				array($staff_id)
+			);
+			$staff = $staff_query ? $staff_query->row() : null;
+			$user_id = $staff ? (int) $staff->user_id : 0;
+			if (!$staff || $user_id < 1) {
+				throw new RuntimeException('link_missing');
+			}
+			$updated = $this->db
+				->where('staff_id', $staff_id)
+				->where('user_id', $user_id)
+				->update('puskesmas_staff', array('user_id' => null));
+			if (!$updated || $this->db->affected_rows() !== 1 || $this->db->trans_status() === false
+				|| !$this->db->trans_commit()) {
+				throw new RuntimeException('unlink_failed');
+			}
+			$transaction_started = false;
+			$this->log_account_audit('unlink_personal_nakes_account', $user_id, $staff_id);
+			return array('status' => 'success', 'message' => 'Akun personal dilepas. Akun tidak dihapus.');
+		} catch (Throwable $e) {
+			if ($transaction_started) {
+				$this->db->trans_rollback();
+			}
+			return array('status' => 'error', 'message' => 'Akun login belum dapat dilepas.');
+		} finally {
+			if ($lock_acquired) {
+				$this->db->query('SELECT RELEASE_LOCK(?) AS released', array($lock_name));
+			}
+			$this->db->db_debug = $db_debug;
+		}
 	}
 
 	public function get_dokter_account_by_id($user_id)
@@ -969,13 +1145,15 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		return $user ? (int) $user->userId : null;
 	}
 
-	private function log_account_audit($action, $target_user_id, $staff_id)
+	private function log_account_audit($action, $target_user_id, $staff_id, $metadata = array())
 	{
 		if (!$this->db->table_exists('audit_logs')) {
 			return false;
 		}
 		$db_debug = $this->db->db_debug;
 		$this->db->db_debug = false;
+		$metadata = is_array($metadata) ? $metadata : array();
+		$metadata['staff_id'] = (int) $staff_id;
 		$result = $this->db->insert('audit_logs', array(
 			'actor_user_id' => $this->current_admin_id(),
 			'action' => $action,
@@ -983,7 +1161,7 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			'entity_id' => (int) $target_user_id,
 			'ip_address' => $this->input->ip_address(),
 			'user_agent' => substr((string) $this->input->user_agent(), 0, 255),
-			'metadata_json' => json_encode(array('staff_id' => (int) $staff_id, 'credential_state' => 'change_required')),
+			'metadata_json' => json_encode($metadata),
 			'created_at' => date('Y-m-d H:i:s'),
 		));
 		$this->db->db_debug = $db_debug;

@@ -38,6 +38,13 @@ class First_login_token_policy
 		return hash_equals($state['digest'], hash_hmac('sha256', $token, $session_binding));
 	}
 
+	public function consume($token, &$state, $user_id, $session_binding, $now = null)
+	{
+		$candidate_state = $state;
+		$state = null;
+		return $this->validate($token, $candidate_state, $user_id, $session_binding, $now);
+	}
+
 	private function validBinding($binding)
 	{
 		return is_string($binding) && preg_match('/\A[a-f0-9]{32}\z/', $binding) === 1;
