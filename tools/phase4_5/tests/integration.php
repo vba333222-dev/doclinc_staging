@@ -377,10 +377,14 @@ try {
 	phase45_db_expect((int) $db->where('entity_type', 'request')->where('entity_id', '100')->where('event_type', 'responsible_doctor_assigned')->count_all_results('notifications') === 3, 'failed_responsible_assignments_create_no_notification');
 	phase45_db_expect(empty($care->chooseMode(101, 'visit', 201)['ok']), 'service_mode_requires_responsible_doctor');
 	phase45_db_expect(empty($care->chooseMode(100, 'visit', 101)['ok']), 'patient_cannot_choose_service_mode');
-	phase45_db_expect(!empty($care->chooseMode(100, 'non_visit', 201)['ok']), 'responsible_doctor_selects_non_visit');
+	$non_visit_result = $care->chooseMode(100, 'non_visit', 201);
+	phase45_db_expect(!empty($non_visit_result['ok']) && !empty($non_visit_result['changed']), 'responsible_doctor_selects_non_visit');
+	$same_non_visit_result = $care->chooseMode(100, 'non_visit', 201);
+	phase45_db_expect(!empty($same_non_visit_result['ok']) && empty($same_non_visit_result['changed']), 'repeated_service_mode_is_idempotent');
 	phase45_db_expect(empty($care->chooseMode(100, 'visit', 202)['ok']), 'unrelated_nakes_cannot_choose_mode');
 	phase45_db_expect(empty($care->chooseMode(100, 'visit', 10)['ok']), 'command_center_cannot_impersonate_responsible_doctor');
-	phase45_db_expect(!empty($care->chooseMode(100, 'visit', 201)['ok']), 'responsible_doctor_selects_visit');
+	$visit_result = $care->chooseMode(100, 'visit', 201);
+	phase45_db_expect(!empty($visit_result['ok']) && !empty($visit_result['changed']), 'responsible_doctor_selects_visit');
 	phase45_db_expect(empty($care->assignVisitPerformer(100, 33, 201)['ok']), 'cross_facility_visit_performer_denied');
 	phase45_db_expect(empty($care->assignVisitPerformer(100, 34, 201)['ok']), 'inactive_visit_performer_denied');
 	phase45_db_expect(empty($care->assignVisitPerformer(100, 35, 201)['ok']), 'ambiguous_visit_performer_denied');

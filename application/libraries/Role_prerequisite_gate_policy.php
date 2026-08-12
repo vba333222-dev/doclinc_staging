@@ -13,7 +13,7 @@ class Role_prerequisite_gate_policy
 		'chat' => array('messages', 'send', 'mark_read', 'foto'),
 		'notifikasi' => array('list_json', 'snapshot', 'mark_read'),
 		'konsultasi' => array('save_konsultasi'),
-		'konsultasi_nakes' => array('get_terapi', 'save_konsultasi_nakes'),
+		'konsultasi_nakes' => array('get_terapi', 'save_konsultasi_nakes', 'save_vital_signs'),
 		'home' => array('update_profile', 'update_profile_photo', 'livekit_token', 'livekit_incoming_call', 'answer_livekit_call', 'reject_livekit_call', 'livekit_call_status', 'cancel_request'),
 		'home_nakes' => array('updateprofile', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment', 'accept_request', 'cancel_request', 'presence_heartbeat', 'presence_snapshot'),
 	);

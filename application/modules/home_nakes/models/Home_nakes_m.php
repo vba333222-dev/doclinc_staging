@@ -986,6 +986,32 @@ class Home_nakes_m extends MX_Controller
 			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Perubahan status kunjungan tidak valid');
 		}
+		if ($this->config->item('care_team_workflow_enabled') === true && $next_status === 'completed') {
+			require_once APPPATH . 'libraries/Visit_vital_signs_service.php';
+			$vital_signs = new Visit_vital_signs_service($this->db);
+			if (!$vital_signs->schemaReady()) {
+				$this->db->trans_rollback();
+				return array('status' => 'error', 'message' => 'Tanda vital belum dapat diperiksa.', 'safe_error_code' => 'vital_signs_schema_unavailable');
+			}
+			$measurement = $vital_signs->currentAssignmentMeasurementState($request, true);
+			if (empty($measurement['assignment_valid']) || empty($measurement['has_measurement'])) {
+				$this->db->trans_rollback();
+				return array('status' => 'error', 'message' => 'Catat tanda vital sebelum menyelesaikan kunjungan.', 'safe_error_code' => 'vital_signs_required');
+			}
+		}
+		if ($current_status === $next_status) {
+			if ($this->db->trans_status() === false || !$this->db->trans_commit()) {
+				$this->db->trans_rollback();
+				return array('status' => 'error', 'message' => 'Status kunjungan tidak dapat diperbarui');
+			}
+			return array(
+				'status' => 'success',
+				'message' => 'Status kunjungan diperbarui.',
+				'visit_status' => $current_status,
+				'visit_status_label' => function_exists('doclinc_visit_status_label') ? doclinc_visit_status_label($current_status) : $current_status,
+				'changed' => false,
+			);
+		}
 
 		$date = date('Y-m-d H:i:s');
 		$data = array('visit_status' => $next_status);
@@ -1019,7 +1045,7 @@ class Home_nakes_m extends MX_Controller
 		}
 		$this->db->update('requests', $data);
 
-		if ($this->db->affected_rows() < 1 && $current_status !== $next_status) {
+		if ($this->db->affected_rows() < 1) {
 			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Status kunjungan tidak dapat diperbarui');
 		}
@@ -1034,27 +1060,25 @@ class Home_nakes_m extends MX_Controller
 			->get('requests')
 			->row();
 		$visit_status = $row && isset($row->visit_status) ? $row->visit_status : $next_status;
-		if ($current_status !== $next_status) {
-			$visit_event_map = array(
-				'en_route' => array('visit_started', 'Perjalanan kunjungan dimulai.', 'visit_started_at'),
-				'arrived' => array('visit_arrived', 'Petugas tiba di lokasi warga.', 'visit_arrived_at'),
-				'in_service' => array('visit_in_service', 'Pelayanan di lokasi dimulai.', 'visit_in_service_at'),
-				'completed' => array('visit_completed', 'Kunjungan di lokasi selesai.', 'visit_completed_at'),
-			);
-			if (isset($visit_event_map[$next_status])) {
-				$event = $visit_event_map[$next_status];
-				$event_metadata = array('visit_status' => $visit_status);
-				if ($row && isset($row->{$event[2]}) && !empty($row->{$event[2]})) {
-					$event_metadata[$event[2]] = $row->{$event[2]};
-				}
-				$this->append_request_event($request_id, $event[0], array(
-					'puskesmas_code' => $row && isset($row->assigned_puskesmas_code) ? $row->assigned_puskesmas_code : null,
-					'actor_user_id' => $user_id,
-					'actor_role' => 'dokter',
-					'message' => $event[1],
-					'metadata' => $event_metadata,
-				));
+		$visit_event_map = array(
+			'en_route' => array('visit_started', 'Perjalanan kunjungan dimulai.', 'visit_started_at'),
+			'arrived' => array('visit_arrived', 'Petugas tiba di lokasi warga.', 'visit_arrived_at'),
+			'in_service' => array('visit_in_service', 'Pelayanan di lokasi dimulai.', 'visit_in_service_at'),
+			'completed' => array('visit_completed', 'Kunjungan di lokasi selesai.', 'visit_completed_at'),
+		);
+		if (isset($visit_event_map[$next_status])) {
+			$event = $visit_event_map[$next_status];
+			$event_metadata = array('visit_status' => $visit_status);
+			if ($row && isset($row->{$event[2]}) && !empty($row->{$event[2]})) {
+				$event_metadata[$event[2]] = $row->{$event[2]};
 			}
+			$this->append_request_event($request_id, $event[0], array(
+				'puskesmas_code' => $row && isset($row->assigned_puskesmas_code) ? $row->assigned_puskesmas_code : null,
+				'actor_user_id' => $user_id,
+				'actor_role' => 'dokter',
+				'message' => $event[1],
+				'metadata' => $event_metadata,
+			));
 		}
 
 		return array(
@@ -1062,6 +1086,7 @@ class Home_nakes_m extends MX_Controller
 			'message' => 'Status kunjungan diperbarui.',
 			'visit_status' => $visit_status,
 			'visit_status_label' => function_exists('doclinc_visit_status_label') ? doclinc_visit_status_label($visit_status) : $visit_status,
+			'changed' => true,
 		);
 	}
 	public function update_visit_location($request_id, $user_id, $latitude, $longitude, $identity_context = null)
