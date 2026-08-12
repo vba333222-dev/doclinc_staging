@@ -62,6 +62,11 @@ const passwordViews = [
   'admin_menu/application/modules/login/views/login_v.php',
   'admin_menu/application/views/commons/footer.php'
 ].map(source);
+const legacyAssignBody = homeNakesController.slice(homeNakesController.indexOf('public function assign_staff()'), homeNakesController.indexOf('public function assign_responsible_doctor()'));
+const responsibleDoctorBody = homeNakesController.slice(homeNakesController.indexOf('public function assign_responsible_doctor()'), homeNakesController.indexOf('public function assign_visit_performer()'));
+const visitPerformerBody = homeNakesController.slice(homeNakesController.indexOf('public function assign_visit_performer()'), homeNakesController.indexOf('public function clear_staff_assignment()'));
+const legacyClearBody = homeNakesController.slice(homeNakesController.indexOf('public function clear_staff_assignment()'), homeNakesController.indexOf('public function tes_save_lokasi()'));
+const legacyAssignmentGate = homeNakesController.slice(homeNakesController.indexOf('private function reject_legacy_staff_assignment_when_care_team_enabled()'), homeNakesController.indexOf('private function respond_staff_assignment_json'));
 
 expect(publicConfig.includes('DOCLINC_SINGLE_ACTIVE_SESSION_ENABLED') && publicConfig.includes('Doclinc_feature_flags::resolve'), 'session_feature_default_off_resolver');
 expect(publicConfig.includes("$config['sess_time_to_update'] = 300;")
@@ -130,8 +135,28 @@ expect(requestOrchestrator.includes('doclinc_notify_puskesmas(')
   && requestAuthz.includes("foreach (array('responsible_doctor_user_id', 'visit_performer_user_id')"), 'pending_cancellation_uses_operational_recipient_without_personal_legacy_fallback');
 expect(homeNakesController.includes("method(TRUE) !== 'POST'") && homeNakesController.includes('assign_responsible_doctor')
   && homeNakesController.includes('choose_service_mode') && homeNakesController.includes('assign_visit_performer'), 'care_team_mutations_are_post_only');
+expect(legacyAssignBody.indexOf('require_dokter_session') < legacyAssignBody.indexOf("method(TRUE) !== 'POST'")
+  && legacyAssignBody.indexOf("method(TRUE) !== 'POST'") < legacyAssignBody.indexOf('reject_legacy_staff_assignment_when_care_team_enabled')
+  && legacyAssignBody.indexOf('reject_legacy_staff_assignment_when_care_team_enabled') < legacyAssignBody.indexOf('Home_nakes_m->assign_staff_to_request')
+  && legacyClearBody.indexOf('require_dokter_session') < legacyClearBody.indexOf("method(TRUE) !== 'POST'")
+  && legacyClearBody.indexOf("method(TRUE) !== 'POST'") < legacyClearBody.indexOf('reject_legacy_staff_assignment_when_care_team_enabled')
+  && legacyClearBody.indexOf('reject_legacy_staff_assignment_when_care_team_enabled') < legacyClearBody.indexOf('Home_nakes_m->clear_staff_assignment'), 'care_team_gate_precedes_legacy_staff_mutations');
+expect(legacyAssignmentGate.includes("care_team_workflow_enabled') !== true")
+  && legacyAssignmentGate.includes('respond_staff_assignment_json(403')
+  && legacyAssignmentGate.includes('Pengaturan ini sudah tidak tersedia.')
+  && legacyAssignmentGate.includes("redirect('home_nakes#riwayat_konsul')"), 'legacy_staff_gate_has_safe_json_and_form_responses');
+expect(activeTask.includes("$care_team_enabled ? 'home_nakes/assign_responsible_doctor' : 'home_nakes/assign_staff'")
+  && activeTask.includes("!$care_team_enabled && $primary_pic_assignment ? '' : 'hidden'")
+  && history.includes("!empty($care_team_workflow_enabled) ? 'home_nakes/assign_responsible_doctor' : 'home_nakes/assign_staff'")
+  && history.includes("empty($care_team_workflow_enabled) && $pic_assignment ? '' : 'hidden'")
+  && history.includes("home_nakes/assign_visit_performer"), 'care_team_ui_uses_new_endpoints_and_hides_legacy_clear');
+expect(responsibleDoctorBody.includes('care_team_post_ready') && responsibleDoctorBody.includes('assignResponsibleDoctor')
+  && visitPerformerBody.includes('care_team_post_ready') && visitPerformerBody.includes('assignVisitPerformer')
+  && !responsibleDoctorBody.includes('reject_legacy_staff_assignment_when_care_team_enabled')
+  && !visitPerformerBody.includes('reject_legacy_staff_assignment_when_care_team_enabled'), 'care_team_assignment_endpoints_remain_available');
 expect(consultationController.includes("['can_assess']") && homeNakesController.includes("['can_visit']")
   && consultationModel.includes("['can_assess']") && homeNakesModel.includes("['can_visit']"), 'responsible_and_performer_authority_remain_distinct');
+expect(consultationController.indexOf("? !empty($access_context['can_assess'])") < consultationController.indexOf('Konsultasi_nakes_m->save_konsultasi_nakes'), 'command_center_clinical_write_denied_before_model_mutation');
 expect(consultationController.includes("['can_open_patient_chat']")
   && consultationController.includes("account_type'] ?? '') === 'personal'")
   && consultationController.includes('doclinc_can_view_chat')
