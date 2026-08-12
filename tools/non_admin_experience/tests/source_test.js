@@ -29,9 +29,12 @@ const authz = read('application/helpers/request_authz_helper.php');
 const chatController = read('application/modules/chat/controllers/Chat.php');
 const chatModel = read('application/modules/chat/models/Chat_m.php');
 const chatView = read('application/modules/chat/views/thread_v.php');
+const nakesHistory = read('application/modules/home_nakes/views/partials/nakes_history_v.php');
 const homeView = read('application/modules/home/views/home_v.php');
 const style = read('assets/css/style.css');
 const notifications = read('assets/js/doclinc-notifications.js');
+const nakesConsultation = read('application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php');
+const nakesConsultationView = read('application/modules/konsultasi_nakes/views/konsultasi_nakes_v.php');
 
 expect(prerequisites.includes('facility_requirements($identity, $missing, $labels, $schema_gaps, false)')
   && prerequisites.includes('Command-center accounts represent a health facility')
@@ -52,9 +55,14 @@ expect(nakesAppbar.includes("'avatar_photo' => !empty($nakes_is_personal) ? $nak
   && chatModel.includes("'sender_photo_url' => base_url('profile/photo/'")
   && chatView.includes('chat-message-avatar'), 'personal_photos_render_on_dashboards_and_chat');
 expect(style.includes('.dl-hero .history-empty-text') && style.includes('color: #ffffff'), 'patient_active_consultation_copy_has_high_contrast');
-expect(authz.includes("account_type'] ?? '') !== 'personal'")
+expect(authz.includes("identity['account_type'] !== 'personal'")
+  && chatController.includes('doclinc_chat_actor_is_command_center()')
+  && chatController.includes('doclinc_chat_actor_is_command_center($user_id)')
   && chatController.includes("'safe_error_code' => $read_only ? 'chat_read_only'")
-  && chatView.includes('Akun Puskesmas hanya dapat memantau percakapan'), 'puskesmas_chat_is_read_only_across_server_and_ui');
+  && !chatView.includes('Akun Puskesmas hanya dapat memantau percakapan')
+  && (nakesHistory.match(/if \(!\$nakes_is_command_center\)/g) || []).length >= 2
+  && nakesConsultation.includes("account_type'] ?? '') === 'personal'")
+  && nakesConsultationView.includes('if (!empty($can_open_patient_chat))'), 'puskesmas_patient_chat_is_hidden_and_denied');
 expect(notifications.includes('this.soundEnabled = true')
   && !notifications.includes('doclincNotificationSoundToggle')
   && !notifications.includes('Aktifkan suara'), 'notification_sound_defaults_on_without_toggle_ui');

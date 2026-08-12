@@ -2,20 +2,32 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 require_once __DIR__ . '/Care_team_policy.php';
+require_once __DIR__ . '/Notification_delivery_service.php';
 
 class Care_team_service
 {
 	private $db;
 	private $policy;
+	private $notification_delivery;
 
-	public function __construct($db = null)
+	public function __construct($db = null, $notification_feature_state = null, $notification_delivery = null)
 	{
+		$CI = null;
 		if ($db === null) {
 			$CI = &get_instance();
 			$db = $CI->db;
 		}
+		if (!is_array($notification_feature_state)) {
+			if ($CI === null && function_exists('get_instance')) {
+				$CI = &get_instance();
+			}
+			$notification_feature_state = array(
+				'enabled' => $CI !== null && $CI->config->item('realtime_notifications_enabled') === true,
+			);
+		}
 		$this->db = $db;
 		$this->policy = new Care_team_policy();
+		$this->notification_delivery = $notification_delivery ?: new Notification_delivery_service($db, $notification_feature_state);
 	}
 
 	public function schemaReady()
@@ -100,6 +112,17 @@ class Care_team_service
 			if ($this->db->affected_rows() !== 1) {
 				return $this->failure('Dokter belum dapat diperbarui.');
 			}
+			if (!$this->createAssignmentNotification(
+				(int) $doctor['user_id'],
+				$actor_user_id,
+				$request_id,
+				'responsible_doctor_assigned',
+				'Konsultasi baru untuk Anda',
+				'Buka konsultasi untuk melihat detail.',
+				$now
+			)) {
+				return $this->failure('Dokter belum dapat diperbarui.');
+			}
 			return $this->success('Dokter penanggung jawab diperbarui.');
 		});
 	}
@@ -172,7 +195,7 @@ class Care_team_service
 				return $this->failure('Anda tidak memiliki akses.');
 			}
 			$performer = $this->lockedStaffIdentity($staff_id);
-			if (!$this->policy->personalEligible($performer, $puskesmas_code)) {
+			if (!$this->policy->visitPerformerEligible($performer, $puskesmas_code)) {
 				return $this->failure('Pilih Nakes dari Puskesmas ini.');
 			}
 			$active = $this->lockedVisitAssignments($request_id);
@@ -211,8 +234,37 @@ class Care_team_service
 			if ($this->db->affected_rows() !== 1) {
 				return $this->failure('Nakes belum dapat diperbarui.');
 			}
+			$doctor_name = $this->doctorDisplayName($actor);
+			if ($doctor_name === '' || !$this->createAssignmentNotification(
+				(int) $performer['user_id'],
+				$actor_user_id,
+				$request_id,
+				'visit_performer_assigned',
+				'Tugas kunjungan baru',
+				'Ditugaskan oleh ' . $doctor_name . '.',
+				$now
+			)) {
+				return $this->failure('Nakes belum dapat diperbarui.');
+			}
 			return $this->success('Nakes kunjungan diperbarui.');
 		});
+	}
+
+	private function createAssignmentNotification($recipient_user_id, $actor_user_id, $request_id, $event_type, $title, $message, $created_at)
+	{
+		return $this->notification_delivery->createWithinTransaction(array(
+			'recipient_user_id' => (int) $recipient_user_id,
+			'recipient_role' => 'dokter',
+			'recipient_puskesmas_code' => null,
+			'actor_user_id' => (int) $actor_user_id,
+			'event_type' => (string) $event_type,
+			'entity_type' => 'request',
+			'entity_id' => (string) ((int) $request_id),
+			'title' => (string) $title,
+			'message' => (string) $message,
+			'is_read' => 0,
+			'created_at' => (string) $created_at,
+		)) !== false;
 	}
 
 	public function requestContext($request_id, $user_id)
@@ -232,7 +284,8 @@ class Care_team_service
 		$result['is_responsible_doctor'] = (int) $request->responsible_doctor_user_id === $user_id
 			&& $this->policy->responsibleDoctorEligible($identity, $request->assigned_puskesmas_code);
 		$result['is_visit_performer'] = (int) $request->visit_performer_user_id === $user_id
-			&& (string) $request->consultation_mode === Care_team_policy::VISIT;
+			&& (string) $request->consultation_mode === Care_team_policy::VISIT
+			&& $this->policy->visitPerformerEligible($identity, $request->assigned_puskesmas_code);
 		$result['can_assess'] = $result['is_responsible_doctor'] && (string) $request->request_status === 'Accepted';
 		$result['can_visit'] = $result['is_visit_performer'] && (string) $request->request_status === 'Accepted';
 		$result['valid'] = $result['can_assess'] || $result['can_visit'];
@@ -300,7 +353,8 @@ class Care_team_service
 
 	private function identity($user_id, $lock = false)
 	{
-		$user_sql = 'SELECT userId, role, status, remark FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ?' . ($lock ? ' FOR UPDATE' : '');
+		$user_name = $this->db->field_exists('nama', 'users') ? ', nama' : ', NULL AS nama';
+		$user_sql = 'SELECT userId, role, status, remark' . $user_name . ' FROM ' . $this->db->dbprefix('users') . ' WHERE userId = ?' . ($lock ? ' FOR UPDATE' : '');
 		$user_query = $this->db->query($user_sql, array((int) $user_id));
 		$user = $user_query ? $user_query->row() : null;
 		$result = array('valid' => false, 'account_type' => 'unclassified', 'user_id' => (int) $user_id);
@@ -314,7 +368,9 @@ class Care_team_service
 		if ($puskesmas_code === '' || !$facility || (string) $facility->status !== 'aktif') {
 			return $result;
 		}
-		$staff_sql = 'SELECT staff_id, user_id, kode_pkm, profesi, status FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE user_id = ? ORDER BY staff_id ASC' . ($lock ? ' FOR UPDATE' : '');
+		$staff_name = $this->db->field_exists('nama', 'puskesmas_staff') ? ', nama' : ', NULL AS nama';
+		$staff_title = $this->db->field_exists('gelar', 'puskesmas_staff') ? ', gelar' : ', NULL AS gelar';
+		$staff_sql = 'SELECT staff_id, user_id, kode_pkm, profesi, status' . $staff_name . $staff_title . ' FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE user_id = ? ORDER BY staff_id ASC' . ($lock ? ' FOR UPDATE' : '');
 		$staff_query = $this->db->query($staff_sql, array((int) $user_id));
 		$staff_rows = $staff_query ? $staff_query->result() : array();
 		$command_query = $this->db->query(
@@ -323,6 +379,7 @@ class Care_team_service
 		);
 		$command = $command_query ? $command_query->row() : null;
 		$result['user_status'] = (string) $user->status;
+		$result['user_name'] = trim((string) $user->nama);
 		$result['puskesmas_code'] = $puskesmas_code;
 		if ($command && (int) $command->userId === (int) $user_id) {
 			if (count($staff_rows) !== 0) {
@@ -345,7 +402,23 @@ class Care_team_service
 		$result['staff_id'] = (int) $staff->staff_id;
 		$result['staff_status'] = (string) $staff->status;
 		$result['staff_profesi'] = (string) $staff->profesi;
+		$result['staff_name'] = trim((string) $staff->nama);
+		$result['staff_gelar'] = trim((string) $staff->gelar);
 		return $result;
+	}
+
+	private function doctorDisplayName(array $identity)
+	{
+		$name = trim((string) ($identity['staff_name'] ?? $identity['user_name'] ?? ''));
+		$title = trim((string) ($identity['staff_gelar'] ?? ''));
+		$title_word = rtrim($title, ". \t\n\r\0\x0B");
+		$title_present = $title_word !== '' && preg_match('/^' . preg_quote($title_word, '/') . '\.?(?:\s|$)/iu', $name) === 1;
+		if ($name === '' || $title === '' || $title_present) {
+			return $name;
+		}
+		return preg_match('/^(?:dr|drg)\.?$/iu', $title) === 1
+			? $title . ' ' . $name
+			: $name . ', ' . $title;
 	}
 
 	private function lockedResponsibleAssignments($request_id)

@@ -43,7 +43,7 @@ if ($request_status === 'Accepted') {
 }
 $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), true)
 	? 'Konsultasi sudah selesai. Riwayat chat hanya dapat dibaca.'
-	: ($is_command_center ? 'Akun Puskesmas hanya dapat memantau percakapan. Pengiriman pesan dan berkas hanya tersedia untuk pasien dan Nakes personal.' : 'Chat ini hanya dapat dibaca.');
+	: 'Chat ini hanya dapat dibaca.';
 $asset_base = base_url('assets/doclinc_ui/chat/');
 $partner_user_id = $current_role === 'dokter'
 	? (isset($request->user_id) ? (int) $request->user_id : 0)

@@ -908,9 +908,16 @@ class Home_m extends MX_Controller
 		if ($this->db->field_exists('updated_at', 'requests')) { $data['updated_at'] = date('Y-m-d H:i:s'); }
 		$this->db->where('request_id', $request_id)->where('user_id', $user_id)->where('request_status', 'Pending')->update('requests', $data);
 		if ($this->db->affected_rows() !== 1) { $this->db->trans_rollback(); return false; }
-		$recipient_id = 0;
-		foreach (array('assigned_nakes_user_id', 'accepted_by_user_id', 'dokter_id') as $field) {
-			if (isset($request->{$field}) && (int) $request->{$field} > 0) { $recipient_id = (int) $request->{$field}; break; }
+		$care_team_enabled = $this->config->item('care_team_workflow_enabled') === true;
+		$recipient_id = $care_team_enabled ? $this->care_team_command_center_user_id($puskesmas_code) : 0;
+		if ($care_team_enabled && $recipient_id < 1) {
+			$this->db->trans_rollback();
+			return false;
+		}
+		if (!$care_team_enabled) {
+			foreach (array('assigned_nakes_user_id', 'accepted_by_user_id', 'dokter_id') as $field) {
+				if (isset($request->{$field}) && (int) $request->{$field} > 0) { $recipient_id = (int) $request->{$field}; break; }
+			}
 		}
 		$notifications = array();
 		$audiences = array('user:' . $user_id, 'puskesmas:' . $puskesmas_code . ':ops');
@@ -931,6 +938,33 @@ class Home_m extends MX_Controller
 			return false;
 		}
 		return true;
+	}
+
+	private function care_team_command_center_user_id($puskesmas_code)
+	{
+		if (!$this->db->table_exists('users') || !$this->db->table_exists('m_puskesmas')
+			|| !$this->db->table_exists('puskesmas_staff') || !$this->db->field_exists('remark', 'users')) {
+			return 0;
+		}
+		$facility = $this->db->query(
+			'SELECT kode_pkm, status FROM ' . $this->db->dbprefix('m_puskesmas') . ' WHERE kode_pkm = ? FOR UPDATE',
+			array((string) $puskesmas_code)
+		)->row();
+		if (!$facility || (string) $facility->status !== 'aktif') {
+			return 0;
+		}
+		$user = $this->db->query(
+			'SELECT userId FROM ' . $this->db->dbprefix('users') . ' WHERE role = ? AND status = ? AND TRIM(remark) = ? ORDER BY userId ASC LIMIT 1 FOR UPDATE',
+			array('dokter', 'aktif', (string) $puskesmas_code)
+		)->row();
+		if (!$user) {
+			return 0;
+		}
+		$staff = $this->db->query(
+			'SELECT staff_id FROM ' . $this->db->dbprefix('puskesmas_staff') . ' WHERE user_id = ? FOR UPDATE',
+			array((int) $user->userId)
+		)->result();
+		return count($staff) === 0 ? (int) $user->userId : 0;
 	}
 
 	public function get_visit_location($request_id, $user_id)

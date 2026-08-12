@@ -28,7 +28,21 @@ class Care_team_policy
 		if (!$this->personalEligible($identity, $puskesmas_code)) {
 			return false;
 		}
-		$profession = strtolower(trim((string) ($identity['staff_profesi'] ?? '')));
+		return $this->doctorProfession($identity['staff_profesi'] ?? '');
+	}
+
+	public function visitPerformerEligible(array $identity, $puskesmas_code)
+	{
+		if (!$this->personalEligible($identity, $puskesmas_code)) {
+			return false;
+		}
+		$profession = trim((string) ($identity['staff_profesi'] ?? ''));
+		return $profession !== '' && !$this->doctorProfession($profession);
+	}
+
+	public function doctorProfession($profession)
+	{
+		$profession = strtolower(trim((string) $profession));
 		return $profession !== '' && preg_match('/(^|\s)dokter($|\s)/u', $profession) === 1;
 	}
 

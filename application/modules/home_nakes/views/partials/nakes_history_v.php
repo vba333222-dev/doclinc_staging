@@ -269,7 +269,7 @@ $history_event_time = static function ($event) {
 															<select name="staff_id" class="form-select form-select-sm" required>
 														<option value=""><?= !empty($care_team_workflow_enabled) ? 'Pilih dokter' : 'Pilih staf'; ?></option>
 														<?php foreach ($puskesmas_staff_options as $staff_option) : ?>
-															<?php if (!empty($care_team_workflow_enabled) && preg_match('/(^|\s)dokter($|\s)/iu', trim((string) ($staff_option->profesi ?? ''))) !== 1) { continue; } ?>
+															<?php if (!empty($care_team_workflow_enabled) && empty($staff_option->responsible_doctor_eligible)) { continue; } ?>
 													<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= !empty($care_team_workflow_enabled) ? ((int) ($x->responsible_doctor_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : '') : ($pic_assignment && (int) $pic_assignment->staff_id === (int) $staff_option->staff_id ? 'selected' : ''); ?> <?= ($staff_option->personal_account_state ?? '') === 'invalid' ? 'disabled' : ''; ?>>
 																			<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Status belum tersedia' : 'Belum ada akun personal'); ?>
 																	</option>
@@ -326,7 +326,7 @@ $history_event_time = static function ($event) {
 																<select name="staff_id" class="form-select form-select-sm" required>
 																	<option value="">Pilih Nakes</option>
 																	<?php foreach ($puskesmas_staff_options as $staff_option) : ?>
-																		<?php if (($staff_option->personal_account_state ?? '') !== 'linked' || empty($staff_option->user_id)) { continue; } ?>
+																<?php if (empty($staff_option->visit_performer_eligible)) { continue; } ?>
 																						<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= (int) ($x->visit_performer_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : ''; ?>><?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?><?= isset($staff_option->is_online) ? ' · ' . ((int) $staff_option->is_online === 1 ? 'Online' : 'Offline') : ''; ?></option>
 																	<?php endforeach; ?>
 																</select>
@@ -366,9 +366,9 @@ $history_event_time = static function ($event) {
 												<i class="fas fa-notes-medical me-2"></i> <?= $care_team_enabled && !$history_is_responsible ? 'Lihat konsultasi' : 'Lanjutkan penanganan'; ?>
 											</a><?php endif; ?>
 											<div class="dl-history-secondary-actions">
-												<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
+												<?php if (!$nakes_is_command_center) : ?><a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
 													<i class="fas fa-comments me-2"></i> Buka chat
-												</a>
+												</a><?php endif; ?>
 												<?php if ($show_visit_tools) : ?><button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>" data-monitor-only="<?= $visit_monitor_only ? '1' : '0'; ?>">
 													<i class="fas fa-map-marker-alt me-2"></i> <?= $visit_monitor_only ? 'Pantau rute Nakes' : 'Lihat lokasi'; ?>
 												</button><?php endif; ?>
@@ -491,9 +491,9 @@ $history_event_time = static function ($event) {
 											<?php endif; ?>
 										</div>
 										<div class="card-footer dl-history-actions dl-history-actions-inline">
-											<a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-secondary btn-sm rounded-pill">
+											<?php if (!$nakes_is_command_center) : ?><a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-secondary btn-sm rounded-pill">
 												<i class="fas fa-comments me-1"></i> Lihat chat
-											</a>
+											</a><?php endif; ?>
 										</div>
 									</div>
 								<?php } ?>

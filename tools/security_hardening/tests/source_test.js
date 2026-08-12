@@ -57,6 +57,7 @@ const chat = source('application/modules/chat/controllers/Chat.php');
 const chatModel = source('application/modules/chat/models/Chat_m.php');
 const chatThread = source('application/modules/chat/views/thread_v.php');
 const requestAuthz = source('application/helpers/request_authz_helper.php');
+const nakesHistory = source('application/modules/home_nakes/views/partials/nakes_history_v.php');
 const chatStorage = source('application/libraries/Chat_attachment_storage.php');
 const routes = source('application/config/routes.php');
 const legacyChatUpload = source('application/modules/chat/controllers/upload.php');
@@ -67,6 +68,7 @@ const homeLegacyNotification = source('application/modules/home/controllers/Noti
 const consultationLegacyNotification = source('application/modules/konsultasi/controllers/Notification.php');
 const consultation = source('application/modules/konsultasi/controllers/Konsultasi.php');
 const nakesConsultation = source('application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php');
+const consultationView = source('application/modules/konsultasi_nakes/views/konsultasi_nakes_v.php');
 const ciSession = source('system/libraries/Session/Session.php');
 const ciFileSession = source('system/libraries/Session/drivers/Session_files_driver.php');
 
@@ -132,10 +134,18 @@ expect(signupView.includes('minlength="8" maxlength="72"') && signupView.include
 expect(passwordPolicy.includes("preg_match('/[A-Z]/'") && passwordPolicy.includes("preg_match('/[a-z]/'") && passwordPolicy.includes("preg_match('/[0-9]/'") && passwordPolicy.includes("preg_match('/[^A-Za-z0-9\\s]/'"), 'password_complexity_is_server_enforced');
 expect(methodBody(chat, 'messages').includes("method(TRUE) !== 'GET'"), 'chat_messages_get_only');
 expect(methodBody(chat, 'send').includes("method(TRUE) !== 'POST'"), 'chat_send_post_only');
-expect(requestAuthz.includes("account_type'] ?? '') !== 'personal'")
+expect(requestAuthz.includes("identity['account_type'] !== 'personal'")
+  && methodBody(chat, 'index').includes('doclinc_chat_actor_is_command_center()')
+  && methodBody(chat, 'messages').includes('doclinc_chat_actor_is_command_center($user_id)')
   && methodBody(chat, 'send').includes('chat_read_only')
   && chat.includes('private function authorize_upload_request') && (chat.match(/chat_read_only/g) || []).length >= 2
-  && chatThread.includes('Akun Puskesmas hanya dapat memantau percakapan'), 'command_center_chat_is_server_and_ui_read_only');
+  && methodBody(chat, 'mark_read').includes('doclinc_chat_actor_is_command_center($user_id)')
+  && methodBody(chat, 'attachment').includes('doclinc_chat_actor_is_command_center($user_id)')
+  && !chatThread.includes('Akun Puskesmas hanya dapat memantau percakapan')
+  && (nakesHistory.match(/if \(!\$nakes_is_command_center\)/g) || []).length >= 2, 'command_center_chat_is_denied_across_ui_and_endpoints');
+expect(nakesConsultation.includes("['can_open_patient_chat']")
+  && nakesConsultation.includes("account_type'] ?? '') === 'personal'")
+  && consultationView.includes('if (!empty($can_open_patient_chat))'), 'consultation_monitoring_hides_command_center_chat_cta');
 expect(methodBody(chat, 'mark_read').includes("method(TRUE) !== 'POST'"), 'chat_mark_read_post_only');
 expect(methodBody(chat, 'foto').includes('authorize_upload_request()'), 'chat_upload_uses_post_authorization_gate');
 expect(methodBody(chat, 'attachment').includes("method(TRUE) !== 'GET'") && methodBody(chat, 'attachment').includes('get_attachment_for_user'), 'chat_attachment_download_is_get_and_authorized');

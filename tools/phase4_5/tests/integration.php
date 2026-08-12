@@ -172,11 +172,13 @@ try {
 	$bootstrap = new mysqli($host, $user, $password, $database, $port);
 	$bootstrap->set_charset('utf8mb4');
 	$ddl = array(
-		"CREATE TABLE users(userId int(11) NOT NULL AUTO_INCREMENT,password varchar(255) NOT NULL,role enum('admin','dokter','warga','') NOT NULL,status enum('aktif','nonaktif') NULL DEFAULT 'aktif',remark varchar(100) NULL,must_change_password tinyint(1) NOT NULL DEFAULT 0,password_changed_at datetime NULL,updated_at datetime NULL,PRIMARY KEY(userId)) ENGINE=InnoDB",
+		"CREATE TABLE users(userId int(11) NOT NULL AUTO_INCREMENT,nama varchar(100) NULL,password varchar(255) NOT NULL,role enum('admin','dokter','warga','') NOT NULL,status enum('aktif','nonaktif') NULL DEFAULT 'aktif',remark varchar(100) NULL,must_change_password tinyint(1) NOT NULL DEFAULT 0,password_changed_at datetime NULL,updated_at datetime NULL,PRIMARY KEY(userId)) ENGINE=InnoDB",
 		"CREATE TABLE m_puskesmas(kode_pkm varchar(100) NOT NULL,status enum('aktif','nonaktif') NOT NULL DEFAULT 'aktif',PRIMARY KEY(kode_pkm)) ENGINE=InnoDB",
-		"CREATE TABLE puskesmas_staff(staff_id int(10) unsigned NOT NULL AUTO_INCREMENT,user_id int(11) NULL,kode_pkm varchar(100) NOT NULL,profesi varchar(100) NULL,status enum('aktif','nonaktif') NOT NULL DEFAULT 'aktif',PRIMARY KEY(staff_id),KEY idx_staff_user(user_id)) ENGINE=InnoDB",
+		"CREATE TABLE puskesmas_staff(staff_id int(10) unsigned NOT NULL AUTO_INCREMENT,user_id int(11) NULL,kode_pkm varchar(100) NOT NULL,nama varchar(150) NOT NULL,gelar varchar(100) NULL,profesi varchar(100) NULL,status enum('aktif','nonaktif') NOT NULL DEFAULT 'aktif',PRIMARY KEY(staff_id),KEY idx_staff_user(user_id)) ENGINE=InnoDB",
 		"CREATE TABLE requests(request_id int(11) NOT NULL AUTO_INCREMENT,request_status enum('Pending','Accepted','Completed','Cancelled') NULL DEFAULT 'Pending',assigned_puskesmas_code varchar(100) NULL,accepted_by_user_id int(11) NULL,assigned_nakes_user_id int(11) NULL,assigned_nakes_at datetime NULL,assigned_nakes_by_user_id int(11) NULL,consultation_mode varchar(30) NULL,PRIMARY KEY(request_id)) ENGINE=InnoDB",
 		"CREATE TABLE request_staff_assignments(assignment_id int(10) unsigned NOT NULL AUTO_INCREMENT,request_id int(11) NOT NULL,staff_id int(10) unsigned NOT NULL,kode_pkm varchar(100) NOT NULL,assigned_by_user_id int(11) NOT NULL,status enum('aktif','diganti','dibatalkan') NOT NULL DEFAULT 'aktif',note text NULL,assigned_at datetime NOT NULL,ended_at datetime NULL,created_at datetime NOT NULL,updated_at datetime NULL,PRIMARY KEY(assignment_id),KEY idx_request_status(request_id,status)) ENGINE=InnoDB",
+		"CREATE TABLE notifications(notification_id int(11) NOT NULL AUTO_INCREMENT,recipient_user_id int(11) NULL,recipient_role varchar(32) NULL,recipient_puskesmas_code varchar(32) NULL,actor_user_id int(11) NULL,event_type varchar(64) NOT NULL,entity_type varchar(64) NOT NULL,entity_id varchar(64) NOT NULL,title varchar(160) NOT NULL,message text NULL,is_read tinyint(1) NOT NULL DEFAULT 0,read_at datetime NULL,created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(notification_id),KEY idx_notifications_user_read_created(recipient_user_id,is_read,created_at),KEY idx_notifications_puskesmas_read_created(recipient_puskesmas_code,is_read,created_at),KEY idx_notifications_event_entity(event_type,entity_type,entity_id),KEY idx_notifications_created(created_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+		"CREATE TABLE realtime_outbox(outbox_id bigint unsigned NOT NULL AUTO_INCREMENT,event_type varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,aggregate_type varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,aggregate_id varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,audience_type varchar(20) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,audience_key varchar(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,payload_json longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,event_version bigint unsigned NOT NULL DEFAULT 1,idempotency_key char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,state varchar(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'pending',attempt_count smallint unsigned NOT NULL DEFAULT 0,available_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),claimed_at datetime(6) NULL,published_at datetime(6) NULL,last_error_code varchar(64) CHARACTER SET ascii COLLATE ascii_bin NULL,created_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),updated_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),PRIMARY KEY(outbox_id),UNIQUE KEY uq_realtime_outbox_idempotency(idempotency_key),KEY idx_realtime_outbox_dispatch(state,available_at,outbox_id),KEY idx_realtime_outbox_audience(audience_type,audience_key,outbox_id),KEY idx_realtime_outbox_aggregate(aggregate_type,aggregate_id,outbox_id),CONSTRAINT chk_realtime_outbox_payload_json CHECK(json_valid(payload_json)),CONSTRAINT chk_realtime_outbox_audience CHECK(audience_type in ('user','puskesmas','request','admin')),CONSTRAINT chk_realtime_outbox_state CHECK(state in ('pending','claimed','published','failed'))) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 	);
 	foreach ($ddl as $sql) { $bootstrap->query($sql); }
 	$bootstrap->close();
@@ -204,9 +206,9 @@ try {
 	), true);
 
 	$db->query("INSERT INTO m_puskesmas VALUES('PKM01','aktif'),('PKM02','aktif')");
-	$db->query("INSERT INTO users(userId,password,role,status,remark) VALUES(10,'hash-10-a','dokter','aktif','PKM01'),(20,'hash-20-a','dokter','aktif','PKM02'),(101,'hash-101-a','warga','aktif',NULL),(201,'hash-201-a','dokter','aktif','PKM01'),(202,'hash-202-a','dokter','aktif','PKM01'),(203,'hash-203-a','dokter','nonaktif','PKM01'),(204,'hash-204-a','dokter','aktif','PKM01'),(301,'hash-301-a','dokter','aktif','PKM02')");
-	$db->query("INSERT INTO puskesmas_staff(staff_id,user_id,kode_pkm,profesi,status) VALUES(31,201,'PKM01','Dokter Umum','aktif'),(32,202,'PKM01','Perawat','aktif'),(33,301,'PKM02','Dokter','aktif'),(34,203,'PKM01','Bidan','aktif'),(35,204,'PKM01','Dokter','aktif'),(36,204,'PKM01','Dokter','aktif')");
-	$db->query("INSERT INTO requests(request_id,request_status,assigned_puskesmas_code,accepted_by_user_id) VALUES(100,'Accepted','PKM01',10),(101,'Accepted','PKM01',10),(102,'Accepted','PKM01',10)");
+	$db->query("INSERT INTO users(userId,nama,password,role,status,remark) VALUES(10,'Pusat Layanan','hash-10-a','dokter','aktif','PKM01'),(20,'Pusat Layanan Dua','hash-20-a','dokter','aktif','PKM02'),(101,'Warga Uji','hash-101-a','warga','aktif',NULL),(201,'Ayu Pratama','hash-201-a','dokter','aktif','PKM01'),(202,'Rina Sehat','hash-202-a','dokter','aktif','PKM01'),(203,'Dina Jaga','hash-203-a','dokter','nonaktif','PKM01'),(204,'Dokter Ganda','hash-204-a','dokter','aktif','PKM01'),(205,'Budi Utama','hash-205-a','dokter','aktif','PKM01'),(206,'Sari Wangi','hash-206-a','dokter','aktif','PKM01'),(301,'Citra Lain','hash-301-a','dokter','aktif','PKM02')");
+	$db->query("INSERT INTO puskesmas_staff(staff_id,user_id,kode_pkm,nama,gelar,profesi,status) VALUES(31,201,'PKM01','Ayu Pratama','dr.','Dokter Umum','aktif'),(32,202,'PKM01','Rina Sehat',NULL,'Perawat','aktif'),(33,301,'PKM02','Citra Lain','dr.','Dokter','aktif'),(34,203,'PKM01','Dina Jaga',NULL,'Bidan','aktif'),(35,204,'PKM01','Dokter Ganda','dr.','Dokter','aktif'),(36,204,'PKM01','Dokter Ganda','dr.','Dokter','aktif'),(37,205,'PKM01','Budi Utama','dr.','Dokter Umum','aktif'),(38,206,'PKM01','Sari Wangi',NULL,'Bidan','aktif')");
+	$db->query("INSERT INTO requests(request_id,request_status,assigned_puskesmas_code,accepted_by_user_id) VALUES(100,'Accepted','PKM01',10),(101,'Accepted','PKM01',10),(102,'Accepted','PKM01',10),(103,'Accepted','PKM01',10),(104,'Accepted','PKM01',10),(105,'Accepted','PKM01',10),(106,'Accepted','PKM01',10)");
 
 	$binding = new Session_binding_service($db);
 	phase45_db_expect($binding->schemaReady(), 'session_binding_schema_ready');
@@ -349,7 +351,7 @@ try {
 	$presence_actor['session_binding_valid'] = true;
 	phase45_db_expect($presence->heartbeatAllowed($presence_actor), 'valid_session_heartbeat_allowed');
 
-	$care = new Care_team_service($db);
+	$care = new Care_team_service($db, array('enabled' => true));
 	phase45_db_expect($care->schemaReady(), 'care_team_schema_ready');
 	$db->query("INSERT INTO request_staff_assignments(request_id,staff_id,kode_pkm,assigned_by_user_id,status,note,assigned_at,created_at) VALUES(100,31,'PKM01',10,'aktif',NULL,NOW(),NOW())");
 	$command_token = $binding->issue(10);
@@ -362,11 +364,17 @@ try {
 	$result = $care->assignResponsibleDoctor(100, 31, 10);
 	phase45_db_expect(!empty($result['ok']), 'command_center_assigns_responsible_doctor');
 	phase45_db_expect((int) $db->where('request_id', 100)->count_all_results('request_responsible_doctor_assignments') === 1, 'responsible_assignment_history_created');
+	phase45_db_expect((int) $db->where('entity_type', 'request')->where('entity_id', '100')->where('event_type', 'responsible_doctor_assigned')->where('recipient_user_id', 201)->count_all_results('notifications') === 1, 'responsible_assignment_creates_one_notification');
 	$result = $care->assignResponsibleDoctor(100, 31, 10);
 	phase45_db_expect(!empty($result['ok']) && (int) $db->where('request_id', 100)->count_all_results('request_responsible_doctor_assignments') === 1, 'responsible_assignment_idempotent');
+	phase45_db_expect((int) $db->where('entity_type', 'request')->where('entity_id', '100')->where('event_type', 'responsible_doctor_assigned')->count_all_results('notifications') === 1, 'responsible_assignment_repeat_creates_no_notification');
+	phase45_db_expect(!empty($care->assignResponsibleDoctor(100, 37, 10)['ok'])
+		&& (int) $db->where('entity_type', 'request')->where('entity_id', '100')->where('event_type', 'responsible_doctor_assigned')->where('recipient_user_id', 205)->count_all_results('notifications') === 1, 'responsible_reassignment_notifies_new_doctor_once');
+	phase45_db_expect(!empty($care->assignResponsibleDoctor(100, 31, 10)['ok']), 'responsible_reassignment_fixture_restored');
 	phase45_db_expect(empty($care->assignResponsibleDoctor(100, 33, 10)['ok']), 'cross_facility_responsible_doctor_denied');
 	phase45_db_expect(empty($care->assignResponsibleDoctor(100, 35, 10)['ok']), 'duplicate_staff_link_responsible_doctor_denied');
 	phase45_db_expect(empty($care->assignResponsibleDoctor(100, 31, 201)['ok']), 'personal_account_cannot_coordinate_responsible_assignment');
+	phase45_db_expect((int) $db->where('entity_type', 'request')->where('entity_id', '100')->where('event_type', 'responsible_doctor_assigned')->count_all_results('notifications') === 3, 'failed_responsible_assignments_create_no_notification');
 	phase45_db_expect(empty($care->chooseMode(101, 'visit', 201)['ok']), 'service_mode_requires_responsible_doctor');
 	phase45_db_expect(empty($care->chooseMode(100, 'visit', 101)['ok']), 'patient_cannot_choose_service_mode');
 	phase45_db_expect(!empty($care->chooseMode(100, 'non_visit', 201)['ok']), 'responsible_doctor_selects_non_visit');
@@ -376,12 +384,28 @@ try {
 	phase45_db_expect(empty($care->assignVisitPerformer(100, 33, 201)['ok']), 'cross_facility_visit_performer_denied');
 	phase45_db_expect(empty($care->assignVisitPerformer(100, 34, 201)['ok']), 'inactive_visit_performer_denied');
 	phase45_db_expect(empty($care->assignVisitPerformer(100, 35, 201)['ok']), 'ambiguous_visit_performer_denied');
+	phase45_db_expect(empty($care->assignVisitPerformer(100, 31, 201)['ok']), 'responsible_doctor_cannot_be_visit_performer');
+	phase45_db_expect(empty($care->assignVisitPerformer(100, 37, 201)['ok']), 'same_facility_other_doctor_cannot_be_visit_performer');
 	phase45_db_expect(!empty($care->assignVisitPerformer(100, 32, 201)['ok']), 'eligible_visit_performer_assigned');
+	phase45_db_expect((int) $db->where('entity_type', 'request')->where('entity_id', '100')->where('event_type', 'visit_performer_assigned')->where('recipient_user_id', 202)->count_all_results('notifications') === 1, 'visit_assignment_creates_one_notification');
+	$visit_notification = $db->where('entity_type', 'request')->where('entity_id', '100')->where('event_type', 'visit_performer_assigned')->where('recipient_user_id', 202)->get('notifications')->row();
+	phase45_db_expect($visit_notification && (int) $visit_notification->actor_user_id === 201
+		&& (string) $visit_notification->title === 'Tugas kunjungan baru'
+		&& (string) $visit_notification->message === 'Ditugaskan oleh dr. Ayu Pratama.', 'visit_notification_uses_server_resolved_responsible_doctor');
+	$visit_outbox = $db->where('event_type', 'notification.created')->where('aggregate_type', 'notification')->order_by('outbox_id', 'DESC')->limit(1)->get('realtime_outbox')->row();
+	phase45_db_expect($visit_outbox && strpos((string) $visit_outbox->payload_json, 'Ayu Pratama') === false
+		&& strpos((string) $visit_outbox->payload_json, 'Warga Uji') === false, 'visit_notification_outbox_contains_no_names');
+	phase45_db_expect(!empty($care->assignVisitPerformer(100, 32, 201)['ok'])
+		&& (int) $db->where('entity_type', 'request')->where('entity_id', '100')->where('event_type', 'visit_performer_assigned')->count_all_results('notifications') === 1, 'visit_assignment_repeat_creates_no_notification');
 	$request = $db->where('request_id', 100)->get('requests')->row();
 	phase45_db_expect((int) $request->responsible_doctor_user_id === 201 && (int) $request->visit_performer_user_id === 202, 'responsible_doctor_and_performer_are_distinct');
 	phase45_db_expect(!empty($care->requestContext(100, 201)['can_assess']) && empty($care->requestContext(100, 201)['can_visit']), 'responsible_doctor_has_assessment_authority');
 	phase45_db_expect(!empty($care->requestContext(100, 202)['can_visit']) && empty($care->requestContext(100, 202)['can_assess']), 'visit_performer_has_visit_authority');
-	phase45_db_expect(!empty($care->assignVisitPerformer(100, 31, 201)['ok']), 'visit_performer_reassignment_allowed');
+	$db->where('staff_id', 32)->update('puskesmas_staff', array('profesi' => 'Dokter'));
+	phase45_db_expect(empty($care->requestContext(100, 202)['can_visit']), 'ineligible_existing_performer_loses_visit_authority');
+	$db->where('staff_id', 32)->update('puskesmas_staff', array('profesi' => 'Perawat'));
+	phase45_db_expect(!empty($care->assignVisitPerformer(100, 38, 201)['ok']), 'visit_performer_reassignment_allowed');
+	phase45_db_expect((int) $db->where('entity_type', 'request')->where('entity_id', '100')->where('event_type', 'visit_performer_assigned')->where('recipient_user_id', 206)->count_all_results('notifications') === 1, 'visit_reassignment_notifies_new_performer_once');
 	phase45_db_expect((int) $db->where('request_id', 100)->where('status', 'aktif')->count_all_results('request_visit_performer_assignments') === 1
 		&& (int) $db->where('request_id', 100)->where('status', 'diganti')->count_all_results('request_visit_performer_assignments') === 1, 'visit_reassignment_preserves_history');
 	$request = $db->where('request_id', 100)->get('requests')->row();
@@ -393,14 +417,55 @@ try {
 
 	$db->query("CREATE TRIGGER fail_responsible_update BEFORE UPDATE ON requests FOR EACH ROW BEGIN IF NEW.request_id=101 AND NEW.responsible_doctor_user_id IS NOT NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic_failure'; END IF; END");
 	$result = $care->assignResponsibleDoctor(101, 31, 10);
-	phase45_db_expect(empty($result['ok']) && (int) $db->where('request_id', 101)->count_all_results('request_responsible_doctor_assignments') === 0, 'responsible_second_write_failure_rolls_back_history');
+	phase45_db_expect(empty($result['ok'])
+		&& (int) $db->where('request_id', 101)->count_all_results('request_responsible_doctor_assignments') === 0
+		&& (int) $db->where('entity_type', 'request')->where('entity_id', '101')->count_all_results('notifications') === 0, 'responsible_second_write_failure_rolls_back_history_and_notification');
 	$db->query('DROP TRIGGER fail_responsible_update');
 
 	phase45_db_expect(!empty($care->assignResponsibleDoctor(102, 31, 10)['ok']) && !empty($care->chooseMode(102, 'visit', 201)['ok']), 'performer_rollback_fixture_ready');
 	$db->query("CREATE TRIGGER fail_performer_update BEFORE UPDATE ON requests FOR EACH ROW BEGIN IF NEW.request_id=102 AND NEW.visit_performer_user_id IS NOT NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic_failure'; END IF; END");
 	$result = $care->assignVisitPerformer(102, 32, 201);
-	phase45_db_expect(empty($result['ok']) && (int) $db->where('request_id', 102)->count_all_results('request_visit_performer_assignments') === 0, 'performer_second_write_failure_rolls_back_history');
+	phase45_db_expect(empty($result['ok'])
+		&& (int) $db->where('request_id', 102)->count_all_results('request_visit_performer_assignments') === 0
+		&& (int) $db->where('entity_type', 'request')->where('entity_id', '102')->where('event_type', 'visit_performer_assigned')->count_all_results('notifications') === 0, 'performer_second_write_failure_rolls_back_history_and_notification');
 	$db->query('DROP TRIGGER fail_performer_update');
+
+	$responsible_notification_count = (int) $db->count_all_results('notifications');
+	$responsible_outbox_count = (int) $db->count_all_results('realtime_outbox');
+	$db->query("CREATE TRIGGER fail_responsible_notification BEFORE INSERT ON realtime_outbox FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic_outbox_failure'");
+	$result = $care->assignResponsibleDoctor(103, 31, 10);
+	phase45_db_expect(empty($result['ok'])
+		&& (int) $db->where('request_id', 103)->count_all_results('request_responsible_doctor_assignments') === 0
+		&& $db->where('request_id', 103)->get('requests')->row()->responsible_doctor_user_id === null
+		&& (int) $db->count_all_results('notifications') === $responsible_notification_count
+		&& (int) $db->count_all_results('realtime_outbox') === $responsible_outbox_count, 'responsible_notification_failure_rolls_back_assignment');
+	$db->query('DROP TRIGGER fail_responsible_notification');
+	$db->query("CREATE TRIGGER fail_notification_insert BEFORE INSERT ON notifications FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic_notification_failure'");
+	$result = $care->assignResponsibleDoctor(106, 31, 10);
+	phase45_db_expect(empty($result['ok'])
+		&& (int) $db->where('request_id', 106)->count_all_results('request_responsible_doctor_assignments') === 0
+		&& $db->where('request_id', 106)->get('requests')->row()->responsible_doctor_user_id === null, 'notification_insert_failure_rolls_back_assignment');
+	$db->query('DROP TRIGGER fail_notification_insert');
+
+	phase45_db_expect(!empty($care->assignResponsibleDoctor(104, 31, 10)['ok'])
+		&& !empty($care->chooseMode(104, 'visit', 201)['ok']), 'visit_notification_rollback_fixture_ready');
+	$visit_notification_count = (int) $db->count_all_results('notifications');
+	$visit_outbox_count = (int) $db->count_all_results('realtime_outbox');
+	$db->query("CREATE TRIGGER fail_visit_notification BEFORE INSERT ON realtime_outbox FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic_outbox_failure'");
+	$result = $care->assignVisitPerformer(104, 32, 201);
+	phase45_db_expect(empty($result['ok'])
+		&& (int) $db->where('request_id', 104)->count_all_results('request_visit_performer_assignments') === 0
+		&& $db->where('request_id', 104)->get('requests')->row()->visit_performer_user_id === null
+		&& (int) $db->count_all_results('notifications') === $visit_notification_count
+		&& (int) $db->count_all_results('realtime_outbox') === $visit_outbox_count, 'visit_notification_failure_rolls_back_assignment');
+	$db->query('DROP TRIGGER fail_visit_notification');
+	phase45_db_expect((int) $db->count_all_results('notifications') === (int) $db->count_all_results('realtime_outbox'), 'assignment_notifications_and_outbox_rows_match');
+	$notification_count = (int) $db->count_all_results('notifications');
+	$outbox_count = (int) $db->count_all_results('realtime_outbox');
+	$persistent_only_care = new Care_team_service($db, array('enabled' => false));
+	phase45_db_expect(!empty($persistent_only_care->assignResponsibleDoctor(105, 31, 10)['ok'])
+		&& (int) $db->count_all_results('notifications') === $notification_count + 1
+		&& (int) $db->count_all_results('realtime_outbox') === $outbox_count, 'realtime_disabled_keeps_persistent_assignment_notification');
 } catch (Throwable $exception) {
 	$failed++;
 	fwrite(STDERR, "FAIL integration_runtime\nSAFE_ERROR_CODE=phase45_integration_failed\n");
