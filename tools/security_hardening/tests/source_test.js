@@ -67,8 +67,15 @@ const homeLegacyNotification = source('application/modules/home/controllers/Noti
 const consultationLegacyNotification = source('application/modules/konsultasi/controllers/Notification.php');
 const consultation = source('application/modules/konsultasi/controllers/Konsultasi.php');
 const nakesConsultation = source('application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php');
+const ciSession = source('system/libraries/Session/Session.php');
+const ciFileSession = source('system/libraries/Session/drivers/Session_files_driver.php');
 
-expect(config.includes("$config['sess_regenerate_destroy'] = TRUE;"), 'session_rotation_destroys_old_identifier');
+expect(config.includes("$config['sess_time_to_update'] = 300;")
+  && config.includes("$config['sess_regenerate_destroy'] = FALSE;"), 'automatic_session_rotation_preserves_parallel_request_compatibility');
+expect(ciSession.includes("$this->sess_regenerate((bool) config_item('sess_regenerate_destroy'))")
+  && ciSession.includes('session_regenerate_id($destroy)')
+  && ciFileSession.includes("unlink($this->_file_path.$session_id)"), 'ci3_file_session_regeneration_contract_verified');
+expect(login.includes('sess_regenerate(TRUE)') && methodBody(login, 'logout').includes('sess_destroy()'), 'login_fixation_rotation_and_logout_destruction_preserved');
 expect(config.includes("$config['cookie_httponly'] = TRUE;"), 'session_cookie_httponly');
 expect(config.includes("getenv('DOCLINC_COOKIE_SECURE')") && config.includes("parse_url((string) $config['base_url'], PHP_URL_SCHEME)"), 'session_cookie_secure_https_default');
 expect(config.includes("$config['csrf_protection'] = TRUE;"), 'csrf_global_protection_enabled');
