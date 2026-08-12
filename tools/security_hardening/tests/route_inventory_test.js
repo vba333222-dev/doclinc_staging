@@ -84,9 +84,9 @@ const inventory = {
   'application/modules/konsultasi/controllers/Notification.php': {
     index: 'TOMBSTONE', test: 'TOMBSTONE', send: 'TOMBSTONE', service_worker: 'TOMBSTONE',
   },
-  'application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php': {
-    index: 'READ', konsultasi: 'READ', get_terapi: 'GET', chat: 'TOMBSTONE', save_konsultasi_nakes: 'POST', getICD_json: 'TOMBSTONE',
-  },
+	'application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php': {
+		index: 'READ', konsultasi: 'READ', get_terapi: 'GET', chat: 'TOMBSTONE', save_vital_signs: 'POST', save_konsultasi_nakes: 'POST', getICD_json: 'TOMBSTONE',
+	},
   'application/modules/notifikasi/controllers/Notifikasi.php': {
     index: 'READ_DELEGATE', list_json: 'GET', snapshot: 'GET', mark_read: 'POST',
   },

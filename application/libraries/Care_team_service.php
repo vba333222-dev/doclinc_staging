@@ -148,6 +148,7 @@ class Care_team_service
 				return $this->failure('Anda tidak memiliki akses.');
 			}
 			$now = date('Y-m-d H:i:s');
+			$changed = (string) ($request->consultation_mode ?? '') !== $mode;
 			if ($mode === Care_team_policy::NON_VISIT) {
 				$active = $this->lockedVisitAssignments($request_id);
 				if ($active === false || count($active) > 1) {
@@ -169,7 +170,10 @@ class Care_team_service
 			if ($this->db->trans_status() === false) {
 				return $this->failure('Jenis layanan belum dapat diperbarui.');
 			}
-			return $this->success($mode === Care_team_policy::VISIT ? 'Kunjungan dipilih.' : 'Tanpa kunjungan dipilih.');
+			return $this->success(
+				$mode === Care_team_policy::VISIT ? 'Kunjungan dipilih.' : 'Tanpa kunjungan dipilih.',
+				array('changed' => $changed, 'consultation_mode' => $mode)
+			);
 		});
 	}
 
@@ -439,9 +443,9 @@ class Care_team_service
 		return $query ? $query->result() : false;
 	}
 
-	private function success($message)
+	private function success($message, array $data = array())
 	{
-		return array('ok' => true, 'status' => 'success', 'message' => $message);
+		return array_merge(array('ok' => true, 'status' => 'success', 'message' => $message), $data);
 	}
 
 	private function failure($message)

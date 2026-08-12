@@ -189,6 +189,14 @@ class Konsultasi_nakes_m extends MX_Controller
 			$this->db->trans_rollback();
 			return false;
 		}
+		if ($this->config->item('care_team_workflow_enabled') === true
+			&& (!$this->db->table_exists('medicalrecords')
+				|| !$this->db->field_exists('responsible_doctor_user_id', 'medicalrecords')
+				|| !$this->db->field_exists('recorded_by_user_id', 'medicalrecords'))) {
+			$this->last_failure_code = 'clinical_attribution_schema_unavailable';
+			$this->db->trans_rollback();
+			return false;
+		}
 		if ($write_anamnesis
 			&& (!$this->db->table_exists('medicalrecords')
 				|| !$this->db->field_exists('record_id', 'medicalrecords')
@@ -218,7 +226,6 @@ class Konsultasi_nakes_m extends MX_Controller
 			$diagnoses = $normalized_diagnoses['diagnoses'];
 			$diagnosa = $diagnoses[0];
 		}
-
 		$consultation_mode = $this->consultation_mode_from_kriteria($kriteria);
 		if ($this->config->item('care_team_workflow_enabled') === true) {
 			$stored_mode = isset($request->consultation_mode) ? (string) $request->consultation_mode : '';
@@ -232,6 +239,22 @@ class Konsultasi_nakes_m extends MX_Controller
 					->where('status', 'aktif')->count_all_results('request_visit_performer_assignments');
 				if ($performer_count !== 1 || empty($request->visit_performer_user_id)) {
 					$this->last_failure_code = 'visit_performer_required';
+					$this->db->trans_rollback();
+					return false;
+				}
+				require_once APPPATH . 'libraries/Visit_vital_signs_service.php';
+				$vital_signs = new Visit_vital_signs_service($this->db);
+				if (!$vital_signs->schemaReady()) {
+					$this->last_failure_code = 'vital_signs_schema_unavailable';
+					$this->db->trans_rollback();
+					return false;
+				}
+				$visit_status = function_exists('doclinc_normalize_visit_status')
+					? doclinc_normalize_visit_status($request->visit_status ?? '')
+					: strtolower(trim((string) ($request->visit_status ?? '')));
+				$measurement = $vital_signs->currentAssignmentMeasurementState($request, true);
+				if ($visit_status !== 'completed' || empty($measurement['assignment_valid']) || empty($measurement['has_measurement'])) {
+					$this->last_failure_code = $visit_status !== 'completed' ? 'visit_status_incomplete' : 'vital_signs_required';
 					$this->db->trans_rollback();
 					return false;
 				}
@@ -317,6 +340,14 @@ class Konsultasi_nakes_m extends MX_Controller
 				'recommendations' => $saran,
 				'created_at' => $date
 			];
+			if ($this->config->item('care_team_workflow_enabled') === true) {
+				if ($this->db->field_exists('responsible_doctor_user_id', 'medicalrecords')) {
+					$record['responsible_doctor_user_id'] = (int) $request->responsible_doctor_user_id;
+				}
+				if ($this->db->field_exists('recorded_by_user_id', 'medicalrecords')) {
+					$record['recorded_by_user_id'] = (int) $user;
+				}
+			}
 
 			if ($write_anamnesis) {
 				$existing = $this->db->query(

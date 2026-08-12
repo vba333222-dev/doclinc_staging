@@ -16,6 +16,7 @@ class Konsultasi_nakes extends MX_Controller
 		$this->load->library('Clinical_anamnesis');
 		$this->load->library('Visit_proof_service');
 		$this->load->library('Medicalrecord_diagnosis_service');
+		$this->load->library('Visit_vital_signs_service');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login', 'refresh');
 		}
@@ -68,6 +69,11 @@ class Konsultasi_nakes extends MX_Controller
 		$x['can_handle_request'] = $x['care_team_workflow_enabled']
 			? !empty($access_context['can_assess'])
 			: !empty($access_context['can_handle']);
+		$x['can_record_vital_signs'] = $x['care_team_workflow_enabled'] && !empty($access_context['can_visit']);
+		$x['vital_signs_schema_ready'] = $this->visit_vital_signs_service->schemaReady();
+		$x['latest_vital_signs'] = $x['vital_signs_schema_ready']
+			? $this->visit_vital_signs_service->latest((int) $x['request_id'])
+			: null;
 		$x['can_open_patient_chat'] = !empty($identity_context['valid'])
 			&& (string) ($identity_context['account_type'] ?? '') === 'personal'
 			&& doclinc_can_view_chat((int) $x['request_id'], $doctor_id, 'dokter');
@@ -101,6 +107,46 @@ class Konsultasi_nakes extends MX_Controller
 		// Tambahkan data obat ke view
 		// $x['data_obat'] = $filteredData;
 		$this->load->view('konsultasi_nakes_v', $x);
+	}
+
+	public function save_vital_signs()
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output->set_status_header(405)->set_output(json_encode(array('status' => 'error', 'message' => 'Metode tidak diizinkan.')));
+			return;
+		}
+		$user_id = (int) $this->session->userdata('id');
+		$identity = doclinc_dokter_identity_context($user_id, true);
+		$request_id = (int) $this->input->post('request_id');
+		if ($this->config->item('care_team_workflow_enabled') !== true
+			|| empty($identity['valid'])
+			|| (string) ($identity['account_type'] ?? '') !== 'personal') {
+			$this->output->set_status_header(403)->set_output(json_encode(array('status' => 'error', 'message' => 'Anda tidak memiliki akses.')));
+			return;
+		}
+		$prerequisite_state = doclinc_role_prerequisite_state($user_id, true);
+		if (empty($prerequisite_state['allowed'])) {
+			$this->output
+				->set_status_header(doclinc_role_prerequisite_http_status($prerequisite_state))
+				->set_output(json_encode(doclinc_role_prerequisite_error_payload($prerequisite_state)));
+			return;
+		}
+		$result = $this->visit_vital_signs_service->record($request_id, $user_id, $identity, array(
+			'systolic' => $this->input->post('systolic'),
+			'diastolic' => $this->input->post('diastolic'),
+			'pulse' => $this->input->post('pulse'),
+			'respiratory_rate' => $this->input->post('respiratory_rate'),
+			'temperature_c' => $this->input->post('temperature_c'),
+			'oxygen_saturation' => $this->input->post('oxygen_saturation'),
+			'notes' => $this->input->post('notes', true),
+		));
+		if (($result['status'] ?? '') !== 'success') {
+			$status = ($result['safe_error_code'] ?? '') === 'schema_unavailable' ? 503 : (($result['safe_error_code'] ?? '') === 'access_denied' ? 403 : 422);
+			$this->output->set_status_header($status)->set_output(json_encode($result));
+			return;
+		}
+		$this->output->set_output(json_encode($result));
 	}
 
 	public function get_terapi()
@@ -477,6 +523,10 @@ class Konsultasi_nakes extends MX_Controller
 			'visit_mode_invalid' => 'Jenis layanan tidak valid. Pilih konsultasi jarak jauh atau Kunjungan Nakes.',
 			'visit_mode_mismatch' => 'Kunjungan yang sudah dimulai tidak dapat ditutup sebagai konsultasi non-visit.',
 			'visit_status_invalid' => 'Status kunjungan harus sudah tiba atau dalam penanganan.',
+			'visit_status_incomplete' => 'Kunjungan perlu diselesaikan oleh Nakes terlebih dahulu.',
+			'vital_signs_required' => 'Tanda vital perlu dicatat sebelum konsultasi diselesaikan.',
+			'vital_signs_schema_unavailable' => 'Pencatatan tanda vital belum tersedia.',
+			'clinical_attribution_schema_unavailable' => 'Penyimpanan hasil konsultasi belum tersedia.',
 			'visit_location_outside_radius' => 'Lokasi Nakes belum berada dalam radius pasien.',
 			'visit_proof_missing' => 'Foto bukti kunjungan wajib tersedia.',
 			'visit_proof_invalid' => 'Bukti kunjungan tidak valid atau bukan milik konsultasi ini.',

@@ -596,7 +596,30 @@ class Home_nakes extends MX_Controller
 			$this->session->userdata('normal_session_token'),
 			$this->config->item('single_active_session_enabled') === true
 		);
+		if (!empty($result['ok']) && !empty($result['changed'])) {
+			$this->notify_service_mode((int) $this->input->post('request_id'), $user_id, $result['consultation_mode']);
+		}
 		$this->care_team_response(!empty($result['ok']) ? 200 : 409, $result);
+	}
+
+	private function notify_service_mode($request_id, $actor_user_id, $mode)
+	{
+		$request = doclinc_request_row((int) $request_id);
+		if (!$request || (int) ($request->responsible_doctor_user_id ?? 0) !== (int) $actor_user_id) {
+			return;
+		}
+		$is_visit = (string) $mode === 'visit';
+		$title = 'Jenis layanan diperbarui';
+		$message = $is_visit ? 'Konsultasi dilanjutkan dengan kunjungan.' : 'Konsultasi dilanjutkan tanpa kunjungan.';
+		$event_type = $is_visit ? 'consultation_visit_selected' : 'consultation_non_visit_selected';
+		$patient_id = (int) ($request->user_id ?? 0);
+		$puskesmas_code = trim((string) ($request->assigned_puskesmas_code ?? ''));
+		if ($patient_id > 0) {
+			doclinc_notify_user($patient_id, $event_type, 'request', (int) $request_id, $title, $message, (int) $actor_user_id);
+		}
+		if ($puskesmas_code !== '') {
+			doclinc_notify_puskesmas($puskesmas_code, $event_type, 'request', (int) $request_id, $title, $message, (int) $actor_user_id);
+		}
 	}
 
 	public function assign_visit_performer()
@@ -1093,8 +1116,11 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 
-		if (function_exists('doclinc_log_request_event')) {
-			doclinc_log_request_event('visit_status_updated', $request_id, array('visit_status' => $result['visit_status']));
+		if (!empty($result['changed'])) {
+			if (function_exists('doclinc_log_request_event')) {
+				doclinc_log_request_event('visit_status_updated', $request_id, array('visit_status' => $result['visit_status']));
+			}
+			$this->notify_visit_status($request, $user_id, $result['visit_status'], $result['visit_status_label']);
 		}
 
 		$this->output->set_output(json_encode(array(
@@ -1104,6 +1130,28 @@ class Home_nakes extends MX_Controller
 			'visit_status' => $result['visit_status'],
 			'visit_status_label' => $result['visit_status_label'],
 		)));
+	}
+
+	private function notify_visit_status($request, $actor_user_id, $visit_status, $visit_status_label)
+	{
+		if (!$request) {
+			return;
+		}
+		$event_type = 'visit_' . (string) $visit_status;
+		$title = 'Kunjungan diperbarui';
+		$message = 'Status kunjungan: ' . (string) $visit_status_label . '.';
+		$patient_id = (int) ($request->user_id ?? 0);
+		$responsible_id = (int) ($request->responsible_doctor_user_id ?? 0);
+		$puskesmas_code = trim((string) ($request->assigned_puskesmas_code ?? ''));
+		if ($patient_id > 0) {
+			doclinc_notify_user($patient_id, $event_type, 'request', (int) $request->request_id, $title, $message, (int) $actor_user_id);
+		}
+		if ($responsible_id > 0 && $responsible_id !== (int) $actor_user_id) {
+			doclinc_notify_user($responsible_id, $event_type, 'request', (int) $request->request_id, $title, $message, (int) $actor_user_id);
+		}
+		if ($puskesmas_code !== '') {
+			doclinc_notify_puskesmas($puskesmas_code, $event_type, 'request', (int) $request->request_id, $title, $message, (int) $actor_user_id);
+		}
 	}
 	public function get_location_user()
 	{

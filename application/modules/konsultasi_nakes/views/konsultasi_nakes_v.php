@@ -767,20 +767,12 @@ if (!function_exists('formatComplaintText')) {
 						<span class="summary-value"><?= html_escape($umur) ?> Tahun</span>
 					</div>
 					<div class="summary-item">
-						<span class="summary-label">User ID</span>
-						<span class="summary-value"><?= html_escape($userid) ?></span>
-					</div>
-					<div class="summary-item">
 						<span class="summary-label">No. Antrian</span>
 						<span class="summary-value"><?= html_escape($queue_code) ?></span>
 					</div>
 					<div class="summary-item">
 						<span class="summary-label">Jenis Layanan</span>
 						<span class="summary-value"><?= html_escape($kriteria !== '' ? $kriteria : 'Belum ditentukan') ?></span>
-					</div>
-					<div class="summary-item">
-						<span class="summary-label">Konteks</span>
-						<span class="summary-value">Puskesmas / Nakes</span>
 					</div>
 				</div>
 			</section>
@@ -797,6 +789,43 @@ if (!function_exists('formatComplaintText')) {
 					<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="chat-button">
 						<i class="bi bi-chat-dots-fill"></i> Buka chat
 					</a>
+				</section>
+			<?php endif; ?>
+
+			<?php if (!empty($care_team_workflow_enabled) && (!empty($latest_vital_signs) || !empty($can_record_vital_signs))) : ?>
+				<section class="consult-card">
+					<h2 class="section-heading"><i class="bi bi-activity"></i> Tanda Vital</h2>
+					<?php if (!empty($latest_vital_signs)) : ?>
+						<div class="summary-grid mb-3">
+							<div class="summary-item"><span class="summary-label">Tekanan darah</span><span class="summary-value"><?= html_escape(($latest_vital_signs->systolic ?? '-') . '/' . ($latest_vital_signs->diastolic ?? '-')); ?> mmHg</span></div>
+							<div class="summary-item"><span class="summary-label">Nadi</span><span class="summary-value"><?= html_escape($latest_vital_signs->pulse ?? '-'); ?> /menit</span></div>
+							<div class="summary-item"><span class="summary-label">Pernapasan</span><span class="summary-value"><?= html_escape($latest_vital_signs->respiratory_rate ?? '-'); ?> /menit</span></div>
+							<div class="summary-item"><span class="summary-label">Suhu</span><span class="summary-value"><?= html_escape($latest_vital_signs->temperature_c ?? '-'); ?> °C</span></div>
+							<div class="summary-item"><span class="summary-label">Saturasi oksigen</span><span class="summary-value"><?= html_escape($latest_vital_signs->oxygen_saturation ?? '-'); ?>%</span></div>
+							<div class="summary-item"><span class="summary-label">Waktu</span><span class="summary-value"><?= html_escape(!empty($latest_vital_signs->measured_at) ? date('d M Y H:i', strtotime($latest_vital_signs->measured_at)) : '-'); ?></span></div>
+						</div>
+						<?php if (!empty($latest_vital_signs->notes)) : ?><p class="mb-3"><?= nl2br(html_escape($latest_vital_signs->notes)); ?></p><?php endif; ?>
+					<?php endif; ?>
+					<?php if (!empty($can_record_vital_signs)) : ?>
+						<?php if (!empty($vital_signs_schema_ready)) : ?>
+							<form id="visitVitalSignsForm">
+								<input type="hidden" name="request_id" value="<?= html_escape((int) $request_id); ?>">
+								<div class="row g-2">
+									<div class="col-6"><label class="form-label" for="vitalSystolic">Sistolik</label><input class="form-control" id="vitalSystolic" name="systolic" type="number" min="50" max="300" inputmode="numeric"></div>
+									<div class="col-6"><label class="form-label" for="vitalDiastolic">Diastolik</label><input class="form-control" id="vitalDiastolic" name="diastolic" type="number" min="30" max="200" inputmode="numeric"></div>
+									<div class="col-6"><label class="form-label" for="vitalPulse">Nadi</label><input class="form-control" id="vitalPulse" name="pulse" type="number" min="20" max="250" inputmode="numeric"></div>
+									<div class="col-6"><label class="form-label" for="vitalRespiratory">Pernapasan</label><input class="form-control" id="vitalRespiratory" name="respiratory_rate" type="number" min="5" max="80" inputmode="numeric"></div>
+									<div class="col-6"><label class="form-label" for="vitalTemperature">Suhu °C</label><input class="form-control" id="vitalTemperature" name="temperature_c" type="number" min="30" max="45" step="0.1" inputmode="decimal"></div>
+									<div class="col-6"><label class="form-label" for="vitalOxygen">Saturasi %</label><input class="form-control" id="vitalOxygen" name="oxygen_saturation" type="number" min="50" max="100" inputmode="numeric"></div>
+									<div class="col-12"><label class="form-label" for="vitalNotes">Catatan</label><textarea class="form-control" id="vitalNotes" name="notes" maxlength="1000" rows="3"></textarea></div>
+								</div>
+								<button class="btn btn-success rounded-pill mt-3" type="submit">Simpan tanda vital</button>
+								<div id="visitVitalSignsMessage" class="small mt-2" role="status"></div>
+							</form>
+						<?php else : ?>
+							<p class="mb-0">Pencatatan tanda vital belum tersedia.</p>
+						<?php endif; ?>
+					<?php endif; ?>
 				</section>
 			<?php endif; ?>
 
@@ -1819,6 +1848,36 @@ if (!function_exists('formatComplaintText')) {
 					selectedTd.text(newValue);
 					$("#terapiModal").modal("hide");
 				}
+			});
+		});
+	</script>
+	<script>
+		$(function() {
+			$('#visitVitalSignsForm').on('submit', function(event) {
+				event.preventDefault();
+				const form = $(this);
+				const button = form.find('button[type="submit"]');
+				const message = $('#visitVitalSignsMessage');
+				button.prop('disabled', true);
+				message.removeClass('text-danger text-success').text('Menyimpan...');
+				$.ajax({
+					url: <?= json_encode(base_url('konsultasi_nakes/save_vital_signs')); ?>,
+					method: 'POST',
+					dataType: 'json',
+					data: form.serialize()
+				}).done(function(response) {
+					if (response && response.status === 'success') {
+						message.addClass('text-success').text(response.message || 'Tanda vital tersimpan.');
+						window.setTimeout(function() { window.location.reload(); }, 600);
+						return;
+					}
+					message.addClass('text-danger').text(response && response.message ? response.message : 'Tanda vital belum tersimpan.');
+				}).fail(function(xhr) {
+					const response = xhr.responseJSON || {};
+					message.addClass('text-danger').text(response.message || 'Tanda vital belum tersimpan.');
+				}).always(function() {
+					button.prop('disabled', false);
+				});
 			});
 		});
 	</script>
