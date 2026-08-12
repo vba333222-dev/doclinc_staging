@@ -415,7 +415,7 @@ $sess_save_path = getenv('DOCLINC_SESSION_PATH') ?: getenv('CI_SESSION_PATH');
 $config['sess_save_path'] = $sess_save_path ? rtrim($sess_save_path, "/\\") . DIRECTORY_SEPARATOR : APPPATH . 'cache/sessions/';
 $config['sess_match_ip'] = FALSE;
 $config['sess_time_to_update'] = 300;
-$config['sess_regenerate_destroy'] = TRUE;
+$config['sess_regenerate_destroy'] = FALSE;
 
 
 // Terus hapus komentar yang ini ya

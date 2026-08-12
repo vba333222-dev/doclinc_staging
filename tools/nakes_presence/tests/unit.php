@@ -1,5 +1,6 @@
 <?php
 define('BASEPATH', dirname(__DIR__, 3) . '/system/');
+define('FCPATH', dirname(__DIR__, 3) . DIRECTORY_SEPARATOR);
 
 require_once dirname(__DIR__, 3) . '/application/libraries/Nakes_presence_policy.php';
 
@@ -124,6 +125,22 @@ $disabled_bootstrap = doclinc_nakes_presence_client_bootstrap($personal['identit
 presence_expect($disabled_bootstrap['enabled'] === false && $disabled_bootstrap['mode'] === 'disabled', 'disabled_client_emits_nothing');
 $presence_client_test_ci->config = new Presence_client_test_config(true);
 
+$asset_fixture = tempnam(sys_get_temp_dir(), 'doclinc-presence-');
+$asset_fixture_ready = is_string($asset_fixture) && file_put_contents($asset_fixture, 'presence-client-a') !== false;
+$asset_version_a = $asset_fixture_ready ? doclinc_nakes_presence_asset_version($asset_fixture) : '';
+$asset_version_a_repeat = $asset_fixture_ready ? doclinc_nakes_presence_asset_version($asset_fixture) : '';
+$asset_fixture_changed = $asset_fixture_ready && file_put_contents($asset_fixture, 'presence-client-b') !== false;
+$asset_version_b = $asset_fixture_changed ? doclinc_nakes_presence_asset_version($asset_fixture) : '';
+if (is_string($asset_fixture) && is_file($asset_fixture)) {
+	unlink($asset_fixture);
+}
+presence_expect($asset_fixture_ready && preg_match('/\A[a-f0-9]{64}\z/', $asset_version_a) === 1, 'presence_asset_version_is_content_hash');
+presence_expect($asset_version_a === $asset_version_a_repeat, 'presence_asset_version_stable_while_unchanged');
+presence_expect($asset_fixture_changed && $asset_version_b !== $asset_version_a, 'presence_asset_version_changes_with_content');
+$presence_asset_url = doclinc_nakes_presence_asset_url();
+presence_expect(strpos($presence_asset_url, 'assets/js/doclinc-nakes-presence.js?v=') !== false
+	&& substr($presence_asset_url, -64) === doclinc_nakes_presence_asset_version(), 'presence_asset_url_uses_deployed_content_hash');
+
 $service_source = file_get_contents(dirname(__DIR__, 3) . '/application/libraries/Nakes_presence_service.php');
 $main_controller = file_get_contents(dirname(__DIR__, 3) . '/application/modules/home_nakes/controllers/Home_nakes.php');
 $admin_controller = file_get_contents(dirname(__DIR__, 3) . '/admin_menu/application/modules/home/controllers/Home.php');
@@ -155,7 +172,12 @@ presence_expect(strpos($client_source, 'setInterval(heartbeat') !== false && str
 presence_expect(strpos($main_controller, 'doclinc_nakes_presence_client_bootstrap($identity_context, true)') !== false
 	&& strpos($consultation_controller, 'doclinc_nakes_presence_client_bootstrap($identity_context)') !== false
 	&& strpos($chat_controller, "\$current_role === 'dokter'") !== false
-	&& substr_count($runtime_view, 'doclinc-nakes-presence.js') === 1, 'shared_presence_bootstrap_contract');
+	&& substr_count($client_helper, "base_url('assets/js/doclinc-nakes-presence.js')") === 1, 'shared_presence_bootstrap_contract');
+presence_expect(strpos($runtime_view, 'doclinc_nakes_presence_asset_url()') !== false
+	&& strpos($client_helper, "hash_file('sha256', \$path)") !== false
+	&& strpos($client_helper, 'uniqid(') === false
+	&& strpos($client_helper, 'random_bytes(') === false
+	&& strpos($client_helper, 'time()') === false, 'presence_asset_cache_version_is_deterministic');
 presence_expect(strpos($main_controller, 'doclinc_nakes_presence_client_bootstrap($identity_context, true)') !== false
 	&& strpos($consultation_view, "load->view('nakes_presence_runtime_v'") !== false
 	&& strpos($chat_view, "load->view('nakes_presence_runtime_v'") !== false, 'personal_nakes_surface_coverage');

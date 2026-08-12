@@ -27,6 +27,8 @@ const care = source('application/libraries/Care_team_service.php');
 const migration = source('application/migrations/20260811000100_session_care_team_foundation.php');
 const activationModel = source('application/modules/login/models/Login_m.php');
 const publicGate = source('application/hooks/Session_binding_gate.php');
+const ciSession = source('system/libraries/Session/Session.php');
+const ciFileSession = source('system/libraries/Session/drivers/Session_files_driver.php');
 const passwordMask = source('assets/js/doclinc-password-mask.js');
 const adminRecoveryModel = source('admin_menu/application/modules/login/models/Login_m.php');
 const adminHome = source('admin_menu/application/modules/home/controllers/Home.php');
@@ -57,6 +59,12 @@ const passwordViews = [
 ].map(source);
 
 expect(publicConfig.includes('DOCLINC_SINGLE_ACTIVE_SESSION_ENABLED') && publicConfig.includes('Doclinc_feature_flags::resolve'), 'session_feature_default_off_resolver');
+expect(publicConfig.includes("$config['sess_time_to_update'] = 300;")
+  && publicConfig.includes("$config['sess_regenerate_destroy'] = FALSE;"), 'public_session_regeneration_retains_old_file_for_parallel_requests');
+expect(ciSession.includes("$this->sess_regenerate((bool) config_item('sess_regenerate_destroy'))")
+  && ciSession.includes('session_regenerate_id($destroy)')
+  && ciFileSession.includes("unlink($this->_file_path.$session_id)"), 'ci3_file_session_destroy_flag_controls_old_file_removal');
+expect(publicLogin.includes('sess_regenerate(TRUE)') && publicLogin.includes('sess_destroy()'), 'explicit_login_rotation_and_logout_destruction_remain_enabled');
 expect(publicConfig.includes('DOCLINC_CARE_TEAM_WORKFLOW_ENABLED'), 'care_team_feature_default_off_resolver');
 expect(adminConfig.includes('DOCLINC_SINGLE_ACTIVE_SESSION_ENABLED'), 'admin_uses_shared_session_feature');
 expect(publicHooks.includes("'class' => 'Session_binding_gate'") && adminHooks.includes("'class' => 'Session_binding_gate'"), 'protected_apps_use_session_gate');
