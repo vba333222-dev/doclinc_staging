@@ -626,6 +626,19 @@ try {
 	$GLOBALS['request_model_application']->config->set('care_team_workflow_enabled', true);
 	$personal_staff_options = $home_nakes->get_active_staff_options_by_code('PKM01');
 	model_integration_expect(count($personal_staff_options) === 2, 'personal_staff_options_queryable_with_care_team_enabled');
+	$care_team_cancel_id = model_integration_insert_request($db, 'Pending');
+	$db->where('request_id', $care_team_cancel_id)->update('requests', array(
+		'assigned_nakes_user_id' => 201,
+		'accepted_by_user_id' => 202,
+		'dokter_id' => 201,
+	));
+	model_integration_expect($home->cancel_request($care_team_cancel_id, 101) === true, 'care_team_pending_owner_cancel_succeeds');
+	$care_team_cancel_notifications = $db->where('entity_type', 'request')->where('entity_id', (string) $care_team_cancel_id)->where('event_type', 'request_cancelled')->get('notifications')->result();
+	model_integration_expect(count($care_team_cancel_notifications) === 1
+		&& (int) $care_team_cancel_notifications[0]->recipient_user_id === 10
+		&& (string) $care_team_cancel_notifications[0]->recipient_puskesmas_code === 'PKM01', 'care_team_pending_cancel_notifies_command_center_once');
+	model_integration_expect((int) $db->where('entity_type', 'request')->where('entity_id', (string) $care_team_cancel_id)
+		->where_in('recipient_user_id', array(201, 202))->count_all_results('notifications') === 0, 'care_team_pending_cancel_ignores_legacy_personal_owners');
 	$GLOBALS['request_model_application']->config->set('care_team_workflow_enabled', false);
 	$GLOBALS['request_model_application']->config->set('nakes_presence_enabled', false);
 	$presence_disabled_options = $home_nakes->get_active_staff_options_by_code('PKM01');

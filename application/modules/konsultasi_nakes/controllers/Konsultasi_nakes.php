@@ -68,6 +68,9 @@ class Konsultasi_nakes extends MX_Controller
 		$x['can_handle_request'] = $x['care_team_workflow_enabled']
 			? !empty($access_context['can_assess'])
 			: !empty($access_context['can_handle']);
+		$x['can_open_patient_chat'] = !empty($identity_context['valid'])
+			&& (string) ($identity_context['account_type'] ?? '') === 'personal'
+			&& doclinc_can_view_chat((int) $x['request_id'], $doctor_id, 'dokter');
 		$x['visit_proof_required'] = doclinc_visit_proof_required();
 		$x['additional_diagnoses_enabled'] = (bool) $this->config->item('additional_diagnoses_enabled');
 		$x['anamnesis_schema_ready'] = false;

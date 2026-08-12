@@ -76,10 +76,11 @@ class Request_transition_orchestrator
 
 		$notification_result = null;
 		if ($request && $this->usesControllerNotification()) {
-			$recipient_id = doclinc_request_handling_nakes_id($request);
-			if (!empty($recipient_id)) {
-				$notification_result = doclinc_notify_user(
-					(int) $recipient_id,
+			$CI = &get_instance();
+			if ($CI->config->item('care_team_workflow_enabled') === true
+				&& (string) ($request->request_status ?? '') === 'Pending') {
+				$notification_result = doclinc_notify_puskesmas(
+					(string) ($request->assigned_puskesmas_code ?? ''),
 					'request_cancelled',
 					'request',
 					$request_id,
@@ -87,6 +88,19 @@ class Request_transition_orchestrator
 					'Permintaan konsultasi dibatalkan oleh pasien.',
 					(int) $actor_user_id
 				);
+			} else {
+				$recipient_id = doclinc_request_handling_nakes_id($request);
+				if (!empty($recipient_id)) {
+					$notification_result = doclinc_notify_user(
+						(int) $recipient_id,
+						'request_cancelled',
+						'request',
+						$request_id,
+						'Konsultasi dibatalkan',
+						'Permintaan konsultasi dibatalkan oleh pasien.',
+						(int) $actor_user_id
+					);
+				}
 			}
 		}
 

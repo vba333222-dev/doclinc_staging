@@ -24,6 +24,11 @@ const presence = source('application/modules/home_nakes/controllers/Home_nakes.p
 const service = source('application/libraries/Session_binding_service.php');
 const sessionPolicy = source('application/libraries/Session_binding_policy.php');
 const care = source('application/libraries/Care_team_service.php');
+const carePolicy = source('application/libraries/Care_team_policy.php');
+const requestAuthz = source('application/helpers/request_authz_helper.php');
+const notificationHelper = source('application/helpers/notification_helper.php');
+const requestOrchestrator = source('application/libraries/Request_transition_orchestrator.php');
+const wargaHomeModel = source('application/modules/home/models/Home_m.php');
 const migration = source('application/migrations/20260811000100_session_care_team_foundation.php');
 const activationModel = source('application/modules/login/models/Login_m.php');
 const publicGate = source('application/hooks/Session_binding_gate.php');
@@ -92,6 +97,15 @@ expect(homeNakesModel.includes("care_team_workflow_enabled') === true\n\t\t\t&& 
 expect(care.includes('responsible_doctor_user_id') && care.includes('request_responsible_doctor_assignments'), 'responsible_doctor_has_canonical_history');
 expect(care.includes('request_visit_performer_assignments') && care.includes('visit_performer_user_id')
   && !care.includes('request_staff_assignments'), 'visit_performer_has_distinct_canonical_history');
+expect(care.includes('Notification_delivery_service') && care.includes('createWithinTransaction')
+  && care.includes("'responsible_doctor_assigned'") && care.includes("'visit_performer_assigned'"), 'care_assignments_create_notifications_inside_owned_transaction');
+expect(care.indexOf('return $this->success(\'Dokter penanggung jawab tetap sama.\');') < care.indexOf("'responsible_doctor_assigned'")
+  && care.indexOf('return $this->success(\'Nakes kunjungan tetap sama.\');') < care.indexOf("'visit_performer_assigned'"), 'idempotent_assignments_do_not_create_notifications');
+expect(requestAuthz.includes("config->item('care_team_workflow_enabled') === true")
+  && requestAuthz.includes('request->responsible_doctor_user_id === $user_id')
+  && requestAuthz.includes('request->visit_performer_user_id === $user_id')
+  && notificationHelper.includes('notification_request.responsible_doctor_user_id')
+  && notificationHelper.includes('notification_request.visit_performer_user_id'), 'care_team_notification_visibility_uses_canonical_owners');
 expect(!care.includes('nakes_presence') && !source('application/libraries/Care_team_policy.php').includes('nakes_presence'), 'presence_is_not_care_team_authorization');
 expect(homeNakesModel.includes('AS is_online') && homeNakesModel.includes("nakes_presence_enabled') === true") && homeNakesModel.includes("select('NULL AS is_online'") && activeTask.includes("'Online' : 'Offline'") && history.includes("'Online' : 'Offline'"), 'presence_is_optional_selection_information');
 expect(homeNakesModel.includes('staff_presence.puskesmas_code COLLATE utf8mb4_unicode_ci = CONVERT(puskesmas_staff.kode_pkm USING utf8mb4) COLLATE utf8mb4_unicode_ci'), 'staff_options_normalize_presence_join_collation');
@@ -100,10 +114,28 @@ expect(homeNakesModel.includes('m_puskesmas.kode_pkm COLLATE utf8mb4_general_ci 
 expect(facilityJoinModels.every(model => model.includes('CONVERT(NULLIF(TRIM(requests.assigned_puskesmas_code)') || model.includes('CONVERT(NULLIF(TRIM($request_alias.assigned_puskesmas_code)')), 'legacy_request_facility_joins_normalize_charset');
 expect(care.includes("account_type'] !== 'command_center") === false && care.includes('commandCenterEligible'), 'command_center_checked_by_policy');
 expect(care.includes("consultation_mode !== Care_team_policy::VISIT") && care.includes('responsible_doctor_user_id'), 'visit_assignment_requires_decision_and_responsible_doctor');
+expect(care.includes('visitPerformerEligible($performer, $puskesmas_code)')
+  && care.includes('visitPerformerEligible($identity, $request->assigned_puskesmas_code)')
+  && carePolicy.includes('public function visitPerformerEligible')
+  && carePolicy.includes('!$this->doctorProfession($profession)'), 'visit_performer_is_personal_non_doctor');
+expect(homeNakesModel.includes('responsible_doctor_eligible') && homeNakesModel.includes('visit_performer_eligible')
+  && activeTask.includes('empty($staff_option->visit_performer_eligible)')
+  && history.includes('empty($staff_option->visit_performer_eligible)'), 'care_team_candidate_lists_use_server_policy');
+expect(care.includes("'Tugas kunjungan baru'") && care.includes("'Ditugaskan oleh ' . $doctor_name . '.'")
+  && care.includes('doctorDisplayName($actor)') && !homeNakesController.includes('doctor_name')
+  && !care.includes("input->post('doctor") && !care.includes("input->post('dokter"), 'visit_notification_doctor_identity_is_server_resolved');
+expect(requestOrchestrator.includes('doclinc_notify_puskesmas(')
+  && wargaHomeModel.includes('care_team_command_center_user_id($puskesmas_code)')
+  && wargaHomeModel.includes("if (!$care_team_enabled) {")
+  && requestAuthz.includes("foreach (array('responsible_doctor_user_id', 'visit_performer_user_id')"), 'pending_cancellation_uses_operational_recipient_without_personal_legacy_fallback');
 expect(homeNakesController.includes("method(TRUE) !== 'POST'") && homeNakesController.includes('assign_responsible_doctor')
   && homeNakesController.includes('choose_service_mode') && homeNakesController.includes('assign_visit_performer'), 'care_team_mutations_are_post_only');
 expect(consultationController.includes("['can_assess']") && homeNakesController.includes("['can_visit']")
   && consultationModel.includes("['can_assess']") && homeNakesModel.includes("['can_visit']"), 'responsible_and_performer_authority_remain_distinct');
+expect(consultationController.includes("['can_open_patient_chat']")
+  && consultationController.includes("account_type'] ?? '') === 'personal'")
+  && consultationController.includes('doclinc_can_view_chat')
+  && consultationView.includes('if (!empty($can_open_patient_chat))'), 'consultation_chat_cta_uses_server_personal_access');
 expect(consultationController.includes('request->consultation_mode') && consultationView.includes('if (!$care_team_workflow_enabled)')
   && consultationModel.includes('service_mode_mismatch'), 'clinical_completion_uses_server_service_decision');
 expect(migration.includes('DATABASE_CONNECTION_OPENED=false') && migration.includes("array_key_exists('apply'"), 'migration_plan_opens_no_database');

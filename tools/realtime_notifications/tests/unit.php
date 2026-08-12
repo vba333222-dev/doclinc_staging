@@ -107,12 +107,65 @@ final class NotificationUnitDatabase
 final class NotificationVisibilityRecorder
 {
 	public $conditions = array();
+	public function escape($value)
+	{
+		return "'" . str_replace("'", "''", (string) $value) . "'";
+	}
+	public function field_exists($field, $table)
+	{
+		return in_array($field, array('responsible_doctor_user_id', 'visit_performer_user_id'), true);
+	}
 	public function where($condition, $value = null, $escape = null)
 	{
 		$this->conditions[] = (string) $condition;
 		return $this;
 	}
 }
+
+final class NotificationTestConfig
+{
+	public $care_team_enabled = true;
+	public function item($key)
+	{
+		return $key === 'care_team_workflow_enabled' ? $this->care_team_enabled : null;
+	}
+}
+
+final class NotificationRequestQuery
+{
+	private $row;
+	public function __construct($row) { $this->row = $row; }
+	public function row() { return $this->row; }
+}
+
+final class NotificationRequestDatabase
+{
+	public $request;
+	public function where($field, $value = null, $escape = null) { return $this; }
+	public function get($table) { return new NotificationRequestQuery($table === 'requests' ? $this->request : null); }
+	public function field_exists($field, $table) { return in_array($field, array('responsible_doctor_user_id', 'visit_performer_user_id'), true); }
+}
+
+$notification_identity_contexts = array();
+if (!function_exists('doclinc_dokter_identity_context')) {
+	function doclinc_dokter_identity_context($user_id = null, $refresh = false)
+	{
+		global $notification_identity_contexts;
+		return isset($notification_identity_contexts[(int) $user_id])
+			? $notification_identity_contexts[(int) $user_id]
+			: array('valid' => false, 'account_type' => 'unclassified');
+	}
+}
+
+$notification_test_ci = (object) array('config' => new NotificationTestConfig(), 'db' => new NotificationRequestDatabase());
+if (!function_exists('get_instance')) {
+	function &get_instance()
+	{
+		global $notification_test_ci;
+		return $notification_test_ci;
+	}
+}
+require_once dirname(__DIR__, 3) . '/application/helpers/request_authz_helper.php';
 
 function notification_data()
 {
@@ -211,6 +264,38 @@ $visibility = new NotificationVisibilityRecorder();
 doclinc_apply_notification_visibility($visibility, array('role' => 'warga', 'user_id' => 101));
 notification_expect(count($visibility->conditions) === 1
 	&& strpos($visibility->conditions[0], 'notification_request.user_id = 101') !== false, 'warga_snapshot_request_owner_filter');
+$care_visibility = new NotificationVisibilityRecorder();
+doclinc_apply_notification_visibility($care_visibility, array(
+	'role' => 'dokter',
+	'user_id' => 202,
+	'identity' => array('valid' => true, 'account_type' => 'personal', 'user_id' => 202, 'staff_id' => 32, 'puskesmas_code' => 'PKM01'),
+));
+$care_condition = implode(' ', $care_visibility->conditions);
+notification_expect(strpos($care_condition, 'responsible_doctor_user_id = 202') !== false
+	&& strpos($care_condition, 'visit_performer_user_id = 202') !== false
+	&& strpos($care_condition, 'assigned_nakes_user_id') === false
+	&& strpos($care_condition, 'accepted_by_user_id') === false
+	&& strpos($care_condition, 'request_staff_assignments') === false, 'care_team_personal_visibility_uses_only_canonical_owners');
+notification_expect(strpos($care_condition, "request_status IN ('Accepted','Completed','Cancelled')") !== false
+	&& strpos($care_condition, "assigned_puskesmas_code) = 'PKM01'") !== false, 'care_team_personal_visibility_keeps_state_and_facility_scope');
+$notification_test_ci->db->request = (object) array(
+	'request_id' => 1001,
+	'request_status' => 'Accepted',
+	'assigned_puskesmas_code' => 'PKM01',
+	'responsible_doctor_user_id' => 202,
+	'visit_performer_user_id' => 203,
+	'assigned_nakes_user_id' => 204,
+	'accepted_by_user_id' => 204,
+	'dokter_id' => 10,
+);
+$responsible_identity = array('valid' => true, 'account_type' => 'personal', 'user_id' => 202, 'staff_id' => 32, 'puskesmas_code' => 'PKM01');
+$performer_identity = array('valid' => true, 'account_type' => 'personal', 'user_id' => 203, 'staff_id' => 33, 'puskesmas_code' => 'PKM01');
+$legacy_identity = array('valid' => true, 'account_type' => 'personal', 'user_id' => 204, 'staff_id' => 34, 'puskesmas_code' => 'PKM01');
+$cross_facility_identity = array('valid' => true, 'account_type' => 'personal', 'user_id' => 202, 'staff_id' => 32, 'puskesmas_code' => 'PKM02');
+notification_expect(doclinc_can_view_request_notification(1001, $responsible_identity), 'responsible_doctor_can_receive_assignment_notification');
+notification_expect(doclinc_can_view_request_notification(1001, $performer_identity), 'visit_performer_can_receive_assignment_notification');
+notification_expect(!doclinc_can_view_request_notification(1001, $legacy_identity), 'care_team_notification_rejects_legacy_owner_fallback');
+notification_expect(!doclinc_can_view_request_notification(1001, $cross_facility_identity), 'care_team_notification_rejects_cross_facility_recipient');
 $personal_request_access = array('valid' => true, 'can_view' => true, 'tenant_match' => true, 'ownership_source' => 'staff_assignment');
 notification_expect($channel_policy->authorize($personal, $channel_policy->parse('request:1001'), $request, $personal_identity, $personal_request_access), 'personal_pic_request_allowed');
 $personal_request_access['ownership_source'] = 'unproven';

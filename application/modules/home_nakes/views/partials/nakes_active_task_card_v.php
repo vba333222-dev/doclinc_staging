@@ -74,7 +74,7 @@
 						<select name="staff_id" class="form-select form-select-sm" required>
 							<option value=""><?= $care_team_enabled ? 'Pilih dokter' : 'Pilih staf'; ?></option>
 							<?php foreach ($primary_staff_options as $staff_option) : ?>
-								<?php if ($care_team_enabled && preg_match('/(^|\s)dokter($|\s)/iu', trim((string) ($staff_option->profesi ?? ''))) !== 1) { continue; } ?>
+								<?php if ($care_team_enabled && empty($staff_option->responsible_doctor_eligible)) { continue; } ?>
 								<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= $care_team_enabled ? ((int) ($nakes_primary_active->responsible_doctor_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : '') : ($primary_pic_assignment && (int) $primary_pic_assignment->staff_id === (int) $staff_option->staff_id ? 'selected' : ''); ?> <?= ($staff_option->personal_account_state ?? '') === 'invalid' ? 'disabled' : ''; ?>>
 									<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Status belum tersedia' : 'Belum ada akun personal'); ?>
 								</option>
@@ -131,7 +131,7 @@
 							<select name="staff_id" class="form-select form-select-sm" required>
 								<option value="">Pilih Nakes</option>
 								<?php foreach ($primary_staff_options as $staff_option) : ?>
-									<?php if (($staff_option->personal_account_state ?? '') !== 'linked' || empty($staff_option->user_id)) { continue; } ?>
+									<?php if (empty($staff_option->visit_performer_eligible)) { continue; } ?>
 									<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= (int) ($nakes_primary_active->visit_performer_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : ''; ?>>
 										<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?><?= isset($staff_option->is_online) ? ' · ' . ((int) $staff_option->is_online === 1 ? 'Online' : 'Offline') : ''; ?>
 									</option>

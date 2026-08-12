@@ -790,13 +790,15 @@ if (!function_exists('formatComplaintText')) {
 				<?= formatComplaintText($keluhan_pasien); ?>
 			</section>
 
-			<section class="consult-card chat-card">
-				<h2 class="section-heading text-white"><i class="bi bi-chat-dots"></i> Chat Konsultasi</h2>
-				<p class="chat-copy">Lakukan komunikasi awal dengan warga sebelum menentukan Visit atau Non-Visit.</p>
-				<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="chat-button">
-					<i class="bi bi-chat-dots-fill"></i> Buka chat
-				</a>
-			</section>
+			<?php if (!empty($can_open_patient_chat)) : ?>
+				<section class="consult-card chat-card">
+					<h2 class="section-heading text-white"><i class="bi bi-chat-dots"></i> Chat Konsultasi</h2>
+					<p class="chat-copy">Hubungi warga untuk melanjutkan konsultasi.</p>
+					<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="chat-button">
+						<i class="bi bi-chat-dots-fill"></i> Buka chat
+					</a>
+				</section>
+			<?php endif; ?>
 
 		<input type="hidden" name="userid" id="userId" value="<?= html_escape($userid) ?>">
 		<input type="hidden" name="dokterid" id="dokterId" value="<?= html_escape($_SESSION['id']) ?>">

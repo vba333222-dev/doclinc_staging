@@ -22,6 +22,10 @@ class Chat extends MX_Controller
 	public function index()
 	{
 		$request_id = (int) ($this->input->get('request_id', TRUE) ?: $this->input->get('reqId', TRUE));
+		if (doclinc_chat_actor_is_command_center()) {
+			redirect(doclinc_request_return_target(doclinc_current_user_role()));
+			return;
+		}
 		if ($request_id < 1 || !doclinc_can_view_chat($request_id)) {
 			doclinc_log_request_event('unauthorized_request_access', $request_id, array('target' => 'chat'));
 			$role = doclinc_current_user_role();
@@ -68,7 +72,8 @@ class Chat extends MX_Controller
 		$after_id = (int) $this->input->get('after_id', TRUE);
 		$user_id = (int) $this->session->userdata('id');
 
-		if ($request_id < 1 || !doclinc_can_view_chat($request_id, $user_id)) {
+		if ($request_id < 1 || doclinc_chat_actor_is_command_center($user_id)
+			|| !doclinc_can_view_chat($request_id, $user_id)) {
 			doclinc_log_request_event('unauthorized_request_access', $request_id, array('target' => 'chat_messages'));
 			$this->output
 				->set_status_header(403)
@@ -103,7 +108,7 @@ class Chat extends MX_Controller
 				->set_output(json_encode(array(
 					'status' => 'error',
 					'safe_error_code' => $read_only ? 'chat_read_only' : 'actor_denied',
-					'message' => $read_only ? 'Akun Puskesmas hanya dapat membaca percakapan.' : 'Anda tidak memiliki akses.',
+					'message' => $read_only ? 'Chat pasien tidak tersedia.' : 'Anda tidak memiliki akses.',
 				)));
 			return;
 		}
@@ -132,7 +137,8 @@ class Chat extends MX_Controller
 
 		$request_id = (int) $this->input->post('request_id');
 		$user_id = (int) $this->session->userdata('id');
-		if ($request_id < 1 || !$this->Chat_m->mark_read($request_id, $user_id)) {
+		if ($request_id < 1 || doclinc_chat_actor_is_command_center($user_id)
+			|| !$this->Chat_m->mark_read($request_id, $user_id)) {
 			$this->output
 				->set_status_header(403)
 				->set_output(json_encode(array('status' => 'error', 'message' => 'Anda tidak memiliki akses.')));
@@ -191,6 +197,9 @@ class Chat extends MX_Controller
 
 		$message_id = (int) $message_id;
 		$user_id = (int) $this->session->userdata('id');
+		if (doclinc_chat_actor_is_command_center($user_id)) {
+			show_404();
+		}
 		$attachment = $this->Chat_m->get_attachment_for_user($message_id, $user_id);
 		if (!$attachment) {
 			doclinc_log_request_event('unauthorized_request_access', 0, array(
@@ -245,7 +254,7 @@ class Chat extends MX_Controller
 				->set_output(json_encode([
 					'status' => 'error',
 					'safe_error_code' => $read_only ? 'chat_read_only' : 'actor_denied',
-					'message' => $read_only ? 'Akun Puskesmas hanya dapat membaca percakapan.' : 'Anda tidak memiliki akses.',
+					'message' => $read_only ? 'Chat pasien tidak tersedia.' : 'Anda tidak memiliki akses.',
 				]));
 			return false;
 		}

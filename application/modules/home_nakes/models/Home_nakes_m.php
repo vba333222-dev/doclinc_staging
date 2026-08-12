@@ -1280,9 +1280,23 @@ class Home_nakes_m extends MX_Controller
 			->get()
 			->result();
 
+		require_once APPPATH . 'libraries/Care_team_policy.php';
+		$policy = new Care_team_policy();
 		foreach ($rows as $staff) {
 			$owner = $this->staff_personal_owner_context($staff, false);
 			$staff->personal_account_state = $owner['state'];
+			$identity = array(
+				'valid' => $owner['state'] === 'linked',
+				'account_type' => 'personal',
+				'user_id' => (int) ($staff->user_id ?? 0),
+				'staff_id' => (int) ($staff->staff_id ?? 0),
+				'user_status' => (string) ($staff->account_status ?? ''),
+				'staff_status' => (string) ($staff->status ?? ''),
+				'puskesmas_code' => (string) ($staff->kode_pkm ?? ''),
+				'staff_profesi' => (string) ($staff->profesi ?? ''),
+			);
+			$staff->responsible_doctor_eligible = $policy->responsibleDoctorEligible($identity, $kode_pkm);
+			$staff->visit_performer_eligible = $policy->visitPerformerEligible($identity, $kode_pkm);
 		}
 
 		return $rows;

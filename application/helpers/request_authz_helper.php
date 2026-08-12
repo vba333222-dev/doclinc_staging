@@ -552,6 +552,15 @@ if (!function_exists('doclinc_request_handling_nakes_id')) {
 		if (!$request) {
 			return null;
 		}
+		$CI = &get_instance();
+		if ($CI->config->item('care_team_workflow_enabled') === true) {
+			foreach (array('responsible_doctor_user_id', 'visit_performer_user_id') as $field) {
+				if (isset($request->{$field}) && (int) $request->{$field} > 0) {
+					return (int) $request->{$field};
+				}
+			}
+			return null;
+		}
 
 		foreach (array('assigned_nakes_user_id', 'accepted_by_user_id', 'dokter_id') as $field) {
 			if (isset($request->{$field}) && trim((string) $request->{$field}) !== '') {
@@ -615,6 +624,16 @@ if (!function_exists('doclinc_can_view_request_notification')) {
 
 			if ($identity_context['account_type'] !== 'personal' || $request_puskesmas_code !== $puskesmas_code) {
 				return false;
+			}
+			$CI = &get_instance();
+			if ($CI->config->item('care_team_workflow_enabled') === true) {
+				if (!in_array((string) $request->request_status, array('Accepted', 'Completed', 'Cancelled'), true)
+					|| !$CI->db->field_exists('responsible_doctor_user_id', 'requests')
+					|| !$CI->db->field_exists('visit_performer_user_id', 'requests')) {
+					return false;
+				}
+				return (int) $request->responsible_doctor_user_id === $user_id
+					|| (int) $request->visit_performer_user_id === $user_id;
 			}
 
 			$staff_id = isset($identity_context['staff_id']) ? (int) $identity_context['staff_id'] : 0;
@@ -1135,6 +1154,10 @@ if (!function_exists('doclinc_can_view_chat')) {
 		}
 
 		if ($role === 'dokter') {
+			$identity = doclinc_dokter_identity_context($user_id, true);
+			if (empty($identity['valid']) || (string) $identity['account_type'] !== 'personal') {
+				return false;
+			}
 			return doclinc_request_is_handled_by_nakes($request, $user_id);
 		}
 

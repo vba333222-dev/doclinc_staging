@@ -33,10 +33,12 @@ phase45_expect($care->mode('non_visit') === Care_team_policy::NON_VISIT, 'non_vi
 phase45_expect($care->mode('other') === null, 'unknown_mode_denied');
 phase45_expect($care->responsibleDoctorEligible($personal_doctor, 'PKM01'), 'personal_doctor_responsible_allowed');
 phase45_expect(!$care->responsibleDoctorEligible($personal_nakes, 'PKM01'), 'non_doctor_responsible_denied');
-phase45_expect($care->personalEligible($personal_nakes, 'PKM01'), 'personal_nakes_performer_allowed');
+phase45_expect($care->visitPerformerEligible($personal_nakes, 'PKM01'), 'personal_nakes_performer_allowed');
+phase45_expect(!$care->visitPerformerEligible($personal_doctor, 'PKM01'), 'personal_doctor_performer_denied');
 phase45_expect(!$care->personalEligible($personal_nakes, 'PKM02'), 'cross_facility_personal_denied');
 phase45_expect($care->commandCenterEligible($command, 'PKM01'), 'command_center_coordinator_allowed');
 phase45_expect(!$care->personalEligible($command, 'PKM01'), 'command_center_performer_denied');
+phase45_expect(!$care->visitPerformerEligible($command, 'PKM01'), 'command_center_visit_performer_denied');
 
 $hook = array();
 require APPPATH . 'config/hooks.php';

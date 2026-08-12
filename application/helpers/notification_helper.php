@@ -81,6 +81,20 @@ if (!function_exists('doclinc_apply_notification_visibility')) {
 			return;
 		}
 
+		$CI = &get_instance();
+		if ($CI->config->item('care_team_workflow_enabled') === true) {
+			if (!$db->field_exists('responsible_doctor_user_id', 'requests')
+				|| !$db->field_exists('visit_performer_user_id', 'requests')) {
+				$db->where($non_operational, null, false);
+				return;
+			}
+			$canonical_owner = "(notification_request.responsible_doctor_user_id = {$user_id} OR notification_request.visit_performer_user_id = {$user_id})";
+			$request_state = "notification_request.request_status IN ('Accepted','Completed','Cancelled')";
+			$request_visibility = "({$notification_alias}.entity_type = 'request' AND {$request_tenant} AND {$request_state} AND {$canonical_owner})";
+			$db->where("({$non_operational} OR {$request_visibility})", null, false);
+			return;
+		}
+
 		$staff_id = (int) $identity['staff_id'];
 		$direct_assignment = $db->field_exists('assigned_nakes_user_id', 'requests')
 			? 'COALESCE(notification_request.assigned_nakes_user_id, 0)'

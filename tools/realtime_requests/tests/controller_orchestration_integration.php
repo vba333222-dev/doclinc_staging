@@ -3,6 +3,17 @@ if (!defined('BASEPATH')) { define('BASEPATH', dirname(__DIR__, 3) . '/system/')
 if (!defined('APPPATH')) { define('APPPATH', dirname(__DIR__, 3) . '/application/'); }
 if (!defined('FCPATH')) { define('FCPATH', dirname(__DIR__, 3) . '/'); }
 
+$GLOBALS['controller_ci_instance'] = null;
+$GLOBALS['controller_care_team_workflow_enabled'] = false;
+
+if (!function_exists('get_instance')) {
+	function &get_instance()
+	{
+		$instance = &$GLOBALS['controller_ci_instance'];
+		return $instance;
+	}
+}
+
 require_once APPPATH . 'libraries/Request_transition_orchestrator.php';
 require_once APPPATH . 'libraries/Medicalrecord_diagnosis_service.php';
 
@@ -53,7 +64,11 @@ final class ControllerOutput
 
 final class ControllerConfig
 {
-	public function item($key) { return $key === 'clinical_suggestions_enabled' ? false : null; }
+	public function item($key) {
+		if ($key === 'clinical_suggestions_enabled') { return false; }
+		if ($key === 'care_team_workflow_enabled') { return $GLOBALS['controller_care_team_workflow_enabled'] === true; }
+		return null;
+	}
 }
 
 final class ControllerEncryption
@@ -232,6 +247,7 @@ function controller_new($class, $operation, $success, array $posts, array $sessi
 	elseif ($class === 'Home') { $controller->Home_m = $model; }
 	elseif ($class === 'Home_nakes') { $controller->Home_nakes_m = $model; }
 	else { $controller->Konsultasi_nakes_m = $model; $controller->Home_nakes_m = $model; }
+	$GLOBALS['controller_ci_instance'] = $controller;
 	return $controller;
 }
 
@@ -261,11 +277,12 @@ function controller_scenario_contract($operation) {
 	return $contracts[$operation];
 }
 
-function controller_run($operation, $success, $notification_succeeds = true) {
+function controller_run($operation, $success, $notification_succeeds = true, $care_team_enabled = false) {
 	list($class, $action, $request_id, $actor_id, $orchestrator_method, $posts, $session, $success_response, $failure_response, $failure_status) = controller_scenario_contract($operation);
 	$GLOBALS['controller_trace'] = array();
 	$GLOBALS['controller_notification_calls'] = array();
 	$GLOBALS['controller_notification_succeeds'] = (bool) $notification_succeeds;
+	$GLOBALS['controller_care_team_workflow_enabled'] = (bool) $care_team_enabled;
 	$GLOBALS['controller_visit_proof_required'] = false;
 	$GLOBALS['controller_requests'] = $operation === 'create' ? array() : array($request_id => controller_fixture_request($request_id, $operation === 'complete' ? 'Accepted' : 'Pending'));
 	$GLOBALS['controller_orchestrator'] = new ControllerOrchestratorProbe();
@@ -339,6 +356,33 @@ foreach (array('create','accept','cancel_warga','cancel_command_center','complet
 controller_expect($success_scenarios === 5, 'controller_success_scenario_count_exact');
 controller_expect($failure_scenarios === 5, 'controller_failure_scenario_count_exact');
 controller_expect($notification_failure_scenarios === 5, 'controller_notification_failure_scenario_count_exact');
+
+$care_team_cancel = controller_run('cancel_warga', true, true, true);
+$care_team_cancel_body = json_decode($care_team_cancel['controller']->output->body, true);
+$care_team_cancel_notifications = $care_team_cancel['notifications'];
+controller_expect(get_instance() === $care_team_cancel['controller']
+	&& $care_team_cancel['controller']->config->item('care_team_workflow_enabled') === true,
+	'care_team_fake_ci_singleton_and_config_enabled');
+controller_expect(count($care_team_cancel['probe']->calls) === 1
+	&& $care_team_cancel['probe']->calls[0]['method'] === 'requestCancelledByOwner',
+	'care_team_pending_cancel_orchestrates_once');
+controller_expect(count($care_team_cancel_notifications) === 1
+	&& $care_team_cancel_notifications[0] === array(
+		'recipient' => 'PKM01', 'event_type' => 'request_cancelled', 'entity_id' => 5003, 'actor' => 101,
+	), 'care_team_pending_cancel_targets_puskesmas_once');
+controller_expect($care_team_cancel_notifications[0]['recipient'] !== 'PKM02'
+	&& $care_team_cancel_notifications[0]['recipient'] !== 999,
+	'care_team_pending_cancel_ignores_malicious_recipient_input');
+controller_expect($care_team_cancel_body === $care_team_cancel['expected_response']
+	&& $care_team_cancel['controller']->output->status === 200,
+	'care_team_pending_cancel_public_response_unchanged');
+
+$care_team_notification_failure = controller_run('cancel_warga', true, false, true);
+controller_expect(json_decode($care_team_notification_failure['controller']->output->body, true) === $care_team_notification_failure['expected_response']
+	&& $care_team_notification_failure['controller']->output->status === 200
+	&& count($care_team_notification_failure['probe']->calls) === 1
+	&& count($care_team_notification_failure['notifications']) === 1,
+	'care_team_pending_cancel_notification_failure_contract');
 
 $repeated_accept = controller_run('accept', true);
 $repeated_accept['controller']->accept_request();

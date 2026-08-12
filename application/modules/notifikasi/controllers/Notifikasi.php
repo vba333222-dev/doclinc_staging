@@ -199,6 +199,9 @@ class Notifikasi extends MX_Controller
 			$is_personal = is_array($identity_context)
 				&& !empty($identity_context['valid'])
 				&& $identity_context['account_type'] === 'personal';
+			if (!$is_personal) {
+				return base_url('home_nakes?highlight_request_id=' . $request_id) . '#req_konsul';
+			}
 			$is_handler = $is_personal
 				|| (string) $request->dokter_id === (string) $user_id
 				|| (isset($request->accepted_by_user_id) && (string) $request->accepted_by_user_id === (string) $user_id)
