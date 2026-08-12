@@ -505,6 +505,9 @@ class Home_nakes extends MX_Controller
 			show_404();
 			return;
 		}
+		if ($this->reject_legacy_staff_assignment_when_care_team_enabled()) {
+			return;
+		}
 
 		$user_id = (int) $this->session->userdata('id');
 		$identity_context = doclinc_dokter_identity_context($user_id, true);
@@ -655,6 +658,9 @@ class Home_nakes extends MX_Controller
 		}
 		if ($this->input->method(TRUE) !== 'POST') {
 			show_404();
+			return;
+		}
+		if ($this->reject_legacy_staff_assignment_when_care_team_enabled()) {
 			return;
 		}
 
@@ -1379,6 +1385,24 @@ class Home_nakes extends MX_Controller
 	{
 		$accept = isset($_SERVER['HTTP_ACCEPT']) ? (string) $_SERVER['HTTP_ACCEPT'] : '';
 		return $this->input->is_ajax_request() || stripos($accept, 'application/json') !== false;
+	}
+
+	private function reject_legacy_staff_assignment_when_care_team_enabled()
+	{
+		if ($this->config->item('care_team_workflow_enabled') !== true) {
+			return false;
+		}
+
+		$request_id = (int) $this->input->post('request_id');
+		$message = 'Pengaturan ini sudah tidak tersedia.';
+		if ($this->staff_assignment_json_requested()) {
+			$this->respond_staff_assignment_json(403, array('status' => 'error', 'message' => $message), $request_id);
+			return true;
+		}
+
+		$this->session->set_flashdata('staff_assignment_error', $message);
+		redirect('home_nakes#riwayat_konsul');
+		return true;
 	}
 
 	private function respond_staff_assignment_json($http_status, array $result, $request_id, $expect_assignment = null)

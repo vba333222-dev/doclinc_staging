@@ -37,6 +37,7 @@ final class ControllerSession
 	private $values;
 	public function __construct(array $values) { $this->values = $values; }
 	public function userdata($key) { return $this->values[$key] ?? null; }
+	public function set_flashdata($key, $value) { $GLOBALS['controller_flash'][$key] = $value; }
 }
 
 final class ControllerInput
@@ -46,6 +47,7 @@ final class ControllerInput
 	public function method($upper = false) { return $upper ? 'POST' : 'post'; }
 	public function post($key, $xss_clean = null) { return $this->values[$key] ?? null; }
 	public function get($key, $xss_clean = null) { return $this->values[$key] ?? null; }
+	public function is_ajax_request() { return $GLOBALS['controller_ajax_requested'] === true; }
 }
 
 final class ControllerOutput
@@ -54,6 +56,7 @@ final class ControllerOutput
 	public $body = '';
 	public $content_type = '';
 	public function set_content_type($value) { $this->content_type = (string) $value; return $this; }
+	public function set_header($value) { return $this; }
 	public function set_status_header($value) { $this->status = (int) $value; return $this; }
 	public function set_output($value) {
 		$this->body = (string) $value;
@@ -133,6 +136,28 @@ final class ControllerModelCollaborator
 		$this->finish();
 		return $this->success;
 	}
+	public function assign_staff_to_request($request_id, $staff_id, $puskesmas_code, $actor_id, $note, $identity) {
+		$GLOBALS['controller_trace'][] = 'model.assign_staff';
+		if ($this->success) {
+			$GLOBALS['controller_staff_assignment'] = (object) array(
+				'staff_id' => (int) $staff_id,
+				'staff_nama' => 'Synthetic staff',
+				'staff_profesi' => 'Perawat',
+				'staff_no_hp' => '',
+			);
+		}
+		return $this->success
+			? array('status' => 'success', 'message' => 'Penanggung jawab diperbarui.')
+			: array('status' => 'error', 'message' => 'Gagal memperbarui penanggung jawab.');
+	}
+	public function clear_staff_assignment($request_id, $puskesmas_code, $actor_id, $identity) {
+		$GLOBALS['controller_trace'][] = 'model.clear_staff_assignment';
+		if ($this->success) { $GLOBALS['controller_staff_assignment'] = null; }
+		return $this->success
+			? array('status' => 'success', 'message' => 'Penugasan dihapus.')
+			: array('status' => 'error', 'message' => 'Gagal menghapus penugasan.');
+	}
+	public function get_active_staff_assignment($request_id) { return $GLOBALS['controller_staff_assignment']; }
 	public function append_request_event($request_id, $event_type, array $data) { $GLOBALS['controller_trace'][] = 'event.append'; return true; }
 }
 
@@ -159,10 +184,14 @@ $GLOBALS['controller_orchestrator'] = null;
 $GLOBALS['controller_notification_calls'] = array();
 $GLOBALS['controller_notification_succeeds'] = true;
 $GLOBALS['controller_visit_proof_required'] = false;
+$GLOBALS['controller_ajax_requested'] = false;
+$GLOBALS['controller_staff_assignment'] = null;
+$GLOBALS['controller_flash'] = array();
+$GLOBALS['controller_redirects'] = array();
 
 function base_url($path = '') { return 'https://fixture.invalid/' . ltrim((string) $path, '/'); }
 function log_message($level, $message) { return true; }
-function redirect($uri = '', $method = 'auto', $code = null) { $GLOBALS['controller_trace'][] = 'redirect'; }
+function redirect($uri = '', $method = 'auto', $code = null) { $GLOBALS['controller_trace'][] = 'redirect'; $GLOBALS['controller_redirects'][] = (string) $uri; }
 function doclinc_role_prerequisite_state($user_id, $fresh = false) { return array('allowed' => (int) $user_id > 0, 'enforced' => false, 'fresh' => (bool) $fresh); }
 function doclinc_realtime_requests_enabled() { return false; }
 function doclinc_visit_proof_required() { return $GLOBALS['controller_visit_proof_required'] === true; }
@@ -284,6 +313,7 @@ function controller_run($operation, $success, $notification_succeeds = true, $ca
 	$GLOBALS['controller_notification_succeeds'] = (bool) $notification_succeeds;
 	$GLOBALS['controller_care_team_workflow_enabled'] = (bool) $care_team_enabled;
 	$GLOBALS['controller_visit_proof_required'] = false;
+	$GLOBALS['controller_ajax_requested'] = false;
 	$GLOBALS['controller_requests'] = $operation === 'create' ? array() : array($request_id => controller_fixture_request($request_id, $operation === 'complete' ? 'Accepted' : 'Pending'));
 	$GLOBALS['controller_orchestrator'] = new ControllerOrchestratorProbe();
 	$_FILES = array();
@@ -299,6 +329,32 @@ function controller_run($operation, $success, $notification_succeeds = true, $ca
 		'orchestrator_method' => $orchestrator_method,
 		'expected_response' => $success ? $success_response : $failure_response,
 		'expected_status' => $success ? 200 : $failure_status,
+	);
+}
+
+function controller_legacy_staff_assignment_run($action, $care_team_enabled, $ajax = true) {
+	$request_id = 5100;
+	$GLOBALS['controller_trace'] = array();
+	$GLOBALS['controller_flash'] = array();
+	$GLOBALS['controller_redirects'] = array();
+	$GLOBALS['controller_requests'] = array($request_id => controller_fixture_request($request_id, 'Accepted'));
+	$GLOBALS['controller_care_team_workflow_enabled'] = (bool) $care_team_enabled;
+	$GLOBALS['controller_ajax_requested'] = (bool) $ajax;
+	$GLOBALS['controller_staff_assignment'] = $action === 'clear_staff_assignment'
+		? (object) array('staff_id' => 1, 'staff_nama' => 'Synthetic staff', 'staff_profesi' => 'Perawat', 'staff_no_hp' => '')
+		: null;
+	$controller = controller_new('Home_nakes', $action, true, array(
+		'request_id' => $request_id,
+		'staff_id' => 1,
+		'note' => 'Synthetic note',
+	), array('id' => 10, 'role' => 'dokter'));
+	$controller->{$action}();
+	$GLOBALS['controller_ajax_requested'] = false;
+	return array(
+		'controller' => $controller,
+		'trace' => $GLOBALS['controller_trace'],
+		'flash' => $GLOBALS['controller_flash'],
+		'redirects' => $GLOBALS['controller_redirects'],
 	);
 }
 
@@ -356,6 +412,31 @@ foreach (array('create','accept','cancel_warga','cancel_command_center','complet
 controller_expect($success_scenarios === 5, 'controller_success_scenario_count_exact');
 controller_expect($failure_scenarios === 5, 'controller_failure_scenario_count_exact');
 controller_expect($notification_failure_scenarios === 5, 'controller_notification_failure_scenario_count_exact');
+
+foreach (array('assign_staff', 'clear_staff_assignment') as $legacy_action) {
+	$care_team_denied = controller_legacy_staff_assignment_run($legacy_action, true);
+	$denied_body = json_decode($care_team_denied['controller']->output->body, true);
+	$model_trace = $legacy_action === 'assign_staff' ? 'model.assign_staff' : 'model.clear_staff_assignment';
+	controller_expect($care_team_denied['controller']->output->status === 403
+		&& $denied_body === array(
+			'status' => 'error',
+			'message' => 'Pengaturan ini sudah tidak tersedia.',
+			'request_id' => 5100,
+			'assignment' => null,
+		), 'care_team_' . $legacy_action . '_json_denied');
+	controller_expect(!in_array($model_trace, $care_team_denied['trace'], true), 'care_team_' . $legacy_action . '_zero_legacy_model_call');
+	$form_denied = controller_legacy_staff_assignment_run($legacy_action, true, false);
+	controller_expect($form_denied['controller']->output->body === ''
+		&& $form_denied['flash'] === array('staff_assignment_error' => 'Pengaturan ini sudah tidak tersedia.')
+		&& $form_denied['redirects'] === array('home_nakes#riwayat_konsul')
+		&& !in_array($model_trace, $form_denied['trace'], true), 'care_team_' . $legacy_action . '_form_redirects_without_mutation');
+
+	$legacy_allowed = controller_legacy_staff_assignment_run($legacy_action, false);
+	$allowed_body = json_decode($legacy_allowed['controller']->output->body, true);
+	controller_expect($legacy_allowed['controller']->output->status === 200
+		&& $allowed_body['status'] === 'success'
+		&& in_array($model_trace, $legacy_allowed['trace'], true), 'feature_off_' . $legacy_action . '_preserved');
+}
 
 $care_team_cancel = controller_run('cancel_warga', true, true, true);
 $care_team_cancel_body = json_decode($care_team_cancel['controller']->output->body, true);
