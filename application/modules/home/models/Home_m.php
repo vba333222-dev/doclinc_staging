@@ -158,21 +158,34 @@ class Home_m extends MX_Controller
 			? 'requests.date AS date'
 			: 'DATE(requests.created_at) AS date';
 
+		$care_team_ready = $this->care_team_display_ready();
 		$handler_name_parts = array();
-		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
-			$handler_name_parts[] = 'assigned_nakes_user.nama';
-		}
-		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
-			$handler_name_parts[] = 'accepted_nakes_user.nama';
+		if ($care_team_ready) {
+			$handler_name_parts[] = 'responsible_doctor_user.nama';
+			$handler_name_parts[] = 'visit_performer_user.nama';
+		} else {
+			if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+				$handler_name_parts[] = 'assigned_nakes_user.nama';
+			}
+			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+				$handler_name_parts[] = 'accepted_nakes_user.nama';
+			}
 		}
 		$explicit_handler_name_expr = !empty($handler_name_parts) ? 'COALESCE(' . implode(', ', $handler_name_parts) . ')' : 'NULL';
 		$legacy_handler_name_expr = 'COALESCE(' . implode(', ', array_merge($handler_name_parts, array('dokter_user.nama'))) . ')';
-		$handler_name_expr = "CASE WHEN requests.request_status = 'Pending' THEN {$explicit_handler_name_expr} ELSE {$legacy_handler_name_expr} END";
+		$handler_name_expr = $care_team_ready
+			? $explicit_handler_name_expr
+			: "CASE WHEN requests.request_status = 'Pending' THEN {$explicit_handler_name_expr} ELSE {$legacy_handler_name_expr} END";
 
 		// Query database
 		$this->db->select("requests.*, {$request_date_select}, COALESCE({$handler_name_expr}, 'Nakes') AS nama_dokter, {$handler_name_expr} AS handling_nakes_name", FALSE);
+		$this->db->select($care_team_ready ? 'responsible_doctor_user.nama AS responsible_doctor_name, visit_performer_user.nama AS visit_performer_name' : 'NULL AS responsible_doctor_name, NULL AS visit_performer_name', FALSE);
 		$this->db->from('requests');
 		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
+		if ($care_team_ready) {
+			$this->db->join('users AS responsible_doctor_user', 'requests.responsible_doctor_user_id = responsible_doctor_user.userId', 'left');
+			$this->db->join('users AS visit_performer_user', 'requests.visit_performer_user_id = visit_performer_user.userId', 'left');
+		}
 		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
 			$this->db->join('users AS assigned_nakes_user', 'requests.assigned_nakes_user_id = assigned_nakes_user.userId', 'left');
 		}
@@ -210,21 +223,32 @@ class Home_m extends MX_Controller
 			? 'requests.date AS date'
 			: ($this->db->field_exists('updated_at', 'requests') ? 'DATE(requests.updated_at) AS date' : 'DATE(requests.created_at) AS date');
 
+		$care_team_ready = $this->care_team_display_ready();
 		$handler_name_parts = array();
-		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
-			$handler_name_parts[] = 'assigned_nakes_user.nama';
+		if ($care_team_ready) {
+			$handler_name_parts[] = 'responsible_doctor_user.nama';
+			$handler_name_parts[] = 'visit_performer_user.nama';
+		} else {
+			if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
+				$handler_name_parts[] = 'assigned_nakes_user.nama';
+			}
+			if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
+				$handler_name_parts[] = 'accepted_nakes_user.nama';
+			}
+			$handler_name_parts[] = 'dokter_user.nama';
 		}
-		if ($this->db->field_exists('accepted_by_user_id', 'requests')) {
-			$handler_name_parts[] = 'accepted_nakes_user.nama';
-		}
-		$handler_name_parts[] = 'dokter_user.nama';
 		$handler_name_expr = 'COALESCE(' . implode(', ', $handler_name_parts) . ", 'Dokter')";
 
 		// Ambil data utama (hasil konsultasi dan user tanpa join terapi)
 		$this->db->select("requests.*, {$request_date_select}, users.nama, {$handler_name_expr} AS nama_dokter, {$handler_name_expr} AS handling_nakes_name", FALSE);
+		$this->db->select($care_team_ready ? 'responsible_doctor_user.nama AS responsible_doctor_name, visit_performer_user.nama AS visit_performer_name' : 'NULL AS responsible_doctor_name, NULL AS visit_performer_name', FALSE);
 		$this->db->from('requests');
 		$this->db->join('users', 'requests.user_id = users.userId');
 		$this->db->join('users AS dokter_user', 'requests.dokter_id = dokter_user.userId', 'left');
+		if ($care_team_ready) {
+			$this->db->join('users AS responsible_doctor_user', 'requests.responsible_doctor_user_id = responsible_doctor_user.userId', 'left');
+			$this->db->join('users AS visit_performer_user', 'requests.visit_performer_user_id = visit_performer_user.userId', 'left');
+		}
 		if ($this->db->field_exists('assigned_nakes_user_id', 'requests')) {
 			$this->db->join('users AS assigned_nakes_user', 'requests.assigned_nakes_user_id = assigned_nakes_user.userId', 'left');
 		}
@@ -378,38 +402,48 @@ class Home_m extends MX_Controller
 		}
 
 		foreach ($requests as $row) {
+			$request_status = isset($row->request_status) ? trim((string) $row->request_status) : '';
+			$consultation_mode = isset($row->consultation_mode) ? strtolower(trim((string) $row->consultation_mode)) : '';
 			$status = isset($row->visit_status) ? $this->warga_normalize_visit_status($row->visit_status) : 'not_started';
+			$is_visit = $consultation_mode === 'visit';
 			$row->warga_visit_status = $status;
-			$row->warga_visit_status_label = $this->warga_visit_status_label($status);
-			$row->warga_top_status_label = $this->warga_top_status_label(isset($row->request_status) ? $row->request_status : '', $status);
-			$row->warga_visit_updated_at = $this->warga_visit_updated_at($row, $status);
-			$row->warga_visit_timeline = $this->get_warga_visit_timeline(isset($row->request_id) ? (int) $row->request_id : 0, $row);
+			$row->warga_is_visit = $is_visit;
+			$row->warga_visit_is_active = $is_visit && $request_status === 'Accepted' && $status !== 'completed';
+			$row->warga_visit_location_available = $row->warga_visit_is_active
+				&& in_array($status, array('en_route', 'arrived', 'in_service'), true);
+			$row->warga_visit_status_label = $is_visit ? $this->warga_visit_status_label($status) : '';
+			$row->warga_top_status_label = $this->warga_top_status_label($request_status, $status, $consultation_mode);
+			$row->warga_visit_updated_at = $is_visit ? $this->warga_visit_updated_at($row, $status) : '';
+			$row->warga_visit_timeline = $is_visit
+				? $this->get_warga_visit_timeline(isset($row->request_id) ? (int) $row->request_id : 0, $row)
+				: array();
 		}
 		$this->decorate_warga_pic_display($requests);
 	}
 
-	public function warga_top_status_label($request_status, $visit_status = null)
+	public function warga_top_status_label($request_status, $visit_status = null, $consultation_mode = null)
 	{
-		$visit_status = $this->warga_normalize_visit_status($visit_status);
-		if ($visit_status !== 'not_started') {
-			return $this->warga_visit_status_label($visit_status);
-		}
-
 		$request_status = trim((string) $request_status);
-		if ($request_status === 'Pending') {
-			return 'Menunggu konfirmasi Puskesmas';
-		}
-		if ($request_status === 'Accepted') {
-			return 'Diterima';
-		}
-		if ($request_status === 'in_service') {
-			return 'Sedang ditangani';
-		}
 		if ($request_status === 'Completed') {
-			return 'Selesai';
+			return 'Konsultasi selesai';
 		}
 		if ($request_status === 'Cancelled') {
 			return 'Dibatalkan';
+		}
+		$consultation_mode = strtolower(trim((string) $consultation_mode));
+		$visit_status = $this->warga_normalize_visit_status($visit_status);
+		if ($consultation_mode === 'visit' && $visit_status !== 'not_started') {
+			return $this->warga_visit_status_label($visit_status);
+		}
+
+		if ($request_status === 'Pending') {
+			return 'Menunggu Puskesmas';
+		}
+		if ($request_status === 'Accepted') {
+			return strtolower(trim((string) $consultation_mode)) === 'non_visit' ? 'Konsultasi tanpa kunjungan' : 'Sedang ditangani';
+		}
+		if ($request_status === 'in_service') {
+			return 'Sedang ditangani';
 		}
 
 		return 'Status belum tersedia';
@@ -765,6 +799,10 @@ class Home_m extends MX_Controller
 			$this->db->field_exists('accepted_by_user_id', 'requests') ? 'accepted_by_user_id' : 'NULL AS accepted_by_user_id',
 			$this->db->field_exists('assigned_nakes_user_id', 'requests') ? 'assigned_nakes_user_id' : 'NULL AS assigned_nakes_user_id',
 			$this->db->field_exists('assigned_nakes_by_user_id', 'requests') ? 'assigned_nakes_by_user_id' : 'NULL AS assigned_nakes_by_user_id',
+			$this->db->field_exists('responsible_doctor_user_id', 'requests') ? 'responsible_doctor_user_id' : 'NULL AS responsible_doctor_user_id',
+			$this->db->field_exists('visit_performer_user_id', 'requests') ? 'visit_performer_user_id' : 'NULL AS visit_performer_user_id',
+			$this->db->field_exists('consultation_mode', 'requests') ? 'consultation_mode' : 'NULL AS consultation_mode',
+			$this->db->field_exists('visit_status', 'requests') ? 'visit_status' : 'NULL AS visit_status',
 		);
 
 		return $this->db
@@ -781,8 +819,18 @@ class Home_m extends MX_Controller
 			return true;
 		}
 
-		foreach (array('accepted_by_user_id', 'assigned_nakes_user_id', 'assigned_nakes_by_user_id') as $field) {
+		foreach (array('accepted_by_user_id', 'assigned_nakes_user_id', 'assigned_nakes_by_user_id', 'responsible_doctor_user_id', 'visit_performer_user_id') as $field) {
 			if (isset($request->{$field}) && (int) $request->{$field} > 0) {
+				return true;
+			}
+		}
+		if (!empty($request->consultation_mode) || (!empty($request->visit_status) && $request->visit_status !== 'not_started')) {
+			return true;
+		}
+		foreach (array('request_responsible_doctor_assignments', 'request_visit_performer_assignments') as $table) {
+			if ($this->db->table_exists($table) && $this->db->field_exists('request_id', $table)
+				&& $this->db->field_exists('status', $table)
+				&& $this->db->where('request_id', (int) $request->request_id)->where('status', 'aktif')->count_all_results($table) > 0) {
 				return true;
 			}
 		}
@@ -839,18 +887,29 @@ class Home_m extends MX_Controller
 			return false;
 		}
 
-		$this->db->where('request_id', $id);
-		$this->db->where('user_id', $user_id);
-		$this->db->where('request_status', 'Pending');
-		$this->db->update('requests', $data);
-
-		if ($this->db->affected_rows() > 0) {
-			log_message('debug', "Update berhasil untuk request ID $id");
-			return true;
-		} else {
-			log_message('error', "Gagal update request ID $id");
+		$this->db->trans_begin();
+		$locked = $this->db->query(
+			'SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? AND user_id = ? FOR UPDATE',
+			array($id, $user_id)
+		)->row();
+		if (!$locked || (string) $locked->request_status !== 'Pending' || $this->request_has_processing_assignment($locked)) {
+			$this->db->trans_rollback();
 			return false;
 		}
+		$this->db->where('request_id', $id)->where('user_id', $user_id)->where('request_status', 'Pending')->update('requests', $data);
+		if ($this->db->trans_status() === false || $this->db->affected_rows() < 1) {
+			$this->db->trans_rollback();
+			return false;
+		}
+		$this->db->trans_commit();
+		return true;
+	}
+
+	private function care_team_display_ready()
+	{
+		return $this->config->item('care_team_workflow_enabled') === true
+			&& $this->db->field_exists('responsible_doctor_user_id', 'requests')
+			&& $this->db->field_exists('visit_performer_user_id', 'requests');
 	}
 
 	private function is_valid_latitude($value)

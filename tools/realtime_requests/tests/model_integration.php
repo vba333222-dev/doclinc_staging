@@ -35,6 +35,19 @@ class ModelIntegrationLoader
 	{
 		return $name !== '';
 	}
+
+	public function library($name)
+	{
+		if ($name === 'encryption') {
+			$GLOBALS['request_model_application']->encryption = new ModelIntegrationEncryption();
+		}
+		return $name !== '';
+	}
+}
+
+class ModelIntegrationEncryption
+{
+	public function decrypt($value) { return $value; }
 }
 
 class ModelIntegrationApplication
@@ -42,6 +55,7 @@ class ModelIntegrationApplication
 	public $db;
 	public $config;
 	public $load;
+	public $encryption;
 
 	public function __construct()
 	{
@@ -575,7 +589,7 @@ try {
 	$GLOBALS['request_model_application']->config->set('visit_arrival_radius_meters', 75);
 
 	$ddl = array(
-		"CREATE TABLE users (userId int NOT NULL AUTO_INCREMENT,password varchar(100) NOT NULL,role enum('admin','dokter','warga','') NOT NULL,status enum('aktif','nonaktif') NULL,remark varchar(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL,must_change_password tinyint(1) NOT NULL DEFAULT 0,PRIMARY KEY(userId)) ENGINE=InnoDB",
+		"CREATE TABLE users (userId int NOT NULL AUTO_INCREMENT,password varchar(100) NOT NULL,nama varchar(150) NULL,role enum('admin','dokter','warga','') NOT NULL,status enum('aktif','nonaktif') NULL,remark varchar(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL,must_change_password tinyint(1) NOT NULL DEFAULT 0,PRIMARY KEY(userId)) ENGINE=InnoDB",
 		"CREATE TABLE m_puskesmas (kode_pkm varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,nama_puskesmas varchar(150) NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(kode_pkm)) ENGINE=InnoDB",
 		"CREATE TABLE puskesmas_staff (staff_id int(10) unsigned NOT NULL AUTO_INCREMENT,kode_pkm varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,user_id int NULL,nama varchar(150) NOT NULL,no_hp varchar(30) NULL,profesi varchar(100) NULL,nomor_sip varchar(100) NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(staff_id)) ENGINE=InnoDB",
 		"CREATE TABLE nakes_presence (user_id int NOT NULL,puskesmas_code varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,last_seen_at datetime(6) NOT NULL,PRIMARY KEY(user_id),KEY idx_presence_tenant(puskesmas_code,last_seen_at,user_id)) ENGINE=InnoDB",
@@ -1298,6 +1312,82 @@ try {
 	$prepared_tenant = $contract->prepare(array('event_id' => 'request.created:9001', 'event_type' => 'request.created', 'aggregate_type' => 'request', 'aggregate_id' => '9001', 'version' => 1, 'invalidation' => 'requests', 'audience' => 'puskesmas:PKM01:ops'), array('PKM01'));
 	model_integration_expect($prepared_owner['idempotency_key'] !== $prepared_tenant['idempotency_key']
 		&& $prepared_owner['payload_json'] !== $prepared_tenant['payload_json'], 'different_audience_cannot_share_duplicate_idempotency');
+
+	$stage = 'warga_pending_edit';
+	model_integration_reset_fixture($db);
+	$db->insert('requests', array(
+		'user_id' => 101,
+		'dokter_id' => 0,
+		'request_description' => 'Original request',
+		'request_status' => 'Pending',
+		'location' => 'Original location',
+		'assigned_puskesmas_code' => 'PKM01',
+		'assigned_puskesmas_name' => 'Synthetic clinic',
+		'assigned_nakes_user_id' => null,
+		'accepted_by_user_id' => null,
+		'assigned_nakes_by_user_id' => null,
+		'visit_status' => 'not_started',
+		'consultation_mode' => null,
+		'created_at' => '2026-01-01 00:00:00',
+		'updated_at' => '2026-01-01 00:00:00',
+	));
+	$editable_request_id = (int) $db->insert_id();
+	$edit_result = $home->updateRequestById($editable_request_id, 101, array(
+		'request_description' => 'Corrected request',
+		'location' => 'Corrected location',
+		'assigned_puskesmas_code' => 'PKM02',
+		'assigned_nakes_user_id' => 202,
+		'consultation_mode' => 'visit',
+	));
+	$edited_request = $db->where('request_id', $editable_request_id)->get('requests')->row();
+	model_integration_expect($edit_result === true
+		&& $edited_request->request_description === 'Corrected request'
+		&& $edited_request->location === 'Corrected location', 'warga_owner_edits_pending_request');
+	model_integration_expect($edited_request->assigned_puskesmas_code === 'PKM01'
+		&& $edited_request->assigned_nakes_user_id === null
+		&& $edited_request->consultation_mode === null, 'warga_edit_ignores_care_team_and_routing_payload');
+	$cross_owner_before = model_integration_digest($db, $editable_request_id);
+	model_integration_expect($home->updateRequestById($editable_request_id, 999, array('request_description' => 'Denied')) === false
+		&& model_integration_digest($db, $editable_request_id) === $cross_owner_before, 'warga_cross_owner_edit_denied_without_mutation');
+	$db->where('request_id', $editable_request_id)->update('requests', array('request_status' => 'Accepted'));
+	$processed_before = model_integration_digest($db, $editable_request_id);
+	model_integration_expect($home->updateRequestById($editable_request_id, 101, array('request_description' => 'Denied')) === false
+		&& model_integration_digest($db, $editable_request_id) === $processed_before, 'warga_processed_request_edit_denied');
+	$db->where('request_id', $editable_request_id)->update('requests', array('request_status' => 'Pending', 'assigned_nakes_user_id' => 201));
+	model_integration_expect($home->updateRequestById($editable_request_id, 101, array('request_description' => 'Denied')) === false,
+		'warga_legacy_assigned_request_edit_denied');
+	$db->query('ALTER TABLE requests ADD responsible_doctor_user_id int NULL, ADD visit_performer_user_id int NULL');
+	$db->data_cache = array();
+	$db->where('request_id', $editable_request_id)->update('requests', array('assigned_nakes_user_id' => null, 'responsible_doctor_user_id' => 201));
+	model_integration_expect($home->updateRequestById($editable_request_id, 101, array('request_description' => 'Denied')) === false,
+		'warga_canonical_care_team_request_edit_denied');
+	$db->where('userId', 201)->update('users', array('nama' => 'Dokter Kanonis'));
+	$db->where('userId', 202)->update('users', array('nama' => 'Dokter Lama'));
+	$db->where('request_id', $editable_request_id)->update('requests', array(
+		'request_status' => 'Accepted',
+		'dokter_id' => 202,
+		'assigned_nakes_user_id' => 202,
+		'responsible_doctor_user_id' => 201,
+		'visit_performer_user_id' => null,
+	));
+	$GLOBALS['request_model_application']->config->set('care_team_workflow_enabled', false);
+	$legacy_identity_rows = $home->getAllDataRequests(101, array('Accepted'));
+	model_integration_expect(count($legacy_identity_rows) === 1
+		&& $legacy_identity_rows[0]->handling_nakes_name === 'Dokter Lama'
+		&& $legacy_identity_rows[0]->responsible_doctor_name === null,
+		'feature_off_installed_schema_keeps_legacy_warga_identity');
+	$GLOBALS['request_model_application']->config->set('care_team_workflow_enabled', true);
+	$canonical_identity_rows = $home->getAllDataRequests(101, array('Accepted'));
+	model_integration_expect(count($canonical_identity_rows) === 1
+		&& $canonical_identity_rows[0]->handling_nakes_name === 'Dokter Kanonis'
+		&& $canonical_identity_rows[0]->responsible_doctor_name === 'Dokter Kanonis',
+		'feature_on_ready_schema_uses_canonical_warga_identity');
+	$db->where('request_id', $editable_request_id)->update('requests', array('responsible_doctor_user_id' => null));
+	$nullable_identity_rows = $home->getAllDataRequests(101, array('Accepted'));
+	model_integration_expect(count($nullable_identity_rows) === 1
+		&& $nullable_identity_rows[0]->handling_nakes_name === null
+		&& $nullable_identity_rows[0]->responsible_doctor_name === null,
+		'feature_on_nullable_canonical_identity_does_not_fall_back_to_legacy');
 
 	echo "REALTIME_REQUEST_FAULT_SCENARIOS={$fault_scenarios}\n";
 	echo "REALTIME_REQUEST_STATE_C_SCENARIOS={$state_c_scenarios}\n";

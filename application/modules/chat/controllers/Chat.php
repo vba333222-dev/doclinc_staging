@@ -81,11 +81,15 @@ class Chat extends MX_Controller
 			return;
 		}
 
-		$this->output->set_output(json_encode(array(
+		$response = array(
 			'status' => 'success',
 			'can_send' => doclinc_can_send_chat($request_id, $user_id),
 			'messages' => $this->Chat_m->get_messages($request_id, $user_id, 50, $after_id),
-		)));
+		);
+		if (doclinc_current_user_role() === 'warga') {
+			$response['participant'] = $this->Chat_m->get_chat_participant_payload($request_id);
+		}
+		$this->output->set_output(json_encode($response));
 	}
 
 	public function send()

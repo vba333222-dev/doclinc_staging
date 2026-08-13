@@ -14,6 +14,34 @@
 		$is_responsible_doctor = $care_team_enabled
 			&& isset($nakes_primary_active->responsible_doctor_user_id)
 			&& (int) $nakes_primary_active->responsible_doctor_user_id === (int) $this->session->userdata('id');
+		$is_visit_performer = $care_team_enabled
+			&& (string) ($nakes_primary_active->consultation_mode ?? '') === 'visit'
+			&& isset($nakes_primary_active->visit_performer_user_id)
+			&& (int) $nakes_primary_active->visit_performer_user_id === (int) $this->session->userdata('id');
+		$primary_visit_status = isset($nakes_primary_active->visit_status) ? doclinc_normalize_visit_status($nakes_primary_active->visit_status) : 'not_started';
+		$primary_visit_status = $primary_visit_status !== '' ? $primary_visit_status : 'not_started';
+		$primary_role_label = $is_responsible_doctor ? 'Dokter penanggung jawab' : ($is_visit_performer ? 'Nakes kunjungan' : 'Pemantau layanan');
+		$primary_next_action = '';
+		if ($is_responsible_doctor) {
+			if ((string) ($nakes_primary_active->consultation_mode ?? '') === '') {
+				$primary_next_action = 'Pilih jenis layanan';
+			} elseif ((string) ($nakes_primary_active->consultation_mode ?? '') === 'visit' && (int) ($nakes_primary_active->visit_performer_user_id ?? 0) < 1) {
+				$primary_next_action = 'Pilih Nakes kunjungan';
+			} elseif ((string) ($nakes_primary_active->consultation_mode ?? '') === 'visit' && $primary_visit_status !== 'completed') {
+				$primary_next_action = 'Pantau hasil kunjungan';
+			} else {
+				$primary_next_action = 'Lengkapi dan selesaikan konsultasi';
+			}
+		} elseif ($is_visit_performer) {
+			$primary_visit_actions = array(
+				'not_started' => 'Mulai perjalanan',
+				'en_route' => 'Tiba di lokasi',
+				'arrived' => 'Mulai pemeriksaan',
+				'in_service' => 'Catat hasil pemeriksaan',
+				'completed' => 'Kunjungan selesai',
+			);
+			$primary_next_action = isset($primary_visit_actions[$primary_visit_status]) ? $primary_visit_actions[$primary_visit_status] : 'Lihat tugas kunjungan';
+		}
 		$primary_event_label = static function ($event) {
 			$event_type = isset($event->event_type) ? (string) $event->event_type : '';
 			if ($event_type === 'pic_assigned') {
@@ -48,6 +76,12 @@
 				<div class="dl-task-meta">No. Antrian: <?= html_escape($active_queue_code); ?> · <?= html_escape($active_mode_label); ?></div>
 			</div>
 		</div>
+		<?php if ($care_team_enabled && ($is_responsible_doctor || $is_visit_performer)) : ?>
+			<div class="alert alert-light border my-3 py-2 px-3" data-primary-next-action="<?= $is_responsible_doctor ? 'responsible_doctor' : 'visit_performer'; ?>">
+				<span class="small text-muted d-block">Peran Anda · <?= html_escape($primary_role_label); ?></span>
+				<strong data-primary-next-action-label><?= html_escape($primary_next_action); ?></strong>
+			</div>
+		<?php endif; ?>
 		<?php if (!empty($can_coordinate_staff)) : ?>
 		<div class="nk-pic-inline" data-pic-summary data-request-id="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
 			<span><?= $care_team_enabled ? 'Dokter penanggung jawab' : 'Penanggung jawab layanan'; ?></span>
@@ -76,7 +110,7 @@
 							<?php foreach ($primary_staff_options as $staff_option) : ?>
 								<?php if ($care_team_enabled && empty($staff_option->responsible_doctor_eligible)) { continue; } ?>
 								<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= $care_team_enabled ? ((int) ($nakes_primary_active->responsible_doctor_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : '') : ($primary_pic_assignment && (int) $primary_pic_assignment->staff_id === (int) $staff_option->staff_id ? 'selected' : ''); ?> <?= ($staff_option->personal_account_state ?? '') === 'invalid' ? 'disabled' : ''; ?>>
-									<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Status belum tersedia' : 'Belum ada akun personal'); ?>
+									<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Status belum tersedia' : 'Belum ada akun'); ?>
 								</option>
 							<?php endforeach; ?>
 						</select>
@@ -143,8 +177,10 @@
 				</div>
 			</div>
 		<?php endif; ?>
-		<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $nakes_primary_active->request_id)); ?>" class="btn btn-success rounded-pill w-100 mt-3 fw-bold">
-			<?= $care_team_enabled && !$is_responsible_doctor ? 'Lihat konsultasi' : 'Lanjutkan penanganan'; ?>
+		<a href="<?= html_escape($is_visit_performer && $primary_visit_status !== 'in_service'
+			? base_url('home_nakes#riwayat_konsul')
+			: base_url('konsultasi_nakes/konsultasi/' . (int) $nakes_primary_active->request_id)); ?>" class="btn btn-success rounded-pill w-100 mt-3 py-2 fw-bold">
+			<?= $is_visit_performer ? ($primary_visit_status === 'in_service' ? 'Catat hasil pemeriksaan' : 'Buka tugas kunjungan') : ($care_team_enabled && !$is_responsible_doctor ? 'Lihat konsultasi' : 'Lanjutkan konsultasi'); ?>
 		</a>
 	<?php else : ?>
 		<?php

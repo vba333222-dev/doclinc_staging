@@ -70,6 +70,10 @@ class Konsultasi_nakes extends MX_Controller
 			? !empty($access_context['can_assess'])
 			: !empty($access_context['can_handle']);
 		$x['can_record_vital_signs'] = $x['care_team_workflow_enabled'] && !empty($access_context['can_visit']);
+		$x['request_status'] = isset($request->request_status) ? (string) $request->request_status : '';
+		$x['consultation_mode'] = isset($request->consultation_mode) ? (string) $request->consultation_mode : '';
+		$x['visit_status'] = isset($request->visit_status) ? doclinc_normalize_visit_status($request->visit_status) : '';
+		$x['is_visit_performer'] = $x['care_team_workflow_enabled'] && !empty($access_context['is_visit_performer']);
 		$x['vital_signs_schema_ready'] = $this->visit_vital_signs_service->schemaReady();
 		$x['latest_vital_signs'] = $x['vital_signs_schema_ready']
 			? $this->visit_vital_signs_service->latest((int) $x['request_id'])
