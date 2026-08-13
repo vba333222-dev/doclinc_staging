@@ -19,16 +19,18 @@ class FakeNode {
 
 const documentListeners = {};
 const windowListeners = {};
+const bodyClasses = new Set();
 const clearedIntervals = [];
 let intervalSequence = 0;
 let fetchCalls = [];
 let deferredResolve = null;
 const fakeDocument = {
   visibilityState: 'visible',
+  body: { classList: { add(name) { bodyClasses.add(name); } } },
   createElement(tag) { return new FakeNode(tag, fakeDocument); },
   addEventListener(name, callback) { documentListeners[name] = callback; },
   removeEventListener(name, callback) { if (documentListeners[name] === callback) delete documentListeners[name]; },
-  getElementById() { return container; }
+  getElementById(id) { return id === 'doclincPuskesmasOperations' ? container : null; }
 };
 const container = new FakeNode('div', fakeDocument);
 
@@ -44,6 +46,7 @@ global.fetch = (url, options) => {
     summary: { pending_requests: 2, unassigned_requests: 1, available_staff: 1, accepted_requests: 3 },
     staff: [{ staff_id: 11, user_id: 201, display_name: '<img onerror=alert(1)>', profession: 'Dokter', is_online: true, last_seen_age_seconds: 12, workload_state: 'busy', active_request_count: 2 }],
     exceptions: [{ request_id: 99, type: 'unassigned_request', visit_status_label: 'Belum dimulai' }],
+    requests: [{ request_id: 7, queue_number: 1, service_date: '2026-08-13', patient_name: '<script>alert(1)</script>', patient_nik_masked: '3671********0001', status_label: 'Dalam perjalanan', service_mode_label: 'Kunjungan', responsible_doctor_name: 'Dokter A', visit_performer_name: 'Perawat B', has_medical_record: false }],
     generated_at_epoch: 1785643200
   };
   return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true, data }) });
@@ -71,15 +74,20 @@ function check(condition, name) {
   fetchCalls = [];
   const runtime = client.create({ enabled: true, snapshotUrl: '/puskesmas/operations/snapshot', pollIntervalMs: 30000 });
   check(runtime.begin() === true, 'runtime_started');
+  check(bodyClasses.has('dl-command-center'), 'command_center_shell_modifier_applied_by_operations_runtime');
   await new Promise(resolve => setImmediate(resolve));
   check(fetchCalls.length === 1 && fetchCalls[0].options.method === 'GET', 'snapshot_uses_get');
   check(fetchCalls[0].options.credentials === 'same-origin' && fetchCalls[0].options.cache === 'no-store', 'snapshot_transport_private');
-  check(container.children.length === 3, 'summary_staff_and_exception_sections_rendered');
+  check(container.children.length === 4, 'summary_staff_exception_and_request_sections_rendered');
   const staffName = container.children[1].children[1].children[0].children[0].children[0].textContent;
   check(staffName === '<img onerror=alert(1)>', 'staff_name_rendered_as_text');
   const staffMeta = container.children[1].children[1].children[0].children[0].children[1].textContent;
   check(staffMeta === 'Dokter · Aktif sekarang', 'staff_freshness_rendered_without_raw_timestamp');
   check(container.children[2].children[1].children[0].attributes['data-request-id'] === '99', 'exception_request_identity_rendered');
+  const requestIdentity = container.children[3].children[1].children[0].children[0];
+  check(requestIdentity.children[0].textContent === 'Antrean 1', 'simple_queue_rendered');
+  check(requestIdentity.children[1].textContent === '<script>alert(1)</script>', 'patient_name_rendered_as_text');
+  check(requestIdentity.children[2].textContent === 'NIK 3671********0001', 'nik_remains_masked_in_list');
   check(typeof windowListeners.pagehide === 'function', 'pagehide_listener_installed');
   check(windowListeners.pagehide() === true, 'pagehide_teardown');
   check(clearedIntervals.length >= 1, 'poll_interval_cleared');

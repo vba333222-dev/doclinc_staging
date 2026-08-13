@@ -391,6 +391,7 @@ class Home_nakes extends MX_Controller
 		$d['puskesmas_operations_bootstrap'] = array(
 			'enabled' => $d['puskesmas_operations_enabled'],
 			'snapshotUrl' => base_url('puskesmas/operations/snapshot'),
+			'medicalRecordUrl' => base_url('puskesmas/operations/medical-record'),
 			'pageUrl' => site_url('puskesmas/operations'),
 			'pollIntervalMs' => max(15000, (int) $this->config->item('puskesmas_operations_poll_seconds') * 1000),
 			'containerId' => 'doclincPuskesmasOperations',

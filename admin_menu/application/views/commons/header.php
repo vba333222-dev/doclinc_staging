@@ -123,7 +123,7 @@
 			<li class="nav-item <?= $doclinc_active_rekam_medis; ?>">
 				<a class="nav-link" href="<?php echo site_url('rekam_medis'); ?>">
 					<i class="fas fa-notes-medical"></i>
-					<span>Rekam medis</span>
+					<span>Pemantauan layanan</span>
 				</a>
 			</li>
 

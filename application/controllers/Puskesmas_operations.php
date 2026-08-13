@@ -21,8 +21,9 @@ class Puskesmas_operations extends CI_Controller
 			$this->respond(405, false, 'method_not_allowed');
 			return;
 		}
-		if (!empty($this->input->get(null, true))) {
-			$this->respond(400, false, 'query_not_allowed');
+		$filters = $this->filters();
+		if ($filters === false) {
+			$this->respond(400, false, 'invalid_filter');
 			return;
 		}
 		if ($this->config->item('puskesmas_operations_enabled') !== true) {
@@ -45,7 +46,8 @@ class Puskesmas_operations extends CI_Controller
 		$result = $service->snapshot(
 			$actor,
 			(int) $this->config->item('puskesmas_operations_staff_limit'),
-			(int) $this->config->item('puskesmas_operations_request_limit')
+			(int) $this->config->item('puskesmas_operations_request_limit'),
+			$filters
 		);
 		if (empty($result['ok'])) {
 			$status = in_array($result['code'], array('schema_unavailable', 'read_failed', 'result_too_large'), true) ? 503 : 403;
@@ -54,6 +56,64 @@ class Puskesmas_operations extends CI_Controller
 		}
 
 		$this->respond(200, true, 'ok', $result['data']);
+	}
+
+	public function medical_record($request_id = 0)
+	{
+		$this->output
+			->set_content_type('application/json', 'utf-8')
+			->set_header('Cache-Control: private, no-store, no-cache, must-revalidate, max-age=0');
+		if ($this->input->method(true) !== 'GET' || !empty($this->input->get(null, true))) {
+			$this->respond(405, false, 'method_not_allowed');
+			return;
+		}
+		if ($this->config->item('puskesmas_operations_enabled') !== true) {
+			$this->respond(403, false, 'feature_disabled');
+			return;
+		}
+		$actor = $this->freshActor();
+		$prerequisite = doclinc_role_prerequisite_state((int) $actor['user_id'], true);
+		if (empty($prerequisite['allowed']) || empty($prerequisite['complete'])) {
+			$this->respond(403, false, 'profile_prerequisites_missing');
+			return;
+		}
+		require_once APPPATH . 'libraries/Puskesmas_operations_service.php';
+		$service = new Puskesmas_operations_service($this->db, (int) $this->config->item('nakes_presence_online_timeout_seconds'));
+		$result = $service->medicalRecord($actor, (int) $request_id);
+		if (empty($result['ok'])) {
+			$this->respond($result['code'] === 'schema_unavailable' ? 503 : 403, false, $result['code']);
+			return;
+		}
+		$this->respond(200, true, 'ok', $result['data']);
+	}
+
+	private function filters()
+	{
+		$input = $this->input->get(null, true);
+		$input = is_array($input) ? $input : array();
+		foreach (array_keys($input) as $key) {
+			if (!in_array($key, array('q', 'date_from', 'date_to'), true)) {
+				return false;
+			}
+		}
+		$q = trim((string) ($input['q'] ?? ''));
+		$from = trim((string) ($input['date_from'] ?? date('Y-m-d')));
+		$to = trim((string) ($input['date_to'] ?? $from));
+		if (strlen($q) > 100 || !$this->validDate($from) || !$this->validDate($to)) {
+			return false;
+		}
+		$from_time = strtotime($from . ' 00:00:00');
+		$to_time = strtotime($to . ' 00:00:00');
+		if ($from_time > $to_time || $to_time - $from_time > 31 * 86400) {
+			return false;
+		}
+		return array('q' => $q, 'date_from' => $from, 'date_to' => $to);
+	}
+
+	private function validDate($value)
+	{
+		$date = DateTime::createFromFormat('!Y-m-d', (string) $value);
+		return $date && $date->format('Y-m-d') === $value;
 	}
 
 	private function freshActor()

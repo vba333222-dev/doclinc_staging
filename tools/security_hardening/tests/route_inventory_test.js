@@ -109,7 +109,7 @@ const inventory = {
     index: 'GET',
   },
   'application/controllers/Puskesmas_operations.php': {
-    snapshot: 'GET',
+    snapshot: 'GET', medical_record: 'GET',
   },
   'application/controllers/Clinical_suggestions.php': {
     search: 'GET',
