@@ -25,6 +25,7 @@
         return {
             enabled: raw.enabled === true,
             snapshotUrl: typeof raw.snapshotUrl === 'string' ? raw.snapshotUrl : '',
+            medicalRecordUrl: typeof raw.medicalRecordUrl === 'string' ? raw.medicalRecordUrl : '',
             pageUrl: typeof raw.pageUrl === 'string' ? raw.pageUrl : '',
             pollIntervalMs: positiveInteger(raw.pollIntervalMs, 30000, 15000),
             containerId: typeof raw.containerId === 'string' && raw.containerId ? raw.containerId : 'doclincPuskesmasOperations'
@@ -74,12 +75,14 @@
             summary: raw.summary && typeof raw.summary === 'object' ? raw.summary : {},
             staff: Array.isArray(raw.staff) ? raw.staff : [],
             exceptions: Array.isArray(raw.exceptions) ? raw.exceptions : [],
+            requests: Array.isArray(raw.requests) ? raw.requests : [],
+            filters: raw.filters && typeof raw.filters === 'object' ? raw.filters : {},
             generated_at_epoch: positiveInteger(raw.generated_at_epoch, 0, 1)
         };
     }
 
-    function section(documentRef, title, meta) {
-        var wrapper = element(documentRef, 'section', 'dl-nakes-card dl-dashboard-section');
+    function section(documentRef, title, meta, modifier) {
+        var wrapper = element(documentRef, 'section', 'dl-nakes-card dl-dashboard-section' + (modifier ? ' ' + modifier : ''));
         var heading = element(documentRef, 'div', 'dl-operations-section-title');
         heading.appendChild(element(documentRef, 'strong', '', title));
         heading.appendChild(element(documentRef, 'span', '', meta));
@@ -109,7 +112,7 @@
         });
         container.appendChild(metrics);
 
-        var staffSection = section(documentRef, 'Beban tugas Nakes', String(data.staff.length) + ' Nakes aktif terhubung');
+        var staffSection = section(documentRef, 'Beban tugas Nakes', String(data.staff.length) + ' Nakes aktif terhubung', 'dl-operations-section--staff');
         var staffList = element(documentRef, 'div', 'dl-operations-staff');
         if (!data.staff.length) {
             staffList.appendChild(element(documentRef, 'div', 'dl-operations-empty', 'Belum ada akun Nakes personal aktif yang terhubung.'));
@@ -129,7 +132,7 @@
         staffSection.appendChild(staffList);
         container.appendChild(staffSection);
 
-        var exceptionSection = section(documentRef, 'Perlu perhatian', String(data.exceptions.length) + ' item operasional');
+        var exceptionSection = section(documentRef, 'Perlu perhatian', String(data.exceptions.length) + ' item operasional', 'dl-operations-section--attention');
         var exceptionList = element(documentRef, 'div', 'dl-operations-exceptions');
         if (!data.exceptions.length) {
 			exceptionList.appendChild(element(documentRef, 'div', 'dl-operations-empty', 'Tidak ada penugasan yang perlu diperiksa.'));
@@ -139,7 +142,7 @@
                 item.setAttribute('data-request-id', String(row.request_id || ''));
                 var copy = element(documentRef, 'div', 'dl-operations-exception-copy');
 				var title = row.type === 'ambiguous_assignment' ? 'Penugasan perlu diperiksa' : 'Penanggung jawab belum ditentukan';
-                copy.appendChild(element(documentRef, 'strong', '', title + ' · Permintaan #' + String(row.request_id || '')));
+				copy.appendChild(element(documentRef, 'strong', '', title));
                 copy.appendChild(element(documentRef, 'span', '', String(row.visit_status_label || 'Belum dimulai')));
                 item.appendChild(copy);
                 exceptionList.appendChild(item);
@@ -147,6 +150,36 @@
         }
         exceptionSection.appendChild(exceptionList);
         container.appendChild(exceptionSection);
+
+		var requestSection = section(documentRef, 'Konsultasi', String(data.requests.length) + ' layanan', 'dl-operations-section--requests');
+		var requestList = element(documentRef, 'div', 'dl-operations-requests');
+		if (!data.requests.length) {
+			requestList.appendChild(element(documentRef, 'div', 'dl-operations-empty', 'Tidak ada layanan pada tanggal ini.'));
+		} else {
+			data.requests.forEach(function(row) {
+				var item = element(documentRef, 'article', 'dl-operations-request-item');
+				item.setAttribute('data-request-id', String(row.request_id || ''));
+				var identity = element(documentRef, 'div', 'dl-operations-request-identity');
+				identity.appendChild(element(documentRef, 'strong', '', 'Antrean ' + String(row.queue_number || '')));
+				identity.appendChild(element(documentRef, 'span', '', String(row.patient_name || 'Warga')));
+				if (row.patient_nik_masked) identity.appendChild(element(documentRef, 'small', '', 'NIK ' + String(row.patient_nik_masked)));
+				identity.appendChild(element(documentRef, 'small', '', String(row.service_date || '-') + ' · ' + String(row.status_label || 'Status belum tersedia')));
+				var team = element(documentRef, 'div', 'dl-operations-request-team');
+				team.appendChild(element(documentRef, 'span', '', 'Dokter penanggung jawab: ' + String(row.responsible_doctor_name || '-')));
+				if (row.service_mode_label === 'Kunjungan') team.appendChild(element(documentRef, 'span', '', 'Petugas kunjungan: ' + String(row.visit_performer_name || '-')));
+				item.appendChild(identity);
+				item.appendChild(team);
+				if (row.has_medical_record) {
+					var detail = element(documentRef, 'button', 'btn btn-outline-success btn-sm dl-operations-record-open', 'Lihat catatan');
+					detail.type = 'button';
+					detail.setAttribute('data-request-id', String(row.request_id || ''));
+					item.appendChild(detail);
+				}
+				requestList.appendChild(item);
+			});
+		}
+		requestSection.appendChild(requestList);
+		container.appendChild(requestSection);
         return true;
     }
 
@@ -154,7 +187,7 @@
         if (!container || !container.ownerDocument) return false;
         clearNode(container);
         container.setAttribute('aria-busy', 'false');
-        container.appendChild(element(container.ownerDocument, 'div', 'dl-nakes-card dl-dashboard-section dl-operations-error', 'Ringkasan operasional belum dapat dimuat. Sistem akan mencoba lagi.'));
+		container.appendChild(element(container.ownerDocument, 'div', 'dl-nakes-card dl-dashboard-section dl-operations-error', 'Data belum dapat dimuat. Coba lagi.'));
         return true;
     }
 
@@ -165,6 +198,8 @@
         var timer = null;
         var abortController = null;
         var container = root.document ? root.document.getElementById(config.containerId) : null;
+		var filterForm = root.document ? root.document.getElementById('doclincOperationsFilters') : null;
+		var recordContainer = root.document ? root.document.getElementById('doclincOperationsMedicalRecord') : null;
 
         function visible() {
             return !root.document || root.document.visibilityState !== 'hidden';
@@ -184,7 +219,12 @@
                 headers: { 'Accept': 'application/json' }
             };
             if (abortController) options.signal = abortController.signal;
-            return root.fetch(config.snapshotUrl, options).then(function(response) {
+			var snapshotUrl = config.snapshotUrl;
+			if (filterForm && typeof root.URLSearchParams === 'function') {
+				var parameters = new root.URLSearchParams(new root.FormData(filterForm));
+				snapshotUrl += '?' + parameters.toString();
+			}
+            return root.fetch(snapshotUrl, options).then(function(response) {
                 return response.json().catch(function() { throw new Error('invalid_response'); }).then(function(body) {
                     if (!response.ok || !body || body.success !== true || !body.data) throw new Error('request_failed');
                     if (!stopped) render(container, body.data);
@@ -203,19 +243,56 @@
             if (!stopped && visible()) snapshot();
         }
 
+		function showMedicalRecord(event) {
+			var button = event.target && event.target.closest ? event.target.closest('.dl-operations-record-open') : null;
+			if (!button || !config.medicalRecordUrl || !recordContainer) return;
+			var requestId = button.getAttribute('data-request-id');
+			if (!/^\d+$/.test(String(requestId || ''))) return;
+			root.fetch(config.medicalRecordUrl.replace(/\/$/, '') + '/' + requestId, { method: 'GET', credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } })
+				.then(function(response) { return response.json().then(function(body) { if (!response.ok || !body.success) throw new Error('request_failed'); return body.data; }); })
+				.then(function(data) {
+					clearNode(recordContainer);
+					recordContainer.appendChild(element(recordContainer.ownerDocument, 'h3', '', 'Catatan layanan'));
+					[['Pasien', data.patient_name], ['Tanggal layanan', data.service_date], ['Dokter penanggung jawab', data.responsible_doctor_name], ['Dicatat oleh', data.recorded_by_name], ['Anamnesis', data.anamnesis], ['Diagnosis', data.diagnosis], ['Terapi', data.treatment], ['Saran', data.recommendations]].forEach(function(row) {
+						var line = element(recordContainer.ownerDocument, 'div', 'dl-operations-record-row');
+						line.appendChild(element(recordContainer.ownerDocument, 'strong', '', row[0]));
+						line.appendChild(element(recordContainer.ownerDocument, 'span', '', String(row[1] || '-')));
+						recordContainer.appendChild(line);
+					});
+					recordContainer.hidden = false;
+					recordContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}).catch(function() {
+					clearNode(recordContainer);
+					recordContainer.appendChild(element(recordContainer.ownerDocument, 'div', 'dl-operations-error', 'Catatan belum dapat dibuka.'));
+					recordContainer.hidden = false;
+				});
+		}
+
+		function submitFilters(event) {
+			event.preventDefault();
+			snapshot();
+		}
+
         function teardown() {
             if (stopped) return false;
             stopped = true;
             if (timer !== null) root.clearInterval(timer);
             if (abortController) abortController.abort();
             if (root.document) root.document.removeEventListener('visibilitychange', onVisibilityChange);
+			if (container && typeof container.removeEventListener === 'function') container.removeEventListener('click', showMedicalRecord);
+			if (filterForm && typeof filterForm.removeEventListener === 'function') filterForm.removeEventListener('submit', submitFilters);
             root.removeEventListener('pagehide', teardown);
             return true;
         }
 
         function begin() {
             if (!config.enabled || !config.snapshotUrl) return false;
+            if (root.document && root.document.body && root.document.body.classList) {
+                root.document.body.classList.add('dl-command-center');
+            }
             if (root.document) root.document.addEventListener('visibilitychange', onVisibilityChange);
+			if (container && typeof container.addEventListener === 'function') container.addEventListener('click', showMedicalRecord);
+			if (filterForm && typeof filterForm.addEventListener === 'function') filterForm.addEventListener('submit', submitFilters);
             root.addEventListener('pagehide', teardown);
             snapshot();
             timer = root.setInterval(snapshot, config.pollIntervalMs);

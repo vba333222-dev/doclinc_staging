@@ -17,11 +17,8 @@
 			$this->session->set_flashdata('title', 'Kelola tindakan');
 			$this->session->set_flashdata('active_tab_tindakan', 'active');
 			unset($_SESSION['active_tab_dashboard']);
-			$year = date('Y');
-			$month = date('m');
-			$x['data_tindakan'] = $this->Kelola_tindakan_m->get_data_tindakan();
 			$this->load->view('commons/header');
-			$this->load->view('kelola_tindakan_v',$x);
+			$this->load->view('kelola_tindakan_v');
 			$this->load->view('commons/footer');
 		}
 
@@ -30,11 +27,7 @@
 			if (!$this->require_post()) {
 				return;
 			}
-			$konsul_id = $this->input->post('konsul_id');
-			$saran = $this->input->post('saran');
-			$this->Kelola_tindakan_m->edit_tindakan($konsul_id, $saran);
-			$this->session->set_flashdata('success', 'Data tindakan berhasil diperbarui.');
-			redirect('kelola_tindakan', 'refresh');
+			$this->deny_clinical_mutation();
 		}
 
 		public function delete_tindakan()
@@ -42,10 +35,13 @@
 			if (!$this->require_post()) {
 				return;
 			}
-			$konsul_id = $this->input->post('konsul_id');
-			$remark = $this->input->post('remark');
-			$this->Kelola_tindakan_m->delete_tindakan($konsul_id, $remark);
-			$this->session->set_flashdata('success', 'Data tindakan berhasil dinonaktifkan.');
+			$this->deny_clinical_mutation();
+		}
+
+		private function deny_clinical_mutation()
+		{
+			$this->output->set_status_header(403);
+			$this->session->set_flashdata('error', 'Data klinis hanya dapat diubah oleh tenaga kesehatan yang menangani.');
 			redirect('kelola_tindakan', 'refresh');
 		}
 

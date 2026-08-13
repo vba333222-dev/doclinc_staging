@@ -69,15 +69,14 @@ $summary_cards = array(
 	array('label' => 'Total rekam medis', 'value' => (int) ($summary['total'] ?? 0), 'icon' => 'fa-notes-medical', 'tone' => 'primary'),
 	array('label' => '30 hari terakhir', 'value' => (int) ($summary['last_30_days'] ?? 0), 'icon' => 'fa-calendar-alt', 'tone' => 'info'),
 	array('label' => 'Puskesmas terlibat', 'value' => (int) ($summary['puskesmas_count'] ?? 0), 'icon' => 'fa-hospital', 'tone' => 'success'),
-	array('label' => 'Diagnosis terbanyak', 'value' => doclinc_record_short_text($summary['top_diagnosis'] ?? '-', 28), 'icon' => 'fa-chart-bar', 'tone' => 'service', 'meta' => number_format((int) ($summary['top_diagnosis_count'] ?? 0)) . ' kasus'),
 );
 ?>
 
 <div class="doclinc-record-library">
 	<div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
 		<div>
-			<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-notes-medical"></i> Rekam medis</h1>
-			<div class="doclinc-page-subtitle">Rekam medis yang sudah diisi.</div>
+			<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-notes-medical"></i> Pemantauan layanan</h1>
+			<div class="doclinc-page-subtitle">Ringkasan layanan tanpa isi klinis pasien.</div>
 		</div>
 	</div>
 
@@ -102,7 +101,7 @@ $summary_cards = array(
 				<div class="form-row align-items-end">
 					<div class="form-group col-lg-4">
 						<label class="small font-weight-bold text-muted" for="keyword">Cari</label>
-						<input type="text" class="form-control" id="keyword" name="keyword" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="Pasien, diagnosis, Puskesmas, ID">
+						<input type="text" class="form-control" id="keyword" name="keyword" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="Nomor permintaan atau Puskesmas">
 					</div>
 					<div class="form-group col-lg-3">
 						<label class="small font-weight-bold text-muted" for="puskesmas">Puskesmas</label>
@@ -133,7 +132,7 @@ $summary_cards = array(
 
 	<div class="card shadow-sm doclinc-record-card">
 		<div class="card-header d-flex flex-wrap align-items-center justify-content-between">
-			<h2 class="h6 mb-0 font-weight-bold">Daftar rekam medis</h2>
+			<h2 class="h6 mb-0 font-weight-bold">Daftar layanan</h2>
 			<span class="doclinc-meta-text">Maksimal 200 data terbaru</span>
 		</div>
 		<div class="card-body">
@@ -145,31 +144,27 @@ $summary_cards = array(
 						<thead>
 							<tr>
 								<th>Tanggal</th>
-								<th>Pasien</th>
+								<th>Permintaan</th>
 								<th>Puskesmas</th>
-								<th>Diagnosis</th>
+								<th>Dokter penanggung jawab</th>
+								<th>Dicatat oleh</th>
 								<th>Jenis layanan</th>
 								<th>Status</th>
-								<th>Aksi</th>
 							</tr>
 						</thead>
 						<tbody>
 							<?php foreach ($records as $row): ?>
 								<tr>
 									<td><?= html_escape(doclinc_record_date($row->created_at ?? '')); ?></td>
-									<td><?= html_escape($row->patient_name ?? '-'); ?></td>
+									<td>#<?= (int) ($row->request_id ?? 0); ?></td>
 									<td>
 										<div class="font-weight-bold"><?= html_escape(doclinc_record_puskesmas_label($row->puskesmas_name ?? '')); ?></div>
 										<div class="doclinc-meta-text"><?= html_escape($row->puskesmas_code ?? '-'); ?></div>
 									</td>
-									<td><?= html_escape(doclinc_record_short_text($row->diagnosis ?? '-', 64)); ?></td>
+									<td><?= html_escape(trim((string) ($row->responsible_doctor_name ?? '')) !== '' ? $row->responsible_doctor_name : 'Belum tercatat'); ?></td>
+									<td><?= html_escape(trim((string) ($row->recorded_by_name ?? '')) !== '' ? $row->recorded_by_name : 'Belum tercatat'); ?></td>
 									<td><span class="doclinc-record-badge"><?= html_escape(doclinc_record_service_label($row->consultation_mode ?? '', $row->visit_status ?? '')); ?></span></td>
 									<td><span class="doclinc-record-badge"><?= html_escape(doclinc_record_status_label($row->request_status ?? '')); ?></span></td>
-									<td>
-										<button type="button" class="btn btn-sm btn-outline-primary doclinc-record-detail" data-record-id="<?= (int) ($row->record_id ?? 0); ?>">
-											Lihat detail
-										</button>
-									</td>
 								</tr>
 							<?php endforeach; ?>
 						</tbody>
@@ -179,144 +174,3 @@ $summary_cards = array(
 		</div>
 	</div>
 </div>
-
-<div class="modal fade" id="recordDetailModal" tabindex="-1" role="dialog" aria-labelledby="recordDetailModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
-		<div class="modal-content">
-			<div class="modal-header">
-				<div>
-					<h5 class="modal-title" id="recordDetailModalLabel">Detail rekam medis</h5>
-					<div class="doclinc-meta-text">Hanya dapat dilihat.</div>
-				</div>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body" id="recordDetailBody">
-				<div class="doclinc-record-empty">Memuat detail rekam medis...</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-			</div>
-		</div>
-	</div>
-</div>
-
-<script>
-	(function($) {
-		function escapeHtml(value) {
-			return $('<div>').text(value == null ? '-' : String(value)).html();
-		}
-
-		function puskesmasLabel(value) {
-			var label = String(value || '').trim();
-			return label === '' || label.toUpperCase() === 'DEFAULT' || label.toUpperCase() === 'PUSKESMAS DEFAULT' || label.toUpperCase() === 'PERLU DICEK'
-				? 'Puskesmas belum tersedia'
-				: label;
-		}
-
-		function serviceLabel(mode, visitStatus) {
-			mode = String(mode || '').toLowerCase();
-			visitStatus = String(visitStatus || '').toLowerCase();
-			if (mode === 'visit' || ['en_route', 'arrived', 'in_service', 'completed'].indexOf(visitStatus) !== -1) {
-				return 'Kunjungan';
-			}
-			if (mode === 'non_visit') {
-				return 'Tanpa kunjungan';
-			}
-			return 'Status belum tersedia';
-		}
-
-		function requestStatusLabel(status) {
-			var labels = {
-				Pending: 'Menunggu konfirmasi Puskesmas',
-				Accepted: 'Diterima',
-				in_service: 'Sedang ditangani',
-				Completed: 'Selesai',
-				Cancelled: 'Dibatalkan'
-			};
-			return labels[status] || 'Status belum tersedia';
-		}
-
-		function visitStatusLabel(status) {
-			var labels = {
-				not_started: 'Belum dimulai',
-				en_route: 'Dalam perjalanan',
-				arrived: 'Sudah tiba',
-				in_service: 'Sedang ditangani',
-				completed: 'Selesai'
-			};
-			return status ? (labels[status] || 'Status belum tersedia') : 'Status belum tersedia';
-		}
-
-		function formatText(value) {
-			value = String(value || '').trim();
-			return value !== '' ? escapeHtml(value).replace(/\n/g, '<br>') : '-';
-		}
-
-		function renderDetail(data) {
-			var anamnesisSection = String(data.anamnesis || '').trim() !== ''
-				? '<h6 class="font-weight-bold">Anamnesis</h6><p>' + formatText(data.anamnesis) + '</p>'
-				: '';
-			return '' +
-				'<div class="doclinc-record-detail-grid">' +
-				'<div><span>Pasien</span><strong>' + escapeHtml(data.patient_name) + '</strong></div>' +
-				'<div><span>ID permintaan</span><strong>#' + escapeHtml(data.request_id) + '</strong></div>' +
-				'<div><span>Puskesmas</span><strong>' + escapeHtml(puskesmasLabel(data.puskesmas_name)) + '</strong></div>' +
-				'<div><span>Status konsultasi</span><strong>' + escapeHtml(requestStatusLabel(data.request_status)) + '</strong></div>' +
-				'<div><span>Jenis layanan</span><strong>' + escapeHtml(serviceLabel(data.consultation_mode, data.visit_status)) + '</strong></div>' +
-				'<div><span>Status kunjungan</span><strong>' + escapeHtml(visitStatusLabel(data.visit_status)) + '</strong></div>' +
-				'<div><span>Nakes atau dokter</span><strong>' + escapeHtml(data.provider_name || '-') + '</strong></div>' +
-				'<div><span>Dibuat</span><strong>' + escapeHtml(data.created_at || '-') + '</strong></div>' +
-				'</div>' +
-				'<hr>' +
-				anamnesisSection +
-				'<h6 class="font-weight-bold">Diagnosis</h6><p>' + formatText(data.diagnosis) + '</p>' +
-				'<h6 class="font-weight-bold">Tindakan dan terapi</h6><p>' + formatText(data.treatment) + '</p>' +
-				'<h6 class="font-weight-bold">Saran dan catatan</h6><p>' + formatText(data.recommendations || data.notes) + '</p>';
-		}
-
-		$(function() {
-			if ($.fn.DataTable && $('#doclincRecordTable').length) {
-				$('#doclincRecordTable').DataTable({
-					pageLength: 25,
-					order: [[0, 'desc']],
-					language: {
-						search: 'Cari cepat:',
-						lengthMenu: 'Tampilkan _MENU_ data',
-						zeroRecords: 'Tidak ada rekam medis yang cocok',
-						info: 'Menampilkan _START_ - _END_ dari _TOTAL_ data',
-						infoEmpty: 'Tidak ada data',
-						paginate: {
-							previous: 'Sebelumnya',
-							next: 'Berikutnya'
-						}
-					}
-				});
-			}
-
-			$(document).on('click', '.doclinc-record-detail', function() {
-				var recordId = $(this).data('record-id');
-				$('#recordDetailBody').html('<div class="doclinc-record-empty">Memuat detail rekam medis...</div>');
-				$('#recordDetailModal').modal('show');
-
-				$.ajax({
-					url: '<?= site_url('rekam_medis/detail'); ?>',
-					type: 'POST',
-					dataType: 'json',
-					data: { record_id: recordId },
-					success: function(response) {
-						if (response && response.success && response.data) {
-							$('#recordDetailBody').html(renderDetail(response.data));
-							return;
-						}
-						$('#recordDetailBody').html('<div class="doclinc-record-empty">Detail rekam medis tidak tersedia.</div>');
-					},
-					error: function() {
-						$('#recordDetailBody').html('<div class="doclinc-record-empty">Detail rekam medis belum dapat dimuat.</div>');
-					}
-				});
-			});
-		});
-	})(jQuery);
-</script>

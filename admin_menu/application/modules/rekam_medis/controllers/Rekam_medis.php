@@ -50,7 +50,7 @@ class Rekam_medis extends MX_Controller
 
 	public function index()
 	{
-		$this->session->set_flashdata('title', 'Rekam Medis');
+		$this->session->set_flashdata('title', 'Pemantauan layanan');
 		$this->session->set_flashdata('active_tab_rekam_medis', 'active');
 
 		$filters = $this->input->method(TRUE) === 'POST'
@@ -73,23 +73,6 @@ class Rekam_medis extends MX_Controller
 			$this->output_json(array('success' => false, 'status' => 'error', 'message' => 'Metode tidak diizinkan.'), 405);
 			return;
 		}
-
-		$record_id = (int) $this->input->post('record_id');
-		if ($record_id < 1) {
-			$this->output_json(array('success' => false, 'status' => 'error', 'message' => 'Rekam medis tidak ditemukan.'), 404);
-			return;
-		}
-
-		$record = $this->Rekam_medis_m->get_record_detail($record_id);
-		if (!$record) {
-			$this->output_json(array('success' => false, 'status' => 'error', 'message' => 'Rekam medis tidak ditemukan.'), 404);
-			return;
-		}
-
-		$this->output_json(array(
-			'success' => true,
-			'status' => 'success',
-			'data' => $record,
-		));
+		$this->output_json(array('success' => false, 'status' => 'error', 'message' => 'Detail klinis tidak tersedia untuk Admin.'), 403);
 	}
 }

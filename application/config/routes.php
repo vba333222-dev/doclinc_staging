@@ -62,6 +62,7 @@ $route['profile/update'] = 'home/update_profile';
 $route['location/address'] = 'location_address/address';
 $route['puskesmas/operations'] = 'home_nakes/operations';
 $route['puskesmas/operations/snapshot'] = 'puskesmas_operations/snapshot';
+$route['puskesmas/operations/medical-record/(:num)'] = 'puskesmas_operations/medical_record/$1';
 $route['realtime/connection-token'] = 'realtime_access/connection_token';
 $route['realtime/subscription-token'] = 'realtime_access/subscription_token';
 $route['notifications/snapshot'] = 'notifikasi/snapshot';

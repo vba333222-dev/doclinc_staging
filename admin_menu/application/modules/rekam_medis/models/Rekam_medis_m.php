@@ -29,13 +29,6 @@ class Rekam_medis_m extends MX_Controller
 			: 'medicalrecords.request_id';
 	}
 
-	private function diagnosis_expr()
-	{
-		return $this->db->field_exists('diagnosis', 'medicalrecords')
-			? 'medicalrecords.diagnosis'
-			: 'NULL';
-	}
-
 	private function created_expr()
 	{
 		if ($this->db->field_exists('created_at', 'medicalrecords')) {
@@ -82,41 +75,32 @@ class Rekam_medis_m extends MX_Controller
 			&& $this->db->field_exists('nama_puskesmas', 'm_puskesmas');
 	}
 
-	private function can_join_patient_user()
+	private function can_join_record_attribution()
 	{
 		return $this->db->table_exists('users')
 			&& $this->db->field_exists('userId', 'users')
 			&& $this->db->field_exists('nama', 'users')
-			&& $this->db->field_exists('user_id', 'requests');
+			&& $this->db->field_exists('responsible_doctor_user_id', 'medicalrecords')
+			&& $this->db->field_exists('recorded_by_user_id', 'medicalrecords');
 	}
 
-	private function can_join_provider_user()
+	private function responsible_doctor_name_expr()
 	{
-		return $this->db->table_exists('users')
-			&& $this->db->field_exists('userId', 'users')
-			&& $this->db->field_exists('nama', 'users')
-			&& $this->db->field_exists('accepted_by_user_id', 'requests');
+		return $this->can_join_record_attribution() ? 'responsible_user.nama' : 'NULL';
 	}
 
-	private function patient_name_expr()
+	private function recorded_by_name_expr()
 	{
-		return $this->can_join_patient_user() ? 'patient_user.nama' : 'NULL';
-	}
-
-	private function provider_name_expr()
-	{
-		return $this->can_join_provider_user() ? 'provider_user.nama' : 'NULL';
+		return $this->can_join_record_attribution() ? 'recorded_user.nama' : 'NULL';
 	}
 
 	private function join_base()
 	{
 		$this->db->from('medicalrecords');
 		$this->db->join('requests', 'requests.request_id = medicalrecords.request_id', 'left');
-		if ($this->can_join_patient_user()) {
-			$this->db->join('users patient_user', 'patient_user.userId = requests.user_id', 'left');
-		}
-		if ($this->can_join_provider_user()) {
-			$this->db->join('users provider_user', 'provider_user.userId = requests.accepted_by_user_id', 'left');
+		if ($this->can_join_record_attribution()) {
+			$this->db->join('users responsible_user', 'responsible_user.userId = medicalrecords.responsible_doctor_user_id', 'left');
+			$this->db->join('users recorded_user', 'recorded_user.userId = medicalrecords.recorded_by_user_id', 'left');
 		}
 		if ($this->can_join_puskesmas()) {
 			$this->db->join('m_puskesmas assigned_puskesmas', 'assigned_puskesmas.kode_pkm = ' . $this->puskesmas_code_expr(), 'left', FALSE);
@@ -141,14 +125,10 @@ class Rekam_medis_m extends MX_Controller
 		if ($keyword !== '') {
 			$like = '%' . $this->db->escape_like_str($keyword) . '%';
 			$clauses = array(
-				$this->diagnosis_expr() . ' LIKE ' . $this->db->escape($like),
 				$this->puskesmas_name_expr() . ' LIKE ' . $this->db->escape($like),
 				$this->puskesmas_code_expr() . ' LIKE ' . $this->db->escape($like),
 				'CAST(requests.request_id AS CHAR) LIKE ' . $this->db->escape($like),
 			);
-			if ($this->can_join_patient_user()) {
-				$clauses[] = 'patient_user.nama LIKE ' . $this->db->escape($like);
-			}
 			$this->db->where('(' . implode(' OR ', $clauses) . ')', NULL, FALSE);
 		}
 	}
@@ -165,18 +145,13 @@ class Rekam_medis_m extends MX_Controller
 		$this->db->select('medicalrecords.request_id AS request_id', FALSE);
 		$this->db->select("$date_expr AS created_at", FALSE);
 		$this->db->select("$updated_expr AS updated_at", FALSE);
-		$this->db->select($this->patient_name_expr() . ' AS patient_name', FALSE);
-		$this->db->select($this->provider_name_expr() . ' AS provider_name', FALSE);
+		$this->db->select($this->responsible_doctor_name_expr() . ' AS responsible_doctor_name', FALSE);
+		$this->db->select($this->recorded_by_name_expr() . ' AS recorded_by_name', FALSE);
 		$this->db->select($this->puskesmas_name_expr() . ' AS puskesmas_name', FALSE);
 		$this->db->select($this->puskesmas_code_expr() . ' AS puskesmas_code', FALSE);
 		$this->db->select($status_expr . ' AS request_status', FALSE);
 		$this->db->select($mode_expr . ' AS consultation_mode', FALSE);
 		$this->db->select($visit_expr . ' AS visit_status', FALSE);
-		$this->db->select($this->diagnosis_expr() . ' AS diagnosis', FALSE);
-		$this->db->select($this->field_expr('medicalrecords', 'anamnesis', 'anamnesis'), FALSE);
-		$this->db->select($this->field_expr('medicalrecords', 'treatment', 'treatment'), FALSE);
-		$this->db->select($this->field_expr('medicalrecords', 'recommendations', 'recommendations'), FALSE);
-		$this->db->select($this->field_expr('medicalrecords', 'notes', 'notes'), FALSE);
 	}
 
 	public function get_records($filters = array(), $limit = 200)
@@ -196,15 +171,7 @@ class Rekam_medis_m extends MX_Controller
 
 	public function get_record_detail($record_id)
 	{
-		if (!$this->ready()) {
-			return null;
-		}
-
-		$this->select_record_fields();
-		$this->join_base();
-		$this->db->where($this->record_id_expr() . ' = ' . (int) $record_id, NULL, FALSE);
-
-		return $this->db->get()->row();
+		return null;
 	}
 
 	public function get_summary($filters = array())
@@ -213,8 +180,6 @@ class Rekam_medis_m extends MX_Controller
 			'total' => 0,
 			'last_30_days' => 0,
 			'puskesmas_count' => 0,
-			'top_diagnosis' => '-',
-			'top_diagnosis_count' => 0,
 		);
 		if (!$this->ready()) {
 			return $summary;
@@ -236,22 +201,6 @@ class Rekam_medis_m extends MX_Controller
 		$this->apply_filters($filters);
 		$row = $this->db->get()->row();
 		$summary['puskesmas_count'] = (int) ($row ? $row->total : 0);
-
-		if ($this->db->field_exists('diagnosis', 'medicalrecords')) {
-			$this->db->select('TRIM(medicalrecords.diagnosis) AS diagnosis, COUNT(*) AS total', FALSE);
-			$this->join_base();
-			$this->apply_filters($filters);
-			$this->db->where('medicalrecords.diagnosis IS NOT NULL', NULL, FALSE);
-			$this->db->where("TRIM(medicalrecords.diagnosis) <> ''", NULL, FALSE);
-			$this->db->group_by('TRIM(medicalrecords.diagnosis)', FALSE);
-			$this->db->order_by('total', 'DESC');
-			$this->db->limit(1);
-			$row = $this->db->get()->row();
-			if ($row) {
-				$summary['top_diagnosis'] = $row->diagnosis;
-				$summary['top_diagnosis_count'] = (int) $row->total;
-			}
-		}
 
 		return $summary;
 	}

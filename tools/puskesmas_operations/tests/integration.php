@@ -3,6 +3,7 @@ if (!defined('BASEPATH')) { define('BASEPATH', dirname(__DIR__, 3) . '/system/')
 if (!defined('APPPATH')) { define('APPPATH', dirname(__DIR__, 3) . '/application/'); }
 if (!defined('FCPATH')) { define('FCPATH', dirname(__DIR__, 3) . '/'); }
 if (!defined('ENVIRONMENT')) { define('ENVIRONMENT', 'testing'); }
+date_default_timezone_set('Asia/Jakarta');
 
 require_once BASEPATH . 'core/Common.php';
 require_once BASEPATH . 'database/DB.php';
@@ -71,6 +72,7 @@ function operations_database_digest($db)
 		'SELECT * FROM nakes_presence ORDER BY user_id',
 		'SELECT * FROM requests ORDER BY request_id',
 		'SELECT * FROM request_staff_assignments ORDER BY assignment_id',
+		'SELECT * FROM medicalrecords ORDER BY record_id',
 	);
 	$state = array();
 	foreach ($queries as $query) {
@@ -132,6 +134,11 @@ try {
 		'save_queries' => true,
 		'port' => $port,
 	), true);
+	$db->query("SET time_zone = '+00:00'");
+	$test_date = '2026-08-14';
+	$test_timestamp = '2026-08-14 00:30:00';
+	$test_timestamp_sql = $db->escape($test_timestamp);
+	$test_filters = array('q' => '', 'date_from' => $test_date, 'date_to' => $test_date);
 
 	$stage = 'schema';
 	$ddl = array(
@@ -139,7 +146,8 @@ try {
 		"CREATE TABLE m_puskesmas(kode_pkm varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,nama_puskesmas varchar(150) NOT NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(kode_pkm)) ENGINE=InnoDB",
 		"CREATE TABLE puskesmas_staff(staff_id int NOT NULL,kode_pkm varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,nama varchar(150) NOT NULL,profesi varchar(100) NULL,nomor_sip varchar(100) NULL,nip varchar(18) NULL,user_id int NULL,status enum('aktif','nonaktif') NOT NULL,PRIMARY KEY(staff_id)) ENGINE=InnoDB",
 		"CREATE TABLE nakes_presence(user_id int NOT NULL,puskesmas_code varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,last_seen_at datetime(6) NOT NULL,PRIMARY KEY(user_id),KEY idx_presence_tenant(puskesmas_code,last_seen_at,user_id)) ENGINE=InnoDB",
-		"CREATE TABLE requests(request_id int NOT NULL,user_id int NOT NULL,request_description text NULL,request_status enum('Pending','Accepted','Completed','Cancelled') NOT NULL,assigned_puskesmas_code varchar(100) NOT NULL,assigned_nakes_user_id int NULL,visit_status varchar(32) NULL,PRIMARY KEY(request_id),KEY idx_request_tenant_status(assigned_puskesmas_code,request_status,request_id)) ENGINE=InnoDB",
+		"CREATE TABLE requests(request_id int NOT NULL,user_id int NOT NULL,request_description text NULL,request_status enum('Pending','Accepted','Completed','Cancelled') NOT NULL,assigned_puskesmas_code varchar(100) NOT NULL,assigned_nakes_user_id int NULL,responsible_doctor_user_id int NULL,visit_performer_user_id int NULL,consultation_mode varchar(30) NULL,visit_status varchar(32) NULL,created_at datetime NOT NULL,PRIMARY KEY(request_id),KEY idx_request_tenant_status(assigned_puskesmas_code,request_status,request_id)) ENGINE=InnoDB",
+		"CREATE TABLE medicalrecords(record_id int NOT NULL AUTO_INCREMENT,request_id int NOT NULL,responsible_doctor_user_id int NULL,recorded_by_user_id int NULL,anamnesis text NULL,diagnosis text NULL,treatment text NULL,recommendations text NULL,created_at datetime NOT NULL,PRIMARY KEY(record_id),KEY idx_medical_request(request_id,record_id)) ENGINE=InnoDB",
 	);
 	foreach ($ddl as $sql) {
 		$db->query($sql);
@@ -186,14 +194,18 @@ try {
 		(102,'PKM01',DATE_SUB(NOW(6),INTERVAL 5 MINUTE)),
 		(201,'PKM02',NOW(6))");
 	$db->query("INSERT INTO requests VALUES
-		(1,301,'complaint-secret-1','Pending','PKM01',NULL,'not_started'),
-		(2,301,'complaint-secret-2','Accepted','PKM01',101,'en_route'),
-		(3,301,'complaint-secret-3','Accepted','PKM01',NULL,'arrived'),
-		(4,301,'complaint-secret-4','Accepted','PKM01',102,'not_started'),
-		(5,301,'complaint-secret-5','Accepted','PKM01',101,'in_service'),
-		(6,301,'complaint-secret-6','Accepted','PKM01',201,'not_started'),
-		(7,301,'complaint-secret-7','Pending','PKM02',NULL,'not_started'),
-		(8,301,'complaint-secret-8','Accepted','PKM02',201,'arrived')");
+		(1,301,'complaint-secret-1','Pending','PKM01',NULL,NULL,NULL,NULL,'not_started',{$test_timestamp_sql}),
+		(2,301,'complaint-secret-2','Accepted','PKM01',101,101,102,'visit','en_route',{$test_timestamp_sql}),
+		(3,301,'complaint-secret-3','Accepted','PKM01',NULL,101,NULL,'visit','arrived',{$test_timestamp_sql}),
+		(4,301,'complaint-secret-4','Accepted','PKM01',102,101,NULL,'non_visit','not_started',{$test_timestamp_sql}),
+		(5,301,'complaint-secret-5','Accepted','PKM01',101,101,102,'visit','in_service',{$test_timestamp_sql}),
+		(6,301,'complaint-secret-6','Accepted','PKM01',201,101,201,'visit','not_started',{$test_timestamp_sql}),
+		(7,301,'complaint-secret-7','Pending','PKM02',NULL,NULL,NULL,NULL,'not_started',{$test_timestamp_sql}),
+		(8,301,'complaint-secret-8','Accepted','PKM02',201,201,NULL,'non_visit','arrived',{$test_timestamp_sql}),
+		(9,301,'complaint-secret-9','Completed','PKM01',101,101,102,'visit','completed',{$test_timestamp_sql})");
+	$db->query("INSERT INTO medicalrecords(request_id,responsible_doctor_user_id,recorded_by_user_id,anamnesis,diagnosis,treatment,recommendations,created_at) VALUES
+		(9,101,102,'Keluhan singkat','Kondisi stabil','Istirahat','Kontrol bila perlu',{$test_timestamp_sql}),
+		(4,NULL,NULL,'Catatan lama','Kondisi lama','-','-',{$test_timestamp_sql})");
 	$db->query("INSERT INTO request_staff_assignments VALUES
 		(20,2,11,'aktif'),
 		(40,4,12,'aktif'),
@@ -204,7 +216,7 @@ try {
 
 	$stage = 'runtime';
 	$before_digest = operations_database_digest($db);
-	$tenant_a = $service->snapshot(operations_command_center_actor(10, 'PKM01'));
+	$tenant_a = $service->snapshot(operations_command_center_actor(10, 'PKM01'), 200, 200, $test_filters);
 	$after_digest = operations_database_digest($db);
 	$tenant_a_ready = !empty($tenant_a['ok']) && $tenant_a['code'] === 'ok' && isset($tenant_a['data']);
 	operations_integration_expect($tenant_a_ready, 'tenant_a_snapshot_succeeds');
@@ -215,7 +227,7 @@ try {
 
 	$summary = $tenant_a['data']['summary'];
 	operations_integration_expect($summary['pending_requests'] === 1 && $summary['accepted_requests'] === 5, 'tenant_a_request_counts_exact');
-	operations_integration_expect($summary['unassigned_requests'] === 1 && $summary['ambiguous_assignments'] === 2, 'tenant_a_assignment_exceptions_exact');
+	operations_integration_expect($summary['unassigned_requests'] === 1 && $summary['ambiguous_assignments'] === 1, 'tenant_a_assignment_exceptions_exact');
 	operations_integration_expect($summary['online_staff'] === 1 && $summary['offline_staff'] === 1, 'tenant_a_presence_counts_exact');
 	operations_integration_expect($summary['busy_staff'] === 2 && $summary['offline_with_active_requests'] === 1, 'tenant_a_workload_counts_exact');
 	operations_integration_expect($summary['not_started_requests'] === 2 && $summary['en_route_requests'] === 1 && $summary['arrived_requests'] === 1 && $summary['in_service_requests'] === 1, 'tenant_a_visit_counts_exact');
@@ -225,16 +237,35 @@ try {
 	operations_integration_expect($tenant_a_user_ids === array(101, 102), 'tenant_a_staff_exact_and_inactive_excluded');
 	$exception_ids = array_column($tenant_a['data']['exceptions'], 'request_id');
 	sort($exception_ids);
-	operations_integration_expect($exception_ids === array(3, 5, 6), 'tenant_a_exception_ids_exact');
+	operations_integration_expect($exception_ids === array(3, 6), 'tenant_a_exception_ids_exact');
+	operations_integration_expect($summary['busy_staff'] === 2, 'canonical_workload_ignores_conflicting_legacy_assignment_history');
 	operations_integration_expect($tenant_a['data']['puskesmas_code'] === 'PKM01', 'tenant_a_scope_explicit');
 
 	$serialized_a = json_encode($tenant_a['data'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-	foreach (array('Warga Rahasia', '081299999999', '3671999999999999', 'complaint-secret', 'SIP-SECRET', '198001012010011') as $forbidden_value) {
+	foreach (array('081299999999', '3671999999999999', 'complaint-secret', 'SIP-SECRET', '198001012010011') as $forbidden_value) {
 		operations_integration_expect(strpos($serialized_a, $forbidden_value) === false, 'tenant_a_private_value_absent_' . substr(hash('sha256', $forbidden_value), 0, 8));
 	}
+	operations_integration_expect(strpos($serialized_a, 'Warga Rahasia') !== false && strpos($serialized_a, '3671********9999') !== false, 'authorized_patient_name_and_masked_nik_visible');
+	operations_integration_expect(count($tenant_a['data']['requests']) === 7 && array_column($tenant_a['data']['requests'], 'queue_number') === array(1, 2, 3, 4, 5, 6, 7), 'queue_sequence_is_deterministic');
+	$search = $service->snapshot(operations_command_center_actor(10, 'PKM01'), 200, 200, array('q' => '3671999999999999', 'date_from' => $test_date, 'date_to' => $test_date));
+	operations_integration_expect(!empty($search['ok']) && count($search['data']['requests']) === 7, 'nik_search_is_facility_scoped_and_parameterized');
+	$db->query("INSERT INTO users VALUES(302,'Warga Tanpa NIK',NULL,'','warga','aktif')");
+	$db->query("INSERT INTO requests VALUES(10,302,'complaint-secret-10','Pending','PKM01',NULL,NULL,NULL,NULL,'not_started',{$test_timestamp_sql})");
+	$name_search = $service->snapshot(operations_command_center_actor(10, 'PKM01'), 200, 200, array('q' => 'Nama Tidak Ada', 'date_from' => $test_date, 'date_to' => $test_date));
+	operations_integration_expect(!empty($name_search['ok']) && count($name_search['data']['requests']) === 0, 'name_search_does_not_match_empty_nik');
+	$record = $service->medicalRecord(operations_command_center_actor(10, 'PKM01'), 9);
+	operations_integration_expect(!empty($record['ok']) && $record['data']['responsible_doctor_name'] === 'Nakes A' && $record['data']['recorded_by_name'] === 'Nakes B', 'own_facility_medical_record_uses_record_attribution');
+	$cross_record = $service->medicalRecord(operations_command_center_actor(20, 'PKM02'), 9);
+	operations_integration_expect(empty($cross_record['ok']) && $cross_record['code'] === 'request_denied', 'cross_facility_medical_record_denied');
+	$db->query('UPDATE requests SET responsible_doctor_user_id=102,visit_performer_user_id=101 WHERE request_id=9');
+	$reassigned_record = $service->medicalRecord(operations_command_center_actor(10, 'PKM01'), 9);
+	operations_integration_expect(!empty($reassigned_record['ok']) && $reassigned_record['data']['responsible_doctor_name'] === 'Nakes A' && $reassigned_record['data']['recorded_by_name'] === 'Nakes B', 'current_reassignment_does_not_change_historical_record_attribution');
+	$legacy_record = $service->medicalRecord(operations_command_center_actor(10, 'PKM01'), 4);
+	operations_integration_expect(!empty($legacy_record['ok']) && $legacy_record['data']['responsible_doctor_name'] === 'Belum tercatat' && $legacy_record['data']['recorded_by_name'] === 'Belum tercatat', 'legacy_null_record_attribution_is_neutral');
+	operations_integration_expect($db->query("SELECT @@session.time_zone AS time_zone")->row()->time_zone === '+00:00' && $test_timestamp === $test_date . ' 00:30:00' && count($tenant_a['data']['requests']) === 7, 'explicit_test_clock_survives_utc_database_jakarta_midnight_boundary');
 	operations_integration_expect(strpos($serialized_a, 'Nakes Tenant B') === false, 'tenant_b_staff_absent_from_tenant_a');
 
-	$tenant_b = $service->snapshot(operations_command_center_actor(20, 'PKM02'));
+	$tenant_b = $service->snapshot(operations_command_center_actor(20, 'PKM02'), 200, 200, $test_filters);
 	$tenant_b_ready = !empty($tenant_b['ok']) && isset($tenant_b['data']['staff']) && count($tenant_b['data']['staff']) === 1;
 	operations_integration_expect($tenant_b_ready, 'tenant_b_snapshot_succeeds');
 	if (!$tenant_b_ready) {
@@ -270,7 +301,7 @@ try {
 	operations_integration_expect($staff_overflow_digest === operations_database_digest($db), 'staff_overflow_zero_database_mutation');
 
 	$request_overflow_digest = operations_database_digest($db);
-	$request_overflow = $service->snapshot(operations_command_center_actor(10, 'PKM01'), 200, 2);
+	$request_overflow = $service->snapshot(operations_command_center_actor(10, 'PKM01'), 200, 2, $test_filters);
 	operations_integration_expect(empty($request_overflow['ok']) && $request_overflow['code'] === 'result_too_large', 'request_limit_overflow_fails_closed');
 	operations_integration_expect($request_overflow_digest === operations_database_digest($db), 'request_overflow_zero_database_mutation');
 
@@ -280,11 +311,11 @@ try {
 	}
 	$db->query('INSERT INTO request_staff_assignments(assignment_id,request_id,staff_id,status) VALUES ' . implode(',', $overflow_values));
 	$assignment_overflow_digest = operations_database_digest($db);
-	$assignment_overflow = $service->snapshot(operations_command_center_actor(20, 'PKM02'));
-	operations_integration_expect(empty($assignment_overflow['ok']) && $assignment_overflow['code'] === 'result_too_large', 'assignment_limit_overflow_fails_closed');
-	operations_integration_expect($assignment_overflow_digest === operations_database_digest($db), 'assignment_overflow_zero_database_mutation');
+	$assignment_overflow = $service->snapshot(operations_command_center_actor(20, 'PKM02'), 200, 200, $test_filters);
+	operations_integration_expect(!empty($assignment_overflow['ok']), 'canonical_care_team_workload_ignores_legacy_assignment_overflow');
+	operations_integration_expect($assignment_overflow_digest === operations_database_digest($db), 'legacy_assignment_overflow_zero_database_mutation');
 
-	$tenant_a_after_b_overflow = $service->snapshot(operations_command_center_actor(10, 'PKM01'));
+	$tenant_a_after_b_overflow = $service->snapshot(operations_command_center_actor(10, 'PKM01'), 200, 200, $test_filters);
 	operations_integration_expect(!empty($tenant_a_after_b_overflow['ok']), 'tenant_b_overflow_does_not_poison_tenant_a');
 
 	$transaction = $db->query('SELECT @@in_transaction AS active')->row();
