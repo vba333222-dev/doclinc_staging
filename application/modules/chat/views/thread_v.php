@@ -47,20 +47,32 @@ $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), t
 $asset_base = base_url('assets/doclinc_ui/chat/');
 $partner_user_id = $current_role === 'dokter'
 	? (isset($request->user_id) ? (int) $request->user_id : 0)
-	: (function_exists('doclinc_request_handling_nakes_id') ? (int) doclinc_request_handling_nakes_id($request) : 0);
+	: (isset($request->chat_clinician_user_id) ? (int) $request->chat_clinician_user_id : 0);
 $profile_photo_fallback = $asset_base . 'doctor-placeholder.jpg';
-$partner_photo_src = $partner_user_id > 0
+$partner_photo_src = $current_role === 'dokter' && $partner_user_id > 0
 	? base_url('profile/photo/' . $partner_user_id)
-	: $profile_photo_fallback;
+	: (!empty($request->chat_clinician_photo_url) ? (string) $request->chat_clinician_photo_url : $profile_photo_fallback);
 $partner_name = 'Petugas Puskesmas';
 $partner_subtitle = 'Konsultasi kesehatan';
 if ($current_role === 'dokter') {
 	$partner_name = isset($request->nama) && $request->nama !== '' ? $request->nama : 'Pasien';
 	$partner_subtitle = isset($request->assigned_puskesmas_name) && $request->assigned_puskesmas_name !== '' ? $request->assigned_puskesmas_name : 'Permintaan konsultasi';
 } else {
-	$partner_name = isset($request->nama_dokter) && $request->nama_dokter !== '' ? $request->nama_dokter : (isset($request->assigned_puskesmas_name) && $request->assigned_puskesmas_name !== '' ? $request->assigned_puskesmas_name : 'Petugas Puskesmas');
+	$partner_name = isset($request->chat_clinician_name) && trim((string) $request->chat_clinician_name) !== ''
+		? trim((string) $request->chat_clinician_name)
+		: 'Tenaga kesehatan';
 	$partner_subtitle = 'Nakes akan membantu konsultasi Anda';
 }
+$auto_visit_location = $current_role === 'dokter'
+	&& !$is_command_center
+	&& $request_status === 'Accepted'
+	&& (string) ($request->consultation_mode ?? '') === 'visit'
+	&& (int) ($request->visit_performer_user_id ?? 0) === $current_user_id
+	&& in_array((string) ($request->visit_status ?? ''), array('en_route', 'arrived', 'in_service'), true);
+$active_visit_location_asset = FCPATH . 'assets/js/doclinc-active-visit-location.js';
+$active_visit_location_version = is_file($active_visit_location_asset) ? (string) filemtime($active_visit_location_asset) : '1';
+$chat_participant_asset = FCPATH . 'assets/js/doclinc-chat-participant.js';
+$chat_participant_version = is_file($chat_participant_asset) ? (string) filemtime($chat_participant_asset) : '1';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -847,9 +859,9 @@ if ($current_role === 'dokter') {
 			<a href="<?= html_escape($back_url); ?>" class="chat-back" aria-label="Kembali">
 				<img src="<?= html_escape($asset_base . 'icon-chat-back.svg'); ?>" alt="">
 			</a>
-			<img class="chat-avatar js-profile-photo" src="<?= html_escape($partner_photo_src); ?>" data-fallback-src="<?= html_escape($profile_photo_fallback); ?>" alt="Foto <?= html_escape($partner_name); ?>">
+			<img class="chat-avatar js-profile-photo" id="chatPartnerAvatar" src="<?= html_escape($partner_photo_src); ?>" data-fallback-src="<?= html_escape($profile_photo_fallback); ?>" alt="Foto <?= html_escape($partner_name); ?>">
 			<div class="chat-title">
-				<p class="chat-title-text"><?= html_escape($partner_name); ?></p>
+				<p class="chat-title-text" id="chatPartnerName"><?= html_escape($partner_name); ?></p>
 				<p class="chat-title-subtext"><?= html_escape($status_label); ?> · <?= html_escape($queue_display); ?></p>
 			</div>
 			<?php if ($can_start_call) : ?>
@@ -870,6 +882,7 @@ if ($current_role === 'dokter') {
 		</header>
 
 		<main class="chat-list" id="chatMessages">
+			<?php if ($auto_visit_location) : ?><div class="chat-muted" id="chatVisitLocationStatus" role="status" aria-live="polite"></div><?php endif; ?>
 			<div class="chat-muted">Memuat pesan...</div>
 		</main>
 
@@ -900,7 +913,7 @@ if ($current_role === 'dokter') {
 			<div class="doclinc-call-panel">
 				<div class="doclinc-call-head">
 					<div class="doclinc-call-context">
-						<img class="doclinc-call-avatar js-profile-photo" src="<?= html_escape($partner_photo_src); ?>" data-fallback-src="<?= html_escape($profile_photo_fallback); ?>" alt="Foto <?= html_escape($partner_name); ?>">
+						<img class="doclinc-call-avatar js-profile-photo" id="doclincCallAvatar" src="<?= html_escape($partner_photo_src); ?>" data-fallback-src="<?= html_escape($profile_photo_fallback); ?>" alt="Foto <?= html_escape($partner_name); ?>">
 						<div>
 							<h2 class="doclinc-call-title" id="doclincCallTitle"><?= html_escape($partner_name); ?></h2>
 							<div class="doclinc-call-status" id="doclincCallStatus">Siap bergabung</div>
@@ -2253,6 +2266,7 @@ if ($current_role === 'dokter') {
 		</script>
 	<?php endif; ?>
 
+	<script src="<?= html_escape(base_url('assets/js/doclinc-chat-participant.js') . '?v=' . rawurlencode($chat_participant_version)); ?>"></script>
 	<script>
 		const requestId = <?= json_encode($request_id); ?>;
 		const currentUserId = <?= json_encode($current_user_id); ?>;
@@ -2266,6 +2280,51 @@ if ($current_role === 'dokter') {
 		let hasLoaded = false;
 		let markReadInFlight = false;
 		let markReadStopped = false;
+		const chatMessageRegistry = window.DoclincChatParticipant
+			? window.DoclincChatParticipant.createMessageRegistry()
+			: null;
+		const chatParticipant = <?= json_encode($current_role === 'warga'); ?> && window.DoclincChatParticipant
+			? window.DoclincChatParticipant.create({
+				nameElements: [document.getElementById('chatPartnerName'), document.getElementById('doclincCallTitle')],
+				imageElements: [document.getElementById('chatPartnerAvatar'), document.getElementById('doclincCallAvatar')],
+				fallbackName: 'Tenaga kesehatan',
+				fallbackPhotoUrl: <?= json_encode($profile_photo_fallback); ?>,
+				isSafePhotoUrl: isSafeProfilePhotoUrl
+			})
+			: null;
+		const chatMessagePoller = window.DoclincChatParticipant
+			? window.DoclincChatParticipant.createPoller({
+				request: function() {
+					return fetch(messagesUrl + '?request_id=' + encodeURIComponent(requestId) + '&after_id=' + encodeURIComponent(lastMessageId), {
+						credentials: 'same-origin'
+					}).then(function(response) {
+						if (!response.ok) {
+							throw new Error('failed');
+						}
+						return response.json();
+					});
+				},
+				apply: function(data) {
+					if (!data || data.status !== 'success') {
+						return;
+					}
+					if (chatParticipant && data.participant) {
+						chatParticipant.update(data.participant);
+					}
+					if (!hasLoaded && (!data.messages || data.messages.length === 0)) {
+						document.getElementById('chatMessages').innerHTML = '<div class="chat-muted">Belum ada pesan pada konsultasi ini.</div>';
+						hasLoaded = true;
+					}
+					(data.messages || []).forEach(appendMessage);
+				},
+				onError: function() {
+					if (!hasLoaded) {
+						document.getElementById('chatMessages').innerHTML = '<div class="chat-error">Chat belum dapat dimuat. Coba lagi.</div>';
+						hasLoaded = true;
+					}
+				}
+			})
+			: null;
 
 		function formatDate(value) {
 			if (!value) {
@@ -2312,6 +2371,11 @@ if ($current_role === 'dokter') {
 			if (!list) {
 				return;
 			}
+			const messageId = parseInt(message.message_id, 10) || 0;
+			if (chatMessageRegistry && !chatMessageRegistry.accept(messageId)) {
+				lastMessageId = Math.max(lastMessageId, messageId);
+				return;
+			}
 			if (!hasLoaded) {
 				list.innerHTML = '';
 				hasLoaded = true;
@@ -2320,6 +2384,7 @@ if ($current_role === 'dokter') {
 			const isMine = parseInt(message.sender_user_id, 10) === currentUserId;
 			const row = document.createElement('div');
 			row.className = 'chat-message-row' + (isMine ? ' mine' : '');
+			if (messageId > 0) row.setAttribute('data-chat-message-id', String(messageId));
 
 			const bubble = document.createElement('div');
 			bubble.className = 'chat-bubble' + (isMine ? ' mine' : '');
@@ -2368,35 +2433,14 @@ if ($current_role === 'dokter') {
 
 			list.appendChild(row);
 			list.scrollTop = list.scrollHeight;
-			lastMessageId = Math.max(lastMessageId, parseInt(message.message_id, 10) || 0);
+			lastMessageId = Math.max(lastMessageId, messageId);
 		}
 
 		function loadMessages() {
-			fetch(messagesUrl + '?request_id=' + encodeURIComponent(requestId) + '&after_id=' + encodeURIComponent(lastMessageId), {
-					credentials: 'same-origin'
-				})
-				.then(function(response) {
-					if (!response.ok) {
-						throw new Error('failed');
-					}
-					return response.json();
-				})
-				.then(function(data) {
-					if (!data || data.status !== 'success') {
-						return;
-					}
-					if (!hasLoaded && (!data.messages || data.messages.length === 0)) {
-						document.getElementById('chatMessages').innerHTML = '<div class="chat-muted">Belum ada pesan pada konsultasi ini.</div>';
-						hasLoaded = true;
-					}
-					(data.messages || []).forEach(appendMessage);
-				})
-				.catch(function() {
-					if (!hasLoaded) {
-						document.getElementById('chatMessages').innerHTML = '<div class="chat-error">Chat belum dapat dimuat. Coba lagi.</div>';
-						hasLoaded = true;
-					}
-				});
+			if (chatMessagePoller) {
+				return chatMessagePoller.poll();
+			}
+			return Promise.resolve({ started: false, applied: false });
 		}
 
 		function markRead() {
@@ -2970,6 +3014,28 @@ if ($current_role === 'dokter') {
 			}
 		}
 	</script>
+	<?php if ($auto_visit_location) : ?>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-active-visit-location.js') . '?v=' . rawurlencode($active_visit_location_version)); ?>"></script>
+		<script>
+			(function() {
+				const status = document.getElementById('chatVisitLocationStatus');
+				if (!window.DoclincActiveVisitLocation) return;
+				window.DoclincActiveVisitLocation.create({
+					window: window,
+					requestId: <?= json_encode($request_id); ?>,
+					active: true,
+					updateUrl: <?= json_encode(base_url('home_nakes/update_visit_location')); ?>,
+					eligibilityUrl: <?= json_encode(base_url('home_nakes/visit_location')); ?>,
+					minIntervalMs: <?= json_encode((function_exists('doclinc_visit_location_min_interval_seconds') ? doclinc_visit_location_min_interval_seconds() : 5) * 1000); ?>,
+					setStatus: function(message, isError) {
+						if (!status) return;
+						status.textContent = message || '';
+						status.classList.toggle('text-danger', isError === true);
+					}
+				}).start();
+			})();
+		</script>
+	<?php endif; ?>
 	<?php $this->load->view('nakes_presence_runtime_v', array('nakes_presence_bootstrap' => $nakes_presence_bootstrap)); ?>
 </body>
 

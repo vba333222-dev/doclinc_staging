@@ -83,6 +83,9 @@ $request_staff_assignment_map = isset($request_staff_assignment_map) && is_array
 $request_staff_latest_assignment_map = isset($request_staff_latest_assignment_map) && is_array($request_staff_latest_assignment_map) ? $request_staff_latest_assignment_map : array();
 $request_event_map = isset($request_event_map) && is_array($request_event_map) ? $request_event_map : array();
 $can_coordinate_staff = isset($can_coordinate_staff) ? (bool) $can_coordinate_staff : false;
+$primary_active_request_id = !empty($nakes_primary_active) && isset($nakes_primary_active->request_id)
+	? (int) $nakes_primary_active->request_id
+	: 0;
 $staff_assignment_success = $this->session->flashdata('staff_assignment_success');
 $staff_assignment_error = $this->session->flashdata('staff_assignment_error');
 
@@ -195,6 +198,33 @@ $history_event_time = static function ($event) {
 										'in_service' => 'completed',
 										'completed' => '',
 									);
+									$visit_next_label = array(
+										'en_route' => 'Mulai perjalanan',
+										'arrived' => 'Tiba di lokasi',
+										'in_service' => 'Mulai pemeriksaan',
+										'completed' => 'Selesaikan kunjungan',
+									);
+									$next_visit_status = isset($visit_next_status[$visit_status]) ? $visit_next_status[$visit_status] : '';
+									$auto_location_enabled = $history_is_performer
+										&& (int) $x->request_id === $primary_active_request_id
+										&& in_array($visit_status, array('en_route', 'arrived', 'in_service'), true);
+									$role_label = $history_is_responsible ? 'Dokter penanggung jawab' : ($history_is_performer ? 'Nakes kunjungan' : 'Pemantau layanan');
+									$next_action_label = '';
+									if ($history_is_responsible) {
+										if ((string) ($x->consultation_mode ?? '') === '') {
+											$next_action_label = 'Pilih jenis layanan';
+										} elseif ((string) ($x->consultation_mode ?? '') === 'visit' && (int) ($x->visit_performer_user_id ?? 0) < 1) {
+											$next_action_label = 'Pilih Nakes kunjungan';
+										} elseif ((string) ($x->consultation_mode ?? '') === 'visit' && $visit_status !== 'completed') {
+											$next_action_label = 'Pantau hasil kunjungan';
+										} else {
+											$next_action_label = 'Lengkapi dan selesaikan konsultasi';
+										}
+									} elseif ($history_is_performer) {
+										$next_action_label = $visit_status === 'in_service'
+											? 'Catat hasil pemeriksaan'
+											: ($next_visit_status !== '' && isset($visit_next_label[$next_visit_status]) ? $visit_next_label[$next_visit_status] : 'Kunjungan selesai');
+									}
 								?>
 									<div class="card shadow dl-history-card dl-history-card-active" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
 										<div class="dl-history-card-head">
@@ -214,6 +244,12 @@ $history_event_time = static function ($event) {
 											<span class="dl-status-pill dl-status-pill-active">Diterima</span>
 										</div>
 										<div class="card-body nk-card-body nk-history-card__body">
+											<?php if ($care_team_enabled && ($history_is_responsible || $history_is_performer)) : ?>
+												<div class="alert alert-light border mb-3 py-2 px-3" data-next-action-role="<?= $history_is_responsible ? 'responsible_doctor' : 'visit_performer'; ?>">
+													<span class="small text-muted d-block">Peran Anda · <?= html_escape($role_label); ?></span>
+													<strong data-next-action-label><?= html_escape($next_action_label); ?></strong>
+												</div>
+											<?php endif; ?>
 											<div class="dl-history-summary nk-complaint nk-card-section">
 												<span class="nk-complaint__title">Keluhan utama</span>
 												<p class="nk-complaint__main"><?= html_escape($complaint['primary']); ?></p>
@@ -271,7 +307,7 @@ $history_event_time = static function ($event) {
 														<?php foreach ($puskesmas_staff_options as $staff_option) : ?>
 															<?php if (!empty($care_team_workflow_enabled) && empty($staff_option->responsible_doctor_eligible)) { continue; } ?>
 													<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= !empty($care_team_workflow_enabled) ? ((int) ($x->responsible_doctor_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : '') : ($pic_assignment && (int) $pic_assignment->staff_id === (int) $staff_option->staff_id ? 'selected' : ''); ?> <?= ($staff_option->personal_account_state ?? '') === 'invalid' ? 'disabled' : ''; ?>>
-																			<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun personal terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Status belum tersedia' : 'Belum ada akun personal'); ?>
+																			<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Status belum tersedia' : 'Belum ada akun'); ?>
 																	</option>
 																<?php endforeach; ?>
 															</select>
@@ -349,11 +385,10 @@ $history_event_time = static function ($event) {
 												<div class="nk-action-panel__body">
 													<div class="nk-detail-row dl-visit-workflow-label"><span class="nk-detail-label">Status</span><strong class="nk-detail-value visit-workflow-label"><?= html_escape($visit_status_label); ?></strong></div>
 													<?php if (!$visit_monitor_only) : ?><div class="dl-visit-workflow-actions nk-visit-actions">
-														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="en_route" <?= $visit_next_status[$visit_status] === 'en_route' ? '' : 'disabled'; ?>>Mulai perjalanan</button>
-														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="arrived" <?= $visit_next_status[$visit_status] === 'arrived' ? '' : 'disabled'; ?>>Tiba di lokasi</button>
-														<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="in_service" <?= $visit_next_status[$visit_status] === 'in_service' ? '' : 'disabled'; ?>>Mulai penanganan</button>
-													<button type="button" class="btn btn-outline-primary btn-sm rounded-pill visit-status-update" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="completed" <?= $visit_next_status[$visit_status] === 'completed' ? '' : 'disabled'; ?>>Selesaikan kunjungan</button>
-												</div><?php else : ?>
+														<?php if ($next_visit_status !== '' && isset($visit_next_label[$next_visit_status])) : ?>
+															<button type="button" class="btn <?= $visit_status === 'in_service' ? 'btn-outline-primary' : 'btn-primary'; ?> rounded-pill visit-status-update py-2 px-3" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-status="<?= html_escape($next_visit_status); ?>"><?= html_escape($visit_next_label[$next_visit_status]); ?></button>
+														<?php endif; ?>
+													</div><?php else : ?>
 													<div class="small text-muted">Puskesmas hanya memonitor perjalanan.</div>
 													<?php endif; ?>
 												</div>
@@ -362,8 +397,8 @@ $history_event_time = static function ($event) {
 											<?php endif; ?>
 										</div>
 										<div class="card-footer dl-history-actions">
-											<?php if ($can_open_consultation) : ?><a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id)); ?>" class="btn btn-success shadow-sm rounded-pill dl-history-primary-action">
-												<i class="fas fa-notes-medical me-2"></i> <?= $care_team_enabled && !$history_is_responsible ? 'Lihat konsultasi' : 'Lanjutkan penanganan'; ?>
+											<?php if ($can_open_consultation) : ?><a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id)); ?>" class="btn <?= $history_is_responsible || ($history_is_performer && $visit_status === 'in_service') ? 'btn-success' : 'btn-outline-success'; ?> shadow-sm rounded-pill dl-history-primary-action py-2 px-3">
+												<i class="fas fa-notes-medical me-2"></i> <?= $history_is_responsible ? (((string) ($x->consultation_mode ?? '') === 'visit' && $visit_status !== 'completed') ? 'Lihat hasil kunjungan' : 'Lanjutkan konsultasi') : ($history_is_performer && $visit_status === 'in_service' ? 'Catat hasil pemeriksaan' : 'Lihat konsultasi'); ?>
 											</a><?php endif; ?>
 											<div class="dl-history-secondary-actions">
 												<?php if (!$nakes_is_command_center) : ?><a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
@@ -374,14 +409,11 @@ $history_event_time = static function ($event) {
 												</button><?php endif; ?>
 											</div>
 											<div class="dl-history-secondary-actions">
-												<?php if ($show_visit_tools && !$visit_monitor_only) : ?><button type="button" class="btn btn-outline-primary shadow-sm rounded-pill start-nakes-visit-tracking" data-request-id="<?= html_escape((int) $x->request_id); ?>">
-													<i class="fas fa-location-arrow me-2"></i> Lacak kunjungan
-												</button><?php endif; ?>
 												<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
 													<i class="fas fa-times-circle me-2"></i> Batalkan
 												</button>
 											</div>
-											<span class="small text-muted w-100 visit-tracking-status" data-tracking-status="<?= html_escape((int) $x->request_id); ?>"></span>
+											<span class="small text-muted w-100 visit-tracking-status" data-tracking-status="<?= html_escape((int) $x->request_id); ?>" data-auto-location="<?= $auto_location_enabled ? '1' : '0'; ?>"></span>
 										</div>
 									</div>
 								<?php

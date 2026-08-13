@@ -13,6 +13,35 @@ $anamnesis_schema_ready = !empty($anamnesis_schema_ready);
 $anamnesis_enabled = $clinical_suggestions_enabled && $anamnesis_schema_ready;
 $anamnesis_existing = isset($anamnesis_existing) ? (string) $anamnesis_existing : '';
 $clinical_suggestions_endpoint = base_url('clinical-suggestions');
+$request_status = isset($request_status) ? (string) $request_status : '';
+$consultation_mode = isset($consultation_mode) ? (string) $consultation_mode : '';
+$visit_status = isset($visit_status) ? (string) $visit_status : '';
+$auto_visit_location = !empty($is_visit_performer)
+	&& $request_status === 'Accepted'
+	&& $consultation_mode === 'visit'
+	&& in_array($visit_status, array('en_route', 'arrived', 'in_service'), true);
+$active_visit_location_version = is_file(FCPATH . 'assets/js/doclinc-active-visit-location.js') ? (string) filemtime(FCPATH . 'assets/js/doclinc-active-visit-location.js') : '1';
+$clinical_form_guard_version = is_file(FCPATH . 'assets/js/doclinc-clinical-form-guard.js') ? (string) filemtime(FCPATH . 'assets/js/doclinc-clinical-form-guard.js') : '1';
+$consultation_role_label = !empty($is_visit_performer) ? 'Nakes kunjungan' : ($can_handle_request ? 'Dokter penanggung jawab' : 'Pemantau layanan');
+$consultation_next_action = '';
+if (!empty($is_visit_performer)) {
+	$visit_action_labels = array(
+		'not_started' => 'Mulai perjalanan dari halaman tugas',
+		'en_route' => 'Konfirmasi saat tiba di lokasi',
+		'arrived' => 'Mulai pemeriksaan dari halaman tugas',
+		'in_service' => 'Catat tanda vital dan hasil pemeriksaan',
+		'completed' => 'Kunjungan selesai',
+	);
+	$consultation_next_action = isset($visit_action_labels[$visit_status]) ? $visit_action_labels[$visit_status] : 'Lihat tugas kunjungan';
+} elseif ($can_handle_request) {
+	if ($consultation_mode === '') {
+		$consultation_next_action = 'Pilih jenis layanan dari halaman tugas';
+	} elseif ($consultation_mode === 'visit' && $visit_status !== 'completed') {
+		$consultation_next_action = 'Tinjau hasil kunjungan sebelum menyelesaikan konsultasi';
+	} else {
+		$consultation_next_action = 'Lengkapi hasil dan selesaikan konsultasi';
+	}
+}
 
 if ((string) $kriteria === '0') {
 	$kriteria = 'Selesai Konsultasi';
@@ -781,6 +810,12 @@ if (!function_exists('formatComplaintText')) {
 				<h2 class="section-heading"><i class="bi bi-clipboard2-pulse"></i> Keluhan Pasien</h2>
 				<?= formatComplaintText($keluhan_pasien); ?>
 			</section>
+			<?php if ($care_team_workflow_enabled && $consultation_next_action !== '') : ?>
+				<section class="consult-card" data-clinical-next-action="<?= !empty($is_visit_performer) ? 'visit_performer' : 'responsible_doctor'; ?>">
+					<span class="summary-label">Peran Anda · <?= html_escape($consultation_role_label); ?></span>
+					<strong class="d-block mt-1" data-clinical-next-action-label><?= html_escape($consultation_next_action); ?></strong>
+				</section>
+			<?php endif; ?>
 
 			<?php if (!empty($can_open_patient_chat)) : ?>
 				<section class="consult-card chat-card">
@@ -790,6 +825,9 @@ if (!function_exists('formatComplaintText')) {
 						<i class="bi bi-chat-dots-fill"></i> Buka chat
 					</a>
 				</section>
+			<?php endif; ?>
+			<?php if ($auto_visit_location) : ?>
+				<div class="small text-muted mb-3" id="consultationVisitLocationStatus" role="status" aria-live="polite"></div>
 			<?php endif; ?>
 
 			<?php if (!empty($care_team_workflow_enabled) && (!empty($latest_vital_signs) || !empty($can_record_vital_signs))) : ?>
@@ -819,7 +857,7 @@ if (!function_exists('formatComplaintText')) {
 									<div class="col-6"><label class="form-label" for="vitalOxygen">Saturasi %</label><input class="form-control" id="vitalOxygen" name="oxygen_saturation" type="number" min="50" max="100" inputmode="numeric"></div>
 									<div class="col-12"><label class="form-label" for="vitalNotes">Catatan</label><textarea class="form-control" id="vitalNotes" name="notes" maxlength="1000" rows="3"></textarea></div>
 								</div>
-								<button class="btn btn-success rounded-pill mt-3" type="submit">Simpan tanda vital</button>
+								<button class="btn btn-success rounded-pill mt-3 py-2 px-3" type="submit">Simpan tanda vital</button>
 								<div id="visitVitalSignsMessage" class="small mt-2" role="status"></div>
 							</form>
 						<?php else : ?>
@@ -832,7 +870,7 @@ if (!function_exists('formatComplaintText')) {
 		<input type="hidden" name="userid" id="userId" value="<?= html_escape($userid) ?>">
 		<input type="hidden" name="dokterid" id="dokterId" value="<?= html_escape($_SESSION['id']) ?>">
 		<?php if (!$can_handle_request) : ?>
-			<div class="alert alert-info" role="status">Permintaan ini dapat dilihat, tetapi penanganan dilakukan oleh Nakes lain.</div>
+			<div class="alert alert-info" role="status"><?= !empty($is_visit_performer) ? 'Anda bertugas mencatat hasil kunjungan.' : 'Permintaan ini hanya dapat dipantau.'; ?></div>
 		<?php endif; ?>
 		<form id="form_konsul_nakes" enctype="multipart/form-data" data-can-handle="<?= $can_handle_request ? '1' : '0'; ?>">
 			<input type="hidden" name="request_id" id="idReq" value="<?= html_escape($request_id) ?>">
@@ -1010,6 +1048,7 @@ if (!function_exists('formatComplaintText')) {
 				<button type="button" class="primary-action shadow-sm" id="save_konsul_nakes">
 					<i class="bi bi-check2-circle"></i> Selesaikan konsultasi
 				</button>
+				<div id="clinicalUnsavedStatus" class="small text-warning mt-2" role="status" aria-live="polite" hidden>Perubahan belum disimpan.</div>
 			<?php endif; ?>
 			</section>
 		</form>
@@ -1040,6 +1079,8 @@ if (!function_exists('formatComplaintText')) {
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/js/bootstrap-select.min.js" integrity="sha512-yrOmjPdp8qH8hgLfWpSFhC/+R9Cj9USL8uJxYIveJZGAiedxyIxwNw4RsLDlcjNlIRR4kkHaDHSmNHAkxFTmgg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-form-guard.js') . '?v=' . rawurlencode($clinical_form_guard_version)); ?>"></script>
+	<?php if ($auto_visit_location) : ?><script src="<?= html_escape(base_url('assets/js/doclinc-active-visit-location.js') . '?v=' . rawurlencode($active_visit_location_version)); ?>"></script><?php endif; ?>
 	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
 		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>
 	<?php endif; ?>
@@ -1060,6 +1101,37 @@ if (!function_exists('formatComplaintText')) {
 		const firebaseEnabled = <?= json_encode($firebase_enabled); ?>;
 		const mapProvider = <?= json_encode($map_provider); ?>;
 		const visitProofRequired = <?= json_encode($visit_proof_required); ?>;
+		const clinicalUnsavedStatus = document.getElementById('clinicalUnsavedStatus');
+		const clinicalFormGuard = window.DoclincClinicalFormGuard ? window.DoclincClinicalFormGuard.create({
+			window: window,
+			form: document.getElementById('form_konsul_nakes'),
+			onDirtyChange: function(dirty) {
+				if (clinicalUnsavedStatus) clinicalUnsavedStatus.hidden = !dirty;
+			}
+		}) : null;
+		const vitalSignsFormGuard = window.DoclincClinicalFormGuard && document.getElementById('visitVitalSignsForm')
+			? window.DoclincClinicalFormGuard.create({ window: window, form: document.getElementById('visitVitalSignsForm') })
+			: null;
+		if (clinicalFormGuard) clinicalFormGuard.start();
+		if (vitalSignsFormGuard) vitalSignsFormGuard.start();
+		<?php if ($auto_visit_location) : ?>
+		const consultationVisitLocationStatus = document.getElementById('consultationVisitLocationStatus');
+		if (window.DoclincActiveVisitLocation) {
+			window.DoclincActiveVisitLocation.create({
+				window: window,
+				requestId: <?= json_encode((int) $request_id); ?>,
+				active: true,
+				updateUrl: <?= json_encode(base_url('home_nakes/update_visit_location')); ?>,
+				eligibilityUrl: <?= json_encode(base_url('home_nakes/visit_location')); ?>,
+				minIntervalMs: <?= json_encode((function_exists('doclinc_visit_location_min_interval_seconds') ? doclinc_visit_location_min_interval_seconds() : 5) * 1000); ?>,
+				setStatus: function(message, isError) {
+					if (!consultationVisitLocationStatus) return;
+					consultationVisitLocationStatus.textContent = message || '';
+					consultationVisitLocationStatus.classList.toggle('text-danger', isError === true);
+				}
+			}).start();
+		}
+		<?php endif; ?>
 
 		function getFirebaseDatabase() {
 			if (!firebaseEnabled || !window.firebase || !firebase.database) {
@@ -1257,12 +1329,14 @@ if (!function_exists('formatComplaintText')) {
 			clearMobileTerapiEditor();
 			renderMobileTerapiList();
 			syncMobileTerapiRowsToTable();
+			if (clinicalFormGuard) clinicalFormGuard.markDirty();
 		}
 
 		function removeMobileTerapiRow(index) {
 			mobileTerapiRows.splice(index, 1);
 			renderMobileTerapiList();
 			syncMobileTerapiRowsToTable();
+			if (clinicalFormGuard) clinicalFormGuard.markDirty();
 		}
 
 		$('#ui_mobile_terapi_add').on('click', addMobileTerapiRow);
@@ -1299,10 +1373,12 @@ if (!function_exists('formatComplaintText')) {
 
 		$('.service-decision-option').on('click', function() {
 			setServiceDecision($(this).data('kriteria'), $(this).data('label'));
+			if (clinicalFormGuard) clinicalFormGuard.markDirty();
 		});
 
 		function restoreCompletionButton() {
 			$('#save_konsul_nakes').prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Selesaikan konsultasi');
+			if (clinicalFormGuard) clinicalFormGuard.submissionFailed();
 		}
 
 		function acquireVisitProofLocation() {
@@ -1333,6 +1409,7 @@ if (!function_exists('formatComplaintText')) {
 		}
 
 		$('#save_konsul_nakes').click(async function() {
+			if (clinicalFormGuard && !clinicalFormGuard.beginSubmission()) return;
 			const userId = document.getElementById('userId').value;
 			const dokterId = document.getElementById('dokterId').value;
 			const idReq = document.getElementById('idReq').value;
@@ -1352,6 +1429,7 @@ if (!function_exists('formatComplaintText')) {
 						? "Masukkan diagnosis."
 						: ((!saranUtama || !saran) ? "Tambahkan saran." : "Pilih jenis layanan."));
 				Swal.fire("Data belum lengkap", validationMessage, "error");
+				if (clinicalFormGuard) clinicalFormGuard.submissionFailed();
 				return;
 			}
 			const diagnosisKeys = [diagnosa].concat(additionalDiagnoses).map(function(value) { return value.toLocaleLowerCase('id-ID'); });
@@ -1359,6 +1437,7 @@ if (!function_exists('formatComplaintText')) {
 				Swal.fire('Diagnosis tidak valid', diagnosisKeys.length > 3
 					? 'Maksimal tiga diagnosis dapat dicatat.'
 					: 'Diagnosis yang sama tidak boleh dicatat dua kali.', 'error');
+				if (clinicalFormGuard) clinicalFormGuard.submissionFailed();
 				return;
 			}
 
@@ -1371,12 +1450,14 @@ if (!function_exists('formatComplaintText')) {
 				if (!proofFile) {
 					setClinicalAttachmentFeedback('Foto bukti kunjungan wajib diambil.');
 					Swal.fire('Bukti kunjungan diperlukan', 'Ambil foto di lokasi pasien sebelum konsultasi diselesaikan.', 'error');
+					if (clinicalFormGuard) clinicalFormGuard.submissionFailed();
 					return;
 				}
 				if (proofFile.type !== 'image/jpeg' || ['jpg', 'jpeg'].indexOf(proofExtension) === -1
 					|| proofFile.size < 1 || proofFile.size > 5 * 1024 * 1024) {
 					setClinicalAttachmentFeedback('Gunakan JPG/JPEG dengan ukuran maksimal 5 MB.');
 					Swal.fire('Foto tidak valid', 'Gunakan JPG/JPEG dengan ukuran maksimal 5 MB.', 'error');
+					if (clinicalFormGuard) clinicalFormGuard.submissionFailed();
 					return;
 				}
 				$('#save_konsul_nakes').prop('disabled', true).text('Memeriksa lokasi...');
@@ -1449,6 +1530,7 @@ if (!function_exists('formatComplaintText')) {
 				data: formData,
 				processData: false, // Wajib
 				contentType: false, // Wajib
+				timeout: 30000,
 				success: function(response) {
 					if (typeof response === 'string') {
 						try {
@@ -1456,6 +1538,7 @@ if (!function_exists('formatComplaintText')) {
 						} catch (e) {}
 					}
 					if (response == 1 || (response && response.status === 'success')) {
+						if (clinicalFormGuard) clinicalFormGuard.submissionSucceeded();
 						Swal.fire({
 							title: "Konsultasi selesai.",
 							icon: "success",
@@ -1687,6 +1770,7 @@ if (!function_exists('formatComplaintText')) {
 			updateNomorUrut();
 			// Update tombol aksi di baris sebelumnya
 			updateTombolAksi();
+			if (clinicalFormGuard) clinicalFormGuard.markDirty();
 		}
 
 		function hapusBaris(button) {
@@ -1698,6 +1782,7 @@ if (!function_exists('formatComplaintText')) {
 				row.remove();
 				updateNomorUrut();
 				updateTombolAksi();
+				if (clinicalFormGuard) clinicalFormGuard.markDirty();
 			} else {
 				alert("Baris pertama tidak bisa dihapus jika hanya ada satu data!");
 			}
@@ -1846,6 +1931,7 @@ if (!function_exists('formatComplaintText')) {
 				if (selectedTd !== null) {
 					let newValue = $("#terapiInput").val();
 					selectedTd.text(newValue);
+					if (clinicalFormGuard) clinicalFormGuard.markDirty();
 					$("#terapiModal").modal("hide");
 				}
 			});
@@ -1855,6 +1941,7 @@ if (!function_exists('formatComplaintText')) {
 		$(function() {
 			$('#visitVitalSignsForm').on('submit', function(event) {
 				event.preventDefault();
+				if (vitalSignsFormGuard && !vitalSignsFormGuard.beginSubmission()) return;
 				const form = $(this);
 				const button = form.find('button[type="submit"]');
 				const message = $('#visitVitalSignsMessage');
@@ -1864,16 +1951,20 @@ if (!function_exists('formatComplaintText')) {
 					url: <?= json_encode(base_url('konsultasi_nakes/save_vital_signs')); ?>,
 					method: 'POST',
 					dataType: 'json',
-					data: form.serialize()
+					data: form.serialize(),
+					timeout: 30000
 				}).done(function(response) {
 					if (response && response.status === 'success') {
+						if (vitalSignsFormGuard) vitalSignsFormGuard.submissionSucceeded();
 						message.addClass('text-success').text(response.message || 'Tanda vital tersimpan.');
 						window.setTimeout(function() { window.location.reload(); }, 600);
 						return;
 					}
+					if (vitalSignsFormGuard) vitalSignsFormGuard.submissionFailed();
 					message.addClass('text-danger').text(response && response.message ? response.message : 'Tanda vital belum tersimpan.');
 				}).fail(function(xhr) {
 					const response = xhr.responseJSON || {};
+					if (vitalSignsFormGuard) vitalSignsFormGuard.submissionFailed();
 					message.addClass('text-danger').text(response.message || 'Tanda vital belum tersimpan.');
 				}).always(function() {
 					button.prop('disabled', false);

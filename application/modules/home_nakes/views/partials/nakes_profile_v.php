@@ -62,9 +62,9 @@ if ($profile_is_command_center) {
 							));
 							?>
 							<div class="min-w-0">
-								<span><?= $profile_is_command_center ? 'Akun Puskesmas' : ($profile_is_personal ? 'Akun personal' : 'Status belum tersedia'); ?></span>
+								<span><?= $profile_is_command_center ? 'Puskesmas' : ($profile_is_personal ? 'Nakes' : 'Status belum tersedia'); ?></span>
 								<strong><?= html_escape($profile_display_name); ?></strong>
-								<small><?= $profile_is_command_center ? 'Akun Puskesmas' : ($profile_is_personal ? 'Akun personal' : 'Status belum tersedia'); ?></small>
+								<small><?= $profile_is_command_center ? 'Puskesmas' : ($profile_is_personal ? 'Nakes' : 'Status belum tersedia'); ?></small>
 							</div>
 						</div>
 
@@ -132,7 +132,7 @@ if ($profile_is_command_center) {
 											<div class="nk-staff-meta">
 												<?php if ($staff_phone !== '') : ?><span><?= html_escape($staff_phone); ?></span><?php endif; ?>
 												<?php if ($staff_sip !== '') : ?><span>SIP <?= html_escape($staff_sip); ?></span><?php else : ?><span class="is-warning">SIP belum dilengkapi</span><?php endif; ?>
-								<?php if ($staff_account_state === 'linked') : ?><span>Akun personal terhubung</span><?php elseif ($staff_account_state === 'unlinked') : ?><span class="is-warning">Belum ada akun personal</span><?php else : ?><span class="is-danger">Akun staf perlu diperiksa</span><?php endif; ?>
+								<?php if ($staff_account_state === 'linked') : ?><span>Akun terhubung</span><?php elseif ($staff_account_state === 'unlinked') : ?><span class="is-warning">Belum ada akun</span><?php else : ?><span class="is-danger">Akun staf perlu diperiksa</span><?php endif; ?>
 											</div>
 										</div>
 									<?php endforeach; ?>

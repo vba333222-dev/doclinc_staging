@@ -826,19 +826,17 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<script>
 		(function(window, $) {
 			const ns = window.doclincVisitTracking = window.doclincVisitTracking || {};
-			const updateVisitLocationUrl = <?= json_encode(base_url('home_nakes/update_visit_location')); ?>;
 			const nakesVisitLocationUrl = <?= json_encode(base_url('home_nakes/visit_location')); ?>;
 			const updateVisitStatusUrl = <?= json_encode(base_url('home_nakes/update_visit_status')); ?>;
 			const visitMapboxToken = <?= json_encode($mapbox_public_token); ?>;
-			const minPostIntervalMs = <?= json_encode((function_exists('doclinc_visit_location_min_interval_seconds') ? doclinc_visit_location_min_interval_seconds() : 5) * 1000); ?>;
 			const monitorRefreshIntervalMs = 10000;
 			const locationAddressResolver = window.DoclincLocationAddress ? window.DoclincLocationAddress.create({
 				provider: <?= json_encode($map_provider); ?>,
 				mapboxToken: visitMapboxToken,
 				googleMaps: window.google && window.google.maps ? window.google.maps : null
 			}) : null;
-			const watches = ns.watches = ns.watches || {};
 			let monitorRefreshTimer = null;
+			let mapFetchGeneration = 0;
 			const mapState = ns.nakesMapState = ns.nakesMapState || {
 				leaflet: null,
 				leafletMarkers: {},
@@ -1285,10 +1283,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				return true;
 			}
 
-			function fetchNakesVisitLocation(requestId, updateDeviceLocation) {
-				if (updateDeviceLocation === undefined) {
-					updateDeviceLocation = true;
-				}
+			function fetchNakesVisitLocation(requestId) {
+				const expectedGeneration = ++mapFetchGeneration;
+				const trackingGeneration = ns.activeVisitLocationManager ? ns.activeVisitLocationManager.generation() : undefined;
 				const fallbackPatientLocation = inlinePatientLocation(requestId);
 				document.body.setAttribute('data-current-visit-request-id', requestId);
 				mapState.currentRequestId = requestId;
@@ -1305,6 +1302,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						request_id: requestId
 					},
 					success: function(response) {
+						if (expectedGeneration !== mapFetchGeneration || String(mapState.currentRequestId) !== String(requestId)) return;
 						if (typeof response === 'string') {
 							try {
 								response = JSON.parse(response);
@@ -1312,7 +1310,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						}
 						if (response && response.status) {
 							if (response.tracking_active === false) {
-								stopTracking(requestId);
+								ns.stopNakesVisitTracking(requestId, trackingGeneration);
 								clearNakesRouteLayers();
 								setNakesArrivalNotice(requestId, null);
 								setRouteText(requestId, null);
@@ -1322,9 +1320,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 							}
 							renderVisitMap(requestId, response, fallbackPatientLocation);
 							setViewerMode(response.viewer_can_update === true);
-							if (updateDeviceLocation && response.viewer_can_update === true) {
-								refreshDeviceLocation(requestId);
-							}
 							return;
 						}
 						renderVisitMap(requestId, response || {}, fallbackPatientLocation);
@@ -1333,6 +1328,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						}
 					},
 					error: function(xhr) {
+						if (expectedGeneration !== mapFetchGeneration || String(mapState.currentRequestId) !== String(requestId)) return;
 						const response = xhr.responseJSON || {};
 						if (xhr.status === 403) {
 							setMapStatus('Anda tidak memiliki akses.', true);
@@ -1345,32 +1341,6 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						}
 					}
 				});
-			}
-
-			function refreshDeviceLocation(requestId) {
-				if (!navigator.geolocation || !requestId) {
-					return;
-				}
-				navigator.geolocation.getCurrentPosition(
-					function(position) {
-						postVisitLocation(requestId, position, true);
-					},
-					function(error) {
-						const message = error && error.code === error.PERMISSION_DENIED ?
-							'Izinkan akses lokasi di perangkat Anda.' :
-							'Lokasi belum ditemukan. Coba lagi.';
-						setTextById('nakesVisitRouteStatus', 'Lokasi belum ditemukan. Coba lagi.');
-						if (hasLoadedVisitMap(requestId)) {
-							setTrackingStatus(requestId, message, true);
-						} else {
-							setMapStatus(message, true);
-						}
-					}, {
-						enableHighAccuracy: true,
-						maximumAge: 30000,
-						timeout: 8000
-					}
-				);
 			}
 
 			function refreshVisitWorkflowControl(requestId, visitStatus, label) {
@@ -1394,132 +1364,28 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				});
 			}
 
-			function stopTracking(requestId) {
-				const state = watches[requestId];
-				if (state && navigator.geolocation && state.watchId !== null) {
-					navigator.geolocation.clearWatch(state.watchId);
-				}
-				delete watches[requestId];
-			}
-
-			function locationMetaValue(value) {
-				const number = parseFloat(value);
-				return Number.isFinite(number) ? number : '';
-			}
-
-			function postVisitLocation(requestId, position, forceSend) {
-				const state = watches[requestId];
-				if (!state && !forceSend) return;
-				if (!position || !position.coords) {
-					setTrackingStatus(requestId, 'Lokasi belum ditemukan. Coba lagi.', true);
-					return;
-				}
-
-				const now = Date.now();
-				if (state) {
-					if (now - state.lastSentAt < minPostIntervalMs) return;
-					state.lastSentAt = now;
-				}
-
-				$.ajax({
-					url: updateVisitLocationUrl,
-					type: 'POST',
-					dataType: 'json',
-					headers: {
-						'Accept': 'application/json',
-						'X-Requested-With': 'XMLHttpRequest'
-					},
-					data: {
-						request_id: requestId,
-						latitude: position.coords.latitude,
-						longitude: position.coords.longitude,
-						accuracy_m: locationMetaValue(position.coords.accuracy),
-						heading: locationMetaValue(position.coords.heading),
-						speed_mps: locationMetaValue(position.coords.speed)
-					},
-					success: function(response) {
-						if (typeof response === 'string') {
-							try {
-								response = JSON.parse(response);
-							} catch (error) {}
-						}
-
-						if (response && response.tracking_active === false) {
-							stopTracking(requestId);
-							clearNakesRouteLayers();
-							setNakesArrivalNotice(requestId, null);
-							setTrackingStatus(requestId, response.message || 'Pelacakan kunjungan selesai.');
-							return;
-						}
-
-						if (response && response.status === 'success') {
-							setRouteText(requestId, response.route);
-							renderVisitMap(requestId, response, inlinePatientLocation(requestId));
-							setTrackingStatus(requestId, 'Lokasi berhasil diperbarui');
-							if (response.request_status && response.request_status !== 'Accepted') {
-								stopTracking(requestId);
-							}
-							if (response.visit_status === 'completed') {
-								stopTracking(requestId);
-							}
-							return;
-						}
-
-						setTrackingStatus(requestId, response && response.message ? response.message : 'Gagal mengirim lokasi', true);
-					},
-					error: function(xhr) {
-						const response = xhr.responseJSON || {};
-						if (hasLoadedVisitMap(requestId)) {
-							setTrackingStatus(requestId, xhr.status === 403 ? 'Aktifkan lokasi perangkat untuk memperbarui posisi Anda' : (response.message || 'Gagal memperbarui lokasi perangkat'), true);
-						} else {
-							setTrackingStatus(requestId, response.message || 'Gagal mengirim lokasi', true);
-						}
-						if (xhr.status === 400 || xhr.status === 403 || xhr.status === 404 || xhr.status === 405) {
-							stopTracking(requestId);
-						}
-					}
-				});
-			}
-
 			ns.startNakesVisitTracking = function(requestId) {
-				if (!navigator.geolocation) {
-					setTrackingStatus(requestId, 'Fitur lokasi tidak tersedia di perangkat ini.', true);
-					return;
-				}
-
-				if (watches[requestId]) {
-					setTrackingStatus(requestId, 'Pelacakan kunjungan aktif.');
-					return;
-				}
-
-				setTrackingStatus(requestId, 'Pelacakan kunjungan aktif.');
-				const watchId = navigator.geolocation.watchPosition(
-					function(position) {
-						postVisitLocation(requestId, position);
-					},
-					function(error) {
-						const message = error && error.code === 1 ? 'Izinkan akses lokasi di perangkat Anda.' : 'Lokasi belum ditemukan. Coba lagi.';
-						setTrackingStatus(requestId, message, true);
-						stopTracking(requestId);
-					}, {
-						enableHighAccuracy: true,
-						maximumAge: 30000,
-						timeout: 10000
-					}
-				);
-
-				watches[requestId] = {
-					watchId: watchId,
-					lastSentAt: 0
-				};
+				mapFetchGeneration += 1;
+				return ns.activeVisitLocationManager ? ns.activeVisitLocationManager.start(requestId) : false;
 			};
-
-			$(document).on('click', '.start-nakes-visit-tracking', function(event) {
-				event.preventDefault();
-				const requestId = $(this).data('request-id');
-				if (!requestId) return;
-				ns.startNakesVisitTracking(requestId);
-			});
+			ns.stopNakesVisitTracking = function(requestId, expectedGeneration) {
+				mapFetchGeneration += 1;
+				return ns.activeVisitLocationManager ? ns.activeVisitLocationManager.stop(requestId, expectedGeneration) : false;
+			};
+			ns.applyActiveVisitLocationResult = function(requestId, response) {
+				if (!response || typeof response !== 'object') return;
+				if (response.tracking_active === false) {
+					clearNakesRouteLayers();
+					setNakesArrivalNotice(requestId, null);
+					setRouteText(requestId, null);
+					return;
+				}
+				if (response.status !== 'success') return;
+				setRouteText(requestId, response.route);
+				if (String(mapState.currentRequestId) === String(requestId)) {
+					renderVisitMap(requestId, response, inlinePatientLocation(requestId));
+				}
+			};
 
 			$(document).on('click', '.lihat-map', function() {
 				const requestId = $(this).data('request-id');
@@ -1528,11 +1394,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				if (requestId) {
 					const monitorOnly = String($(this).data('monitor-only')) === '1';
 					setViewerMode(!monitorOnly);
-					fetchNakesVisitLocation(requestId, !monitorOnly);
+					fetchNakesVisitLocation(requestId);
 					if (monitorRefreshTimer) window.clearInterval(monitorRefreshTimer);
 					if (monitorOnly) {
 						monitorRefreshTimer = window.setInterval(function() {
-							fetchNakesVisitLocation(requestId, false);
+							fetchNakesVisitLocation(requestId);
 						}, monitorRefreshIntervalMs);
 					}
 					return;
@@ -1566,7 +1432,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				event.preventDefault();
 				const requestId = mapState.currentRequestId || document.body.getAttribute('data-current-visit-request-id');
 				if (!requestId) return;
-				fetchNakesVisitLocation(requestId, false);
+				fetchNakesVisitLocation(requestId);
 			});
 
 			const nakesMapOffcanvas = document.getElementById('offcanvasMapTujuan');
@@ -1619,7 +1485,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 								ns.startNakesVisitTracking(requestId);
 							}
 							if (response.visit_status === 'completed') {
-								stopTracking(requestId);
+								ns.stopNakesVisitTracking(requestId);
 							}
 							setVisitWorkflowMessage(requestId, response.message || 'Status kunjungan diperbarui');
 							return;
@@ -1638,7 +1504,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 			$(window).on('beforeunload', function() {
 				if (monitorRefreshTimer) window.clearInterval(monitorRefreshTimer);
-				Object.keys(watches).forEach(stopTracking);
+			});
+			$(window).on('pagehide', function() {
+				mapFetchGeneration += 1;
 			});
 		})(window, jQuery);
 	</script>
@@ -1689,80 +1557,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				map: map
 			});
 
-			if (navigator.geolocation) {
-				navigator.geolocation.getCurrentPosition((position) => {
-					userLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-					map.setCenter(userLocation);
-					userMarker.setPosition(userLocation);
-					// Set tujuan awal berdasarkan lokasi pengguna
-					if (firstLoad) {
-						updateDestination(userLocation.lat(), userLocation.lng());
-						firstLoad = false;
-					}
-				}, showError);
-
-				navigator.geolocation.watchPosition(updateLocation, showError);
-			} else {
-				alert("Fitur lokasi tidak tersedia di perangkat ini.");
-			}
-
 			document.querySelectorAll(".lihat-map").forEach(button => {
 				button.addEventListener("click", function() {
 					const lat = parseFloat(this.getAttribute("data-lat"));
 					const lng = parseFloat(this.getAttribute("data-lng"));
 					updateDestination(lat, lng);
-				});
-			});
-		}
-
-		function updateLocation(position) {
-			if (!hasGoogleMaps()) return;
-
-			userLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-
-			userMarker.setPosition(userLocation);
-			map.setCenter(userLocation);
-
-			const newLocation = {
-				lat: position.coords.latitude,
-				lng: position.coords.longitude,
-			};
-
-			document.getElementById("latitude").value = newLocation.lat;
-			document.getElementById("longitude").value = newLocation.lng;
-
-			saveLocationToFirebase(position.coords.latitude, position.coords.longitude);
-
-			getAddress(userLocation);
-			hitungJarak(destinationMarker.getPosition());
-			hitungJarakAcc(destinationMarker.getPosition());
-		}
-
-		function saveLocationToFirebases(lat, lng) {
-			const userId = document.getElementById("username").value;
-			const location = db.ref('location').push();
-			location.set({
-				userId: userId,
-				latitude: lat,
-				longitude: lng,
-				timestamp: getFirebaseServerTimestamp(),
-			});
-		}
-
-		function saveLocationToFirebase(lat, lng) {
-			const userName = '<?= $_SESSION['id'] ?>';
-			const userId = document.getElementById("username").value;
-			const locationRef = db.ref('location/' + userName);
-
-			locationRef.once('value').then((snapshot) => {
-				if (snapshot.exists()) {
-				} else {
-				}
-				locationRef.set({
-					userId: userId,
-					latitude: lat,
-					longitude: lng,
-					timestamp: getFirebaseServerTimestamp(),
 				});
 			});
 		}
@@ -2443,6 +2242,47 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<?php endif; ?>
 	<?php if (is_array($request_realtime_bootstrap)) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-requests.js')); ?>"></script>
+	<?php endif; ?>
+	<?php if (!empty($nakes_is_personal)) : ?>
+		<?php $active_visit_location_version = is_file(FCPATH . 'assets/js/doclinc-active-visit-location.js') ? (string) filemtime(FCPATH . 'assets/js/doclinc-active-visit-location.js') : '1'; ?>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-active-visit-location.js') . '?v=' . rawurlencode($active_visit_location_version)); ?>"></script>
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				const visitTracking = window.doclincVisitTracking;
+				if (!window.DoclincActiveVisitLocation || !visitTracking) return;
+				function trackingNode(requestId) {
+					return Array.from(document.querySelectorAll('[data-tracking-status]')).find(function(node) {
+						return String(node.getAttribute('data-tracking-status')) === String(requestId);
+					}) || null;
+				}
+				visitTracking.activeVisitLocationManager = window.DoclincActiveVisitLocation.createManager({
+					createRuntime: function(requestId) {
+						return window.DoclincActiveVisitLocation.create({
+							window: window,
+							requestId: requestId,
+							active: true,
+							revalidateOnStart: true,
+							updateUrl: <?= json_encode(base_url('home_nakes/update_visit_location')); ?>,
+							eligibilityUrl: <?= json_encode(base_url('home_nakes/visit_location')); ?>,
+							minIntervalMs: <?= json_encode((function_exists('doclinc_visit_location_min_interval_seconds') ? doclinc_visit_location_min_interval_seconds() : 5) * 1000); ?>,
+							onResult: function(response) {
+								visitTracking.applyActiveVisitLocationResult(requestId, response);
+							},
+							setStatus: function(message, isError) {
+								const node = trackingNode(requestId);
+								if (!node) return;
+								node.textContent = message || '';
+								node.classList.toggle('text-danger', isError === true);
+							}
+						});
+					}
+				});
+				const activeLocation = document.querySelector('[data-auto-location="1"]');
+				if (activeLocation) {
+					visitTracking.startNakesVisitTracking(activeLocation.getAttribute('data-tracking-status'));
+				}
+			});
+		</script>
 	<?php endif; ?>
 	<?php $this->load->view('nakes_presence_runtime_v', array('nakes_presence_bootstrap' => $nakes_presence_bootstrap)); ?>
 	<?php if (!empty($puskesmas_operations_enabled)) : ?>

@@ -25,12 +25,15 @@ const nakesProfile = read('application/modules/home_nakes/views/partials/nakes_p
 const nakesAppbar = read('application/modules/home_nakes/views/partials/nakes_appbar_v.php');
 const completionView = read('application/views/profile_completion_v.php');
 const presence = read('assets/js/doclinc-nakes-presence.js');
+const activeVisitLocation = read('assets/js/doclinc-active-visit-location.js');
 const authz = read('application/helpers/request_authz_helper.php');
 const chatController = read('application/modules/chat/controllers/Chat.php');
 const chatModel = read('application/modules/chat/models/Chat_m.php');
 const chatView = read('application/modules/chat/views/thread_v.php');
 const nakesHistory = read('application/modules/home_nakes/views/partials/nakes_history_v.php');
 const homeView = read('application/modules/home/views/home_v.php');
+const homeModel = read('application/modules/home/models/Home_m.php');
+const homeController = read('application/modules/home/controllers/Home.php');
 const style = read('assets/css/style.css');
 const notifications = read('assets/js/doclinc-notifications.js');
 const nakesConsultation = read('application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php');
@@ -55,6 +58,21 @@ expect(nakesAppbar.includes("'avatar_photo' => !empty($nakes_is_personal) ? $nak
   && chatModel.includes("'sender_photo_url' => base_url('profile/photo/'")
   && chatView.includes('chat-message-avatar'), 'personal_photos_render_on_dashboards_and_chat');
 expect(style.includes('.dl-hero .history-empty-text') && style.includes('color: #ffffff'), 'patient_active_consultation_copy_has_high_contrast');
+expect(homeController.includes("request_status !== 'Pending'") && homeModel.includes('FOR UPDATE')
+  && homeModel.includes("->where('user_id', $user_id)"), 'warga_pending_edit_revalidates_owner_under_lock');
+expect(homeModel.includes('responsible_doctor_user_id') && homeModel.includes('visit_performer_user_id')
+  && homeModel.includes('request_responsible_doctor_assignments'), 'warga_edit_closes_after_care_team_assignment');
+expect(homeModel.includes("return 'Menunggu Puskesmas'") && homeModel.includes("return 'Konsultasi selesai'"), 'warga_status_uses_natural_labels');
+expect(homeView.includes('Dokter penanggung jawab:') && homeView.includes('Petugas kunjungan:'), 'warga_history_uses_care_team_names');
+expect(!nakesAppbar.includes('Akun personal') && !nakesAppbar.includes('Akun Personal'), 'nakes_header_has_no_account_classification');
+expect(!nakesHistory.includes('Lacak kunjungan') && !nakesHistory.includes('start-nakes-visit-tracking'), 'manual_visit_tracking_action_absent');
+expect(nakesShell.includes('DoclincActiveVisitLocation.createManager')
+  && nakesShell.includes('revalidateOnStart: true')
+  && activeVisitLocation.includes("permissions.query({ name: 'geolocation' })")
+  && activeVisitLocation.includes("permission.state === 'granted'"), 'automatic_location_respects_existing_browser_permission');
+expect(chatModel.includes('chat_clinician_name')
+  && chatModel.includes("doclinc_dokter_identity_context($user_id, true)")
+  && chatView.includes('request->chat_clinician_name'), 'warga_chat_uses_personal_clinician_name');
 expect(authz.includes("identity['account_type'] !== 'personal'")
   && chatController.includes('doclinc_chat_actor_is_command_center()')
   && chatController.includes('doclinc_chat_actor_is_command_center($user_id)')
