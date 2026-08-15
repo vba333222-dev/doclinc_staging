@@ -26,7 +26,12 @@ const integration = read('tools/puskesmas_operations/tests/integration.php');
 const integrationRunner = read('tools/puskesmas_operations/run_disposable_integration.sh');
 
 expect(config.includes('DOCLINC_PUSKESMAS_OPERATIONS_ENABLED') && config.includes('DOCLINC_PUSKESMAS_OPERATIONS_ENVIRONMENT'), 'feature_flag_environment_bound');
-expect(config.includes("$config['role_prerequisites_enabled'] === true") && config.includes("$config['nakes_presence_enabled'] === true"), 'feature_requires_prerequisites_and_presence');
+expect(
+  config.includes("$config['puskesmas_operations_enabled'] = $puskesmas_operations_feature['enabled']")
+    && config.includes("&& $config['nakes_presence_enabled'] === true")
+    && !/puskesmas_operations_enabled[^;]+role_prerequisites_enabled/s.test(config),
+  'feature_requires_presence_without_global_role_flag'
+);
 expect(routes.includes("$route['puskesmas/operations'] = 'home_nakes/operations';") && routes.includes("$route['puskesmas/operations/snapshot'] = 'puskesmas_operations/snapshot';") && routes.includes('puskesmas/operations/medical-record/(:num)'), 'explicit_operations_routes');
 expect(controller.includes("method(true) !== 'GET'") && controller.includes("array('q', 'date_from', 'date_to')") && controller.includes('31 * 86400'), 'snapshot_get_only_with_bounded_filters');
 expect(controller.includes("doclinc_dokter_identity_context($user_id, true)") && controller.includes("doclinc_role_prerequisite_state((int) $actor['user_id'], true)"), 'actor_and_prerequisites_refreshed');
@@ -45,6 +50,11 @@ expect(service.includes('patient_nik_masked') && service.includes('maskNik') && 
 expect(service.includes('responsible_doctor_user_id') && service.includes('visit_performer_user_id') && service.includes("$care_team_ready ? $canonical_user_id"), 'workload_prefers_canonical_care_team_owners');
 expect(service.includes("->where('r.assigned_puskesmas_code', $puskesmas_code)") && service.includes("->where('r.assigned_puskesmas_code', (string) $scope['puskesmas_code'])"), 'search_and_record_access_are_facility_scoped');
 expect(homeController.includes("$this->initial_section = 'operasional'") && homeController.includes("account_type'] ?? '') !== 'command_center'"), 'dedicated_page_rejects_non_command_center');
+expect(
+  homeController.includes('require_role_prerequisites($user_id, false, true)')
+    && homeController.includes("!empty($d['role_prerequisite_state']['complete'])"),
+  'page_and_navigation_require_actor_level_completion'
+);
 expect(shell.includes("partials/puskesmas_operations_v") && shell.includes('doclinc-puskesmas-operations.js'), 'command_center_shell_loads_operations_runtime');
 expect(navigation.includes("site_url('puskesmas/operations')") && navigation.includes("navigateNakesSection('operasional'"), 'stable_operations_navigation');
 expect(partial.includes('Nama atau NIK') && partial.includes('Dari tanggal') && partial.includes('Hanya pantau') && partial.includes('aria-live="polite"'), 'bounded_operations_filter_ui_contract');

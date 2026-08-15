@@ -926,14 +926,11 @@ $puskesmas_operations_feature = Doclinc_feature_flags::resolve(
 	$realtime_client_runtime_environment_env
 );
 $config['puskesmas_operations_enabled'] = $puskesmas_operations_feature['enabled']
-	&& $config['role_prerequisites_enabled'] === true
 	&& $config['nakes_presence_enabled'] === true;
 $config['puskesmas_operations_environment'] = $puskesmas_operations_feature['environment'];
 $config['puskesmas_operations_feature_reason'] = !$puskesmas_operations_feature['enabled']
 	? $puskesmas_operations_feature['reason']
-	: ($config['role_prerequisites_enabled'] !== true
-		? 'role_prerequisites_required'
-		: ($config['nakes_presence_enabled'] !== true ? 'nakes_presence_required' : 'enabled'));
+	: ($config['nakes_presence_enabled'] !== true ? 'nakes_presence_required' : 'enabled');
 $config['puskesmas_operations_poll_seconds'] = 30;
 $config['puskesmas_operations_staff_limit'] = 200;
 $config['puskesmas_operations_request_limit'] = 200;

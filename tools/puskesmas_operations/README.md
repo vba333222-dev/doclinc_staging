@@ -7,22 +7,26 @@ The browser contract intentionally excludes patient identity, contact details,
 clinical content, coordinates, NIK/KK/BPJS/KIS, NIP, SIP, and raw storage keys.
 Personal Nakes cannot access the snapshot or its navigation entry.
 
-The feature defaults off and requires all three staging/uat gates:
+The feature defaults off and requires its own staging/uat gate plus Nakes
+Presence:
 
 ```text
 DOCLINC_PUSKESMAS_OPERATIONS_ENABLED=true
 DOCLINC_PUSKESMAS_OPERATIONS_ENVIRONMENT=staging
-DOCLINC_ROLE_PREREQUISITES_ENABLED=true
 DOCLINC_NAKES_PRESENCE_ENABLED=true
 ```
 
 No schema is introduced by this feature. It fails closed unless the existing
-care-operations tables and role prerequisites are ready.
+care-operations tables and Nakes Presence are ready. Every Puskesmas Operations
+page or API entry still evaluates the authenticated command-center account's
+role prerequisites and requires a complete result even when the global Role
+Prerequisites rollout is disabled.
 
 Run tests:
 
 ```bash
 php8.1 tools/puskesmas_operations/tests/unit.php
+php8.1 tools/puskesmas_operations/tests/controller_access_test.php
 node tools/puskesmas_operations/tests/client_test.js
 node tools/puskesmas_operations/tests/source_test.js
 ```

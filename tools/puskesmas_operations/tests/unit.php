@@ -37,14 +37,75 @@ function operations_actor($type = 'command_center', $changes = array())
 	return array_replace_recursive($actor, $changes);
 }
 
+function operations_config_state(array $overrides = array())
+{
+	$root = dirname(__DIR__, 3);
+	$code = "define('BASEPATH',__DIR__);define('FCPATH'," . var_export($root . '/', true)
+		. ");define('APPPATH'," . var_export($root . '/application/', true)
+		. ");require " . var_export($root . '/application/config/config.php', true)
+		. ";echo json_encode(array("
+		. "'operations_enabled'=>\$config['puskesmas_operations_enabled'],"
+		. "'operations_reason'=>\$config['puskesmas_operations_feature_reason'],"
+		. "'role_enabled'=>\$config['role_prerequisites_enabled'],"
+		. "'presence_enabled'=>\$config['nakes_presence_enabled']));";
+	$environment = getenv();
+	if (!is_array($environment)) {
+		$environment = array();
+	}
+	$environment = array_merge($environment, array(
+		'DOCLINC_REALTIME_CLIENT_RUNTIME_ENVIRONMENT' => 'staging',
+		'DOCLINC_ROLE_PREREQUISITES_ENABLED' => 'false',
+		'DOCLINC_ROLE_PREREQUISITES_ENVIRONMENT' => 'staging',
+		'DOCLINC_NAKES_PRESENCE_ENABLED' => 'true',
+		'DOCLINC_NAKES_PRESENCE_ENVIRONMENT' => 'staging',
+		'DOCLINC_PUSKESMAS_OPERATIONS_ENABLED' => 'true',
+		'DOCLINC_PUSKESMAS_OPERATIONS_ENVIRONMENT' => 'staging',
+	), $overrides);
+	$process = proc_open(
+		array(PHP_BINARY, '-r', $code),
+		array(1 => array('pipe', 'w'), 2 => array('pipe', 'w')),
+		$pipes,
+		null,
+		$environment,
+		array('bypass_shell' => true)
+	);
+	if (!is_resource($process)) {
+		return null;
+	}
+	$output = stream_get_contents($pipes[1]);
+	stream_get_contents($pipes[2]);
+	fclose($pipes[1]);
+	fclose($pipes[2]);
+	return proc_close($process) === 0 ? json_decode($output, true) : null;
+}
+
 $policy = new Puskesmas_operations_policy();
 $scope = $policy->snapshotScope(operations_actor());
 operations_expect(!empty($scope['allowed']) && $scope['puskesmas_code'] === 'PKM01', 'canonical_command_center_allowed');
 operations_expect(empty($policy->snapshotScope(operations_actor('personal'))['allowed']), 'personal_nakes_denied');
+operations_expect(empty($policy->snapshotScope(operations_actor('command_center', array('authenticated' => false)))['allowed']), 'unauthenticated_actor_denied');
+operations_expect(empty($policy->snapshotScope(operations_actor('command_center', array('role' => 'admin')))['allowed']), 'admin_actor_denied');
 operations_expect(empty($policy->snapshotScope(operations_actor('command_center', array('status' => 'nonaktif')))['allowed']), 'inactive_actor_denied');
 operations_expect(empty($policy->snapshotScope(operations_actor('command_center', array('must_change_password' => true)))['allowed']), 'must_change_actor_denied');
 operations_expect(empty($policy->snapshotScope(operations_actor('command_center', array('identity' => array('user_id' => 99))))['allowed']), 'identity_user_mismatch_denied');
 operations_expect(empty($policy->snapshotScope(operations_actor('command_center', array('identity' => array('puskesmas_code' => ''))))['allowed']), 'empty_tenant_denied');
+
+$decoupled = operations_config_state();
+operations_expect(is_array($decoupled)
+	&& $decoupled['operations_enabled'] === true
+	&& $decoupled['operations_reason'] === 'enabled'
+	&& $decoupled['role_enabled'] === false
+	&& $decoupled['presence_enabled'] === true, 'global_role_off_operations_on_when_presence_ready');
+$presence_off = operations_config_state(array('DOCLINC_NAKES_PRESENCE_ENABLED' => 'false'));
+operations_expect(is_array($presence_off)
+	&& $presence_off['operations_enabled'] === false
+	&& $presence_off['operations_reason'] === 'nakes_presence_required'
+	&& $presence_off['role_enabled'] === false, 'presence_remains_required_without_enabling_global_role_gate');
+$operations_off = operations_config_state(array('DOCLINC_PUSKESMAS_OPERATIONS_ENABLED' => 'false'));
+operations_expect(is_array($operations_off)
+	&& $operations_off['operations_enabled'] === false
+	&& $operations_off['operations_reason'] === 'flag_disabled'
+	&& $operations_off['role_enabled'] === false, 'own_feature_reason_preserved_and_global_role_unchanged');
 
 $service = new Puskesmas_operations_service(null, 90);
 $staff = array(
