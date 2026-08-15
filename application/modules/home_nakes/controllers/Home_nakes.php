@@ -355,6 +355,9 @@ class Home_nakes extends MX_Controller
 			show_404();
 			return;
 		}
+		if (!$this->require_role_prerequisites($user_id, false, true)) {
+			return;
+		}
 		$this->initial_section = 'operasional';
 		$this->index();
 	}
@@ -385,9 +388,12 @@ class Home_nakes extends MX_Controller
 		$d['nakes_puskesmas_name'] = !empty($identity_context['puskesmas_name']) ? (string) $identity_context['puskesmas_name'] : '';
 		$d['nakes_presence_bootstrap'] = doclinc_nakes_presence_client_bootstrap($identity_context, true);
 		$d['nakes_presence_enabled'] = !empty($d['nakes_presence_bootstrap']['enabled']);
+		$d['role_prerequisite_state'] = doclinc_role_prerequisite_state($uid, true);
 		$d['puskesmas_operations_enabled'] = $this->config->item('puskesmas_operations_enabled') === true
 			&& $account_type === 'command_center'
-			&& !empty($identity_context['valid']);
+			&& !empty($identity_context['valid'])
+			&& !empty($d['role_prerequisite_state']['allowed'])
+			&& !empty($d['role_prerequisite_state']['complete']);
 		$d['puskesmas_operations_bootstrap'] = array(
 			'enabled' => $d['puskesmas_operations_enabled'],
 			'snapshotUrl' => base_url('puskesmas/operations/snapshot'),
@@ -398,7 +404,6 @@ class Home_nakes extends MX_Controller
 		);
 		$d['profile'] = $this->Home_nakes_m->get_profile_by_id($uid);
 		$d['care_team_workflow_enabled'] = $this->config->item('care_team_workflow_enabled') === true;
-		$d['role_prerequisite_state'] = doclinc_role_prerequisite_state($uid, true);
 		if (!is_array($d['profile'])) {
 			$d['profile'] = array();
 		}
@@ -1408,10 +1413,10 @@ class Home_nakes extends MX_Controller
 		return false;
 	}
 
-	private function require_role_prerequisites($user_id, $json_only = true)
+	private function require_role_prerequisites($user_id, $json_only = true, $require_complete = false)
 	{
 		$state = doclinc_role_prerequisite_state((int) $user_id, true);
-		if (!empty($state['allowed'])) {
+		if (!empty($state['allowed']) && (!$require_complete || !empty($state['complete']))) {
 			return true;
 		}
 
