@@ -162,7 +162,7 @@ function phase7_line_from_segment($segment, $needle)
 	return substr($segment, $start, $end - $start);
 }
 
-function render_warga_consultation_names(array $active_rows, array $completed_rows, array &$warnings)
+function phase7_consultation_segments()
 {
 	$source = file_get_contents(dirname(__DIR__, 2) . '/application/modules/home/views/home_v.php');
 	$active_marker = 'foreach ($getAllDataRequests as $data) {';
@@ -172,15 +172,80 @@ function render_warga_consultation_names(array $active_rows, array $completed_ro
 	if ($active_start === false || $completed_start === false || $completed_start <= $active_start) {
 		throw new RuntimeException('Consultation history loops are unavailable.');
 	}
-	$active_segment = substr($source, $active_start, $completed_start - $active_start);
-	$completed_segment = substr($source, $completed_start);
-	$active_assignment = phase7_statement_from_segment($active_segment, '$handling_nakes_name =');
-	$active_render = phase7_line_from_segment($active_segment, 'html_escape($handling_nakes_name');
+	return array(
+		'active' => substr($source, $active_start, $completed_start - $active_start),
+		'completed' => substr($source, $completed_start),
+	);
+}
+
+function render_warga_active_consultations(array $active_rows, array &$warnings)
+{
+	$segments = phase7_consultation_segments();
+	$active_segment = $segments['active'];
+	$statements = array(
+		phase7_statement_from_segment($active_segment, '$consultation_mode ='),
+		phase7_statement_from_segment($active_segment, '$is_visit ='),
+		phase7_statement_from_segment($active_segment, '$visit_is_active ='),
+		phase7_statement_from_segment($active_segment, '$visit_location_available ='),
+		phase7_statement_from_segment($active_segment, '$mode_label ='),
+		phase7_statement_from_segment($active_segment, '$responsible_doctor_name ='),
+		phase7_statement_from_segment($active_segment, '$handling_nakes_label ='),
+		phase7_statement_from_segment($active_segment, '$pic_label ='),
+	);
+	$mode_render = phase7_line_from_segment($active_segment, 'html_escape($mode_label)');
+	$responsible_doctor_render = phase7_line_from_segment($active_segment, 'html_escape($handling_nakes_label)');
+	$pic_render = phase7_line_from_segment($active_segment, 'html_escape($pic_label)');
+
+	set_error_handler(function ($severity, $message, $file, $line) use (&$warnings) {
+		if (($severity & (E_WARNING | E_NOTICE)) !== 0) {
+			$warnings[] = array('severity' => $severity, 'message' => $message, 'file' => $file, 'line' => $line);
+			return true;
+		}
+		return false;
+	});
+	$buffer_level = ob_get_level();
+	ob_start();
+	try {
+		foreach ($active_rows as $data) {
+			$request_status = isset($data->request_status) ? (string) $data->request_status : '';
+			$visit_status = isset($data->visit_status) ? doclinc_normalize_visit_status($data->visit_status) : '';
+			$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
+			$visit_label = isset($data->warga_visit_status_label) ? (string) $data->warga_visit_status_label : '';
+			$visit_updated = '';
+			$visit_timeline = isset($data->warga_visit_timeline) ? $data->warga_visit_timeline : array();
+			$request_id = isset($data->request_id) ? (int) $data->request_id : 0;
+			$id_request = $request_id;
+			eval(implode("\n", $statements));
+			eval('?>' . $mode_render);
+			eval('?>' . $responsible_doctor_render);
+			eval('?>' . $pic_render);
+			echo render_warga_visit(array(
+				'request_id' => $request_id,
+				'request_status' => $request_status,
+				'is_visit' => $is_visit,
+				'visit_location_available' => $visit_location_available,
+				'visit_label' => $visit_label,
+				'visit_updated' => $visit_updated,
+				'visit_timeline' => $visit_timeline,
+			));
+		}
+		return ob_get_clean();
+	} finally {
+		while (ob_get_level() > $buffer_level) {
+			ob_end_clean();
+		}
+		restore_error_handler();
+	}
+}
+
+function render_warga_completed_performers(array $completed_rows, array &$warnings)
+{
+	$segments = phase7_consultation_segments();
+	$completed_segment = $segments['completed'];
 	$completed_assignment = phase7_statement_from_segment($completed_segment, '$visit_performer_name =');
 	$completed_render = phase7_line_from_segment($completed_segment, 'if ($visit_performer_name !==');
 
-	$template = "<?php foreach (\$active_rows as \$data) {\n{$active_assignment}\n?>\n{$active_render}\n<?php } ?>\n"
-		. "<?php foreach (\$completed_rows as \$data) {\n{$completed_assignment}\n?>\n{$completed_render}\n<?php } ?>";
+	$template = "<?php foreach (\$completed_rows as \$data) {\n{$completed_assignment}\n?>\n{$completed_render}\n<?php } ?>";
 	set_error_handler(function ($severity, $message, $file, $line) use (&$warnings) {
 		if (($severity & (E_WARNING | E_NOTICE)) !== 0) {
 			$warnings[] = array('severity' => $severity, 'message' => $message, 'file' => $file, 'line' => $line);
@@ -247,51 +312,148 @@ phase7_render_expect(strpos($unassigned, 'data-primary-next-action=') === false 
 phase7_render_expect(strpos($completed, 'Kunjungan selesai') !== false && strpos($completed, 'data-visit-status=') === false, 'completed_visit_has_no_stale_status_mutation');
 
 $identity_warnings = array();
-$active_with_handler = render_warga_consultation_names(
-	array((object) array('handling_nakes_name' => 'Nakes Aktif')),
-	array(),
-	$identity_warnings
-);
-$active_without_handler = render_warga_consultation_names(array((object) array()), array(), $identity_warnings);
-$completed_with_performer = render_warga_consultation_names(
-	array(),
+$pre_visit = render_warga_active_consultations(array((object) array(
+	'request_id' => 41,
+	'request_status' => 'Accepted',
+	'consultation_mode' => null,
+	'visit_status' => 'not_started',
+	'handling_nakes_name' => 'Legacy Nakes Present',
+	'responsible_doctor_name' => 'Dokter Pra-kunjungan',
+	'assigned_pic_label' => 'PIC Pra-kunjungan',
+)), $identity_warnings);
+$active_without_legacy_handler = render_warga_active_consultations(array((object) array(
+	'request_id' => 44,
+	'request_status' => 'Accepted',
+	'consultation_mode' => null,
+	'visit_status' => 'not_started',
+	'responsible_doctor_name' => 'Dokter Tanpa Nakes Lama',
+	'assigned_pic_label' => 'PIC Tanpa Nakes Lama',
+)), $identity_warnings);
+$active_visit = render_warga_active_consultations(array((object) array(
+	'request_id' => 42,
+	'request_status' => 'Accepted',
+	'consultation_mode' => 'visit',
+	'visit_status' => 'en_route',
+	'warga_visit_status_label' => 'Petugas sedang menuju lokasi',
+	'warga_visit_timeline' => array(array('label' => 'Dalam perjalanan')),
+)), $identity_warnings);
+$active_non_visit = render_warga_active_consultations(array((object) array(
+	'request_id' => 43,
+	'request_status' => 'Accepted',
+	'consultation_mode' => 'non_visit',
+	'visit_status' => 'not_started',
+)), $identity_warnings);
+$multiple_active_records = render_warga_active_consultations(array(
+	(object) array(
+		'request_id' => 45,
+		'request_status' => 'Accepted',
+		'consultation_mode' => null,
+		'visit_status' => 'not_started',
+		'handling_nakes_name' => 'Legacy Nakes Pertama',
+		'responsible_doctor_name' => 'Dokter Aktif Pertama',
+		'assigned_pic_label' => 'PIC Aktif Pertama',
+	),
+	(object) array(
+		'request_id' => 46,
+		'request_status' => 'Accepted',
+		'consultation_mode' => null,
+		'visit_status' => 'not_started',
+		'handling_nakes_name' => 'Legacy Nakes Kedua',
+		'responsible_doctor_name' => 'Dokter Aktif Kedua',
+		'assigned_pic_label' => 'PIC Aktif Kedua',
+	),
+), $identity_warnings);
+$completed_with_performer = render_warga_completed_performers(
 	array((object) array('visit_performer_name' => 'Petugas Riwayat')),
 	$identity_warnings
 );
-$completed_without_performer = render_warga_consultation_names(array(), array((object) array()), $identity_warnings);
-$history_without_active = render_warga_consultation_names(
-	array(),
+$completed_without_performer = render_warga_completed_performers(array((object) array()), $identity_warnings);
+$history_without_active = render_warga_completed_performers(
 	array((object) array('visit_performer_name' => 'Petugas Tanpa Aktif')),
 	$identity_warnings
 );
-$multiple_records = render_warga_consultation_names(
-	array((object) array('handling_nakes_name' => 'Nakes Pertama'), (object) array()),
+$multiple_records = render_warga_completed_performers(
 	array((object) array('visit_performer_name' => 'Petugas Pertama'), (object) array()),
 	$identity_warnings
 );
+$segments = phase7_consultation_segments();
+$legacy_estimasi_removed = strpos($segments['active'], 'Estimasi:') === false
+	&& strpos($segments['active'], 'id="estimasi"') === false;
+$legacy_generic_nakes_removed = strpos($segments['active'], '> Nakes:</p>') === false
+	&& strpos($segments['active'], 'html_escape($handling_nakes_name') === false;
+$legacy_handling_present_absent = strpos($pre_visit, 'Legacy Nakes Present') === false
+	&& strpos($pre_visit, 'Dokter penanggung jawab: Dokter Pra-kunjungan') !== false
+	&& strpos($pre_visit, 'PIC Pra-kunjungan') !== false;
+$legacy_handling_empty_absent = strpos($active_without_legacy_handler, '> Nakes:</p>') === false
+	&& strpos($active_without_legacy_handler, 'Belum tersedia') === false
+	&& strpos($active_without_legacy_handler, 'Dokter penanggung jawab: Dokter Tanpa Nakes Lama') !== false
+	&& strpos($active_without_legacy_handler, 'PIC Tanpa Nakes Lama') !== false;
+$active_record_name_leak = strpos($multiple_active_records, 'Legacy Nakes Pertama') !== false
+	|| strpos($multiple_active_records, 'Legacy Nakes Kedua') !== false
+	|| substr_count($multiple_active_records, 'Dokter penanggung jawab: Dokter Aktif Pertama') !== 1
+	|| substr_count($multiple_active_records, 'Dokter penanggung jawab: Dokter Aktif Kedua') !== 1
+	|| substr_count($multiple_active_records, 'PIC Aktif Pertama') !== 1
+	|| substr_count($multiple_active_records, 'PIC Aktif Kedua') !== 1;
+$pre_visit_copy_pass = strpos($pre_visit, 'Menunggu penentuan layanan') !== false;
+$pre_visit_behavior_pass = strpos($pre_visit, 'Buka chat') !== false
+	&& strpos($pre_visit, 'doclinc-visit-summary') === false
+	&& strpos($pre_visit, 'visit-location-toggle') === false
+	&& strpos($pre_visit, 'visit-map-41') === false;
+$visit_behavior_pass = strpos($active_visit, 'Kunjungan') !== false
+	&& strpos($active_visit, 'Petugas sedang menuju lokasi') !== false
+	&& strpos($active_visit, 'visit-location-toggle') !== false
+	&& strpos($active_visit, 'visit-map-42') !== false
+	&& strpos($active_visit, 'data-visit-route-distance="42"') !== false
+	&& strpos($active_visit, 'data-visit-route-eta="42"') !== false
+	&& strpos($active_visit, 'Buka chat') !== false;
+$non_visit_behavior_pass = strpos($active_non_visit, 'Tanpa kunjungan') !== false
+	&& strpos($active_non_visit, 'Buka chat') !== false
+	&& strpos($active_non_visit, 'doclinc-visit-summary') === false
+	&& strpos($active_non_visit, 'visit-location-toggle') === false;
 $undefined_variable_count = count(array_filter($identity_warnings, function ($warning) {
 	return stripos((string) $warning['message'], 'Undefined variable') !== false;
 }));
-$handling_render_pass = strpos($active_with_handler, 'Nakes Aktif') !== false
-	&& strpos($active_without_handler, 'Belum tersedia') !== false;
-$performer_render_pass = strpos($completed_with_performer, 'Petugas kunjungan: Petugas Riwayat') !== false
-	&& strpos($completed_without_performer, 'Petugas kunjungan:') === false
+$performer_present_pass = strpos($completed_with_performer, 'Petugas kunjungan: Petugas Riwayat') !== false
 	&& strpos($history_without_active, 'Petugas kunjungan: Petugas Tanpa Aktif') !== false;
-$cross_record_leak = substr_count($multiple_records, 'Nakes Pertama') !== 1
-	|| substr_count($multiple_records, 'Belum tersedia') !== 1
-	|| substr_count($multiple_records, 'Petugas kunjungan: Petugas Pertama') !== 1;
+$performer_empty_pass = strpos($completed_without_performer, 'Petugas kunjungan:') === false;
+$completed_record_name_leak = substr_count($multiple_records, 'Petugas kunjungan: Petugas Pertama') !== 1
+	|| substr_count($multiple_records, 'Petugas kunjungan:') !== 1;
+$performer_render_pass = $performer_present_pass && $performer_empty_pass;
+$cross_record_leak = $active_record_name_leak || $completed_record_name_leak;
 
 phase7_render_expect(count($identity_warnings) === 0, 'warga_consultation_names_render_without_php_warnings');
 phase7_render_expect($undefined_variable_count === 0, 'warga_consultation_names_have_no_undefined_variables');
-phase7_render_expect($handling_render_pass, 'active_consultation_handling_nakes_renders_with_safe_fallback');
-phase7_render_expect($performer_render_pass, 'completed_consultation_visit_performer_is_fresh_per_row');
+phase7_render_expect($legacy_handling_present_absent, 'active_consultation_ignores_present_legacy_handling_nakes_value');
+phase7_render_expect($legacy_handling_empty_absent, 'active_consultation_needs_no_legacy_handling_nakes_fallback');
+phase7_render_expect(!$active_record_name_leak, 'active_consultation_visible_names_are_record_local');
+phase7_render_expect($pre_visit_copy_pass, 'accepted_pre_visit_uses_clear_patient_facing_mode_copy');
+phase7_render_expect($legacy_estimasi_removed, 'active_consultation_removes_legacy_estimate_block');
+phase7_render_expect($legacy_generic_nakes_removed, 'active_consultation_removes_legacy_generic_nakes_block');
+phase7_render_expect($pre_visit_behavior_pass, 'accepted_pre_visit_keeps_chat_without_visit_map');
+phase7_render_expect($visit_behavior_pass, 'accepted_visit_keeps_progress_map_route_and_chat');
+phase7_render_expect($non_visit_behavior_pass, 'accepted_non_visit_keeps_label_and_chat_without_visit_map');
+phase7_render_expect($performer_present_pass, 'completed_consultation_renders_current_visit_performer');
+phase7_render_expect($performer_empty_pass, 'completed_consultation_omits_missing_visit_performer');
+phase7_render_expect(!$completed_record_name_leak, 'completed_consultation_names_are_record_local');
 phase7_render_expect(!$cross_record_leak, 'consultation_names_do_not_leak_between_cards');
 
 echo 'PHP_WARNING_COUNT=' . count($identity_warnings) . "\n";
 echo 'UNDEFINED_VARIABLE_COUNT=' . $undefined_variable_count . "\n";
-echo 'HANDLING_NAKES_RENDER=' . ($handling_render_pass ? 'PASS' : 'FAIL') . "\n";
 echo 'VISIT_PERFORMER_RENDER=' . ($performer_render_pass ? 'PASS' : 'FAIL') . "\n";
 echo 'CROSS_RECORD_VALUE_LEAK=' . ($cross_record_leak ? 'PRESENT' : 'NONE') . "\n";
+echo 'LEGACY_HANDLING_NAKES_PRESENT_CASE=' . ($legacy_handling_present_absent ? 'ABSENT_AS_DESIGNED' : 'PRESENT') . "\n";
+echo 'LEGACY_HANDLING_NAKES_EMPTY_CASE=' . ($legacy_handling_empty_absent ? 'ABSENT_AS_DESIGNED' : 'PRESENT') . "\n";
+echo 'ACTIVE_RECORD_NAME_LEAK=' . ($active_record_name_leak ? 'PRESENT' : 'NONE') . "\n";
+echo 'VISIT_PERFORMER_PRESENT=' . ($performer_present_pass ? 'PASS' : 'FAIL') . "\n";
+echo 'VISIT_PERFORMER_EMPTY=' . ($performer_empty_pass ? 'PASS' : 'FAIL') . "\n";
+echo 'COMPLETED_RECORD_NAME_LEAK=' . ($completed_record_name_leak ? 'PRESENT' : 'NONE') . "\n";
+echo 'PRE_VISIT_COPY=' . ($pre_visit_copy_pass ? 'PASS' : 'FAIL') . "\n";
+echo 'LEGACY_ESTIMASI_REMOVED=' . ($legacy_estimasi_removed ? 'YES' : 'NO') . "\n";
+echo 'LEGACY_GENERIC_NAKES_BLOCK_REMOVED=' . ($legacy_generic_nakes_removed ? 'YES' : 'NO') . "\n";
+echo 'VISIT_MAP_BEHAVIOR_UNCHANGED=' . ($visit_behavior_pass && $pre_visit_behavior_pass ? 'YES' : 'NO') . "\n";
+echo 'CHAT_BEHAVIOR_UNCHANGED=' . ($pre_visit_behavior_pass && $visit_behavior_pass && $non_visit_behavior_pass ? 'YES' : 'NO') . "\n";
+echo 'NON_VISIT_BEHAVIOR_UNCHANGED=' . ($non_visit_behavior_pass ? 'YES' : 'NO') . "\n";
+echo 'COMPLETED_HISTORY_REGRESSION=' . ($performer_render_pass && !$cross_record_leak ? 'NONE' : 'PRESENT') . "\n";
 
 echo "PHASE7_RENDER_PASS={$passed}\n";
 echo "PHASE7_RENDER_FAIL={$failed}\n";
