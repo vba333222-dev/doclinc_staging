@@ -1556,8 +1556,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$nama_dokter = $data->nama_dokter;
 								$status = $data->request_status;
 								$request_status = $status;
-								$lat = $data->lattitude;
-								$lng = $data->longitude;
 								$puskesmas_label = doclinc_request_puskesmas_label($data);
 								$queue_number_label = doclinc_request_queue_number_label($data);
 								$visit_status = isset($data->visit_status) ? doclinc_normalize_visit_status($data->visit_status) : '';
@@ -1574,10 +1572,11 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$visit_location_available = isset($data->warga_visit_location_available)
 									? (bool) $data->warga_visit_location_available
 									: $visit_is_active && in_array($visit_status, array('en_route', 'arrived', 'in_service'), true);
-								$mode_label = doclinc_consultation_mode_label($consultation_mode);
+								$mode_label = $consultation_mode === ''
+									? 'Menunggu penentuan layanan'
+									: doclinc_consultation_mode_label($consultation_mode);
 								$responsible_doctor_name = !empty($data->responsible_doctor_name) ? trim((string) $data->responsible_doctor_name) : '';
 								$visit_performer_name = !empty($data->visit_performer_name) ? trim((string) $data->visit_performer_name) : '';
-								$handling_nakes_name = doclinc_request_handling_nakes_name($data);
 								$handling_nakes_label = $responsible_doctor_name !== '' ? 'Dokter penanggung jawab: ' . $responsible_doctor_name : 'Dokter belum tercatat.';
 								$pic_label = !empty($data->assigned_pic_label) ? $data->assigned_pic_label : 'Penanggung jawab layanan belum dipilih.';
 
@@ -1621,12 +1620,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											'visit_updated' => $visit_updated,
 											'visit_timeline' => $visit_timeline,
 										)); ?>
-										<p class="mb-0 small fw-bold"><i class="fas fa-stethoscope fa-fw"></i> Nakes:</p>
-										<p class="mb-0"><?= html_escape($handling_nakes_name !== '' ? $handling_nakes_name : 'Belum tersedia'); ?></p>
-										<p class="mb-0 small fw-bold"><i class="far fa-clock fa-fw"></i> Estimasi:</p>
-										<input type="text" name="latitudes" id="latitudes" value="<?= $lat; ?>" hidden />
-										<input type="text" name="longitudes" id="longitudes" value="<?= $lng; ?>" hidden />
-										<span id="estimasi"></span>
 										<?php if ($request_status === 'Pending') : ?>
 											<div class="mt-3">
 												<button type="button"
