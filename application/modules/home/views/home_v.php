@@ -1577,6 +1577,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$mode_label = doclinc_consultation_mode_label($consultation_mode);
 								$responsible_doctor_name = !empty($data->responsible_doctor_name) ? trim((string) $data->responsible_doctor_name) : '';
 								$visit_performer_name = !empty($data->visit_performer_name) ? trim((string) $data->visit_performer_name) : '';
+								$handling_nakes_name = doclinc_request_handling_nakes_name($data);
 								$handling_nakes_label = $responsible_doctor_name !== '' ? 'Dokter penanggung jawab: ' . $responsible_doctor_name : 'Dokter belum tercatat.';
 								$pic_label = !empty($data->assigned_pic_label) ? $data->assigned_pic_label : 'Penanggung jawab layanan belum dipilih.';
 
@@ -1668,6 +1669,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$nama_dokter_riwayat = !empty($data->nama_dokter) ? $data->nama_dokter : 'Dokter';
 								$handling_nakes_name = doclinc_request_handling_nakes_name($data);
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh: ' . $handling_nakes_name : 'Nakes belum tersedia.';
+								$visit_performer_name = !empty($data->visit_performer_name)
+									? trim((string) $data->visit_performer_name)
+									: '';
 								$mode_label = doclinc_consultation_mode_label(isset($data->consultation_mode) ? $data->consultation_mode : '');
 								$visit_status_completed = isset($data->warga_visit_status) ? $data->warga_visit_status : (isset($data->visit_status) ? doclinc_normalize_visit_status($data->visit_status) : 'not_started');
 								$visit_status_completed = $visit_status_completed !== '' ? $visit_status_completed : 'not_started';

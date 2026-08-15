@@ -33,6 +33,16 @@ function doclinc_normalize_visit_status($status)
 	return in_array($status, array('not_started', 'en_route', 'arrived', 'in_service', 'completed'), true) ? $status : '';
 }
 
+function doclinc_request_handling_nakes_name($request)
+{
+	foreach (array('handling_nakes_name', 'assigned_nakes_name', 'accepted_nakes_name', 'dokter_user_name', 'nama_dokter') as $field) {
+		if (isset($request->{$field}) && trim((string) $request->{$field}) !== '') {
+			return trim((string) $request->{$field});
+		}
+	}
+	return '';
+}
+
 class MX_Controller {}
 
 class Phase7Config
@@ -126,6 +136,71 @@ function render_nakes_next_action($request, $user_id)
 	return $render->call($context, $request);
 }
 
+function phase7_statement_from_segment($segment, $needle)
+{
+	$start = strpos($segment, $needle);
+	if ($start === false) {
+		throw new RuntimeException('Missing reviewed statement: ' . $needle);
+	}
+	$end = strpos($segment, ';', $start);
+	if ($end === false) {
+		throw new RuntimeException('Unterminated reviewed statement: ' . $needle);
+	}
+	return substr($segment, $start, $end - $start + 1);
+}
+
+function phase7_line_from_segment($segment, $needle)
+{
+	$position = strpos($segment, $needle);
+	if ($position === false) {
+		throw new RuntimeException('Missing reviewed render line: ' . $needle);
+	}
+	$start = strrpos(substr($segment, 0, $position), "\n");
+	$start = $start === false ? 0 : $start + 1;
+	$end = strpos($segment, "\n", $position);
+	$end = $end === false ? strlen($segment) : $end;
+	return substr($segment, $start, $end - $start);
+}
+
+function render_warga_consultation_names(array $active_rows, array $completed_rows, array &$warnings)
+{
+	$source = file_get_contents(dirname(__DIR__, 2) . '/application/modules/home/views/home_v.php');
+	$active_marker = 'foreach ($getAllDataRequests as $data) {';
+	$completed_marker = 'foreach ($getAllDataRequestsCompleted as $data) {';
+	$active_start = strpos($source, $active_marker);
+	$completed_start = strpos($source, $completed_marker);
+	if ($active_start === false || $completed_start === false || $completed_start <= $active_start) {
+		throw new RuntimeException('Consultation history loops are unavailable.');
+	}
+	$active_segment = substr($source, $active_start, $completed_start - $active_start);
+	$completed_segment = substr($source, $completed_start);
+	$active_assignment = phase7_statement_from_segment($active_segment, '$handling_nakes_name =');
+	$active_render = phase7_line_from_segment($active_segment, 'html_escape($handling_nakes_name');
+	$completed_assignment = phase7_statement_from_segment($completed_segment, '$visit_performer_name =');
+	$completed_render = phase7_line_from_segment($completed_segment, 'if ($visit_performer_name !==');
+
+	$template = "<?php foreach (\$active_rows as \$data) {\n{$active_assignment}\n?>\n{$active_render}\n<?php } ?>\n"
+		. "<?php foreach (\$completed_rows as \$data) {\n{$completed_assignment}\n?>\n{$completed_render}\n<?php } ?>";
+	set_error_handler(function ($severity, $message, $file, $line) use (&$warnings) {
+		if (($severity & (E_WARNING | E_NOTICE)) !== 0) {
+			$warnings[] = array('severity' => $severity, 'message' => $message, 'file' => $file, 'line' => $line);
+			return true;
+		}
+		return false;
+	});
+	$buffer_level = ob_get_level();
+	ob_start();
+	try {
+		eval('?>' . $template);
+		return ob_get_clean();
+	} finally {
+		while (ob_get_level() > $buffer_level) {
+			ob_end_clean();
+		}
+		restore_error_handler();
+	}
+}
+
 $schema = new Phase7SchemaDb();
 $config = new Phase7Config();
 $home = new Phase7HomeModel($schema, $config);
@@ -170,6 +245,53 @@ phase7_render_expect(strpos($doctor, 'Pilih jenis layanan') !== false && strpos(
 phase7_render_expect(strpos($performer, 'Tiba di lokasi') !== false && strpos($performer, 'data-primary-next-action="visit_performer"') !== false, 'visit_performer_gets_status_specific_next_action');
 phase7_render_expect(strpos($unassigned, 'data-primary-next-action=') === false && strpos($unassigned, 'choose_service_mode') === false, 'unassigned_nakes_has_no_mutation_action');
 phase7_render_expect(strpos($completed, 'Kunjungan selesai') !== false && strpos($completed, 'data-visit-status=') === false, 'completed_visit_has_no_stale_status_mutation');
+
+$identity_warnings = array();
+$active_with_handler = render_warga_consultation_names(
+	array((object) array('handling_nakes_name' => 'Nakes Aktif')),
+	array(),
+	$identity_warnings
+);
+$active_without_handler = render_warga_consultation_names(array((object) array()), array(), $identity_warnings);
+$completed_with_performer = render_warga_consultation_names(
+	array(),
+	array((object) array('visit_performer_name' => 'Petugas Riwayat')),
+	$identity_warnings
+);
+$completed_without_performer = render_warga_consultation_names(array(), array((object) array()), $identity_warnings);
+$history_without_active = render_warga_consultation_names(
+	array(),
+	array((object) array('visit_performer_name' => 'Petugas Tanpa Aktif')),
+	$identity_warnings
+);
+$multiple_records = render_warga_consultation_names(
+	array((object) array('handling_nakes_name' => 'Nakes Pertama'), (object) array()),
+	array((object) array('visit_performer_name' => 'Petugas Pertama'), (object) array()),
+	$identity_warnings
+);
+$undefined_variable_count = count(array_filter($identity_warnings, function ($warning) {
+	return stripos((string) $warning['message'], 'Undefined variable') !== false;
+}));
+$handling_render_pass = strpos($active_with_handler, 'Nakes Aktif') !== false
+	&& strpos($active_without_handler, 'Belum tersedia') !== false;
+$performer_render_pass = strpos($completed_with_performer, 'Petugas kunjungan: Petugas Riwayat') !== false
+	&& strpos($completed_without_performer, 'Petugas kunjungan:') === false
+	&& strpos($history_without_active, 'Petugas kunjungan: Petugas Tanpa Aktif') !== false;
+$cross_record_leak = substr_count($multiple_records, 'Nakes Pertama') !== 1
+	|| substr_count($multiple_records, 'Belum tersedia') !== 1
+	|| substr_count($multiple_records, 'Petugas kunjungan: Petugas Pertama') !== 1;
+
+phase7_render_expect(count($identity_warnings) === 0, 'warga_consultation_names_render_without_php_warnings');
+phase7_render_expect($undefined_variable_count === 0, 'warga_consultation_names_have_no_undefined_variables');
+phase7_render_expect($handling_render_pass, 'active_consultation_handling_nakes_renders_with_safe_fallback');
+phase7_render_expect($performer_render_pass, 'completed_consultation_visit_performer_is_fresh_per_row');
+phase7_render_expect(!$cross_record_leak, 'consultation_names_do_not_leak_between_cards');
+
+echo 'PHP_WARNING_COUNT=' . count($identity_warnings) . "\n";
+echo 'UNDEFINED_VARIABLE_COUNT=' . $undefined_variable_count . "\n";
+echo 'HANDLING_NAKES_RENDER=' . ($handling_render_pass ? 'PASS' : 'FAIL') . "\n";
+echo 'VISIT_PERFORMER_RENDER=' . ($performer_render_pass ? 'PASS' : 'FAIL') . "\n";
+echo 'CROSS_RECORD_VALUE_LEAK=' . ($cross_record_leak ? 'PRESENT' : 'NONE') . "\n";
 
 echo "PHASE7_RENDER_PASS={$passed}\n";
 echo "PHASE7_RENDER_FAIL={$failed}\n";
