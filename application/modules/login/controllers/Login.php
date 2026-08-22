@@ -29,7 +29,7 @@ class Login extends MX_Controller
 			} elseif ($role == 'dokter') {
 				redirect('/home_nakes');
 			} elseif ($role == 'admin') {
-				redirect('admin_menu/login');
+				redirect('admin_menu/');
 			} else {
 				echo 'Akun tidak dapat diproses.';
 			}
@@ -187,7 +187,9 @@ class Login extends MX_Controller
 	public function logout()
 	{
 		if ($this->input->method(TRUE) !== 'POST') {
-			show_404();
+			// Keep direct navigation intentional and valid; state-changing logout
+			// remains POST-only and CSRF-protected by the rendered clients.
+			redirect('login');
 			return;
 		}
 		if ($this->config->item('single_active_session_enabled') === true) {

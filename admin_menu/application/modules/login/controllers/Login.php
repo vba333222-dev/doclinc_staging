@@ -120,7 +120,8 @@
 	    }
 		public function logout(){
 			if ($this->input->method(TRUE) !== 'POST') {
-				show_404();
+				// Direct navigation is a safe, valid landing on the Admin login.
+				redirect('/','refresh');
 				return;
 			}
 			$expected = $this->session->userdata('admin_logout_token');
