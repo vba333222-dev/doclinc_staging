@@ -887,6 +887,20 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 		$access_context = doclinc_nakes_request_access_context($request, $identity_context);
+		if ((string) $request->request_status === 'Pending') {
+			if (empty($access_context['can_view']) || empty($access_context['tenant_match']) || (string) ($identity_context['account_type'] ?? '') !== 'command_center') {
+				$this->output->set_status_header(403)->set_output(json_encode(array('status' => false, 'message' => 'Anda tidak memiliki akses.')));
+				return;
+			}
+			$this->output->set_output(json_encode(array(
+				'status' => 'patient_only', 'success' => true, 'request_id' => $request_id,
+				'request_status' => 'Pending',
+				'patient' => array('lat' => isset($request->lattitude) ? (float) $request->lattitude : null, 'lng' => isset($request->longitude) ? (float) $request->longitude : null, 'address' => isset($request->location) ? (string) $request->location : ''),
+				'patient_location_only' => true, 'tracking_active' => false, 'nakes' => null, 'route' => null, 'eta' => null,
+				'viewer_can_update' => false, 'message' => 'Lokasi pasien untuk triase. Pelacakan kunjungan belum aktif.'
+			)));
+			return;
+		}
 		$monitoring_access = Visit_monitoring_policy::resolve($identity_context, $access_context, $request);
 		if (empty($monitoring_access['allowed'])) {
 			$this->output
@@ -898,7 +912,7 @@ class Home_nakes extends MX_Controller
 			? doclinc_normalize_visit_status($request->visit_status)
 			: '';
 		$current_visit_status = $current_visit_status !== '' ? $current_visit_status : 'not_started';
-		if ($request->request_status !== 'Accepted' || $current_visit_status === 'completed') {
+		if ($request->request_status !== 'Accepted' || strtolower((string) ($request->consultation_mode ?? '')) !== 'visit' || $current_visit_status === 'completed') {
 			$this->output->set_output(json_encode(array(
 				'status' => 'inactive',
 				'success' => false,

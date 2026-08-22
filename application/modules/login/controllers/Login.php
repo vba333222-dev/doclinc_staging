@@ -29,7 +29,7 @@ class Login extends MX_Controller
 			} elseif ($role == 'dokter') {
 				redirect('/home_nakes');
 			} elseif ($role == 'admin') {
-				redirect('/home_admin');
+				redirect('admin_menu/login');
 			} else {
 				echo 'Akun tidak dapat diproses.';
 			}
@@ -124,9 +124,6 @@ class Login extends MX_Controller
 		}
 		$username = htmlspecialchars($this->input->post('username'));
 		$password = (string) $this->input->post('password');
-		$location = htmlspecialchars($this->input->post('location'));
-		$lattitude = htmlspecialchars($this->input->post('lattitude'));
-		$longitude = htmlspecialchars($this->input->post('longitude'));
 		$auth = $this->Login_m->auth($username);
 		$user = $auth->num_rows() > 0 ? $auth->row() : null;
 		$actor_is_allowed = $user && (string) ($user->status ?? '') === 'aktif';
@@ -177,11 +174,6 @@ class Login extends MX_Controller
 			}
 			$this->session->set_userdata($session_data);	
 			
-			$id = $this->session->userdata('id');
-			$username = $this->session->userdata('username');		
-			if ($must_change_password === 0) {
-				$this->Login_m->save_location($id,$username,$location, $lattitude,$longitude);
-			}
 			$this->Login_m->log_login_event('login_success', $user->userId, array('role' => $user->role));
 			// echo "OK";
 			echo "1";

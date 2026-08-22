@@ -68,7 +68,7 @@
 								$show_complaint_symptoms = !$is_weak_request_value($complaint_symptoms);
 								$show_complaint_description = !$is_weak_request_value($complaint_description) && ((function_exists('mb_strlen') && mb_strlen($complaint_description, 'UTF-8') <= 80) || (!function_exists('mb_strlen') && strlen($complaint_description) <= 80));
 								$show_mode_label = !$is_weak_request_value($mode_label);
-								$show_distance_label = !$is_weak_request_value($distance_label);
+								$show_distance_label = strtolower((string) ($x->request_status ?? 'Pending')) !== 'pending' && !$is_weak_request_value($distance_label);
 								$show_address = !$is_weak_request_value($x->location);
 							?>
 								<?php $this->load->view('partials/nakes_full_request_card_v', get_defined_vars()); ?>

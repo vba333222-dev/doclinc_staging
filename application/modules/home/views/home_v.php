@@ -2102,6 +2102,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					<form id="ratingForm">
 						<input type="hidden" name="iduser" value="<?= $this->session->userdata('id') ?>">
 						<input type="hidden" name="id_dokter" id="dokIds">
+						<input type="hidden" name="request_id" id="ratingRequestId">
 						<div class="mb-3">
 							<!-- Rating input -->
 							<div class="rating-stars">
@@ -3870,6 +3871,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							document.getElementById('gambarDokter').src = safeProfileImageUrl(dataDokter.userId, dataDokter.foto);
 							document.getElementById('namaDokter').textContent = dataDokter.nama;
 							document.getElementById('dokIds').value = idDokter;
+							document.getElementById('ratingRequestId').value = request_id;
 
 							showPopupRate();
 						}
@@ -3902,7 +3904,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					type: 'POST',
 					data: {
 						id_user: idUser,
-						id_dokter: idDokter,
+					id_dokter: idDokter,
+					request_id: document.getElementById('ratingRequestId').value,
 						rating: rating
 					},
 					dataType: 'json',
