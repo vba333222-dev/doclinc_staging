@@ -32,7 +32,11 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 	<meta name="msapplication-TileColor" content="#ffffff">
 	<meta name="msapplication-TileImage" content="<?php echo base_url(); ?>assets/img/ms-icon-144x144.png">
 	<meta name="theme-color" content="#ffffff">
-	<title>Admin DocLink</title>
+		<title>Admin DocLink</title>
+		<style>
+			.doclinc-password-toggle { min-width: 44px; min-height: 44px; border: 0; background: transparent; cursor: pointer; }
+			.doclinc-password-toggle:focus-visible { outline: 3px solid #1F6F4B; outline-offset: 2px; }
+		</style>
 	<script>
 		(function() {
 			var storedTheme = null;
@@ -74,6 +78,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 							<div class="alert alert-info" role="status"><?= html_escape($session_message); ?></div>
 						<?php endif; ?>
 						<form class="user">
+							<input type="hidden" name="<?= html_escape($this->security->get_csrf_token_name()); ?>" value="<?= html_escape($this->security->get_csrf_hash()); ?>">
 							<div class="form-group mb-4">
 								<label for="email" class="text-primary font-weight-bold">Email</label>
 								<div class="input-group">
@@ -91,6 +96,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 										<span class="input-group-text bg-white border-right-0"><i class="fas fa-lock text-primary"></i></span>
 									</div>
 									<input type="password" class="form-control border-left-0 border-primary" id="password" name="password" placeholder="Masukkan password">
+									<button type="button" class="doclinc-password-toggle" id="passwordToggle" aria-label="Tampilkan password"><i class="fas fa-eye"></i></button>
 								</div>
 								<div class="invalid-feedback">Password tidak boleh kosong.</div>
 							</div>
@@ -142,6 +148,13 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 		</div>
 	</div>
 	<script type="text/javascript">
+		$('#passwordToggle').on('click', function() {
+			var input = $('#password');
+			var visible = input.attr('type') === 'text';
+			input.attr('type', visible ? 'password' : 'text');
+			$(this).attr('aria-label', visible ? 'Tampilkan password' : 'Sembunyikan password');
+			$(this).find('i').toggleClass('fa-eye', visible).toggleClass('fa-eye-slash', !visible);
+		});
 		$(document).ready(function() {
 			$('#email').focus();
 			$('#login').click(function(event) {
@@ -156,7 +169,8 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 						url: "<?php echo site_url('login/ceklogin'); ?>",
 						data: {
 							email: email,
-							password: password
+										password: password,
+										<?= json_encode($this->security->get_csrf_token_name()); ?>: <?= json_encode($this->security->get_csrf_hash()); ?>
 						},
 						success: function(result) {
 							if (result == 1) {

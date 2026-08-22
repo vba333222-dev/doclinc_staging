@@ -51,6 +51,27 @@
 </head>
 
 <body id="page-top">
+	<meta name="csrf-token-name" content="<?= html_escape($this->security->get_csrf_token_name()); ?>">
+	<meta name="csrf-token-hash" content="<?= html_escape($this->security->get_csrf_hash()); ?>">
+	<script>
+		(function($) {
+			if (!$) return;
+			$(function() {
+				var name = document.querySelector('meta[name="csrf-token-name"]')?.content || '';
+				var hash = document.querySelector('meta[name="csrf-token-hash"]')?.content || '';
+				$('form[method="post"], form[method="POST"]').each(function() {
+					if (name && !this.querySelector('input[name="' + name + '"]')) $('<input>', {type: 'hidden', name: name, value: hash}).appendTo(this);
+				});
+				$.ajaxSetup({ data: function(data) {
+					if (!name) return data;
+					if (typeof data === 'string') return data + (data ? '&' : '') + encodeURIComponent(name) + '=' + encodeURIComponent(hash);
+					data = data || {};
+					if (typeof data === 'object' && data[name] === undefined) data[name] = hash;
+					return data;
+				} });
+			});
+		})(window.jQuery);
+	</script>
 	<div id="wrapper">
 		<?php
 		$doclinc_admin_segment = $this->uri->segment(1) ?: 'home';
@@ -279,7 +300,7 @@
 									url: summaryUrl,
 									type: 'GET',
 									dataType: 'json',
-									cache: false,
+									cache: true,
 									xhrFields: {
 										withCredentials: true
 									}

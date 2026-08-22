@@ -38,7 +38,7 @@
 											</div>
 											<?php if ($show_address || $show_mode_label || $show_distance_label) : ?>
 												<div class="nk-detail-panel nk-card-section">
-													<div class="nk-detail-panel__title">Detail permintaan</div>
+									<div class="nk-detail-panel__title"><?= strtolower((string) ($x->request_status ?? 'Pending')) === 'pending' ? 'Lokasi pasien' : 'Detail permintaan'; ?></div>
 													<div class="nk-detail-panel__body">
 														<?php if ($show_address) : ?>
 															<div class="nk-detail-row"><span class="nk-detail-label">Alamat</span><strong class="nk-detail-value"><?= doclinc_history_safe_text($x->location); ?></strong></div>

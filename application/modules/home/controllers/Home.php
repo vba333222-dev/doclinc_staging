@@ -445,7 +445,7 @@ class Home extends MX_Controller
 			} elseif ($role == 'dokter') {
 				redirect('/home_nakes');
 			} elseif ($role == 'admin') {
-				redirect('/home_admin');
+				redirect('admin_menu/login');
 			} else {
 				echo 'Akun tidak dapat diproses.';
 			}
@@ -812,9 +812,29 @@ class Home extends MX_Controller
 		if (!$this->require_post_json()) {
 			return;
 		}
-		$iduser = $this->session->userdata('id');
+		if ($this->session->userdata('role') !== 'warga') {
+			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Anda tidak memiliki akses.']));
+			return;
+		}
+		$iduser = (int) $this->session->userdata('id');
+		$request_id = (int) $this->input->post('request_id');
 		$iddokter = (int) $this->input->post('id_dokter');
-		$rating = $this->input->post('rating');
+		$rating = (int) $this->input->post('rating');
+		if ($iduser < 1 || $request_id < 1 || $iddokter < 1 || $rating < 1 || $rating > 5) {
+			$this->output->set_status_header(422)->set_output(json_encode(['status' => 'error', 'message' => 'Penilaian belum dapat disimpan.']));
+			return;
+		}
+		$request = $this->db->select('request_id, user_id, dokter_id, assigned_nakes_user_id, accepted_by_user_id, responsible_doctor_user_id, visit_performer_user_id, request_status')
+			->from('requests')->where('request_id', $request_id)->where('user_id', $iduser)->where('request_status', 'Completed')->get()->row();
+		if (!$request) {
+			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Penilaian hanya tersedia untuk konsultasi selesai milik Anda.']));
+			return;
+		}
+		$allowed_doctors = array_filter(array_map('intval', [$request->dokter_id, $request->assigned_nakes_user_id, $request->accepted_by_user_id, $request->responsible_doctor_user_id, $request->visit_performer_user_id]));
+		if (!in_array($iddokter, $allowed_doctors, true)) {
+			$this->output->set_status_header(403)->set_output(json_encode(['status' => 'error', 'message' => 'Nakes tidak terkait dengan konsultasi ini.']));
+			return;
+		}
 
 		$result = $this->Home_m->submit_rating($iduser, $iddokter, $rating);
 

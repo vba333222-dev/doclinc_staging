@@ -8,6 +8,14 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="stylesheet" href="<?= base_url('assets/css/style.css'); ?>">
+	<style>
+		.auth-toggle-pw { min-width: 44px; min-height: 44px; padding: 10px; border: 0; background: transparent; cursor: pointer; }
+		.auth-toggle-pw:focus-visible { outline: 3px solid #1F6F4B; outline-offset: 2px; }
+		.auth-pw-wrap { position: relative; }
+		.auth-pw-wrap input { padding-right: 52px; }
+		.auth-toggle-pw { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); }
+		.auth-btn-outline { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; color: #1F6F4B; border: 1px solid #1F6F4B; background: #fff; text-decoration: none; }
+	</style>
 </head>
 <body class="bg-success">
 	<div class="container">
@@ -20,7 +28,7 @@
 				<div class="card shadow-lg" style="border-radius: 10px; overflow: hidden;">
 					<div class="card-body" style="background-color: #e0f2f1;">
 						<form id="signupForm">
-							<div class="form-floating mb-2">
+							<div class="form-floating mb-2 auth-pw-wrap">
 							  <input type="text" class="form-control" id="nama_lengkap" name="nama_lengkap" placeholder="Nama lengkap">
 							  <label for="nama_lengkap">Nama lengkap</label>
 							</div>
@@ -39,11 +47,13 @@
 							<div class="form-floating mb-2">
 							  <input type="password" class="form-control" id="password" name="password" placeholder="Password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
 							  <label for="password">Password</label>
+							  <button type="button" class="auth-toggle-pw" tabindex="0" data-target="password" aria-label="Tampilkan password"><i class="fas fa-eye"></i></button>
 							</div>
 							<div class="form-text mb-2">Minimal 8 karakter: huruf besar, huruf kecil, angka, dan karakter khusus.</div>
-							<div class="form-floating mb-2">
+							<div class="form-floating mb-2 auth-pw-wrap">
 							  <input type="password" class="form-control" id="k_password" name="k_password" placeholder="Konfirmasi password" minlength="8" maxlength="72" autocomplete="new-password" required>
 							  <label for="k_password">Konfirmasi password</label>
+							  <button type="button" class="auth-toggle-pw" tabindex="0" data-target="k_password" aria-label="Tampilkan konfirmasi password"><i class="fas fa-eye"></i></button>
 							</div>
 							<div class="row g-2">
 				                <div class="col">
@@ -59,7 +69,7 @@
 
 				                    <div class="d-grid">
 
-				                        <a href="<?= site_url('login');?>" class="btn btn-secondary">Batal</a>
+						                <a href="<?= site_url('login');?>" class="btn auth-btn-outline">Batal</a>
 				                    </div>
 				                </div>
 				            </div>
@@ -82,6 +92,16 @@
 
 
 	<script>
+		document.querySelectorAll('.auth-toggle-pw').forEach(function(button) {
+			button.addEventListener('click', function() {
+				var input = document.getElementById(this.dataset.target);
+				if (!input) return;
+				var icon = this.querySelector('i');
+				input.type = input.type === 'password' ? 'text' : 'password';
+				icon.classList.toggle('fa-eye-slash', input.type === 'text');
+				icon.classList.toggle('fa-eye', input.type === 'password');
+			});
+		});
 
 		document.getElementById('signupForm').addEventListener('submit', function(event) {
 			event.preventDefault();
