@@ -1419,7 +1419,7 @@ class Home_nakes extends MX_Controller
 			return false;
 		}
 		if ($role === 'admin') {
-			redirect('home_admin');
+			redirect('admin_menu/');
 			return false;
 		}
 

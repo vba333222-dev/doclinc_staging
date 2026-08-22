@@ -68,6 +68,7 @@ $route['realtime/subscription-token'] = 'realtime_access/subscription_token';
 $route['notifications/snapshot'] = 'notifikasi/snapshot';
 $route['realtime/requests/snapshot'] = 'realtime_requests/snapshot';
 $route['login/change-password'] = 'login/change_password';
+$route['logout'] = 'login/logout';
 $route['login/change-password/submit'] = 'login/update_password';
 $route['login/activate'] = 'login/activate';
 $route['login/activate/auth'] = 'login/activate_auth';

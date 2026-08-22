@@ -445,7 +445,7 @@ class Home extends MX_Controller
 			} elseif ($role == 'dokter') {
 				redirect('/home_nakes');
 			} elseif ($role == 'admin') {
-				redirect('admin_menu/login');
+				redirect('admin_menu/');
 			} else {
 				echo 'Akun tidak dapat diproses.';
 			}
