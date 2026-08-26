@@ -732,6 +732,22 @@ $care_team_workflow_feature = Doclinc_feature_flags::resolve(
 $config['care_team_workflow_enabled'] = $care_team_workflow_feature['enabled'];
 $config['care_team_workflow_environment'] = $care_team_workflow_feature['environment'];
 $config['care_team_workflow_feature_reason'] = $care_team_workflow_feature['reason'];
+$nakes_placement_enabled_env = getenv('DOCLINC_NAKES_PLACEMENT_ENABLED');
+if ($nakes_placement_enabled_env === false || $nakes_placement_enabled_env === '') {
+	$nakes_placement_enabled_env = $_SERVER['DOCLINC_NAKES_PLACEMENT_ENABLED'] ?? null;
+}
+$nakes_placement_environment_env = getenv('DOCLINC_NAKES_PLACEMENT_ENVIRONMENT');
+if ($nakes_placement_environment_env === false || $nakes_placement_environment_env === '') {
+	$nakes_placement_environment_env = $_SERVER['DOCLINC_NAKES_PLACEMENT_ENVIRONMENT'] ?? '';
+}
+$nakes_placement_feature = Doclinc_feature_flags::resolve(
+	$nakes_placement_enabled_env,
+	$nakes_placement_environment_env,
+	$realtime_client_runtime_environment_env
+);
+$config['nakes_placement_enabled'] = $nakes_placement_feature['enabled'];
+$config['nakes_placement_environment'] = $nakes_placement_feature['environment'];
+$config['nakes_placement_feature_reason'] = $nakes_placement_feature['reason'];
 $realtime_public_websocket_url_env = getenv('DOCLINC_REALTIME_PUBLIC_WEBSOCKET_URL');
 if ($realtime_public_websocket_url_env === false || $realtime_public_websocket_url_env === '') {
 	$realtime_public_websocket_url_env = isset($_SERVER['DOCLINC_REALTIME_PUBLIC_WEBSOCKET_URL'])

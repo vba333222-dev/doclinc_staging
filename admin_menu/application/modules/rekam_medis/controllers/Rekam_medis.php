@@ -73,6 +73,28 @@ class Rekam_medis extends MX_Controller
 			$this->output_json(array('success' => false, 'status' => 'error', 'message' => 'Metode tidak diizinkan.'), 405);
 			return;
 		}
-		$this->output_json(array('success' => false, 'status' => 'error', 'message' => 'Detail klinis tidak tersedia untuk Admin.'), 403);
+		$gateway_file = APPPATH . 'libraries/Admin_clinical_access_gateway.php';
+		if (is_file($gateway_file)) require_once $gateway_file;
+		$gateway = new Admin_clinical_access_gateway($this);
+		if (!$gateway->featureEnabled()) {
+			$this->output_json(array('success' => false, 'status' => 'error', 'message' => 'Detail klinis tidak tersedia untuk Admin.'), 403);
+			return;
+		}
+		$record_id = (int) $this->input->post('record_id', TRUE);
+		$context = $this->Rekam_medis_m->get_record_audit_context($record_id);
+		if (!$context) {
+			$this->output_json(array('success' => false, 'status' => 'error', 'message' => 'Rekam medis tidak ditemukan.'), 404);
+			return;
+		}
+		$decision = $gateway->authorizeRecord($record_id, array(
+			'reason_code' => $this->input->post('reason_code', TRUE),
+			'reason_text' => $this->input->post('reason_text', TRUE),
+		), $context);
+		if (empty($decision['allowed'])) {
+			$this->output_json(array('success' => false, 'status' => 'error', 'message' => !empty($decision['requires_reason']) ? 'Alasan akses diperlukan.' : 'Akses detail klinis ditolak.', 'reason' => $decision['error']), !empty($decision['requires_reason']) ? 428 : 403);
+			return;
+		}
+		$detail = $this->Rekam_medis_m->get_record_detail($record_id);
+		$this->output_json(array('success' => true, 'status' => 'ok', 'data' => $detail), 200);
 	}
 }

@@ -171,7 +171,33 @@ class Rekam_medis_m extends MX_Controller
 
 	public function get_record_detail($record_id)
 	{
-		return null;
+		if (!$this->ready() || (int) $record_id < 1) return null;
+		$this->db->select('medicalrecords.record_id, medicalrecords.request_id');
+		$this->db->select($this->field_expr('medicalrecords', 'anamnesis', 'anamnesis'), FALSE);
+		$this->db->select($this->field_expr('medicalrecords', 'diagnosis', 'diagnosis'), FALSE);
+		$this->db->select($this->field_expr('medicalrecords', 'treatment', 'treatment'), FALSE);
+		$this->db->select($this->field_expr('medicalrecords', 'recommendations', 'recommendations'), FALSE);
+		$this->db->select($this->created_expr() . ' AS created_at', FALSE);
+		$this->db->select('requests.user_id AS patient_user_id, requests.date AS request_date');
+		$this->db->select($this->puskesmas_name_expr() . ' AS puskesmas_name', FALSE);
+		$this->db->select($this->responsible_doctor_name_expr() . ' AS responsible_doctor_name', FALSE);
+		$this->db->select($this->recorded_by_name_expr() . ' AS recorded_by_name', FALSE);
+		$this->join_base();
+		$this->db->where($this->record_id_expr(), (int) $record_id, FALSE);
+		return $this->db->get()->row_array();
+	}
+
+	public function get_record_audit_context($record_id)
+	{
+		if (!$this->ready() || (int) $record_id < 1) return null;
+		$this->db->select('medicalrecords.record_id, medicalrecords.request_id, requests.user_id AS patient_user_id', FALSE);
+		$this->db->select($this->puskesmas_code_expr() . ' AS puskesmas_code', FALSE);
+		$this->join_base();
+		$this->db->where($this->record_id_expr(), (int) $record_id, FALSE);
+		$row = $this->db->get()->row_array();
+		if (!$row) return null;
+		$row['access_kind'] = 'read_clinical_detail';
+		return $row;
 	}
 
 	public function get_summary($filters = array())
