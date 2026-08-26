@@ -361,6 +361,27 @@ The implementation must inspect the current table first and reuse equivalent exi
 
 DB-level singularity must guarantee at most one `aktif` assignment per request.
 
+### 4.2.1 Assignment operation idempotency
+
+`request_visit_performer_assignments` remains the canonical assignment history;
+it is not an operation receipt. The additive `visit_assignment_operations` table
+is a durable idempotency receipt only. It records the successful `assign`,
+`reassign`, or `cancel_before_start` operation and links its source/result
+assignment rows without becoming workflow state or a second assignment history.
+
+Each successful operation writes exactly one receipt in the same database
+transaction as its domain mutation. `idempotency_key` is globally unique.
+Retries with the same key and the same canonical operation fingerprint/context
+return the original successful result; reuse of that key with different
+canonical input returns `IDEMPOTENCY_KEY_CONFLICT`. Failed validation and rolled
+back operations create no successful-operation receipt. The server-generated
+`operation_fingerprint` is a SHA-256 representation of canonical operation
+input and is not user-controlled serialized state.
+
+`request_events.domain_event_key` remains timeline projection/history dedupe and
+does not replace the operation receipt. The receipt contains no pending state,
+error result, retry counter, or response payload.
+
 ### 5.3 `visit_results`
 
 Required fields:
