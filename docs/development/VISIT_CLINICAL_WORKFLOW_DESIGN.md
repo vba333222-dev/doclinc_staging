@@ -8,7 +8,7 @@ The core goal is to separate physical Visit execution from clinical responsibili
 
 The authoritative core flow is:
 
-`Responsible Doctor disposition -> Command Center assign performer -> physical Visit + TTV -> Visit Result -> Responsible Doctor review -> medical record finalization -> clinical closure`
+`Responsible Doctor disposition -> Command Center assign performer -> physical Visit + TTV -> Visit Result -> doctor-authorized review -> medical record finalization -> clinical closure`
 
 The non-Visit flow is:
 
@@ -60,7 +60,7 @@ These may be added later without changing the core source-of-truth boundaries de
 3. Physical completion is not clinical completion.
 4. No canonical `clinical_workflow_status` column or table is introduced.
 5. Typed domain records are authoritative. `request_events` is a timeline projection, not canonical state storage.
-6. Responsible Doctor and Visit Performer are separate authorities. Visit Performer authority never transfers clinical final authority.
+6. Responsible Doctor and Visit Performer remain separate assignment authorities. A canonical personal doctor Visit Performer is an explicit exception: for the same request they may review their own submitted result, finalize the clinical record, and perform clinical closure. This does not transfer or replace the Responsible Doctor assignment.
 7. Command Center is a facility/operational identity, not a clinician, even where legacy role fields could superficially resemble a clinician identity.
 8. Existing compatibility fields may be projected during transition but must not override new canonical assignment records when the new workflow is authoritative.
 9. Submitted clinical history is immutable. Corrections create new versions or amendments rather than reopening old records.
@@ -194,7 +194,7 @@ Correction rules:
 
 ### 4.6 Doctor Review
 
-The Responsible Doctor reviews the latest submitted Visit Result version.
+The latest submitted Visit Result version may be reviewed by either the active Responsible Doctor or the active canonical personal Visit Performer when that performer's Nakes profession is doctor. A doctor Visit Performer may review their own submitted result. A non-doctor performer, unrelated doctor, Command Center, Admin, and super-admin remain ineligible.
 
 Core decisions:
 
@@ -205,7 +205,7 @@ Core decisions:
 
 Each Visit Result version may have only one terminal review. Review rows are immutable.
 
-Only the latest submitted result may receive a review that can affect the current workflow. An older result can never later become the valid closure-driving approval after a newer submitted version exists.
+Only the latest submitted result may receive a review that can affect the current workflow. An older result can never later become the valid closure-driving approval after a newer submitted version exists. Every review retains canonical assignment provenance: use the active Responsible Doctor assignment when the actor holds it; otherwise use the active Visit Performer assignment, which is permitted only for a personal doctor performer.
 
 On `approved`:
 
@@ -221,6 +221,17 @@ On `correction_required`:
 - the active performer assignment remains `aktif`;
 - the performer may produce the next version.
 
+#### Clinical authority reconciliation
+
+- `DOCTOR_PERFORMER_SELF_REVIEW=ALLOWED`: a canonical personal doctor Visit Performer may review their own submitted result.
+- `DOCTOR_PERFORMER_CLINICAL_FINALIZATION=ALLOWED`.
+- `DOCTOR_PERFORMER_CLINICAL_CLOSURE=ALLOWED`.
+- `SAME_USER_RESPONSIBLE_AND_PERFORMER=ALLOWED`.
+- `ROLE_DOKTER_ALONE_GRANTS_AUTHORITY=NO`.
+- `RESPONSIBLE_DOCTOR_IMPLICIT_HANDOVER=NO`: selecting a doctor as performer never transfers or replaces the Responsible Doctor assignment.
+
+The explicit exception is limited to a canonical active personal Nakes Visit Performer whose profession is doctor. A non-doctor performer remains limited to performer operations. Command Center, Admin, super-admin, and unrelated doctors remain operational/read-only or denied for clinical mutation.
+
 ### 4.7 Medical record finalization
 
 The existing `medicalrecords` model remains in use for the core. Canonical Encounter migration is deferred.
@@ -232,7 +243,7 @@ Add explicit markers:
 
 Before finalization, the record remains editable according to existing clinical authorization plus the new workflow guards.
 
-For an enrolled Visit, finalization is allowed only after the latest submitted Visit Result has an `approved` Doctor Review.
+For an enrolled Visit, finalization is allowed only after the latest submitted Visit Result has an `approved` Doctor Review. The actor must be the active Responsible Doctor or the active canonical personal doctor Visit Performer for that request.
 
 For an enrolled non-Visit consultation, Visit Result and Doctor Review are not required.
 
@@ -289,7 +300,7 @@ In the core, only `clinical_finalized_by_user_id` may author an amendment. Autho
 - there is no newer unreviewed result;
 - there is no pending correction cycle;
 - medical record is clinically finalized;
-- closure actor is the valid Responsible Doctor for the core flow.
+- closure actor is the valid Responsible Doctor or canonical personal doctor Visit Performer for the core flow.
 
 A successful closure changes `request_status` to `Completed` exactly once.
 
@@ -301,7 +312,7 @@ A successful closure changes `request_status` to `Completed` exactly once.
 - request is enrolled in the new workflow;
 - active disposition is `non_visit`;
 - medical record is clinically finalized;
-- closure actor is the valid Responsible Doctor.
+- closure actor is the valid Responsible Doctor or canonical personal doctor Visit Performer.
 
 It does not require `visit_status`, Visit Performer assignment, Visit Result, or Doctor Review.
 
@@ -405,7 +416,8 @@ Required fields:
 - `request_id` foreign key.
 - `visit_result_id` foreign key.
 - `reviewer_user_id`.
-- `responsible_assignment_id` attribution to the Responsible Doctor assignment active for the review.
+- nullable `responsible_assignment_id` attribution to the Responsible Doctor assignment active for the review.
+- nullable `reviewer_visit_assignment_id` attribution to the canonical Visit Performer assignment when that assignment authorizes the review.
 - `decision`: `approved` or `correction_required`.
 - nullable `correction_reason`, mandatory when decision is `correction_required`.
 - nullable `review_notes`.
@@ -415,6 +427,7 @@ Required fields:
 Constraint:
 
 - unique `visit_result_id` so a result version has only one terminal review.
+- at least one of `responsible_assignment_id` or `reviewer_visit_assignment_id` is required; both references must belong to the same request and preserve the assignment that authorized the review.
 
 Foreign-key deletion policy is `RESTRICT`.
 
@@ -513,19 +526,19 @@ Controllers must not independently reconstruct workflow authorization with scatt
 | Record TTV | active Visit Performer | valid physical Visit state and assignment |
 | Create/edit result draft | active Visit Performer | `arrived`, `in_service`, or `completed`; active assignment |
 | Submit Visit Result | active Visit Performer | physical Visit completed and result valid |
-| Review Visit Result | Responsible Doctor | latest submitted result only |
-| Finalize clinical record | Responsible Doctor | Visit: latest result approved; non-Visit: applicable consultation guards |
-| Close Visit | Responsible Doctor | all Visit closure invariants |
-| Close non-Visit consultation | Responsible Doctor | non-Visit disposition + finalized record |
+| Review Visit Result | Responsible Doctor or canonical personal doctor Visit Performer | latest submitted result only; performer doctor may review own result |
+| Finalize clinical record | Responsible Doctor or canonical personal doctor Visit Performer | Visit: latest result approved; non-Visit: applicable consultation guards |
+| Close Visit | Responsible Doctor or canonical personal doctor Visit Performer | all Visit closure invariants |
+| Close non-Visit consultation | Responsible Doctor or canonical personal doctor Visit Performer | non-Visit disposition + finalized record |
 | Create Clinical Amendment | `clinical_finalized_by_user_id` | record finalized |
 
 Explicit denials in the core:
 
 - Command Center cannot perform clinical findings/review/finalization actions merely because of legacy role representation.
-- Visit Performer cannot author canonical diagnosis, prescription, final assessment, or clinical closure through performer authority.
+- Visit Performer cannot author canonical diagnosis, prescription, or final assessment through ordinary performer authority. The explicit doctor-performer exception permits review, clinical finalization, and clinical closure for that request.
 - Admin and super-admin capabilities do not imply clinician authority.
 - `clinical_audit` is a read/audit capability, not clinical mutation authority.
-- Another doctor cannot review/finalize/amend solely because they are a doctor; controlled handover is deferred.
+- Another doctor cannot review/finalize/amend solely because they are a doctor; controlled handover is deferred. A doctor with canonical Visit Performer authority is not an unrelated doctor and may exercise the explicit exception.
 
 When the new workflow is authoritative, Responsible Doctor authority comes from the active Responsible Doctor assignment, not fallback `dokter_id` or `accepted_by_user_id`. Visit Performer authority comes from the canonical active performer assignment, not compatibility projection columns alone.
 
@@ -840,7 +853,7 @@ Prove at minimum:
 
 - Command Center cannot act as Responsible Doctor.
 - Command Center cannot submit performer clinical evidence unless it is also a separately valid personal performer identity through the canonical personal-Nakes path; facility identity alone never suffices.
-- Visit Performer cannot review/finalize/close through performer authority.
+- Non-doctor Visit Performer cannot review/finalize/close; a canonical personal doctor Visit Performer may do so under the explicit doctor-performer exception.
 - Admin/super-admin cannot mutate clinical workflow through governance authority.
 - unrelated doctor cannot review/finalize/amend in the core.
 - Warga cannot access clinician mutation endpoints.
@@ -890,6 +903,7 @@ For an enrolled Visit request:
 - TTV: `request_vital_sign_measurements`.
 - Field Visit evidence: versioned `visit_results` plus TTV reference table.
 - Review: `clinical_reviews` attached to exact Visit Result versions.
+- Review authority: active Responsible Doctor assignment or, for the explicit exception, active canonical personal doctor Visit Performer assignment; provenance is stored on the review.
 - Clinical final record: finalized `medicalrecords` plus ordered `clinical_amendments`.
 - Request completion: `requests.request_status` changed only by the applicable clinical closure operation.
 - Timeline: `request_events` as projection/history.
