@@ -78,6 +78,16 @@ if (!function_exists('doclinc_append_request_event')) {
 			$encoded = !empty($metadata) ? json_encode($metadata) : null;
 			$data['metadata_json'] = $encoded !== false ? $encoded : null;
 		}
+		if ($CI->db->field_exists('domain_event_key', 'request_events')) {
+			$key = isset($payload['domain_event_key']) ? trim((string) $payload['domain_event_key']) : '';
+			if ($key !== '') {
+				$existing = $CI->db->where('domain_event_key', $key)->get('request_events')->row();
+				if ($existing) {
+					return (int) $existing->request_id === $request_id && (string) $existing->event_type === $event_type;
+				}
+				$data['domain_event_key'] = substr($key, 0, 191);
+			}
+		}
 
 		return (bool) $CI->db->insert('request_events', $data);
 	}
