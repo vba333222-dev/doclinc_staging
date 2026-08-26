@@ -23,8 +23,8 @@ class Visit_disposition_service
             if ($existingKey) return ((int)$existingKey->request_id === (int)$requestId && (int)$existingKey->created_by_user_id === (int)$actorUserId) ? $this->ok($existingKey) : $this->fail('IDEMPOTENCY_KEY_CONFLICT');
             if (!$this->enabled) return $this->fail('WORKFLOW_ENROLLMENT_DISABLED');
             if ((string)$request->request_status !== 'Accepted') return $this->fail('REQUEST_NOT_ACCEPTED');
-            if (!$this->policy->canCreateDisposition($requestId, $actorUserId)) return $this->fail('NOT_RESPONSIBLE_DOCTOR');
             if ($this->model->getActiveForUpdate($requestId)) return $this->fail('DISPOSITION_ALREADY_EXISTS');
+            if (!$this->policy->canCreateDisposition($requestId, $actorUserId)) return $this->fail('NOT_RESPONSIBLE_DOCTOR');
             $data = $this->normalize($input, $actorUserId, $requestId, 1, $idempotencyKey);
             $id = $this->model->insert($data); if (!$id) return $this->fail('DISPOSITION_CONFLICT');
             if (!$this->db->where('request_id',(int)$requestId)->update('requests', array('consultation_mode'=>$data['decision']))) return $this->fail('DISPOSITION_CONFLICT');

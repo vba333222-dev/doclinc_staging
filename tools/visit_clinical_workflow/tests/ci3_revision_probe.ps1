@@ -1,0 +1,8 @@
+param([string]$Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path)
+$ErrorActionPreference='Stop'
+& (Get-Command php).Source (Join-Path $Root 'tools\visit_clinical_workflow\tests\ci3_revision_setup.php') | Write-Output
+$barrier=Join-Path ([IO.Path]::GetTempPath()) ('vcw-rev-'+[guid]::NewGuid().ToString('N'))
+$outA=$barrier+'.a.out';$outB=$barrier+'.b.out';$errA=$barrier+'.a.err';$errB=$barrier+'.b.err';$worker=Join-Path $Root 'tools\visit_clinical_workflow\tests\ci3_revision_worker.php'
+$pA=Start-Process (Get-Command php).Source -ArgumentList @($worker,'A',$barrier) -WorkingDirectory $Root -RedirectStandardOutput $outA -RedirectStandardError $errA -PassThru
+$pB=Start-Process (Get-Command php).Source -ArgumentList @($worker,'B',$barrier) -WorkingDirectory $Root -RedirectStandardOutput $outB -RedirectStandardError $errB -PassThru
+try { $deadline=(Get-Date).AddSeconds(20); while((!(Test-Path ($barrier+'.A.ready'))) -or (!(Test-Path ($barrier+'.B.ready')))){if((Get-Date)-gt $deadline){throw 'workers not ready'};Start-Sleep -Milliseconds 50}; Set-Content -LiteralPath ($barrier+'.release') -Value release -NoNewline; $deadline=(Get-Date).AddSeconds(30); while((!$pA.HasExited)-or(!$pB.HasExited)){if((Get-Date)-gt $deadline){throw 'workers timeout'};Start-Sleep -Milliseconds 50}; Write-Output ('WORKER_A_PID='+$pA.Id);Write-Output ('WORKER_B_PID='+$pB.Id);Write-Output ('WORKER_A='+((Get-Content $outA -Raw).Trim()));Write-Output ('WORKER_B='+((Get-Content $outB -Raw).Trim())); } finally { foreach($f in @($outA,$outB,$errA,$errB,$barrier+'.A.ready',$barrier+'.B.ready',$barrier+'.release')){if(Test-Path $f){Remove-Item -LiteralPath $f -Force}} }
