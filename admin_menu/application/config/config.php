@@ -603,6 +603,20 @@ $config['nakes_presence_enabled'] = !empty($nakes_presence_feature['enabled']);
 $config['nakes_presence_environment'] = (string) ($nakes_presence_feature['environment'] ?? '');
 $config['nakes_presence_feature_reason'] = (string) ($nakes_presence_feature['reason'] ?? 'disabled');
 $config['nakes_presence_online_timeout_seconds'] = 90;
+$nakes_placement_enabled_env = getenv('DOCLINC_NAKES_PLACEMENT_ENABLED');
+if ($nakes_placement_enabled_env === false || $nakes_placement_enabled_env === '') {
+	$nakes_placement_enabled_env = $_SERVER['DOCLINC_NAKES_PLACEMENT_ENABLED'] ?? null;
+}
+$nakes_placement_environment_env = getenv('DOCLINC_NAKES_PLACEMENT_ENVIRONMENT');
+if ($nakes_placement_environment_env === false || $nakes_placement_environment_env === '') {
+	$nakes_placement_environment_env = $_SERVER['DOCLINC_NAKES_PLACEMENT_ENVIRONMENT'] ?? '';
+}
+$nakes_placement_feature = class_exists('Doclinc_feature_flags')
+	? Doclinc_feature_flags::resolve($nakes_placement_enabled_env, $nakes_placement_environment_env, $nakes_presence_runtime_env)
+	: array('enabled' => false, 'environment' => '', 'reason' => 'resolver_unavailable');
+$config['nakes_placement_enabled'] = !empty($nakes_placement_feature['enabled']);
+$config['nakes_placement_environment'] = (string) ($nakes_placement_feature['environment'] ?? '');
+$config['nakes_placement_feature_reason'] = (string) ($nakes_placement_feature['reason'] ?? 'disabled');
 $single_active_session_enabled_env = getenv('DOCLINC_SINGLE_ACTIVE_SESSION_ENABLED');
 if ($single_active_session_enabled_env === false || $single_active_session_enabled_env === '') {
 	$single_active_session_enabled_env = $_SERVER['DOCLINC_SINGLE_ACTIVE_SESSION_ENABLED'] ?? null;

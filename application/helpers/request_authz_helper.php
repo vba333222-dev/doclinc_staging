@@ -1134,6 +1134,38 @@ if (!function_exists('doclinc_can_view_visit_location')) {
 	}
 }
 
+if (!function_exists('doclinc_request_has_assigned_nakes')) {
+	function doclinc_request_has_assigned_nakes($request)
+	{
+		if (!$request || empty($request->request_id)) {
+			return false;
+		}
+
+		// Jalur care-team: dokter penanggung jawab atau petugas kunjungan sudah ditetapkan.
+		foreach (array('responsible_doctor_user_id', 'visit_performer_user_id') as $field) {
+			if (isset($request->{$field}) && (int) $request->{$field} > 0) {
+				return true;
+			}
+		}
+
+		// Jalur legacy: Nakes/PIC dianggap ditunjuk bila ada penugasan staf aktif
+		// (sumber yang sama dengan label PIC di kartu warga). Klaim langsung oleh
+		// akun command center tanpa staf tidak dihitung.
+		$CI = &get_instance();
+		if (!$CI->db->table_exists('request_staff_assignments')) {
+			return false;
+		}
+		$assignment = $CI->db
+			->select('assignment_id')
+			->where('request_id', (int) $request->request_id)
+			->where('status', 'aktif')
+			->limit(1)
+			->get('request_staff_assignments')
+			->row();
+		return !empty($assignment);
+	}
+}
+
 if (!function_exists('doclinc_can_view_chat')) {
 	function doclinc_can_view_chat($request_id, $user_id = null, $role = null)
 	{
@@ -1150,6 +1182,12 @@ if (!function_exists('doclinc_can_view_chat')) {
 		}
 
 		if ($role === 'warga') {
+			// Warga hanya dapat membuka chat setelah permintaan diterima DAN Nakes
+			// penanggung jawab sudah ditunjuk. Riwayat yang sudah selesai/dibatalkan
+			// tetap dapat dibuka (read-only).
+			if ($request->request_status === 'Accepted' && !doclinc_request_has_assigned_nakes($request)) {
+				return false;
+			}
 			return (string) $request->user_id === (string) $user_id;
 		}
 
@@ -1180,9 +1218,13 @@ if (!function_exists('doclinc_can_send_chat')) {
 			}
 		}
 		$request = doclinc_request_row($request_id);
-		return $request
-			&& $request->request_status === 'Accepted'
-			&& doclinc_can_view_chat($request_id, $user_id, $role);
+		if (!$request || $request->request_status !== 'Accepted') {
+			return false;
+		}
+		if ($role === 'warga' && !doclinc_request_has_assigned_nakes($request)) {
+			return false;
+		}
+		return doclinc_can_view_chat($request_id, $user_id, $role);
 	}
 }
 

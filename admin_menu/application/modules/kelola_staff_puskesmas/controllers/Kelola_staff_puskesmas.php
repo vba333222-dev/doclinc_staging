@@ -251,6 +251,47 @@ class Kelola_staff_puskesmas extends MX_Controller
 		redirect('kelola_staff_puskesmas', 'refresh');
 	}
 
+	/**
+	 * Schedule a facility transfer through the placement service. The actor and
+	 * current placement are always resolved server-side.
+	 */
+	public function schedule_transfer()
+	{
+		if (!$this->require_placement_post()) return;
+		$effectiveAt = trim((string) $this->input->post('effective_at', TRUE));
+		$reason = trim((string) $this->input->post('reason', TRUE));
+		if (!preg_match('/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\z/', $effectiveAt)
+			|| (int) $this->input->post('staff_id', TRUE) < 1
+			|| trim((string) $this->input->post('destination_facility', TRUE)) === ''
+			|| $reason === '') {
+			$this->placement_flash('error', 'Data transfer belum valid.');
+			return;
+		}
+		$result = $this->placement_service()->schedule(array(
+			'staff_id' => (int) $this->input->post('staff_id', TRUE),
+			'destination_facility' => trim((string) $this->input->post('destination_facility', TRUE)),
+			'effective_at' => $effectiveAt,
+			'reason' => $reason,
+		));
+		$this->placement_flash($result ? 'success' : 'error', $result ? 'Transfer dijadwalkan.' : 'Transfer belum dapat dijadwalkan.');
+	}
+
+	public function cancel_transfer()
+	{
+		if (!$this->require_placement_post()) return;
+		$transferId = (int) $this->input->post('transfer_id', TRUE);
+		$result = $transferId > 0 ? $this->placement_service()->cancel($transferId, date('Y-m-d H:i:s')) : false;
+		$this->placement_flash($result ? 'success' : 'error', $result ? 'Transfer dibatalkan.' : 'Transfer belum dapat dibatalkan.');
+	}
+
+	public function activate_transfer()
+	{
+		if (!$this->require_placement_post()) return;
+		$transferId = (int) $this->input->post('transfer_id', TRUE);
+		$result = $transferId > 0 ? $this->placement_service()->activate($transferId, date('Y-m-d H:i:s')) : false;
+		$this->placement_flash($result ? 'success' : 'error', $result ? 'Transfer diterapkan.' : 'Transfer belum dapat diterapkan.');
+	}
+
 	public function update_personal_profile()
 	{
 		if (!$this->require_post()) {
@@ -558,6 +599,43 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$this->session->set_flashdata('error', 'Metode tidak diizinkan.');
 		redirect('kelola_staff_puskesmas', 'refresh');
 		return false;
+	}
+
+	private function require_placement_post()
+	{
+		if (!$this->require_post()) return false;
+		if ($this->config->item('nakes_placement_enabled') !== true) {
+			$this->placement_flash('error', 'Fitur penempatan Nakes belum diaktifkan.');
+			return false;
+		}
+		return true;
+	}
+
+	private function placement_service()
+	{
+		require_once dirname(APPPATH, 2) . '/application/libraries/Nakes_placement_policy.php';
+		require_once dirname(APPPATH, 2) . '/application/libraries/Nakes_placement_store.php';
+		require_once dirname(APPPATH, 2) . '/application/libraries/Nakes_placement_service.php';
+		$actorId = (int) $this->session->userdata('id');
+		$actor = array('user_id' => $actorId, 'role' => '', 'status' => '');
+		if ($actorId > 0 && $this->db->table_exists('users')) {
+			$row = $this->db->select('role,status')->where('userId', $actorId)->limit(1)->get('users')->row_array();
+			if ($row) {
+				$actor['role'] = (string) ($row['role'] ?? '');
+				$actor['status'] = (string) ($row['status'] ?? '');
+			}
+		}
+		return new Nakes_placement_service(
+			new Nakes_placement_store($this->db),
+			true,
+			$actor
+		);
+	}
+
+	private function placement_flash($type, $message)
+	{
+		$this->session->set_flashdata($type, $message);
+		redirect('kelola_staff_puskesmas', 'refresh');
 	}
 
 	private function ensure_provisioning_csrf_token()

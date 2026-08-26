@@ -175,6 +175,12 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 		}
 
 		$row = $this->filter_staff_payload($data);
+		if ($this->placement_feature_enabled() && array_key_exists('kode_pkm', $row)) {
+			$current = $this->db->select('kode_pkm')->where('staff_id', $staff_id)->get('puskesmas_staff')->row();
+			if (!$current || strtoupper(trim((string) $current->kode_pkm)) !== strtoupper(trim((string) $row['kode_pkm']))) {
+				return false;
+			}
+		}
 		unset($row['staff_id'], $row['user_id'], $row['created_at'], $row['created_by_user_id']);
 		if ($this->db->field_exists('updated_at', 'puskesmas_staff')) {
 			$row['updated_at'] = date('Y-m-d H:i:s');
@@ -240,6 +246,11 @@ class Kelola_staff_puskesmas_m extends MX_Controller
 			return 'unlinked';
 		}
 		return $provisioning === Nakes_personal_account_policy::INVALID ? 'invalid' : 'linked';
+	}
+
+	private function placement_feature_enabled()
+	{
+		return (bool) $this->config->item('nakes_placement_enabled');
 	}
 
 	public function provisioning_account_state($staff, $command_center_user_id, $unlinked_account_available = false)
