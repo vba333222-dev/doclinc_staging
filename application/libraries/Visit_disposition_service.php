@@ -16,6 +16,7 @@ class Visit_disposition_service
     }
     public function create($requestId, $actorUserId, array $input, $idempotencyKey)
     {
+        if (trim((string) $idempotencyKey) === '') return $this->fail('IDEMPOTENCY_KEY_CONFLICT');
         return $this->transact(function () use ($requestId, $actorUserId, $input, $idempotencyKey) {
             $request = $this->lockRequest($requestId); if (!$request) return $this->fail('REQUEST_NOT_FOUND');
             $existingKey = $this->model->findByIdempotencyKey($idempotencyKey);
@@ -33,6 +34,7 @@ class Visit_disposition_service
     }
     public function revise($requestId, $actorUserId, $expectedVersion, array $input, $idempotencyKey)
     {
+        if (trim((string) $idempotencyKey) === '') return $this->fail('IDEMPOTENCY_KEY_CONFLICT');
         return $this->transact(function () use ($requestId, $actorUserId, $expectedVersion, $input, $idempotencyKey) {
             $request = $this->lockRequest($requestId); if (!$request) return $this->fail('REQUEST_NOT_FOUND');
             $existingKey = $this->model->findByIdempotencyKey($idempotencyKey);
@@ -42,12 +44,19 @@ class Visit_disposition_service
             if (!$this->policy->canReview($requestId, $actorUserId)) return $this->fail('NOT_RESPONSIBLE_DOCTOR');
             if (in_array((string)$request->visit_status, array('en_route','arrived','in_service','completed'), true)) return $this->fail('DISPOSITION_LOCKED');
             $nextVersion = (int)$active->version_no + 1; $data = $this->normalize($input, $actorUserId, $requestId, $nextVersion, $idempotencyKey);
+            $performer = $this->lockActivePerformer($requestId);
             $supersededAt = date('Y-m-d H:i:s.u');
             if (!$this->model->update($active->disposition_id, array('superseded_at'=>$supersededAt))) return $this->fail('DISPOSITION_CONFLICT');
             $newId = $this->model->insert($data); if (!$newId) return $this->fail('DISPOSITION_CONFLICT');
             if (!$this->model->update($active->disposition_id, array('superseded_by_disposition_id'=>$newId))) return $this->fail('DISPOSITION_CONFLICT');
+            if ($performer && ($data['decision'] === 'non_visit' || ($data['required_profession'] !== null && !$this->performerMatches($performer, $data['required_profession']))) ) {
+                $status = $data['decision'] === 'non_visit' ? 'dibatalkan' : 'diganti';
+                if (!$this->db->where('visit_assignment_id',(int)$performer->visit_assignment_id)->update('request_visit_performer_assignments', array('status'=>$status,'ended_by_user_id'=>(int)$actorUserId,'end_reason'=>$data['decision']==='non_visit'?'Disposition changed to non_visit':'Disposition requirements changed','completed_at'=>null,'ended_at'=>date('Y-m-d H:i:s.u')))) return $this->fail('DISPOSITION_CONFLICT');
+                if (!$this->db->where('request_id',(int)$requestId)->update('requests', array('visit_performer_user_id'=>null))) return $this->fail('DISPOSITION_CONFLICT');
+            }
             if (!$this->db->where('request_id',(int)$requestId)->update('requests', array('consultation_mode'=>$data['decision']))) return $this->fail('DISPOSITION_CONFLICT');
             if (!doclinc_append_request_event($requestId, 'visit_disposition.revised', array('actor_user_id'=>$actorUserId,'domain_event_key'=>'visit-disposition:'.$newId.':created','metadata'=>array('disposition_id'=>$newId,'supersedes'=>(int)$active->disposition_id)), get_instance())) return $this->fail('DISPOSITION_CONFLICT');
+            if (!doclinc_append_request_event($requestId, 'visit_disposition.superseded', array('actor_user_id'=>$actorUserId,'domain_event_key'=>'visit-disposition:'.$active->disposition_id.':superseded','metadata'=>array('disposition_id'=>(int)$active->disposition_id,'superseded_by'=>$newId)), get_instance())) return $this->fail('DISPOSITION_CONFLICT');
             return $this->okRow($newId, $nextVersion);
         });
     }
@@ -63,6 +72,8 @@ class Visit_disposition_service
     }
     private function text($input,$key){$v=isset($input[$key])?trim((string)$input[$key]):'';return $v===''?null:$v;}
     private function lockRequest($id){return $this->db->query('SELECT * FROM '.$this->db->dbprefix('requests').' WHERE request_id = ? FOR UPDATE',array((int)$id))->row();}
+    private function lockActivePerformer($id){$q=$this->db->query('SELECT visit_assignment_id, user_id, staff_id FROM '.$this->db->dbprefix('request_visit_performer_assignments').' WHERE request_id = ? AND status = ? LIMIT 1 FOR UPDATE',array((int)$id,'aktif'));return $q?$q->row():null;}
+    private function performerMatches($performer,$required){$q=$this->db->query('SELECT profesi FROM '.$this->db->dbprefix('puskesmas_staff').' WHERE staff_id = ? LIMIT 1',array((int)$performer->staff_id));$r=$q?$q->row():null;return $r && strcasecmp(trim((string)$r->profesi),trim((string)$required))===0;}
     private function transact($callback){$this->db->trans_begin();try{$r=$callback();if(empty($r['ok'])){$this->db->trans_rollback();return $r;}if(!$this->db->trans_status()||!$this->db->trans_commit()){ $this->db->trans_rollback();return $this->fail('DISPOSITION_CONFLICT');}return $r;}catch(InvalidArgumentException $e){$this->db->trans_rollback();return $this->fail($e->getMessage());}catch(Throwable $e){$this->db->trans_rollback();return $this->fail('DISPOSITION_CONFLICT');}}
     private function ok($row){return array('ok'=>true,'disposition_id'=>(int)$row->disposition_id,'version_no'=>(int)$row->version_no);}
     private function okRow($id,$version){return array('ok'=>true,'disposition_id'=>(int)$id,'version_no'=>(int)$version);}
