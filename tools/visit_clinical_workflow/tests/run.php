@@ -1,13 +1,15 @@
 <?php
 
 $mode = isset($argv[1]) ? (string) $argv[1] : '';
-if (!in_array($mode, array('schema', 'migrate'), true)) {
-    fwrite(STDERR, "Usage: php tools/visit_clinical_workflow/tests/run.php schema|migrate\n");
+if (!in_array($mode, array('schema', 'migrate', 'authorization', 'state_resolver'), true)) {
+    fwrite(STDERR, "Usage: php tools/visit_clinical_workflow/tests/run.php schema|migrate|authorization|state_resolver\n");
     exit(2);
 }
 
 try {
     require __DIR__ . '/bootstrap.php';
+    if ($mode === 'authorization') { require __DIR__ . '/authorization_test.php'; exit(0); }
+    if ($mode === 'state_resolver') { require __DIR__ . '/state_resolver_test.php'; exit(0); }
     vcw_load_baseline_schema();
     putenv('VCW_BASELINE_LOADED=1');
     if ($mode === 'migrate') {

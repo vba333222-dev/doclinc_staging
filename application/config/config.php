@@ -732,6 +732,22 @@ $care_team_workflow_feature = Doclinc_feature_flags::resolve(
 $config['care_team_workflow_enabled'] = $care_team_workflow_feature['enabled'];
 $config['care_team_workflow_environment'] = $care_team_workflow_feature['environment'];
 $config['care_team_workflow_feature_reason'] = $care_team_workflow_feature['reason'];
+$visit_clinical_workflow_enabled_env = getenv('DOCLINC_VISIT_CLINICAL_WORKFLOW_ENABLED');
+if ($visit_clinical_workflow_enabled_env === false || $visit_clinical_workflow_enabled_env === '') {
+	$visit_clinical_workflow_enabled_env = $_SERVER['DOCLINC_VISIT_CLINICAL_WORKFLOW_ENABLED'] ?? null;
+}
+$visit_clinical_workflow_environment_env = getenv('DOCLINC_VISIT_CLINICAL_WORKFLOW_ENVIRONMENT');
+if ($visit_clinical_workflow_environment_env === false || $visit_clinical_workflow_environment_env === '') {
+	$visit_clinical_workflow_environment_env = $_SERVER['DOCLINC_VISIT_CLINICAL_WORKFLOW_ENVIRONMENT'] ?? '';
+}
+$visit_clinical_workflow_feature = Doclinc_feature_flags::resolve(
+	$visit_clinical_workflow_enabled_env,
+	$visit_clinical_workflow_environment_env,
+	$realtime_client_runtime_environment_env
+);
+$config['visit_clinical_workflow_enabled'] = $visit_clinical_workflow_feature['enabled'];
+$config['visit_clinical_workflow_environment'] = $visit_clinical_workflow_feature['environment'];
+$config['visit_clinical_workflow_feature_reason'] = $visit_clinical_workflow_feature['reason'];
 $nakes_placement_enabled_env = getenv('DOCLINC_NAKES_PLACEMENT_ENABLED');
 if ($nakes_placement_enabled_env === false || $nakes_placement_enabled_env === '') {
 	$nakes_placement_enabled_env = $_SERVER['DOCLINC_NAKES_PLACEMENT_ENABLED'] ?? null;

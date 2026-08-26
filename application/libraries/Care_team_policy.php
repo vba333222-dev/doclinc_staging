@@ -37,7 +37,7 @@ class Care_team_policy
 			return false;
 		}
 		$profession = trim((string) ($identity['staff_profesi'] ?? ''));
-		return $profession !== '' && !$this->doctorProfession($profession);
+		return $profession !== '';
 	}
 
 	public function doctorProfession($profession)
