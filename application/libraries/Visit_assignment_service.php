@@ -113,7 +113,7 @@ class Visit_assignment_service
             if (!$this->policy->isEnrolled($requestId)) return $this->fail('WORKFLOW_NOT_ENROLLED');
             $disposition = $this->activeDisposition($requestId); if (!$disposition || (string) $disposition->decision !== 'visit') return $this->fail('VISIT_NOT_REQUIRED');
             if ((string) $request->visit_status !== 'not_started') return $this->fail('VISIT_ALREADY_STARTED');
-            $facility = trim((string) $request->assigned_puskesmas_code); $cancelAuthorized = $this->policy->canReview($requestId, $actor); if (!$cancelAuthorized && function_exists('doclinc_can_cancel_request')) $cancelAuthorized = doclinc_can_cancel_request($requestId, $actor, 'dokter'); if (!$cancelAuthorized) return $this->fail('CANCELLATION_NOT_AUTHORIZED');
+            $cancelAuthorized = function_exists('doclinc_can_cancel_request') && doclinc_can_cancel_request($requestId, $actor, 'dokter'); if (!$cancelAuthorized) return $this->fail('CANCELLATION_NOT_AUTHORIZED');
             $old = $this->activeAssignment($requestId); if (!$old) return $this->fail('NO_ACTIVE_PERFORMER');
             $now = date('Y-m-d H:i:s.u');
             if (!$this->db->where('visit_assignment_id', (int) $old->visit_assignment_id)->where('status', 'aktif')->update('request_visit_performer_assignments', array('status' => 'dibatalkan', 'ended_by_user_id' => $actor, 'end_reason' => $reason, 'completed_at' => null, 'ended_at' => $now, 'updated_at' => $now))) return $this->fail('ASSIGNMENT_CONFLICT');
