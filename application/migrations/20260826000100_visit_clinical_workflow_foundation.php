@@ -67,7 +67,7 @@ try {
             CONSTRAINT fk_visit_disposition_request FOREIGN KEY (request_id) REFERENCES requests (request_id) ON DELETE RESTRICT ON UPDATE RESTRICT,
             CONSTRAINT fk_visit_disposition_creator FOREIGN KEY (created_by_user_id) REFERENCES users (userId) ON DELETE RESTRICT ON UPDATE RESTRICT,
             CONSTRAINT fk_visit_disposition_superseded FOREIGN KEY (superseded_by_disposition_id) REFERENCES visit_dispositions (disposition_id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-            CONSTRAINT chk_visit_disposition_urgency CHECK ((decision = 'visit' AND urgency IN ('routine','priority','urgent')) OR (decision = 'non_visit' AND urgency IS NULL)
+            CONSTRAINT chk_visit_disposition_urgency CHECK ((decision = 'visit' AND urgency IS NOT NULL AND urgency IN ('routine','priority','urgent')) OR (decision = 'non_visit' AND urgency IS NULL)
             )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
