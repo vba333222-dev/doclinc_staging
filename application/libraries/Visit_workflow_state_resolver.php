@@ -42,5 +42,5 @@ class Visit_workflow_state_resolver
     }
     private function result($id,$enrolled,$state) { return array('request_id'=>$id,'managed'=>true,'enrolled'=>$enrolled,'state'=>$state); }
     private function scalar($sql,$id) { $row=$this->row($sql,$id); return $row ? (int)array_values($row)[0] : 0; }
-    private function row($sql,$id) { if (is_callable($this->reader)) return call_user_func($this->reader, $sql, $id); $stmt=$this->db->prepare($sql); $stmt->bind_param('i',$id); $stmt->execute(); $r=$stmt->get_result(); $row=$r->fetch_assoc(); $stmt->close(); return $row ?: null; }
+    private function row($sql,$id) { if (is_callable($this->reader)) return call_user_func($this->reader, $sql, $id); $query=$this->db->query($sql, array((int)$id)); return $query ? $query->row_array() : null; }
 }

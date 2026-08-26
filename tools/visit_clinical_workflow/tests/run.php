@@ -1,8 +1,8 @@
 <?php
 
 $mode = isset($argv[1]) ? (string) $argv[1] : '';
-if (!in_array($mode, array('schema', 'migrate', 'authorization', 'state_resolver', 'disposition'), true)) {
-    fwrite(STDERR, "Usage: php tools/visit_clinical_workflow/tests/run.php schema|migrate|authorization|state_resolver|disposition\n");
+if (!in_array($mode, array('schema', 'migrate', 'authorization', 'state_resolver', 'disposition', 'ci3_smoke', 'ci3_disposition'), true)) {
+    fwrite(STDERR, "Usage: php tools/visit_clinical_workflow/tests/run.php schema|migrate|authorization|state_resolver|disposition|ci3_smoke|ci3_disposition\n");
     exit(2);
 }
 
@@ -11,6 +11,8 @@ try {
     if ($mode === 'authorization') { require __DIR__ . '/authorization_test.php'; exit(0); }
     if ($mode === 'state_resolver') { require __DIR__ . '/state_resolver_test.php'; exit(0); }
     if ($mode === 'disposition') { require __DIR__ . '/disposition_test.php'; exit(0); }
+    if ($mode === 'ci3_smoke') { require __DIR__ . '/ci3_smoke_test.php'; exit(0); }
+    if ($mode === 'ci3_disposition') { require __DIR__ . '/ci3_disposition_smoke.php'; exit(0); }
     vcw_load_baseline_schema();
     putenv('VCW_BASELINE_LOADED=1');
     if ($mode === 'migrate') {
