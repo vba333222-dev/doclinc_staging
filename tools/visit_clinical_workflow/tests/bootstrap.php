@@ -11,7 +11,7 @@ $port = (int) (getenv('VCW_DB_PORT') ?: 33317);
 $database = getenv('VCW_DB_NAME') ?: 'doclinc_visit_test';
 $username = getenv('VCW_DB_USER') ?: 'doclinc_test';
 $password = getenv('VCW_DB_PASSWORD') ?: 'doclinc_test_only';
-$baselineSchema = getenv('VCW_BASELINE_SCHEMA') ?: 'C:\\Project\\doclinc-local-mirror\\schema\\alibaba-staging-schema-20260822-034559.sql';
+$baselineSchema = 'C:\\Project\\doclinc-local-mirror\\schema\\alibaba-staging-schema-20260822-034559.sql';
 
 function vcw_db()
 {
@@ -54,12 +54,11 @@ function vcw_load_baseline_schema()
 
     $sql = file_get_contents($baselineSchema);
     vcw_assert_true($sql !== false && trim($sql) !== '', 'Application-compatible baseline schema is empty');
-    vcw_assert_true(!preg_match('/(?:^|\R)\s*(?:INSERT|UPDATE|DELETE|TRUNCATE)\s+/i', $sql), 'Baseline schema must contain definitions only');
-
     // The verified dump is schema-only. Remove dump reset statements because this
     // harness always starts from a fresh disposable database.
     $sql = preg_replace('/^\s*DROP TABLE IF EXISTS .*?;\s*$/mi', '', $sql);
     vcw_assert_true($sql !== null, 'Baseline schema preprocessing failed');
+    vcw_assert_true(!preg_match('/(?:^|;)\s*(?:INSERT|UPDATE|DELETE|TRUNCATE|DROP\s+(?:DATABASE|TABLE))\b/i', $sql), 'Baseline schema must contain definitions only');
 
     $db = vcw_db();
     vcw_assert_true($db->multi_query($sql), 'Application-compatible baseline import failed');
