@@ -13,7 +13,7 @@ if ((int) $db->query("SELECT COUNT(*) AS c FROM information_schema.tables WHERE 
 
 function vcw_assignment_user($db, $id, $facility, $staff = null, $profession = 'Perawat')
 {
-    $db->query('INSERT INTO users (userId,nama,email,username,password,role,status,must_change_password,remark) VALUES (?,?,?,?,?,?,?,?,?)', array($id, 'Task5 ' . $id, 'task5-' . $id . '@example.invalid', 'task5-' . $id, password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT), 'dokter', 'aktif', 0, $facility));
+    $db->query('INSERT INTO users (userId,nama,email,username,password,role,status,must_change_password,remark) VALUES (?,?,?,?,?,?,?,?,?)', array($id, 'Task5 ' . $id, 'task5-' . $id . '@example.invalid', 'task5-' . $id, password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT, array('cost' => 4)), 'dokter', 'aktif', 0, $facility));
     if ($staff !== null) {
         $db->query('INSERT INTO puskesmas_staff (staff_id,kode_pkm,user_id,nama,profesi,status) VALUES (?,?,?,?,?,?)', array($staff, $facility, $id, 'Task5 Staff ' . $id, $profession, 'aktif'));
         $db->query('INSERT INTO nakes_facility_placements (staff_id,facility_code,effective_from,status,created_by_user_id) VALUES (?,?,?,?,?)', array($staff, $facility, '2026-01-01 00:00:00', 'active', $id));
@@ -22,17 +22,19 @@ function vcw_assignment_user($db, $id, $facility, $staff = null, $profession = '
 
 function vcw_assignment_fixture($db, $request, $facility, $doctor, $doctorStaff, $performers = array())
 {
+    static $commandSequence = 0;
     vcw_assert_safe_request_id($request);
     $db->query('INSERT INTO m_puskesmas (kode_pkm,nama_puskesmas,status) VALUES (?,?,?)', array($facility, 'Task5 Facility', 'aktif'));
-    vcw_assignment_user($db, 50000 + $request % 100, $facility); // canonical command center (no staff)
+    $commandUserId = 40000 + (++$commandSequence);
+    vcw_assignment_user($db, $commandUserId, $facility); // canonical command center (no staff)
     vcw_assignment_user($db, $doctor, $facility, $doctorStaff, 'dokter');
     foreach ($performers as $performer) { vcw_assignment_user($db, $performer[0], $facility, $performer[1], $performer[2]); }
     $db->query('INSERT INTO requests (request_id,user_id,location,request_status,assigned_puskesmas_code,assigned_puskesmas_name,visit_status) VALUES (?,?,?,?,?,?,?)', array($request, $doctor, 'synthetic', 'Accepted', $facility, 'Task5 Facility', 'not_started'));
     $db->query('INSERT INTO request_responsible_doctor_assignments (request_id,staff_id,user_id,assigned_by_user_id,status,assigned_at) VALUES (?,?,?,?,?,NOW(6))', array($request, $doctorStaff, $doctor, $doctor, 'aktif'));
     $disposition = new Visit_disposition_service($db, new Visit_workflow_policy($db, true), true);
     $created = $disposition->create($request, $doctor, array('decision' => 'visit', 'urgency' => 'routine'), 'task5-disposition-' . $request);
-    vcw_assert_true(!empty($created['ok']), 'fixture disposition creation failed code=' . (string) ($created['code'] ?? 'none'));
-    return 50000 + $request % 100;
+    vcw_assert_true(!empty($created['ok']), 'fixture disposition creation failed request=' . $request . ' doctor=' . $doctor . ' code=' . (string) ($created['code'] ?? 'none') . ' identity=' . json_encode(function_exists('doclinc_dokter_identity_context') ? doclinc_dokter_identity_context($doctor, true) : array()) . ' assignment=' . (int) $db->where('request_id', $request)->where('user_id', $doctor)->count_all_results('request_responsible_doctor_assignments'));
+    return $commandUserId;
 }
 
 $suffix = random_int(1, 500);
@@ -122,3 +124,80 @@ echo "ASSIGN_IDEMPOTENT_REPLAY=PASS\n";
 echo "REASSIGN_IDEMPOTENT_REPLAY=PASS\n";
 echo "CANCELLATION_IDEMPOTENT_REPLAY=PASS\n";
 echo "TASK5_REAL_SERVICE_EXECUTION=PASS\n";
+
+// Closure A1: compare every cancellation decision with the pre-existing helper.
+$parityCases = array(
+    array('legacy_handled_doctor', 'doctor', true),
+    array('responsible_only', 'doctor', false),
+    array('performer_only', 'performer', false),
+    array('same_responsible_performer', 'same', false),
+    array('command_center', 'command', false),
+    array('unrelated_doctor', 'doctor', false),
+    array('unrelated_nakes', 'nakes', false),
+    array('admin', 'admin', false),
+    array('super_admin', 'super_admin', false),
+);
+$parityPass = true;
+foreach ($parityCases as $index => $case) {
+    $id = 71000 + $suffix * 20 + $index * 17;
+    vcw_assert_safe_request_id($id);
+    $facilityId = 'T5P-' . $suffix . '-' . $index;
+    $doctorId = $id + 1;
+    $doctorStaff = $id + 1;
+    $performerId = $id + 2;
+    $performerStaff = $id + 2;
+    $commandId = vcw_assignment_fixture($db, $id, $facilityId, $doctorId, $doctorStaff, array(array($performerId, $performerStaff, 'Perawat')));
+    $actorId = $doctorId;
+    if ($case[1] === 'performer') $actorId = $performerId;
+    if ($case[1] === 'same') $actorId = $doctorId;
+    if ($case[1] === 'command') $actorId = $commandId;
+    if ($case[1] === 'nakes') $actorId = $performerId;
+    if ($case[1] === 'admin' || $case[1] === 'super_admin') {
+        $actorId = $id + 5;
+        $role = $case[1] === 'admin' ? 'admin' : 'super-admin';
+        $db->query('INSERT INTO users (userId,nama,email,username,password,role,status,must_change_password,remark) VALUES (?,?,?,?,?,?,?,?,?)', array($actorId, 'Task5 ' . $role . ' ' . $id, 'task5-' . $role . '-' . $id . '@example.invalid', 'task5-' . $role . '-' . $id, password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT, array('cost' => 4)), $role, 'aktif', 0, $facilityId));
+    }
+    $assigned = $service->assign($id, $commandId, $performerId, 'parity-assign-' . $id);
+    vcw_assert_true(!empty($assigned['ok']), 'parity assignment setup failed ' . $case[0]);
+    if ($case[1] === 'nakes') $db->where('userId', $actorId)->update('users', array('role' => 'warga'));
+    if ($case[2]) $db->where('request_id', $id)->update('requests', array('assigned_nakes_user_id' => $actorId));
+    $helper = doclinc_can_cancel_request($id, $actorId, $case[1] === 'nakes' ? 'warga' : ($case[1] === 'admin' || $case[1] === 'super_admin' ? $role : 'dokter'));
+    $result = $service->cancelBeforeStart($id, $actorId, 'parity', 'parity-cancel-' . $id);
+    $serviceAllowed = !empty($result['ok']);
+    vcw_assert_same((bool) $helper, $serviceAllowed, 'cancellation parity ' . $case[0]);
+    if ($helper) {
+        vcw_assert_same('Cancelled', (string) $db->where('request_id', $id)->get('requests')->row()->request_status, 'authorized parity request');
+    } else {
+        $state = $db->where('request_id', $id)->get('requests')->row();
+        $assignmentState = $db->where('request_id', $id)->where('status', 'aktif')->get('request_visit_performer_assignments')->row();
+        vcw_assert_same('Accepted', (string) $state->request_status, 'denied parity request');
+        vcw_assert_true($assignmentState !== null, 'denied parity assignment');
+        vcw_assert_same($performerId, (int) $state->visit_performer_user_id, 'denied parity projection');
+        vcw_assert_same(0, (int) $db->where('request_id', $id)->where('operation_type', 'cancel_before_start')->count_all_results('visit_assignment_operations'), 'denied parity receipt');
+        vcw_assert_same(0, (int) $db->where('request_id', $id)->where('event_type', 'visit_assignment.cancelled')->count_all_results('request_events'), 'denied parity event');
+    }
+}
+
+// Closure A1: an authorized actor is still locked out after physical start.
+foreach (array('en_route', 'arrived', 'in_service', 'completed') as $offset => $visitStatus) {
+    $id = 73000 + $suffix * 20 + $offset * 23;
+    vcw_assert_safe_request_id($id);
+    $facilityId = 'T5S-' . $suffix . '-' . $offset;
+    $doctorId = $id + 1;
+    $commandId = vcw_assignment_fixture($db, $id, $facilityId, $doctorId, $doctorId, array(array($id + 2, $id + 2, 'Perawat')));
+    $db->where('request_id', $id)->update('requests', array('assigned_nakes_user_id' => $doctorId));
+    $service->assign($id, $commandId, $id + 2, 'start-assign-' . $id);
+    $db->where('request_id', $id)->update('requests', array('visit_status' => $visitStatus));
+    $before = $db->where('request_id', $id)->get('requests')->row();
+    $result = $service->cancelBeforeStart($id, $doctorId, 'post-start', 'post-start-' . $id);
+    vcw_assert_same('VISIT_ALREADY_STARTED', $result['code'] ?? null, 'post-start cancellation ' . $visitStatus);
+    $after = $db->where('request_id', $id)->get('requests')->row();
+    vcw_assert_same((string) $before->request_status, (string) $after->request_status, 'post-start request unchanged');
+    vcw_assert_same($visitStatus, (string) $after->visit_status, 'post-start status unchanged');
+    vcw_assert_true($db->where('request_id', $id)->where('status', 'aktif')->get('request_visit_performer_assignments')->row() !== null, 'post-start assignment active');
+    vcw_assert_same(0, (int) $db->where('request_id', $id)->where('operation_type', 'cancel_before_start')->count_all_results('visit_assignment_operations'), 'post-start receipt zero');
+    vcw_assert_same(0, (int) $db->where('request_id', $id)->where('event_type', 'visit_assignment.cancelled')->count_all_results('request_events'), 'post-start event zero');
+}
+
+echo "CANCELLATION_AUTHORITY_PARITY=PASS\n";
+echo "POSTSTART_CANCELLATION_REJECTED=PASS\n";
