@@ -15,5 +15,5 @@ class VcwSession { public function userdata($key){return null;} }
 class VcwApplication { public $db; public $load; public $config; public $session; public function __construct($db){$this->db=$db;$this->load=new VcwLoader($db);$this->config=new VcwConfig(array('visit_clinical_workflow_enabled'=>getenv('VCW_FEATURE_ENABLED')==='1'));$this->session=new VcwSession();} }
 $GLOBALS['vcw_app'] = new VcwApplication($db);
 if (!function_exists('get_instance')) { function &get_instance(){return $GLOBALS['vcw_app'];} }
-require_once APPPATH . 'helpers/request_authz_helper.php'; require_once APPPATH . 'helpers/request_event_helper.php'; require_once APPPATH . 'libraries/Visit_workflow_policy.php'; require_once APPPATH . 'models/Visit_disposition_m.php'; require_once APPPATH . 'libraries/Visit_disposition_service.php';
+require_once APPPATH . 'helpers/request_authz_helper.php'; require_once APPPATH . 'helpers/request_event_helper.php'; require_once APPPATH . 'libraries/Visit_workflow_policy.php'; require_once APPPATH . 'models/Visit_disposition_m.php'; require_once APPPATH . 'libraries/Visit_disposition_service.php'; require_once APPPATH . 'libraries/Visit_assignment_service.php';
 return $GLOBALS['vcw_app'];

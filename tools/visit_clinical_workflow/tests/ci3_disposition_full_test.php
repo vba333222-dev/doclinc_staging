@@ -5,6 +5,7 @@ function vcw_id($n) { global $vcwBase; return $vcwBase + $n; }
 $vcwBase = 30000 + random_int(1, 500) * 100;
  $vcwFacility = 'PKM-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
 $db->query("DELETE FROM request_events WHERE request_id >= 20000");
+$db->query("DELETE FROM visit_assignment_operations WHERE request_id >= 20000");
 $db->query("DELETE FROM request_responsible_doctor_assignments WHERE request_id >= 20000");
 $db->query("DELETE FROM request_visit_performer_assignments WHERE request_id >= 20000");
 $db->query("DELETE FROM visit_dispositions WHERE request_id >= 20000");
