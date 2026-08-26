@@ -89,6 +89,15 @@ if (!function_exists('doclinc_append_request_event')) {
 			}
 		}
 
-		return (bool) $CI->db->insert('request_events', $data);
+		if ($CI->db->insert('request_events', $data)) {
+			return true;
+		}
+		if (!empty($data['domain_event_key'])) {
+			$existing = $CI->db->where('domain_event_key', $data['domain_event_key'])->get('request_events')->row();
+			if ($existing && (int) $existing->request_id === $request_id && (string) $existing->event_type === $event_type) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
