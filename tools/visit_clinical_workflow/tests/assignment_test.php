@@ -201,3 +201,90 @@ foreach (array('en_route', 'arrived', 'in_service', 'completed') as $offset => $
 
 echo "CANCELLATION_AUTHORITY_PARITY=PASS\n";
 echo "POSTSTART_CANCELLATION_REJECTED=PASS\n";
+
+// Closure A2: doctor-performer identity and sequential reassignment guards.
+$doctorRequest = 76000 + $suffix;
+$doctorFacility = 'T5D-' . $suffix;
+$doctorUser = $doctorRequest + 1;
+$doctorCommand = vcw_assignment_fixture($db, $doctorRequest, $doctorFacility, $doctorUser, $doctorUser, array());
+$doctorAssign = $service->assign($doctorRequest, $doctorCommand, $doctorUser, 'doctor-performer-' . $doctorRequest);
+vcw_assert_true(!empty($doctorAssign['ok']), 'eligible doctor performer rejected');
+echo "DOCTOR_PERFORMER_ALLOWED=PASS\n";
+
+$sameRequest = $doctorRequest + 100;
+$sameFacility = $doctorFacility . '-S';
+$sameDoctor = $sameRequest + 1;
+$sameCommand = vcw_assignment_fixture($db, $sameRequest, $sameFacility, $sameDoctor, $sameDoctor, array());
+$sameBefore = $db->where('request_id', $sameRequest)->where('user_id', $sameDoctor)->where('status', 'aktif')->get('request_responsible_doctor_assignments')->row();
+$sameRequestBefore = $db->where('request_id', $sameRequest)->get('requests')->row();
+$sameResult = $service->assign($sameRequest, $sameCommand, $sameDoctor, 'same-doctor-' . $sameRequest);
+vcw_assert_true(!empty($sameResult['ok']), 'same responsible/performer rejected');
+$sameAfter = $db->where('request_id', $sameRequest)->where('user_id', $sameDoctor)->where('status', 'aktif')->get('request_responsible_doctor_assignments')->row();
+    vcw_assert_same((int) $sameBefore->responsible_assignment_id, (int) $sameAfter->responsible_assignment_id, 'responsible assignment changed');
+vcw_assert_same((int) $sameRequestBefore->responsible_doctor_user_id, (int) $db->where('request_id', $sameRequest)->get('requests')->row()->responsible_doctor_user_id, 'responsible projection changed');
+vcw_assert_same('Accepted', (string) $db->where('request_id', $sameRequest)->get('requests')->row()->request_status, 'same-user request status');
+vcw_assert_same(0, (int) $db->where('request_id', $sameRequest)->count_all_results('clinical_reviews'), 'assignment created review');
+echo "SAME_USER_RESPONSIBLE_AND_PERFORMER_ALLOWED=PASS\nRESPONSIBLE_DOCTOR_ASSIGNMENT_PRESERVED=PASS\n";
+
+$offRequest = $sameRequest + 100;
+$offFacility = $sameFacility . '-O';
+$offDoctor = $offRequest + 1;
+$offCommand = vcw_assignment_fixture($db, $offRequest, $offFacility, $offDoctor, $offDoctor, array(array($offRequest + 2, $offRequest + 2, 'Perawat')));
+$offService = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+$offResult = $offService->assign($offRequest, $offCommand, $offRequest + 2, 'enrolled-off-' . $offRequest);
+vcw_assert_true(!empty($offResult['ok']), 'enrolled assignment blocked by feature flag off');
+echo "ENROLLED_ASSIGNMENT_AFTER_FLAG_OFF=PASS\n";
+
+$reassignRequest = $offRequest + 100;
+$reassignFacility = $offFacility . '-R';
+$reassignDoctor = $reassignRequest + 1;
+$reassignCommand = vcw_assignment_fixture($db, $reassignRequest, $reassignFacility, $reassignDoctor, $reassignDoctor, array(array($reassignRequest + 2, $reassignRequest + 2, 'Perawat'), array($reassignRequest + 3, $reassignRequest + 3, 'dokter')));
+$reassignService = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+$aResult = $reassignService->assign($reassignRequest, $reassignCommand, $reassignRequest + 2, 'a-' . $reassignRequest);
+$bResult = $reassignService->reassign($reassignRequest, $reassignCommand, $reassignRequest + 3, 'doctor replacement', 'b-' . $reassignRequest);
+vcw_assert_true(!empty($aResult['ok']) && !empty($bResult['ok']), 'doctor replacement reassign failed');
+vcw_assert_same('diganti', (string) $db->where('visit_assignment_id', (int) $aResult['assignment_id'])->get('request_visit_performer_assignments')->row()->status, 'reassign old status');
+vcw_assert_same($reassignRequest + 3, (int) $db->where('request_id', $reassignRequest)->get('requests')->row()->visit_performer_user_id, 'reassign projection');
+echo "REASSIGN_HAPPY_PATH=PASS\nRESPONSIBLE_DOCTOR_AS_REPLACEMENT_ALLOWED=PASS\n";
+
+$invalidRequest = $reassignRequest + 100;
+$invalidFacility = $reassignFacility . '-I';
+$invalidDoctor = $invalidRequest + 1;
+$invalidCommand = vcw_assignment_fixture($db, $invalidRequest, $invalidFacility, $invalidDoctor, $invalidDoctor, array(array($invalidRequest + 2, $invalidRequest + 2, 'Perawat'), array($invalidRequest + 3, $invalidRequest + 3, 'Perawat'), array($invalidRequest + 4, $invalidRequest + 4, 'Perawat'), array($invalidRequest + 5, $invalidRequest + 5, 'Perawat')));
+$invalidService = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+$invalidFirst = $invalidService->assign($invalidRequest, $invalidCommand, $invalidRequest + 2, 'invalid-base-' . $invalidRequest);
+vcw_assert_true(!empty($invalidFirst['ok']), 'invalid-target setup failed');
+$invalidTargets = array($invalidRequest + 3, $invalidRequest + 4, $invalidRequest + 5, $invalidCommand);
+foreach ($invalidTargets as $targetIndex => $target) {
+    if ($targetIndex === 0) $db->where('userId', $target)->update('users', array('status' => 'nonaktif'));
+    if ($targetIndex === 1) $db->where('user_id', $target)->update('puskesmas_staff', array('status' => 'nonaktif'));
+    if ($targetIndex === 2) $db->where('staff_id', $target)->update('nakes_facility_placements', array('facility_code' => 'OTHER-FACILITY'));
+    $blocked = $invalidService->reassign($invalidRequest, $invalidCommand, $target, 'invalid-target', 'invalid-target-' . $invalidRequest . '-' . $targetIndex);
+    vcw_assert_same('PERFORMER_NOT_ELIGIBLE', $blocked['code'] ?? null, 'invalid reassignment target');
+    vcw_assert_true($db->where('request_id', $invalidRequest)->where('status', 'aktif')->where('user_id', $invalidRequest + 2)->get('request_visit_performer_assignments')->row() !== null, 'invalid target closed old assignment');
+    vcw_assert_same($invalidRequest + 2, (int) $db->where('request_id', $invalidRequest)->get('requests')->row()->visit_performer_user_id, 'invalid target changed projection');
+}
+$db->where('request_id', $invalidRequest)->update('requests', array('visit_performer_user_id' => $invalidRequest + 2));
+$db->where('request_id', $invalidRequest)->update('visit_dispositions', array('required_profession' => 'dokter'));
+$db->where('userId', $invalidRequest + 3)->update('users', array('status' => 'aktif'));
+$db->where('user_id', $invalidRequest + 3)->update('puskesmas_staff', array('status' => 'aktif'));
+$mismatch = $invalidService->reassign($invalidRequest, $invalidCommand, $invalidRequest + 3, 'profession mismatch', 'invalid-target-mismatch-' . $invalidRequest);
+vcw_assert_same('PERFORMER_NOT_ELIGIBLE', $mismatch['code'] ?? null, 'profession mismatch guard');
+$samePerformer = $invalidService->reassign($invalidRequest, $invalidCommand, $invalidRequest + 2, 'same performer', 'same-performer-' . $invalidRequest);
+vcw_assert_same('SAME_PERFORMER', $samePerformer['code'] ?? null, 'same performer guard');
+echo "REASSIGN_INVALID_TARGET_ZERO_MUTATION=PASS\nSAME_PERFORMER_ZERO_MUTATION=PASS\n";
+
+foreach (array('en_route', 'arrived', 'in_service', 'completed') as $offset => $state) {
+    $id = $reassignRequest + 200 + $offset * 23;
+    $facilityId = $reassignFacility . '-P' . $offset;
+    $doc = $id + 1;
+    $cmd = vcw_assignment_fixture($db, $id, $facilityId, $doc, $doc, array(array($id + 2, $id + 2, 'Perawat'), array($id + 3, $id + 3, 'Perawat')));
+    $svc = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+    $first = $svc->assign($id, $cmd, $id + 2, 'post-reassign-a-' . $id);
+    vcw_assert_true(!empty($first['ok']), 'post-start setup failed');
+    $db->where('request_id', $id)->update('requests', array('visit_status' => $state));
+    $blocked = $svc->reassign($id, $cmd, $id + 3, 'post-start', 'post-reassign-b-' . $id);
+    vcw_assert_same('VISIT_ALREADY_STARTED', $blocked['code'] ?? null, 'post-start reassign ' . $state);
+    vcw_assert_true($db->where('request_id', $id)->where('status', 'aktif')->get('request_visit_performer_assignments')->row() !== null, 'post-start active assignment');
+}
+echo "POSTSTART_REASSIGN_REJECTED=PASS\nSAME_PERFORMER_RULING=SAME_PERFORMER\n";
