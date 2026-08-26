@@ -42,6 +42,7 @@ if (!$task2) {
         vcw_assert_same(0, (int) $count, $field[0] . '.' . $field[1] . ' must not pre-exist baseline unexpectedly');
     }
 } else {
+    vcw_assert_same(1, vcw_count_table('visit_assignment_operations'), 'visit_assignment_operations must exist after receipt migration');
     foreach (array('visit_dispositions', 'visit_results', 'visit_result_vital_sign_measurements', 'clinical_reviews', 'clinical_amendments', 'clinical_amendment_items') as $table) {
         vcw_assert_same(1, vcw_count_table($table), $table . ' must exist after Task 2 migrations');
     }
@@ -98,6 +99,13 @@ if (!$task2) {
         }
         return false;
     };
+    $anyIndexColumns = function ($table, $columns) {
+        $rows = vcw_table_indexes($table);
+        $found = array();
+        foreach ($rows as $row) { $found[$row['INDEX_NAME']][(int) $row['SEQ_IN_INDEX']] = $row['COLUMN_NAME']; }
+        foreach ($found as $parts) { ksort($parts); if (array_values($parts) === $columns) { return true; } }
+        return false;
+    };
     foreach (array(
         array('visit_dispositions', 'active_request_key'),
         array('visit_results', 'active_draft_key'),
@@ -125,6 +133,36 @@ if (!$task2) {
     vcw_assert_true($index('request_visit_performer_assignments', 'uq_visit_performer_active_request') === 1, 'active performer uniqueness missing');
     vcw_assert_same('YES', $column('request_events', 'domain_event_key')['IS_NULLABLE'], 'domain event key must be nullable');
 
+    foreach (array(
+        array('assignment_operation_id', 'bigint(20) unsigned', 'NO', 'auto_increment'),
+        array('request_id', 'int(11)', 'NO', ''),
+        array('operation_type', "enum('assign','reassign','cancel_before_start')", 'NO', ''),
+        array('actor_user_id', 'int(11)', 'NO', ''),
+        array('source_assignment_id', 'bigint(20) unsigned', 'YES', ''),
+        array('result_assignment_id', 'bigint(20) unsigned', 'YES', ''),
+        array('idempotency_key', 'varchar(191)', 'NO', ''),
+        array('operation_fingerprint', 'char(64)', 'NO', ''),
+        array('created_at', 'datetime(6)', 'NO', ''),
+    ) as $physical) {
+        $metadata = $column('visit_assignment_operations', $physical[0]);
+        vcw_assert_same($physical[1], $metadata['COLUMN_TYPE'], 'assignment operation physical type mismatch for ' . $physical[0]);
+        vcw_assert_same($physical[2], $metadata['IS_NULLABLE'], 'assignment operation nullability mismatch for ' . $physical[0]);
+        if ($physical[3] !== '') { vcw_assert_true(stripos($metadata['EXTRA'], $physical[3]) !== false, 'assignment operation auto increment missing'); }
+    }
+    vcw_assert_same(6, (int) $column('visit_assignment_operations', 'created_at')['DATETIME_PRECISION'], 'assignment operation timestamp precision mismatch');
+    vcw_assert_true($index('visit_assignment_operations', 'uq_visit_assignment_operation_idempotency') === 1, 'global operation idempotency uniqueness missing');
+    vcw_assert_true($anyIndexColumns('visit_assignment_operations', array('request_id', 'created_at')), 'operation request/created lookup index missing');
+    $operationForeignKeys = array();
+    $foreignKeyStatement = vcw_db()->query("SELECT k.CONSTRAINT_NAME, k.COLUMN_NAME, k.REFERENCED_TABLE_NAME, k.REFERENCED_COLUMN_NAME, r.DELETE_RULE FROM information_schema.KEY_COLUMN_USAGE k JOIN information_schema.REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA AND r.CONSTRAINT_NAME = k.CONSTRAINT_NAME WHERE k.TABLE_SCHEMA = DATABASE() AND k.TABLE_NAME = 'visit_assignment_operations' AND k.REFERENCED_TABLE_NAME IS NOT NULL");
+    while ($foreignKey = $foreignKeyStatement->fetch_assoc()) { $operationForeignKeys[$foreignKey['COLUMN_NAME']] = $foreignKey; }
+    $foreignKeyStatement->free();
+    foreach (array('request_id' => array('requests', 'request_id'), 'actor_user_id' => array('users', 'userId'), 'source_assignment_id' => array('request_visit_performer_assignments', 'visit_assignment_id'), 'result_assignment_id' => array('request_visit_performer_assignments', 'visit_assignment_id')) as $field => $target) {
+        vcw_assert_true(isset($operationForeignKeys[$field]), 'operation FK missing for ' . $field);
+        vcw_assert_same($target[0], $operationForeignKeys[$field]['REFERENCED_TABLE_NAME'], 'operation FK target table mismatch for ' . $field);
+        vcw_assert_same($target[1], $operationForeignKeys[$field]['REFERENCED_COLUMN_NAME'], 'operation FK target column mismatch for ' . $field);
+        vcw_assert_same('RESTRICT', $operationForeignKeys[$field]['DELETE_RULE'], 'operation FK delete rule mismatch for ' . $field);
+    }
+
     $expectFailure = function ($sql, $message) {
         $failed = false;
         try { vcw_db()->query($sql); } catch (Throwable $exception) { $failed = true; }
@@ -137,6 +175,8 @@ if (!$task2) {
     vcw_db()->query("INSERT INTO requests (request_id,user_id,location,request_status) VALUES (10002,10001,'synthetic','Pending'),(10003,10001,'synthetic','Pending'),(10004,10001,'synthetic','Pending'),(10005,10001,'synthetic','Pending')");
     vcw_db()->query("INSERT INTO request_visit_performer_assignments (request_id,staff_id,user_id,assigned_by_user_id,assigned_at) VALUES (10001,10001,10001,10001,NOW(6))");
     $assignment = vcw_db()->insert_id;
+    vcw_db()->query("INSERT INTO request_visit_performer_assignments (request_id,staff_id,user_id,assigned_by_user_id,status,assigned_at) VALUES (10001,10001,10001,10001,'diganti',NOW(6))");
+    $closedAssignment = vcw_db()->insert_id;
     vcw_db()->query("INSERT INTO request_responsible_doctor_assignments (request_id,staff_id,user_id,assigned_by_user_id,assigned_at) VALUES (10001,10001,10001,10001,NOW(6))");
     $responsible = vcw_db()->insert_id;
     $scalar = function ($sql) { $result = vcw_db()->query($sql); $row = $result->fetch_row(); $result->free(); return (int) $row[0]; };
@@ -170,6 +210,28 @@ if (!$task2) {
     vcw_db()->query("INSERT INTO request_events (request_id,event_type,domain_event_key) VALUES (10001,'task2-null-a',NULL),(10001,'task2-null-b',NULL)");
     vcw_db()->query("INSERT INTO request_events (request_id,event_type,domain_event_key) VALUES (10001,'task2-key-a','task2-domain-key')");
     $expectFailure("INSERT INTO request_events (request_id,event_type,domain_event_key) VALUES (10001,'task2-key-b','task2-domain-key')", 'domain event key uniqueness must reject duplicate');
+
+    $operationInsert = function ($requestId, $operationType, $actorUserId, $sourceId, $resultId, $key, $fingerprint) use ($expectFailure) {
+        $source = $sourceId === null ? 'NULL' : (string) (int) $sourceId;
+        $result = $resultId === null ? 'NULL' : (string) (int) $resultId;
+        $sql = "INSERT INTO visit_assignment_operations (request_id,operation_type,actor_user_id,source_assignment_id,result_assignment_id,idempotency_key,operation_fingerprint,created_at) VALUES (" . (int) $requestId . ",'" . $operationType . "'," . (int) $actorUserId . "," . $source . "," . $result . ",'" . $key . "','" . $fingerprint . "',NOW(6))";
+        vcw_db()->query($sql);
+    };
+    $operationInsert(10001, 'assign', 10001, null, $assignment, 'task5-op-assign', str_repeat('a', 64));
+    $operationInsert(10001, 'reassign', 10001, $closedAssignment, $assignment, 'task5-op-reassign', str_repeat('b', 64));
+    $operationInsert(10001, 'cancel_before_start', 10001, $assignment, null, 'task5-op-cancel', str_repeat('c', 64));
+    $expectFailure("INSERT INTO visit_assignment_operations (request_id,operation_type,actor_user_id,source_assignment_id,result_assignment_id,idempotency_key,operation_fingerprint,created_at) VALUES (10001,'assign',10001," . (int) $closedAssignment . "," . (int) $assignment . ",'task5-op-invalid-assign-source','" . str_repeat('d', 64) . "',NOW(6))", 'assign receipt must reject source assignment');
+    $expectFailure("INSERT INTO visit_assignment_operations (request_id,operation_type,actor_user_id,source_assignment_id,result_assignment_id,idempotency_key,operation_fingerprint,created_at) VALUES (10001,'assign',10001,NULL,NULL,'task5-op-invalid-assign-result','" . str_repeat('e', 64) . "',NOW(6))", 'assign receipt must require result assignment');
+    $expectFailure("INSERT INTO visit_assignment_operations (request_id,operation_type,actor_user_id,source_assignment_id,result_assignment_id,idempotency_key,operation_fingerprint,created_at) VALUES (10001,'reassign',10001,NULL," . (int) $assignment . ",'task5-op-invalid-reassign-source','" . str_repeat('f', 64) . "',NOW(6))", 'reassign receipt must require source assignment');
+    $expectFailure("INSERT INTO visit_assignment_operations (request_id,operation_type,actor_user_id,source_assignment_id,result_assignment_id,idempotency_key,operation_fingerprint,created_at) VALUES (10001,'reassign',10001," . (int) $closedAssignment . ",NULL,'task5-op-invalid-reassign-result','" . str_repeat('1', 64) . "',NOW(6))", 'reassign receipt must require result assignment');
+    $expectFailure("INSERT INTO visit_assignment_operations (request_id,operation_type,actor_user_id,source_assignment_id,result_assignment_id,idempotency_key,operation_fingerprint,created_at) VALUES (10001,'reassign',10001," . (int) $assignment . "," . (int) $assignment . ",'task5-op-invalid-reassign-same','" . str_repeat('2', 64) . "',NOW(6))", 'reassign receipt must reject identical assignments');
+    $expectFailure("INSERT INTO visit_assignment_operations (request_id,operation_type,actor_user_id,source_assignment_id,result_assignment_id,idempotency_key,operation_fingerprint,created_at) VALUES (10001,'cancel_before_start',10001,NULL,NULL,'task5-op-invalid-cancel-source','" . str_repeat('3', 64) . "',NOW(6))", 'cancel receipt must require source assignment');
+    $expectFailure("INSERT INTO visit_assignment_operations (request_id,operation_type,actor_user_id,source_assignment_id,result_assignment_id,idempotency_key,operation_fingerprint,created_at) VALUES (10001,'cancel_before_start',10001," . (int) $assignment . "," . (int) $closedAssignment . ",'task5-op-invalid-cancel-result','" . str_repeat('4', 64) . "',NOW(6))", 'cancel receipt must reject result assignment');
+    $expectFailure("INSERT INTO visit_assignment_operations (request_id,operation_type,actor_user_id,source_assignment_id,result_assignment_id,idempotency_key,operation_fingerprint,created_at) VALUES (10002,'assign',10001,NULL," . (int) $assignment . ",'task5-op-assign','" . str_repeat('5', 64) . "',NOW(6))", 'idempotency key must be globally unique');
+    $operationInsert(10002, 'assign', 10001, null, $scalar('SELECT visit_assignment_id FROM request_visit_performer_assignments WHERE request_id = 10002'), 'task5-op-assign-other', str_repeat('6', 64));
+    echo "ASSIGNMENT_OPERATION_SCHEMA=PASS\n";
+    echo "ASSIGNMENT_OPERATION_SHAPE_CONSTRAINTS=PASS\n";
+    echo "GLOBAL_IDEMPOTENCY_KEY_UNIQUENESS=PASS\n";
     echo "TASK2_SCHEMA_CONSTRAINTS=PASS\n";
 }
 

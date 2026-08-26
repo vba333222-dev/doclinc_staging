@@ -21,6 +21,7 @@ try {
             dirname(__DIR__, 3) . '/application/migrations/20260826000100_visit_clinical_workflow_foundation.php',
             dirname(__DIR__, 3) . '/application/migrations/20260826000200_clinical_amendment_foundation.php',
             dirname(__DIR__, 3) . '/application/migrations/20260826000300_visit_performer_assignment_completion.php',
+            dirname(__DIR__, 3) . '/application/migrations/20260826000400_visit_assignment_operation_foundation.php',
         );
         foreach ($migrations as $migration) {
             $command = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($migration);
