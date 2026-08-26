@@ -296,6 +296,24 @@ class Care_team_service
 		return $result;
 	}
 
+	public function activeResponsibleDoctorAssignments($request_id)
+	{
+		$query = $this->db->query(
+			'SELECT responsible_assignment_id, staff_id, user_id FROM ' . $this->db->dbprefix('request_responsible_doctor_assignments') . ' WHERE request_id = ? AND status = ?',
+			array((int) $request_id, 'aktif')
+		);
+		return $query ? $query->result() : false;
+	}
+
+	public function activeVisitPerformerAssignments($request_id)
+	{
+		$query = $this->db->query(
+			'SELECT visit_assignment_id, staff_id, user_id FROM ' . $this->db->dbprefix('request_visit_performer_assignments') . ' WHERE request_id = ? AND status = ?',
+			array((int) $request_id, 'aktif')
+		);
+		return $query ? $query->result() : false;
+	}
+
 	private function transaction($operation)
 	{
 		if (!$this->db->trans_begin()) {
