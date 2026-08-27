@@ -11,6 +11,7 @@ class Visit_assignment_service
     private $db;
     private $policy;
     private $carePolicy;
+    private $receiptWriteContext = null;
 
     public function __construct($db = null, $policy = null)
     {
@@ -28,10 +29,11 @@ class Visit_assignment_service
         if ($requestId < 1 || $actor < 1 || $performerUserId < 1 || $key === '') {
             return $this->fail('ASSIGNMENT_CONFLICT');
         }
+        $this->receiptWriteContext = array('request' => $requestId, 'type' => 'assign', 'actor' => $actor, 'key' => $key, 'fingerprint' => $this->fingerprint('assign', array($requestId, $actor, $performerUserId)), 'stage' => 'before');
         return $this->transaction(function () use ($requestId, $actor, $performerUserId, $key) {
             $request = $this->lockRequest($requestId);
             if (!$request) return $this->fail('REQUEST_NOT_FOUND');
-            $fingerprint = $this->fingerprint('assign', array($requestId, $actor, $performerUserId));
+            $fingerprint = $this->receiptWriteContext['fingerprint'];
             $receipt = $this->receipt($key);
             if ($receipt) return $this->replay($receipt, 'assign', $requestId, $actor, $fingerprint);
             if ((string) $request->request_status !== 'Accepted') return $this->fail('REQUEST_NOT_ACCEPTED');
@@ -46,6 +48,7 @@ class Visit_assignment_service
             if (!$this->performerEligible($performer, $facility, $disposition->required_profession)) return $this->fail('PERFORMER_NOT_ELIGIBLE');
             if ($this->activeAssignment($requestId)) return $this->fail('ACTIVE_PERFORMER_EXISTS');
             $now = date('Y-m-d H:i:s.u');
+            $this->receiptWriteContext['stage'] = 'assignment';
             if (!$this->db->insert('request_visit_performer_assignments', array(
                 'request_id' => $requestId,
                 'staff_id' => (int) $performer['staff_id'],
@@ -57,8 +60,10 @@ class Visit_assignment_service
                 'updated_at' => $now,
             ))) return $this->fail('ASSIGNMENT_CONFLICT');
             $assignmentId = (int) $this->db->insert_id();
+            $this->receiptWriteContext['stage'] = 'projection';
             if (!$this->db->where('request_id', $requestId)->update('requests', array('visit_performer_user_id' => $performerUserId))) return $this->fail('ASSIGNMENT_CONFLICT');
-            if (!$this->insertReceipt($requestId, 'assign', $actor, null, $assignmentId, $key, $fingerprint)) return $this->fail('ASSIGNMENT_CONFLICT');
+            if (!$this->insertReceipt($requestId, 'assign', $actor, null, $assignmentId, $key, $fingerprint)) return $this->receiptCollisionFailure($requestId, $actor, $key, $fingerprint);
+            $this->receiptWriteContext['stage'] = 'event';
             if (!$this->event($requestId, 'visit_assignment.assigned', 'visit-assignment:' . $assignmentId . ':assigned', $actor, array('assignment_id' => $assignmentId))) return $this->fail('ASSIGNMENT_CONFLICT');
             return $this->success($assignmentId, null);
         });
@@ -129,15 +134,63 @@ class Visit_assignment_service
     private function transaction($callback)
     {
         $this->db->trans_begin();
-        try { $result = $callback(); if (empty($result['ok']) || $this->db->trans_status() === false) { $this->db->trans_rollback(); return $result; } if (!$this->db->trans_commit()) { $this->db->trans_rollback(); return $this->fail('ASSIGNMENT_CONFLICT'); } return $result; }
-        catch (Throwable $exception) { $this->db->trans_rollback(); return $this->fail('ASSIGNMENT_CONFLICT'); }
+        try {
+            $result = $callback();
+            if (empty($result['ok']) || $this->db->trans_status() === false) {
+                $this->db->trans_rollback();
+                $replay = $this->receiptCollisionReplay($result);
+                if ($replay !== null) return $replay;
+                unset($result['_receipt_collision'], $result['_receipt_key'], $result['_receipt_request'], $result['_receipt_actor'], $result['_receipt_fingerprint']);
+                return $result;
+            }
+            if (!$this->db->trans_commit()) {
+                $this->db->trans_rollback();
+                $replay = $this->receiptCollisionReplay(null);
+                if ($replay !== null) return $replay;
+                return $this->fail('ASSIGNMENT_CONFLICT');
+            }
+            $this->receiptWriteContext = null;
+            return $result;
+        }
+        catch (Throwable $exception) {
+            $this->db->trans_rollback();
+            $replay = $this->receiptCollisionReplay(null);
+            if ($replay !== null) return $replay;
+            return $this->fail('ASSIGNMENT_CONFLICT');
+        }
+    }
+
+    private function receiptCollisionReplay($result = null)
+    {
+        $context = $this->receiptWriteContext;
+        if ($context === null || (isset($context['stage']) && $context['stage'] === 'before')) return null;
+        $this->receiptWriteContext = null;
+        try { $receipt = $this->receiptAfterRollback($context['key']); }
+        catch (Throwable $exception) { return null; }
+        if (!$receipt) return null;
+        return $this->replay($receipt, $context['type'], $context['request'], $context['actor'], $context['fingerprint']);
     }
 
     private function lockRequest($id) { $q = $this->db->query('SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE', array((int) $id)); return $q ? $q->row() : null; }
     private function activeDisposition($id) { return $this->db->query('SELECT * FROM ' . $this->db->dbprefix('visit_dispositions') . ' WHERE request_id = ? AND superseded_at IS NULL ORDER BY version_no DESC LIMIT 1 FOR UPDATE', array((int) $id))->row(); }
     private function activeAssignment($id) { $q = $this->db->query('SELECT * FROM ' . $this->db->dbprefix('request_visit_performer_assignments') . ' WHERE request_id = ? AND status = ? LIMIT 1 FOR UPDATE', array((int) $id, 'aktif')); return $q ? $q->row() : null; }
     private function receipt($key) { $q = $this->db->query('SELECT * FROM ' . $this->db->dbprefix('visit_assignment_operations') . ' WHERE idempotency_key = ? LIMIT 1 FOR UPDATE', array($key)); return $q ? $q->row() : null; }
-    private function insertReceipt($request, $type, $actor, $source, $result, $key, $fingerprint) { return $this->db->insert('visit_assignment_operations', array('request_id' => $request, 'operation_type' => $type, 'actor_user_id' => $actor, 'source_assignment_id' => $source, 'result_assignment_id' => $result, 'idempotency_key' => $key, 'operation_fingerprint' => $fingerprint, 'created_at' => date('Y-m-d H:i:s.u'))); }
+    private function receiptAfterRollback($key) { $q = $this->db->query('SELECT * FROM ' . $this->db->dbprefix('visit_assignment_operations') . ' WHERE idempotency_key = ? LIMIT 1 FOR UPDATE', array($key)); return $q ? $q->row() : null; }
+    private function insertReceipt($request, $type, $actor, $source, $result, $key, $fingerprint)
+    {
+        if ($this->receiptWriteContext === null) $this->receiptWriteContext = array('request' => $request, 'type' => $type, 'actor' => $actor, 'key' => $key, 'fingerprint' => $fingerprint);
+        $this->receiptWriteContext['stage'] = 'receipt';
+        try {
+            $ok = $this->db->insert('visit_assignment_operations', array('request_id' => $request, 'operation_type' => $type, 'actor_user_id' => $actor, 'source_assignment_id' => $source, 'result_assignment_id' => $result, 'idempotency_key' => $key, 'operation_fingerprint' => $fingerprint, 'created_at' => date('Y-m-d H:i:s.u')));
+        } catch (Throwable $exception) {
+            $this->receiptWriteContext['db_error'] = $this->db->error();
+            $this->receiptWriteContext['exception_code'] = (int) $exception->getCode();
+            return false;
+        }
+        if (!$ok) $this->receiptWriteContext['db_error'] = $this->db->error();
+        return $ok;
+    }
+    private function receiptCollisionFailure($request, $actor, $key, $fingerprint) { return array('ok' => false, 'code' => 'ASSIGNMENT_CONFLICT', '_receipt_collision' => true, '_receipt_key' => $key, '_receipt_request' => $request, '_receipt_actor' => $actor, '_receipt_fingerprint' => $fingerprint); }
     private function identity($userId) { return function_exists('doclinc_dokter_identity_context') ? doclinc_dokter_identity_context((int) $userId, true) : array('valid' => false); }
     private function performerEligible($identity, $facility, $required) { if (!$this->carePolicy->visitPerformerEligible((array) $identity, $facility)) return false; if ($required !== null && trim((string) $required) !== '' && strcasecmp(trim((string) $identity['staff_profesi']), trim((string) $required)) !== 0) return false; $exists = $this->db->query('SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', array('nakes_facility_placements')); if (!$exists || (int) $exists->row()->table_count !== 1) return false; $placement = $this->db->query('SELECT placement_id FROM ' . $this->db->dbprefix('nakes_facility_placements') . ' WHERE staff_id = ? AND facility_code = ? AND status = ? LIMIT 1', array((int) $identity['staff_id'], trim((string) $facility), 'active')); return $placement && $placement->num_rows() === 1; }
     private function event($request, $type, $key, $actor, $metadata) { return function_exists('doclinc_append_request_event') && doclinc_append_request_event($request, $type, array('actor_user_id' => $actor, 'domain_event_key' => $key, 'metadata' => $metadata), get_instance()); }
