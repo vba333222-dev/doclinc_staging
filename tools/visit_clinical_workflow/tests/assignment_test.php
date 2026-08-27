@@ -54,11 +54,11 @@ $different = $service->assign($request, $command, $request + 3, 'assign-' . $req
 vcw_assert_same('ACTIVE_PERFORMER_EXISTS', $different['code'] ?? null, 'different assign key conflict');
 $badActor = $service->assign($request, $request + 1, $request + 3, 'assign-bad-actor');
 vcw_assert_same('NOT_COMMAND_CENTER', $badActor['code'] ?? null, 'non command center rejected');
-$reassigned = $service->reassign($request, $command, $request + 3, 'switch performer', 'reassign-' . $request);
+$reassigned = $service->reassign($request, $command, $assignmentId, $request + 3, 'switch performer', 'reassign-' . $request);
 vcw_assert_true(!empty($reassigned['ok']), 'reassign must succeed');
 $old = $db->where('visit_assignment_id', $assignmentId)->get('request_visit_performer_assignments')->row();
 vcw_assert_same('diganti', (string) $old->status, 'old assignment closed');
-$reassignReplay = $service->reassign($request, $command, $request + 3, 'switch performer', 'reassign-' . $request);
+$reassignReplay = $service->reassign($request, $command, $assignmentId, $request + 3, 'switch performer', 'reassign-' . $request);
 vcw_assert_same((int) $reassigned['assignment_id'], (int) $reassignReplay['assignment_id'], 'reassign replay');
 
 $cancelRequest = $request + 10;
@@ -241,11 +241,39 @@ $reassignDoctor = $reassignRequest + 1;
 $reassignCommand = vcw_assignment_fixture($db, $reassignRequest, $reassignFacility, $reassignDoctor, $reassignDoctor, array(array($reassignRequest + 2, $reassignRequest + 2, 'Perawat'), array($reassignRequest + 3, $reassignRequest + 3, 'dokter')));
 $reassignService = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
 $aResult = $reassignService->assign($reassignRequest, $reassignCommand, $reassignRequest + 2, 'a-' . $reassignRequest);
-$bResult = $reassignService->reassign($reassignRequest, $reassignCommand, $reassignRequest + 3, 'doctor replacement', 'b-' . $reassignRequest);
+$bResult = $reassignService->reassign($reassignRequest, $reassignCommand, (int) $aResult['assignment_id'], $reassignRequest + 3, 'doctor replacement', 'b-' . $reassignRequest);
 vcw_assert_true(!empty($aResult['ok']) && !empty($bResult['ok']), 'doctor replacement reassign failed');
 vcw_assert_same('diganti', (string) $db->where('visit_assignment_id', (int) $aResult['assignment_id'])->get('request_visit_performer_assignments')->row()->status, 'reassign old status');
 vcw_assert_same($reassignRequest + 3, (int) $db->where('request_id', $reassignRequest)->get('requests')->row()->visit_performer_user_id, 'reassign projection');
 echo "REASSIGN_HAPPY_PATH=PASS\nRESPONSIBLE_DOCTOR_AS_REPLACEMENT_ALLOWED=PASS\n";
+
+// B2a stale-source guard: a command observed against A must not silently
+// retarget the replacement B; a deliberate B -> C command remains valid.
+$staleRequest = $reassignRequest + 50;
+$staleFacility = $reassignFacility . '-ST';
+$staleDoctor = $staleRequest + 1;
+$staleCommand = vcw_assignment_fixture($db, $staleRequest, $staleFacility, $staleDoctor, $staleDoctor, array(
+    array($staleRequest + 2, $staleRequest + 2, 'Perawat'),
+    array($staleRequest + 3, $staleRequest + 3, 'Perawat'),
+    array($staleRequest + 4, $staleRequest + 4, 'Perawat'),
+));
+$staleService = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+$staleA = $staleService->assign($staleRequest, $staleCommand, $staleRequest + 2, 'stale-a-' . $staleRequest);
+vcw_assert_true(!empty($staleA['ok']), 'stale-source setup assignment failed');
+$staleAId = (int) $staleA['assignment_id'];
+$staleB = $staleService->reassign($staleRequest, $staleCommand, $staleAId, $staleRequest + 3, 'stale-source first', 'stale-b-' . $staleRequest);
+vcw_assert_true(!empty($staleB['ok']), 'stale-source first reassignment failed');
+$staleBId = (int) $staleB['assignment_id'];
+$staleResult = $staleService->reassign($staleRequest, $staleCommand, $staleAId, $staleRequest + 4, 'stale-source second', 'stale-c-' . $staleRequest);
+vcw_assert_same('PERFORMER_ASSIGNMENT_STALE', $staleResult['code'] ?? null, 'stale source must conflict');
+vcw_assert_same('diganti', (string) $db->where('visit_assignment_id', $staleAId)->get('request_visit_performer_assignments')->row()->status, 'stale source remains historical');
+vcw_assert_same('aktif', (string) $db->where('visit_assignment_id', $staleBId)->get('request_visit_performer_assignments')->row()->status, 'replacement remains active after stale command');
+vcw_assert_same(0, (int) $db->where('request_id', $staleRequest)->where('user_id', $staleRequest + 4)->count_all_results('request_visit_performer_assignments'), 'stale target absent');
+$currentResult = $staleService->reassign($staleRequest, $staleCommand, $staleBId, $staleRequest + 4, 'stale-source second', 'stale-d-' . $staleRequest);
+vcw_assert_true(!empty($currentResult['ok']), 'current-source reassignment must remain valid');
+$sourceKeyConflict = $staleService->reassign($staleRequest, $staleCommand, $staleAId, $staleRequest + 4, 'stale-source second', 'stale-d-' . $staleRequest);
+vcw_assert_same('IDEMPOTENCY_KEY_CONFLICT', $sourceKeyConflict['code'] ?? null, 'changed expected source conflicts on replay key');
+echo "STALE_SOURCE_GUARD=PASS\nLEGITIMATE_SEQUENTIAL_REASSIGN=PASS\nEXPECTED_SOURCE_KEY_CONFLICT=PASS\n";
 
 $invalidRequest = $reassignRequest + 100;
 $invalidFacility = $reassignFacility . '-I';
@@ -259,7 +287,7 @@ foreach ($invalidTargets as $targetIndex => $target) {
     if ($targetIndex === 0) $db->where('userId', $target)->update('users', array('status' => 'nonaktif'));
     if ($targetIndex === 1) $db->where('user_id', $target)->update('puskesmas_staff', array('status' => 'nonaktif'));
     if ($targetIndex === 2) $db->where('staff_id', $target)->update('nakes_facility_placements', array('facility_code' => 'OTHER-FACILITY'));
-    $blocked = $invalidService->reassign($invalidRequest, $invalidCommand, $target, 'invalid-target', 'invalid-target-' . $invalidRequest . '-' . $targetIndex);
+    $blocked = $invalidService->reassign($invalidRequest, $invalidCommand, (int) $invalidFirst['assignment_id'], $target, 'invalid-target', 'invalid-target-' . $invalidRequest . '-' . $targetIndex);
     vcw_assert_same('PERFORMER_NOT_ELIGIBLE', $blocked['code'] ?? null, 'invalid reassignment target');
     vcw_assert_true($db->where('request_id', $invalidRequest)->where('status', 'aktif')->where('user_id', $invalidRequest + 2)->get('request_visit_performer_assignments')->row() !== null, 'invalid target closed old assignment');
     vcw_assert_same($invalidRequest + 2, (int) $db->where('request_id', $invalidRequest)->get('requests')->row()->visit_performer_user_id, 'invalid target changed projection');
@@ -268,9 +296,9 @@ $db->where('request_id', $invalidRequest)->update('requests', array('visit_perfo
 $db->where('request_id', $invalidRequest)->update('visit_dispositions', array('required_profession' => 'dokter'));
 $db->where('userId', $invalidRequest + 3)->update('users', array('status' => 'aktif'));
 $db->where('user_id', $invalidRequest + 3)->update('puskesmas_staff', array('status' => 'aktif'));
-$mismatch = $invalidService->reassign($invalidRequest, $invalidCommand, $invalidRequest + 3, 'profession mismatch', 'invalid-target-mismatch-' . $invalidRequest);
+$mismatch = $invalidService->reassign($invalidRequest, $invalidCommand, (int) $invalidFirst['assignment_id'], $invalidRequest + 3, 'profession mismatch', 'invalid-target-mismatch-' . $invalidRequest);
 vcw_assert_same('PERFORMER_NOT_ELIGIBLE', $mismatch['code'] ?? null, 'profession mismatch guard');
-$samePerformer = $invalidService->reassign($invalidRequest, $invalidCommand, $invalidRequest + 2, 'same performer', 'same-performer-' . $invalidRequest);
+$samePerformer = $invalidService->reassign($invalidRequest, $invalidCommand, (int) $invalidFirst['assignment_id'], $invalidRequest + 2, 'same performer', 'same-performer-' . $invalidRequest);
 vcw_assert_same('SAME_PERFORMER', $samePerformer['code'] ?? null, 'same performer guard');
 echo "REASSIGN_INVALID_TARGET_ZERO_MUTATION=PASS\nSAME_PERFORMER_ZERO_MUTATION=PASS\n";
 
@@ -283,7 +311,7 @@ foreach (array('en_route', 'arrived', 'in_service', 'completed') as $offset => $
     $first = $svc->assign($id, $cmd, $id + 2, 'post-reassign-a-' . $id);
     vcw_assert_true(!empty($first['ok']), 'post-start setup failed');
     $db->where('request_id', $id)->update('requests', array('visit_status' => $state));
-    $blocked = $svc->reassign($id, $cmd, $id + 3, 'post-start', 'post-reassign-b-' . $id);
+    $blocked = $svc->reassign($id, $cmd, (int) $first['assignment_id'], $id + 3, 'post-start', 'post-reassign-b-' . $id);
     vcw_assert_same('VISIT_ALREADY_STARTED', $blocked['code'] ?? null, 'post-start reassign ' . $state);
     vcw_assert_true($db->where('request_id', $id)->where('status', 'aktif')->get('request_visit_performer_assignments')->row() !== null, 'post-start active assignment');
 }
@@ -405,7 +433,7 @@ $b1ReassignService = new Visit_assignment_service($db, new Visit_workflow_policy
 $b1A = $b1ReassignService->assign($b1ReassignRequest, $b1ReassignCommand, $b1ReassignRequest + 2, 'b1-reassign-seed-' . $b1ReassignRequest);
 $b1AId = (int) $b1A['assignment_id'];
 vcw_b1_trigger($db, 'vcw_b1_reassign_event', 'request_events', 'b1 reassign event failure');
-$failedReassign = $b1ReassignService->reassign($b1ReassignRequest, $b1ReassignCommand, $b1ReassignRequest + 3, 'b1 failure', 'b1-reassign-event-' . $b1ReassignRequest);
+$failedReassign = $b1ReassignService->reassign($b1ReassignRequest, $b1ReassignCommand, $b1AId, $b1ReassignRequest + 3, 'b1 failure', 'b1-reassign-event-' . $b1ReassignRequest);
 vcw_b1_drop($db, 'vcw_b1_reassign_event');
 vcw_assert_true(empty($failedReassign['ok']), 'reassign event failure must fail');
 vcw_assert_same('aktif', (string) $db->where('visit_assignment_id', $b1AId)->get('request_visit_performer_assignments')->row()->status, 'reassign rollback source status');

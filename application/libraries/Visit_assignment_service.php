@@ -64,18 +64,19 @@ class Visit_assignment_service
         });
     }
 
-    public function reassign($requestId, $commandCenterUserId, $newPerformerUserId, $reason, $idempotencyKey)
+    public function reassign($requestId, $commandCenterUserId, $expectedAssignmentId, $newPerformerUserId, $reason, $idempotencyKey)
     {
         $requestId = (int) $requestId;
         $actor = (int) $commandCenterUserId;
+        $expectedAssignmentId = (int) $expectedAssignmentId;
         $newPerformerUserId = (int) $newPerformerUserId;
         $key = trim((string) $idempotencyKey);
         $reason = $this->reason($reason);
-        if ($requestId < 1 || $actor < 1 || $newPerformerUserId < 1 || $key === '' || $reason === '') return $this->fail('ASSIGNMENT_CONFLICT');
-        return $this->transaction(function () use ($requestId, $actor, $newPerformerUserId, $reason, $key) {
+        if ($requestId < 1 || $actor < 1 || $expectedAssignmentId < 1 || $newPerformerUserId < 1 || $key === '' || $reason === '') return $this->fail('ASSIGNMENT_CONFLICT');
+        return $this->transaction(function () use ($requestId, $actor, $expectedAssignmentId, $newPerformerUserId, $reason, $key) {
             $request = $this->lockRequest($requestId);
             if (!$request) return $this->fail('REQUEST_NOT_FOUND');
-            $fingerprint = $this->fingerprint('reassign', array($requestId, $actor, $newPerformerUserId, $reason));
+            $fingerprint = $this->fingerprint('reassign', array($requestId, $actor, $expectedAssignmentId, $newPerformerUserId, $reason));
             $receipt = $this->receipt($key);
             if ($receipt) return $this->replay($receipt, 'reassign', $requestId, $actor, $fingerprint);
             if ((string) $request->request_status !== 'Accepted') return $this->fail('REQUEST_NOT_ACCEPTED');
@@ -87,6 +88,7 @@ class Visit_assignment_service
             if (!$this->carePolicy->commandCenterEligible($this->identity($actor), $facility)) return $this->fail('NOT_COMMAND_CENTER');
             $old = $this->activeAssignment($requestId);
             if (!$old) return $this->fail('NO_ACTIVE_PERFORMER');
+            if ((int) $old->visit_assignment_id !== $expectedAssignmentId) return $this->fail('PERFORMER_ASSIGNMENT_STALE');
             if ((int) $old->user_id === $newPerformerUserId) return $this->fail('SAME_PERFORMER');
             if (!$this->performerEligible($this->identity($newPerformerUserId), $facility, $disposition->required_profession)) return $this->fail('PERFORMER_NOT_ELIGIBLE');
             $now = date('Y-m-d H:i:s.u');

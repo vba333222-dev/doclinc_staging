@@ -99,17 +99,19 @@ $rbarrier = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'visit-reassign-barrier-'
 mkdir($rbarrier); $rprocs = array();
 foreach (array(array($rb, 'task5r-b-' . $rr), array($rcandidate, 'task5r-c-' . $rr)) as $item) {
     $out = $rbarrier . DIRECTORY_SEPARATOR . 'out-' . $item[0] . '.txt';
-    $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($worker) . ' ' . (int) $rr . ' ' . (int) $rc . ' ' . (int) $item[0] . ' ' . escapeshellarg($item[1]) . ' ' . escapeshellarg($rbarrier) . ' reassign ' . escapeshellarg('Concurrent reassignment');
+    $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($worker) . ' ' . (int) $rr . ' ' . (int) $rc . ' ' . (int) $item[0] . ' ' . escapeshellarg($item[1]) . ' ' . escapeshellarg($rbarrier) . ' reassign ' . escapeshellarg('Concurrent reassignment') . ' ' . (int) $sourceId;
     $rprocs[] = array('proc' => proc_open($cmd, array(1 => array('file', $out, 'w'), 2 => array('file', $out . '.err', 'w')), $pipes), 'out' => $out);
 }
 $deadline = microtime(true) + 30;
 while (count(glob($rbarrier . DIRECTORY_SEPARATOR . 'ready-*')) < 2) { if (microtime(true) > $deadline) throw new RuntimeException('reassign workers did not become ready'); usleep(10000); }
 file_put_contents($rbarrier . DIRECTORY_SEPARATOR . 'release', 'go');
 $rresults = array(); foreach ($rprocs as $process) { $code = proc_close($process['proc']); vcw_assert_same(0, $code, 'reassign worker exit'); $rresults[] = trim((string) file_get_contents($process['out'])); }
-$rwins = 0; $rconnections = array(); foreach ($rresults as $rresult) { if (strpos($rresult, '"ok":true') !== false) $rwins++; if (preg_match('/CONNECTION_ID=(\d+)/', $rresult, $m)) $rconnections[] = $m[1]; }
+$rwins = 0; $rstale = 0; $rconnections = array(); foreach ($rresults as $rresult) { if (strpos($rresult, '"ok":true') !== false) $rwins++; if (strpos($rresult, 'PERFORMER_ASSIGNMENT_STALE') !== false) $rstale++; if (preg_match('/CONNECTION_ID=(\d+)/', $rresult, $m)) $rconnections[] = $m[1]; }
 vcw_assert_same(1, $rwins, 'one reassign winner');
+vcw_assert_same(1, $rstale, 'one stale reassign loser');
 vcw_assert_same(2, count(array_unique($rconnections)), 'reassign independent connections');
 vcw_assert_same('diganti', (string) $db->where('visit_assignment_id', $sourceId)->get('request_visit_performer_assignments')->row()->status, 'source closed once');
 vcw_assert_same(1, (int) $db->where('request_id', $rr)->where('status', 'aktif')->count_all_results('request_visit_performer_assignments'), 'one active replacement');
 vcw_assert_same(1, (int) $db->where('request_id', $rr)->where('operation_type', 'reassign')->count_all_results('visit_assignment_operations'), 'one reassign receipt');
 echo "TWO_REASSIGNMENT_RACE_EXECUTED=YES\nINDEPENDENT_REASSIGNMENT_CONNECTIONS=YES\nGENUINE_REASSIGNMENT_OVERLAP=YES\nCONCURRENT_REASSIGNMENT=PASS\n";
+foreach ($rresults as $rresult) echo $rresult . "\n";
