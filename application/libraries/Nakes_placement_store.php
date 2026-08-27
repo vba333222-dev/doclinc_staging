@@ -71,7 +71,14 @@ class Nakes_placement_store
 			if ($this->db->where('responsible_doctor_user_id',$userId)->where_not_in('request_status',$terminalStatuses)->count_all_results('requests') > 0) $result[] = array('kind'=>'responsible_doctor','active'=>true);
 		}
 		if ($userId > 0 && $this->db->field_exists('visit_performer_user_id','requests')) {
-			if ($this->db->where('visit_performer_user_id',$userId)->where_not_in('request_status',$terminalStatuses)->count_all_results('requests') > 0) $result[] = array('kind'=>'visit_performer','active'=>true);
+			$visitProjectionQuery = 'SELECT COUNT(*) AS blocker_count FROM ' . $this->db->dbprefix('requests') . ' r WHERE r.visit_performer_user_id = ? AND r.request_status NOT IN (' . implode(',', array_fill(0, count($terminalStatuses), '?')) . ')';
+			$visitProjectionBinds = array($userId);
+			foreach ($terminalStatuses as $terminalStatus) $visitProjectionBinds[] = $terminalStatus;
+			if ($this->db->table_exists('visit_dispositions')) {
+				$visitProjectionQuery .= ' AND NOT EXISTS (SELECT 1 FROM ' . $this->db->dbprefix('visit_dispositions') . ' d WHERE d.request_id = r.request_id)';
+			}
+			$visitProjection = $this->db->query($visitProjectionQuery, $visitProjectionBinds)->row();
+			if ($visitProjection && (int) $visitProjection->blocker_count > 0) $result[] = array('kind'=>'visit_performer','active'=>true);
 		}
 		if ($userId > 0 && $this->db->field_exists('assigned_nakes_user_id','requests')) {
 			if ($this->db->where('assigned_nakes_user_id',$userId)->where_not_in('request_status',$terminalStatuses)->count_all_results('requests') > 0) $result[] = array('kind'=>'accepted_request','active'=>true);
