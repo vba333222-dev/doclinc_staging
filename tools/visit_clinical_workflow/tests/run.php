@@ -1,7 +1,7 @@
 <?php
 
 $mode = isset($argv[1]) ? (string) $argv[1] : '';
-if (!in_array($mode, array('schema', 'migrate', 'authorization', 'state_resolver', 'disposition', 'assignment', 'assignment_concurrency', 'placement', 'ci3_smoke', 'ci3_disposition', 'ci3_disposition_full', 'physical_start', 'physical_start_worker'), true)) {
+if (!in_array($mode, array('schema', 'migrate', 'authorization', 'state_resolver', 'disposition', 'assignment', 'assignment_concurrency', 'placement', 'ci3_smoke', 'ci3_disposition', 'ci3_disposition_full', 'physical_start', 'physical_start_worker', 'row_lock_gate'), true)) {
     fwrite(STDERR, "Usage: php tools/visit_clinical_workflow/tests/run.php schema|migrate|authorization|state_resolver|disposition|ci3_smoke|ci3_disposition\n");
     exit(2);
 }
@@ -19,6 +19,7 @@ try {
     if ($mode === 'ci3_disposition_full') { require __DIR__ . '/ci3_disposition_full_test.php'; exit(0); }
     if ($mode === 'physical_start') { require __DIR__ . '/physical_start_test.php'; exit(0); }
     if ($mode === 'physical_start_worker') { require __DIR__ . '/physical_start_worker_test.php'; exit(0); }
+    if ($mode === 'row_lock_gate') { require __DIR__ . '/row_lock_gate_worker_test.php'; exit(0); }
     vcw_load_baseline_schema();
     putenv('VCW_BASELINE_LOADED=1');
     if ($mode === 'migrate') {
