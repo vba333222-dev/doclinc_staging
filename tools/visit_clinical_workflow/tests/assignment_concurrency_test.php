@@ -77,6 +77,44 @@ echo "ASSIGNMENT_INDEPENDENT_CONNECTIONS=PASS\n";
 echo "ASSIGNMENT_RACE_WINNERS=1\n";
 foreach ($results as $result) echo $result . "\n";
 
+// B2b: two simultaneous retries of the exact same assign operation.
+$sameRequest = 75000 + $suffix * 10;
+$sameFacility = 'T5K-' . $suffix;
+$sameCommand = 51000 + $suffix;
+$sameDoctor = $sameRequest + 1;
+$samePerformer = $sameRequest + 2;
+vcw_assert_safe_request_id($sameRequest);
+$db->query('INSERT INTO m_puskesmas (kode_pkm,nama_puskesmas,status) VALUES (?,?,?)', array($sameFacility, 'Task5 Same Key Facility', 'aktif'));
+$db->query('INSERT INTO users (userId,nama,email,username,password,role,status,must_change_password,remark) VALUES (?,?,?,?,?,?,?,?,?)', array($sameCommand, 'Task5K Command', 'task5k-command-' . $suffix . '@example.invalid', 'task5k-command-' . $suffix, password_hash('x', PASSWORD_BCRYPT), 'dokter', 'aktif', 0, $sameFacility));
+vcw_concurrency_user($db, $sameDoctor, $sameFacility, $sameDoctor, 'dokter');
+vcw_concurrency_user($db, $samePerformer, $sameFacility, $samePerformer, 'Perawat');
+$db->query('INSERT INTO requests (request_id,user_id,location,request_status,assigned_puskesmas_code,assigned_puskesmas_name,visit_status) VALUES (?,?,?,?,?,?,?)', array($sameRequest, $sameDoctor, 'synthetic', 'Accepted', $sameFacility, 'Task5 Same Key Facility', 'not_started'));
+$db->query('INSERT INTO request_responsible_doctor_assignments (request_id,staff_id,user_id,assigned_by_user_id,status,assigned_at) VALUES (?,?,?,?,?,NOW(6))', array($sameRequest, $sameDoctor, $sameDoctor, $sameDoctor, 'aktif'));
+$db->query('INSERT INTO visit_dispositions (request_id,version_no,decision,urgency,created_by_user_id,created_at,idempotency_key) VALUES (?,?,?,?,?,?,?)', array($sameRequest, 1, 'visit', 'routine', $sameDoctor, date('Y-m-d H:i:s.u'), 'task5k-disposition-' . $sameRequest));
+$sameBarrier = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'visit-same-key-barrier-' . bin2hex(random_bytes(5));
+mkdir($sameBarrier); $sameProcesses = array(); $sameKey = 'same-key-' . $sameRequest;
+foreach (array('a', 'b') as $workerName) {
+    $out = $sameBarrier . DIRECTORY_SEPARATOR . 'out-' . $workerName . '.txt';
+    $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($worker) . ' ' . (int) $sameRequest . ' ' . (int) $sameCommand . ' ' . (int) $samePerformer . ' ' . escapeshellarg($sameKey) . ' ' . escapeshellarg($sameBarrier);
+    $sameProcesses[] = array('proc' => proc_open($cmd, array(1 => array('file', $out, 'w'), 2 => array('file', $out . '.err', 'w')), $pipes), 'out' => $out);
+}
+$deadline = microtime(true) + 30;
+while (count(glob($sameBarrier . DIRECTORY_SEPARATOR . 'ready-*')) < 2) { if (microtime(true) > $deadline) throw new RuntimeException('same-key workers did not become ready'); usleep(10000); }
+file_put_contents($sameBarrier . DIRECTORY_SEPARATOR . 'release', 'go');
+$sameResults = array(); foreach ($sameProcesses as $process) { $code = proc_close($process['proc']); vcw_assert_same(0, $code, 'same-key worker exit'); $sameResults[] = trim((string) file_get_contents($process['out'])); }
+$sameIds = array();
+foreach ($sameResults as $sameResult) {
+    vcw_assert_true(strpos($sameResult, '"ok":true') !== false, 'same-key retry must succeed');
+    if (preg_match('/"assignment_id":(\d+)/', $sameResult, $m)) $sameIds[] = (int) $m[1];
+}
+vcw_assert_same(2, count($sameIds), 'same-key result IDs present');
+vcw_assert_same(1, count(array_unique($sameIds)), 'same-key replay returns same assignment');
+vcw_assert_same(1, (int) $db->where('request_id', $sameRequest)->count_all_results('request_visit_performer_assignments'), 'same-key assignment dedupe');
+vcw_assert_same(1, (int) $db->where('idempotency_key', $sameKey)->count_all_results('visit_assignment_operations'), 'same-key receipt dedupe');
+vcw_assert_same(1, (int) $db->where('request_id', $sameRequest)->where('event_type', 'visit_assignment.assigned')->count_all_results('request_events'), 'same-key event dedupe');
+echo "TWO_SAME_KEY_ASSIGN_WORKERS_EXECUTED=YES\nINDEPENDENT_SAME_KEY_CONNECTIONS=YES\nGENUINE_SAME_KEY_OVERLAP=YES\nSAME_KEY_CONCURRENT_ASSIGN_REPLAY=PASS\n";
+foreach ($sameResults as $sameResult) echo $sameResult . "\n";
+
 // B2a: two independent reassign() calls contend for the same active assignment.
 $rr = 80000 + $suffix * 10;
 $rf = 'T5R-' . $suffix;
