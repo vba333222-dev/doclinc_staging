@@ -115,6 +115,49 @@ vcw_assert_same(1, (int) $db->where('request_id', $sameRequest)->where('event_ty
 echo "TWO_SAME_KEY_ASSIGN_WORKERS_EXECUTED=YES\nINDEPENDENT_SAME_KEY_CONNECTIONS=YES\nGENUINE_SAME_KEY_OVERLAP=YES\nSAME_KEY_CONCURRENT_ASSIGN_REPLAY=PASS\n";
 foreach ($sameResults as $sameResult) echo $sameResult . "\n";
 
+// B2c RED: different requests contend on the globally unique operation key.
+$globalA = 76000 + $suffix * 10;
+$globalB = 77000 + $suffix * 10;
+$globalFacilityA = 'T5G-A-' . $suffix;
+$globalFacilityB = 'T5G-B-' . $suffix;
+$globalCommandA = 52000 + $suffix;
+$globalCommandB = 53000 + $suffix;
+$globalDoctorA = $globalA + 1;
+$globalDoctorB = $globalB + 1;
+$globalPerformerA = $globalA + 2;
+$globalPerformerB = $globalB + 2;
+foreach (array(array($globalFacilityA, $globalCommandA), array($globalFacilityB, $globalCommandB)) as $facilityData) {
+    $db->query('INSERT INTO m_puskesmas (kode_pkm,nama_puskesmas,status) VALUES (?,?,?)', array($facilityData[0], 'Task5 Global Facility', 'aktif'));
+    $db->query('INSERT INTO users (userId,nama,email,username,password,role,status,must_change_password,remark) VALUES (?,?,?,?,?,?,?,?,?)', array($facilityData[1], 'Task5G Command', 'task5g-command-' . $facilityData[1] . '@example.invalid', 'task5g-command-' . $facilityData[1], password_hash('x', PASSWORD_BCRYPT), 'dokter', 'aktif', 0, $facilityData[0]));
+}
+vcw_concurrency_user($db, $globalDoctorA, $globalFacilityA, $globalDoctorA, 'dokter');
+vcw_concurrency_user($db, $globalPerformerA, $globalFacilityA, $globalPerformerA, 'Perawat');
+vcw_concurrency_user($db, $globalDoctorB, $globalFacilityB, $globalDoctorB, 'dokter');
+vcw_concurrency_user($db, $globalPerformerB, $globalFacilityB, $globalPerformerB, 'Perawat');
+foreach (array(array($globalA, $globalDoctorA, $globalFacilityA), array($globalB, $globalDoctorB, $globalFacilityB)) as $requestData) {
+    $db->query('INSERT INTO requests (request_id,user_id,location,request_status,assigned_puskesmas_code,assigned_puskesmas_name,visit_status) VALUES (?,?,?,?,?,?,?)', array($requestData[0], $requestData[1], 'synthetic', 'Accepted', $requestData[2], 'Task5 Global Facility', 'not_started'));
+    $db->query('INSERT INTO request_responsible_doctor_assignments (request_id,staff_id,user_id,assigned_by_user_id,status,assigned_at) VALUES (?,?,?,?,?,NOW(6))', array($requestData[0], $requestData[1], $requestData[1], $requestData[1], 'aktif'));
+    $db->query('INSERT INTO visit_dispositions (request_id,version_no,decision,urgency,created_by_user_id,created_at,idempotency_key) VALUES (?,?,?,?,?,?,?)', array($requestData[0], 1, 'visit', 'routine', $requestData[1], date('Y-m-d H:i:s.u'), 'task5g-disposition-' . $requestData[0]));
+}
+$globalBarrier = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'visit-global-key-barrier-' . bin2hex(random_bytes(5));
+mkdir($globalBarrier); $globalProcesses = array(); $globalKey = 'global-key-' . $suffix;
+foreach (array(array($globalA, $globalCommandA, $globalPerformerA, 'a'), array($globalB, $globalCommandB, $globalPerformerB, 'b')) as $globalData) {
+    $out = $globalBarrier . DIRECTORY_SEPARATOR . 'out-' . $globalData[3] . '.txt';
+    $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($worker) . ' ' . (int) $globalData[0] . ' ' . (int) $globalData[1] . ' ' . (int) $globalData[2] . ' ' . escapeshellarg($globalKey) . ' ' . escapeshellarg($globalBarrier);
+    $globalProcesses[] = array('proc' => proc_open($cmd, array(1 => array('file', $out, 'w'), 2 => array('file', $out . '.err', 'w')), $pipes), 'out' => $out);
+}
+$deadline = microtime(true) + 30;
+while (count(glob($globalBarrier . DIRECTORY_SEPARATOR . 'ready-*')) < 2) { if (microtime(true) > $deadline) throw new RuntimeException('global-key workers did not become ready'); usleep(10000); }
+file_put_contents($globalBarrier . DIRECTORY_SEPARATOR . 'release', 'go');
+$globalResults = array(); foreach ($globalProcesses as $process) { $code = proc_close($process['proc']); vcw_assert_same(0, $code, 'global-key worker exit'); $globalResults[] = trim((string) file_get_contents($process['out'])); }
+$globalSuccess = 0; $globalConflict = 0; $globalConnections = array();
+foreach ($globalResults as $globalResult) { if (strpos($globalResult, '"ok":true') !== false) $globalSuccess++; if (strpos($globalResult, 'IDEMPOTENCY_KEY_CONFLICT') !== false) $globalConflict++; if (preg_match('/CONNECTION_ID=(\d+)/', $globalResult, $m)) $globalConnections[] = $m[1]; }
+foreach ($globalResults as $globalResult) echo $globalResult . "\n";
+vcw_assert_same(1, $globalSuccess, 'one global-key winner');
+vcw_assert_same(1, $globalConflict, 'one global-key conflict');
+echo "TWO_GLOBAL_KEY_WORKERS_EXECUTED=YES\nINDEPENDENT_GLOBAL_KEY_CONNECTIONS=YES\nGENUINE_GLOBAL_KEY_OVERLAP=YES\nDIFFERENT_REQUEST_ROWS_LOCKED=YES\nCROSS_REQUEST_GLOBAL_KEY_RACE=PASS\n";
+foreach ($globalResults as $globalResult) echo $globalResult . "\n";
+
 // B2a: two independent reassign() calls contend for the same active assignment.
 $rr = 80000 + $suffix * 10;
 $rf = 'T5R-' . $suffix;
