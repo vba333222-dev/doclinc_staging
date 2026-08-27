@@ -288,3 +288,78 @@ foreach (array('en_route', 'arrived', 'in_service', 'completed') as $offset => $
     vcw_assert_true($db->where('request_id', $id)->where('status', 'aktif')->get('request_visit_performer_assignments')->row() !== null, 'post-start active assignment');
 }
 echo "POSTSTART_REASSIGN_REJECTED=PASS\nSAME_PERFORMER_RULING=SAME_PERFORMER\n";
+
+// Closure A3: enrolled physical authority must use the canonical performer row.
+require_once APPPATH . 'libraries/Care_team_service.php';
+$careTeam = new Care_team_service($db);
+$app->config->set('care_team_workflow_enabled', true);
+$canonicalContext = $careTeam->requestContext($doctorRequest, $doctorUser);
+vcw_assert_true(!empty($canonicalContext['is_visit_performer']), 'active canonical performer must authorize physical visit');
+vcw_assert_true(doclinc_can_update_visit_status($doctorRequest, $doctorUser, 'dokter'), 'physical authorization helper rejected canonical performer');
+
+$compatRequest = $doctorRequest + 1000;
+$compatFacility = $doctorFacility . '-C';
+$compatDoctor = $compatRequest + 1;
+$compatPerformer = $compatRequest + 2;
+$compatCommand = vcw_assignment_fixture($db, $compatRequest, $compatFacility, $compatDoctor, $compatDoctor, array(array($compatPerformer, $compatPerformer, 'Perawat')));
+$db->where('request_id', $compatRequest)->update('requests', array('visit_performer_user_id' => $compatPerformer));
+$compatContext = $careTeam->requestContext($compatRequest, $compatPerformer);
+vcw_assert_true(empty($compatContext['is_visit_performer']), 'compatibility-only performer must not authorize enrolled physical visit');
+vcw_assert_true(!doclinc_can_update_visit_status($compatRequest, $compatPerformer, 'dokter'), 'physical authorization helper accepted compatibility-only performer');
+echo "ENROLLED_CANONICAL_PERFORMER_REQUIRED=PASS\nCOMPATIBILITY_ONLY_PERFORMER_DENIED=PASS\n";
+echo "REAL_PHYSICAL_PATH_USES_CANONICAL_AUTH=PASS\n";
+
+$staffOnlyRequest = $doctorRequest + 1050;
+$staffOnlyFacility = $doctorFacility . '-ST';
+$staffOnlyDoctor = $staffOnlyRequest + 1;
+$staffOnlyPerformer = $staffOnlyRequest + 2;
+vcw_assignment_fixture($db, $staffOnlyRequest, $staffOnlyFacility, $staffOnlyDoctor, $staffOnlyDoctor, array(array($staffOnlyPerformer, $staffOnlyPerformer, 'Perawat')));
+$db->query('INSERT INTO request_staff_assignments (request_id,staff_id,kode_pkm,assigned_by_user_id,status,assigned_at) VALUES (?,?,?,?,?,NOW(6))', array($staffOnlyRequest, $staffOnlyPerformer, $staffOnlyFacility, $staffOnlyDoctor, 'aktif'));
+$staffOnlyContext = $careTeam->requestContext($staffOnlyRequest, $staffOnlyPerformer);
+vcw_assert_true(empty($staffOnlyContext['is_visit_performer']), 'legacy staff assignment must not authorize enrolled physical visit');
+
+$wrongRequest = $doctorRequest + 1075;
+$wrongFacility = $doctorFacility . '-W';
+$wrongDoctor = $wrongRequest + 1;
+$wrongPerformer = $wrongRequest + 2;
+$wrongOther = $wrongRequest + 3;
+$wrongCommand = vcw_assignment_fixture($db, $wrongRequest, $wrongFacility, $wrongDoctor, $wrongDoctor, array(array($wrongPerformer, $wrongPerformer, 'Perawat'), array($wrongOther, $wrongOther, 'Perawat')));
+$wrongService = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+$wrongAssigned = $wrongService->assign($wrongRequest, $wrongCommand, $wrongPerformer, 'wrong-owner-' . $wrongRequest);
+vcw_assert_true(!empty($wrongAssigned['ok']), 'wrong-owner setup failed');
+$wrongContext = $careTeam->requestContext($wrongRequest, $wrongOther);
+vcw_assert_true(empty($wrongContext['is_visit_performer']), 'wrong canonical performer must not authorize physical visit');
+
+$responsibleOnlyRequest = $doctorRequest + 1090;
+$responsibleOnlyFacility = $doctorFacility . '-R';
+$responsibleOnlyDoctor = $responsibleOnlyRequest + 1;
+vcw_assignment_fixture($db, $responsibleOnlyRequest, $responsibleOnlyFacility, $responsibleOnlyDoctor, $responsibleOnlyDoctor, array());
+$responsibleOnlyContext = $careTeam->requestContext($responsibleOnlyRequest, $responsibleOnlyDoctor);
+vcw_assert_true(empty($responsibleOnlyContext['is_visit_performer']), 'responsible doctor alone gained physical authority context=' . json_encode($responsibleOnlyContext));
+echo "REQUEST_STAFF_ASSIGNMENT_ONLY_DENIED_FOR_ENROLLED=PASS\nWRONG_CANONICAL_PERFORMER_DENIED=PASS\nRESPONSIBLE_DOCTOR_ALONE_NOT_PHYSICAL_PERFORMER=PASS\n";
+
+$terminalRequest = $doctorRequest + 1100;
+$terminalFacility = $doctorFacility . '-T';
+$terminalDoctor = $terminalRequest + 1;
+$terminalPerformer = $terminalRequest + 2;
+$terminalCommand = vcw_assignment_fixture($db, $terminalRequest, $terminalFacility, $terminalDoctor, $terminalDoctor, array(array($terminalPerformer, $terminalPerformer, 'Perawat')));
+$terminalService = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+$terminalAssigned = $terminalService->assign($terminalRequest, $terminalCommand, $terminalPerformer, 'terminal-' . $terminalRequest);
+vcw_assert_true(!empty($terminalAssigned['ok']), 'terminal assignment setup failed');
+$db->where('request_id', $terminalRequest)->where('status', 'aktif')->update('request_visit_performer_assignments', array('status' => 'selesai'));
+$terminalContext = $careTeam->requestContext($terminalRequest, $terminalPerformer);
+vcw_assert_true(empty($terminalContext['is_visit_performer']), 'terminal canonical performer must not authorize physical visit');
+foreach (array('diganti', 'dibatalkan') as $terminalStatus) {
+    $statusRequest = $terminalRequest + ($terminalStatus === 'diganti' ? 25 : 50);
+    $statusFacility = $terminalFacility . '-' . ($terminalStatus === 'diganti' ? 'DG' : 'DB');
+    $statusDoctor = $statusRequest + 1;
+    $statusPerformer = $statusRequest + 2;
+    $statusCommand = vcw_assignment_fixture($db, $statusRequest, $statusFacility, $statusDoctor, $statusDoctor, array(array($statusPerformer, $statusPerformer, 'Perawat')));
+    $statusService = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+    $statusAssigned = $statusService->assign($statusRequest, $statusCommand, $statusPerformer, 'status-' . $statusRequest);
+    vcw_assert_true(!empty($statusAssigned['ok']), 'status setup failed');
+    $db->where('visit_assignment_id', (int) $statusAssigned['assignment_id'])->update('request_visit_performer_assignments', array('status' => $terminalStatus));
+    $statusContext = $careTeam->requestContext($statusRequest, $statusPerformer);
+    vcw_assert_true(empty($statusContext['is_visit_performer']), 'terminal status authorized physical visit: ' . $terminalStatus);
+}
+echo "TERMINAL_CANONICAL_ASSIGNMENT_DENIED=PASS\n";

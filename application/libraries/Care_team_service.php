@@ -287,9 +287,23 @@ class Care_team_service
 		}
 		$result['is_responsible_doctor'] = (int) $request->responsible_doctor_user_id === $user_id
 			&& $this->policy->responsibleDoctorEligible($identity, $request->assigned_puskesmas_code);
-		$result['is_visit_performer'] = (int) $request->visit_performer_user_id === $user_id
-			&& (string) $request->consultation_mode === Care_team_policy::VISIT
-			&& $this->policy->visitPerformerEligible($identity, $request->assigned_puskesmas_code);
+		$enrolled = false;
+		if ($this->db->table_exists('visit_dispositions')) {
+			$enrolled = $this->db->where('request_id', $request_id)->limit(1)->get('visit_dispositions')->num_rows() > 0;
+		}
+		$canonical_performer = false;
+		if ($enrolled && $this->db->table_exists('request_visit_performer_assignments')) {
+			$canonical_performer = $this->db
+				->where('request_id', $request_id)
+				->where('user_id', $user_id)
+				->where('status', 'aktif')
+				->limit(1)
+				->get('request_visit_performer_assignments')
+				->num_rows() > 0;
+		}
+		$result['is_visit_performer'] = (string) $request->consultation_mode === Care_team_policy::VISIT
+			&& $this->policy->visitPerformerEligible($identity, $request->assigned_puskesmas_code)
+			&& ($enrolled ? $canonical_performer : (int) $request->visit_performer_user_id === $user_id);
 		$result['can_assess'] = $result['is_responsible_doctor'] && (string) $request->request_status === 'Accepted';
 		$result['can_visit'] = $result['is_visit_performer'] && (string) $request->request_status === 'Accepted';
 		$result['valid'] = $result['can_assess'] || $result['can_visit'];
