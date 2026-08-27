@@ -593,6 +593,12 @@ One transaction must validate request/disposition/physical state and performer e
 
 Reassignment must close the old assignment and create the replacement atomically.
 
+Every reassignment command carries the caller-observed expected `visit_assignment_id`.
+Under the request lock, the active canonical performer assignment must equal this
+source token; otherwise the service returns `PERFORMER_ASSIGNMENT_STALE` with no
+mutation. A later intentional reassignment uses the newly active assignment ID.
+Assignment history remains immutable.
+
 Two concurrent assignment attempts must result in one winner and one safe conflict/refresh response, never two active performers.
 
 ### 8.4 Physical-start races
