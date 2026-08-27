@@ -965,6 +965,27 @@ class Home_nakes_m extends MX_Controller
 			$this->db->trans_rollback();
 			return array('status' => 'error', 'message' => 'Status kunjungan hanya dapat diperbarui untuk konsultasi aktif');
 		}
+		// Enrolled Visit workflow mutations use a fixed lock order and revalidate
+		// canonical workflow state while the request row is held. Legacy,
+		// non-enrolled requests continue through the pre-existing authorization
+		// path below.
+		require_once APPPATH . 'libraries/Visit_workflow_policy.php';
+		$workflow_policy = new Visit_workflow_policy($this->db, true);
+		if ($workflow_policy->isEnrolled($request_id)) {
+			$active_disposition = $this->db->query(
+				'SELECT decision FROM ' . $this->db->dbprefix('visit_dispositions') . ' WHERE request_id = ? AND superseded_at IS NULL ORDER BY version_no DESC LIMIT 1 FOR UPDATE',
+				array($request_id)
+			)->row();
+			$active_performer = $this->db->query(
+				'SELECT user_id FROM ' . $this->db->dbprefix('request_visit_performer_assignments') . ' WHERE request_id = ? AND status = ? ORDER BY visit_assignment_id DESC LIMIT 1 FOR UPDATE',
+				array($request_id, 'aktif')
+			)->row();
+			if (!$active_disposition || (string) $active_disposition->decision !== 'visit'
+				|| !$active_performer || (int) $active_performer->user_id !== $user_id) {
+				$this->db->trans_rollback();
+				return array('status' => 'error', 'message' => 'Status kunjungan tidak dapat diperbarui');
+			}
+		}
 		$database_identity = function_exists('doclinc_dokter_identity_context')
 			? doclinc_dokter_identity_context($user_id, true)
 			: null;
