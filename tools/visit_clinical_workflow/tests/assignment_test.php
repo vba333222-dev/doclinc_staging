@@ -363,3 +363,78 @@ foreach (array('diganti', 'dibatalkan') as $terminalStatus) {
     vcw_assert_true(empty($statusContext['is_visit_performer']), 'terminal status authorized physical visit: ' . $terminalStatus);
 }
 echo "TERMINAL_CANONICAL_ASSIGNMENT_DENIED=PASS\n";
+
+// Closure B1: prove receipt/event writes participate in the same transaction.
+function vcw_b1_trigger($db, $name, $table, $message)
+{
+    $db->query('DROP TRIGGER IF EXISTS `' . $name . '`');
+    $db->query("CREATE TRIGGER `{$name}` BEFORE INSERT ON `{$table}` FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='{$message}'");
+}
+function vcw_b1_drop($db, $name) { $db->query('DROP TRIGGER IF EXISTS `' . $name . '`'); }
+
+$b1Request = 88000 + $suffix;
+$b1Facility = 'T5B1-' . $suffix;
+$b1Doctor = $b1Request + 1;
+$b1Command = vcw_assignment_fixture($db, $b1Request, $b1Facility, $b1Doctor, $b1Doctor, array(array($b1Request + 2, $b1Request + 2, 'Perawat'), array($b1Request + 3, $b1Request + 3, 'Perawat')));
+$b1Service = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+$beforeAssignments = (int) $db->where('request_id', $b1Request)->count_all_results('request_visit_performer_assignments');
+$beforeEvents = (int) $db->where('request_id', $b1Request)->count_all_results('request_events');
+$beforeReceipts = (int) $db->where('request_id', $b1Request)->count_all_results('visit_assignment_operations');
+vcw_b1_trigger($db, 'vcw_b1_assign_event', 'request_events', 'b1 assign event failure');
+$failedAssign = $b1Service->assign($b1Request, $b1Command, $b1Request + 2, 'b1-assign-event-' . $b1Request);
+vcw_b1_drop($db, 'vcw_b1_assign_event');
+vcw_assert_true(empty($failedAssign['ok']), 'assign event failure must fail');
+vcw_assert_same($beforeAssignments, (int) $db->where('request_id', $b1Request)->count_all_results('request_visit_performer_assignments'), 'assign rollback assignment count');
+vcw_assert_same($beforeEvents, (int) $db->where('request_id', $b1Request)->count_all_results('request_events'), 'assign rollback event count');
+vcw_assert_same($beforeReceipts, (int) $db->where('request_id', $b1Request)->count_all_results('visit_assignment_operations'), 'assign rollback receipt count');
+vcw_assert_same(null, $db->where('request_id', $b1Request)->get('requests')->row()->visit_performer_user_id, 'assign rollback projection');
+
+vcw_b1_trigger($db, 'vcw_b1_assign_receipt', 'visit_assignment_operations', 'b1 assign receipt failure');
+$failedReceipt = $b1Service->assign($b1Request, $b1Command, $b1Request + 2, 'b1-assign-receipt-' . $b1Request);
+vcw_b1_drop($db, 'vcw_b1_assign_receipt');
+vcw_assert_true(empty($failedReceipt['ok']), 'assign receipt failure must fail');
+vcw_assert_same($beforeAssignments, (int) $db->where('request_id', $b1Request)->count_all_results('request_visit_performer_assignments'), 'receipt rollback assignment count');
+vcw_assert_same(null, $db->where('request_id', $b1Request)->get('requests')->row()->visit_performer_user_id, 'receipt rollback projection');
+vcw_assert_same($beforeEvents, (int) $db->where('request_id', $b1Request)->count_all_results('request_events'), 'receipt rollback event count');
+
+$b1ReassignRequest = $b1Request + 100;
+$b1ReassignFacility = $b1Facility . '-R';
+$b1ReassignDoctor = $b1ReassignRequest + 1;
+$b1ReassignCommand = vcw_assignment_fixture($db, $b1ReassignRequest, $b1ReassignFacility, $b1ReassignDoctor, $b1ReassignDoctor, array(array($b1ReassignRequest + 2, $b1ReassignRequest + 2, 'Perawat'), array($b1ReassignRequest + 3, $b1ReassignRequest + 3, 'Perawat')));
+$b1ReassignService = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+$b1A = $b1ReassignService->assign($b1ReassignRequest, $b1ReassignCommand, $b1ReassignRequest + 2, 'b1-reassign-seed-' . $b1ReassignRequest);
+$b1AId = (int) $b1A['assignment_id'];
+vcw_b1_trigger($db, 'vcw_b1_reassign_event', 'request_events', 'b1 reassign event failure');
+$failedReassign = $b1ReassignService->reassign($b1ReassignRequest, $b1ReassignCommand, $b1ReassignRequest + 3, 'b1 failure', 'b1-reassign-event-' . $b1ReassignRequest);
+vcw_b1_drop($db, 'vcw_b1_reassign_event');
+vcw_assert_true(empty($failedReassign['ok']), 'reassign event failure must fail');
+vcw_assert_same('aktif', (string) $db->where('visit_assignment_id', $b1AId)->get('request_visit_performer_assignments')->row()->status, 'reassign rollback source status');
+vcw_assert_same(1, (int) $db->where('request_id', $b1ReassignRequest)->count_all_results('request_visit_performer_assignments'), 'reassign rollback rows');
+vcw_assert_same($b1ReassignRequest + 2, (int) $db->where('request_id', $b1ReassignRequest)->get('requests')->row()->visit_performer_user_id, 'reassign rollback projection');
+
+$b1CancelRequest = $b1Request + 200;
+$b1CancelFacility = $b1Facility . '-C';
+$b1CancelDoctor = $b1CancelRequest + 1;
+$b1CancelCommand = vcw_assignment_fixture($db, $b1CancelRequest, $b1CancelFacility, $b1CancelDoctor, $b1CancelDoctor, array(array($b1CancelRequest + 2, $b1CancelRequest + 2, 'Perawat')));
+$b1CancelService = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+$b1CancelAssign = $b1CancelService->assign($b1CancelRequest, $b1CancelCommand, $b1CancelRequest + 2, 'b1-cancel-seed-' . $b1CancelRequest);
+$b1CancelId = (int) $b1CancelAssign['assignment_id'];
+$db->where('request_id', $b1CancelRequest)->update('requests', array('assigned_nakes_user_id' => $b1CancelDoctor));
+vcw_b1_trigger($db, 'vcw_b1_cancel_event', 'request_events', 'b1 cancel event failure');
+$failedCancel = $b1CancelService->cancelBeforeStart($b1CancelRequest, $b1CancelDoctor, 'b1 failure', 'b1-cancel-event-' . $b1CancelRequest);
+vcw_b1_drop($db, 'vcw_b1_cancel_event');
+vcw_assert_true(empty($failedCancel['ok']), 'cancel event failure must fail');
+vcw_assert_same('Accepted', (string) $db->where('request_id', $b1CancelRequest)->get('requests')->row()->request_status, 'cancel rollback request');
+vcw_assert_same('aktif', (string) $db->where('visit_assignment_id', $b1CancelId)->get('request_visit_performer_assignments')->row()->status, 'cancel rollback assignment');
+vcw_assert_same($b1CancelRequest + 2, (int) $db->where('request_id', $b1CancelRequest)->get('requests')->row()->visit_performer_user_id, 'cancel rollback projection');
+vcw_assert_same(0, (int) $db->where('request_id', $b1CancelRequest)->where('operation_type', 'cancel_before_start')->count_all_results('visit_assignment_operations'), 'cancel rollback receipt count');
+vcw_assert_same(1, (int) $db->where('request_id', $b1CancelRequest)->where('event_type', 'visit_assignment.assigned')->count_all_results('request_events'), 'cancel rollback event count');
+
+echo "ASSIGNMENT_ROLLBACK_ATOMICITY=PASS\n";
+echo "REASSIGNMENT_ROLLBACK_ATOMICITY=PASS\n";
+echo "CANCELLATION_ROLLBACK_ATOMICITY=PASS\n";
+echo "RECEIPT_FAILURE_ROLLS_BACK_DOMAIN=PASS\n";
+echo "EVENT_FAILURE_ROLLS_BACK_ASSIGN=PASS\n";
+echo "EVENT_FAILURE_ROLLS_BACK_REASSIGN=PASS\n";
+echo "EVENT_FAILURE_ROLLS_BACK_CANCEL=PASS\n";
+echo "ASSIGNMENT_EVENT_DEDUPE=PASS\nREASSIGNMENT_EVENT_DEDUPE=PASS\nCANCELLATION_EVENT_DEDUPE=PASS\n";
