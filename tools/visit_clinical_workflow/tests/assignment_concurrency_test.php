@@ -76,3 +76,40 @@ echo "ASSIGNMENT_WORKERS_READY=PASS\n";
 echo "ASSIGNMENT_INDEPENDENT_CONNECTIONS=PASS\n";
 echo "ASSIGNMENT_RACE_WINNERS=1\n";
 foreach ($results as $result) echo $result . "\n";
+
+// B2a: two independent reassign() calls contend for the same active assignment.
+$rr = 80000 + $suffix * 10;
+$rf = 'T5R-' . $suffix;
+$rd = $rr + 1; $rc = $rr; $ra = $rr + 2; $rb = $rr + 3; $rcandidate = $rr + 4;
+vcw_assert_safe_request_id($rr);
+$db->query('INSERT INTO m_puskesmas (kode_pkm,nama_puskesmas,status) VALUES (?,?,?)', array($rf, 'Task5 Reassign Facility', 'aktif'));
+$db->query('INSERT INTO users (userId,nama,email,username,password,role,status,must_change_password,remark) VALUES (?,?,?,?,?,?,?,?,?)', array($rc, 'Task5R Command', 'task5r-command-' . $suffix . '@example.invalid', 'task5r-command-' . $suffix, password_hash('x', PASSWORD_BCRYPT), 'dokter', 'aktif', 0, $rf));
+vcw_concurrency_user($db, $rd, $rf, $rd, 'dokter');
+vcw_concurrency_user($db, $ra, $rf, $ra, 'Perawat');
+vcw_concurrency_user($db, $rb, $rf, $rb, 'Perawat');
+vcw_concurrency_user($db, $rcandidate, $rf, $rcandidate, 'Perawat');
+$db->query('INSERT INTO requests (request_id,user_id,location,request_status,assigned_puskesmas_code,assigned_puskesmas_name,visit_status) VALUES (?,?,?,?,?,?,?)', array($rr, $rd, 'synthetic', 'Accepted', $rf, 'Task5 Reassign Facility', 'not_started'));
+$db->query('INSERT INTO request_responsible_doctor_assignments (request_id,staff_id,user_id,assigned_by_user_id,status,assigned_at) VALUES (?,?,?,?,?,NOW(6))', array($rr, $rd, $rd, $rd, 'aktif'));
+$db->query('INSERT INTO visit_dispositions (request_id,version_no,decision,urgency,created_by_user_id,created_at,idempotency_key) VALUES (?,?,?,?,?,?,?)', array($rr, 1, 'visit', 'routine', $rd, date('Y-m-d H:i:s.u'), 'task5r-disposition-' . $rr));
+$rrService = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
+$seed = $rrService->assign($rr, $rc, $ra, 'task5r-seed-' . $rr);
+vcw_assert_true(!empty($seed['ok']), 'reassign seed assignment');
+$sourceId = (int) $seed['assignment_id'];
+$rbarrier = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'visit-reassign-barrier-' . bin2hex(random_bytes(5));
+mkdir($rbarrier); $rprocs = array();
+foreach (array(array($rb, 'task5r-b-' . $rr), array($rcandidate, 'task5r-c-' . $rr)) as $item) {
+    $out = $rbarrier . DIRECTORY_SEPARATOR . 'out-' . $item[0] . '.txt';
+    $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($worker) . ' ' . (int) $rr . ' ' . (int) $rc . ' ' . (int) $item[0] . ' ' . escapeshellarg($item[1]) . ' ' . escapeshellarg($rbarrier) . ' reassign ' . escapeshellarg('Concurrent reassignment');
+    $rprocs[] = array('proc' => proc_open($cmd, array(1 => array('file', $out, 'w'), 2 => array('file', $out . '.err', 'w')), $pipes), 'out' => $out);
+}
+$deadline = microtime(true) + 30;
+while (count(glob($rbarrier . DIRECTORY_SEPARATOR . 'ready-*')) < 2) { if (microtime(true) > $deadline) throw new RuntimeException('reassign workers did not become ready'); usleep(10000); }
+file_put_contents($rbarrier . DIRECTORY_SEPARATOR . 'release', 'go');
+$rresults = array(); foreach ($rprocs as $process) { $code = proc_close($process['proc']); vcw_assert_same(0, $code, 'reassign worker exit'); $rresults[] = trim((string) file_get_contents($process['out'])); }
+$rwins = 0; $rconnections = array(); foreach ($rresults as $rresult) { if (strpos($rresult, '"ok":true') !== false) $rwins++; if (preg_match('/CONNECTION_ID=(\d+)/', $rresult, $m)) $rconnections[] = $m[1]; }
+vcw_assert_same(1, $rwins, 'one reassign winner');
+vcw_assert_same(2, count(array_unique($rconnections)), 'reassign independent connections');
+vcw_assert_same('diganti', (string) $db->where('visit_assignment_id', $sourceId)->get('request_visit_performer_assignments')->row()->status, 'source closed once');
+vcw_assert_same(1, (int) $db->where('request_id', $rr)->where('status', 'aktif')->count_all_results('request_visit_performer_assignments'), 'one active replacement');
+vcw_assert_same(1, (int) $db->where('request_id', $rr)->where('operation_type', 'reassign')->count_all_results('visit_assignment_operations'), 'one reassign receipt');
+echo "TWO_REASSIGNMENT_RACE_EXECUTED=YES\nINDEPENDENT_REASSIGNMENT_CONNECTIONS=YES\nGENUINE_REASSIGNMENT_OVERLAP=YES\nCONCURRENT_REASSIGNMENT=PASS\n";

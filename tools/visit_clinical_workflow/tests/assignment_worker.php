@@ -5,6 +5,8 @@ $command = (int) ($argv[2] ?? 0);
 $performer = (int) ($argv[3] ?? 0);
 $key = (string) ($argv[4] ?? '');
 $barrier = (string) ($argv[5] ?? '');
+$mode = (string) ($argv[6] ?? 'assign');
+$reason = (string) ($argv[7] ?? 'concurrent');
 if ($request < 1 || $command < 1 || $performer < 1 || $key === '' || $barrier === '') {
     fwrite(STDERR, "worker arguments missing\n");
     exit(2);
@@ -25,5 +27,7 @@ while (!is_file($barrier . DIRECTORY_SEPARATOR . 'release')) {
 }
 
 $service = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
-$result = $service->assign($request, $command, $performer, $key);
+$result = $mode === 'reassign'
+    ? $service->reassign($request, $command, $performer, $reason, $key)
+    : $service->assign($request, $command, $performer, $key);
 echo 'PID=' . getmypid() . ' CONNECTION_ID=' . (int) $connection->connection_id . ' RESULT=' . json_encode($result) . "\n";
