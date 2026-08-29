@@ -22,10 +22,9 @@ function vcw_assignment_user($db, $id, $facility, $staff = null, $profession = '
 
 function vcw_assignment_fixture($db, $request, $facility, $doctor, $doctorStaff, $performers = array())
 {
-    static $commandSequence = 0;
     vcw_assert_safe_request_id($request);
     $db->query('INSERT INTO m_puskesmas (kode_pkm,nama_puskesmas,status) VALUES (?,?,?)', array($facility, 'Task5 Facility', 'aktif'));
-    $commandUserId = 40000 + (++$commandSequence);
+    $commandUserId = $request - 1;
     vcw_assignment_user($db, $commandUserId, $facility); // canonical command center (no staff)
     vcw_assignment_user($db, $doctor, $facility, $doctorStaff, 'dokter');
     foreach ($performers as $performer) { vcw_assignment_user($db, $performer[0], $facility, $performer[1], $performer[2]); }
@@ -37,8 +36,12 @@ function vcw_assignment_fixture($db, $request, $facility, $doctor, $doctorStaff,
     return $commandUserId;
 }
 
-$suffix = random_int(1, 500);
-$request = 60000 + $suffix * 10;
+$maximum = $db->query(
+    'SELECT GREATEST(COALESCE((SELECT MAX(userId) FROM users),0),COALESCE((SELECT MAX(staff_id) FROM puskesmas_staff),0),COALESCE((SELECT MAX(request_id) FROM requests),0)) AS base_id'
+)->row();
+$fixtureBase = (int) $maximum->base_id + 1000;
+$suffix = $fixtureBase;
+$request = $fixtureBase;
 $facility = 'T5-' . $suffix;
 $command = vcw_assignment_fixture($db, $request, $facility, $request + 1, $request + 1, array(array($request + 2, $request + 2, 'Perawat'), array($request + 3, $request + 3, 'dokter')));
 $service = new Visit_assignment_service($db, new Visit_workflow_policy($db, false));
@@ -113,10 +116,11 @@ $nonEnrolledRequest = $request + 20;
 $nonFacility = $facility . '-N';
 vcw_assert_safe_request_id($nonEnrolledRequest);
 $db->query('INSERT INTO m_puskesmas (kode_pkm,nama_puskesmas,status) VALUES (?,?,?)', array($nonFacility, 'Task5 Facility', 'aktif'));
-vcw_assignment_user($db, 51000 + $nonEnrolledRequest % 100, $nonFacility);
+$nonEnrolledCommand = $nonEnrolledRequest - 1;
+vcw_assignment_user($db, $nonEnrolledCommand, $nonFacility);
 vcw_assignment_user($db, $nonEnrolledRequest + 1, $nonFacility, $nonEnrolledRequest + 1, 'Perawat');
 $db->query('INSERT INTO requests (request_id,user_id,location,request_status,assigned_puskesmas_code,assigned_puskesmas_name,visit_status) VALUES (?,?,?,?,?,?,?)', array($nonEnrolledRequest, $nonEnrolledRequest + 1, 'synthetic', 'Accepted', $nonFacility, 'Task5 Facility', 'not_started'));
-$notEnrolled = $service->assign($nonEnrolledRequest, 51000 + $nonEnrolledRequest % 100, $nonEnrolledRequest + 1, 'not-enrolled');
+$notEnrolled = $service->assign($nonEnrolledRequest, $nonEnrolledCommand, $nonEnrolledRequest + 1, 'not-enrolled');
 vcw_assert_same('WORKFLOW_NOT_ENROLLED', $notEnrolled['code'] ?? null, 'non-enrolled rejected');
 
 echo "TASK5_ASSIGNMENT_MATRIX=PASS\n";
@@ -139,7 +143,7 @@ $parityCases = array(
 );
 $parityPass = true;
 foreach ($parityCases as $index => $case) {
-    $id = 71000 + $suffix * 20 + $index * 17;
+    $id = $fixtureBase + 1000 + $index * 17;
     vcw_assert_safe_request_id($id);
     $facilityId = 'T5P-' . $suffix . '-' . $index;
     $doctorId = $id + 1;
@@ -180,7 +184,7 @@ foreach ($parityCases as $index => $case) {
 
 // Closure A1: an authorized actor is still locked out after physical start.
 foreach (array('en_route', 'arrived', 'in_service', 'completed') as $offset => $visitStatus) {
-    $id = 73000 + $suffix * 20 + $offset * 23;
+    $id = $fixtureBase + 2000 + $offset * 23;
     vcw_assert_safe_request_id($id);
     $facilityId = 'T5S-' . $suffix . '-' . $offset;
     $doctorId = $id + 1;
@@ -203,7 +207,7 @@ echo "CANCELLATION_AUTHORITY_PARITY=PASS\n";
 echo "POSTSTART_CANCELLATION_REJECTED=PASS\n";
 
 // Closure A2: doctor-performer identity and sequential reassignment guards.
-$doctorRequest = 76000 + $suffix;
+$doctorRequest = $fixtureBase + 3000;
 $doctorFacility = 'T5D-' . $suffix;
 $doctorUser = $doctorRequest + 1;
 $doctorCommand = vcw_assignment_fixture($db, $doctorRequest, $doctorFacility, $doctorUser, $doctorUser, array());
@@ -400,7 +404,7 @@ function vcw_b1_trigger($db, $name, $table, $message)
 }
 function vcw_b1_drop($db, $name) { $db->query('DROP TRIGGER IF EXISTS `' . $name . '`'); }
 
-$b1Request = 88000 + $suffix;
+$b1Request = $fixtureBase + 6000;
 $b1Facility = 'T5B1-' . $suffix;
 $b1Doctor = $b1Request + 1;
 $b1Command = vcw_assignment_fixture($db, $b1Request, $b1Facility, $b1Doctor, $b1Doctor, array(array($b1Request + 2, $b1Request + 2, 'Perawat'), array($b1Request + 3, $b1Request + 3, 'Perawat')));

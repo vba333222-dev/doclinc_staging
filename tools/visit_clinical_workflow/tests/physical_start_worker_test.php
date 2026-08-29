@@ -12,7 +12,10 @@ function pswt_user($db, $id, $facility, $staffId, $profession) {
 if ((int) $app->db->query("SELECT COUNT(*) c FROM information_schema.tables WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='nakes_facility_placements'")->row()->c === 0) {
     $app->db->query("CREATE TABLE nakes_facility_placements (placement_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,staff_id INT UNSIGNED NOT NULL,facility_code VARCHAR(64) NOT NULL,effective_from DATETIME NOT NULL,effective_until DATETIME NULL,status ENUM('active','ended') NOT NULL DEFAULT 'active',active_staff_key INT UNSIGNED AS (CASE WHEN status='active' THEN staff_id ELSE NULL END) STORED,created_by_user_id INT NOT NULL,PRIMARY KEY(placement_id),UNIQUE KEY uq_nakes_active_staff(active_staff_key)) ENGINE=InnoDB");
 }
-$base = 98000 + random_int(1, 100);
+$maximum = $app->db->query(
+    'SELECT GREATEST(COALESCE((SELECT MAX(userId) FROM users),0),COALESCE((SELECT MAX(staff_id) FROM puskesmas_staff),0),COALESCE((SELECT MAX(request_id) FROM requests),0)) AS base_id'
+)->row();
+$base = (int) $maximum->base_id + 100;
 $facility = 'H1A-' . $base; $request = $base; $doctor = $base + 1; $performer = $base + 2; $other = $base + 3; $command = $base - 1;
 $db = $app->db;
 $db->query('INSERT INTO m_puskesmas (kode_pkm,nama_puskesmas,status) VALUES (?,?,?)', array($facility, 'H1a Facility', 'aktif'));
