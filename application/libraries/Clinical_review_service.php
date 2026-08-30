@@ -37,6 +37,7 @@ class Clinical_review_service
             if(!$result || (int)$result->request_id!==$requestId || (int)$result->visit_assignment_id!==(int)$assignment->visit_assignment_id || (string)$result->status!=='submitted') return $this->rollback('RESULT_NOT_ALLOWED');
             $latest=$this->db->query("SELECT visit_result_id FROM visit_results WHERE request_id=? AND status='submitted' ORDER BY version_no DESC, visit_result_id DESC LIMIT 1",array($requestId))->row();
             if(!$latest || (int)$latest->visit_result_id!==$visitResultId) return $this->rollback('RESULT_NOT_LATEST');
+            if($performerOk && ((int)$result->visit_assignment_id !== (int)$assignment->visit_assignment_id || (int)$result->performer_user_id !== $reviewerUserId || (int)$result->performer_user_id !== (int)$assignment->user_id || (int)$result->performer_staff_id !== (int)$assignment->staff_id)) return $this->rollback('REVIEW_RESULT_PERFORMER_MISMATCH');
             $existing=$this->model->getByIdempotencyKey($key);
             if($existing){ return $this->replayOrConflict($existing,$requestId,$visitResultId,$reviewerUserId,$decision,$reason,$notes,$rdOk,$performerOk); }
             $existingResult=$this->model->getForResultForUpdate($visitResultId);
