@@ -81,6 +81,11 @@ $saved = $service->saveDraft($v2, $fixture['performer'], 0, $edited);
 vcw_assert_true(($saved['status'] ?? null) === 'success' && (int) $saved['draft_revision'] === 1, 'correction draft integrates optimistic save');
 $v2Submit = $service->submit($v2, $fixture['performer'], array($measurement), 'submit-v2-' . $v2);
 vcw_assert_same('success', $v2Submit['status'] ?? null, 'correction version submits through Task 7C');
+$postSubmitReplay = $service->createCorrectionDraft($fixture['request'], $fixture['performer'], $v1, 'correction-' . $v1);
+vcw_assert_true(($postSubmitReplay['status'] ?? null) === 'success' && !empty($postSubmitReplay['idempotent_replay']) && (int) $postSubmitReplay['visit_result_id'] === $v2, 'same correction key replays submitted successor');
+vcw_assert_same('submitted', (string) $db->where('visit_result_id', $v2)->get('visit_results')->row()->status, 'post-submit replay does not reopen successor');
+vcw_assert_same(2, (int) $db->where('request_id', $fixture['request'])->count_all_results('visit_results'), 'post-submit replay creates no new version');
+vcw_assert_same(1, (int) $db->where('request_id', $fixture['request'])->where('event_type', 'visit_result.correction_draft_created')->count_all_results('request_events'), 'post-submit replay does not duplicate receipt');
 vcw_assert_same($v1Before, $db->where('visit_result_id', $v1)->get('visit_results')->row_array(), 'v2 submission preserves predecessor');
 vcw_assert_same('aktif', (string) $db->where('visit_assignment_id', $fixture['assignment'])->get('request_visit_performer_assignments')->row()->status, 'correction submission keeps assignment active');
 r7d_expect($service->createCorrectionDraft($fixture['request'], $fixture['performer'], $v1, 'stale-v1-' . $v1), 'CORRECTION_NOT_ALLOWED', 'non-latest predecessor denied');
@@ -135,4 +140,5 @@ echo "CORRECTION_CANONICAL_PERFORMER=PASS\nCORRECTION_UNRELATED_DENIED=PASS\nCOR
 echo "CORRECTION_NON_LATEST_PREDECESSOR_DENIED=PASS\nCORRECTION_LATEST_PREDECESSOR_REQUIRED=PASS\nCORRECTION_VERSION_NO_INCREMENTED=PASS\nCORRECTION_SUPERSEDES_LINK=PASS\n";
 echo "CORRECTION_FACTUAL_PAYLOAD_COPIED=PASS\nCORRECTION_TTV_LINKS_NOT_COPIED=PASS\nCORRECTION_REVIEW_NOT_COPIED=PASS\nCORRECTION_PREDECESSOR_IMMUTABLE=PASS\n";
 echo "CORRECTION_DRAFT_EDITABLE=PASS\nCORRECTION_DRAFT_REVISION_INTEGRATES_7B=PASS\nCORRECTION_VERSION_SUBMITS_WITH_7C=PASS\nCORRECTION_SUBMISSION_PREDECESSOR_UNCHANGED=PASS\nCORRECTION_SUBMISSION_ASSIGNMENT_REMAINS_ACTIVE=PASS\nCORRECTION_REQUIRES_EXPLICIT_CREATE=PASS\nCORRECTION_VERSION_CHAIN=PASS\n";
+echo "CORRECTION_REPLAY_AFTER_SUBMISSION=PASS\nCORRECTION_REPLAY_SAME_SUCCESSOR=PASS\nPOST_SUBMIT_REPLAY_NO_NEW_VERSION=PASS\nPOST_SUBMIT_REPLAY_NO_MUTATION=PASS\nPOST_SUBMIT_REPLAY_RECEIPT_SINGLE=PASS\n";
 echo "CORRECTION_DOCTOR_PERFORMER_ALLOWED=PASS\nCORRECTION_COMPLETED_STATE_REQUIRED=PASS\nCORRECTION_REPLACED_PERFORMER_DENIED=PASS\nCORRECTION_TERMINAL_PERFORMER_DENIED=PASS\nCORRECTION_GLOBAL_KEY_CONFLICT=PASS\nCORRECTION_KEY_VALIDATION=PASS\n";
