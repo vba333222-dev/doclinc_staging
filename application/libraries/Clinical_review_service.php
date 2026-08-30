@@ -16,7 +16,6 @@ class Clinical_review_service
         $decision=strtolower(trim((string)$decision)); $reason=$this->text($correctionReason); $notes=$this->text($reviewNotes); $key=trim((string)$idempotencyKey);
         if ($requestId<1||$visitResultId<1||$reviewerUserId<1||$key===''||strlen($key)>191||!in_array($decision,array('approved','correction_required'),true)) return $this->fail('INVALID_REVIEW_INPUT');
         if ($decision==='correction_required' && trim($reason)==='') return $this->fail('CORRECTION_REASON_REQUIRED');
-        if ($decision==='approved') return $this->fail('REVIEW_APPROVAL_REQUIRES_COMPLETION');
         if (!$this->db->trans_begin()) return $this->fail('WRITE_FAILED');
         try {
             $historic=$this->model->getByIdempotencyKey($key);
@@ -52,7 +51,13 @@ class Clinical_review_service
             $row=array('request_id'=>$requestId,'visit_result_id'=>$visitResultId,'reviewer_user_id'=>$reviewerUserId,'responsible_assignment_id'=>$rdOk?(int)$rd->responsible_assignment_id:null,'reviewer_visit_assignment_id'=>$rdOk?null:(int)$assignment->visit_assignment_id,'decision'=>$decision,'correction_reason'=>$reason===''?null:$reason,'review_notes'=>$notes===''?null:$notes,'reviewed_at'=>date('Y-m-d H:i:s.u'),'idempotency_key'=>$key);
             $id=$this->model->insertReview($row);
             if($id<1) return $this->rollback('WRITE_FAILED');
-            if(!doclinc_append_request_event($requestId,'visit_result.correction_required',array('puskesmas_code'=>$facility,'actor_user_id'=>$reviewerUserId,'actor_staff_id'=>(int)$assignment->staff_id,'domain_event_key'=>'clinical-review:'.$id.':correction_required','metadata'=>array('clinical_review_id'=>$id,'visit_result_id'=>$visitResultId,'visit_assignment_id'=>(int)$assignment->visit_assignment_id,'reviewer_user_id'=>$reviewerUserId,'provenance_assignment_id'=>$rdOk?(int)$rd->responsible_assignment_id:(int)$assignment->visit_assignment_id)),get_instance())) return $this->rollback('WRITE_FAILED');
+            $eventType=$decision==='approved'?'visit_result.approved':'visit_result.correction_required';
+            $eventSuffix=$decision==='approved'?'approved':'correction_required';
+            if($decision==='approved') {
+                $now=date('Y-m-d H:i:s.u');
+                if(!$this->db->where('visit_assignment_id',(int)$assignment->visit_assignment_id)->where('status','aktif')->update('request_visit_performer_assignments',array('status'=>'selesai','ended_at'=>$now,'ended_by_user_id'=>$reviewerUserId,'end_reason'=>'Visit Result approved','completed_at'=>$now,'updated_at'=>$now)) || $this->db->affected_rows()!==1) return $this->rollback('WRITE_FAILED');
+            }
+            if(!doclinc_append_request_event($requestId,$eventType,array('puskesmas_code'=>$facility,'actor_user_id'=>$reviewerUserId,'actor_staff_id'=>(int)$assignment->staff_id,'domain_event_key'=>'clinical-review:'.$id.':'.$eventSuffix,'metadata'=>array('clinical_review_id'=>$id,'visit_result_id'=>$visitResultId,'visit_assignment_id'=>(int)$assignment->visit_assignment_id,'reviewer_user_id'=>$reviewerUserId,'provenance_assignment_id'=>$rdOk?(int)$rd->responsible_assignment_id:(int)$assignment->visit_assignment_id)),get_instance())) return $this->rollback('WRITE_FAILED');
             $saved=$this->model->getForResultForUpdate($visitResultId); if(!$this->db->trans_commit()) return $this->fail('WRITE_FAILED'); return array('status'=>'success','clinical_review_id'=>$id,'review'=>$saved);
         } catch(Throwable $e){$this->db->trans_rollback(); return $this->fail('WRITE_FAILED');}
     }
