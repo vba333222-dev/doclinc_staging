@@ -20,4 +20,4 @@ $temp = $announce . '.' . getmypid() . '.tmp';
 file_put_contents($temp, json_encode(array('pid' => getmypid(), 'connection_id' => $connectionId)), LOCK_EX);
 rename($temp, $announce);
 $result = (new Clinical_review_service($app->db))->review($requestId, $resultId, $reviewerId, $decision, $reason, $notes, $key);
-echo json_encode(array('ok' => ($result['status'] ?? null) === 'success', 'code' => $result['safe_error_code'] ?? null, 'connection_id' => $connectionId, 'pid' => getmypid(), 'result' => $result), JSON_UNESCAPED_SLASHES) . "\n";
+echo json_encode(array('ok' => ($result['status'] ?? null) === 'success', 'code' => $result['safe_error_code'] ?? null, 'connection_id' => $connectionId, 'pid' => getmypid(), 'result' => $result, 'db_error_code' => (int) (($app->db->error()['code'] ?? 0))), JSON_UNESCAPED_SLASHES) . "\n";
