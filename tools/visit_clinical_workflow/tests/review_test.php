@@ -5,6 +5,9 @@ $db = $app->db;
 $app->config->set('care_team_workflow_enabled', true);
 require_once APPPATH . 'libraries/Visit_result_service.php';
 require_once APPPATH . 'libraries/Clinical_review_service.php';
+require_once APPPATH . 'libraries/Nakes_placement_store.php';
+require_once APPPATH . 'libraries/Visit_workflow_state_resolver.php';
+require_once APPPATH . 'libraries/Visit_workflow_policy.php';
 require_once __DIR__ . '/result_submission_support.php';
 $db->query("CREATE TABLE IF NOT EXISTS nakes_facility_placements (placement_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,staff_id INT UNSIGNED NOT NULL,facility_code VARCHAR(64) NOT NULL,effective_from DATETIME NOT NULL,effective_until DATETIME NULL,status ENUM('active','ended') NOT NULL DEFAULT 'active',active_staff_key INT UNSIGNED AS (CASE WHEN status='active' THEN staff_id ELSE NULL END) STORED,created_by_user_id INT NOT NULL,ended_by_user_id INT NULL,created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY(placement_id),UNIQUE KEY uq_nakes_active_staff(active_staff_key)) ENGINE=InnoDB");
 function review8c_doctor_fixture($db, $request, $rd, $performer, $facility)
@@ -81,6 +84,9 @@ $approvalRequest=30001; $approvalRd=30002; $approvalPerformer=30003; $approvalFa
 $approvalAssignment=review8c_doctor_fixture($db,$approvalRequest,$approvalRd,$approvalPerformer,$approvalFacility);
 $db->query("INSERT INTO visit_results (request_id,visit_assignment_id,version_no,performer_user_id,performer_staff_id,status,draft_revision,findings_json,actions_json,created_at,updated_at,submitted_at,submitted_by_user_id,submission_key) VALUES ($approvalRequest,$approvalAssignment,1,$approvalPerformer,$approvalPerformer,'submitted',0,'[]','[]',NOW(6),NOW(6),NOW(6),$approvalPerformer,'approval-result')");
 $approvalResult=(int)$db->insert_id();
+$placementStore=new Nakes_placement_store($db);
+$approvalBlockersBefore=$placementStore->blockers($approvalPerformer);
+vcw_assert_true(count($approvalBlockersBefore)>0,'active approval assignment blocks placement transfer');
 $approval=$reviewService->review($approvalRequest,$approvalResult,$approvalRd,'approved',null,null,'approval-key');
 vcw_assert_same('success',$approval['status']??null,'approved review succeeds');
 $approvalRow=$db->where('clinical_review_id',(int)$approval['clinical_review_id'])->get('clinical_reviews')->row();
@@ -89,6 +95,11 @@ vcw_assert_same('approved',(string)($approvalRow->decision??''),'approved decisi
 vcw_assert_same('selesai',(string)($approvalAssignmentRow->status??''),'approval completes assignment');
 vcw_assert_true(!empty($approvalAssignmentRow->completed_at),'approval sets completed_at');
 vcw_assert_same(1,(int)$db->where('request_id',$approvalRequest)->where('event_type','visit_result.approved')->count_all_results('request_events'),'approval event persisted');
+$approvalBlockersAfter=$placementStore->blockers($approvalPerformer);
+vcw_assert_same(0,count($approvalBlockersAfter),'completed approval assignment clears placement blocker');
+$resolver=new Visit_workflow_state_resolver($db,new Visit_workflow_policy($db,false),true);
+$resolved=$resolver->resolve($approvalRequest);
+vcw_assert_same('WAITING_CLINICAL_FINALIZATION',$resolved['state']??null,'approved result awaits clinical finalization');
 $approvalReplay=$reviewService->review($approvalRequest,$approvalResult,$approvalRd,'approved',null,null,'approval-key');
 vcw_assert_true(($approvalReplay['idempotent']??false)===true && (int)$approvalReplay['clinical_review_id']===(int)$approval['clinical_review_id'],'approval idempotent replay');
 $atomicApprovalRequest=30101; $atomicApprovalRd=30102; $atomicApprovalPerformer=30103; $atomicApprovalFacility='REVIEW-APPROVAL-ATOMIC-'.$atomicApprovalRequest;
