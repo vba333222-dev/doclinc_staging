@@ -188,4 +188,29 @@ $atomicReply=$reviewService->review($atomicRequest,$atomicResult,$atomicRd,'corr
 vcw_assert_same('WRITE_FAILED',$atomicReply['safe_error_code']??null,'review event failure is domain-safe');
 vcw_assert_same(0,(int)$db->where('visit_result_id',$atomicResult)->count_all_results('clinical_reviews'),'review insert rolled back on event failure');
 $db->query('DROP TRIGGER vcw_review_event_fail');
+
+// Task 8D closure proofs: current assignment completion, correction blocker, and old-result approval guard.
+$exactRequest=30401; $exactRd=30402; $exactPerformer=30403; $exactFacility='REVIEW-EXACT-'.$exactRequest;
+$exactAssignment=review8c_doctor_fixture($db,$exactRequest,$exactRd,$exactPerformer,$exactFacility);
+$db->query("INSERT INTO request_visit_performer_assignments (request_id,staff_id,user_id,assigned_by_user_id,status,assigned_at,ended_at,end_reason) VALUES ($exactRequest,30404,30404,$exactRd,'diganti',NOW(6),NOW(6),'reassigned')");
+$historicalAssignment=(int)$db->insert_id();
+$db->query("INSERT INTO visit_results (request_id,visit_assignment_id,version_no,performer_user_id,performer_staff_id,status,draft_revision,findings_json,actions_json,created_at,updated_at,submitted_at,submitted_by_user_id,submission_key) VALUES ($exactRequest,$exactAssignment,1,$exactPerformer,$exactPerformer,'submitted',0,'[]','[]',NOW(6),NOW(6),NOW(6),$exactPerformer,'exact-result')");
+$exactResult=(int)$db->insert_id();
+$exactApproval=$reviewService->review($exactRequest,$exactResult,$exactRd,'approved',null,null,'exact-approval-key');
+vcw_assert_same('success',$exactApproval['status']??null,'exact current assignment approval');
+vcw_assert_same('selesai',(string)$db->where('visit_assignment_id',$exactAssignment)->get('request_visit_performer_assignments')->row()->status,'current assignment completed');
+vcw_assert_same('diganti',(string)$db->where('visit_assignment_id',$historicalAssignment)->get('request_visit_performer_assignments')->row()->status,'historical assignment unchanged');
+
+$corrRequest=30501; $corrRd=30502; $corrPerformer=30503; $corrFacility='REVIEW-CORR-'.$corrRequest;
+$corrAssignment=review8c_doctor_fixture($db,$corrRequest,$corrRd,$corrPerformer,$corrFacility);
+$db->query("INSERT INTO visit_results (request_id,visit_assignment_id,version_no,performer_user_id,performer_staff_id,status,draft_revision,findings_json,actions_json,created_at,updated_at,submitted_at,submitted_by_user_id,submission_key) VALUES ($corrRequest,$corrAssignment,1,$corrPerformer,$corrPerformer,'submitted',0,'[]','[]',NOW(6),NOW(6),NOW(6),$corrPerformer,'corr-result')");
+$corrResult=(int)$db->insert_id();
+$corrStore=new Nakes_placement_store($db); $corrBefore=count($corrStore->blockers($corrPerformer));
+$corrReview=$reviewService->review($corrRequest,$corrResult,$corrRd,'correction_required','Needs correction',null,'corr-key');
+vcw_assert_same('success',$corrReview['status']??null,'correction review for blocker proof');
+vcw_assert_same('aktif',(string)$db->where('visit_assignment_id',$corrAssignment)->get('request_visit_performer_assignments')->row()->status,'correction leaves assignment active');
+vcw_assert_true($corrBefore>0 && count($corrStore->blockers($corrPerformer))>0,'correction blocker remains');
+
+$historicApproval=$reviewService->review($fixture['request'],$resultId,$fixture['doctor'],'approved',null,null,'new-approval-on-corrected-v1');
+vcw_assert_true(($historicApproval['status']??null)==='error','historic corrected result cannot be newly approved');
 echo "TASK8C_REVIEW_API_PRESENT=PASS\nTASK8C_CORRECTION_REVIEW=PASS\nTASK8C_IDEMPOTENCY=PASS\nTASK8C_APPROVAL_GUARD=PASS\nTASK8C_SEPARATE_DOCTOR_AUTHORITIES=PASS\nTASK8C_DUAL_AUTHORITY_RD_PRECEDENCE=PASS\nTASK8C_AUTHORITY_NEGATIVE_MATRIX=PASS\nTASK8C_PERFORMER_OWN_RESULT_GUARD=PASS\n";
