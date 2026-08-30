@@ -10,6 +10,7 @@ $db->query("CREATE TABLE IF NOT EXISTS nakes_facility_placements (placement_id B
 function review8c_doctor_fixture($db, $request, $rd, $performer, $facility)
 {
     $db->query('INSERT INTO m_puskesmas (kode_pkm,nama_puskesmas,status) VALUES (?,?,?)', array($facility,'Review Facility','aktif'));
+    $db->query('INSERT INTO users (userId,nama,email,username,password,role,status,must_change_password,remark) VALUES (?,?,?,?,?,?,?,?,?)', array($request-1,'Review Command','reviewcmd'.$request.'@invalid','reviewcmd'.$request,'x','dokter','aktif',0,$facility));
     foreach (array($rd, $performer) as $id) {
         $db->query('INSERT INTO users (userId,nama,email,username,password,role,status,must_change_password,remark) VALUES (?,?,?,?,?,?,?,?,?)', array($id,'Review '.$id,'review'.$id.'@invalid','review'.$id,'x','dokter','aktif',0,$facility));
         $db->query('INSERT INTO puskesmas_staff (staff_id,kode_pkm,user_id,nama,profesi,status) VALUES (?,?,?,?,?,?)', array($id,$facility,$id,'Review Staff '.$id,'dokter','aktif'));
@@ -44,6 +45,15 @@ $rdCorrection = $resultService->createCorrectionDraft($fixture['request'], $perf
 vcw_assert_same('success', $rdCorrection['status'] ?? null, 'RD review integrates with Task 7 correction');
 vcw_assert_same(2, (int) ($rdCorrection['version_no'] ?? 0), 'RD correction creates v2');
 vcw_assert_same($resultId, (int) $db->where('request_id', $fixture['request'])->where('version_no', 2)->get('visit_results')->row()->supersedes_result_id, 'RD correction predecessor');
+$reviewCountBeforeReplay=(int)$db->where('visit_result_id',$resultId)->count_all_results('clinical_reviews');
+$eventCountBeforeReplay=(int)$db->where('request_id',$fixture['request'])->where('event_type','visit_result.correction_required')->count_all_results('request_events');
+$db->query("UPDATE request_visit_performer_assignments SET status='diganti', ended_at=NOW(6), end_reason='historical replay test' WHERE visit_assignment_id=".(int)$fixture['assignment']);
+$historicalReplay=$reviewService->review($fixture['request'],$resultId,$fixture['doctor'],'correction_required','Perlu koreksi.','Catatan review','review-key-' . $fixture['request']);
+vcw_assert_true(($historicalReplay['idempotent']??false)===true && (int)$historicalReplay['clinical_review_id']===(int)$review['clinical_review_id'],'historical replay returns committed review');
+vcw_assert_same($reviewCountBeforeReplay,(int)$db->where('visit_result_id',$resultId)->count_all_results('clinical_reviews'),'historical replay no duplicate review');
+vcw_assert_same($eventCountBeforeReplay,(int)$db->where('request_id',$fixture['request'])->where('event_type','visit_result.correction_required')->count_all_results('request_events'),'historical replay no duplicate event');
+$historyConflict=$reviewService->review($fixture['request'],$resultId,$fixture['doctor'],'correction_required','Changed reason','Catatan review','review-key-' . $fixture['request']);
+vcw_assert_same('REVIEW_KEY_CONFLICT',$historyConflict['safe_error_code']??null,'historical replay context conflict');
 $replay = $reviewService->review($fixture['request'], $resultId, $fixture['doctor'], 'correction_required', 'Perlu koreksi.', 'Catatan review', 'review-key-' . $fixture['request']);
 vcw_assert_true(($replay['idempotent'] ?? false) === true, 'review idempotent replay');
 $approval = $reviewService->review($fixture['request'], $resultId, $fixture['doctor'], 'approved', null, null, 'review-approval-' . $fixture['request']);
@@ -119,4 +129,12 @@ function review8c_negative($db,$base,$mode)
     vcw_assert_same($before,(int)$db->where('request_id',$request)->count_all_results('request_events'),'no event '.$mode);
 }
 foreach(array(28501=>'nondoctor_performer',28601=>'unrelated_doctor',28701=>'unrelated_nakes',28801=>'command_center',28901=>'facility_identity',29001=>'inactive_user',29101=>'inactive_staff',29201=>'invalid_placement',29301=>'cross_facility',29401=>'replaced',29501=>'terminal',29601=>'compatibility_only',29701=>'admin',29801=>'warga') as $baseNeg=>$modeNeg){ review8c_negative($db,$baseNeg,$modeNeg); }
+$atomicRequest=29901; $atomicRd=29902; $atomicPerformer=29903; $atomicAssignment=review8c_doctor_fixture($db,$atomicRequest,$atomicRd,$atomicPerformer,'REVIEW-ATOMIC-'.$atomicRequest);
+$db->query("INSERT INTO visit_results (request_id,visit_assignment_id,version_no,performer_user_id,performer_staff_id,status,draft_revision,findings_json,actions_json,created_at,updated_at,submitted_at,submitted_by_user_id,submission_key) VALUES ($atomicRequest,$atomicAssignment,1,$atomicPerformer,$atomicPerformer,'submitted',0,'[]','[]',NOW(6),NOW(6),NOW(6),$atomicPerformer,'atomic-result')");
+$atomicResult=(int)$db->insert_id();
+$db->query("CREATE TRIGGER vcw_review_event_fail BEFORE INSERT ON request_events FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='forced review event failure'");
+$atomicReply=$reviewService->review($atomicRequest,$atomicResult,$atomicRd,'correction_required','Atomicity',null,'atomic-review-key');
+vcw_assert_same('WRITE_FAILED',$atomicReply['safe_error_code']??null,'review event failure is domain-safe');
+vcw_assert_same(0,(int)$db->where('visit_result_id',$atomicResult)->count_all_results('clinical_reviews'),'review insert rolled back on event failure');
+$db->query('DROP TRIGGER vcw_review_event_fail');
 echo "TASK8C_REVIEW_API_PRESENT=PASS\nTASK8C_CORRECTION_REVIEW=PASS\nTASK8C_IDEMPOTENCY=PASS\nTASK8C_APPROVAL_GUARD=PASS\nTASK8C_SEPARATE_DOCTOR_AUTHORITIES=PASS\nTASK8C_DUAL_AUTHORITY_RD_PRECEDENCE=PASS\nTASK8C_AUTHORITY_NEGATIVE_MATRIX=PASS\nTASK8C_PERFORMER_OWN_RESULT_GUARD=PASS\n";

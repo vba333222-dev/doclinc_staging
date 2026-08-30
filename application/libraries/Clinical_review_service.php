@@ -19,6 +19,12 @@ class Clinical_review_service
         if ($decision==='approved') return $this->fail('REVIEW_APPROVAL_REQUIRES_COMPLETION');
         if (!$this->db->trans_begin()) return $this->fail('WRITE_FAILED');
         try {
+            $historic=$this->model->getByIdempotencyKey($key);
+            if($historic){
+                if((int)$historic->request_id!==$requestId||(int)$historic->visit_result_id!==$visitResultId||(int)$historic->reviewer_user_id!==$reviewerUserId||(string)$historic->decision!==$decision||(trim((string)$historic->correction_reason)!==trim($reason))||(trim((string)$historic->review_notes)!==trim($notes))) return $this->rollback('REVIEW_KEY_CONFLICT');
+                if(!$this->db->trans_commit()) return $this->fail('WRITE_FAILED');
+                return array('status'=>'success','clinical_review_id'=>(int)$historic->clinical_review_id,'review'=>$historic,'idempotent'=>true);
+            }
             $request=$this->db->query('SELECT * FROM requests WHERE request_id = ? FOR UPDATE',array($requestId))->row();
             if(!$request) return $this->rollback('REQUEST_NOT_FOUND');
             if((string)$request->request_status!=='Accepted') return $this->rollback('REQUEST_NOT_ACCEPTED');
