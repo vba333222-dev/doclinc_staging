@@ -494,7 +494,7 @@ class Visit_result_service
         if (!$successor || (int) $successor->supersedes_result_id !== (int) $predecessorResultId
             || (int) $successor->request_id !== (int) $requestId
             || (int) $successor->visit_assignment_id !== (int) $assignmentId
-            || (string) $successor->status !== 'draft') {
+            || !in_array((string) $successor->status, array('draft', 'submitted'), true)) {
             return null;
         }
         return $successor;
