@@ -244,6 +244,112 @@ class Visit_result_service
         }
     }
 
+    public function createCorrectionDraft($requestId, $performerUserId, $supersededResultId, $idempotencyKey)
+    {
+        $requestId = (int) $requestId;
+        $performerUserId = (int) $performerUserId;
+        $supersededResultId = (int) $supersededResultId;
+        if ($requestId < 1 || $performerUserId < 1 || $supersededResultId < 1 || !$this->schemaReady()) {
+            return $this->failure('ACCESS_DENIED');
+        }
+        if (!$this->validCorrectionKey($idempotencyKey)) {
+            return $this->failure('INVALID_CORRECTION_KEY');
+        }
+        $idempotencyKey = trim((string) $idempotencyKey);
+        if (!$this->db->trans_begin()) {
+            return $this->failure('WRITE_FAILED');
+        }
+        try {
+            $context = $this->lockedContext($requestId, $performerUserId, array('completed'));
+            if (empty($context['ok'])) {
+                return $this->rollbackFailure($context['code']);
+            }
+            $receiptKey = $this->correctionReceiptKey($idempotencyKey);
+            $receipt = $this->model->findRequestEventByDomainKeyForUpdate($receiptKey);
+            if ($receipt) {
+                $replay = $this->correctionReplay($receipt, $requestId, $supersededResultId, (int) $context['assignment']->visit_assignment_id);
+                if (!$replay) {
+                    return $this->rollbackFailure('CORRECTION_KEY_CONFLICT');
+                }
+                if (!$this->commit()) { return $this->failure('WRITE_FAILED'); }
+                return $this->correctionSuccess($replay, true);
+            }
+            $latest = $this->model->getLatestSubmittedForUpdate($requestId);
+            if (!$latest || (int) $latest->visit_result_id !== $supersededResultId) {
+                return $this->rollbackFailure('CORRECTION_NOT_ALLOWED');
+            }
+            $predecessor = $this->model->findByIdForUpdate($supersededResultId);
+            if (!$predecessor || (string) $predecessor->status !== 'submitted'
+                || (int) $predecessor->request_id !== $requestId
+                || (int) $predecessor->visit_assignment_id !== (int) $context['assignment']->visit_assignment_id
+                || (int) $predecessor->performer_user_id !== $performerUserId
+                || (int) $predecessor->performer_staff_id !== (int) $context['assignment']->staff_id) {
+                return $this->rollbackFailure('CORRECTION_NOT_ALLOWED');
+            }
+            $review = $this->db->query(
+                'SELECT * FROM ' . $this->db->dbprefix('clinical_reviews') . ' WHERE visit_result_id = ? LIMIT 1 FOR UPDATE',
+                array($supersededResultId)
+            )->row();
+            if (!$review) {
+                return $this->rollbackFailure('CORRECTION_REVIEW_REQUIRED');
+            }
+            if ((string) $review->decision !== 'correction_required') {
+                return $this->rollbackFailure('CORRECTION_NOT_ALLOWED');
+            }
+            $successor = $this->model->getSuccessorForPredecessorForUpdate($supersededResultId);
+            if ($successor) {
+                return $this->rollbackFailure('CORRECTION_ALREADY_EXISTS');
+            }
+            if (!$this->storedPayloadValid($predecessor)) {
+                return $this->rollbackFailure('INVALID_RESULT_PAYLOAD');
+            }
+            $now = $this->now();
+            $successorId = $this->model->insertCorrectionDraft(array(
+                'request_id' => $requestId,
+                'visit_assignment_id' => (int) $context['assignment']->visit_assignment_id,
+                'version_no' => (int) $predecessor->version_no + 1,
+                'supersedes_result_id' => $supersededResultId,
+                'performer_user_id' => $performerUserId,
+                'performer_staff_id' => (int) $context['assignment']->staff_id,
+                'status' => 'draft',
+                'draft_revision' => 0,
+                'observation_summary' => $predecessor->observation_summary,
+                'findings_json' => $predecessor->findings_json,
+                'actions_json' => $predecessor->actions_json,
+                'performer_notes' => $predecessor->performer_notes,
+                'created_at' => $now,
+                'updated_at' => $now,
+                'submitted_at' => null,
+                'submitted_by_user_id' => null,
+                'submission_key' => null,
+            ));
+            if ($successorId < 1 || $this->db->trans_status() === false) {
+                return $this->rollbackFailure('WRITE_FAILED');
+            }
+            $successor = $this->model->findByIdForUpdate($successorId);
+            if (!$successor || !doclinc_append_request_event($requestId, 'visit_result.correction_draft_created', array(
+                'puskesmas_code' => (string) ($context['request']->assigned_puskesmas_code ?? ''),
+                'actor_user_id' => $performerUserId,
+                'actor_staff_id' => (int) $context['assignment']->staff_id,
+                'actor_role' => (string) ($context['identity']['role'] ?? ''),
+                'domain_event_key' => $receiptKey,
+                'metadata' => array(
+                    'predecessor_visit_result_id' => $supersededResultId,
+                    'successor_visit_result_id' => $successorId,
+                    'visit_assignment_id' => (int) $context['assignment']->visit_assignment_id,
+                    'version_no' => (int) $successor->version_no,
+                ),
+            ), get_instance())) {
+                return $this->rollbackFailure('WRITE_FAILED');
+            }
+            if (!$this->commit()) { return $this->failure('WRITE_FAILED'); }
+            return $this->correctionSuccess($successor, false);
+        } catch (Throwable $exception) {
+            $this->db->trans_rollback();
+            return $this->failure('WRITE_FAILED');
+        }
+    }
+
     private function lockedContext($requestId, $performerUserId, ?array $allowedStates = null)
     {
         $request = $this->db->query(
@@ -362,6 +468,38 @@ class Visit_result_service
         return is_string($submissionKey) && trim($submissionKey) !== '' && strlen(trim($submissionKey)) <= 191 && $this->validUtf8($submissionKey);
     }
 
+    private function validCorrectionKey($idempotencyKey)
+    {
+        return is_string($idempotencyKey) && trim($idempotencyKey) !== '' && strlen(trim($idempotencyKey)) <= 191 && $this->validUtf8($idempotencyKey);
+    }
+
+    private function correctionReceiptKey($idempotencyKey)
+    {
+        return 'visit-result-correction:' . hash('sha256', trim((string) $idempotencyKey));
+    }
+
+    private function correctionReplay($receipt, $requestId, $predecessorResultId, $assignmentId)
+    {
+        if ((string) $receipt->event_type !== 'visit_result.correction_draft_created' || (int) $receipt->request_id !== (int) $requestId) {
+            return null;
+        }
+        $metadata = json_decode((string) ($receipt->metadata_json ?? ''), true);
+        if (!is_array($metadata)
+            || (int) ($metadata['predecessor_visit_result_id'] ?? 0) !== (int) $predecessorResultId
+            || (int) ($metadata['visit_assignment_id'] ?? 0) !== (int) $assignmentId
+            || (int) ($metadata['successor_visit_result_id'] ?? 0) < 1) {
+            return null;
+        }
+        $successor = $this->model->findByIdForUpdate((int) $metadata['successor_visit_result_id']);
+        if (!$successor || (int) $successor->supersedes_result_id !== (int) $predecessorResultId
+            || (int) $successor->request_id !== (int) $requestId
+            || (int) $successor->visit_assignment_id !== (int) $assignmentId
+            || (string) $successor->status !== 'draft') {
+            return null;
+        }
+        return $successor;
+    }
+
     private function validMeasurements(array $measurements, array $measurementIds, array $context, $result)
     {
         if (count($measurements) !== count($measurementIds)) {
@@ -436,6 +574,7 @@ class Visit_result_service
         return $this->db && $this->db->table_exists('visit_results') && $this->db->table_exists('visit_dispositions')
             && $this->db->table_exists('request_visit_performer_assignments') && $this->db->table_exists('nakes_facility_placements')
             && $this->db->table_exists('request_vital_sign_measurements') && $this->db->table_exists('visit_result_vital_sign_measurements')
+            && $this->db->table_exists('clinical_reviews')
             && $this->db->table_exists('request_events');
     }
 
@@ -477,6 +616,19 @@ class Visit_result_service
             'visit_assignment_id' => (int) $row->visit_assignment_id,
             'version_no' => (int) $row->version_no,
             'measurement_ids' => $measurementIds,
+            'idempotent_replay' => $idempotentReplay === true,
+        );
+    }
+
+    private function correctionSuccess($row, $idempotentReplay)
+    {
+        return array(
+            'status' => 'success',
+            'visit_result_id' => (int) $row->visit_result_id,
+            'request_id' => (int) $row->request_id,
+            'visit_assignment_id' => (int) $row->visit_assignment_id,
+            'version_no' => (int) $row->version_no,
+            'draft_revision' => (int) $row->draft_revision,
             'idempotent_replay' => $idempotentReplay === true,
         );
     }

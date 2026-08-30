@@ -50,6 +50,35 @@ class Visit_result_m
         )->row();
     }
 
+    public function getLatestSubmittedForUpdate($requestId)
+    {
+        return $this->db->query(
+            "SELECT * FROM " . $this->db->dbprefix('visit_results') . " WHERE request_id = ? AND status = 'submitted' ORDER BY version_no DESC, visit_result_id DESC LIMIT 1 FOR UPDATE",
+            array((int) $requestId)
+        )->row();
+    }
+
+    public function getSuccessorForPredecessorForUpdate($predecessorResultId)
+    {
+        return $this->db->query(
+            'SELECT * FROM ' . $this->db->dbprefix('visit_results') . ' WHERE supersedes_result_id = ? ORDER BY version_no DESC, visit_result_id DESC LIMIT 1 FOR UPDATE',
+            array((int) $predecessorResultId)
+        )->row();
+    }
+
+    public function insertCorrectionDraft(array $row)
+    {
+        return $this->db->insert('visit_results', $row) ? (int) $this->db->insert_id() : 0;
+    }
+
+    public function findRequestEventByDomainKeyForUpdate($domainEventKey)
+    {
+        return $this->db->query(
+            'SELECT * FROM ' . $this->db->dbprefix('request_events') . ' WHERE domain_event_key = ? LIMIT 1 FOR UPDATE',
+            array((string) $domainEventKey)
+        )->row();
+    }
+
     public function insertInitialDraft(array $row)
     {
         return $this->db->insert('visit_results', $row) ? (int) $this->db->insert_id() : 0;
