@@ -71,4 +71,64 @@ class Visit_result_m
         }
         return (int) $this->db->affected_rows();
     }
+
+    public function findBySubmissionKey($submissionKey)
+    {
+        return $this->db->query(
+            'SELECT * FROM ' . $this->db->dbprefix('visit_results') . ' WHERE submission_key = ? LIMIT 1',
+            array((string) $submissionKey)
+        )->row();
+    }
+
+    public function measurementRowsForUpdate(array $measurementIds)
+    {
+        if (empty($measurementIds)) {
+            return array();
+        }
+        $placeholders = implode(',', array_fill(0, count($measurementIds), '?'));
+        return $this->db->query(
+            'SELECT * FROM ' . $this->db->dbprefix('request_vital_sign_measurements')
+                . ' WHERE measurement_id IN (' . $placeholders . ') ORDER BY measurement_id ASC FOR UPDATE',
+            array_values($measurementIds)
+        )->result();
+    }
+
+    public function insertMeasurementLinks($visitResultId, array $measurementIds, $linkedAt)
+    {
+        foreach ($measurementIds as $measurementId) {
+            if (!$this->db->insert('visit_result_vital_sign_measurements', array(
+                'visit_result_id' => (int) $visitResultId,
+                'measurement_id' => (int) $measurementId,
+                'linked_at' => (string) $linkedAt,
+            ))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public function linkedMeasurementIds($visitResultId)
+    {
+        $rows = $this->db->query(
+            'SELECT measurement_id FROM ' . $this->db->dbprefix('visit_result_vital_sign_measurements')
+                . ' WHERE visit_result_id = ? ORDER BY measurement_id ASC',
+            array((int) $visitResultId)
+        )->result();
+        return array_map(function ($row) { return (int) $row->measurement_id; }, $rows);
+    }
+
+    public function guardedDraftSubmit($visitResultId, $performerUserId, $submissionKey, $submittedAt)
+    {
+        $this->db->set('status', 'submitted');
+        $this->db->set('submitted_at', (string) $submittedAt);
+        $this->db->set('submitted_by_user_id', (int) $performerUserId);
+        $this->db->set('submission_key', (string) $submissionKey);
+        $this->db->set('updated_at', (string) $submittedAt);
+        $this->db->where('visit_result_id', (int) $visitResultId);
+        $this->db->where('status', 'draft');
+        if (!$this->db->update('visit_results')) {
+            return false;
+        }
+        return (int) $this->db->affected_rows();
+    }
 }
