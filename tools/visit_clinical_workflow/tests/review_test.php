@@ -118,6 +118,15 @@ $doctorApprovalResult=(int)$db->insert_id();
 $doctorApproval=$reviewService->review($doctorApprovalRequest,$doctorApprovalResult,$doctorApprovalPerformer,'approved',null,null,'doctor-approval-key');
 vcw_assert_same('success',$doctorApproval['status']??null,'doctor performer approval succeeds');
 vcw_assert_same('selesai',(string)$db->where('visit_assignment_id',$doctorApprovalAssignment)->get('request_visit_performer_assignments')->row()->status,'doctor performer assignment completed');
+$assignmentFailRequest=30301; $assignmentFailRd=30302; $assignmentFailPerformer=30303; $assignmentFailAssignment=review8c_doctor_fixture($db,$assignmentFailRequest,$assignmentFailRd,$assignmentFailPerformer,'REVIEW-ASSIGN-FAIL-'.$assignmentFailRequest);
+$db->query("INSERT INTO visit_results (request_id,visit_assignment_id,version_no,performer_user_id,performer_staff_id,status,draft_revision,findings_json,actions_json,created_at,updated_at,submitted_at,submitted_by_user_id,submission_key) VALUES ($assignmentFailRequest,$assignmentFailAssignment,1,$assignmentFailPerformer,$assignmentFailPerformer,'submitted',0,'[]','[]',NOW(6),NOW(6),NOW(6),$assignmentFailPerformer,'assignment-fail-result')");
+$assignmentFailResult=(int)$db->insert_id();
+$db->query("CREATE TRIGGER vcw_assignment_fail BEFORE UPDATE ON request_visit_performer_assignments FOR EACH ROW IF NEW.status='selesai' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='forced assignment failure'; END IF");
+$assignmentFailReply=$reviewService->review($assignmentFailRequest,$assignmentFailResult,$assignmentFailRd,'approved',null,null,'assignment-fail-key');
+vcw_assert_same('WRITE_FAILED',$assignmentFailReply['safe_error_code']??null,'assignment failure is domain-safe');
+vcw_assert_same(0,(int)$db->where('visit_result_id',$assignmentFailResult)->count_all_results('clinical_reviews'),'assignment failure rolls back review');
+vcw_assert_same('aktif',(string)$db->where('visit_assignment_id',$assignmentFailAssignment)->get('request_visit_performer_assignments')->row()->status,'assignment failure preserves active state');
+$db->query('DROP TRIGGER vcw_assignment_fail');
 
 // Dedicated same-actor dual-authority fixture: RD provenance must win.
 $dualRequest=28401; $dualUser=28402; $dualFacility='REVIEW-DUAL-'.$dualRequest;
