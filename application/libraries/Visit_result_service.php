@@ -2,6 +2,7 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 require_once APPPATH . 'models/Visit_result_m.php';
+require_once APPPATH . 'helpers/request_event_helper.php';
 require_once __DIR__ . '/Care_team_policy.php';
 
 class Visit_result_service
@@ -136,7 +137,114 @@ class Visit_result_service
         }
     }
 
-    private function lockedContext($requestId, $performerUserId)
+    public function submit($visitResultId, $performerUserId, array $measurementIds, $submissionKey)
+    {
+        $visitResultId = (int) $visitResultId;
+        $performerUserId = (int) $performerUserId;
+        $normalizedIds = $this->normalizeMeasurementIds($measurementIds);
+        if ($visitResultId < 1 || $performerUserId < 1 || !$this->schemaReady()) {
+            return $this->failure('RESULT_NOT_FOUND');
+        }
+        if (empty($normalizedIds['valid'])) {
+            return $this->failure('INVALID_MEASUREMENT_REFERENCES');
+        }
+        if (!$this->validSubmissionKey($submissionKey)) {
+            return $this->failure('INVALID_SUBMISSION_KEY');
+        }
+        $submissionKey = trim((string) $submissionKey);
+        $candidate = $this->model->findById($visitResultId);
+        if (!$candidate) {
+            return $this->failure('RESULT_NOT_FOUND');
+        }
+        if (!$this->db->trans_begin()) {
+            return $this->failure('WRITE_FAILED');
+        }
+        try {
+            $context = $this->lockedContext((int) $candidate->request_id, $performerUserId, array('completed'));
+            if (empty($context['ok'])) {
+                return $this->rollbackFailure($context['code']);
+            }
+            $result = $this->model->findByIdForUpdate($visitResultId);
+            if (!$result || (int) $result->request_id !== (int) $context['request']->request_id) {
+                return $this->rollbackFailure('RESULT_NOT_FOUND');
+            }
+            if ((int) $result->visit_assignment_id !== (int) $context['assignment']->visit_assignment_id
+                || (int) $result->performer_user_id !== $performerUserId
+                || (int) $result->performer_staff_id !== (int) $context['assignment']->staff_id) {
+                return $this->rollbackFailure('ACCESS_DENIED');
+            }
+            $latest = $this->model->getLatestForAssignmentForUpdate((int) $context['assignment']->visit_assignment_id);
+            if (!$latest || (int) $latest->visit_result_id !== $visitResultId) {
+                return $this->rollbackFailure('RESULT_CONFLICT');
+            }
+            $keyOwner = $this->model->findBySubmissionKey($submissionKey);
+            if ($keyOwner && (int) $keyOwner->visit_result_id !== $visitResultId) {
+                return $this->rollbackFailure('SUBMISSION_KEY_CONFLICT');
+            }
+            if ((string) $result->status === 'submitted') {
+                if ((string) $result->submission_key !== $submissionKey) {
+                    return $this->rollbackFailure('RESULT_ALREADY_SUBMITTED');
+                }
+                if ($this->model->linkedMeasurementIds($visitResultId) !== $normalizedIds['values']) {
+                    return $this->rollbackFailure('SUBMISSION_KEY_CONFLICT');
+                }
+                if (!$this->commit()) { return $this->failure('WRITE_FAILED'); }
+                return $this->submissionSuccess($result, $normalizedIds['values'], true);
+            }
+            if ((string) $result->status !== 'draft') {
+                return $this->rollbackFailure('RESULT_CONFLICT');
+            }
+            if ($keyOwner) {
+                return $this->rollbackFailure('SUBMISSION_KEY_CONFLICT');
+            }
+            if (!$this->storedPayloadValid($result)) {
+                return $this->rollbackFailure('INVALID_RESULT_PAYLOAD');
+            }
+            $measurements = $this->model->measurementRowsForUpdate($normalizedIds['values']);
+            if (!$this->validMeasurements($measurements, $normalizedIds['values'], $context, $result)) {
+                return $this->rollbackFailure('INVALID_MEASUREMENT_REFERENCES');
+            }
+            $now = $this->now();
+            if (!$this->model->insertMeasurementLinks($visitResultId, $normalizedIds['values'], $now)) {
+                return $this->rollbackFailure('WRITE_FAILED');
+            }
+            $affected = $this->model->guardedDraftSubmit($visitResultId, $performerUserId, $submissionKey, $now);
+            if ($affected === false || $this->db->trans_status() === false) {
+                $this->db->trans_rollback();
+                return $this->submissionWriteFailure($submissionKey, $visitResultId);
+            }
+            if ($affected !== 1) {
+                $fresh = $this->model->findByIdForUpdate($visitResultId);
+                if (!$fresh) { return $this->rollbackFailure('RESULT_NOT_FOUND'); }
+                if ((string) $fresh->status === 'submitted') { return $this->rollbackFailure('RESULT_ALREADY_SUBMITTED'); }
+                return $this->rollbackFailure('WRITE_FAILED');
+            }
+            if (!doclinc_append_request_event((int) $context['request']->request_id, 'visit_result.submitted', array(
+                'puskesmas_code' => (string) ($context['request']->assigned_puskesmas_code ?? ''),
+                'actor_user_id' => $performerUserId,
+                'actor_staff_id' => (int) $context['assignment']->staff_id,
+                'actor_role' => (string) ($context['identity']['role'] ?? ''),
+                'domain_event_key' => 'visit-result:' . $visitResultId . ':submitted',
+                'metadata' => array(
+                    'visit_result_id' => $visitResultId,
+                    'version_no' => (int) $result->version_no,
+                    'visit_assignment_id' => (int) $result->visit_assignment_id,
+                ),
+            ), get_instance())) {
+                return $this->rollbackFailure('WRITE_FAILED');
+            }
+            $submitted = $this->model->findByIdForUpdate($visitResultId);
+            if (!$submitted || !$this->commit()) {
+                return $this->failure('WRITE_FAILED');
+            }
+            return $this->submissionSuccess($submitted, $normalizedIds['values'], false);
+        } catch (Throwable $exception) {
+            $this->db->trans_rollback();
+            return $this->submissionWriteFailure($submissionKey, $visitResultId);
+        }
+    }
+
+    private function lockedContext($requestId, $performerUserId, ?array $allowedStates = null)
     {
         $request = $this->db->query(
             'SELECT * FROM ' . $this->db->dbprefix('requests') . ' WHERE request_id = ? FOR UPDATE',
@@ -155,7 +263,8 @@ class Visit_result_service
         $state = function_exists('doclinc_normalize_visit_status')
             ? doclinc_normalize_visit_status($request->visit_status ?? '')
             : strtolower(trim((string) ($request->visit_status ?? '')));
-        if (!in_array($state, array('arrived', 'in_service', 'completed'), true)) {
+        $allowedStates = $allowedStates ?: array('arrived', 'in_service', 'completed');
+        if (!in_array($state, $allowedStates, true)) {
             return array('ok' => false, 'code' => 'INVALID_WORKFLOW_STATE');
         }
         $assignments = $this->db->query(
@@ -211,6 +320,67 @@ class Visit_result_service
         ));
     }
 
+    private function storedPayloadValid($result)
+    {
+        $findings = json_decode((string) $result->findings_json, true);
+        $actions = json_decode((string) $result->actions_json, true);
+        if (!is_array($findings) || !is_array($actions) || json_last_error() !== JSON_ERROR_NONE) {
+            return false;
+        }
+        $normalized = $this->normalizePayload(array(
+            'observation_summary' => $result->observation_summary,
+            'findings' => $findings,
+            'actions' => $actions,
+            'performer_notes' => $result->performer_notes,
+        ));
+        return !empty($normalized['valid']);
+    }
+
+    private function normalizeMeasurementIds(array $measurementIds)
+    {
+        $normalized = array();
+        foreach ($measurementIds as $measurementId) {
+            if (is_int($measurementId)) {
+                $id = $measurementId;
+            } elseif (is_string($measurementId) && preg_match('/^[1-9][0-9]*$/D', $measurementId) === 1) {
+                $id = (int) $measurementId;
+            } else {
+                return array('valid' => false);
+            }
+            if ($id < 1 || isset($normalized[$id])) {
+                return array('valid' => false);
+            }
+            $normalized[$id] = $id;
+        }
+        $values = array_values($normalized);
+        sort($values, SORT_NUMERIC);
+        return array('valid' => true, 'values' => $values);
+    }
+
+    private function validSubmissionKey($submissionKey)
+    {
+        return is_string($submissionKey) && trim($submissionKey) !== '' && strlen(trim($submissionKey)) <= 191 && $this->validUtf8($submissionKey);
+    }
+
+    private function validMeasurements(array $measurements, array $measurementIds, array $context, $result)
+    {
+        if (count($measurements) !== count($measurementIds)) {
+            return false;
+        }
+        $assignment = $context['assignment'];
+        foreach ($measurements as $measurement) {
+            if ((int) $measurement->request_id !== (int) $result->request_id
+                || (int) $measurement->measured_by_user_id !== (int) $assignment->user_id
+                || (int) $measurement->visit_performer_user_id !== (int) $assignment->user_id
+                || (int) $measurement->measured_by_staff_id !== (int) $assignment->staff_id
+                || (string) $measurement->measured_at < (string) $assignment->assigned_at
+                || (!empty($assignment->ended_at) && (string) $measurement->measured_at > (string) $assignment->ended_at)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private function normalizeItems($items)
     {
         if (!is_array($items) || !$this->isList($items) || count($items) > 50) { return array('valid' => false); }
@@ -264,7 +434,9 @@ class Visit_result_service
     private function schemaReady()
     {
         return $this->db && $this->db->table_exists('visit_results') && $this->db->table_exists('visit_dispositions')
-            && $this->db->table_exists('request_visit_performer_assignments') && $this->db->table_exists('nakes_facility_placements');
+            && $this->db->table_exists('request_visit_performer_assignments') && $this->db->table_exists('nakes_facility_placements')
+            && $this->db->table_exists('request_vital_sign_measurements') && $this->db->table_exists('visit_result_vital_sign_measurements')
+            && $this->db->table_exists('request_events');
     }
 
     private function replayCanonicalDraft($requestId, $assignmentId, $performerUserId)
@@ -294,6 +466,28 @@ class Visit_result_service
             'draft_revision' => (int) $row->draft_revision,
             'created' => $created === true,
         );
+    }
+
+    private function submissionSuccess($row, array $measurementIds, $idempotentReplay)
+    {
+        return array(
+            'status' => 'success',
+            'visit_result_id' => (int) $row->visit_result_id,
+            'request_id' => (int) $row->request_id,
+            'visit_assignment_id' => (int) $row->visit_assignment_id,
+            'version_no' => (int) $row->version_no,
+            'measurement_ids' => $measurementIds,
+            'idempotent_replay' => $idempotentReplay === true,
+        );
+    }
+
+    private function submissionWriteFailure($submissionKey, $visitResultId)
+    {
+        $owner = $this->model->findBySubmissionKey($submissionKey);
+        if ($owner && (int) $owner->visit_result_id !== (int) $visitResultId) {
+            return $this->failure('SUBMISSION_KEY_CONFLICT');
+        }
+        return $this->failure('WRITE_FAILED');
     }
 
     private function rollbackFailure($code)
