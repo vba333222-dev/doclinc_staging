@@ -26,6 +26,8 @@ class Clinical_review_service
             }
             $request=$this->db->query('SELECT * FROM requests WHERE request_id = ? FOR UPDATE',array($requestId))->row();
             if(!$request) return $this->rollback('REQUEST_NOT_FOUND');
+            $existing=$this->model->getByIdempotencyKeyForUpdate($key);
+            if($existing){ return $this->replayOrConflict($existing,$requestId,$visitResultId,$reviewerUserId,$decision,$reason,$notes,false,false); }
             if((string)$request->request_status!=='Accepted') return $this->rollback('REQUEST_NOT_ACCEPTED');
             if(strtolower(trim((string)$request->visit_status))!=='completed') return $this->rollback('INVALID_WORKFLOW_STATE');
             if((string)$request->consultation_mode!=='visit') return $this->rollback('VISIT_NOT_REQUIRED');
@@ -43,8 +45,6 @@ class Clinical_review_service
             $latest=$this->db->query("SELECT visit_result_id FROM visit_results WHERE request_id=? AND status='submitted' ORDER BY version_no DESC, visit_result_id DESC LIMIT 1",array($requestId))->row();
             if(!$latest || (int)$latest->visit_result_id!==$visitResultId) return $this->rollback('RESULT_NOT_LATEST');
             if($performerOk && ((int)$result->visit_assignment_id !== (int)$assignment->visit_assignment_id || (int)$result->performer_user_id !== $reviewerUserId || (int)$result->performer_user_id !== (int)$assignment->user_id || (int)$result->performer_staff_id !== (int)$assignment->staff_id)) return $this->rollback('REVIEW_RESULT_PERFORMER_MISMATCH');
-            $existing=$this->model->getByIdempotencyKey($key);
-            if($existing){ return $this->replayOrConflict($existing,$requestId,$visitResultId,$reviewerUserId,$decision,$reason,$notes,$rdOk,$performerOk); }
             $existingResult=$this->model->getForResultForUpdate($visitResultId);
             if($existingResult) return $this->rollback('REVIEW_ALREADY_EXISTS');
             if(!$rdOk && !$performerOk) return $this->rollback('ACCESS_DENIED');
