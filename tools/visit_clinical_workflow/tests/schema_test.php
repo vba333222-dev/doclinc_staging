@@ -233,6 +233,34 @@ if (!$task2) {
     echo "ASSIGNMENT_OPERATION_SHAPE_CONSTRAINTS=PASS\n";
     echo "GLOBAL_IDEMPOTENCY_KEY_UNIQUENESS=PASS\n";
     echo "TASK2_SCHEMA_CONSTRAINTS=PASS\n";
+
+    if ((getenv('VCW_TASK8B_SCHEMA') ?: '') === '1') {
+        $reviewColumns = array();
+        $columnQuery = vcw_db()->query("SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE FROM information_schema.columns WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'clinical_reviews'");
+        while ($columnRow = $columnQuery->fetch_assoc()) { $reviewColumns[$columnRow['COLUMN_NAME']] = $columnRow; }
+        vcw_assert_true(isset($reviewColumns['reviewer_visit_assignment_id']), 'Task 8B performer provenance column missing');
+        vcw_assert_same('YES', $reviewColumns['responsible_assignment_id']['IS_NULLABLE'] ?? null, 'Task 8B Responsible Doctor provenance must be nullable');
+        vcw_assert_same('bigint(20) unsigned', $reviewColumns['reviewer_visit_assignment_id']['COLUMN_TYPE'] ?? null, 'Task 8B performer provenance type mismatch');
+        $performerFk = vcw_db()->query("SELECT COUNT(*) AS c FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'clinical_reviews' AND COLUMN_NAME = 'reviewer_visit_assignment_id' AND REFERENCED_TABLE_NAME = 'request_visit_performer_assignments' AND REFERENCED_COLUMN_NAME = 'visit_assignment_id'")->fetch_assoc();
+        vcw_assert_same(1, (int) ($performerFk['c'] ?? 0), 'Task 8B performer provenance FK missing');
+        $createReview = vcw_db()->query('SHOW CREATE TABLE clinical_reviews')->fetch_assoc();
+        $createSql = strtolower((string) ($createReview['Create Table'] ?? ''));
+        vcw_assert_true(strpos($createSql, 'responsible_assignment_id` is not null') !== false && strpos($createSql, 'reviewer_visit_assignment_id` is not null') !== false, 'Task 8B XOR provenance CHECK missing');
+        vcw_assert_true(strpos($createSql, 'uq_clinical_review_result') !== false && strpos($createSql, 'uq_clinical_review_idempotency') !== false, 'Task 8B existing review uniques missing');
+        $performerAssignment = (int) $scalar('SELECT visit_assignment_id FROM request_visit_performer_assignments WHERE request_id = 10002 LIMIT 1');
+        $performerResult = 0;
+        vcw_db()->query("INSERT INTO visit_results (request_id,visit_assignment_id,version_no,performer_user_id,performer_staff_id,status,findings_json,actions_json,created_at,updated_at) VALUES (10002," . $performerAssignment . ",2,10001,10001,'draft','[]','[]',NOW(6),NOW(6))");
+        $performerResult = (int) vcw_db()->insert_id;
+        vcw_db()->query("INSERT INTO clinical_reviews (request_id,visit_result_id,reviewer_user_id,responsible_assignment_id,reviewer_visit_assignment_id,decision,reviewed_at,idempotency_key) VALUES (10002," . $performerResult . ",10001,NULL," . $performerAssignment . ",'approved',NOW(6),'task8b-performer-valid')");
+        $expectFailure("INSERT INTO clinical_reviews (request_id,visit_result_id,reviewer_user_id,responsible_assignment_id,reviewer_visit_assignment_id,decision,reviewed_at,idempotency_key) VALUES (10002," . $performerResult . ",10001,NULL,NULL,'approved',NOW(6),'task8b-no-provenance')", 'XOR must reject missing provenance');
+        $expectFailure("INSERT INTO clinical_reviews (request_id,visit_result_id,reviewer_user_id,responsible_assignment_id,reviewer_visit_assignment_id,decision,reviewed_at,idempotency_key) VALUES (10002," . $performerResult . ",10001," . (int) $responsible . "," . $performerAssignment . ",'approved',NOW(6),'task8b-double-provenance')", 'XOR must reject double provenance');
+        $expectFailure("INSERT INTO clinical_reviews (request_id,visit_result_id,reviewer_user_id,responsible_assignment_id,reviewer_visit_assignment_id,decision,reviewed_at,idempotency_key) VALUES (10002," . $performerResult . ",10001,NULL,999999999,'approved',NOW(6),'task8b-invalid-performer-fk')", 'performer provenance FK must reject unknown assignment');
+        vcw_assert_same('INT', strtoupper(substr($reviewColumns['reviewer_user_id']['COLUMN_TYPE'], 0, 3)), 'reviewer user type must remain integer');
+        $assignmentColumns = vcw_table_columns('request_visit_performer_assignments');
+        foreach ($assignmentColumns as $assignmentColumn) { vcw_assert_true($assignmentColumn['COLUMN_NAME'] !== 'completion_review_id', 'completion_review_id must not be added'); }
+        echo "TASK8B_PROVENANCE_DB_CONSTRAINTS=PASS\n";
+        echo "TASK8B_SCHEMA_TARGET_ASSERTIONS=PASS\n";
+    }
 }
 
 echo "BASELINE_SCHEMA_RECONCILIATION=PASS\n";
