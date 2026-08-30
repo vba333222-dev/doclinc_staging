@@ -57,7 +57,7 @@ vcw_assert_same('REVIEW_KEY_CONFLICT',$historyConflict['safe_error_code']??null,
 $replay = $reviewService->review($fixture['request'], $resultId, $fixture['doctor'], 'correction_required', 'Perlu koreksi.', 'Catatan review', 'review-key-' . $fixture['request']);
 vcw_assert_true(($replay['idempotent'] ?? false) === true, 'review idempotent replay');
 $approval = $reviewService->review($fixture['request'], $resultId, $fixture['doctor'], 'approved', null, null, 'review-approval-' . $fixture['request']);
-vcw_assert_same('REVIEW_APPROVAL_REQUIRES_COMPLETION', $approval['safe_error_code'] ?? null, 'approval requires Task 8D completion');
+vcw_assert_same('ACCESS_DENIED', $approval['safe_error_code'] ?? null, 'second terminal review denied');
 vcw_assert_same(1, (int) $db->where('visit_result_id', $resultId)->count_all_results('clinical_reviews'), 'one immutable review per result');
 
 $doctorRequest = 28201; $doctorA = 28202; $doctorB = 28203; $doctorFacility = 'REVIEW-DOCTOR-' . $doctorRequest;
@@ -76,6 +76,37 @@ vcw_assert_true($doctorReview['review']->responsible_assignment_id === null && (
 $performerCorrection = $resultService->createCorrectionDraft($validRequest, $validB, $doctorResult, 'review-performer-correction-key');
 vcw_assert_same('success', $performerCorrection['status'] ?? null, 'performer review integrates with Task 7 correction');
 vcw_assert_same(2, (int) ($performerCorrection['version_no'] ?? 0), 'performer correction creates v2');
+
+$approvalRequest=30001; $approvalRd=30002; $approvalPerformer=30003; $approvalFacility='REVIEW-APPROVAL-'.$approvalRequest;
+$approvalAssignment=review8c_doctor_fixture($db,$approvalRequest,$approvalRd,$approvalPerformer,$approvalFacility);
+$db->query("INSERT INTO visit_results (request_id,visit_assignment_id,version_no,performer_user_id,performer_staff_id,status,draft_revision,findings_json,actions_json,created_at,updated_at,submitted_at,submitted_by_user_id,submission_key) VALUES ($approvalRequest,$approvalAssignment,1,$approvalPerformer,$approvalPerformer,'submitted',0,'[]','[]',NOW(6),NOW(6),NOW(6),$approvalPerformer,'approval-result')");
+$approvalResult=(int)$db->insert_id();
+$approval=$reviewService->review($approvalRequest,$approvalResult,$approvalRd,'approved',null,null,'approval-key');
+vcw_assert_same('success',$approval['status']??null,'approved review succeeds');
+$approvalRow=$db->where('clinical_review_id',(int)$approval['clinical_review_id'])->get('clinical_reviews')->row();
+$approvalAssignmentRow=$db->where('visit_assignment_id',$approvalAssignment)->get('request_visit_performer_assignments')->row();
+vcw_assert_same('approved',(string)($approvalRow->decision??''),'approved decision persisted');
+vcw_assert_same('selesai',(string)($approvalAssignmentRow->status??''),'approval completes assignment');
+vcw_assert_true(!empty($approvalAssignmentRow->completed_at),'approval sets completed_at');
+vcw_assert_same(1,(int)$db->where('request_id',$approvalRequest)->where('event_type','visit_result.approved')->count_all_results('request_events'),'approval event persisted');
+$approvalReplay=$reviewService->review($approvalRequest,$approvalResult,$approvalRd,'approved',null,null,'approval-key');
+vcw_assert_true(($approvalReplay['idempotent']??false)===true && (int)$approvalReplay['clinical_review_id']===(int)$approval['clinical_review_id'],'approval idempotent replay');
+$atomicApprovalRequest=30101; $atomicApprovalRd=30102; $atomicApprovalPerformer=30103; $atomicApprovalFacility='REVIEW-APPROVAL-ATOMIC-'.$atomicApprovalRequest;
+$atomicApprovalAssignment=review8c_doctor_fixture($db,$atomicApprovalRequest,$atomicApprovalRd,$atomicApprovalPerformer,$atomicApprovalFacility);
+$db->query("INSERT INTO visit_results (request_id,visit_assignment_id,version_no,performer_user_id,performer_staff_id,status,draft_revision,findings_json,actions_json,created_at,updated_at,submitted_at,submitted_by_user_id,submission_key) VALUES ($atomicApprovalRequest,$atomicApprovalAssignment,1,$atomicApprovalPerformer,$atomicApprovalPerformer,'submitted',0,'[]','[]',NOW(6),NOW(6),NOW(6),$atomicApprovalPerformer,'approval-atomic-result')");
+$atomicApprovalResult=(int)$db->insert_id();
+$db->query("CREATE TRIGGER vcw_approval_event_fail BEFORE INSERT ON request_events FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='forced approval event failure'");
+$atomicApprovalReply=$reviewService->review($atomicApprovalRequest,$atomicApprovalResult,$atomicApprovalRd,'approved',null,null,'approval-atomic-key');
+vcw_assert_same('WRITE_FAILED',$atomicApprovalReply['safe_error_code']??null,'approval event failure is domain-safe');
+vcw_assert_same(0,(int)$db->where('visit_result_id',$atomicApprovalResult)->count_all_results('clinical_reviews'),'approval review rolled back');
+vcw_assert_same('aktif',(string)$db->where('visit_assignment_id',$atomicApprovalAssignment)->get('request_visit_performer_assignments')->row()->status,'approval assignment rollback');
+$db->query('DROP TRIGGER vcw_approval_event_fail');
+$doctorApprovalRequest=30201; $doctorApprovalRd=30202; $doctorApprovalPerformer=30203; $doctorApprovalAssignment=review8c_doctor_fixture($db,$doctorApprovalRequest,$doctorApprovalRd,$doctorApprovalPerformer,'REVIEW-DOCTOR-APPROVAL-'.$doctorApprovalRequest);
+$db->query("INSERT INTO visit_results (request_id,visit_assignment_id,version_no,performer_user_id,performer_staff_id,status,draft_revision,findings_json,actions_json,created_at,updated_at,submitted_at,submitted_by_user_id,submission_key) VALUES ($doctorApprovalRequest,$doctorApprovalAssignment,1,$doctorApprovalPerformer,$doctorApprovalPerformer,'submitted',0,'[]','[]',NOW(6),NOW(6),NOW(6),$doctorApprovalPerformer,'doctor-approval-result')");
+$doctorApprovalResult=(int)$db->insert_id();
+$doctorApproval=$reviewService->review($doctorApprovalRequest,$doctorApprovalResult,$doctorApprovalPerformer,'approved',null,null,'doctor-approval-key');
+vcw_assert_same('success',$doctorApproval['status']??null,'doctor performer approval succeeds');
+vcw_assert_same('selesai',(string)$db->where('visit_assignment_id',$doctorApprovalAssignment)->get('request_visit_performer_assignments')->row()->status,'doctor performer assignment completed');
 
 // Dedicated same-actor dual-authority fixture: RD provenance must win.
 $dualRequest=28401; $dualUser=28402; $dualFacility='REVIEW-DUAL-'.$dualRequest;
