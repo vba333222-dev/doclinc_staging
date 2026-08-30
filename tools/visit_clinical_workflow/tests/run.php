@@ -1,7 +1,7 @@
 <?php
 
 $mode = isset($argv[1]) ? (string) $argv[1] : '';
-    if (!in_array($mode, array('schema', 'migrate', 'authorization', 'state_resolver', 'disposition', 'assignment', 'assignment_concurrency', 'placement', 'ci3_smoke', 'ci3_disposition', 'ci3_disposition_full', 'physical_start', 'physical_start_worker', 'row_lock_gate', 'physical_start_concurrency', 'start_first_revision', 'reassign_first_start', 'start_first_reassign', 'vital_signs', 'vital_signs_concurrency', 'result', 'result_concurrency', 'result_submission', 'result_submission_concurrency', 'result_correction', 'result_correction_concurrency', 'review', 'review_concurrency', 'review_cross_request', 'finalization'), true)) {
+    if (!in_array($mode, array('schema', 'migrate', 'authorization', 'state_resolver', 'disposition', 'assignment', 'assignment_concurrency', 'placement', 'ci3_smoke', 'ci3_disposition', 'ci3_disposition_full', 'physical_start', 'physical_start_worker', 'row_lock_gate', 'physical_start_concurrency', 'start_first_revision', 'reassign_first_start', 'start_first_reassign', 'vital_signs', 'vital_signs_concurrency', 'result', 'result_concurrency', 'result_submission', 'result_submission_concurrency', 'result_correction', 'result_correction_concurrency', 'review', 'review_concurrency', 'review_cross_request', 'finalization', 'finalization_concurrency', 'amendment_concurrency'), true)) {
     fwrite(STDERR, "Usage: php tools/visit_clinical_workflow/tests/run.php schema|migrate|authorization|state_resolver|disposition|ci3_smoke|ci3_disposition\n");
     exit(2);
 }
@@ -36,6 +36,8 @@ try {
     if ($mode === 'review_concurrency') { require __DIR__ . '/review_concurrency_test.php'; exit(0); }
     if ($mode === 'review_cross_request') { require __DIR__ . '/review_cross_request_key_test.php'; exit(0); }
     if ($mode === 'finalization') { require __DIR__ . '/finalization_test.php'; exit(0); }
+    if ($mode === 'finalization_concurrency') { require __DIR__ . '/finalization_concurrency_test.php'; exit(0); }
+    if ($mode === 'amendment_concurrency') { require __DIR__ . '/amendment_concurrency_test.php'; exit(0); }
     vcw_load_baseline_schema();
     putenv('VCW_BASELINE_LOADED=1');
     if ($mode === 'migrate') {
