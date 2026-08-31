@@ -16,7 +16,7 @@ CREATE TABLE `clinical_closure_operations` (
   CONSTRAINT `chk_clinical_closure_operation_fingerprint` CHECK (`operation_fingerprint` REGEXP '^[0-9a-f]{64}$'),
   CONSTRAINT `chk_clinical_closure_operation_shape` CHECK (
     (`closure_mode` = 'non_visit' AND `authority_source` = 'responsible_doctor' AND `responsible_assignment_id` IS NOT NULL AND `visit_assignment_id` IS NULL)
-    OR (`closure_mode` = 'visit' AND `authority_source` = 'responsible_doctor' AND `responsible_assignment_id` IS NOT NULL)
+    OR (`closure_mode` = 'visit' AND `authority_source` = 'responsible_doctor' AND `responsible_assignment_id` IS NOT NULL AND `visit_assignment_id` IS NULL)
     OR (`closure_mode` = 'visit' AND `authority_source` = 'doctor_visit_performer' AND `visit_assignment_id` IS NOT NULL)
   ),
   CONSTRAINT `fk_clinical_closure_operation_request` FOREIGN KEY (`request_id`) REFERENCES `requests` (`request_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,

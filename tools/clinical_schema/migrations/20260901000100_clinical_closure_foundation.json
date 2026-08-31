@@ -51,7 +51,7 @@
         ],
         "check_constraints":[
           {"name":"chk_clinical_closure_operation_fingerprint","expression":"operation_fingerprint regexp '^[0-9a-f]{64}$'"},
-          {"name":"chk_clinical_closure_operation_shape","expression":"closure_mode='non_visit' and authority_source='responsible_doctor' and responsible_assignment_id is not null and visit_assignment_id is null or closure_mode='visit' and authority_source='responsible_doctor' and responsible_assignment_id is not null or closure_mode='visit' and authority_source='doctor_visit_performer' and visit_assignment_id is not null"}
+          {"name":"chk_clinical_closure_operation_shape","expression":"closure_mode='non_visit' and authority_source='responsible_doctor' and responsible_assignment_id is not null and visit_assignment_id is null or closure_mode='visit' and authority_source='responsible_doctor' and responsible_assignment_id is not null and visit_assignment_id is null or closure_mode='visit' and authority_source='doctor_visit_performer' and visit_assignment_id is not null"}
         ]
       }
     }
