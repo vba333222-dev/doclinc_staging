@@ -9,6 +9,7 @@ $readyFile = (string) ($argv[3] ?? '');
 $releaseFile = (string) ($argv[4] ?? '');
 $targets = array(
     'request' => array('table' => 'requests', 'key' => 'request_id'),
+    'medicalrecord' => array('table' => 'medicalrecords', 'key' => 'record_id'),
     'disposition' => array('table' => 'visit_dispositions', 'key' => 'disposition_id'),
     'performer_assignment' => array('table' => 'request_visit_performer_assignments', 'key' => 'visit_assignment_id'),
 );
