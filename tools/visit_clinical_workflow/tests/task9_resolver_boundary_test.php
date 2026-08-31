@@ -3,11 +3,15 @@ require_once __DIR__ . '/assert.php';
 $app = require __DIR__ . '/ci3_bootstrap.php';
 $db = $app->db;
 require_once APPPATH . 'libraries/Visit_workflow_state_resolver.php';
+require_once APPPATH . 'libraries/Clinical_finalization_service.php';
+require_once APPPATH . 'libraries/Clinical_amendment_service.php';
+$db->query("CREATE TABLE IF NOT EXISTS nakes_facility_placements (placement_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,staff_id INT UNSIGNED NOT NULL,facility_code VARCHAR(64) NOT NULL,effective_from DATETIME NOT NULL,effective_until DATETIME NULL,status ENUM('active','ended') NOT NULL DEFAULT 'active',active_staff_key INT UNSIGNED AS (CASE WHEN status='active' THEN staff_id ELSE NULL END) STORED,created_by_user_id INT NOT NULL,ended_by_user_id INT NULL,created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY(placement_id),UNIQUE KEY uq_nakes_active_staff(active_staff_key)) ENGINE=InnoDB");
 
 function t9rb_fixture($db, $id, $mode, $finalized = false)
 {
     $id = (int) $id; $rd = $id + 1; $performer = $id + 2; $facility = 'T9RB-' . $id;
     $db->query('INSERT INTO m_puskesmas (kode_pkm,nama_puskesmas,status) VALUES (?,?,?)', [$facility, 'Task9 resolver', 'aktif']);
+    $db->query('INSERT INTO users (userId,nama,email,username,password,role,status,must_change_password,remark) VALUES (?,?,?,?,?,?,?,?,?)', [$id, 'T9RB command', 't9rbcmd' . $id . '@invalid', 't9rbcmd' . $id, 'x', 'dokter', 'aktif', 0, $facility]);
     foreach ([$rd, $performer] as $u) {
         $db->query('INSERT INTO users (userId,nama,email,username,password,role,status,must_change_password,remark) VALUES (?,?,?,?,?,?,?,?,?)', [$u, 'T9RB ' . $u, 't9rb' . $u . '@invalid', 't9rb' . $u, 'x', 'dokter', 'aktif', 0, $facility]);
         $db->query('INSERT INTO puskesmas_staff (staff_id,kode_pkm,user_id,nama,profesi,status) VALUES (?,?,?,?,?,?)', [$u, $facility, $u, 'T9RB staff', 'dokter', 'aktif']);
@@ -30,17 +34,24 @@ function t9rb_fixture($db, $id, $mode, $finalized = false)
 }
 
 $resolver = new Visit_workflow_state_resolver($db, null, true);
+$finalizer = new Clinical_finalization_service($db);
+$amender = new Clinical_amendment_service($db);
 [$visit, $visitRecord] = t9rb_fixture($db, 47001, 'visit', false);
 vcw_assert_same('WAITING_CLINICAL_FINALIZATION', $resolver->resolve($visit)['state'] ?? null, 'Visit unfinalized resolver');
-$db->where('record_id', $visitRecord)->update('medicalrecords', ['clinical_finalized_at' => date('Y-m-d H:i:s.u'), 'clinical_finalized_by_user_id' => 47002]);
+$visitFinalization = $finalizer->finalize($visit, 47002, 't9rb-final-' . $visit);
+vcw_assert_same('success', $visitFinalization['status'] ?? null, 'Visit finalization succeeds');
 vcw_assert_same('READY_FOR_CLOSURE', $resolver->resolve($visit)['state'] ?? null, 'Visit finalized resolver');
-    $db->query('INSERT INTO clinical_amendments (request_id,record_id,sequence_no,created_by_user_id,reason,idempotency_key,created_at) VALUES (?,?,?,?,?,?,NOW(6))', [$visit, $visitRecord, 1, 47002, 'resolver amendment', 't9rb-amend-' . $visit]);
-$amendment = (int) $db->insert_id();
-$db->query('INSERT INTO clinical_amendment_items (amendment_id,item_order,field_key,corrected_value,previous_value) VALUES (?,?,?,?,?)', [$amendment, 1, 'diagnosis', 'amended', 'initial']);
+$visitAmendment = $amender->amend($visit, $visitRecord, 47002, 'resolver amendment', [['field_key' => 'diagnosis', 'corrected_value' => 'amended']], 't9rb-amend-' . $visit);
+vcw_assert_same('success', $visitAmendment['status'] ?? null, 'Visit amendment succeeds');
 vcw_assert_same('READY_FOR_CLOSURE', $resolver->resolve($visit)['state'] ?? null, 'Visit amendment remains closure');
 
 [$nonVisit, $nonVisitRecord] = t9rb_fixture($db, 47101, 'non_visit', false);
 vcw_assert_same('WAITING_CLINICAL_FINALIZATION', $resolver->resolve($nonVisit)['state'] ?? null, 'Non-visit unfinalized resolver');
-$db->where('record_id', $nonVisitRecord)->update('medicalrecords', ['clinical_finalized_at' => date('Y-m-d H:i:s.u'), 'clinical_finalized_by_user_id' => 47102]);
+$nonVisitFinalization = $finalizer->finalize($nonVisit, 47102, 't9rb-final-' . $nonVisit);
+vcw_assert_same('success', $nonVisitFinalization['status'] ?? null, 'Non-visit finalization succeeds');
 vcw_assert_same('READY_FOR_CLOSURE', $resolver->resolve($nonVisit)['state'] ?? null, 'Non-visit finalized resolver');
+$boundaryRows = $db->query('SELECT request_id, request_status FROM requests WHERE request_id IN (?,?)', [$visit, $nonVisit])->result_array();
+foreach ($boundaryRows as $row) vcw_assert_same('Accepted', $row['request_status'], 'Task 9 leaves request Accepted');
+$closureEvents = (int) $db->where_in('request_id', [$visit, $nonVisit])->where_in('event_type', ['clinical_visit.closed', 'clinical_consultation.closed', 'request.completed'])->count_all_results('request_events');
+vcw_assert_same(0, $closureEvents, 'Task 9 emits no closure/completion event');
 echo "TASK9_VISIT_RESOLVER=PASS\nTASK9_NONVISIT_RESOLVER=PASS\nTASK9_AMENDMENT_RESOLVER_STABLE=PASS\nTASK9_RESOLVER=PASS\nTASK9_REQUEST_COMPLETION_NOT_STARTED=PASS\nTASK9_CLINICAL_CLOSURE_NOT_STARTED=PASS\n";
