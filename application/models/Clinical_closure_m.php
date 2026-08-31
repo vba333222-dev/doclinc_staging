@@ -30,9 +30,16 @@ class Clinical_closure_m
 
     public function insertSuccessfulReceipt(array $row)
     {
-        if (!$this->db->insert('clinical_closure_operations', $row)) {
-            return false;
+        $previousDebug = property_exists($this->db, 'db_debug') ? $this->db->db_debug : null;
+        if (property_exists($this->db, 'db_debug')) { $this->db->db_debug = false; }
+        try {
+            $inserted = $this->db->insert('clinical_closure_operations', $row);
+            $operationId = $inserted ? (int) $this->db->insert_id() : 0;
+        } catch (Throwable $exception) {
+            $operationId = 0;
+        } finally {
+            if (property_exists($this->db, 'db_debug')) { $this->db->db_debug = $previousDebug; }
         }
-        return (int) $this->db->insert_id();
+        return $operationId > 0 ? $operationId : false;
     }
 }

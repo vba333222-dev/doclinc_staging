@@ -6,6 +6,7 @@ require_once APPPATH . 'libraries/Care_team_policy.php';
 require_once APPPATH . 'libraries/Visit_workflow_policy.php';
 require_once APPPATH . 'helpers/request_authz_helper.php';
 require_once APPPATH . 'helpers/request_event_helper.php';
+require_once APPPATH . 'helpers/request_realtime_helper.php';
 
 class Clinical_closure_service
 {
@@ -100,6 +101,29 @@ class Clinical_closure_service
             if ((int) $this->db->affected_rows() !== 1) { return $this->rollback('WRITE_FAILED'); }
             $event = array('puskesmas_code' => $facility, 'actor_user_id' => $userId, 'actor_staff_id' => (int) ($identity['staff_id'] ?? 0), 'domain_event_key' => 'request:' . $requestId . ':clinical-closed', 'metadata' => array('request_id' => $requestId, 'closure_operation_id' => $operationId, 'closure_mode' => $mode, 'authority_source' => $authority, 'closed_by_user_id' => $userId, 'closed_at' => $closedAt));
             if (!doclinc_append_request_event($requestId, 'clinical.closed', $event, get_instance())) { return $this->rollback('WRITE_FAILED'); }
+            if (function_exists('doclinc_realtime_requests_enabled') && doclinc_realtime_requests_enabled()) {
+                $audiences = array('user:' . (int) $request->user_id);
+                if ($rd && (int) $rd->user_id > 0) { $audiences[] = 'user:' . (int) $rd->user_id; }
+                if ($mode === Care_team_policy::VISIT && $assignment && (int) $assignment->user_id > 0) { $audiences[] = 'user:' . (int) $assignment->user_id; }
+                if ($facility !== '') { $audiences[] = 'puskesmas:' . $facility . ':ops'; }
+                $notifications = array(array(
+                    'recipient_user_id' => (int) $request->user_id,
+                    'recipient_role' => 'warga',
+                    'recipient_puskesmas_code' => null,
+                    'actor_user_id' => $userId,
+                    'event_type' => 'consultation_completed',
+                    'entity_type' => 'request',
+                    'entity_id' => (string) $requestId,
+                    'title' => 'Konsultasi selesai',
+                    'message' => 'Hasil konsultasi Anda sudah tersedia.',
+                    'is_read' => 0,
+                    'created_at' => $closedAt,
+                ));
+                $delivery = doclinc_request_realtime_delivery($this->db);
+                if (!$delivery->deliver('completed', $requestId, $requestId, $audiences, $facility !== '' ? array($facility) : array(), $notifications)) {
+                    return $this->rollback('WRITE_FAILED');
+                }
+            }
             if (!$this->db->trans_commit()) { return $this->fail('WRITE_FAILED'); }
             return array('status' => 'success', 'request_id' => $requestId, 'closure_operation_id' => $operationId, 'closed_at' => $closedAt, 'authority_source' => $authority, 'idempotent' => false);
         } catch (Throwable $exception) {

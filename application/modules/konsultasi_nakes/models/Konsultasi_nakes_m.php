@@ -189,6 +189,19 @@ class Konsultasi_nakes_m extends MX_Controller
 			$this->db->trans_rollback();
 			return false;
 		}
+		// Enrolled requests are governed by the clinical workflow and may only
+		// reach Completed through Clinical_closure_service.  This check is
+		// intentionally independent of the feature flag and considers any
+		// historical disposition as enrollment evidence.
+		$enrolled = $this->db->query(
+			'SELECT 1 FROM ' . $this->db->dbprefix('visit_dispositions') . ' WHERE request_id = ? LIMIT 1',
+			array((int) $request_id)
+		)->row();
+		if ($enrolled) {
+			$this->last_failure_code = 'clinical_closure_required';
+			$this->db->trans_rollback();
+			return false;
+		}
 		if ($this->config->item('care_team_workflow_enabled') === true
 			&& (!$this->db->table_exists('medicalrecords')
 				|| !$this->db->field_exists('responsible_doctor_user_id', 'medicalrecords')
