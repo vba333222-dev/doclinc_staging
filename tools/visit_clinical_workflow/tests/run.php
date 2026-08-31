@@ -1,7 +1,7 @@
 <?php
 
 $mode = isset($argv[1]) ? (string) $argv[1] : '';
-    if (!in_array($mode, array('schema', 'migrate', 'authorization', 'state_resolver', 'disposition', 'assignment', 'assignment_concurrency', 'placement', 'ci3_smoke', 'ci3_disposition', 'ci3_disposition_full', 'physical_start', 'physical_start_worker', 'row_lock_gate', 'physical_start_concurrency', 'start_first_revision', 'reassign_first_start', 'start_first_reassign', 'vital_signs', 'vital_signs_concurrency', 'result', 'result_concurrency', 'result_submission', 'result_submission_concurrency', 'result_correction', 'result_correction_concurrency', 'review', 'review_concurrency', 'review_cross_request', 'finalization', 'finalization_concurrency', 'amendment_concurrency', 'atomicity', 'timestamp_clock', 'task9_resolver_boundary', 'clinical_closure_schema', 'clinical_closure'), true)) {
+    if (!in_array($mode, array('schema', 'migrate', 'authorization', 'state_resolver', 'disposition', 'assignment', 'assignment_concurrency', 'placement', 'ci3_smoke', 'ci3_disposition', 'ci3_disposition_full', 'physical_start', 'physical_start_worker', 'row_lock_gate', 'physical_start_concurrency', 'start_first_revision', 'reassign_first_start', 'start_first_reassign', 'vital_signs', 'vital_signs_concurrency', 'result', 'result_concurrency', 'result_submission', 'result_submission_concurrency', 'result_correction', 'result_correction_concurrency', 'review', 'review_concurrency', 'review_cross_request', 'finalization', 'finalization_concurrency', 'amendment_concurrency', 'atomicity', 'timestamp_clock', 'task9_resolver_boundary', 'clinical_closure_schema', 'clinical_closure', 'clinical_closure_legacy_bypass', 'clinical_closure_concurrency', 'clinical_closure_atomicity', 'clinical_closure_resolver_boundary'), true)) {
     fwrite(STDERR, "Usage: php tools/visit_clinical_workflow/tests/run.php schema|migrate|authorization|state_resolver|disposition|ci3_smoke|ci3_disposition\n");
     exit(2);
 }
@@ -13,6 +13,10 @@ try {
     if ($mode === 'task9_resolver_boundary') { require __DIR__ . '/task9_resolver_boundary_test.php'; exit(0); }
     if ($mode === 'clinical_closure_schema') { require __DIR__ . '/clinical_closure_schema_test.php'; exit(0); }
     if ($mode === 'clinical_closure') { require __DIR__ . '/clinical_closure_test.php'; exit(0); }
+    if ($mode === 'clinical_closure_legacy_bypass') { require __DIR__ . '/clinical_closure_legacy_bypass_test.php'; exit(0); }
+    if ($mode === 'clinical_closure_concurrency') { require __DIR__ . '/clinical_closure_concurrency_test.php'; exit(0); }
+    if ($mode === 'clinical_closure_atomicity') { require __DIR__ . '/clinical_closure_atomicity_test.php'; exit(0); }
+    if ($mode === 'clinical_closure_resolver_boundary') { require __DIR__ . '/clinical_closure_resolver_boundary_test.php'; exit(0); }
     if ($mode === 'disposition') { require __DIR__ . '/disposition_test.php'; exit(0); }
     if ($mode === 'assignment') { require __DIR__ . '/assignment_test.php'; exit(0); }
     if ($mode === 'assignment_concurrency') { require __DIR__ . '/assignment_concurrency_test.php'; exit(0); }

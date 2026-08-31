@@ -3,6 +3,9 @@ require_once __DIR__ . '/assert.php';
 $app = require __DIR__ . '/ci3_bootstrap.php';
 $db = $app->db;
 $app->config->set('care_team_workflow_enabled', true);
+$app->config->set('realtime_requests_enabled', true);
+$app->config->set('realtime_client_enabled', true);
+$app->config->set('realtime_notifications_enabled', true);
 require_once APPPATH . 'libraries/Clinical_closure_service.php';
 $db->query("CREATE TABLE IF NOT EXISTS nakes_facility_placements (placement_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,staff_id INT UNSIGNED NOT NULL,facility_code VARCHAR(64) NOT NULL,effective_from DATETIME NOT NULL,effective_until DATETIME NULL,status ENUM('active','ended') NOT NULL DEFAULT 'active',active_staff_key INT UNSIGNED AS (CASE WHEN status='active' THEN staff_id ELSE NULL END) STORED,created_by_user_id INT NOT NULL,ended_by_user_id INT NULL,created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY(placement_id),UNIQUE KEY uq_nakes_active_staff(active_staff_key)) ENGINE=InnoDB");
 
@@ -36,6 +39,10 @@ vcw_assert_same('non_visit', (string) $receipt->closure_mode, 'closure mode');
 vcw_assert_same('responsible_doctor', (string) $receipt->authority_source, 'closure provenance');
 $eventCount = (int) $db->where('request_id', $requestId)->where('domain_event_key', 'request:' . $requestId . ':clinical-closed')->count_all_results('request_events');
 vcw_assert_same(1, $eventCount, 'closure event');
+$notificationCount = (int) $db->where('entity_type', 'request')->where('entity_id', (string) $requestId)->where('event_type', 'consultation_completed')->count_all_results('notifications');
+$outboxCount = (int) $db->where('event_type', 'request.completed')->where('aggregate_id', (string) $requestId)->count_all_results('realtime_outbox');
+vcw_assert_same(1, $notificationCount, 'closure notification persisted once');
+vcw_assert_true($outboxCount >= 1, 'closure request outbox persisted');
 
 $replay = $service->closeClinicalConsultation($requestId, $actor, 't10-closure-' . $requestId);
 vcw_assert_same('success', $replay['status'] ?? null, 'historical closure replay');
