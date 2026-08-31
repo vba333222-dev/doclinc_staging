@@ -56,11 +56,11 @@ These may be added later without changing the core source-of-truth boundaries de
 
 1. `requests.visit_status` remains a strictly physical lifecycle:
    `not_started -> en_route -> arrived -> in_service -> completed`.
-2. `requests.request_status` remains the request lifecycle and stays `Accepted` throughout an enrolled Visit until clinical closure succeeds.
+2. `requests.request_status` remains the request lifecycle and stays `Accepted` throughout an enrolled Visit or non-Visit workflow until Clinical Closure succeeds.
 3. Physical completion is not clinical completion.
 4. No canonical `clinical_workflow_status` column or table is introduced.
 5. Typed domain records are authoritative. `request_events` is a timeline projection, not canonical state storage.
-6. Responsible Doctor and Visit Performer remain separate assignment authorities. A canonical personal doctor Visit Performer is an explicit exception: for the same request they may review their own submitted result, finalize the clinical record, and perform clinical closure. This does not transfer or replace the Responsible Doctor assignment.
+6. Responsible Doctor and Visit Performer remain separate assignment authorities. A canonical personal doctor Visit Performer is an explicit Visit-only exception: for the same Visit request they may review their own submitted result, finalize the clinical record, and close that Visit. This does not transfer or replace the Responsible Doctor assignment; non-Visit closure remains Responsible Doctor-only.
 7. Command Center is a facility/operational identity, not a clinician, even where legacy role fields could superficially resemble a clinician identity.
 8. Existing compatibility fields may be projected during transition but must not override new canonical assignment records when the new workflow is authoritative.
 9. Submitted clinical history is immutable. Corrections create new versions or amendments rather than reopening old records.
@@ -225,12 +225,13 @@ On `correction_required`:
 
 - `DOCTOR_PERFORMER_SELF_REVIEW=ALLOWED`: a canonical personal doctor Visit Performer may review their own submitted result.
 - `DOCTOR_PERFORMER_CLINICAL_FINALIZATION=ALLOWED`.
-- `DOCTOR_PERFORMER_CLINICAL_CLOSURE=ALLOWED`.
+- `DOCTOR_PERFORMER_CLINICAL_CLOSURE=ALLOWED`: Visit only.
+- `NON_VISIT_CLOSURE_RESPONSIBLE_DOCTOR_ONLY=YES`.
 - `SAME_USER_RESPONSIBLE_AND_PERFORMER=ALLOWED`.
 - `ROLE_DOKTER_ALONE_GRANTS_AUTHORITY=NO`.
 - `RESPONSIBLE_DOCTOR_IMPLICIT_HANDOVER=NO`: selecting a doctor as performer never transfers or replaces the Responsible Doctor assignment.
 
-The explicit exception is limited to a canonical active personal Nakes Visit Performer whose profession is doctor. A non-doctor performer remains limited to performer operations. Command Center, Admin, super-admin, and unrelated doctors remain operational/read-only or denied for clinical mutation.
+The explicit closure exception is limited to a canonical active personal Nakes Visit Performer whose profession is doctor and applies only to Visit closure. A non-doctor performer remains limited to performer operations. For non-Visit closure, a Visit Performer is never an authority source. Command Center, Admin, super-admin, and unrelated doctors remain operational/read-only or denied for clinical mutation.
 
 ### 4.7 Medical record finalization
 
@@ -300,9 +301,9 @@ In the core, only `clinical_finalized_by_user_id` may author an amendment. Autho
 - there is no newer unreviewed result;
 - there is no pending correction cycle;
 - medical record is clinically finalized;
-- closure actor is the valid Responsible Doctor or canonical personal doctor Visit Performer for the core flow.
+- closure actor is the valid Responsible Doctor or canonical personal doctor Visit Performer for the Visit closure flow.
 
-A successful closure changes `request_status` to `Completed` exactly once.
+A successful closure changes `request_status` to `Completed` through exactly one successful status mutation.
 
 #### Non-Visit
 
@@ -312,9 +313,11 @@ A successful closure changes `request_status` to `Completed` exactly once.
 - request is enrolled in the new workflow;
 - active disposition is `non_visit`;
 - medical record is clinically finalized;
-- closure actor is the valid Responsible Doctor or canonical personal doctor Visit Performer.
+- closure actor is the valid canonical Responsible Doctor.
 
-It does not require `visit_status`, Visit Performer assignment, Visit Result, or Doctor Review.
+It does not require `visit_status`, Visit Performer assignment, Visit Result, or Doctor Review. A doctor Visit Performer is not a non-Visit closure authority source.
+
+Both entry points are owned by a focused `Clinical_closure_service`; controllers must not reconstruct these checks or mutate the request directly. Closure is a terminal clinical operation, distinct from finalization, and does not create results, reviews, amendments, or physical Visit state.
 
 ## 5. Data model
 
@@ -510,6 +513,27 @@ Example server-generated keys:
 
 Message text must never be the deduplication mechanism.
 
+### 5.10 `clinical_closure_operations`
+
+Clinical Closure uses one durable successful-operation receipt table for both Visit and non-Visit closure. This table is not workflow state, an event table, a command queue, or a failed-attempt log.
+
+Required semantic fields:
+
+- `closure_operation_id` primary key;
+- `request_id` foreign key, with exactly one successful closure receipt per request;
+- `closure_mode` (`visit` or `non_visit`);
+- globally unique `idempotency_key`;
+- server-generated SHA-256 `operation_fingerprint`;
+- `closed_by_user_id`;
+- `authority_source` (`responsible_doctor` or `doctor_visit_performer`);
+- nullable `responsible_assignment_id`;
+- nullable `visit_assignment_id`;
+- `closed_at` from the MariaDB transaction clock.
+
+Use the actual repository physical integer/FK types during implementation and `RESTRICT` deletion policy. If `authority_source=responsible_doctor`, `responsible_assignment_id` is required and `visit_assignment_id` is null. If `authority_source=doctor_visit_performer`, `visit_assignment_id` is required and `responsible_assignment_id` is null. Non-Visit receipts always use `responsible_doctor`. When both Visit authorities apply to the same actor, prefer Responsible Doctor provenance.
+
+The canonical fingerprint is generated from `request_id`, `closure_mode`, and `actor_user_id`. Authority provenance is server-resolved historical evidence and is deliberately excluded from the fingerprint so mutable authority context cannot invalidate exact replay.
+
 ## 6. Service boundaries
 
 The implementation must avoid a monolithic workflow service.
@@ -549,17 +573,19 @@ Controllers must not independently reconstruct workflow authorization with scatt
 | Submit Visit Result | active Visit Performer | physical Visit completed and result valid |
 | Review Visit Result | Responsible Doctor or canonical personal doctor Visit Performer | latest submitted result only; performer doctor may review own result |
 | Finalize clinical record | Responsible Doctor or canonical personal doctor Visit Performer | Visit: latest result approved; non-Visit: applicable consultation guards |
-| Close Visit | Responsible Doctor or canonical personal doctor Visit Performer | all Visit closure invariants |
-| Close non-Visit consultation | Responsible Doctor or canonical personal doctor Visit Performer | non-Visit disposition + finalized record |
+| Close Visit | Responsible Doctor or canonical personal doctor Visit Performer | all Visit closure invariants; provenance prefers Responsible Doctor when both apply |
+| Close non-Visit consultation | Responsible Doctor only | non-Visit disposition + finalized record; no Visit entities required |
 | Create Clinical Amendment | `clinical_finalized_by_user_id` | record finalized |
 
 Explicit denials in the core:
 
 - Command Center cannot perform clinical findings/review/finalization actions merely because of legacy role representation.
-- Visit Performer cannot author canonical diagnosis, prescription, or final assessment through ordinary performer authority. The explicit doctor-performer exception permits review, clinical finalization, and clinical closure for that request.
+- Visit Performer cannot author canonical diagnosis, prescription, or final assessment through ordinary performer authority. The explicit doctor-performer exception permits review, clinical finalization, and Visit closure only for that request.
 - Admin and super-admin capabilities do not imply clinician authority.
 - `clinical_audit` is a read/audit capability, not clinical mutation authority.
-- Another doctor cannot review/finalize/amend solely because they are a doctor; controlled handover is deferred. A doctor with canonical Visit Performer authority is not an unrelated doctor and may exercise the explicit exception.
+- Another doctor cannot review/finalize/amend/close solely because they are a doctor; controlled handover is deferred. A doctor with canonical Visit Performer authority is not an unrelated doctor and may exercise the explicit exception only for Visit closure.
+- A doctor Visit Performer is denied non-Visit closure even when otherwise clinically eligible; only the canonical Responsible Doctor may close a non-Visit request.
+- Closure actor need not equal `medicalrecords.clinical_finalized_by_user_id`; finalization and closure have independent attribution.
 
 When the new workflow is authoritative, Responsible Doctor authority comes from the active Responsible Doctor assignment, not fallback `dokter_id` or `accepted_by_user_id`. Visit Performer authority comes from the canonical active performer assignment, not compatibility projection columns alone.
 
@@ -569,7 +595,7 @@ When the new workflow is authoritative, Responsible Doctor authority comes from 
 
 Workflow mutations that can race use the request row as the coarse serialization root, then lock domain rows in a consistent order:
 
-`requests -> active disposition -> active performer assignment -> result -> review/medicalrecord`
+`requests -> active disposition -> active performer assignment -> result -> review/medicalrecord -> closure receipt/event/outbox`
 
 A service may lock only the subset it requires, but when multiple categories are needed their relative order must remain consistent.
 
@@ -635,9 +661,11 @@ Markers change only once. Repeated valid calls return an idempotent already-fina
 
 ### 8.9 Clinical closure
 
-Closure locks the request first and revalidates every closure prerequisite using canonical records.
+`Clinical_closure_service` exposes `closeClinicalVisit()` and `closeClinicalConsultation()`. Each operation uses one transaction: lock the request; resolve an existing receipt/replay condition; validate enrollment, lifecycle, mode, authority, and all current prerequisites; obtain the MariaDB transaction clock; insert the successful closure receipt; update `requests.request_status` from `Accepted` to `Completed`; persist the closure event and required same-database notification/outbox records; then commit. External delivery occurs only after commit.
 
-Concurrent closure attempts may produce one actual state change; subsequent calls return idempotent already-completed success without duplicate event/audit/notification persistence.
+The receipt is successful-operation history, not workflow state. Exact replay requires the same globally unique key and operation fingerprint and returns the original committed result. A reused key with a different fingerprint returns `CLOSURE_KEY_CONFLICT`. A new key after successful closure returns `CLINICAL_ALREADY_CLOSED`; it is not treated as an idempotent success and creates no second receipt/event/status mutation. Failed or rolled-back attempts create no receipt, so their keys remain reusable.
+
+Concurrent closure attempts serialize from the request row. One mutation wins; a different-key loser receives `CLINICAL_ALREADY_CLOSED`, while same-key identical callers may both receive the original successful result. Mode mismatch and unmet prerequisites are deterministic and produce no receipt or mutation. Closure does not freeze later Clinical Amendments, which remain allowed under the Task 9 finalizer authority rule.
 
 ### 8.10 Clinical Amendments
 
@@ -670,6 +698,11 @@ Domain services return stable machine-readable outcomes. Representative error co
 - `CLINICAL_RECORD_NOT_FINALIZED`
 - `CLINICAL_RECORD_ALREADY_FINALIZED`
 - `CLINICAL_CLOSURE_NOT_READY`
+- `CLOSURE_KEY_CONFLICT`
+- `CLINICAL_ALREADY_CLOSED`
+- `CLINICAL_CLOSURE_FORBIDDEN`
+- `CLINICAL_CLOSURE_MODE_MISMATCH`
+- `CLINICAL_CLOSURE_NOT_ENROLLED`
 
 The HTTP layer maps domain outcomes to appropriate 403/409/422 responses. UI code must not parse human-readable error strings to determine workflow state.
 
@@ -703,6 +736,8 @@ Representative machine states:
 - `COMPLETED`
 
 The resolver is read-only and performs no hidden repair or state mutation.
+
+`COMPLETED` is the terminal derived state when `requests.request_status` is `Completed`. A post-closure Clinical Amendment does not reopen the request or change this state; non-Visit requests never require physical Visit entities.
 
 ## 11. Actor-specific presentation
 
@@ -775,12 +810,14 @@ Domain events may include, subject to existing event naming conventions:
 - Visit Result correction required.
 - Visit Result approved.
 - Clinical record finalized.
-- Consultation clinically completed.
+- Consultation clinically completed (`request:{id}:clinical-closed` when compatible with existing event-key conventions).
 - Clinical Amendment created.
 
 Realtime payloads should carry identifiers and state hints, not become a second canonical workflow state. Clients refresh the authoritative read model after receiving a relevant event.
 
 Existing `realtime_outbox` idempotency is reused. The implementation must audit the existing notification writer for recipient-scoped deduplication; if no equivalent mechanism exists, add a focused delivery key rather than building a second notification subsystem.
+
+Clinical Closure event persistence is distinct from `clinical_closure_operations`: the receipt is the successful-operation record, while `request_events.domain_event_key` remains timeline/event deduplication. Event, notification, and realtime-outbox persistence that shares the database belongs inside the closure transaction; actual delivery is post-commit.
 
 ## 13. Feature flag and enrollment
 
@@ -803,6 +840,8 @@ No clinical backfill is required to activate the core feature.
 
 Legacy request columns may remain compatibility projections during transition, but when a request is enrolled the new typed domain records define authority and workflow state.
 
+For an enrolled clinical-workflow request, every legacy or generic path capable of setting `request_status=Completed` must be prevented from bypassing `Clinical_closure_service`. Implementation must audit the lowest safe canonical mutation boundary and apply an enrollment-aware guard there; it must not rely on controller names, magic flags, or user-supplied switches. Non-enrolled legacy requests retain their existing completion behavior, and existing `Completed` requests are neither backfilled with closure receipts nor migrated into the new workflow.
+
 Migrations must be:
 
 - additive/backward-compatible;
@@ -811,6 +850,8 @@ Migrations must be:
 - non-destructive;
 - free from `DROP`, `TRUNCATE`, destructive reset, or broad data normalization;
 - free from staging data mutations outside a separately approved validation procedure.
+
+The repository currently contains both the legacy CodeIgniter timestamped migration configuration (`migrations` table, with the Task 9 disposable runner invoking explicit timestamped scripts) and the clinical schema migrator backed by `clinical_schema_migrations`. Task 10's closure foundation must use the established `clinical_schema_migrations` ledger and its descriptor/checksum/concurrency conventions for the new clinical schema unit; it must not silently create a third bookkeeping mechanism. The implementation plan must identify the exact migrator entry point and preserve the legacy runner's behavior for already-approved foundations.
 
 Before writing migrations, implementation work must inspect actual table/column/index definitions and reuse equivalent fields/constraints where they already exist. This is a schema reconciliation requirement, not an open design decision.
 
@@ -823,6 +864,7 @@ Logical migration groups:
 1. Visit clinical workflow foundation: disposition, result, TTV references, review, request-event deduplication, and clinical finalization markers.
 2. Clinical amendment foundation: amendment header and items.
 3. Care Team compatibility extension: assignment completion/end-attribution fields only where the current schema lacks equivalent fields.
+4. Clinical closure foundation: `clinical_closure_operations` and any additive closure-specific constraints required by the approved receipt semantics.
 
 The physical count of migration files may follow the repository's normal migration conventions as long as the domain boundaries and rollback/safety expectations remain clear.
 
@@ -853,6 +895,11 @@ Cover at minimum:
 - Visit closure prerequisites;
 - non-Visit closure without Visit Result/Review;
 - idempotent finalization and closure;
+- clinical closure receipt, fingerprint, provenance, replay, conflict, and already-closed semantics;
+- closure versus finalization, correction, Visit Result, and amendment ordering;
+- Visit and non-Visit closure authority and prerequisite denials;
+- enrolled-request legacy completion bypass protection;
+- closure request/event/notification/outbox rollback atomicity;
 - actor-specific authorization denials.
 
 ### Required concurrency tests
@@ -871,6 +918,8 @@ Prove these races:
 - review approval vs invalid newer-result creation -> approval remains bound to the actual latest submitted version;
 - duplicate medical record finalization -> one attribution/timestamp/event;
 - duplicate clinical closure -> one request completion/event;
+- exact same-key closure replay -> historical success; new key after closure -> `CLINICAL_ALREADY_CLOSED`; same-key different fingerprint -> `CLOSURE_KEY_CONFLICT`;
+- closure receipt, status transition, event, and same-DB delivery records commit or roll back together;
 - duplicate Clinical Amendment POST -> one immutable amendment;
 - Nakes placement transfer activation vs active Visit assignment -> existing governance blocker remains effective.
 
@@ -880,11 +929,23 @@ Prove at minimum:
 
 - Command Center cannot act as Responsible Doctor.
 - Command Center cannot submit performer clinical evidence unless it is also a separately valid personal performer identity through the canonical personal-Nakes path; facility identity alone never suffices.
-- Non-doctor Visit Performer cannot review/finalize/close; a canonical personal doctor Visit Performer may do so under the explicit doctor-performer exception.
+- Non-doctor Visit Performer cannot review/finalize/close; a canonical personal doctor Visit Performer may review/finalize/close a Visit under the explicit doctor-performer exception, but cannot close a non-Visit consultation.
+- A doctor Visit Performer cannot close a non-Visit consultation; only the canonical Responsible Doctor may do so.
+- Closure actor may differ from `clinical_finalized_by_user_id`; finalization and closure attribution are independent.
 - Admin/super-admin cannot mutate clinical workflow through governance authority.
 - unrelated doctor cannot review/finalize/amend in the core.
 - Warga cannot access clinician mutation endpoints.
 - compatibility columns alone cannot grant enrolled-workflow authority.
+
+### Clinical Closure acceptance matrix
+
+Visit success must cover Responsible Doctor closure, canonical personal doctor Visit Performer closure, same-user dual-role provenance preferring Responsible Doctor, a closer different from the clinical finalizer, and amendments both before and after closure. Non-Visit success must cover Responsible Doctor closure without any Visit Performer, Visit Result, Doctor Review, or physical Visit requirement.
+
+Authority negatives must cover non-doctor performers, doctor performers attempting non-Visit closure, unrelated doctors, Command Center, Admin/super-admin without canonical clinical authority, and users whose `role=dokter` is not backed by the canonical assignment.
+
+Prerequisite negatives must cover incomplete physical Visit, missing submission, unapproved latest result, a newer unreviewed result, pending correction, unfinalized record, mode mismatch, cancelled/non-`Accepted` request, and a non-enrolled request passed to `Clinical_closure_service`.
+
+Idempotency/concurrency tests must cover exact same-key replay, same-key fingerprint conflict, Responsible Doctor versus Visit Performer race, different-key same-request race, and the one-receipt/one-event/one-status-transition invariant. Transaction-failure tests must prove zero partial closure state. Legacy-bypass tests must cover every discovered completion writer for enrolled and non-enrolled requests.
 
 ### Regression expectations
 
@@ -933,6 +994,7 @@ For an enrolled Visit request:
 - Review authority: active Responsible Doctor assignment or, for the explicit exception, active canonical personal doctor Visit Performer assignment; provenance is stored on the review.
 - Clinical final record: finalized `medicalrecords` plus ordered `clinical_amendments`.
 - Request completion: `requests.request_status` changed only by the applicable clinical closure operation.
+- Clinical closure receipt: `clinical_closure_operations` records successful closure operations, globally unique idempotency keys, server fingerprints, authority provenance, and the MariaDB closure clock.
 - Timeline: `request_events` as projection/history.
 - Delivery: existing notifications and `realtime_outbox`.
 - UI state: deterministic server-side resolver plus actor-specific presenter.
