@@ -224,7 +224,8 @@ On `correction_required`:
 #### Clinical authority reconciliation
 
 - `DOCTOR_PERFORMER_SELF_REVIEW=ALLOWED`: a canonical personal doctor Visit Performer may review their own submitted result.
-- `DOCTOR_PERFORMER_CLINICAL_FINALIZATION=ALLOWED`.
+- `DOCTOR_PERFORMER_CLINICAL_FINALIZATION=ALLOWED_FOR_VISIT_ONLY`.
+- `NON_VISIT_FINALIZATION_RESPONSIBLE_DOCTOR_ONLY=YES`.
 - `DOCTOR_PERFORMER_CLINICAL_CLOSURE=ALLOWED`: Visit only.
 - `NON_VISIT_CLOSURE_RESPONSIBLE_DOCTOR_ONLY=YES`.
 - `SAME_USER_RESPONSIBLE_AND_PERFORMER=ALLOWED`.
@@ -246,7 +247,7 @@ Before finalization, the record remains editable according to existing clinical 
 
 For an enrolled Visit, finalization is allowed only after the latest submitted Visit Result has an `approved` Doctor Review. The actor must be the active Responsible Doctor or the active canonical personal doctor Visit Performer for that request.
 
-For an enrolled non-Visit consultation, Visit Result and Doctor Review are not required.
+For an enrolled non-Visit consultation, Visit Result and Doctor Review are not required. Finalization authority is the canonical Responsible Doctor only; a doctor Visit Performer is not a non-Visit finalization authority.
 
 Finalization is a distinct backend domain operation from clinical closure. A successful Doctor Review is not rolled back merely because later medical record finalization or closure fails.
 
@@ -572,7 +573,7 @@ Controllers must not independently reconstruct workflow authorization with scatt
 | Create/edit result draft | active Visit Performer | `arrived`, `in_service`, or `completed`; active assignment |
 | Submit Visit Result | active Visit Performer | physical Visit completed and result valid |
 | Review Visit Result | Responsible Doctor or canonical personal doctor Visit Performer | latest submitted result only; performer doctor may review own result |
-| Finalize clinical record | Responsible Doctor or canonical personal doctor Visit Performer | Visit: latest result approved; non-Visit: applicable consultation guards |
+| Finalize clinical record | Responsible Doctor or canonical personal doctor Visit Performer for Visit; Responsible Doctor only for non-Visit | Visit: latest result approved; non-Visit: applicable consultation guards |
 | Close Visit | Responsible Doctor or canonical personal doctor Visit Performer | all Visit closure invariants; provenance prefers Responsible Doctor when both apply |
 | Close non-Visit consultation | Responsible Doctor only | non-Visit disposition + finalized record; no Visit entities required |
 | Create Clinical Amendment | `clinical_finalized_by_user_id` | record finalized |
@@ -580,11 +581,12 @@ Controllers must not independently reconstruct workflow authorization with scatt
 Explicit denials in the core:
 
 - Command Center cannot perform clinical findings/review/finalization actions merely because of legacy role representation.
-- Visit Performer cannot author canonical diagnosis, prescription, or final assessment through ordinary performer authority. The explicit doctor-performer exception permits review, clinical finalization, and Visit closure only for that request.
+- Visit Performer cannot author canonical diagnosis, prescription, or final assessment through ordinary performer authority. The explicit doctor-performer exception permits review, Visit clinical finalization, and Visit closure only for that request.
 - Admin and super-admin capabilities do not imply clinician authority.
 - `clinical_audit` is a read/audit capability, not clinical mutation authority.
 - Another doctor cannot review/finalize/amend/close solely because they are a doctor; controlled handover is deferred. A doctor with canonical Visit Performer authority is not an unrelated doctor and may exercise the explicit exception only for Visit closure.
 - A doctor Visit Performer is denied non-Visit closure even when otherwise clinically eligible; only the canonical Responsible Doctor may close a non-Visit request.
+- A doctor Visit Performer is denied non-Visit finalization even when otherwise clinically eligible; only the canonical Responsible Doctor may finalize a non-Visit record.
 - Closure actor need not equal `medicalrecords.clinical_finalized_by_user_id`; finalization and closure have independent attribution.
 
 When the new workflow is authoritative, Responsible Doctor authority comes from the active Responsible Doctor assignment, not fallback `dokter_id` or `accepted_by_user_id`. Visit Performer authority comes from the canonical active performer assignment, not compatibility projection columns alone.
@@ -894,7 +896,7 @@ Cover at minimum:
 - immutable Clinical Amendment and ordered read projection;
 - Visit closure prerequisites;
 - non-Visit closure without Visit Result/Review;
-- idempotent finalization and closure;
+- Task 9 finalization retries follow its existing idempotent marker/event contract; Clinical Closure exact same-key plus same-fingerprint replay returns historical success, a new key after closure returns `CLINICAL_ALREADY_CLOSED`, and a same key with a different fingerprint returns `CLOSURE_KEY_CONFLICT`;
 - clinical closure receipt, fingerprint, provenance, replay, conflict, and already-closed semantics;
 - closure versus finalization, correction, Visit Result, and amendment ordering;
 - Visit and non-Visit closure authority and prerequisite denials;
@@ -929,8 +931,8 @@ Prove at minimum:
 
 - Command Center cannot act as Responsible Doctor.
 - Command Center cannot submit performer clinical evidence unless it is also a separately valid personal performer identity through the canonical personal-Nakes path; facility identity alone never suffices.
-- Non-doctor Visit Performer cannot review/finalize/close; a canonical personal doctor Visit Performer may review/finalize/close a Visit under the explicit doctor-performer exception, but cannot close a non-Visit consultation.
-- A doctor Visit Performer cannot close a non-Visit consultation; only the canonical Responsible Doctor may do so.
+- Non-doctor Visit Performer cannot review/finalize/close; a canonical personal doctor Visit Performer may review/finalize/close a Visit under the explicit doctor-performer exception, but cannot finalize or close a non-Visit consultation.
+- A doctor Visit Performer cannot finalize or close a non-Visit consultation; only the canonical Responsible Doctor may perform those operations.
 - Closure actor may differ from `clinical_finalized_by_user_id`; finalization and closure attribution are independent.
 - Admin/super-admin cannot mutate clinical workflow through governance authority.
 - unrelated doctor cannot review/finalize/amend in the core.
@@ -993,6 +995,7 @@ For an enrolled Visit request:
 - Review: `clinical_reviews` attached to exact Visit Result versions.
 - Review authority: active Responsible Doctor assignment or, for the explicit exception, active canonical personal doctor Visit Performer assignment; provenance is stored on the review.
 - Clinical final record: finalized `medicalrecords` plus ordered `clinical_amendments`.
+- Clinical finalization authority: Responsible Doctor for non-Visit; Responsible Doctor or canonical personal doctor Visit Performer for Visit.
 - Request completion: `requests.request_status` changed only by the applicable clinical closure operation.
 - Clinical closure receipt: `clinical_closure_operations` records successful closure operations, globally unique idempotency keys, server fingerprints, authority provenance, and the MariaDB closure clock.
 - Timeline: `request_events` as projection/history.
