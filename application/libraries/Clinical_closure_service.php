@@ -92,7 +92,15 @@ class Clinical_closure_service
             $operationId = $this->model->insertSuccessfulReceipt($receiptRow);
             if (!$operationId) {
                 $this->db->trans_rollback();
-                $collision = $this->model->findByIdempotencyKey($key);
+                // A concurrent transaction may have just released the unique
+                // key after the failed insert.  Re-read briefly on the fresh
+                // connection snapshot before classifying the collision.
+                $collision = null;
+                for ($attempt = 0; $attempt < 10; $attempt++) {
+                    $collision = $this->model->findByIdempotencyKey($key);
+                    if ($collision) { break; }
+                    usleep(20000);
+                }
                 if ($collision && (string) $collision->operation_fingerprint === $fingerprint && (int) $collision->request_id === $requestId) { return $this->success($collision, true); }
                 if ($collision) { return $this->fail('CLOSURE_KEY_CONFLICT'); }
                 return $this->fail('WRITE_FAILED');
