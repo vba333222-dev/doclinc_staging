@@ -1,0 +1,59 @@
+{
+  "migration_id": "20260901000100_clinical_closure_foundation",
+  "migration_name": "Clinical closure receipt foundation",
+  "description": "Create the immutable successful-operation receipt for clinical closure.",
+  "minimum_mariadb_version": "10.11.0",
+  "schema_only": true,
+  "imports_package_data": false,
+  "enables_runtime": false,
+  "expected_created_tables": ["clinical_closure_operations"],
+  "expected_modified_tables": [],
+  "required_applied_migrations": [
+    {"migration_id":"00000000000000_clinical_schema_ledger","checksum":"12a2124722792ce2ec1b6635fc668240d79933889f9dc7f0745928d1dd7a7eab"}
+  ],
+  "preconditions": {"tables_must_be_empty": []},
+  "steps": [
+    {
+      "step_id": "001_create_clinical_closure_operations",
+      "type": "create_table",
+      "sql_file": "sql/20260901000100/001_create_clinical_closure_operations.sql",
+      "expected_schema": {
+        "table_name":"clinical_closure_operations",
+        "engine":"InnoDB",
+        "default_charset":"utf8mb4",
+        "default_collation":"utf8mb4_general_ci",
+        "columns":[
+          {"name":"closure_operation_id","column_type":"bigint(20) unsigned","nullable":false,"default":null,"extra":"auto_increment","character_set":null,"collation":null,"generation_expression":""},
+          {"name":"request_id","column_type":"int(11)","nullable":false,"default":null,"extra":"","character_set":null,"collation":null,"generation_expression":""},
+          {"name":"closure_mode","column_type":"enum('visit','non_visit')","nullable":false,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_general_ci","generation_expression":""},
+          {"name":"idempotency_key","column_type":"varchar(191)","nullable":false,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_bin","generation_expression":""},
+          {"name":"operation_fingerprint","column_type":"char(64)","nullable":false,"default":null,"extra":"","character_set":"ascii","collation":"ascii_bin","generation_expression":""},
+          {"name":"closed_by_user_id","column_type":"int(11)","nullable":false,"default":null,"extra":"","character_set":null,"collation":null,"generation_expression":""},
+          {"name":"authority_source","column_type":"enum('responsible_doctor','doctor_visit_performer')","nullable":false,"default":null,"extra":"","character_set":"utf8mb4","collation":"utf8mb4_general_ci","generation_expression":""},
+          {"name":"responsible_assignment_id","column_type":"bigint(20) unsigned","nullable":true,"default":null,"extra":"","character_set":null,"collation":null,"generation_expression":""},
+          {"name":"visit_assignment_id","column_type":"bigint(20) unsigned","nullable":true,"default":null,"extra":"","character_set":null,"collation":null,"generation_expression":""},
+          {"name":"closed_at","column_type":"datetime(6)","nullable":false,"default":null,"extra":"","character_set":null,"collation":null,"generation_expression":""}
+        ],
+        "primary_key":["closure_operation_id"],
+        "unique_indexes":[
+          {"name":"uq_clinical_closure_operation_request","columns":["request_id"]},
+          {"name":"uq_clinical_closure_operation_idempotency","columns":["idempotency_key"]}
+        ],
+        "indexes":[
+          {"name":"fk_clinical_closure_operation_responsible","columns":["responsible_assignment_id"]},
+          {"name":"fk_clinical_closure_operation_visit","columns":["visit_assignment_id"]},
+          {"name":"idx_clinical_closure_operation_actor","columns":["closed_by_user_id","closed_at"]}
+        ],
+        "foreign_keys":[
+          {"name":"fk_clinical_closure_operation_request","columns":["request_id"],"referenced_table":"requests","referenced_columns":["request_id"],"on_update":"RESTRICT","on_delete":"RESTRICT"},
+          {"name":"fk_clinical_closure_operation_responsible","columns":["responsible_assignment_id"],"referenced_table":"request_responsible_doctor_assignments","referenced_columns":["responsible_assignment_id"],"on_update":"RESTRICT","on_delete":"RESTRICT"},
+          {"name":"fk_clinical_closure_operation_visit","columns":["visit_assignment_id"],"referenced_table":"request_visit_performer_assignments","referenced_columns":["visit_assignment_id"],"on_update":"RESTRICT","on_delete":"RESTRICT"}
+        ],
+        "check_constraints":[
+          {"name":"chk_clinical_closure_operation_fingerprint","expression":"operation_fingerprint regexp '^[0-9a-f]{64}$'"},
+          {"name":"chk_clinical_closure_operation_shape","expression":"closure_mode='non_visit' and authority_source='responsible_doctor' and responsible_assignment_id is not null and visit_assignment_id is null or closure_mode='visit' and authority_source='responsible_doctor' and responsible_assignment_id is not null or closure_mode='visit' and authority_source='doctor_visit_performer' and visit_assignment_id is not null"}
+        ]
+      }
+    }
+  ]
+}
