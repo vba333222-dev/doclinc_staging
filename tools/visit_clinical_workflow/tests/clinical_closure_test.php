@@ -7,6 +7,7 @@ $app->config->set('realtime_requests_enabled', true);
 $app->config->set('realtime_client_enabled', true);
 $app->config->set('realtime_notifications_enabled', true);
 require_once APPPATH . 'libraries/Clinical_closure_service.php';
+require_once APPPATH . 'libraries/Clinical_amendment_service.php';
 $db->query("CREATE TABLE IF NOT EXISTS nakes_facility_placements (placement_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,staff_id INT UNSIGNED NOT NULL,facility_code VARCHAR(64) NOT NULL,effective_from DATETIME NOT NULL,effective_until DATETIME NULL,status ENUM('active','ended') NOT NULL DEFAULT 'active',active_staff_key INT UNSIGNED AS (CASE WHEN status='active' THEN staff_id ELSE NULL END) STORED,created_by_user_id INT NOT NULL,ended_by_user_id INT NULL,created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY(placement_id),UNIQUE KEY uq_nakes_active_staff(active_staff_key)) ENGINE=InnoDB");
 
 $base = 150000 + (int) (microtime(true) * 100) % 10000;
@@ -54,6 +55,9 @@ vcw_assert_same('CLOSURE_KEY_CONFLICT', $conflict['safe_error_code'] ?? null, 's
 
 $newKey = $service->closeClinicalConsultation($requestId, $actor, 't10-new-key-' . $requestId);
 vcw_assert_same('CLINICAL_ALREADY_CLOSED', $newKey['safe_error_code'] ?? null, 'new key after closure');
+$postClosureAmendment = (new Clinical_amendment_service($db))->amend($requestId, $recordId, $actor, 'post-closure', array(array('field_key' => 'diagnosis', 'corrected_value' => 'post-closure')), 't10-post-closure-amend-' . $requestId);
+vcw_assert_same('success', $postClosureAmendment['status'] ?? null, 'amendment remains allowed after closure');
+vcw_assert_same('Completed', (string) $db->where('request_id', $requestId)->get('requests')->row()->request_status, 'post-closure amendment does not reopen request');
 
 // Visit closure: exact approved-result assignment authorizes the performer,
 // even though the historical assignment is already in its post-review state.
