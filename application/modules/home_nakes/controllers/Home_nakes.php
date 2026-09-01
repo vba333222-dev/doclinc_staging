@@ -1628,7 +1628,7 @@ class Home_nakes extends MX_Controller
 		$ok = isset($result['status']) && $result['status'] === 'success';
 		$body = array('success' => $ok, 'safe_error_code' => $ok ? null : (string) ($result['safe_error_code'] ?? 'WRITE_FAILED'), 'message' => $ok ? 'OK' : 'Operasi tidak dapat diproses.');
 		if ($ok) $body['data'] = $result;
-		$this->output->set_status_header($ok ? 200 : 422)->set_output(json_encode($body));
+		$this->output->set_content_type('application/json')->set_status_header($ok ? 200 : 422)->set_output(json_encode($body));
 	}
 
 	public function clinical_review()
