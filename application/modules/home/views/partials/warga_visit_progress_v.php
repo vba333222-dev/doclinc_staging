@@ -3,6 +3,7 @@
 	<?php if (!empty($is_visit)) : ?>
 		<div class="doclinc-visit-summary mb-3">
 			<p class="doclinc-visit-summary__label" data-visit-summary-label="<?= html_escape((int) $request_id); ?>"><?= html_escape($visit_label); ?></p>
+			<span class="doclinc-clinical-lottie visually-hidden" data-clinical-lottie="<?= html_escape(base_url('assets/doclinc_ui/clinical_workflow/pemberitahuan.json')); ?>" data-clinical-lottie-fallback="Status diperbarui" aria-hidden="true"></span>
 			<?php if ($visit_updated !== '') : ?>
 				<span class="doclinc-visit-meta" data-visit-summary-meta="<?= html_escape((int) $request_id); ?>">Diperbarui <?= html_escape($visit_updated); ?></span>
 			<?php endif; ?>

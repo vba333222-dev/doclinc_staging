@@ -33,6 +33,7 @@ test('touched workflow surfaces keep actor-safe correction presentation', async 
   const home = read('application/modules/home/views/home_v.php');
   const nakes = read('application/modules/home_nakes/views/partials/nakes_active_task_card_v.php');
   expect(home).toContain('warga_visit_progress_v');
+  expect(home).toContain('doclinc-clinical-lottie.js');
   expect(nakes).toContain('primary_next_action');
   expect(nakes).not.toContain('correction_reason');
   await page.setContent('<div data-role="warga-progress">Sedang ditinjau dokter</div>');

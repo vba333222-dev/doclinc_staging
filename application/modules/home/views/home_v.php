@@ -4014,6 +4014,12 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 	<?php endif; ?>
 	<?php if ($clinical_suggestions_enabled) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-suggestions.js')); ?>"></script>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-lottie.js')); ?>"></script>
+		<script>
+			document.querySelectorAll('[data-clinical-lottie]').forEach(function (element) {
+				window.DoclincClinicalLottie.play(element, element.getAttribute('data-clinical-lottie'), element.getAttribute('data-clinical-lottie-fallback'));
+			});
+		</script>
 	<?php endif; ?>
 
 </body>
