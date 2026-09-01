@@ -12,9 +12,12 @@ if ($barrierDir !== '' && $runId !== '' && $scenarioId !== '' && ($workerId === 
     $record = $db->select('record_id,clinical_finalized_at,clinical_finalized_by_user_id')->where('request_id', $requestId)->order_by('record_id', 'DESC')->limit(1)->get('medicalrecords')->row_array();
     $user = $db->select('userId,role,status')->where('userId', $actor)->get('users')->row_array();
     $staff = $db->select('staff_id,user_id,profesi,status,kode_pkm')->where('user_id', $actor)->order_by('staff_id', 'DESC')->limit(1)->get('puskesmas_staff')->row_array();
-    $facts = array('request' => $request, 'disposition' => $disposition, 'responsible' => $responsible, 'record' => array('record_id' => $record['record_id'] ?? null, 'finalized' => !empty($record['clinical_finalized_at']), 'finalized_by' => $record['clinical_finalized_by_user_id'] ?? null), 'user' => $user, 'staff' => $staff, 'mode' => $mode);
+    $result = $db->select('visit_result_id,visit_assignment_id,performer_user_id,performer_staff_id,status')->where('request_id', $requestId)->where('status', 'submitted')->order_by('visit_result_id', 'DESC')->limit(1)->get('visit_results')->row_array();
+    $review = $result ? $db->select('clinical_review_id,decision')->where('visit_result_id', (int) $result['visit_result_id'])->get('clinical_reviews')->row_array() : array();
+    $assignment = $result ? $db->select('visit_assignment_id,user_id,staff_id,status')->where('visit_assignment_id', (int) $result['visit_assignment_id'])->get('request_visit_performer_assignments')->row_array() : array();
+    $facts = array('request' => $request, 'disposition' => $disposition, 'responsible' => $responsible, 'record' => array('record_id' => $record['record_id'] ?? null, 'finalized' => !empty($record['clinical_finalized_at']), 'finalized_by' => $record['clinical_finalized_by_user_id'] ?? null), 'user' => $user, 'staff' => $staff, 'result' => $result, 'review' => $review, 'assignment' => $assignment, 'mode' => $mode);
     $fingerprint = hash('sha256', json_encode($facts, JSON_UNESCAPED_SLASHES));
-    $ready = array('run_id' => $runId, 'scenario_id' => $scenarioId, 'worker_id' => $workerId, 'request_id' => $requestId, 'user_id' => $actor, 'mode' => $mode, 'fixture_fingerprint' => $fingerprint, 'call_begin_ns' => 0);
+    $ready = array('run_id' => $runId, 'scenario_id' => $scenarioId, 'worker_id' => $workerId, 'operation' => 'closure', 'request_id' => $requestId, 'user_id' => $actor, 'mode' => $mode, 'fixture_fingerprint' => $fingerprint, 'call_begin_ns' => 0);
     $tmp = $barrierDir . DIRECTORY_SEPARATOR . 'ready-' . $workerId . '.tmp'; $readyPath = $barrierDir . DIRECTORY_SEPARATOR . 'ready-' . $workerId . '.json';
     file_put_contents($tmp, json_encode($ready)); rename($tmp, $readyPath);
     $goPath = $barrierDir . DIRECTORY_SEPARATOR . 'go.json'; $deadline = microtime(true) + 10; $goData = null;
