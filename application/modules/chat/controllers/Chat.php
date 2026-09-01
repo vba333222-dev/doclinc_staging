@@ -11,6 +11,7 @@ class Chat extends MX_Controller
 		$this->load->helper('request_navigation');
 		$this->load->helper('notification');
 		$this->load->helper('nakes_presence_client');
+		$this->load->helper('clinical_workflow_assets');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			if (strtolower((string) $this->router->fetch_method()) === 'attachment') {
 				show_404();

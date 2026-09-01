@@ -827,7 +827,11 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			}
 
 			.doclinc-call-controls {
+				display: grid;
+				grid-template-columns: repeat(3, minmax(52px, 1fr));
 				gap: 10px;
+				width: min(260px, calc(100vw - 32px));
+				margin: 0 auto;
 			}
 
 			.doclinc-call-control {
@@ -838,6 +842,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			.doclinc-call-control.end-call {
 				width: 60px;
 				height: 60px;
+				justify-self: center;
 			}
 		}
 
@@ -967,9 +972,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						</svg>
 					</button>
 					<button type="button" class="doclinc-call-control end-call" id="doclincCallEnd" title="Akhiri" aria-label="Akhiri">
-						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-							<path d="M5.2 15.1c4.5-2.7 9.1-2.7 13.6 0 .7.4 1.6.2 2-.5l.8-1.5c.4-.7.2-1.6-.5-2-5.9-3.5-12.3-3.5-18.2 0-.7.4-.9 1.3-.5 2l.8 1.5c.4.7 1.3.9 2 .5Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
+						<img src="<?= html_escape(clinical_workflow_asset('livekit.end_call')); ?>" alt="" aria-hidden="true" width="24" height="24">
 					</button>
 				</div>
 			</div>

@@ -1,0 +1,13 @@
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+trace/
+*.zip
+*.trace
+*.png
+*.jpg
+*.jpeg
+*.webm
+*.mp4
+.tmp/
