@@ -32,11 +32,6 @@ class Clinical_closure_service
         return $this->close(Care_team_policy::NON_VISIT, $requestId, $userId, $idempotencyKey);
     }
 
-    public function closeClinical($requestId, $userId, $idempotencyKey)
-    {
-        return $this->close(null, $requestId, $userId, $idempotencyKey);
-    }
-
     private function close($mode, $requestId, $userId, $key)
     {
         $requestId = (int) $requestId;
@@ -49,10 +44,6 @@ class Clinical_closure_service
         try {
             $request = $this->db->query('SELECT * FROM requests WHERE request_id=? FOR UPDATE', array($requestId))->row();
             if (!$request) { return $this->rollback('REQUEST_NOT_FOUND'); }
-            if ($mode === null) {
-                $mode = $this->policy->mode($request->consultation_mode ?? null);
-                if ($mode === null) { return $this->rollback('CLINICAL_CLOSURE_MODE_MISMATCH'); }
-            }
             $fingerprint = hash('sha256', $requestId . "\n" . $mode . "\n" . $userId);
             $receipt = $this->model->findByIdempotencyKeyForUpdate($key);
             if ($receipt) {

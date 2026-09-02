@@ -1,9 +1,19 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
+require_once APPPATH . 'libraries/Visit_workflow_state_resolver.php';
+require_once APPPATH . 'libraries/Visit_workflow_presenter.php';
+require_once APPPATH . 'libraries/Visit_workflow_policy.php';
 class Clinical_workflow_surface
 {
     private $db; private $resolver; private $presenter; private $policy;
-    public function __construct($db = null, $resolver = null, $presenter = null, $policy = null) { $this->db=$db; $this->resolver=$resolver; $this->presenter=$presenter; $this->policy=$policy; }
+    public function __construct($db = null, $resolver = null, $presenter = null, $policy = null) {
+        $ci = get_instance();
+        $this->db = $db ?: $ci->db;
+        $enabled = (bool) $ci->config->item('visit_clinical_workflow_enabled');
+        $this->policy = $policy ?: new Visit_workflow_policy($this->db, $enabled);
+        $this->resolver = $resolver ?: new Visit_workflow_state_resolver($this->db, $this->policy, $enabled);
+        $this->presenter = $presenter ?: new Visit_workflow_presenter();
+    }
     public function forRequest($requestId, $actorUserId)
     {
         $id=(int)$requestId; $actor=(int)$actorUserId;
@@ -14,11 +24,11 @@ class Clinical_workflow_surface
         $state=$this->resolver->resolve($id); $context=$this->actorContext($id,$actor); $presentation=$this->presenter->present($state,$context['type']);
         $data=array('request'=>$request,'workflow_state'=>$state,'presentation'=>$presentation,'actor_context'=>$context,
             'disposition_summary'=>$this->row('SELECT decision, version_no FROM visit_dispositions WHERE request_id = ? AND superseded_at IS NULL ORDER BY version_no DESC LIMIT 1',array($id)),
-            'responsible_doctor'=>$this->row('SELECT assignment_id, user_id, staff_id, status FROM request_responsible_doctor_assignments WHERE request_id = ? ORDER BY assignment_id DESC LIMIT 1',array($id)),
+            'responsible_doctor'=>$this->row('SELECT responsible_assignment_id, user_id, staff_id, status FROM request_responsible_doctor_assignments WHERE request_id = ? ORDER BY responsible_assignment_id DESC LIMIT 1',array($id)),
             'performer'=>$this->row('SELECT visit_assignment_id, user_id, staff_id, status FROM request_visit_performer_assignments WHERE request_id = ? ORDER BY visit_assignment_id DESC LIMIT 1',array($id)),
             'visit_progress'=>array('visit_status'=>$request['visit_status']),
             'result_summary'=>$this->row("SELECT visit_result_id, version_no, status, performer_user_id, performer_staff_id, visit_assignment_id FROM visit_results WHERE request_id = ? AND status = 'submitted' ORDER BY version_no DESC, visit_result_id DESC LIMIT 1",array($id)),
-            'review_summary'=>$this->row('SELECT cr.review_id, cr.visit_result_id, cr.decision, cr.correction_reason FROM clinical_reviews cr INNER JOIN visit_results vr ON vr.visit_result_id=cr.visit_result_id WHERE vr.request_id=? ORDER BY vr.version_no DESC, cr.review_id DESC LIMIT 1',array($id)),
+            'review_summary'=>$this->row('SELECT cr.clinical_review_id, cr.visit_result_id, cr.decision, cr.correction_reason FROM clinical_reviews cr INNER JOIN visit_results vr ON vr.visit_result_id=cr.visit_result_id WHERE vr.request_id=? ORDER BY vr.version_no DESC, cr.clinical_review_id DESC LIMIT 1',array($id)),
             'finalization_summary'=>$this->row('SELECT record_id, clinical_finalized_at, clinical_finalized_by_user_id FROM medicalrecords WHERE request_id = ? ORDER BY record_id DESC LIMIT 1',array($id)),
             'closure_summary'=>$this->row('SELECT closure_operation_id, closed_by_user_id, authority_source, closed_at FROM clinical_closure_operations WHERE request_id = ? LIMIT 1',array($id)), 'available_actions'=>array());
         if ($context['type']==='warga' && isset($data['review_summary']['correction_reason'])) $data['review_summary']['correction_reason']=null;

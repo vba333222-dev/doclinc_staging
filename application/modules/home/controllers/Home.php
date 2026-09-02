@@ -14,7 +14,7 @@ class Home extends MX_Controller
 		$this->load->helper('request_realtime');
 		$this->load->helper('role_prerequisite');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if (in_array($this->router->fetch_method(), array('visit_location', 'livekit_token', 'livekit_incoming_call', 'answer_livekit_call', 'reject_livekit_call', 'livekit_call_status', 'update_profile', 'update_profile_photo'), true)) {
+			if (in_array($this->router->fetch_method(), array('visit_location', 'livekit_token', 'livekit_incoming_call', 'answer_livekit_call', 'reject_livekit_call', 'livekit_call_status', 'update_profile', 'update_profile_photo', 'clinical_workflow'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -25,6 +25,21 @@ class Home extends MX_Controller
 			redirect('login');
 		}
 		$this->load->helper('maps');
+	}
+
+	public function clinical_workflow($request_id = 0)
+	{
+		$this->output->set_content_type('application/json');
+		if ($this->session->userdata('role') !== 'warga' || $this->input->method(TRUE) !== 'GET') {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'safe_error_code' => 'ACCESS_DENIED', 'message' => 'Akses ditolak.')));
+			return;
+		}
+		$this->load->library('Clinical_workflow_surface');
+		$result = $this->clinical_workflow_surface->forRequest((int) $request_id, (int) $this->session->userdata('id'));
+		$ok = ($result['status'] ?? '') === 'success';
+		$body = array('success' => $ok, 'safe_error_code' => $ok ? null : (string) ($result['safe_error_code'] ?? 'ACCESS_DENIED'), 'message' => $ok ? 'OK' : 'Akses ditolak.');
+		if ($ok) { $body['data'] = $result['data']; }
+		$this->output->set_status_header($ok ? 200 : 403)->set_output(json_encode($body));
 	}
 
 	public function update_profile_photo()

@@ -58,6 +58,19 @@ class Puskesmas_operations extends CI_Controller
 		$this->respond(200, true, 'ok', $result['data']);
 	}
 
+	public function clinical_workflow($request_id = 0)
+	{
+		$this->output->set_content_type('application/json', 'utf-8');
+		if ($this->input->method(true) !== 'GET' || !in_array((string) $this->session->userdata('role'), array('admin', 'super_admin', 'command_center'), true)) {
+			$this->respond(403, false, 'ACCESS_DENIED');
+			return;
+		}
+		$this->load->library('Clinical_workflow_surface');
+		$result = $this->clinical_workflow_surface->forRequest((int) $request_id, (int) $this->session->userdata('id'));
+		$ok = ($result['status'] ?? '') === 'success';
+		$this->respond($ok ? 200 : 403, $ok, $ok ? 'ok' : (string) ($result['safe_error_code'] ?? 'ACCESS_DENIED'), $ok ? $result['data'] : array());
+	}
+
 	public function medical_record($request_id = 0)
 	{
 		$this->output

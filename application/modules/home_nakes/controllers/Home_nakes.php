@@ -1656,6 +1656,13 @@ class Home_nakes extends MX_Controller
 		if (!$this->require_dokter_session() || strtoupper($this->input->method()) !== 'POST') return;
 		$request_id=(int)$this->input->post('request_id');
 		$this->load->library('Clinical_closure_service');
-		$this->clinical_json_result($this->clinical_closure_service->closeClinical($request_id,(int)$this->session->userdata('id'),(string)$this->input->post('idempotency_key')));
+		$request = $this->db->select('consultation_mode')->where('request_id', $request_id)->get('requests')->row();
+		$mode = $request ? strtolower(trim((string) $request->consultation_mode)) : '';
+		$actor = (int) $this->session->userdata('id');
+		$key = (string) $this->input->post('idempotency_key');
+		$result = $mode === 'visit'
+			? $this->clinical_closure_service->closeClinicalVisit($request_id, $actor, $key)
+			: ($mode === 'non_visit' ? $this->clinical_closure_service->closeClinicalConsultation($request_id, $actor, $key) : array('status' => 'error', 'safe_error_code' => 'CLINICAL_CLOSURE_MODE_MISMATCH'));
+		$this->clinical_json_result($result);
 	}
 }

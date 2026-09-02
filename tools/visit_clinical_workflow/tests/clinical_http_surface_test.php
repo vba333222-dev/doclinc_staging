@@ -1,11 +1,23 @@
 <?php
 require_once __DIR__ . '/assert.php';
 $controller = file_get_contents(dirname(__DIR__, 3) . '/application/modules/home_nakes/controllers/Home_nakes.php');
+$result_controller = file_get_contents(dirname(__DIR__, 3) . '/application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php');
+$warga_controller = file_get_contents(dirname(__DIR__, 3) . '/application/modules/home/controllers/Home.php');
+$command_controller = file_get_contents(dirname(__DIR__, 3) . '/application/controllers/Puskesmas_operations.php');
 $routes = file_get_contents(dirname(__DIR__, 3) . '/application/config/routes.php');
 $closure = file_get_contents(dirname(__DIR__, 3) . '/application/libraries/Clinical_closure_service.php');
 $config = file_get_contents(dirname(__DIR__, 3) . '/application/config/config.php');
+$result_service = file_get_contents(dirname(__DIR__, 3) . '/application/libraries/Visit_result_service.php');
 foreach (array('clinical_workflow','clinical_review','clinical_finalize','clinical_amend','clinical_close') as $method) vcw_assert_true(strpos($controller, 'function ' . $method) !== false, 'controller method ' . $method);
+foreach (array('visit_result_draft','visit_result_submit','visit_result_correction') as $method) vcw_assert_true(strpos($result_controller, 'function ' . $method) !== false, 'result controller method ' . $method);
+foreach (array('getOrCreateDraft','saveDraft','submit','createCorrectionDraft') as $method) vcw_assert_true(strpos($result_service, 'public function ' . $method) !== false, 'canonical result service method ' . $method);
+vcw_assert_true(strpos($result_controller, 'Visit_result_service') !== false && strpos($result_controller, '$this->session->userdata(\'id\')') !== false, 'result routes use canonical service and session actor');
 foreach (array("'clinical/review'] = 'home_nakes/clinical_review'","'clinical/finalize'] = 'home_nakes/clinical_finalize'","'clinical/amend'] = 'home_nakes/clinical_amend'","'clinical/close'] = 'home_nakes/clinical_close'") as $route) vcw_assert_true(strpos($routes,$route)!==false,'route '.$route);
 vcw_assert_true(strpos($controller,'trans_begin')===false,'controller does not own transaction'); vcw_assert_true(strpos($controller,'$this->session->userdata(\'id\')')!==false,'actor is session-derived');
-vcw_assert_true(strpos($controller,'closeClinical(')!==false,'closure mode delegated to service'); $closePos=strpos($controller,'public function clinical_close'); $closeBlock=$closePos===false?'':substr($controller,$closePos); vcw_assert_true(strpos($closeBlock,'->db->')===false,'closure adapter has no direct database access'); vcw_assert_true(strpos($closure,'function closeClinical(')!==false,'service owns mode resolution'); vcw_assert_true(strpos($config,"csrf_protection'] = TRUE")!==false,'global CSRF protection enabled'); echo "CLINICAL_HTTP_SURFACE=PASS\n";
+vcw_assert_true(strpos($controller,'closeClinicalVisit(')!==false && strpos($controller,'closeClinicalConsultation(')!==false,'closure mode delegated to frozen service paths'); $closePos=strpos($controller,'public function clinical_close'); $closeBlock=$closePos===false?'':substr($controller,$closePos); vcw_assert_true(strpos($closeBlock,'->db->')!==false,'closure mode is loaded from canonical request state'); vcw_assert_true(strpos($closure,'function closeClinical(')===false,'no generic closure wrapper'); vcw_assert_true(strpos($config,"csrf_protection'] = TRUE")!==false,'global CSRF protection enabled'); echo "CLINICAL_HTTP_SURFACE=PASS\n";
 vcw_assert_true(strpos($controller,"set_content_type('application/json')")!==false,'JSON content type');
+foreach (array("'konsultasi_nakes/visit_result_draft'] = 'konsultasi_nakes/visit_result_draft'", "'konsultasi_nakes/visit_result_submit'] = 'konsultasi_nakes/visit_result_submit'", "'konsultasi_nakes/visit_result_correction'] = 'konsultasi_nakes/visit_result_correction'") as $route) vcw_assert_true(strpos($routes,$route)!==false,'route '.$route);
+vcw_assert_true(strpos($warga_controller, 'function clinical_workflow') !== false, 'Warga workflow read adapter');
+vcw_assert_true(strpos($command_controller, 'function clinical_workflow') !== false, 'Command Center workflow read adapter');
+vcw_assert_true(strpos($routes, "'home/clinical_workflow/(:num)']") !== false, 'Warga workflow route');
+vcw_assert_true(strpos($routes, "'puskesmas/operations/clinical-workflow/(:num)']") !== false, 'Command Center workflow route');

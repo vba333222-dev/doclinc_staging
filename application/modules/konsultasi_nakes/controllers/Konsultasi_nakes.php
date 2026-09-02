@@ -17,12 +17,97 @@ class Konsultasi_nakes extends MX_Controller
 		$this->load->library('Visit_proof_service');
 		$this->load->library('Medicalrecord_diagnosis_service');
 		$this->load->library('Visit_vital_signs_service');
+		$this->load->library('Visit_result_service');
 		if ($this->session->userdata('logged_in') != TRUE) {
 			redirect('login', 'refresh');
 		}
 
 		// Load library ApiClient
 		$this->load->library('ApiClient');
+	}
+
+	public function visit_result_draft()
+	{
+		$this->output->set_content_type('application/json');
+		if (!$this->require_visit_result_actor()) { return; }
+		if ($this->input->method(TRUE) === 'GET') {
+			$request_id = (int) $this->input->get('request_id');
+			$result = $this->visit_result_service->getOrCreateDraft($request_id, (int) $this->session->userdata('id'));
+			$this->visit_result_json($result);
+			return;
+		}
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output->set_status_header(405)->set_output(json_encode(array('success' => false, 'safe_error_code' => 'method_not_allowed', 'message' => 'Metode tidak diizinkan.')));
+			return;
+		}
+		$payload = array(
+			'observation_summary' => $this->input->post('observation_summary', true),
+			'findings' => $this->input->post('findings', true),
+			'actions' => $this->input->post('actions', true),
+			'performer_notes' => $this->input->post('performer_notes', true),
+		);
+		$result = $this->visit_result_service->saveDraft(
+			(int) $this->input->post('visit_result_id'),
+			(int) $this->session->userdata('id'),
+			(int) $this->input->post('expected_revision'),
+			$payload
+		);
+		$this->visit_result_json($result);
+	}
+
+	public function visit_result_submit()
+	{
+		$this->output->set_content_type('application/json');
+		if (!$this->require_visit_result_actor()) { return; }
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output->set_status_header(405)->set_output(json_encode(array('success' => false, 'safe_error_code' => 'method_not_allowed', 'message' => 'Metode tidak diizinkan.')));
+			return;
+		}
+		$measurement_ids = $this->input->post('measurement_ids', true);
+		if (!is_array($measurement_ids)) { $measurement_ids = array(); }
+		$result = $this->visit_result_service->submit(
+			(int) $this->input->post('visit_result_id'),
+			(int) $this->session->userdata('id'),
+			$measurement_ids,
+			(string) $this->input->post('submission_key', true)
+		);
+		$this->visit_result_json($result);
+	}
+
+	public function visit_result_correction()
+	{
+		$this->output->set_content_type('application/json');
+		if (!$this->require_visit_result_actor()) { return; }
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->output->set_status_header(405)->set_output(json_encode(array('success' => false, 'safe_error_code' => 'method_not_allowed', 'message' => 'Metode tidak diizinkan.')));
+			return;
+		}
+		$result = $this->visit_result_service->createCorrectionDraft(
+			(int) $this->input->post('request_id'),
+			(int) $this->session->userdata('id'),
+			(int) $this->input->post('superseded_result_id'),
+			(string) $this->input->post('idempotency_key', true)
+		);
+		$this->visit_result_json($result);
+	}
+
+	private function visit_result_json($result)
+	{
+		$ok = isset($result['status']) && $result['status'] === 'success';
+		$body = array('success' => $ok, 'safe_error_code' => $ok ? null : (string) ($result['safe_error_code'] ?? 'RESULT_WRITE_FAILED'), 'message' => $ok ? 'OK' : 'Operasi hasil kunjungan tidak dapat diproses.');
+		if ($ok) { $body['data'] = $result; }
+		$this->output->set_status_header($ok ? 200 : 422)->set_output(json_encode($body));
+	}
+
+	private function require_visit_result_actor()
+	{
+		$user_id = (int) $this->session->userdata('id');
+		$identity = doclinc_dokter_identity_context($user_id, true);
+		if ($user_id < 1 || empty($identity['valid']) || (string) ($identity['account_type'] ?? '') !== 'personal') {
+			$this->output->set_status_header(403)->set_output(json_encode(array('success' => false, 'safe_error_code' => 'ACCESS_DENIED', 'message' => 'Akses ditolak.')));
+			return false;
+		}
+		return true;
 	}
 
 	public function index()
