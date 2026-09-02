@@ -8,7 +8,7 @@ if (!in_array($host, array('127.0.0.1', 'localhost'), true)) {
 }
 
 $port = (int) (getenv('VCW_DB_PORT') ?: 33317);
-$database = getenv('VCW_DB_NAME') ?: 'doclinc_visit_test';
+$database = getenv('VCW_DB_NAME') ?: 'doclinc_governance_test_task11';
 $username = getenv('VCW_DB_USER') ?: 'doclinc_test';
 $password = getenv('VCW_DB_PASSWORD') ?: 'doclinc_test_only';
 $baselineSchema = 'C:\\Project\\doclinc-local-mirror\\schema\\alibaba-staging-schema-20260822-034559.sql';
