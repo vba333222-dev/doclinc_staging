@@ -77,13 +77,19 @@ $db_host = getenv('DB_HOST') ?: '';
 $db_name = getenv('DB_NAME') ?: '';
 $db_user = getenv('DB_USER') ?: '';
 $db_pass = getenv('DB_PASS') ?: '';
+$db_port = getenv('DB_PORT') ?: '3306';
+if (getenv('DOCLINC_TEST_RUNTIME') === '1') {
+	if ($db_host !== '127.0.0.1' || (string) $db_port !== '33317' || $db_name !== 'doclinc_visit_test') {
+		throw new RuntimeException('DOCLINC_TEST_RUNTIME requires disposable loopback database 127.0.0.1:33317/doclinc_visit_test');
+	}
+}
 
 $db['default'] = array(
 	'dsn'	=> '',
 	'hostname' => $db_host,
 	'username' => $db_user,
 	'password' => $db_pass,
-	'port'     => '3306',
+	'port'     => $db_port,
 	'database' => $db_name,
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
