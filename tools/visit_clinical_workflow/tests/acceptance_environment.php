@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/bootstrap.php';
 
-if (getenv('DOCLINC_TEST_RUNTIME') !== '1' || $host !== '127.0.0.1' || (int) $port !== 33317 || $database !== 'doclinc_governance_test_task11') {
+if (getenv('DOCLINC_TEST_RUNTIME') !== '1' || $host !== '127.0.0.1' || (int) $port !== 33317 || $database !== 'doclinc_visit_test') {
     throw new RuntimeException('acceptance_environment_guard_failed');
 }
 
@@ -25,4 +25,3 @@ function acceptance_schema_preflight()
 
 acceptance_schema_preflight();
 echo "ACCEPTANCE_SCHEMA_PREFLIGHT=PASS\n";
-
