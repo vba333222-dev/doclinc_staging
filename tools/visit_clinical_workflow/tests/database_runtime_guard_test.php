@@ -3,7 +3,7 @@ require_once __DIR__ . '/assert.php';
 putenv('DOCLINC_TEST_RUNTIME=1');
 putenv('DB_HOST=127.0.0.1');
 putenv('DB_PORT=33317');
-putenv('DB_NAME=doclinc_governance_test_task11');
+putenv('DB_NAME=doclinc_visit_test');
 putenv('DB_USER=doclinc_test');
 putenv('DB_PASS=doclinc_test_only');
 define('BASEPATH', __DIR__);
