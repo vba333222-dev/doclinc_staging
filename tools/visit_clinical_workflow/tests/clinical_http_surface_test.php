@@ -19,5 +19,6 @@ vcw_assert_true(strpos($controller,"set_content_type('application/json')")!==fal
 foreach (array("'konsultasi_nakes/visit_result_draft'] = 'konsultasi_nakes/visit_result_draft'", "'konsultasi_nakes/visit_result_submit'] = 'konsultasi_nakes/visit_result_submit'", "'konsultasi_nakes/visit_result_correction'] = 'konsultasi_nakes/visit_result_correction'") as $route) vcw_assert_true(strpos($routes,$route)!==false,'route '.$route);
 vcw_assert_true(strpos($warga_controller, 'function clinical_workflow') !== false, 'Warga workflow read adapter');
 vcw_assert_true(strpos($command_controller, 'function clinical_workflow') !== false, 'Command Center workflow read adapter');
+vcw_assert_true(strpos($command_controller, "'message'") !== false, 'Command Center safe envelope includes message');
 vcw_assert_true(strpos($routes, "'home/clinical_workflow/(:num)']") !== false, 'Warga workflow route');
 vcw_assert_true(strpos($routes, "'puskesmas/operations/clinical-workflow/(:num)']") !== false, 'Command Center workflow route');

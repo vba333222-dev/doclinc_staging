@@ -170,7 +170,7 @@ class Puskesmas_operations extends CI_Controller
 
 	private function respond($status, $success, $code, array $data = array())
 	{
-		$body = array('success' => (bool) $success, 'safe_error_code' => (string) $code);
+		$body = array('success' => (bool) $success, 'safe_error_code' => (string) $code, 'message' => $success ? 'OK' : 'Operasi tidak dapat diproses.');
 		if ($success) {
 			$body['data'] = $data;
 		}
