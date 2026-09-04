@@ -37,7 +37,7 @@ function vcw_assignment_fixture($db, $request, $facility, $doctor, $doctorStaff,
 }
 
 $maximum = $db->query(
-    'SELECT GREATEST(COALESCE((SELECT MAX(userId) FROM users),0),COALESCE((SELECT MAX(staff_id) FROM puskesmas_staff),0),COALESCE((SELECT MAX(request_id) FROM requests),0)) AS base_id'
+    'SELECT GREATEST(COALESCE((SELECT MAX(userId) FROM users),0),COALESCE((SELECT MAX(staff_id) FROM puskesmas_staff),0),COALESCE((SELECT MAX(staff_id) FROM nakes_facility_placements),0),COALESCE((SELECT MAX(request_id) FROM requests),0)) AS base_id'
 )->row();
 $fixtureBase = (int) $maximum->base_id + 1000;
 $suffix = $fixtureBase;

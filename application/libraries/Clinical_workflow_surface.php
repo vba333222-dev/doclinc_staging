@@ -34,8 +34,35 @@ class Clinical_workflow_surface
         if ($context['type']==='warga' && isset($data['review_summary']['correction_reason'])) $data['review_summary']['correction_reason']=null;
         return array('status'=>'success','data'=>$data);
     }
-    private function canView($requestId,$actorId,$request) { if (is_object($this->policy) && is_callable(array($this->policy,'canView'))) return (bool)$this->policy->canView($requestId,$actorId); if (function_exists('doclinc_can_view_request')) return (bool)doclinc_can_view_request($requestId,$actorId); return false; }
-    private function actorContext($requestId,$actorId) { $role=$this->scalar('SELECT role FROM users WHERE userId = ?',array($actorId)); $type='warga'; if ((string)$role==='dokter' && $this->isResponsible($requestId,$actorId)) $type='responsible_doctor'; elseif (in_array((string)$role,array('dokter','nakes'),true) && (int)$this->scalar('SELECT COUNT(*) FROM request_visit_performer_assignments WHERE request_id=? AND user_id=? AND status IN (\'aktif\',\'selesai\')',array($requestId,$actorId))>0) $type='performer'; elseif (in_array((string)$role,array('admin','super_admin','command_center'),true)) $type='command_center'; return array('user_id'=>$actorId,'type'=>$type); }
+    private function canView($requestId,$actorId,$request) {
+        if (is_object($this->policy) && is_callable(array($this->policy,'canView'))) return (bool)$this->policy->canView($requestId,$actorId);
+        $role = (string) $this->scalar('SELECT role FROM users WHERE userId = ?', array((int) $actorId));
+        if (in_array($role, array('admin', 'super_admin', 'command_center'), true)) return true;
+        if (function_exists('doclinc_dokter_identity_context') && function_exists('doclinc_can_coordinate_request')) {
+            $identity = doclinc_dokter_identity_context((int)$actorId, true);
+            if (doclinc_can_coordinate_request((object)$request, $identity)) return true;
+        }
+        if (function_exists('doclinc_can_view_request')) return (bool)doclinc_can_view_request($requestId,$actorId);
+        return false;
+    }
+    private function actorContext($requestId,$actorId) {
+        $role = $this->scalar('SELECT role FROM users WHERE userId = ?', array($actorId));
+        $type = 'warga';
+        $identity = function_exists('doclinc_dokter_identity_context')
+            ? doclinc_dokter_identity_context((int) $actorId, true)
+            : array();
+        if (!empty($identity['valid']) && ($identity['account_type'] ?? '') === 'command_center') {
+            $type = 'command_center';
+        } elseif ((string) $role === 'dokter' && $this->isResponsible($requestId, $actorId)) {
+            $type = 'responsible_doctor';
+        } elseif (in_array((string) $role, array('dokter', 'nakes'), true)
+            && (int) $this->scalar("SELECT COUNT(*) FROM request_visit_performer_assignments WHERE request_id=? AND user_id=? AND status IN ('aktif','selesai')", array($requestId, $actorId)) > 0) {
+            $type = 'performer';
+        } elseif (in_array((string) $role, array('admin', 'super_admin', 'command_center'), true)) {
+            $type = 'command_center';
+        }
+        return array('user_id' => $actorId, 'type' => $type);
+    }
     private function isResponsible($requestId,$actorId) { return (int)$this->scalar('SELECT COUNT(*) FROM request_responsible_doctor_assignments WHERE request_id=? AND user_id=? AND status=\'aktif\'',array($requestId,$actorId))>0; }
     private function scalar($sql,$params) { $row=$this->row($sql,$params); return $row ? array_values($row)[0] : null; }
     private function row($sql,$params) { $q=$this->db->query($sql,$params); return $q ? $q->row_array() : null; }

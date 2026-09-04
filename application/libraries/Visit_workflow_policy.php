@@ -29,6 +29,18 @@ class Visit_workflow_policy
         return $row && (int) $row->count > 0;
     }
 
+    /**
+     * Returns whether this request is owned by the managed clinical workflow.
+     * Persisted enrollment remains authoritative after the feature is disabled;
+     * otherwise only a request currently eligible for first enrollment is
+     * managed. The feature flag alone never claims an existing request.
+     */
+    public function isManagedWorkflowRequest($requestId)
+    {
+        if ($this->request($requestId) === null) { return false; }
+        return $this->isEnrolled($requestId) || $this->mayEnrollNewRequest($requestId);
+    }
+
     public function mayEnrollNewRequest($requestId)
     {
         return $this->enabled && !$this->isEnrolled($requestId) && $this->requestStatus($requestId) === 'Accepted';

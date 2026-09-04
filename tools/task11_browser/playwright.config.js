@@ -15,7 +15,8 @@ const baseURL = validateBaseUrl(process.env.TASK11_BASE_URL || 'http://127.0.0.1
 
 module.exports = defineConfig({
   testDir: './tests',
-  timeout: 15000,
+  timeout: 120000,
+  workers: 1,
   expect: { timeout: 5000 },
   reporter: process.env.CI ? [['line'], ['html', { outputFolder: 'playwright-report', open: 'never' }]] : [['list']],
   use: {

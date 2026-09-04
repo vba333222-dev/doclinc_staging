@@ -208,7 +208,9 @@ class Konsultasi_nakes extends MX_Controller
 		$user_id = (int) $this->session->userdata('id');
 		$identity = doclinc_dokter_identity_context($user_id, true);
 		$request_id = (int) $this->input->post('request_id');
-		if ($this->config->item('care_team_workflow_enabled') !== true
+		$managed_workflow = function_exists('doclinc_request_is_managed_workflow')
+			&& doclinc_request_is_managed_workflow($request_id);
+		if (($this->config->item('care_team_workflow_enabled') !== true && !$managed_workflow)
 			|| empty($identity['valid'])
 			|| (string) ($identity['account_type'] ?? '') !== 'personal') {
 			$this->output->set_status_header(403)->set_output(json_encode(array('status' => 'error', 'message' => 'Anda tidak memiliki akses.')));

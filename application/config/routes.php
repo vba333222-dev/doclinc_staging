@@ -67,6 +67,7 @@ $route['home_nakes/clinical_workflow/(:num)'] = 'home_nakes/clinical_workflow/$1
 $route['home/clinical_workflow/(:num)'] = 'home/clinical_workflow/$1';
 $route['puskesmas/operations/clinical-workflow/(:num)'] = 'puskesmas_operations/clinical_workflow/$1';
 $route['clinical/review'] = 'home_nakes/clinical_review';
+$route['clinical/disposition'] = 'home_nakes/clinical_disposition';
 $route['clinical/finalize'] = 'home_nakes/clinical_finalize';
 $route['clinical/amend'] = 'home_nakes/clinical_amend';
 $route['clinical/close'] = 'home_nakes/clinical_close';

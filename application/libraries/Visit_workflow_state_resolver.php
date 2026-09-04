@@ -10,7 +10,10 @@ class Visit_workflow_state_resolver
         $id = (int) $requestId; $request = $this->row('SELECT request_status, visit_status, consultation_mode FROM requests WHERE request_id = ?', $id);
         if (!$request) return array('request_id'=>$id,'managed'=>false,'enrolled'=>false,'state'=>null);
         $enrolled = $this->policy ? $this->policy->isEnrolled($id) : ((int) $this->scalar('SELECT COUNT(*) FROM visit_dispositions WHERE request_id = ?', $id) > 0);
-        if (!$enrolled && !$this->enabled) return array('request_id'=>$id,'managed'=>false,'enrolled'=>false,'state'=>null);
+        $managed = $this->policy
+            ? ($this->enabled ? $this->policy->isManagedWorkflowRequest($id) : $enrolled)
+            : ($this->enabled || $enrolled);
+        if (!$managed) return array('request_id'=>$id,'managed'=>false,'enrolled'=>false,'state'=>null);
         if ((string)$request['request_status'] === 'Completed') return $this->result($id,$enrolled,'COMPLETED');
         if (!$enrolled) return $this->result($id,false,'WAITING_DOCTOR_DISPOSITION');
         $disposition = $this->row('SELECT decision FROM visit_dispositions WHERE request_id = ? AND superseded_at IS NULL ORDER BY version_no DESC LIMIT 1', $id);

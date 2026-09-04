@@ -547,6 +547,20 @@ if (!function_exists('doclinc_request_handling_nakes_name')) {
 }
 
 if (!function_exists('doclinc_request_handling_nakes_id')) {
+	function doclinc_request_is_managed_workflow($request_id)
+	{
+		$request_id = (int) $request_id;
+		if ($request_id < 1) {
+			return false;
+		}
+		$CI = &get_instance();
+		require_once APPPATH . 'libraries/Visit_workflow_policy.php';
+		return (new Visit_workflow_policy(
+			$CI->db,
+			$CI->config->item('visit_clinical_workflow_enabled') === true
+		))->isManagedWorkflowRequest($request_id);
+	}
+
 	function doclinc_request_handling_nakes_id($request)
 	{
 		if (!$request) {
@@ -780,7 +794,8 @@ if (!function_exists('doclinc_nakes_request_access_context')) {
 			$context['errors'][] = 'tenant_mismatch';
 			return $context;
 		}
-		if ($CI->config->item('care_team_workflow_enabled') === true) {
+		$managed_workflow = doclinc_request_is_managed_workflow($request_id);
+		if ($CI->config->item('care_team_workflow_enabled') === true || $managed_workflow) {
 			require_once APPPATH . 'libraries/Care_team_service.php';
 			$care_team = new Care_team_service($CI->db);
 			if (!$care_team->schemaReady()) {

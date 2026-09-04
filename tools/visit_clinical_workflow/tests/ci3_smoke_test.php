@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/assert.php';
-$app = require __DIR__ . '/ci3_bootstrap.php'; $policy = new Visit_workflow_policy($app->db, false); $row = $app->db->query("SELECT MIN(r.request_id) AS request_id FROM requests r LEFT JOIN visit_dispositions d ON d.request_id=r.request_id WHERE d.request_id IS NULL AND r.request_id NOT IN (47,52)")->row(); $id = $row ? (int)$row->request_id : 1; vcw_assert_safe_request_id($id);
+$app = require __DIR__ . '/ci3_bootstrap.php'; $policy = new Visit_workflow_policy($app->db, false); $row = $app->db->query("SELECT MIN(r.request_id) AS request_id FROM requests r LEFT JOIN visit_dispositions d ON d.request_id=r.request_id WHERE d.request_id IS NULL AND r.request_status='Accepted' AND r.request_id NOT IN (47,52)")->row(); $id = $row ? (int)$row->request_id : 1; vcw_assert_safe_request_id($id);
 vcw_assert_same(false, $policy->isEnrolled($id), 'enrollment query'); vcw_assert_same(false, $policy->mayEnrollNewRequest($id), 'feature off');
+vcw_assert_same(false, $policy->isManagedWorkflowRequest($id), 'legacy request remains unmanaged with feature off');
+vcw_assert_same(true, (new Visit_workflow_policy($app->db, true))->isManagedWorkflowRequest($id), 'feature-on request is managed before disposition');
 require_once dirname(__DIR__, 3) . '/application/libraries/Visit_workflow_state_resolver.php';
 $resolverOff = new Visit_workflow_state_resolver($app->db, $policy, false);
 vcw_assert_same(null, $resolverOff->resolve($id)['state'], 'legacy state with feature off');
@@ -13,5 +15,6 @@ $app->db->query("INSERT INTO visit_dispositions (request_id,version_no,decision,
 $enrolledPolicy = new Visit_workflow_policy($app->db, false);
 vcw_assert_same(true, $enrolledPolicy->isEnrolled($id), 'enrolled query after disposition');
 vcw_assert_same(false, $enrolledPolicy->mayEnrollNewRequest($id), 'enrolled flag off remains no new enrollment');
+vcw_assert_same(true, $enrolledPolicy->isManagedWorkflowRequest($id), 'enrolled request remains managed with feature off');
 echo "CI3_BOOTSTRAP=PASS\nREAL_POLICY_EXECUTION=PASS\nREAL_STATE_RESOLVER_EXECUTION=PASS\nDISPOSABLE_DB_CONNECTION=PASS\nPOLICY_IS_ENROLLED=false\nPOLICY_MAY_ENROLL=false\n";
 echo "POLICY_IS_ENROLLED_AFTER_DISPOSITION=true\nPOLICY_MAY_ENROLL_AFTER_DISPOSITION=false\n";

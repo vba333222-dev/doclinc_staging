@@ -61,7 +61,16 @@ class Puskesmas_operations extends CI_Controller
 	public function clinical_workflow($request_id = 0)
 	{
 		$this->output->set_content_type('application/json', 'utf-8');
-		if ($this->input->method(true) !== 'GET' || !in_array((string) $this->session->userdata('role'), array('admin', 'super_admin', 'command_center'), true)) {
+		$method_allowed = $this->input->method(true) === 'GET';
+		$role = (string) $this->session->userdata('role');
+		$actor_allowed = in_array($role, array('admin', 'super_admin', 'command_center'), true);
+		if ($role === 'dokter') {
+			$actor = $this->freshActor();
+			require_once APPPATH . 'libraries/Puskesmas_operations_policy.php';
+			$scope = (new Puskesmas_operations_policy())->snapshotScope($actor);
+			$actor_allowed = !empty($scope['allowed']);
+		}
+		if (!$method_allowed || !$actor_allowed) {
 			$this->respond(403, false, 'ACCESS_DENIED');
 			return;
 		}

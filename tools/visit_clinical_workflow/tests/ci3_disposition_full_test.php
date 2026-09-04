@@ -4,14 +4,8 @@ $app = require __DIR__ . '/ci3_bootstrap.php'; $db = $app->db;
 function vcw_id($n) { global $vcwBase; return $vcwBase + $n; }
 $vcwBase = 30000 + random_int(1, 500) * 100;
  $vcwFacility = 'PKM-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
-$db->query("DELETE FROM request_events WHERE request_id >= 20000");
-$db->query("DELETE FROM visit_assignment_operations WHERE request_id >= 20000");
-$db->query("DELETE FROM request_responsible_doctor_assignments WHERE request_id >= 20000");
-$db->query("DELETE FROM request_visit_performer_assignments WHERE request_id >= 20000");
-$db->query("DELETE FROM visit_dispositions WHERE request_id >= 20000");
-$db->query("DELETE FROM requests WHERE request_id >= 20000");
-$db->query("DELETE FROM puskesmas_staff WHERE staff_id >= 20000");
-$db->query("DELETE FROM users WHERE userId >= 20000");
+$vcwMax = $db->query('SELECT GREATEST(COALESCE(MAX(userId), 0), COALESCE((SELECT MAX(request_id) FROM requests), 0)) AS max_id FROM users')->row();
+$vcwBase = max($vcwBase, ((int) ($vcwMax->max_id ?? 0)) + 100);
 function vcw_user($db,$id,$remark=null,$role='dokter') { global $vcwFacility; if($remark===null){$remark=$vcwFacility;} $db->query("INSERT INTO users (userId,nama,email,username,password,role,status,must_change_password,remark) VALUES (?,?,?,?,?,?,?,?,?)",array($id,'Synthetic '.$id,'u'.$id.'@runner.invalid','u'.$id,password_hash(bin2hex(random_bytes(12)),PASSWORD_BCRYPT),$role,'aktif',0,$remark)); }
 function vcw_fixture($db,$request,$doctor,$performer=false) {
     global $vcwFacility;

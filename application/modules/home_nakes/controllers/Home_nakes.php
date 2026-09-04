@@ -564,7 +564,7 @@ class Home_nakes extends MX_Controller
 			$this->care_team_response(405, array('status' => 'error', 'message' => 'Metode tidak diizinkan.'));
 			return;
 		}
-		if (!$this->care_team_post_ready()) {
+		if (!$this->care_team_post_ready((int) $this->input->post('request_id'))) {
 			return;
 		}
 		$user_id = (int) $this->session->userdata('id');
@@ -590,7 +590,7 @@ class Home_nakes extends MX_Controller
 			$this->care_team_response(405, array('status' => 'error', 'message' => 'Metode tidak diizinkan.'));
 			return;
 		}
-		if (!$this->care_team_post_ready()) {
+		if (!$this->care_team_post_ready((int) $this->input->post('request_id'))) {
 			return;
 		}
 		$user_id = (int) $this->session->userdata('id');
@@ -634,7 +634,7 @@ class Home_nakes extends MX_Controller
 			$this->care_team_response(405, array('status' => 'error', 'message' => 'Metode tidak diizinkan.'));
 			return;
 		}
-		if (!$this->care_team_post_ready()) {
+		if (!$this->care_team_post_ready((int) $this->input->post('request_id'))) {
 			return;
 		}
 		$user_id = (int) $this->session->userdata('id');
@@ -649,18 +649,20 @@ class Home_nakes extends MX_Controller
 		$this->care_team_response(!empty($result['ok']) ? 200 : 409, $result);
 	}
 
-	private function care_team_post_ready()
+	private function care_team_post_ready($request_id = 0)
 	{
 		if ($this->input->method(TRUE) !== 'POST') {
 			$this->care_team_response(405, array('status' => 'error', 'message' => 'Metode tidak diizinkan.'));
 			return false;
 		}
-		if ($this->config->item('care_team_workflow_enabled') !== true) {
-			$this->care_team_response(403, array('status' => 'error', 'message' => 'Layanan belum tersedia.'));
-			return false;
-		}
 		if (!$this->require_dokter_session()) {
 			return false;
+		}
+		if ($this->config->item('care_team_workflow_enabled') !== true) {
+			if ((int) $request_id < 1 || !doclinc_request_is_managed_workflow((int) $request_id)) {
+				$this->care_team_response(403, array('status' => 'error', 'message' => 'Layanan belum tersedia.'));
+				return false;
+			}
 		}
 		return true;
 	}
@@ -771,6 +773,16 @@ class Home_nakes extends MX_Controller
 		}
 
 		$request = doclinc_request_row($id);
+		if (doclinc_request_is_managed_workflow($id)) {
+			$this->output
+				->set_status_header(403)
+				->set_output(json_encode(array(
+					'status' => 'error',
+					'safe_error_code' => 'MANAGED_WORKFLOW_REQUIRED',
+					'message' => 'Permintaan ini harus diproses melalui alur klinis.',
+				)));
+			return;
+		}
 		if (!$request || (string) $request->request_status !== 'Pending' || !doclinc_can_coordinate_request($request, $identity_context)) {
 			$this->output
 				->set_status_header(403)
@@ -1636,6 +1648,34 @@ class Home_nakes extends MX_Controller
 		if (!$this->require_dokter_session() || strtoupper($this->input->method()) !== 'POST') return;
 		$this->load->library('Clinical_review_service');
 		$this->clinical_json_result($this->clinical_review_service->review((int)$this->input->post('request_id'),(int)$this->input->post('visit_result_id'),(int)$this->session->userdata('id'),(string)$this->input->post('decision'),(string)$this->input->post('correction_reason'),(string)$this->input->post('review_notes'),(string)$this->input->post('idempotency_key')));
+	}
+
+	public function clinical_disposition()
+	{
+		if (!$this->require_dokter_session() || strtoupper($this->input->method()) !== 'POST') return;
+		$this->load->library('Visit_disposition_service');
+		$input = array(
+			'decision' => (string) $this->input->post('decision'),
+			'urgency' => (string) $this->input->post('urgency'),
+			'instructions' => (string) $this->input->post('instructions'),
+			'rationale' => (string) $this->input->post('rationale'),
+			'required_profession' => (string) $this->input->post('required_profession'),
+			'required_competency_note' => (string) $this->input->post('required_competency_note'),
+		);
+		$result = $this->visit_disposition_service->create(
+			(int) $this->input->post('request_id'),
+			(int) $this->session->userdata('id'),
+			$input,
+			(string) $this->input->post('idempotency_key')
+		);
+		$ok = !empty($result['ok']);
+		$body = array(
+			'success' => $ok,
+			'safe_error_code' => $ok ? null : (string) ($result['code'] ?? 'DISPOSITION_CONFLICT'),
+			'message' => $ok ? 'OK' : 'Operasi disposisi tidak dapat diproses.',
+		);
+		if ($ok) $body['data'] = $result;
+		$this->output->set_content_type('application/json')->set_status_header($ok ? 200 : 422)->set_output(json_encode($body));
 	}
 
 	public function clinical_finalize()

@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/assert.php';
+require_once __DIR__ . '/task7_lock_observer.php';
 $app = require __DIR__ . '/ci3_bootstrap.php';
 $db = $app->db;
 $app->config->set('care_team_workflow_enabled', true);
@@ -43,6 +44,9 @@ function r7cc_collect($process, array $pipes, $message)
 
 function r7cc_root_password()
 {
+    if (getenv('VCW_LOCK_OBSERVER_MODE') === 'direct') {
+        return getenv('VCW_LOCK_OBSERVER_PASSWORD') ?: '';
+    }
     $inspect = json_decode((string) shell_exec('docker inspect visit_clinical_workflow-db-1'), true);
     foreach (($inspect[0]['Config']['Env'] ?? array()) as $entry) {
         if (strpos($entry, 'MARIADB_ROOT_PASSWORD=') === 0) { return substr($entry, strlen('MARIADB_ROOT_PASSWORD=')); }
@@ -52,6 +56,7 @@ function r7cc_root_password()
 
 function r7cc_edges($password)
 {
+    if (getenv('VCW_LOCK_OBSERVER_MODE') === 'direct') { return task7_lock_observer_edges(); }
     $sql = 'SELECT r.trx_mysql_thread_id,b.trx_mysql_thread_id FROM information_schema.INNODB_LOCK_WAITS w JOIN information_schema.INNODB_TRX r ON r.trx_id=w.requesting_trx_id JOIN information_schema.INNODB_TRX b ON b.trx_id=w.blocking_trx_id';
     $command = 'docker exec visit_clinical_workflow-db-1 mariadb -N -B -uroot -p' . escapeshellarg($password) . ' doclinc_visit_test -e ' . escapeshellarg($sql);
     $edges = array();
