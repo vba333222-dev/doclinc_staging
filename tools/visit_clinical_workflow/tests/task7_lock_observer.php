@@ -16,6 +16,18 @@ function task7_lock_observer_edges()
         || trim($user) === '' || $password === '') {
         throw new RuntimeException('lock_observer_refuses_non_disposable_target');
     }
+    $workerHost = getenv('VCW_DB_HOST');
+    $workerPort = (int) getenv('VCW_DB_PORT');
+    $workerName = getenv('VCW_DB_NAME');
+    if ($workerHost !== false && $workerHost !== '' && $workerHost !== $host) {
+        throw new RuntimeException('lock_observer_target_mismatch');
+    }
+    if ($workerPort > 0 && $workerPort !== $port) {
+        throw new RuntimeException('lock_observer_target_mismatch');
+    }
+    if ($workerName !== false && $workerName !== '' && $workerName !== $database) {
+        throw new RuntimeException('lock_observer_target_mismatch');
+    }
     mysqli_report(MYSQLI_REPORT_OFF);
     $db = @new mysqli($host, $user, $password, $database, $port);
     if ($db->connect_errno) { throw new RuntimeException('lock_observer_connection_failed'); }

@@ -4,11 +4,14 @@ const { actorPage, canonicalSurface } = require('../support/lifecycle');
 const { installBrowserHygiene } = require('./console_network_helpers');
 const path = require('path');
 
-test('workflow remains safe when optional Lottie assets fail', async ({ browser }) => {
-  const data = fixtureData(); const actor = await actorPage(browser, data, 'WARGA'); let aborted = 0;
-  const hygiene = installBrowserHygiene(actor.page, value => /livekit|lottie|clinical_workflow\/pemberitahuan\.json|ERR_FAILED/.test(value));
+test('workflow remains safe when optional Lottie and realtime dependencies fail', async ({ browser }) => {
+  const data = fixtureData(); const actor = await actorPage(browser, data, 'WARGA'); let aborted = 0; let realtimeFailures = 0;
+  const hygiene = installBrowserHygiene(actor.page, value => /clinical_workflow\/pemberitahuan\.json|realtime\/requests\/snapshot|ERR_FAILED/.test(value));
   await actor.page.route('**/clinical_workflow/pemberitahuan.json', route => { aborted += 1; route.abort(); });
-  await actor.page.route('**/realtime/**', route => route.abort());
+  await actor.page.route('**/realtime/requests/snapshot', route => route.abort());
+  actor.page.on('requestfailed', request => {
+    if (request.url().includes('/realtime/requests/snapshot')) realtimeFailures += 1;
+  });
   await actor.page.setContent('<span data-clinical-lottie="/assets/doclinc_ui/clinical_workflow/pemberitahuan.json" data-clinical-lottie-fallback="Status diperbarui" aria-live="polite"></span><main>Workflow tetap tersedia</main>');
   await actor.page.addScriptTag({ path: path.resolve(__dirname, '../../../assets/js/doclinc-clinical-lottie.js') });
   await actor.page.evaluate(() => {
@@ -16,8 +19,10 @@ test('workflow remains safe when optional Lottie assets fail', async ({ browser 
     return window.DoclincClinicalLottie.play(document.querySelector('[data-clinical-lottie]'), '/assets/doclinc_ui/clinical_workflow/pemberitahuan.json', 'Status diperbarui');
   });
   await expect(actor.page.locator('[data-clinical-lottie]')).toHaveText('Status diperbarui');
+  await actor.page.evaluate(() => fetch('/realtime/requests/snapshot').catch(() => null));
   const surface = await canonicalSurface(actor.page, 'WARGA', data.requests.historical_completed);
   expect(surface.request).toBeTruthy();
   expect(aborted).toBe(1);
+  expect(realtimeFailures).toBe(1);
   await expect(actor.page.locator('body')).not.toContainText('SQLSTATE'); hygiene.assertClean(); await actor.context.close();
 });

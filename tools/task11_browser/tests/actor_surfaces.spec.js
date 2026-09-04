@@ -11,11 +11,21 @@ test('all six actors receive the canonical role-filtered workflow surface', asyn
   for (const name of ['WARGA', 'COMMAND_CENTER', 'RD', 'DOCTOR_PERFORMER', 'NONDOCTOR_PERFORMER', 'UNRELATED_DOCTOR']) {
     const actor = await actorPage(browser, data, name);
     const result = await actor.page.request.get(name === 'WARGA' ? `/home/clinical_workflow/${requestId}` : name === 'COMMAND_CENTER' ? `/puskesmas/operations/clinical-workflow/${requestId}` : `/home_nakes/clinical_workflow/${requestId}`);
-    if (name === 'WARGA' || name === 'COMMAND_CENTER') {
+    if (name === 'WARGA' || name === 'COMMAND_CENTER' || name === 'RD') {
       expect(result.status(), `${name} surface status`).toBe(200); const body = await result.json();
       expect(body.data).toEqual(expect.objectContaining({ workflow_state: expect.objectContaining({ state: expect.any(String) }), actor_context: expect.any(Object), available_actions: expect.anything() }));
-      if (name === 'COMMAND_CENTER') expect(body.data.actor_context.type).toBe('command_center');
-    } else expect([200, 302, 403]).toContain(result.status());
+      const expectedType = { WARGA: 'warga', COMMAND_CENTER: 'command_center', RD: 'responsible_doctor' }[name];
+      expect(body.data.actor_context.type, `${name} canonical actor context`).toBe(expectedType);
+    } else if (name === 'NONDOCTOR_PERFORMER') {
+      expect(result.status(), `${name} authorized surface status`).toBe(200); const body = await result.json();
+      expect(body.data.actor_context).toEqual(expect.objectContaining({ type: 'performer' }));
+    } else if (name === 'DOCTOR_PERFORMER') {
+      // This request is assigned to the non-doctor performer above; the doctor
+      // performer is therefore a request-unrelated clinician and must be denied.
+      expect(result.status(), `${name} unrelated surface denial`).toBe(403);
+    } else {
+      expect(result.status(), `${name} unrelated surface denial`).toBe(403);
+    }
     await actor.context.close();
   }
 });
