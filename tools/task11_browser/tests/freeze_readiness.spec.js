@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { fixtureData, post, expectDenied, csrf } = require('./fixtures');
+const { fixtureData, stateProbe, post, expectDenied, csrf } = require('./fixtures');
 const { actorPage, enroll, canonicalSurface } = require('../support/lifecycle');
 const { readSurface } = require('./surface_helpers');
 
@@ -55,7 +55,10 @@ test.describe('Task 11C.3 browser freeze-readiness boundaries', () => {
     // uses the same canonical key and must replay rather than create a second row.
     const first = await enroll(rdA.page, data.requests.idempotency, key);
     const retry = await enroll(rdA.page, data.requests.idempotency, key);
-    expect(first.body).toBeTruthy(); expect(retry.body).toBeTruthy();
+    const firstDisposition = first.body.data || first.body; const retryDisposition = retry.body.data || retry.body;
+    expect(firstDisposition).toEqual(expect.objectContaining({ disposition_id: expect.any(Number) }));
+    expect(retryDisposition).toEqual(expect.objectContaining({ disposition_id: firstDisposition.disposition_id, version_no: firstDisposition.version_no }));
+    expect(stateProbe(data.requests.idempotency).disposition_count).toBe(1);
     const replaySurface = await canonicalSurface(warga.page, 'WARGA', data.requests.idempotency);
     expect(replaySurface.disposition_summary || {}).toBeTruthy();
 
@@ -96,7 +99,9 @@ test.describe('Task 11C.3 browser freeze-readiness boundaries', () => {
     }, body)).resolves.toBe('transport_failed');
     await rd.page.unroute('**/clinical/disposition');
     const retry = await enroll(rd.page, data.requests.idempotency, key);
-    expect(retry.body).toBeTruthy();
+    const retryDisposition = retry.body.data || retry.body;
+    expect(retryDisposition).toEqual(expect.objectContaining({ disposition_id: expect.any(Number) }));
+    expect(stateProbe(data.requests.idempotency).disposition_count).toBe(1);
     const canonical = await canonicalSurface(warga.page, 'WARGA', data.requests.idempotency);
     expect(canonical.workflow_state.state).not.toBe('WAITING_DOCTOR_DISPOSITION');
     await warga.context.close(); await rd.context.close();
@@ -105,13 +110,21 @@ test.describe('Task 11C.3 browser freeze-readiness boundaries', () => {
   test('legacy non-enrolled acceptance remains compatible and historical reads stay non-managed', async ({ browser }) => {
     const data = fixtureData();
     const command = await actorPage(browser, data, 'COMMAND_CENTER');
-    const legacyBefore = await readSurface(command.page, 'home_nakes', data.requests.legacy, { requireSuccess: false });
+    const legacyBefore = stateProbe(data.requests.legacy);
     const legacyAccept = await post(command.page, '/home_nakes/accept_request', { id: data.requests.legacy, latitude: '0', longitude: '0' });
-    expect([200, 302]).toContain(legacyAccept.response.status());
-    const historicalBefore = await readSurface(command.page, 'home_nakes', data.requests.historical_completed, { requireSuccess: false });
-    expect([200, 302, 403]).toContain(historicalBefore.response.status());
-    const historicalAfter = await readSurface(command.page, 'home_nakes', data.requests.historical_completed, { requireSuccess: false });
-    expect(historicalAfter.response.status()).toBe(historicalBefore.response.status());
+    expect(legacyAccept.response.status()).toBe(200);
+    expect(legacyAccept.json).toEqual(expect.objectContaining({ status: 'success' }));
+    const legacyAfter = stateProbe(data.requests.legacy);
+    expect(legacyBefore.request_status).toBe('Pending');
+    expect(legacyAfter.request_status).toBe('Accepted');
+    expect(legacyAfter.disposition_count).toBe(0);
+    const historicalBefore = stateProbe(data.requests.historical_completed);
+    const historicalSurfaceBefore = await readSurface(command.page, 'home_nakes', data.requests.historical_completed, { requireSuccess: false });
+    const historicalAfter = stateProbe(data.requests.historical_completed);
+    expect(historicalBefore.request_status).toBe('Completed');
+    expect(historicalBefore.disposition_count).toBe(0);
+    expect(historicalAfter).toEqual(historicalBefore);
+    expect(historicalSurfaceBefore.response.status()).not.toBe(500);
     await command.context.close();
   });
 });

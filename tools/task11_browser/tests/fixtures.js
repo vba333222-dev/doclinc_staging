@@ -9,6 +9,10 @@ function fixtureData() {
   if (!data.actors || !data.requests) throw new Error('invalid_task11_browser_fixture');
   return data;
 }
+function stateProbe(requestId) {
+  const output = execFileSync('docker', ['exec', '-e', `TASK11_RUN_ID=${RUN_ID}`, WEB_CONTAINER, 'php', 'tools/task11_browser/tests/state_probe.php', String(requestId)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  return JSON.parse(output.split(/\r?\n/).filter(Boolean).pop());
+}
 async function loginActor(page, actor) {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   const token = await csrf(page);
@@ -42,4 +46,4 @@ async function expectDenied(result) {
   if ([401, 403, 409, 422].includes(status) && (!result.json || (!/^[A-Z0-9_]+$/.test(result.json.safe_error_code || '') && !(result.json.status === 'error' && typeof result.json.message === 'string' && result.json.message.trim() !== '')))) throw new Error(`missing_safe_error_contract status=${status}`);
   return result;
 }
-module.exports = { fixtureData, loginActor, csrf, post, surface, expectSuccess, expectDenied };
+module.exports = { fixtureData, stateProbe, loginActor, csrf, post, surface, expectSuccess, expectDenied };
