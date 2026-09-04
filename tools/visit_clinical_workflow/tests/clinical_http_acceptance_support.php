@@ -61,9 +61,9 @@ function task11_cleanup_run($runId)
     $db = task11_db();
     $name = (string) $db->query('SELECT DATABASE()')->fetch_row()[0];
     task11_assert($name === 'doclinc_visit_test', 'disposable_database_required');
-    $like = 't11_' . $runId . '_%';
-    $statement = $db->prepare('SELECT userId FROM users WHERE username LIKE ?');
-    $statement->bind_param('s', $like);
+    $runPattern = '^' . preg_quote('t11_' . $runId . '_', '/');
+    $statement = $db->prepare('SELECT userId FROM users WHERE username REGEXP ?');
+    $statement->bind_param('s', $runPattern);
     $statement->execute();
     $result = $statement->get_result();
     $userIds = array();
@@ -71,16 +71,18 @@ function task11_cleanup_run($runId)
         $userIds[] = (int) $row[0];
     }
     $statement->close();
-    $facilityLike = 'Task 11 disposable facility ' . $runId . '%';
-    $statement = $db->prepare('SELECT kode_pkm FROM m_puskesmas WHERE nama_puskesmas LIKE ?');
-    $statement->bind_param('s', $facilityLike);
-    $statement->execute();
-    $result = $statement->get_result();
     $facilities = array();
-    while ($row = $result->fetch_row()) {
-        $facilities[] = (string) $row[0];
+    foreach (array('Task 11 disposable facility ', 'Task 11 unrelated facility ') as $facilityPrefix) {
+        $facilityPattern = '^' . preg_quote($facilityPrefix . $runId, '/');
+        $statement = $db->prepare('SELECT kode_pkm FROM m_puskesmas WHERE nama_puskesmas REGEXP ?');
+        $statement->bind_param('s', $facilityPattern);
+        $statement->execute();
+        $result = $statement->get_result();
+        while ($row = $result->fetch_row()) {
+            $facilities[] = (string) $row[0];
+        }
+        $statement->close();
     }
-    $statement->close();
     if (!$userIds && !$facilities) {
         return;
     }

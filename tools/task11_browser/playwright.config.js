@@ -1,4 +1,9 @@
 const { defineConfig, devices } = require('@playwright/test');
+const crypto = require('crypto');
+
+if (!process.env.TASK11_RUN_ID) {
+  process.env.TASK11_RUN_ID = `browser${process.pid}${crypto.randomBytes(4).toString('hex')}`;
+}
 
 function validateBaseUrl(value) {
   let parsed;
@@ -26,6 +31,7 @@ module.exports = defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
+  globalTeardown: './tests/global_teardown.js',
   projects: [
     { name: 'chromium-desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'chromium-tablet', use: { ...devices['iPad Mini'], browserName: 'chromium' } },

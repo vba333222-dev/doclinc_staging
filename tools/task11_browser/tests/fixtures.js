@@ -1,8 +1,8 @@
 const { execFileSync } = require('child_process');
-const crypto = require('crypto');
 const WEB_CONTAINER = process.env.TASK11_WEB_CONTAINER || 'task11-browser-web-20260904';
-const RUN_ID = process.env.TASK11_RUN_ID || `browser_${process.pid}_${crypto.randomBytes(4).toString('hex')}`;
-process.env.TASK11_RUN_ID = RUN_ID;
+process.env.TASK11_WEB_CONTAINER = WEB_CONTAINER;
+const RUN_ID = process.env.TASK11_RUN_ID;
+if (!RUN_ID) throw new Error('task11_run_id_required');
 function fixtureData() {
   const output = execFileSync('docker', ['exec', '-e', `TASK11_RUN_ID=${RUN_ID}`, WEB_CONTAINER, 'php', 'tools/task11_browser/tests/fixture_setup.php'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
   const data = JSON.parse(output.split(/\r?\n/).filter(Boolean).pop());
