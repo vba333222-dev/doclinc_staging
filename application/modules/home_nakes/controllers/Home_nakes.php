@@ -1630,9 +1630,22 @@ class Home_nakes extends MX_Controller
 	public function clinical_workflow($request_id = 0)
 	{
 		if (!$this->require_dokter_session()) return;
+		if (strtoupper($this->input->method()) !== 'GET') {
+			$this->clinical_method_not_allowed();
+			return;
+		}
 		$this->load->library('Clinical_workflow_surface');
 		$result = $this->clinical_workflow_surface->forRequest((int) $request_id, (int) $this->session->userdata('id'));
-		$this->output->set_status_header($result['status'] === 'success' ? 200 : 403)->set_output(json_encode(array('success' => $result['status'] === 'success', 'safe_error_code' => $result['status'] === 'success' ? null : $result['safe_error_code'], 'message' => $result['status'] === 'success' ? 'OK' : 'Tidak memiliki akses.', 'data' => $result['status'] === 'success' ? $result['data'] : null)));
+		$this->output->set_content_type('application/json')->set_status_header($result['status'] === 'success' ? 200 : 403)->set_output(json_encode(array('success' => $result['status'] === 'success', 'safe_error_code' => $result['status'] === 'success' ? null : $result['safe_error_code'], 'message' => $result['status'] === 'success' ? 'OK' : 'Tidak memiliki akses.', 'data' => $result['status'] === 'success' ? $result['data'] : null)));
+	}
+
+	private function clinical_method_not_allowed()
+	{
+		$this->output->set_content_type('application/json')->set_status_header(405)->set_output(json_encode(array(
+			'success' => false,
+			'safe_error_code' => 'method_not_allowed',
+			'message' => 'Metode tidak diizinkan.',
+		)));
 	}
 
 	private function clinical_json_result($result)
@@ -1645,14 +1658,16 @@ class Home_nakes extends MX_Controller
 
 	public function clinical_review()
 	{
-		if (!$this->require_dokter_session() || strtoupper($this->input->method()) !== 'POST') return;
+		if (!$this->require_dokter_session()) return;
+		if (strtoupper($this->input->method()) !== 'POST') { $this->clinical_method_not_allowed(); return; }
 		$this->load->library('Clinical_review_service');
 		$this->clinical_json_result($this->clinical_review_service->review((int)$this->input->post('request_id'),(int)$this->input->post('visit_result_id'),(int)$this->session->userdata('id'),(string)$this->input->post('decision'),(string)$this->input->post('correction_reason'),(string)$this->input->post('review_notes'),(string)$this->input->post('idempotency_key')));
 	}
 
 	public function clinical_disposition()
 	{
-		if (!$this->require_dokter_session() || strtoupper($this->input->method()) !== 'POST') return;
+		if (!$this->require_dokter_session()) return;
+		if (strtoupper($this->input->method()) !== 'POST') { $this->clinical_method_not_allowed(); return; }
 		$this->load->library('Visit_disposition_service');
 		$input = array(
 			'decision' => (string) $this->input->post('decision'),
@@ -1680,20 +1695,23 @@ class Home_nakes extends MX_Controller
 
 	public function clinical_finalize()
 	{
-		if (!$this->require_dokter_session() || strtoupper($this->input->method()) !== 'POST') return;
+		if (!$this->require_dokter_session()) return;
+		if (strtoupper($this->input->method()) !== 'POST') { $this->clinical_method_not_allowed(); return; }
 		$this->load->library('Clinical_finalization_service'); $this->clinical_json_result($this->clinical_finalization_service->finalize((int)$this->input->post('request_id'),(int)$this->session->userdata('id'),(string)$this->input->post('idempotency_key')));
 	}
 
 	public function clinical_amend()
 	{
-		if (!$this->require_dokter_session() || strtoupper($this->input->method()) !== 'POST') return;
+		if (!$this->require_dokter_session()) return;
+		if (strtoupper($this->input->method()) !== 'POST') { $this->clinical_method_not_allowed(); return; }
 		$this->load->library('Clinical_amendment_service'); $items = json_decode((string)$this->input->post('items'), true); if (!is_array($items)) $items=array();
 		$this->clinical_json_result($this->clinical_amendment_service->amend((int)$this->input->post('request_id'),(int)$this->input->post('record_id'),(int)$this->session->userdata('id'),(string)$this->input->post('reason'),$items,(string)$this->input->post('idempotency_key')));
 	}
 
 	public function clinical_close()
 	{
-		if (!$this->require_dokter_session() || strtoupper($this->input->method()) !== 'POST') return;
+		if (!$this->require_dokter_session()) return;
+		if (strtoupper($this->input->method()) !== 'POST') { $this->clinical_method_not_allowed(); return; }
 		$request_id=(int)$this->input->post('request_id');
 		$this->load->library('Clinical_closure_service');
 		$request = $this->db->select('consultation_mode')->where('request_id', $request_id)->get('requests')->row();
