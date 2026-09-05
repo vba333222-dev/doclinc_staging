@@ -1,5 +1,6 @@
 const { execFileSync } = require('child_process');
-const WEB_CONTAINER = process.env.TASK11_WEB_CONTAINER || 'task11-browser-web-20260904';
+const WEB_CONTAINER = process.env.TASK11_WEB_CONTAINER;
+if (!WEB_CONTAINER || !/^task11-[a-z0-9-]+$/i.test(WEB_CONTAINER)) throw new Error('task11_web_container_required');
 process.env.TASK11_WEB_CONTAINER = WEB_CONTAINER;
 const RUN_ID = process.env.TASK11_RUN_ID;
 if (!RUN_ID) throw new Error('task11_run_id_required');

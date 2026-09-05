@@ -10,5 +10,5 @@ define('BASEPATH', __DIR__);
 $db = array();
 require dirname(__DIR__, 3) . '/application/config/database.php';
 vcw_assert_true(isset($db['default']['port']) && (string) $db['default']['port'] === '33317', 'test runtime selects disposable DB port');
-vcw_assert_true(isset($db['default']['database']) && (string) $db['default']['database'] === 'doclinc_governance_test_task11', 'test runtime selects unified disposable database');
+vcw_assert_true(isset($db['default']['database']) && (string) $db['default']['database'] === 'doclinc_visit_test', 'test runtime selects unified disposable database');
 echo "DATABASE_RUNTIME_GUARD=PASS\n";

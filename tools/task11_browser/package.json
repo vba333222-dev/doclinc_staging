@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "config-safety": "node tests/config_safety_test.js"
+  },
   "devDependencies": {
     "@playwright/test": "1.62.1"
   }

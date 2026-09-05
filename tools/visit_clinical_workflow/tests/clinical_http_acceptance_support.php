@@ -219,7 +219,8 @@ final class Task11HttpClient
         $host = strtolower((string) ($parts['host'] ?? ''));
         $port = (int) ($parts['port'] ?? 0);
         $allowedContainerHost = getenv('VCW_HTTP_LOCAL_CONTAINER_HOST') ?: '';
-        task11_assert(($host === '127.0.0.1' || $host === 'localhost' || ($allowedContainerHost !== '' && $host === strtolower($allowedContainerHost))) && $port >= 1 && $port <= 65535, 'local_http_target_required');
+        $containerHostAllowed = $allowedContainerHost !== '' && $host === strtolower($allowedContainerHost) && preg_match('/^task11-[a-z0-9-]+$/i', $host) === 1;
+        task11_assert(($host === '127.0.0.1' || $host === 'localhost' || $containerHostAllowed) && $port >= 1 && $port <= 65535, 'local_http_target_required');
         $this->base = rtrim($base, '/');
     }
 
@@ -418,7 +419,9 @@ final class Task11FixtureFactory
 
     public function saveState($path, $requestId)
     {
-        file_put_contents($path, json_encode(array('suffix' => $this->suffix, 'facility' => $this->facility, 'password' => $this->password, 'actors' => $this->actors, 'request_id' => (int) $requestId), JSON_UNESCAPED_SLASHES));
+        $written = file_put_contents($path, json_encode(array('suffix' => $this->suffix, 'facility' => $this->facility, 'password' => $this->password, 'actors' => $this->actors, 'request_id' => (int) $requestId), JSON_UNESCAPED_SLASHES));
+        task11_assert($written !== false, 'flag_off_state_write_failed');
+        @chmod($path, 0600);
     }
 
     public function stateRequestId($path)

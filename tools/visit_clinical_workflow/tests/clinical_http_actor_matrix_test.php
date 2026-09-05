@@ -131,6 +131,9 @@ try {
     }
     if (getenv('TASK11_FLAG_OFF_CONTINUE') === '1') {
         task11_assert($flagStatePath !== '' && is_file($flagStatePath), 'flag_off_state_file_missing');
+        register_shutdown_function(function () use ($flagStatePath) {
+            if (is_file($flagStatePath)) @unlink($flagStatePath);
+        });
         $factory = new Task11FixtureFactory($flagStatePath);
         $requestId = $factory->stateRequestId($flagStatePath);
         $cc = new Task11HttpClient($base); $cc->login($factory->actor('COMMAND_CENTER')['username'], $factory->password());
@@ -248,6 +251,7 @@ try {
         task11_assert($surfaceResponse['status'] === 200, 'surface_status_' . $path . '_' . $surfaceResponse['status']);
         $surface = task11_json($surfaceResponse['body']); $data = $surface['data'] ?? array();
         foreach (array('request','workflow_state','presentation','actor_context','disposition_summary','responsible_doctor','performer','visit_progress','result_summary','review_summary','finalization_summary','closure_summary','available_actions') as $field) task11_assert(array_key_exists($field, $data), 'surface_missing_' . $actor . '_' . $field);
+        if ($actor === 'RD') task11_assert(($data['actor_context']['type'] ?? '') === 'responsible_doctor', 'surface_actor_context_rd_mismatch');
         $report['REAL_WORKFLOW_SURFACE_' . $actor] = 'PASS';
     }
     $wargaData = task11_surface($clients['WARGA'], '/home/clinical_workflow/' . $requestId);
@@ -396,6 +400,7 @@ try {
     $report['FINALIZATION_RESPONSE_SAFE'] = json_encode($finalizationResponse, JSON_UNESCAPED_SLASHES);
     $report['CLOSURE_RESPONSE_SAFE'] = json_encode($closureResponse, JSON_UNESCAPED_SLASHES);
 } catch (Throwable $e) {
+    if ($flagStatePath !== '' && is_file($flagStatePath) && getenv('TASK11_FLAG_OFF_CONTINUE') === '1') @unlink($flagStatePath);
     $failure = $e->getMessage();
     $report['ROOT_CAUSE_IF_BLOCKED'] = 'TEST_HARNESS_OR_FIXTURE:' . $failure;
     $report['TASK11_REAL_CI3_HTTP_STATUS'] = 'BLOCKED';
