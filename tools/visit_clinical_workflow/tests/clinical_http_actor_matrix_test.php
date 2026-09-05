@@ -238,7 +238,7 @@ try {
         // a responsible-doctor account may be denied here when the legacy
         // request-view policy has no active nakes handling link.  This is a
         // read-surface characterization, not a lifecycle failure.
-        $surfaceAllowed = in_array($actor, array('WARGA', 'COMMAND_CENTER'), true);
+        $surfaceAllowed = in_array($actor, array('WARGA', 'COMMAND_CENTER', 'RD'), true);
         if (!$surfaceAllowed) {
             $deniedBody = task11_json($surfaceResponse['body']);
             task11_assert($surfaceResponse['status'] === 403 && empty($deniedBody['success']), 'surface_denial_contract_' . $actor . '_' . $surfaceResponse['status']);
