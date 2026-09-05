@@ -57,20 +57,39 @@ async function submitResult(page, draft, key) {
 async function completeVisit(browser, data, requestKey, performerName = 'NONDOCTOR_PERFORMER', reviewerName = 'RD') {
   const rd = await actorPage(browser, data, reviewerName);
   const performer = await actorPage(browser, data, performerName);
+  const observer = await actorPage(browser, data, 'WARGA');
   const requestId = data.requests[requestKey];
   const prefix = `browser-${requestKey}-${data.suffix}`;
+  const timeline = [];
+  const checkpoint = async (operation) => {
+    const surfaced = await canonicalSurface(observer.page, 'WARGA', requestId);
+    timeline.push({ operation, state: surfaced.workflow_state && surfaced.workflow_state.state });
+    return surfaced;
+  };
   await enroll(rd.page, requestId, `${prefix}-disp`, performerName === 'DOCTOR_PERFORMER' ? 'dokter' : 'Perawat');
+  await checkpoint('disposition');
   await assign(rd.page, requestId, data.actors[performerName].id, `${prefix}-assign`);
-  for (const state of ['en_route', 'arrived', 'in_service']) await physical(performer.page, requestId, state);
+  await checkpoint('assignment');
+  for (const state of ['en_route', 'arrived', 'in_service']) {
+    await physical(performer.page, requestId, state);
+    await checkpoint(`physical:${state}`);
+  }
   await vitals(performer.page, requestId);
+  await checkpoint('vitals');
   await physical(performer.page, requestId, 'completed');
+  await checkpoint('physical:completed');
   const draft = await resultDraft(performer.page, requestId);
   await saveDraft(performer.page, draft);
+  await checkpoint('result_save');
   await submitResult(performer.page, draft, `${prefix}-submit`);
+  await checkpoint('result_submit');
   await mutate(rd.page, '/clinical/review', { request_id: requestId, visit_result_id: draft.visit_result_id, decision: 'approved', review_notes: 'Browser approved', idempotency_key: `${prefix}-review` });
+  await checkpoint('review');
   const finalization = await mutate(rd.page, '/clinical/finalize', { request_id: requestId, idempotency_key: `${prefix}-finalize` });
+  await checkpoint('finalization');
   const closure = await mutate(rd.page, '/clinical/close', { request_id: requestId, idempotency_key: `${prefix}-close` });
-  return { requestId, rd, performer, finalization, closure, draft };
+  await checkpoint('closure');
+  return { requestId, rd, performer, observer, finalization, closure, draft, timeline };
 }
 
 module.exports = { actorPage, mutate, canonicalSurface, enroll, assign, physical, vitals, resultDraft, saveDraft, submitResult, completeVisit, surface };

@@ -19,5 +19,5 @@ test('post-closure amendment is limited to the clinical finalizer', async ({ bro
   const other = await actorPage(browser, data, 'COMMAND_CENTER'); await expectDenied(await post(other.page, '/clinical/amend', { request_id: completed.requestId, idempotency_key: `amend-deny-${data.suffix}` }));
   const unrelated = await actorPage(browser, data, 'UNRELATED_DOCTOR'); await expectDenied(await post(unrelated.page, '/clinical/amend', { request_id: completed.requestId, idempotency_key: `amend-deny-unrelated-${data.suffix}` }));
   const nonFinalizer = await actorPage(browser, data, 'DOCTOR_PERFORMER'); await expectDenied(await post(nonFinalizer.page, '/clinical/amend', { request_id: completed.requestId, idempotency_key: `amend-deny-performer-${data.suffix}` }));
-  await unrelated.context.close(); await nonFinalizer.context.close(); await other.context.close(); await warga.context.close(); await completed.rd.context.close(); await completed.performer.context.close();
+  await unrelated.context.close(); await nonFinalizer.context.close(); await other.context.close(); await warga.context.close(); await completed.rd.context.close(); await completed.performer.context.close(); await completed.observer.context.close();
 });
