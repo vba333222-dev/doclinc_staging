@@ -73,3 +73,6 @@ application/third_party/firebase/*firebase-adminsdk*.json
 *firebase-adminsdk*.json
 
 .env
+
+# ReStructuredText documentation
+*.rst
