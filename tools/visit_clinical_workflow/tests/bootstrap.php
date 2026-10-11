@@ -111,3 +111,25 @@ function vcw_assert_fixture_request_id($requestId)
     vcw_assert_safe_request_id($requestId);
     return (int) $requestId;
 }
+
+function vcw_reset_disposable_schema()
+{
+    global $host, $database;
+    vcw_assert_true(in_array($host, array('127.0.0.1', 'localhost'), true), 'Reset refuses a non-loopback database host');
+    vcw_assert_true($database === 'doclinc_visit_test', 'Reset refuses a non-disposable database');
+
+    $db = vcw_db();
+    $db->query('SET FOREIGN_KEY_CHECKS = 0');
+    $result = $db->query("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'");
+    $tables = array();
+    while ($row = $result->fetch_row()) {
+        $tables[] = (string) $row[0];
+    }
+    $result->free();
+    foreach ($tables as $table) {
+        vcw_assert_true((bool) preg_match('/^[a-z][a-z0-9_]*$/', $table), 'Unsafe table name during reset');
+        $db->query('DROP TABLE IF EXISTS `' . $table . '`');
+    }
+    $db->query('SET FOREIGN_KEY_CHECKS = 1');
+    return count($tables);
+}
