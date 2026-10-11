@@ -1,6 +1,6 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 				<div id="operasional" class="content <?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? 'active' : ''; ?>">
-					<div class="dl-dashboard-stack dl-puskesmas-operations">
+					<div class="dl-dashboard-stack dl-puskesmas-operations" data-puskesmas-command-center>
 						<div class="dl-nakes-card dl-dashboard-section dl-operations-intro">
 							<div>
 								<span class="dl-operations-kicker">Puskesmas</span>

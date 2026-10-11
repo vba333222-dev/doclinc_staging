@@ -170,6 +170,7 @@ if (!function_exists('formatComplaintText')) {
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
+	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/doclinc-nakes.css">
 	<?php if ($clinical_suggestions_enabled) : ?>
 		<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-clinical-suggestions.css')); ?>">
 	<?php endif; ?>
@@ -860,6 +861,9 @@ if (!function_exists('formatComplaintText')) {
 		</header>
 
 		<main class="content animate__animated animate__fadeInUp animate__faster">
+			<div class="nakes-clinical-layout">
+			<aside class="nakes-context-rail" aria-label="Konteks pasien dan konsultasi">
+
 			<section class="consult-card">
 				<h2 class="section-heading"><i class="bi bi-person-vcard"></i> Ringkasan Pasien</h2>
 				<div class="summary-grid">
@@ -904,6 +908,9 @@ if (!function_exists('formatComplaintText')) {
 			<?php endif; ?>
 			<?php if ($auto_visit_location) : ?>
 				<div class="small text-muted mb-3" id="consultationVisitLocationStatus" role="status" aria-live="polite"></div>
+			</aside>
+			<div class="nakes-work-pane">
+
 			<?php endif; ?>
 
 			<?php if (!empty($care_team_workflow_enabled) && (!empty($latest_vital_signs) || !empty($can_record_vital_signs))) : ?>
@@ -1176,6 +1183,9 @@ if (!function_exists('formatComplaintText')) {
 				<?php endif; ?>
 			</section>
 		<?php endif; ?>
+			</div>
+			</div>
+
 		</main>
 	</div>
 

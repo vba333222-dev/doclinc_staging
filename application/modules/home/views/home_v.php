@@ -249,6 +249,7 @@ if (!function_exists('doclinc_warga_render_result_rows')) {
 $doclinc_active_request = isset($active_consultation_request) ? $active_consultation_request : null;
 $doclinc_has_active_request = !empty($doclinc_active_request);
 $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_active_request->request_id) ? (int) $doclinc_active_request->request_id : 0;
+$doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active_request->warga_is_visit) ? (bool) $doclinc_active_request->warga_is_visit : strtolower((string) ($doclinc_active_request->consultation_mode ?? '')) === 'visit');
 ?>
 
 <!DOCTYPE html>
@@ -1158,9 +1159,11 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}
 		}
 	</style>
+	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-design-system.css'); ?>">
+	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-warga.css'); ?>">
 </head>
 
-<body class="bg-light dl-dashboard-body">
+<body class="bg-light dl-dashboard-body dl-warga-app<?= !empty($doclinc_has_active_request) ? ' has-active-request' : ''; ?><?= $doclinc_active_is_visit ? ' has-active-visit' : ''; ?>">
 	<div id="preloader">
 		<div class="text-center">
 			<img class="mb-3" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" height="50px">
@@ -1174,7 +1177,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 	</div>
 
 	<div class="content-wrapper dl-shell" id="content-wrapper">
-		<div class="contents">
+		<div class="contents dl-warga-content">
 			<div class="hero bg-success p-3 overflow-hidden dl-appbar">
 				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
 					<i class="bi bi-bell-fill fs-4"></i>
@@ -1226,7 +1229,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				</defs>
 				<path style="transform:translate(0, 50px); opacity:0.9" fill="url(#sw-gradient-1)" d="M0,60L48,54C96,48,192,36,288,28C384,20,480,16,576,24C672,32,768,52,864,62C960,72,1056,72,1152,64C1248,56,1344,40,1440,30C1536,20,1632,16,1728,30C1824,44,1920,76,2016,86C2112,96,2208,84,2304,68C2400,52,2496,32,2592,34C2688,36,2784,60,2880,68C2976,76,3072,68,3168,58C3264,48,3360,36,3456,26C3552,16,3648,8,3744,18C3840,28,3936,56,4032,68C4128,80,4224,76,4320,74C4416,72,4512,72,4608,72C4704,72,4800,72,4896,66C4992,60,5088,48,5184,44C5280,40,5376,44,5472,46C5568,48,5664,48,5760,46C5856,44,5952,40,6048,46C6144,52,6240,68,6336,72C6432,76,6528,68,6624,60C6720,52,6816,44,6864,40L6912,36L6912,120L6864,120C6816,120,6720,120,6624,120C6528,120,6432,120,6336,120C6240,120,6144,120,6048,120C5952,120,5856,120,5760,120C5664,120,5568,120,5472,120C5376,120,5280,120,5184,120C5088,120,4992,120,4896,120C4800,120,4704,120,4608,120C4512,120,4416,120,4320,120C4224,120,4128,120,4032,120C3936,120,3840,120,3744,120C3648,120,3552,120,3456,120C3360,120,3264,120,3168,120C3072,120,2976,120,2880,120C2784,120,2688,120,2592,120C2496,120,2400,120,2304,120C2208,120,2112,120,2016,120C1920,120,1824,120,1728,120C1632,120,1536,120,1440,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
 			</svg>
-			<div class="position-relative">
+			<div class="position-relative dl-warga-surface-stack">
 				<div id="beranda" class="content active">
 					<?php if ($role_prerequisite_incomplete) : ?>
 						<div class="alert <?= $role_prerequisite_blocked ? 'alert-warning' : 'alert-info'; ?> d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2" role="<?= $role_prerequisite_blocked ? 'alert' : 'status'; ?>" data-role-prerequisite-alert data-enforced="<?= $role_prerequisite_blocked ? 'true' : 'false'; ?>">
@@ -1247,24 +1250,24 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							<h2 class="dl-hero-title">Mulai konsultasi</h2>
 							<p class="dl-hero-text">Ceritakan keluhan Anda kepada Nakes.</p>
 							<?php if ($role_prerequisite_blocked && $role_prerequisite_cta_url !== '') : ?>
-								<a href="#profile" class="dl-btn-secondary" onclick="showContent('profile')">
+								<a href="#profile" class="dl-btn-secondary warga-action warga-action--secondary" onclick="showContent('profile')">
 									Lengkapi profil <i class="fas fa-user-edit"></i>
 								</a>
 							<?php elseif ($role_prerequisite_blocked) : ?>
 								<span class="dl-btn-secondary" aria-disabled="true">Hubungi pengelola <i class="fas fa-headset"></i></span>
 							<?php elseif ($doclinc_has_active_request) : ?>
-								<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">
+								<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary warga-action warga-action--secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">
 									Lihat konsultasi <img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('consultation')); ?>" alt="" aria-hidden="true">
 								</a>
 								<p class="history-empty-text mt-2 mb-0">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan terlebih dahulu.</p>
 							<?php else : ?>
-								<a href="#" class="dl-btn-secondary" onclick="showContent('konsultasi_kesehatan')">
+								<a href="#" class="dl-btn-secondary warga-action warga-action--secondary" onclick="showContent('konsultasi_kesehatan')">
 									Buat permintaan <i class="fas fa-plus-circle"></i>
 								</a>
 							<?php endif; ?>
 						</div>
 					</section>
-					<div class="dl-feature-grid">
+					<div class="dl-feature-grid dl-quick-links" aria-label="Akses cepat">
 						<a href="<?= html_escape($doclinc_has_active_request ? base_url('home#riwayat') : '#'); ?>" class="feature-menu dl-feature-card<?= $doclinc_has_active_request ? ' disabled' : ''; ?>" onclick="<?= $doclinc_has_active_request ? 'openActiveConsultation(' . html_escape($doclinc_active_request_id) . '); return false;' : "showContent('konsultasi_kesehatan'); return false;"; ?>">
 							<div class="icon-wrapper">
 								<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('nakes')); ?>" alt="" aria-hidden="true">
@@ -1287,7 +1290,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 							<span class="text-muted small">Lainnya</span>
 						</a>
 					</div>
-					<section>
+						<section class="dl-current-consultation" aria-labelledby="currentConsultationTitle">
+							<h2 id="currentConsultationTitle" class="visually-hidden">Konsultasi saat ini</h2>
 						<div class="dl-section-header">
 							<h3 class="dl-section-title">Konsultasi saat ini</h3>
 							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="history-meta text-decoration-none" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat semua</a>
@@ -1309,8 +1313,13 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$dl_pic_label = $dl_responsible_name !== ''
 									? 'Dokter penanggung jawab: ' . $dl_responsible_name
 									: (!empty($dlCurrentRequest->assigned_pic_label) ? $dlCurrentRequest->assigned_pic_label : 'Dokter belum dipilih.');
+								$dl_next_step = $dl_current_status === 'Pending'
+									? 'Menunggu konfirmasi Puskesmas.'
+									: ((string) ($dlCurrentRequest->consultation_mode ?? '') === 'visit'
+										? 'Pantau perkembangan kunjungan Anda di sini.'
+										: 'Lanjutkan komunikasi dengan tenaga kesehatan Anda.');
 							?>
-								<div class="dl-card p-3" data-request-id="<?= (int) $dlCurrentRequest->request_id; ?>">
+								<div class="dl-surface dl-current-consultation-card dl-consultation-record dl-consultation-record--current p-3" data-request-id="<?= (int) $dlCurrentRequest->request_id; ?>">
 									<div class="d-flex justify-content-between align-items-start gap-3 mb-3">
 										<div>
 											<div class="d-flex align-items-center gap-2 mb-1">
@@ -1327,6 +1336,11 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											<span class="filler"></span>
 										</div>
 									</div>
+									<div class="dl-next-step" aria-label="Langkah berikutnya">
+										<span class="dl-next-step__label">Langkah berikutnya</span>
+										<p><?= html_escape($dl_next_step); ?></p>
+									</div>
+
 									<div class="history-section mb-3">
 										<span class="history-result-label">Keluhan</span>
 										<div class="history-result-value"><?= doclinc_warga_complaint_summary($dl_current_keluhan); ?></div>
@@ -1341,7 +1355,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 										</div>
 									<?php endif; ?>
 									<div class="d-grid gap-2">
-										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary w-100" onclick="openActiveConsultation(<?= html_escape((int) $dlCurrentRequest->request_id); ?>); return false;">Lihat detail</a>
+										<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary w-100 warga-action warga-action--secondary" onclick="openActiveConsultation(<?= html_escape((int) $dlCurrentRequest->request_id); ?>); return false;">Lihat detail</a>
 										<?php if ($dl_current_status === 'Pending') : ?>
 											<button type="button"
 												class="btn btn-sm btn-outline-success rounded-pill edit-warga-request"
@@ -1394,7 +1408,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					<?php if ($doclinc_has_active_request) : ?>
 						<div class="dl-empty-state text-center">
 							<p class="history-empty-text mb-3">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan terlebih dahulu.</p>
-							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat konsultasi</a>
+							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary warga-action warga-action--secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat konsultasi</a>
 						</div>
 					<?php else : ?>
 					<div class="card shadow mb-2 rounded-4 bg-white clickable-card dl-card"
@@ -1530,9 +1544,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 						</div>
 					</div>
 				</div>
-				<div id="riwayat" class="content">
+				<div id="riwayat" class="content dl-history-surface">
 					<h2 class="dl-section-title mb-3">Konsultasi saya</h2>
-					<ul class="nav nav-tabs nav-justified mb-3 dl-tabs" id="myTab" role="tablist">
+					<ul class="nav nav-tabs nav-justified mb-3 dl-tabs warga-segmented-control" id="myTab" role="tablist">
 						<li class="nav-item" role="presentation">
 							<button class="nav-link active" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="false">Saat ini</button>
 						</li>
@@ -1542,7 +1556,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					</ul>
 					<!-- Tab Konsultasi -->
 					<div class="tab-content" id="myTabContent">
-						<div class="tab-pane fade show active" id="proses-tab-pane" role="tabpanel" aria-labelledby="proses-tab" tabindex="0">
+						<div class="tab-pane fade show active dl-record-list" id="proses-tab-pane" role="tabpanel" aria-labelledby="proses-tab" tabindex="0">
 							<?php
 							if (empty($getAllDataRequests)) :
 							?>
@@ -1594,7 +1608,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									✅ Permintaan diterima.
 								</div>
 
-								<div class="card shadow mb-2 dl-card" data-request-id="<?= html_escape((int) $id_request); ?>">
+								<div class="card shadow mb-2 dl-card<?= $is_visit ? ' dl-card--visit' : ''; ?>" data-request-id="<?= html_escape((int) $id_request); ?>">
 									<div class="card-header d-flex align-items-center">
 										<div>
 											<p class="mb-0 fw-bold"><?= html_escape($puskesmas_label); ?></p>
@@ -1662,7 +1676,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					?>
 				</div>
 						<!-- Tab Riwayat -->
-						<div class="tab-pane fade" id="selesai-tab-pane" role="tabpanel" aria-labelledby="selesai-tab" tabindex="0">
+						<div class="tab-pane fade dl-record-list" id="selesai-tab-pane" role="tabpanel" aria-labelledby="selesai-tab" tabindex="0">
 							<?php
 							if (empty($getAllDataRequestsCompleted)) {
 							?>
@@ -1725,7 +1739,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								}
 								$saran_clean = stripos($saran_dokter, 'Dokumentasi Tindakan') !== false ? '' : doclinc_warga_clean_result_text($saran_dokter);
 							?>
-								<div class="card shadow mb-3 history-result-card dl-card" id="card-<?= html_escape($card_id); ?>" data-request-id="<?= $id_request; ?>">
+								<div class="card shadow mb-3 history-result-card dl-card dl-consultation-record dl-clinical-record" id="card-<?= html_escape($card_id); ?>" data-request-id="<?= $id_request; ?>">
 									<div class="card-header d-flex align-items-start gap-3">
 										<div class="flex-grow-1">
 											<div class="history-request-id"><?= html_escape($puskesmas_label); ?></div>
@@ -1803,12 +1817,14 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											</div>
 										<?php endif; ?>
 										<input type="hidden" id="doktId" value="<?= html_escape($dokter_id); ?>">
-										<button class="btn btn-sm btn-outline-success mt-2 dl-btn-secondary" onclick="downloadCard('card-<?= html_escape($card_id); ?>')">
+										<div class="warga-action-group" aria-label="Aksi rekam medis">
+										<button class="btn btn-sm btn-outline-success dl-btn-secondary warga-action warga-action--secondary" onclick="downloadCard('card-<?= html_escape($card_id); ?>')">
 							<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('prescription')); ?>" alt="" aria-hidden="true"> Unduh resep
 										</button>
-										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-sm btn-outline-secondary mt-2 dl-btn-secondary">
+										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-sm btn-outline-secondary dl-btn-secondary warga-action warga-action--secondary">
 							<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('chat')); ?>" alt="" aria-hidden="true"> Buka chat
 										</a>
+										</div>
 									</div>
 								</div>
 							<?php } ?>
@@ -1816,7 +1832,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					</div>
 				</div>
 
-				<div id="profile" class="content">
+				<div id="profile" class="content dl-profile-surface">
 					<?php
 					$nama = '';
 					$email = '';
@@ -2607,6 +2623,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		});
 
 		function showContent(tab) {
+			document.body.classList.toggle('dl-history-mode', tab === 'riwayat');
 			let currentActiveContent = document.querySelector('.content.active');
 			if (currentActiveContent) {
 				currentActiveContent.classList.remove('active');

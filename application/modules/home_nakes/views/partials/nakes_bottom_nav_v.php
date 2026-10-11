@@ -1,5 +1,5 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
-	<div class="nav-bottom-wrapper dl-bottom-nav" id="nav-bottom-wrapper">
+	<div class="nav-bottom-wrapper dl-bottom-nav dl-puskesmas-mobile-nav" id="nav-bottom-wrapper">
 		<nav class="dl-bottom-nav-menu menu" aria-label="Navigasi nakes">
 			<a href="#beranda" id="beranda-tab" class="menu-item <?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? '' : 'active'; ?>" onclick="showContent('beranda')" aria-label="Beranda">
 				<img class="dl-semantic-icon dl-semantic-icon--lg" src="<?= html_escape(doclinc_ui_asset('home')); ?>" alt="" aria-hidden="true">

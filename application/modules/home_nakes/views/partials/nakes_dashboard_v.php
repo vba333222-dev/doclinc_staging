@@ -1,6 +1,6 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 				<div id="beranda" class="content <?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? '' : 'active'; ?>">
-					<div class="dl-dashboard-stack">
+					<div class="dl-dashboard-stack nakes-dashboard-workspace">
 						<?php
 						$role_prerequisite_state = isset($role_prerequisite_state) && is_array($role_prerequisite_state) ? $role_prerequisite_state : array();
 						$role_prerequisite_blocked = !empty($role_prerequisite_state['enforced']) && empty($role_prerequisite_state['allowed']);
@@ -138,6 +138,7 @@
 							'section_meta' => (string) $nakes_active_count . (!empty($nakes_is_personal) ? ' tugas' : ' diterima'),
 							'section_link_label' => 'Lihat',
 							'section_link_target' => '#riwayat_konsul',
+							'section_class' => 'nakes-current-section-heading',
 						));
 						$this->load->view('partials/nakes_active_task_card_v', get_defined_vars());
 						?>

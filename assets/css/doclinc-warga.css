@@ -1,0 +1,203 @@
+/* DokLinc Warga role surface: calm, readable, and intentionally scoped. */
+.dl-warga-app,
+.dl-warga-chat,
+.dl-warga-profile,
+.dl-warga-auth {
+  --warga-ink: #1F2A24;
+  --warga-muted: #66756D;
+  --warga-line: #E7ECE9;
+  --warga-soft: #F4F8F6;
+  --warga-brand: #379A69;
+  --warga-brand-dark: #1f6f4b;
+  --warga-focus: #0b6e9e;
+  color: var(--warga-ink);
+  font-family: "Manrope", "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+.dl-warga-app { min-height: 100vh; background: #F7F7F7; }
+.dl-warga-app #content-wrapper.dl-shell { max-width: none; width: 100%; }
+.dl-warga-app .dl-appbar { max-width: none; }
+.dl-warga-app .contents { width: min(1240px, calc(100% - 48px)); margin: 0 auto; padding-bottom: 2rem; }
+.dl-warga-app .dl-appbar { background: var(--warga-brand) !important; }
+.dl-warga-app .dl-appbar > * { position: relative; z-index: 1; }
+.dl-warga-app .dl-appbar #wave { opacity: .12; pointer-events: none; }
+.dl-warga-app .dl-appbar .dl-profile-copy { color: #f5fffb !important; }
+.dl-warga-app .dl-appbar .dl-profile-copy > small { color: #d8f3e7 !important; font-size: .82rem; font-weight: 600; }
+.dl-warga-app .dl-appbar .dl-profile-copy > h3 { color: #ffffff !important; font-weight: 800; }
+.dl-warga-app .dl-appbar .dl-profile-copy > p { color: #c8e9dc !important; font-size: .86rem; }
+.dl-warga-app .dl-appbar .dl-profile-copy > p.dl-user-coordinate { color: #d8f3e7 !important; }
+.dl-warga-app .dl-hero { margin: 1rem 0 1.25rem; padding: 1.25rem 1.4rem; border: 1px solid var(--warga-line); border-radius: 1rem; background: #fff; box-shadow: 0 8px 24px rgba(24, 57, 44, .06); }
+.dl-warga-app.has-active-request .dl-hero { padding: .9rem 1.15rem; background: var(--warga-soft); box-shadow: none; }
+.dl-warga-app.has-active-request #beranda { display: flex; flex-direction: column; }
+.dl-warga-app.has-active-request #beranda > .dl-current-consultation { order: 1; }
+.dl-warga-app.has-active-request #beranda > .dl-hero { order: 2; }
+.dl-warga-app.has-active-request #beranda > .dl-quick-links { order: 3; }
+.dl-warga-app.has-active-request #beranda > .row { order: 4; }
+.dl-warga-app.has-active-request .dl-hero { margin-top: .65rem; padding: .65rem .9rem; }
+.dl-warga-app.has-active-request .dl-hero .btn,
+.dl-warga-app.has-active-request .dl-hero a { min-height: 40px; font-size: .86rem; }
+.dl-warga-app.has-active-request .dl-hero h1,
+.dl-warga-app.has-active-request .dl-hero h2 { font-size: 1.05rem; }
+.dl-warga-app.has-active-request .dl-hero .history-empty-text { font-size: .82rem; }
+.dl-warga-app .dl-hero p { color: var(--warga-muted); }
+.dl-warga-app .dl-quick-links { display: flex; flex-wrap: wrap; gap: .5rem; margin: .75rem 0 1.25rem; }
+.dl-warga-app .dl-quick-links a { min-height: 44px; display: inline-flex; align-items: center; gap: .45rem; padding: .55rem .8rem; border: 1px solid var(--warga-line); border-radius: .75rem; background: #fff; color: var(--warga-ink); text-decoration: none; }
+.dl-warga-app .dl-quick-links a:hover { border-color: #a9cabc; background: var(--warga-soft); }
+.dl-warga-app .dl-current-consultation { margin-top: 1.25rem; }
+.dl-warga-app .dl-current-consultation-card { border: 1px solid #c9ded4; border-left: 4px solid var(--warga-brand); border-radius: .9rem; background: #fff; box-shadow: 0 8px 24px rgba(24, 57, 44, .07); }
+.dl-warga-app .dl-current-consultation-card .card-header { background: transparent; border-bottom: 1px solid var(--warga-line); }
+.dl-next-step { margin: 1rem 0; padding: .8rem 1rem; border-left: 3px solid #72a78e; background: var(--warga-soft); }
+.dl-next-step__label { display: block; color: var(--warga-brand-dark); font-size: .76rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+.dl-next-step p { margin: .2rem 0 0; color: var(--warga-ink); }
+.dl-warga-app .history-section { padding: 1rem 0; border-top: 1px solid var(--warga-line); }
+.dl-warga-app .history-section:first-child { border-top: 0; }
+.dl-warga-app .dl-record-list { margin-top: .75rem; border-top: 1px solid var(--warga-line); }
+.dl-warga-app .dl-consultation-record { padding: 1rem 0; border-bottom: 1px solid var(--warga-line); background: transparent; }
+.dl-warga-app .dl-consultation-record:last-child { border-bottom: 0; }
+.dl-warga-app .dl-consultation-record .card-header,
+.dl-warga-app .dl-consultation-record .card-body { padding-left: 0; padding-right: 0; background: transparent; }
+.dl-warga-app .history-result-card { border: 0; border-radius: 0; box-shadow: none; }
+.dl-warga-app .history-result-card .card-header { border-bottom: 0; }
+.dl-warga-app .dl-clinical-record .history-section h5 { margin-bottom: .45rem; color: var(--warga-brand-dark); font-size: .9rem; }
+.dl-warga-app .dl-clinical-record .history-section p { max-width: 72ch; color: #314b42; line-height: 1.65; }
+.dl-warga-app .dl-clinical-record .history-section { border: 0; border-top: 1px solid var(--warga-line); border-radius: 0; background: transparent; }
+.dl-warga-app .dl-clinical-record { max-width: 860px; margin-inline: auto; }
+.dl-warga-app .dl-clinical-record .doclinc-visit-summary { border: 0; border-top: 1px solid var(--warga-line); border-radius: 0; background: transparent; padding: 1rem 0; }
+.dl-warga-app.dl-history-mode #beranda > .dl-hero,
+.dl-warga-app.dl-history-mode #beranda > .dl-quick-links,
+.dl-warga-app.dl-history-mode #beranda > .dl-current-consultation,
+.dl-warga-app.dl-history-mode #beranda > .row { display: none; }
+.dl-warga-app.dl-history-mode .dl-history-surface { max-width: 980px; margin-inline: auto; padding-top: .5rem; }
+.dl-warga-app.dl-history-mode .dl-history-surface > .dl-section-title { margin-bottom: 1rem; }
+.dl-warga-app.dl-history-mode .dl-record-list { margin-top: .5rem; }
+.dl-warga-app .doclinc-visit-summary { border: 1px solid var(--warga-line); border-radius: .75rem; background: var(--warga-soft); }
+.dl-warga-app .doclinc-visit-map { min-height: 240px; border-radius: .75rem; overflow: hidden; }
+.dl-warga-app .doclinc-visit-map:empty::before { content: "Lokasi kunjungan belum tersedia"; display: grid; place-items: center; min-height: 240px; color: var(--warga-muted); background: #eef5f1; }
+.dl-warga-app .dl-visit-fallback { display: grid; place-items: center; border: 1px dashed #b8d2c5; background: #eef5f1; color: var(--warga-muted); }
+.dl-warga-app .dl-visit-fallback-content { display: grid; gap: .35rem; padding: 1rem; text-align: center; }
+.dl-warga-app .dl-visit-fallback-content strong { color: var(--warga-brand-dark); }
+.dl-warga-app .dl-bottom-nav { padding-bottom: max(.5rem, env(safe-area-inset-bottom)); }
+.dl-warga-app .dl-bottom-nav a { min-height: 44px; }
+.dl-warga-app :is(a, button, input, select, textarea):focus-visible { outline: 3px solid color-mix(in srgb, var(--warga-focus) 75%, white); outline-offset: 2px; }
+
+/* Chat is a focused reading surface, not a floating card. */
+.dl-warga-chat { min-height: 100vh; background: #F7F7F7; }
+.dl-warga-chat .chat-shell { width: min(960px, 100%); min-height: 100vh; margin: 0 auto; background: #fff; border-left: 1px solid var(--warga-line); border-right: 1px solid var(--warga-line); }
+.dl-warga-chat .chat-header { position: sticky; top: 0; z-index: 2; background: rgba(255,255,255,.97); border-bottom: 1px solid var(--warga-line); }
+.dl-warga-chat .chat-list { padding: 1.25rem clamp(1rem, 4vw, 2rem) 7rem; }
+.dl-warga-chat .chat-message { max-width: min(72ch, 82%); border-radius: .8rem; box-shadow: none; }
+.dl-warga-chat .chat-form { padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
+.dl-warga-chat .chat-input-row textarea { min-height: 44px; }
+
+/* Auth and profile share the same restrained Warga rhythm. */
+.dl-warga-auth { min-height: 100vh; background: #F4F8F6; }
+.dl-warga-auth .container { width: min(100% - 2rem, 960px); }
+.dl-warga-auth .card { border: 1px solid var(--warga-line); border-radius: 1rem !important; box-shadow: 0 12px 32px rgba(24,57,44,.09) !important; }
+.dl-warga-auth .card-body { padding: clamp(1.25rem, 4vw, 2rem); }
+.dl-warga-auth .form-control { min-height: 48px; border-color: #c9d9d2; }
+.dl-warga-auth .btn { min-height: 44px; }
+.dl-warga-profile .completion-shell { width: min(100% - 2rem, 900px); }
+.dl-warga-profile .completion-card { border-color: var(--warga-line); box-shadow: 0 12px 32px rgba(24,57,44,.08); }
+
+@media (min-width: 768px) {
+  .dl-warga-app .dl-appbar { padding: 1.25rem 1.5rem !important; }
+  .dl-warga-app .dl-profile-photo { width: 72px !important; height: 72px !important; }
+  .dl-warga-app .dl-bottom-nav { position: static !important; width: min(1240px, calc(100% - 48px)); margin: 0 auto; border: 0; box-shadow: none; background: transparent; }
+  .dl-warga-app .dl-bottom-nav ul { justify-content: flex-start; gap: .35rem; }
+  .dl-warga-app .dl-bottom-nav a { border-radius: .65rem; }
+  .dl-warga-app .dl-record-list { background: transparent; padding: 0; border: 0; border-radius: 0; }
+}
+@media (min-width: 1000px) {
+  .dl-warga-app.has-active-request #beranda { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr); align-items: start; column-gap: 1.25rem; padding-top: 1rem; }
+  .dl-warga-app.has-active-request #beranda > .dl-current-consultation { grid-column: 1; grid-row: 1 / span 3; margin-top: 0; }
+  .dl-warga-app.has-active-request #beranda > .dl-hero { grid-column: 2; grid-row: 1; margin-top: 1rem; padding-top: 1rem; }
+  .dl-warga-app.has-active-request #beranda > .dl-quick-links { grid-column: 2; grid-row: 2; align-self: start; }
+  .dl-warga-app.has-active-request #beranda > .row { display: none; }
+  .dl-warga-app .dl-current-consultation-card { max-width: none; }
+}
+@media (max-width: 767.98px) {
+  .dl-warga-app #content-wrapper.dl-shell { max-width: 430px; }
+  .dl-warga-app .dl-appbar { max-width: 430px; }
+  .dl-warga-app .contents { width: 100%; padding: 0 1rem calc(8rem + env(safe-area-inset-bottom)); scroll-padding-bottom: calc(8rem + env(safe-area-inset-bottom)); }
+  .dl-warga-app .dl-history-surface { padding-bottom: 1.5rem; }
+  /* Keep the mobile navigation in document flow so long clinical/history
+     surfaces cannot be hidden behind a fixed bar. */
+  .dl-warga-app.dl-warga-app.dl-history-mode #nav-bottom-wrapper { position: static !important; inset: auto !important; width: 100%; }
+  /* W-02 can be opened from the history tab, but its primary navigation must
+     remain fixed and reachable while the long Visit surface is scrolled. */
+  .dl-warga-app.has-active-visit.dl-history-mode #nav-bottom-wrapper {
+    position: fixed !important;
+    inset: auto 0 0 !important;
+    width: 100%;
+    max-width: none;
+    transform: none;
+    margin: 0;
+  }
+  .dl-warga-app.has-active-request .dl-hero { padding: .4rem 0 !important; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .dl-warga-app.has-active-request .dl-hero-content { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+  .dl-warga-app.has-active-request .dl-hero-text { margin: 0; flex: 1 1 100%; }
+  .dl-warga-app.has-active-request .dl-hero-title { font-size: .98rem; margin-bottom: 0; }
+  .dl-warga-app .dl-quick-links { overflow: visible; }
+  .dl-warga-app.has-active-request .dl-quick-links { margin-top: .35rem; }
+  .dl-warga-app .dl-quick-links a { flex: 1 1 calc(50% - .5rem); }
+  .dl-warga-chat .chat-shell { border: 0; }
+  .dl-warga-chat .chat-list { padding-bottom: 8rem; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+/* Warga control system: action importance is expressed by size, shape and
+   placement rather than by making every control a full-width pill. */
+.dl-warga-app .warga-action { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 42px; padding: .55rem 1rem; border-radius: 9px !important; font-size: .875rem; font-weight: 650; line-height: 1.2; width: auto; text-decoration: none; }
+.dl-warga-app .warga-action--primary { min-height: 46px; padding-inline: 1.2rem; color: #fff; background: var(--warga-brand); border: 1px solid var(--warga-brand); }
+.dl-warga-app .warga-action--secondary { color: var(--warga-brand-dark); background: #fff; border: 1px solid #a9cabc; }
+.dl-warga-app .warga-action--tertiary { min-height: 40px; padding-inline: .35rem; color: var(--warga-brand); background: transparent; border: 0; }
+.dl-warga-app .dl-btn-primary,
+.dl-warga-app .dl-btn-secondary { border-radius: 9px !important; }
+.dl-warga-app .dl-btn-primary { min-height: 46px; padding: .65rem 1.15rem; font-size: .875rem; font-weight: 650; }
+.dl-warga-app .warga-action-group { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-top: 1rem; }
+.dl-warga-app .dl-current-consultation-card .d-grid > .warga-action { justify-self: end; }
+.dl-warga-app .dl-clinical-record .warga-action { min-width: 132px; }
+.dl-warga-app .warga-segmented-control { width: min(100%, 380px); margin-inline: 0; gap: .25rem; padding: .2rem; border: 1px solid var(--warga-line); border-radius: 10px; background: #fff; }
+.dl-warga-app .warga-segmented-control .nav-link { min-height: 40px; padding: .45rem .9rem; border: 0; border-radius: 8px; color: var(--warga-muted); font-size: .875rem; font-weight: 650; }
+.dl-warga-app .warga-segmented-control .nav-link.active { color: var(--warga-brand-dark); background: #c9f3e7; }
+.dl-warga-app .dl-quick-links a { min-height: 44px; border-radius: 9px; }
+
+@media (min-width: 1000px) {
+  .dl-warga-app.has-active-request .dl-quick-links { display: grid; grid-template-columns: 1fr; gap: .45rem; margin-top: .5rem; }
+  .dl-warga-app.has-active-request .dl-quick-links a { width: 100%; justify-content: flex-start; padding: .4rem .65rem; }
+  .dl-warga-app.has-active-request .dl-quick-links a .icon-wrapper { width: 34px; height: 34px; min-width: 34px; }
+  .dl-warga-app .dl-current-consultation-card .d-grid { justify-items: end; }
+  .dl-warga-app .dl-clinical-record .history-result-row + .history-result-row { border-top: 1px solid var(--warga-line); }
+}
+@media (max-width: 767.98px) {
+  .dl-warga-app .dl-current-consultation-card .d-grid > .warga-action { width: 100%; justify-self: stretch; }
+  .dl-warga-app .dl-clinical-record .warga-action { flex: 1 1 0; min-width: 0; }
+  .dl-warga-app .warga-action-group { gap: .5rem; }
+  .dl-warga-app .warga-action-group .warga-action { flex: 1 1 0; min-width: 0; }
+  .dl-warga-app .warga-segmented-control { width: 100%; }
+  .dl-warga-app .warga-segmented-control .nav-link { min-height: 42px; }
+  .dl-warga-app .dl-quick-links a { min-height: 44px; }
+}
+
+/* Visit-only fallback treatment. A provider-less route is an honest status
+   message, not an empty map canvas; keep the real map dimensions untouched. */
+.dl-warga-app .dl-card--visit .dl-visit-fallback {
+  min-height: 148px;
+  height: 148px;
+}
+.dl-warga-app .dl-card--visit .dl-visit-fallback-content {
+  max-width: 34rem;
+}
+@media (max-width: 767.98px) {
+  /* Leave room after the final Visit action for the fixed Warga navigation. */
+  .dl-warga-app .dl-card--visit {
+    margin-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+  .dl-warga-app .dl-card--visit .dl-visit-fallback {
+    min-height: 132px;
+    height: 132px;
+  }
+  /* Keep the approved fixed navigation pattern. The shared mobile content
+     padding and Visit-specific bottom margin let the long workspace scroll
+     completely above the navigation without moving the navigation itself. */
+}

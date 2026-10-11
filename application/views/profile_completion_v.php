@@ -25,8 +25,9 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 	<meta name="robots" content="noindex,nofollow">
 	<title>Lengkapi data - DocLink</title>
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-profile-completion.css')); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-warga.css')); ?>">
 </head>
-<body>
+<body class="dl-warga-profile">
 	<main class="completion-shell">
 		<section class="completion-card" aria-labelledby="completionTitle">
 			<header class="completion-head">

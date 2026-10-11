@@ -134,6 +134,10 @@
         });
         container.appendChild(metrics);
 
+        var operationsGrid = element(documentRef, 'div', 'dl-operations-grid');
+        var primaryOperations = element(documentRef, 'div', 'dl-operations-primary');
+        var supportingOperations = element(documentRef, 'aside', 'dl-operations-supporting');
+
         var staffSection = section(documentRef, 'Beban tugas Nakes', String(data.staff.length) + ' Nakes aktif terhubung', 'dl-operations-section--staff');
         var staffList = element(documentRef, 'div', 'dl-operations-staff');
         if (!data.staff.length) {
@@ -152,7 +156,7 @@
             });
         }
         staffSection.appendChild(staffList);
-        container.appendChild(staffSection);
+        supportingOperations.appendChild(staffSection);
 
         var exceptionSection = section(documentRef, 'Perlu perhatian', String(data.exceptions.length) + ' item operasional', 'dl-operations-section--attention');
         var exceptionList = element(documentRef, 'div', 'dl-operations-exceptions');
@@ -183,7 +187,7 @@
             });
         }
         exceptionSection.appendChild(exceptionList);
-        container.appendChild(exceptionSection);
+        primaryOperations.appendChild(exceptionSection);
 
 		var requestSection = section(documentRef, 'Konsultasi', String(data.requests.length) + ' layanan', 'dl-operations-section--requests');
 		var requestList = element(documentRef, 'div', 'dl-operations-requests');
@@ -213,7 +217,10 @@
 			});
 		}
 		requestSection.appendChild(requestList);
-		container.appendChild(requestSection);
+		primaryOperations.appendChild(requestSection);
+		operationsGrid.appendChild(primaryOperations);
+		operationsGrid.appendChild(supportingOperations);
+		container.appendChild(operationsGrid);
 
         var rangeLabel = root.document ? root.document.getElementById('doclincOperationsRangeLabel') : null;
         if (rangeLabel) rangeLabel.textContent = rangeLabelText(data.filters);
@@ -297,7 +304,10 @@
 						recordContainer.appendChild(line);
 					});
 					recordContainer.hidden = false;
-					recordContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					recordContainer.classList.add('is-visible');
+					if (root.document && root.document.body) root.document.body.classList.add('has-puskesmas-record');
+					var recordTop = recordContainer.getBoundingClientRect().top + (root.pageYOffset || 0) - 20;
+					if (typeof root.scrollTo === 'function') root.scrollTo({ top: Math.max(0, recordTop), behavior: 'smooth' });
 				}).catch(function() {
 					clearNode(recordContainer);
 					recordContainer.appendChild(element(recordContainer.ownerDocument, 'div', 'dl-operations-error', 'Catatan belum dapat dibuka.'));

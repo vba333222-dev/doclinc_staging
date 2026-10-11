@@ -1,0 +1,240 @@
+/* Facility command-center layer. Intentionally scoped away from Personal Nakes. */
+.dl-puskesmas-shell {
+	--puskesmas-ink: #1F2A24;
+	--puskesmas-muted: #66756D;
+	--puskesmas-line: #E7ECE9;
+	--puskesmas-soft: #F4F8F6;
+	background: #F4F8F6;
+}
+
+.dl-puskesmas-shell .dl-shell {
+	max-width: 1320px;
+	margin-inline: auto;
+}
+
+.dl-puskesmas-shell .dl-nakes-appbar {
+	background: #E8F7F0 !important;
+	color: var(--puskesmas-ink);
+	padding: 14px 22px 10px !important;
+}
+
+.dl-puskesmas-desktop-nav {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	margin: 13px auto 0;
+	max-width: 620px;
+	padding: 4px;
+	border: 1px solid #cde8da;
+	border-radius: 12px;
+	background: rgba(255,255,255,.72);
+}
+
+.dl-puskesmas-desktop-nav a {
+	min-height: 38px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 15px;
+	border-radius: 9px;
+	color: #4b665c;
+	font-size: 12px;
+	font-weight: 800;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.dl-puskesmas-desktop-nav a:hover,
+.dl-puskesmas-desktop-nav a:focus-visible,
+.dl-puskesmas-desktop-nav a.is-active {
+	background: #379A69;
+	color: #fff;
+	outline: none;
+}
+
+.dl-puskesmas-shell .dl-puskesmas-operations {
+	padding-bottom: 24px;
+}
+
+.dl-puskesmas-shell .dl-operations-intro {
+	border: 1px solid var(--puskesmas-line);
+	box-shadow: none;
+	padding: 18px 20px;
+}
+
+.dl-puskesmas-shell .dl-operations-filters {
+	gap: 10px;
+	padding: 12px 14px;
+	border: 1px solid var(--puskesmas-line);
+	box-shadow: none;
+}
+
+.dl-puskesmas-shell .dl-operations-filters input {
+	min-height: 40px;
+	border-radius: 9px;
+	background: #fff;
+}
+
+.dl-puskesmas-shell .dl-operations-filters .btn {
+	min-height: 40px;
+	border-radius: 9px;
+}
+
+.dl-puskesmas-shell .dl-operations-summary {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 0;
+	padding: 10px 0;
+	border-top: 1px solid var(--puskesmas-line);
+	border-bottom: 1px solid var(--puskesmas-line);
+}
+
+.dl-puskesmas-shell .dl-operations-metric {
+	min-height: 60px;
+	display: grid;
+	align-content: center;
+	gap: 2px;
+	padding: 4px 18px;
+	border: 0;
+	border-right: 1px solid var(--puskesmas-line);
+	border-radius: 0;
+	background: transparent;
+}
+
+.dl-puskesmas-shell .dl-operations-metric:last-child { border-right: 0; }
+.dl-puskesmas-shell .dl-operations-metric span { font-size: 11px; color: var(--puskesmas-muted); }
+.dl-puskesmas-shell .dl-operations-metric strong { font-size: 21px; color: var(--puskesmas-ink); }
+
+.dl-puskesmas-shell .dl-operations-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1.7fr) minmax(280px, .9fr);
+	gap: 18px;
+	align-items: start;
+}
+
+/* The legacy operations host is itself a two-column grid. Let the scoped
+   command-center grid own the desktop composition instead of nesting inside
+   a half-width legacy track. */
+.dl-puskesmas-shell #doclincPuskesmasOperations {
+	display: block;
+}
+
+.dl-puskesmas-shell .dl-operations-primary,
+.dl-puskesmas-shell .dl-operations-supporting {
+	display: grid;
+	gap: 14px;
+	min-width: 0;
+}
+
+.dl-puskesmas-shell .dl-operations-section--attention {
+	border-color: #e3d8bd;
+	background: #fffdf8;
+}
+
+.dl-puskesmas-shell .dl-operations-section--attention .dl-operations-section-title strong {
+	color: #7e5f21;
+}
+
+.dl-puskesmas-shell .dl-operations-section--requests,
+.dl-puskesmas-shell .dl-operations-section--staff {
+	box-shadow: none;
+	border-color: var(--puskesmas-line);
+}
+
+.dl-puskesmas-shell .dl-operations-section-title {
+	margin-bottom: 8px;
+}
+
+.dl-puskesmas-shell .dl-operations-request-item {
+	grid-template-columns: minmax(150px, 1.15fr) minmax(190px, 1fr) auto;
+	gap: 14px;
+	min-height: 74px;
+	padding: 10px 12px;
+	border: 0;
+	border-top: 1px solid #e8f0ec;
+	border-radius: 0;
+	background: transparent;
+}
+
+.dl-puskesmas-shell .dl-operations-request-item:first-child { border-top: 0; }
+.dl-puskesmas-shell .dl-operations-request-identity strong { color: var(--puskesmas-ink); font-size: 13px; }
+.dl-puskesmas-shell .dl-operations-request-identity span { color: #2e5142; font-size: 13px; font-weight: 700; }
+.dl-puskesmas-shell .dl-operations-request-identity small,
+.dl-puskesmas-shell .dl-operations-request-team span { color: var(--puskesmas-muted); font-size: 11px; line-height: 1.35; }
+.dl-puskesmas-shell .dl-operations-request-team { gap: 3px; }
+.dl-puskesmas-shell .dl-operations-request-item .btn { min-height: 38px; border-radius: 8px !important; white-space: nowrap; }
+
+.dl-puskesmas-shell .dl-operations-staff-item,
+.dl-puskesmas-shell .dl-operations-exception-item {
+	padding: 10px 0;
+	border-bottom-color: #e8f0ec;
+}
+
+.dl-puskesmas-shell .dl-operations-state { border-radius: 8px; }
+
+.dl-puskesmas-shell .dl-operations-record {
+	max-width: 920px;
+	margin: 16px auto 0;
+	padding: 20px 24px;
+	border: 1px solid var(--puskesmas-line);
+	box-shadow: none;
+}
+
+.dl-puskesmas-shell .dl-operations-record h3 {
+	margin: 0 0 12px;
+	font-size: 21px;
+	color: var(--puskesmas-ink);
+}
+
+.dl-puskesmas-shell .dl-operations-record-row {
+	grid-template-columns: minmax(160px, .4fr) minmax(0, 1fr);
+	padding: 10px 0;
+}
+
+.dl-puskesmas-shell .dl-operations-record-row strong { color: #315647; font-size: 12px; }
+.dl-puskesmas-shell .dl-operations-record-row span { color: #39584c; font-size: 13px; line-height: 1.5; }
+
+@media (min-width: 768px) {
+	.dl-puskesmas-shell .dl-bottom-nav { display: none !important; }
+	.dl-puskesmas-shell .dl-puskesmas-mobile-nav { display: none; }
+	.dl-puskesmas-shell .content-wrapper { padding-bottom: 24px; }
+}
+
+@media (max-width: 767.98px) {
+	.dl-puskesmas-shell .dl-bottom-nav { display: block !important; }
+	.dl-puskesmas-shell .dl-puskesmas-desktop-nav { display: none; }
+	.dl-puskesmas-shell .dl-puskesmas-mobile-nav { height: auto; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); }
+	.dl-puskesmas-shell .dl-puskesmas-mobile-nav .dl-bottom-nav-menu { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 0 !important; }
+	.dl-puskesmas-shell .dl-puskesmas-mobile-nav .menu-item { min-height: 54px; padding: 6px 2px !important; }
+	.dl-puskesmas-shell .dl-puskesmas-mobile-nav .menu-item i { font-size: 17px !important; }
+	.dl-puskesmas-shell .dl-puskesmas-mobile-nav .menu-item span { font-size: 10px; }
+	.dl-puskesmas-shell .content-wrapper { padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px)); }
+	.dl-puskesmas-shell .dl-puskesmas-operations { padding-inline: 12px; }
+	.dl-puskesmas-shell #doclincPuskesmasOperations { display: flex; flex-direction: column; }
+	.dl-puskesmas-shell #doclincPuskesmasOperations .dl-operations-grid { order: 1; }
+	.dl-puskesmas-shell #doclincPuskesmasOperations .dl-operations-summary { order: 2; }
+	.dl-puskesmas-shell .dl-operations-filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 10px; padding: 10px; }
+	.dl-puskesmas-shell .dl-operations-filters label:first-child,
+	.dl-puskesmas-shell .dl-operations-filters .btn { grid-column: 1 / -1; }
+	.dl-puskesmas-shell .dl-operations-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.dl-puskesmas-shell .dl-operations-metric { padding: 8px 12px; border-bottom: 1px solid var(--puskesmas-line); }
+	.dl-puskesmas-shell .dl-operations-metric:nth-child(2n) { border-right: 0; }
+	.dl-puskesmas-shell .dl-operations-metric:nth-last-child(-n+2) { border-bottom: 0; }
+	.dl-puskesmas-shell .dl-operations-grid { grid-template-columns: 1fr; gap: 14px; }
+	.dl-puskesmas-shell .dl-operations-primary { order: 1; }
+	.dl-puskesmas-shell .dl-operations-supporting { order: 2; }
+	.dl-puskesmas-shell .dl-operations-request-item { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 10px; }
+	.dl-puskesmas-shell .dl-operations-request-team { grid-column: 1 / -1; }
+	.dl-puskesmas-shell .dl-operations-request-item .btn { grid-column: 2; grid-row: 1; }
+	.dl-puskesmas-shell .dl-operations-record { margin-inline: 12px; padding: 16px; }
+	.dl-puskesmas-shell .dl-operations-record-row { grid-template-columns: 1fr; gap: 3px; }
+}
+
+@media (max-width: 479.98px) {
+	.dl-puskesmas-shell .dl-operations-filters { gap: 8px; padding: 10px; }
+	.dl-puskesmas-shell .dl-operations-filters label { gap: 3px; font-size: 11px; }
+	.dl-puskesmas-shell .dl-operations-filters input { min-height: 38px; }
+	.dl-puskesmas-shell .dl-operations-intro { padding: 15px 14px; }
+	.dl-puskesmas-shell .dl-operations-intro h2 { font-size: 18px; }
+}

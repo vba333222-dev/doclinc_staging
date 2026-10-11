@@ -1,5 +1,5 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
-<div class="dl-nakes-card dl-dashboard-section">
+<div class="dl-nakes-card dl-dashboard-section nakes-current-task-surface">
 	<?php if ($nakes_primary_active) :
 		$active_queue_code = doclinc_request_queue_code($nakes_primary_active);
 		$active_mode_label = doclinc_consultation_mode_label(isset($nakes_primary_active->consultation_mode) ? $nakes_primary_active->consultation_mode : '');

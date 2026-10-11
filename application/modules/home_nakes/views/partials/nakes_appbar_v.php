@@ -41,6 +41,21 @@ $nakes_header_name = !empty($nakes_is_command_center) && $nakes_puskesmas_displa
 						<span class="notify-number nk-notification-badge" id="badgeNotif" style="display: none;"></span>
 					</a>
 				</div>
+				<?php if (!empty($nakes_is_command_center)) : ?>
+				<nav class="dl-puskesmas-desktop-nav" aria-label="Navigasi Puskesmas">
+					<a href="#beranda" onclick="showContent('beranda'); return false;">Beranda</a>
+					<a href="#req_konsul" onclick="showContent('req_konsul'); return false;">Permintaan</a>
+					<a href="<?= html_escape(site_url('puskesmas/operations')); ?>" class="is-active" aria-current="page">Operasional</a>
+					<a href="#riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">Riwayat</a>
+					<a href="#profile" onclick="showContent('profile'); return false;">Profil</a>
+				</nav>
+				<?php else : ?>
+				<nav class="dl-nakes-desktop-nav" aria-label="Navigasi utama nakes">
+					<a href="#beranda" class="is-active" data-nakes-nav="beranda" onclick="showContent('beranda'); return false;">Beranda</a>
+					<a href="#riwayat_konsul" data-nakes-nav="riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">Riwayat</a>
+					<a href="#profil" data-nakes-nav="profil" data-bs-toggle="modal" data-bs-target="#modalProfil">Profil</a>
+				</nav>
+				<?php endif; ?>
 				<span id="address_label" class="d-none"></span>
 				<input type="hidden" id="id_user" value="<?= html_escape($this->session->userdata('id')); ?>">
 				<input type="hidden" id="address" placeholder="Latitude">

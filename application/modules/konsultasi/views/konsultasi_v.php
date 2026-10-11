@@ -411,6 +411,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 		}
 	</style>
+    <link rel="stylesheet" href="<?= base_url('assets/css/doclinc-design-system.css'); ?>">
+	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-warga.css'); ?>">
 </head>
 
 <body class="consultation-form-page dl-dashboard-body">

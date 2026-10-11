@@ -130,10 +130,12 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/css/bootstrap-select.min.css" integrity="sha512-g2SduJKxa4Lbn3GW+Q7rNz+pKP9AWMR++Ta8fgwsZRCUsawjPvF/BxSMkGS61VsR9yinGoEgrHPGPn2mrj8+4w==" crossorigin="anonymous" referrerpolicy="no-referrer">
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/nakes-dashboard.css">
+	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/doclinc-nakes.css">
+	<?php if (!empty($nakes_is_command_center)) : ?><link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-puskesmas.css')); ?>"><?php endif; ?>
 	<?php if (!empty($nakes_presence_enabled)) : ?><link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-nakes-presence.css')); ?>"><?php endif; ?>
 </head>
 
-<body class="bg-light dl-dashboard-body dl-nakes-dashboard">
+<body class="bg-light dl-dashboard-body dl-nakes-dashboard <?= !empty($nakes_is_command_center) ? 'dl-puskesmas-shell' : ''; ?>">
 	<div id="preloader">
 		<div class="text-center">
 			<img class="mb-3" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" height="50px">

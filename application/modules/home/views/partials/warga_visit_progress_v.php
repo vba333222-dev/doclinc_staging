@@ -9,16 +9,25 @@
 			<?php endif; ?>
 			<?= doclinc_warga_visit_timeline($visit_timeline); ?>
 		</div>
+		<?php if (empty($map_provider) || (string) $map_provider === 'none') : ?>
+			<div class="doclinc-visit-map dl-visit-fallback mt-2" role="img" aria-label="Informasi rute kunjungan">
+				<div class="dl-visit-fallback-content">
+					<strong>Rute kunjungan</strong>
+					<span>Lokasi atau perkiraan waktu tiba belum tersedia.</span>
+				</div>
+			</div>
+		<?php endif; ?>
+
 	<?php endif; ?>
 	<?php if (!empty($pic_assigned)) : ?>
 		<div class="mt-3">
-			<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="btn btn-success btn-sm rounded-pill dl-btn-primary">
+			<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="btn btn-success btn-sm dl-btn-primary warga-action warga-action--primary">
 				<img class="dl-semantic-icon dl-semantic-icon--sm" src="<?= html_escape(doclinc_ui_asset('chat')); ?>" alt="" aria-hidden="true"> Buka chat
 			</a>
 		</div>
 	<?php endif; ?>
 	<?php if (!empty($is_visit) && !empty($visit_location_available)) : ?>
-		<button type="button" class="btn btn-outline-success btn-sm rounded-pill visit-location-toggle" data-request-id="<?= html_escape((int) $request_id); ?>" data-map-id="visit-map-<?= html_escape((int) $request_id); ?>">
+		<button type="button" class="btn btn-outline-success btn-sm visit-location-toggle warga-action warga-action--secondary" data-request-id="<?= html_escape((int) $request_id); ?>" data-map-id="visit-map-<?= html_escape((int) $request_id); ?>">
 			<img class="dl-semantic-icon dl-semantic-icon--sm" src="<?= html_escape(doclinc_ui_asset('map_nakes')); ?>" alt="" aria-hidden="true"> Lihat lokasi
 		</button>
 		<div class="doclinc-visit-status mt-2" data-visit-status="<?= html_escape((int) $request_id); ?>"></div>
@@ -39,8 +48,15 @@
 			<div class="visit-route-card-row"><span>Jarak</span><strong data-visit-route-distance="<?= html_escape((int) $request_id); ?>">Menghitung...</strong></div>
 			<div class="visit-route-card-row"><span>Estimasi tiba</span><strong data-visit-route-eta="<?= html_escape((int) $request_id); ?>">Menghitung...</strong></div>
 			<div class="visit-route-card-row"><span>Terakhir diperbarui</span><strong data-visit-route-updated="<?= html_escape((int) $request_id); ?>">-</strong></div>
-			<div class="visit-route-provider-note mt-1 d-none" data-visit-route-provider-note="<?= html_escape((int) $request_id); ?>"></div>
-			<div class="visit-route-provider-note mt-1 d-none" data-visit-arrival-message="<?= html_escape((int) $request_id); ?>"></div>
+		<div class="visit-route-provider-note mt-1 d-none" data-visit-route-provider-note="<?= html_escape((int) $request_id); ?>"></div>
+		<div class="visit-route-provider-note mt-1 d-none" data-visit-arrival-message="<?= html_escape((int) $request_id); ?>"></div>
+		</div>
+	<?php elseif (!empty($is_visit)) : ?>
+		<div class="doclinc-visit-map dl-visit-fallback mt-2" role="img" aria-label="Informasi rute kunjungan">
+			<div class="dl-visit-fallback-content">
+				<strong>Rute kunjungan</strong>
+				<span>Lokasi atau perkiraan waktu tiba belum tersedia.</span>
+			</div>
 		</div>
 	<?php endif; ?>
 <?php endif; ?>

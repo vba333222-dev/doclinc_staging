@@ -117,6 +117,8 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Chat Konsultasi</title>
+	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-warga.css'); ?>">
+	<?php if ($is_nakes_role) : ?><link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-nakes.css')); ?>"><?php endif; ?>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1106,7 +1108,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-livekit.css')); ?>">
 </head>
 
-<body>
+<body class="dl-warga-chat<?= $is_nakes_role ? ' nakes-chat' : ''; ?>">
 	<div class="chat-shell is-active" data-chat-role="<?= html_escape($current_role); ?>" data-request-id="<?= html_escape($request_id); ?>">
 		<header class="chat-header" data-chat-surface="active-room">
 			<a href="<?= html_escape($back_url); ?>" class="chat-back" aria-label="Kembali">
