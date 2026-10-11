@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_STATUS_KEHAMILAN",
+    "judul": "Master Status Kehamilan",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 5,
+    "cakupan": "Status kehamilan yang dilaporkan atau dikonfirmasi.",
+    "digunakan_pada": [
+      "Profil kesehatan",
+      "Validasi klinis"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "PREGNANT",
+      "nama": "Hamil",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 1
+    },
+    {
+      "kode": "POSSIBLE",
+      "nama": "Mungkin hamil",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 2
+    },
+    {
+      "kode": "NOT_PREGNANT",
+      "nama": "Tidak hamil",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 3
+    },
+    {
+      "kode": "UNKNOWN",
+      "nama": "Tidak diketahui",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 4
+    },
+    {
+      "kode": "NOT_APPLICABLE",
+      "nama": "Tidak relevan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 5
+    }
+  ]
+}

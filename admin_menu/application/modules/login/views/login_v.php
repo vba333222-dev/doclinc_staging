@@ -32,11 +32,10 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 	<meta name="msapplication-TileColor" content="#ffffff">
 	<meta name="msapplication-TileImage" content="<?php echo base_url(); ?>assets/img/ms-icon-144x144.png">
 	<meta name="theme-color" content="#ffffff">
-		<title>Admin DocLink</title>
-		<style>
-			.doclinc-password-toggle { min-width: 44px; min-height: 44px; border: 0; background: transparent; cursor: pointer; }
-			.doclinc-password-toggle:focus-visible { outline: 3px solid #1F6F4B; outline-offset: 2px; }
-		</style>
+	<title>Admin DocLink</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<script>
 		(function() {
 			var storedTheme = null;
@@ -96,7 +95,9 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 										<span class="input-group-text bg-white border-right-0"><i class="fas fa-lock text-primary"></i></span>
 									</div>
 									<input type="password" class="form-control border-left-0 border-primary" id="password" name="password" placeholder="Masukkan password">
-									<button type="button" class="doclinc-password-toggle" id="passwordToggle" aria-label="Tampilkan password"><i class="fas fa-eye"></i></button>
+									<button type="button" class="doclinc-password-toggle" onclick="togglePassword()" aria-label="Tampilkan password">
+										<i class="fas fa-eye" id="passwordToggleIcon"></i>
+									</button>
 								</div>
 								<div class="invalid-feedback">Password tidak boleh kosong.</div>
 							</div>
@@ -134,7 +135,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 							<input type="email" class="form-control" id="email_cust" name="email_cust" placeholder="name@example.com" required>
 						</div>
 						<div class="form-group mb-3">
-							<label class="sr-only">Token</label>
+							<label class="visually-hidden">Token</label>
 							<input type="hidden" class="form-control" id="g-recaptcha-response" placeholder="Token" readonly required>
 						</div>
 						<center class="mb-3">
@@ -148,13 +149,6 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 		</div>
 	</div>
 	<script type="text/javascript">
-		$('#passwordToggle').on('click', function() {
-			var input = $('#password');
-			var visible = input.attr('type') === 'text';
-			input.attr('type', visible ? 'password' : 'text');
-			$(this).attr('aria-label', visible ? 'Tampilkan password' : 'Sembunyikan password');
-			$(this).find('i').toggleClass('fa-eye', visible).toggleClass('fa-eye-slash', !visible);
-		});
 		$(document).ready(function() {
 			$('#email').focus();
 			$('#login').click(function(event) {
@@ -169,8 +163,8 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 						url: "<?php echo site_url('login/ceklogin'); ?>",
 						data: {
 							email: email,
-										password: password,
-										<?= json_encode($this->security->get_csrf_token_name()); ?>: <?= json_encode($this->security->get_csrf_hash()); ?>
+							password: password,
+							<?= json_encode($this->security->get_csrf_token_name()); ?>: <?= json_encode($this->security->get_csrf_hash()); ?>
 						},
 						success: function(result) {
 							if (result == 1) {
@@ -245,6 +239,22 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 	<script src="<?php echo base_url(); ?>assets/js/sb-admin-2.min.js"></script>
 
 	<script src="<?= base_url('../assets/js/doclinc-password-mask.js'); ?>"></script>
+
+	<script>
+		function togglePassword() {
+			var passwordInput = document.getElementById('password');
+			var icon = document.getElementById('passwordToggleIcon');
+			if (passwordInput.type === 'password') {
+				passwordInput.type = 'text';
+				icon.classList.remove('fa-eye');
+				icon.classList.add('fa-eye-slash');
+			} else {
+				passwordInput.type = 'password';
+				icon.classList.remove('fa-eye-slash');
+				icon.classList.add('fa-eye');
+			}
+		}
+	</script>
 </body>
 
 </html>

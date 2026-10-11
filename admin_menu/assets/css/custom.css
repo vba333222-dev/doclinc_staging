@@ -1,15 +1,15 @@
 :root,
 html[data-theme="light"] {
-    --green-dark: #09AD74;
-    --green-medium: #34b89a;
-    --green-light: #48c9b0;
+    --green-dark: #1F6F4B;
+    --green-medium: #2a8f63;
+    --green-light: #3aab82;
     --grey-light: #f5f5f5;
     --light-grey: #f5f7fb;
     --grey-medium: #d9d9d9;
     --white: #ffffff;
     --shadow: rgba(0, 0, 0, 0.1);
-    --doclinc-primary: #09AD74;
-    --doclinc-primary-dark: #087f5b;
+    --doclinc-primary: #1F6F4B;
+    --doclinc-primary-dark: #177a42;
     --doclinc-info: #38b6ff;
     --doclinc-surface: #ffffff;
     --doclinc-page: #f4f6fb;
@@ -17,7 +17,7 @@ html[data-theme="light"] {
     --doclinc-text: #263238;
     --doclinc-muted: #718096;
     --doclinc-radius: 8px;
-    --doclinc-sidebar-bg: linear-gradient(135deg, #087f5b 0%, #1f9bd1 100%);
+    --doclinc-sidebar-bg: linear-gradient(135deg, #177a42 0%, #1F6F4B 100%);
     --doclinc-sidebar-active: rgba(255, 255, 255, 0.17);
     --doclinc-sidebar-hover: rgba(255, 255, 255, 0.10);
     --doclinc-sidebar-active-border: #ffffff;
@@ -63,7 +63,7 @@ html[data-theme="dark"] {
     --doclinc-button-surface: #172033;
 }
 .bg-success{
-    background-color: #09AD74 !important;
+    background-color: #1F6F4B !important;
 }
 .btn-default-asoka {
     background: var(--green-dark);
@@ -190,7 +190,7 @@ html[data-theme="dark"] {
 /* Modern Styling Updates */
 body {
     /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */ 
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Manrope', 'Nunito', sans-serif;
     color: var(--doclinc-text);
     background-color: var(--doclinc-page);
 }
@@ -228,7 +228,7 @@ body {
 /* Doclinc admin visual system */
 body {
     background: var(--doclinc-page);
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Manrope', 'Nunito', sans-serif;
     color: var(--doclinc-text);
 }
 
@@ -1987,5 +1987,505 @@ html[data-theme="dark"] .doclinc-action-danger {
         display: block;
         margin-top: 60px;
         text-align: center;
+    }
+}
+
+/* ============================================
+   PRODUCTION UI/UX IMPROVEMENTS
+   ============================================ */
+
+/* Manrope Font Import */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+/* Global Transitions */
+* {
+    transition-property: background-color, border-color, color, box-shadow, opacity;
+    transition-duration: 0.15s;
+    transition-timing-function: ease;
+}
+
+/* Disable transitions on form inputs for better UX */
+input, select, textarea, button {
+    transition-property: none;
+}
+
+/* Dashboard Card Improvements */
+.doclinc-dashboard-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    cursor: default;
+}
+
+.doclinc-dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(31, 111, 75, 0.12);
+    border-color: var(--doclinc-primary);
+}
+
+.doclinc-dashboard-card-icon {
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.doclinc-dashboard-card:hover .doclinc-dashboard-card-icon {
+    transform: scale(1.08);
+    background-color: var(--doclinc-primary);
+    color: #ffffff;
+}
+
+/* Table Row Improvements */
+.table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.table tbody tr:hover {
+    background-color: var(--doclinc-table-hover) !important;
+}
+
+.table tbody tr:hover td {
+    background-color: transparent !important;
+}
+
+/* Button Improvements */
+.btn {
+    transition: all 0.2s ease;
+    font-weight: 700;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-success {
+    background-color: var(--doclinc-primary);
+    border-color: var(--doclinc-primary);
+}
+
+.btn-success:hover {
+    background-color: var(--doclinc-primary-dark);
+    border-color: var(--doclinc-primary-dark);
+    box-shadow: 0 4px 12px rgba(31, 111, 75, 0.25);
+}
+
+.btn-primary {
+    background-color: var(--doclinc-primary);
+    border-color: var(--doclinc-primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--doclinc-primary-dark);
+    border-color: var(--doclinc-primary-dark);
+    box-shadow: 0 4px 12px rgba(31, 111, 75, 0.25);
+}
+
+/* Card Improvements */
+.card {
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    box-shadow: 0 2px 8px var(--doclinc-shadow);
+}
+
+.card:hover {
+    box-shadow: 0 4px 16px var(--doclinc-shadow);
+}
+
+.card-header {
+    background-color: var(--doclinc-surface);
+    border-bottom: 1px solid var(--doclinc-border);
+    font-weight: 700;
+}
+
+/* Sidebar Improvements */
+.doclinc-sidebar {
+    transition: width 0.3s ease, transform 0.3s ease;
+}
+
+.doclinc-sidebar .nav-link {
+    transition: all 0.2s ease;
+    border-radius: var(--doclinc-radius);
+    margin-bottom: 4px;
+}
+
+.doclinc-sidebar .nav-link:hover {
+    background: var(--doclinc-sidebar-hover);
+    transform: translateX(4px);
+}
+
+.doclinc-sidebar .nav-link.active {
+    background: var(--doclinc-sidebar-active);
+    border-left-color: var(--doclinc-sidebar-active-border);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+/* Topbar Improvements */
+.doclinc-topbar {
+    background: var(--doclinc-topbar-bg);
+    border-bottom: 1px solid var(--doclinc-border);
+}
+
+.doclinc-topbar .nav-link {
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+}
+
+.doclinc-topbar .nav-link:hover {
+    background: var(--doclinc-sidebar-active);
+}
+
+/* Form Control Improvements */
+.form-control, .form-select {
+    border-radius: var(--doclinc-radius);
+    border: 1px solid var(--doclinc-border);
+    background-color: var(--doclinc-input-bg);
+    color: var(--doclinc-input-text);
+    min-height: 40px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--doclinc-primary);
+    box-shadow: 0 0 0 3px rgba(31, 111, 75, 0.15);
+}
+
+/* Badge Improvements */
+.badge {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.badge-success {
+    background-color: var(--doclinc-primary);
+}
+
+/* Alert Improvements */
+.alert {
+    border-radius: var(--doclinc-radius);
+    border: none;
+    font-weight: 600;
+}
+
+.alert-success {
+    background-color: rgba(31, 111, 75, 0.1);
+    color: var(--doclinc-primary-dark);
+}
+
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #856404;
+}
+
+/* Modal Improvements */
+.modal-content {
+    border: 1px solid var(--doclinc-border);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--doclinc-border);
+    background: var(--doclinc-surface);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--doclinc-border);
+    background: var(--doclinc-surface);
+}
+
+/* Dropdown Improvements */
+.dropdown-menu {
+    border: 1px solid var(--doclinc-border);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    padding: 0.5rem;
+}
+
+.dropdown-item {
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+}
+
+.dropdown-item:hover {
+    background: var(--doclinc-sidebar-active);
+    color: var(--doclinc-primary-dark);
+}
+
+/* Scroll to Top Button */
+.scroll-to-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    background: var(--doclinc-primary);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(31, 111, 75, 0.3);
+    transition: all 0.2s ease;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.scroll-to-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.scroll-to-top:hover {
+    background: var(--doclinc-primary-dark);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(31, 111, 75, 0.4);
+}
+
+/* Loading Spinner */
+.doclinc-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    color: var(--doclinc-muted);
+    font-weight: 600;
+}
+
+.doclinc-loading::before {
+    content: "";
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--doclinc-border);
+    border-top-color: var(--doclinc-primary);
+    border-radius: 999px;
+    animation: doclinc-spin 0.8s linear infinite;
+}
+
+@keyframes doclinc-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Empty State */
+.doclinc-empty-state {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: var(--doclinc-muted);
+}
+
+.doclinc-empty-state i {
+    font-size: 3rem;
+    color: var(--doclinc-border);
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* Page Header */
+.doclinc-page-header {
+    background: linear-gradient(135deg, rgba(31, 111, 75, 0.08) 0%, rgba(56, 182, 255, 0.06) 100%);
+    border-bottom: 1px solid var(--doclinc-border);
+}
+
+.doclinc-page-title {
+    color: var(--doclinc-primary-dark);
+    font-weight: 800;
+    font-size: 1.5rem;
+}
+
+.doclinc-page-subtitle {
+    color: var(--doclinc-muted);
+    font-size: 0.9rem;
+}
+
+/* Account Card Improvements */
+.doclinc-account-card {
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    background: var(--doclinc-surface);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.doclinc-account-card:hover {
+    border-color: var(--doclinc-primary);
+    box-shadow: 0 4px 16px var(--doclinc-shadow);
+}
+
+.doclinc-account-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.doclinc-account-card__title {
+    font-weight: 800;
+    color: var(--doclinc-text);
+    font-size: 1rem;
+}
+
+.doclinc-account-card__status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.doclinc-account-card__status.is-active {
+    background: rgba(31, 111, 75, 0.1);
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-account-card__status.is-inactive {
+    background: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+}
+
+.doclinc-account-card__status.is-warning {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+}
+
+/* Password Toggle */
+.doclinc-password-wrapper {
+    position: relative;
+}
+
+.doclinc-password-toggle {
+
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--doclinc-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.doclinc-password-toggle:hover {
+    color: var(--doclinc-primary);
+}
+
+/* Responsive Improvements */
+@media (max-width: 768px) {
+    .doclinc-sidebar {
+        transform: translateX(-100%);
+        width: 250px;
+    }
+    
+    .doclinc-sidebar.show {
+        transform: translateX(0);
+    }
+    
+    .doclinc-content-wrapper {
+        margin-left: 0;
+    }
+    
+    .doclinc-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .doclinc-page-header {
+        padding: 1rem !important;
+    }
+    
+    .doclinc-page-title {
+        font-size: 1.25rem;
+    }
+}
+
+/* Sidebar Toggle Button */
+#sidebarToggle, #sidebarToggleTop {
+    background: var(--doclinc-surface);
+    border: 1px solid var(--doclinc-border);
+    color: var(--doclinc-text);
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#sidebarToggle:hover, #sidebarToggleTop:hover {
+    background: var(--doclinc-sidebar-active);
+    color: var(--doclinc-primary-dark);
+}
+
+/* Profile Image Fallback */
+.doclinc-profile-image {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border: 2px solid var(--doclinc-border);
+    border-radius: 999px;
+    background: var(--doclinc-surface);
+}
+
+/* Notification Badge Pulse */
+.doclinc-notification-badge {
+    animation: doclinc-pulse 2s infinite;
+}
+
+@keyframes doclinc-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* DataTables Improvements */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 8px !important;
+    margin: 0 2px;
+    transition: all 0.15s ease;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: var(--doclinc-table-hover) !important;
+    color: var(--doclinc-primary-dark) !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: var(--doclinc-primary) !important;
+    color: #ffffff !important;
+    border-color: var(--doclinc-primary) !important;
+}
+
+/* Footer */
+.sticky-footer {
+    border-top: 1px solid var(--doclinc-border);
+}
+
+.sticky-footer .copyright {
+    color: var(--doclinc-muted);
+    font-size: 0.85rem;
+}
+
+/* Focus States for Accessibility */
+.btn:focus, .form-control:focus, .nav-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(31, 111, 75, 0.25);
+}
+
+/* Print Styles */
+@media print {
+    .sidebar, .topbar, .sticky-footer, .scroll-to-top {
+        display: none !important;
+    }
+    
+    .doclinc-content-wrapper {
+        margin-left: 0 !important;
     }
 }

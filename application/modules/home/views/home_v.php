@@ -283,7 +283,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		}
 
 		.card-header {
-			background-color: #09AD74;
+			background-color: #1F6F4B;
 			color: white;
 		}
 
@@ -302,7 +302,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		}
 
 		.history-request-id {
-			color: #379A69;
+			color: #1F6F4B;
 			font-weight: 700;
 			font-size: 13px;
 		}
@@ -315,8 +315,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 		.history-status-badge {
 			background: #dff4ec;
-			color: #379A69;
-			border: 1px solid rgba(55, 154, 105, 0.24);
+			color: #1F6F4B;
+			border: 1px solid rgba(31, 111, 75, 0.24);
 			border-radius: 999px;
 			font-size: 12px;
 			font-weight: 700;
@@ -332,7 +332,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		}
 
 		.history-section-title {
-			color: #379A69;
+			color: #1F6F4B;
 			font-weight: 700;
 			font-size: 13px;
 			margin-bottom: 8px;
@@ -357,7 +357,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		}
 
 		.history-complaint-heading {
-			color: #379A69;
+			color: #1F6F4B;
 			font-weight: 700;
 			font-size: 14px;
 			margin: 10px 0 6px;
@@ -569,9 +569,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		}
 
 		.dl-profile-actions .btn {
-			min-height: 42px;
+			min-height: 44px;
 			border-radius: 12px;
-			font-size: 13px;
+			font-size: var(--dl-font-size-md);
 			font-weight: 800;
 		}
 
@@ -717,8 +717,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		}
 
 		.doclinc-visit-step--active .doclinc-visit-step-dot {
-			border-color: #09ad74;
-			background: #09ad74;
+			border-color: #1F6F4B;
+			background: #1F6F4B;
 		}
 
 		.doclinc-visit-marker {
@@ -773,7 +773,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		}
 
 		.header {
-			background-color: #09AD74;
+			background-color: #1F6F4B;
 			color: white;
 			padding: 15px;
 			text-align: center;
@@ -788,7 +788,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			left: 0;
 			width: 100%;
 			height: 100%;
-			background-color: #09AD74;
+			background-color: #1F6F4B;
 			display: flex;
 			justify-content: center;
 			align-items: center;
@@ -1163,7 +1163,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 <body class="bg-light dl-dashboard-body">
 	<div id="preloader">
 		<div class="text-center">
-			<img class="mb-3" src="<?= base_url(); ?>assets/images/doklincwhite.png" alt="" height="50px">
+			<img class="mb-3" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" height="50px">
 			<p class="mb-0">
 			<div class="spinner-border spinner-border-sm text-light" role="status">
 				<span class="visually-hidden">Loading...</span>
@@ -1231,9 +1231,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					<?php if ($role_prerequisite_incomplete) : ?>
 						<div class="alert <?= $role_prerequisite_blocked ? 'alert-warning' : 'alert-info'; ?> d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2" role="<?= $role_prerequisite_blocked ? 'alert' : 'status'; ?>" data-role-prerequisite-alert data-enforced="<?= $role_prerequisite_blocked ? 'true' : 'false'; ?>">
 							<div>
-								<strong><?= $role_prerequisite_blocked ? 'Profil wajib dilengkapi.' : 'Profil Anda belum lengkap.'; ?></strong>
+								<strong><?= $role_prerequisite_blocked ? 'Profil wajib dilengkapi.' : 'Profil belum lengkap.'; ?></strong>
 								<span><?= html_escape(!empty($role_prerequisite_labels) ? implode(', ', $role_prerequisite_labels) . ($role_prerequisite_extra_count > 0 ? ' dan ' . $role_prerequisite_extra_count . ' data lainnya' : '') . ' perlu dilengkapi.' : 'Lengkapi data profil untuk melanjutkan.'); ?></span>
-								<?php if (!$role_prerequisite_blocked) : ?><span class="d-block small mt-1">Anda tetap dapat menggunakan aplikasi sementara data diperbarui.</span><?php endif; ?>
+								<?php if (!$role_prerequisite_blocked) : ?><span class="d-block small mt-1">Aplikasi tetap dapat digunakan.</span><?php endif; ?>
 							</div>
 							<?php if ($role_prerequisite_cta_url !== '') : ?>
 								<a class="btn btn-warning btn-sm" href="#profile" onclick="showContent('profile')"><?= html_escape($role_prerequisite_cta_label !== '' ? $role_prerequisite_cta_label : 'Lengkapi profil'); ?></a>
@@ -1256,7 +1256,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">
 									Lihat konsultasi <i class="fas fa-clipboard-list"></i>
 								</a>
-								<p class="history-empty-text mt-2 mb-0">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.</p>
+								<p class="history-empty-text mt-2 mb-0">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan terlebih dahulu.</p>
 							<?php else : ?>
 								<a href="#" class="dl-btn-secondary" onclick="showContent('konsultasi_kesehatan')">
 									Buat permintaan <i class="fas fa-plus-circle"></i>
@@ -1306,7 +1306,9 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								$dl_visit_timeline = isset($dlCurrentRequest->warga_visit_timeline) ? $dlCurrentRequest->warga_visit_timeline : array();
 								$dl_responsible_name = !empty($dlCurrentRequest->responsible_doctor_name) ? trim((string) $dlCurrentRequest->responsible_doctor_name) : '';
 								$dl_performer_name = !empty($dlCurrentRequest->visit_performer_name) ? trim((string) $dlCurrentRequest->visit_performer_name) : '';
-								$dl_pic_label = $dl_responsible_name !== '' ? 'Dokter penanggung jawab: ' . $dl_responsible_name : 'Dokter belum dipilih.';
+								$dl_pic_label = $dl_responsible_name !== ''
+									? 'Dokter penanggung jawab: ' . $dl_responsible_name
+									: (!empty($dlCurrentRequest->assigned_pic_label) ? $dlCurrentRequest->assigned_pic_label : 'Dokter belum dipilih.');
 							?>
 								<div class="dl-card p-3" data-request-id="<?= (int) $dlCurrentRequest->request_id; ?>">
 									<div class="d-flex justify-content-between align-items-start gap-3 mb-3">
@@ -1391,7 +1393,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					<h2 class="dl-section-title mb-3">Buat permintaan</h2>
 					<?php if ($doclinc_has_active_request) : ?>
 						<div class="dl-empty-state text-center">
-							<p class="history-empty-text mb-3">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.</p>
+							<p class="history-empty-text mb-3">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan terlebih dahulu.</p>
 							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat konsultasi</a>
 						</div>
 					<?php else : ?>
@@ -1577,8 +1579,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									: doclinc_consultation_mode_label($consultation_mode);
 								$responsible_doctor_name = !empty($data->responsible_doctor_name) ? trim((string) $data->responsible_doctor_name) : '';
 								$visit_performer_name = !empty($data->visit_performer_name) ? trim((string) $data->visit_performer_name) : '';
-								$handling_nakes_label = $responsible_doctor_name !== '' ? 'Dokter penanggung jawab: ' . $responsible_doctor_name : 'Dokter belum tercatat.';
-								$pic_label = !empty($data->assigned_pic_label) ? $data->assigned_pic_label : 'Penanggung jawab layanan belum dipilih.';
+								$handling_nakes_label = $responsible_doctor_name !== ''
+									? 'Dokter penanggung jawab: ' . $responsible_doctor_name
+									: (!empty($data->assigned_pic_label) ? $data->assigned_pic_label : 'Dokter belum tercatat.');
+								$pic_assigned = $responsible_doctor_name !== '' || !empty($data->assigned_pic_label);
 
 								// jadikan tanggal di atas formatnya jadi 11 November 2024
 								$tanggal = date('d F Y', strtotime($tanggal));
@@ -1605,21 +1609,36 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 												<span class="badge text-bg-light border"><?= html_escape($visit_label); ?></span>
 											<?php endif; ?>
 										</div>
-										<div class="history-meta mb-2"><?= html_escape($handling_nakes_label); ?></div>
-										<div class="history-meta mb-2" data-warga-pic-label="<?= html_escape((int) $id_request); ?>"><?= html_escape($pic_label); ?></div>
+								<div class="history-meta mb-2" data-warga-pic-label="<?= html_escape((int) $id_request); ?>"><?= html_escape($handling_nakes_label); ?></div>
 										<div class="history-section mb-3">
 											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan</div>
 											<?= doclinc_warga_complaint_summary($keluhan); ?>
 										</div>
 										<?php $this->load->view('partials/warga_visit_progress_v', array(
-											'request_id' => $id_request,
-											'request_status' => $request_status,
-											'is_visit' => $is_visit,
-											'visit_location_available' => $visit_location_available,
-											'visit_label' => $visit_label,
-											'visit_updated' => $visit_updated,
-											'visit_timeline' => $visit_timeline,
+										'request_id' => $id_request,
+										'request_status' => $request_status,
+										'is_visit' => $is_visit,
+										'visit_location_available' => $visit_location_available,
+										'pic_assigned' => $pic_assigned,
+										'visit_label' => $visit_label,													'visit_updated' => $visit_updated,
+													'visit_timeline' => $visit_timeline,
 										)); ?>
+										<?php
+										// Peta lokasi Nakes (PIC) untuk konsultasi non-kunjungan yang sudah diterima.
+										if ($request_status === 'Accepted' && !$is_visit) :
+											$pic_map_nakes_lat = isset($data->lattitude_dokter) ? trim((string) $data->lattitude_dokter) : '';
+											$pic_map_nakes_lng = isset($data->longitude_dokter) ? trim((string) $data->longitude_dokter) : '';
+											if ($pic_map_nakes_lat !== '' && $pic_map_nakes_lng !== '' && is_numeric($pic_map_nakes_lat) && is_numeric($pic_map_nakes_lng)) :
+												$this->load->view('partials/warga_pic_map_v', array(
+													'pic_map_request_id' => (int) $id_request,
+													'pic_map_patient_lat' => isset($data->patient_latitude) && $data->patient_latitude !== null ? $data->patient_latitude : (isset($data->lattitude) ? $data->lattitude : ''),
+													'pic_map_patient_lng' => isset($data->patient_longitude) && $data->patient_longitude !== null ? $data->patient_longitude : (isset($data->longitude) ? $data->longitude : ''),
+													'pic_map_nakes_lat' => $pic_map_nakes_lat,
+													'pic_map_nakes_lng' => $pic_map_nakes_lng,
+												));
+											endif;
+										endif;
+										?>
 										<?php if ($request_status === 'Pending') : ?>
 											<div class="mt-3">
 												<button type="button"
@@ -1891,37 +1910,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				<div id="notifikasi" class="content">
 
 				</div>
-				<div id="pahlawan_1" class="content">
 
-					<form action="" method="post">
-						<div class="form-floating mb-2">
-							<input type="hidden" class="form-control shadow border-success" id="nama" value="<?php echo $_SESSION['username']; ?>" placeholder="Nama Lengkap" readonly>
-						</div>
-						<div class="form-floating mb-2">
-							<textarea name="keluhan" id="keluhan" class="form-control shadow border-success" placeholder="keluhan"></textarea>
-							<label for="keluhan">Keluhan</label>
-						</div>
-						<div class="form-floating mb-2 d-none">
-							<input type="hidden" class="form-control shadow border-success" id="no_hp" value="087775587778" placeholder="Nomor HP" readonly>
-							<label for="no_hp">Nomor HP</label>
-						</div>
-						<div class="form-floating mb-2">
-
-							<textarea id="address" class="form-control shadow border-success" placeholder="Alamat: ..." readonly style="height: 100px"></textarea>
-							<label for="address">Alamat</label>
-							<input type="text" class="d-none" id="latitudex" placeholder="Latitude" readonly>
-							<input type="text" class="d-none" id="longitudex" placeholder="Longitude" readonly>
-							<div id="map"></div>
-						</div>
-						<div class="form-floating mb-2">
-							<input type="text" class="form-control shadow border-success" id="tanggal" value="<?php echo date('d-m-Y'); ?>" placeholder="tanggal" readonly>
-							<label for="Tanggal">Tanggal </label>
-						</div>
-						<div class="d-grid">
-							<button type="submit" class="btn btn-outline-success" id="save_konsul">Kirim</button>
-						</div>
-					</form>
-				</div>
 			</div>
 		</div>
 	</div>
@@ -2425,7 +2414,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					state.routeLine = L.polyline(routePoints, {
 						weight: 6,
 						opacity: 0.95,
-						color: '#09AD74',
+						color: '#1F6F4B',
 						lineCap: 'round',
 						lineJoin: 'round'
 					}).addTo(state.map);
@@ -2525,6 +2514,27 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					}, 0);
 				}
 				ns.pollVisitLocation(requestId, mapContainerId);
+			});
+
+			$(document).on('click', '.pic-map-toggle', function(event) {
+				event.preventDefault();
+				const button = $(this);
+				const requestId = button.data('request-id');
+				const mapContainerId = button.data('map-id');
+				if (!requestId || !mapContainerId) return;
+				const container = document.getElementById(mapContainerId);
+				if (!container) return;
+
+				const isHidden = container.classList.contains('d-none');
+				container.classList.toggle('d-none');
+				if (!isHidden) return;
+
+				const patientLocation = parseLocation({ latitude: container.dataset.patientLat, longitude: container.dataset.patientLng });
+				const nakesLocation = parseLocation({ latitude: container.dataset.nakesLat, longitude: container.dataset.nakesLng });
+				const state = ns.initVisitMap(mapContainerId, patientLocation, nakesLocation);
+				if (state) {
+					ns.updateVisitMapMarkers(mapContainerId, patientLocation, nakesLocation, null);
+				}
 			});
 
 			$(document).on('click', '.visit-route-recenter', function(event) {
@@ -2647,7 +2657,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				icon: "warning",
 				showCancelButton: true,
 				confirmButtonText: "Keluar",
-				confirmButtonColor: "#09AD74",
+				confirmButtonColor: "#1F6F4B",
 				cancelButtonText: "Batal"
 			}).then((result) => {
 				if (result.isConfirmed) {
@@ -2666,22 +2676,6 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			});
 		});
 
-		$('#save_konsul').click(function() {
-			var nama = $('#nama').val();
-			var keluhan = $('#keluhan').val();
-			var no_hp = $('#no_hp').val();
-			var lat = $('#latitude').val();
-			var lng = $('#longitude').val();
-			var alamat = $('#address').val();
-			var tanggal = $('#tanggal').val();
-
-			alert(nama);
-			alert(keluhan);
-			alert(lat);
-			alert(lng);
-			alert(alamat);
-			alert(tanggal);
-		});
 		$('.owl-carousel').owlCarousel({
 			loop: true,
 			autoplay: true,
@@ -2992,6 +2986,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				return;
 			}
 			const normalized = window.DoclincLocationAddress && window.DoclincLocationAddress.normalizeLocation(location);
+			// Alamat lengkap dari reverse geocoding diisi lewat setLocationText();
+			// placeholder ini hanya tampil sementara atau saat alamat gagal diperoleh.
 			coordinateEl.textContent = normalized ? 'Lokasi terdeteksi' : 'Lokasi belum ditemukan. Coba lagi.';
 		}
 
@@ -3017,8 +3013,14 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		function setLocationText(address, kota) {
 			const addressEl = document.getElementById("userLocationAddress");
 			const kotaEl = document.getElementById('kota');
+			const coordinateEl = document.getElementById('userCoordinateLabel');
 
 			if (addressEl) addressEl.textContent = address || "Alamat belum dapat dikenali";
+			// Header menampilkan alamat lengkap bila berhasil dikenali;
+			// "Lokasi terdeteksi" hanya status sementara saat alamat sedang dicari.
+			if (coordinateEl && address) {
+				coordinateEl.textContent = address === 'Mencari alamat...' ? 'Lokasi terdeteksi' : address;
+			}
 			if (kotaEl) kotaEl.textContent = kota || "Lokasi belum tersedia";
 		}
 
@@ -3041,11 +3043,15 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 			}
 
 			// Inisialisasi peta
+			const mapElement = document.getElementById("map");
+			if (!mapElement) {
+				return;
+			}
 			const initialLocation = {
 				lat: -6.1751,
 				lng: 106.8650
 			}; // Lokasi awal (Jakarta)
-			map = new google.maps.Map(document.getElementById("map"), {
+			map = new google.maps.Map(mapElement, {
 				zoom: 15,
 				center: initialLocation,
 			});
@@ -3110,7 +3116,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 				.then(result => {
 					// Tampilkan respon dari PHP
 					const results = document.querySelectorAll('.hasil');
-					const heroCards = document.querySelectorAll('.hero-card'); // Pastikan setiap pahlawan ada di elemen dengan class ini
+					const heroCards = document.querySelectorAll('.hero-card');
 					const badges = document.querySelectorAll('.badge.rounded-pill.status'); // Ambil elemen badge "Available"
 
 					// const times = result.split(/\s+/);
@@ -3870,8 +3876,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 
 							document.getElementById('gambarDokter').src = safeProfileImageUrl(dataDokter.userId, dataDokter.foto);
 							document.getElementById('namaDokter').textContent = dataDokter.nama;
-							document.getElementById('dokIds').value = idDokter;
-							document.getElementById('ratingRequestId').value = request_id;
+						document.getElementById('dokIds').value = idDokter;
+						document.getElementById('ratingRequestId').value = request_id;
 
 							showPopupRate();
 						}
@@ -3904,8 +3910,8 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					type: 'POST',
 					data: {
 						id_user: idUser,
-					id_dokter: idDokter,
-					request_id: document.getElementById('ratingRequestId').value,
+						id_dokter: idDokter,
+						request_id: request_id,
 						rating: rating
 					},
 					dataType: 'json',

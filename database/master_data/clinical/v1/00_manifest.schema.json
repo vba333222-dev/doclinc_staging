@@ -1,0 +1,849 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://doclink.local/schemas/clinical-master-manifest-v1.json",
+  "title": "DocLink Clinical Master Package Manifest",
+  "description": "Governance schema for the DocLink clinical master-data package manifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "manifest_schema_version",
+    "package_id",
+    "package_version",
+    "package_status",
+    "production_ready",
+    "runtime_enabled",
+    "contains_patient_data",
+    "contains_personal_data",
+    "contains_credentials",
+    "package_summary",
+    "governance_notices",
+    "review_governance",
+    "dependency_policy",
+    "runtime_policies",
+    "submanifests",
+    "datasets"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "00_manifest.schema.json"
+    },
+    "manifest_schema_version": {
+      "const": "1.0"
+    },
+    "package_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "package_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "package_status": {
+      "$ref": "#/$defs/canonicalStatus"
+    },
+    "production_ready": {
+      "type": "boolean"
+    },
+    "runtime_enabled": {
+      "type": "boolean"
+    },
+    "contains_patient_data": {
+      "type": "boolean"
+    },
+    "contains_personal_data": {
+      "type": "boolean"
+    },
+    "contains_credentials": {
+      "type": "boolean"
+    },
+    "package_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "product_name",
+        "dataset_count",
+        "record_count",
+        "master_reference_only"
+      ],
+      "properties": {
+        "product_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dataset_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "master_reference_only": {
+          "type": "boolean"
+        }
+      }
+    },
+    "governance_notices": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "review_governance": {
+      "$ref": "#/$defs/reviewGovernance"
+    },
+    "dependency_policy": {
+      "$ref": "#/$defs/dependencyPolicy"
+    },
+    "runtime_policies": {
+      "$ref": "#/$defs/runtimePolicies"
+    },
+    "submanifests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/submanifest"
+      }
+    },
+    "datasets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dataset"
+      }
+    }
+  },
+  "$defs": {
+    "canonicalStatus": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in_review",
+        "approved",
+        "rejected",
+        "retired"
+      ]
+    },
+    "reviewType": {
+      "type": "string",
+      "enum": [
+        "clinical",
+        "clinical_coder",
+        "pharmacy",
+        "product",
+        "security"
+      ]
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!\\.\\.(?:/|$))(?!.*\\/\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)*$"
+    },
+    "uniqueKey": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
+    },
+    "sourceStatusMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_field",
+        "source_value",
+        "canonical_status",
+        "requires_domain_review",
+        "review_types",
+        "notes"
+      ],
+      "properties": {
+        "source_field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonical_status": {
+          "$ref": "#/$defs/canonicalStatus"
+        },
+        "requires_domain_review": {
+          "type": "boolean"
+        },
+        "review_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/reviewType"
+          }
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "canonicalStatusSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "value"
+      ],
+      "properties": {
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "reviewGovernance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_statuses",
+        "source_status_mappings",
+        "default_when_missing",
+        "principles"
+      ],
+      "properties": {
+        "canonical_statuses": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "prefixItems": [
+            {
+              "const": "draft"
+            },
+            {
+              "const": "in_review"
+            },
+            {
+              "const": "approved"
+            },
+            {
+              "const": "rejected"
+            },
+            {
+              "const": "retired"
+            }
+          ],
+          "items": false
+        },
+        "source_status_mappings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/sourceStatusMapping"
+          }
+        },
+        "default_when_missing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "canonical_status",
+            "requires_domain_review",
+            "notes"
+          ],
+          "properties": {
+            "canonical_status": {
+              "$ref": "#/$defs/canonicalStatus"
+            },
+            "requires_domain_review": {
+              "type": "boolean"
+            },
+            "notes": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "principles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "dependencyPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dependencies_used_for_dataset_existence_validation",
+        "dependencies_used_for_seed_ordering",
+        "dependencies_automatically_define_database_foreign_keys",
+        "record_level_referential_validation_requires_explicit_validator_or_import_rules",
+        "contextual_review_dependencies_require_complete_reference_coverage",
+        "automatic_foreign_key_inference_prohibited"
+      ],
+      "properties": {
+        "dependencies_used_for_dataset_existence_validation": {
+          "type": "boolean",
+          "const": true
+        },
+        "dependencies_used_for_seed_ordering": {
+          "type": "boolean",
+          "const": true
+        },
+        "dependencies_automatically_define_database_foreign_keys": {
+          "type": "boolean",
+          "const": false
+        },
+        "record_level_referential_validation_requires_explicit_validator_or_import_rules": {
+          "type": "boolean",
+          "const": true
+        },
+        "contextual_review_dependencies_require_complete_reference_coverage": {
+          "type": "boolean",
+          "const": false
+        },
+        "automatic_foreign_key_inference_prohibited": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "dependencyDetail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataset_id",
+        "dependency_type",
+        "dependent_field",
+        "dependent_value_must_exist_in_dependency",
+        "import_into_dependency_dataset",
+        "automatic_foreign_key",
+        "notes"
+      ],
+      "properties": {
+        "dataset_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dependency_type": {
+          "type": "string",
+          "enum": [
+            "dataset_existence",
+            "seed_order",
+            "record_reference",
+            "contextual_review",
+            "contextual_review_and_seed_order"
+          ]
+        },
+        "dependent_field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dependent_value_must_exist_in_dependency": {
+          "type": "boolean"
+        },
+        "import_into_dependency_dataset": {
+          "type": "boolean"
+        },
+        "automatic_foreign_key": {
+          "type": "boolean",
+          "const": false
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "runtimePolicyBase": {
+      "type": "object",
+      "required": [
+        "runtime_enabled",
+        "notes"
+      ],
+      "properties": {
+        "runtime_enabled": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "runtimePolicies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "icd10_diagnosis_selection",
+        "patient_intake_master_usage",
+        "medication_prescription_usage",
+        "red_flag_content"
+      ],
+      "properties": {
+        "icd10_diagnosis_selection": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/runtimePolicyBase"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "runtime_enabled",
+                "current_runtime_selectable_record_count",
+                "requirements",
+                "notes"
+              ],
+              "properties": {
+                "runtime_enabled": {
+                  "type": "boolean"
+                },
+                "current_runtime_selectable_record_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "requirements": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "notes": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          ]
+        },
+        "patient_intake_master_usage": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/runtimePolicyBase"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "runtime_enabled",
+                "requirements",
+                "notes"
+              ],
+              "properties": {
+                "runtime_enabled": {
+                  "type": "boolean"
+                },
+                "requirements": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "notes": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          ]
+        },
+        "medication_prescription_usage": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/runtimePolicyBase"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "runtime_enabled",
+                "prescription_ready",
+                "fornas_name_reference_prescription_ready",
+                "requirements",
+                "notes"
+              ],
+              "properties": {
+                "runtime_enabled": {
+                  "type": "boolean"
+                },
+                "prescription_ready": {
+                  "type": "boolean"
+                },
+                "fornas_name_reference_prescription_ready": {
+                  "type": "boolean"
+                },
+                "requirements": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "notes": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          ]
+        },
+        "red_flag_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/runtimePolicyBase"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "runtime_enabled",
+                "screening_support_only",
+                "diagnosis_engine",
+                "substitute_for_clinical_assessment",
+                "notes"
+              ],
+              "properties": {
+                "runtime_enabled": {
+                  "type": "boolean"
+                },
+                "screening_support_only": {
+                  "type": "boolean"
+                },
+                "diagnosis_engine": {
+                  "type": "boolean"
+                },
+                "substitute_for_clinical_assessment": {
+                  "type": "boolean"
+                },
+                "notes": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "submanifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "submanifest_id",
+        "path",
+        "manifest_type",
+        "sha256",
+        "dataset_count",
+        "record_count",
+        "dataset_ids"
+      ],
+      "properties": {
+        "submanifest_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "manifest_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "dataset_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dataset_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataset_id",
+        "path",
+        "domain",
+        "entity",
+        "version",
+        "source",
+        "source_version",
+        "source_status",
+        "license_status",
+        "language",
+        "record_count",
+        "sha256",
+        "json_root_type",
+        "unique_key",
+        "dependencies",
+        "seed_order",
+        "review_type",
+        "canonical_review_status",
+        "canonical_status_source",
+        "runtime_selectable",
+        "runtime_enabled",
+        "clinical_review_required",
+        "pharmacy_review_required",
+        "master_reference_only",
+        "notes"
+      ],
+      "properties": {
+        "dataset_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "domain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metadata_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "license_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "json_root_type": {
+          "type": "string",
+          "enum": [
+            "array",
+            "object_with_data_array"
+          ]
+        },
+        "unique_key": {
+          "$ref": "#/$defs/uniqueKey"
+        },
+        "dependencies": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "seed_order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "review_type": {
+          "$ref": "#/$defs/reviewType"
+        },
+        "canonical_review_status": {
+          "$ref": "#/$defs/canonicalStatus"
+        },
+        "canonical_status_source": {
+          "$ref": "#/$defs/canonicalStatusSource"
+        },
+        "dependency_details": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/dependencyDetail"
+          }
+        },
+        "runtime_selectable": {
+          "type": "boolean"
+        },
+        "runtime_enabled": {
+          "type": "boolean"
+        },
+        "clinical_review_required": {
+          "type": "boolean"
+        },
+        "pharmacy_review_required": {
+          "type": "boolean"
+        },
+        "master_reference_only": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "runtime_enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "runtime_enabled"
+            ]
+          },
+          "then": {
+            "properties": {
+              "canonical_review_status": {
+                "const": "approved"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "runtime_selectable": {
+                "const": true
+              }
+            },
+            "required": [
+              "runtime_selectable"
+            ]
+          },
+          "then": {
+            "properties": {
+              "canonical_review_status": {
+                "const": "approved"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "dataset_id": {
+                "const": "ICD10_LEGACY_CODE_REVIEW"
+              }
+            },
+            "required": [
+              "dataset_id"
+            ]
+          },
+          "then": {
+            "required": [
+              "dependency_details"
+            ],
+            "properties": {
+              "dependencies": {
+                "contains": {
+                  "const": "MASTER_DIAGNOSIS_ICD10_WHO_2019"
+                }
+              },
+              "dependency_details": {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "dataset_id",
+                    "dependency_type",
+                    "dependent_field",
+                    "dependent_value_must_exist_in_dependency",
+                    "import_into_dependency_dataset",
+                    "automatic_foreign_key"
+                  ],
+                  "properties": {
+                    "dataset_id": {
+                      "const": "MASTER_DIAGNOSIS_ICD10_WHO_2019"
+                    },
+                    "dependency_type": {
+                      "const": "contextual_review_and_seed_order"
+                    },
+                    "dependent_field": {
+                      "const": "legacy_code"
+                    },
+                    "dependent_value_must_exist_in_dependency": {
+                      "const": false
+                    },
+                    "import_into_dependency_dataset": {
+                      "const": false
+                    },
+                    "automatic_foreign_key": {
+                      "type": "boolean",
+                      "const": false
+                    }
+                  }
+                }
+              },
+              "runtime_selectable": {
+                "const": false
+              },
+              "runtime_enabled": {
+                "const": false
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

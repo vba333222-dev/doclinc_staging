@@ -73,3 +73,9 @@ application/third_party/firebase/*firebase-adminsdk*.json
 *firebase-adminsdk*.json
 
 .env
+
+.agents/
+.stitch/
+.freebuff/
+.playwright-cli/
+implementation_plan.md

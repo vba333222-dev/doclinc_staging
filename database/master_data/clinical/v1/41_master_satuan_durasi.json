@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_SATUAN_DURASI",
+    "judul": "Master Satuan Durasi",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 6,
+    "cakupan": "Satuan durasi untuk onset, terapi, dan kontrol.",
+    "digunakan_pada": [
+      "Form warga",
+      "Prescription builder"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "MINUTE",
+      "nama": "menit",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "seconds": 60,
+      "urutan": 1
+    },
+    {
+      "kode": "HOUR",
+      "nama": "jam",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "seconds": 3600,
+      "urutan": 2
+    },
+    {
+      "kode": "DAY",
+      "nama": "hari",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "seconds": 86400,
+      "urutan": 3
+    },
+    {
+      "kode": "WEEK",
+      "nama": "minggu",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "seconds": 604800,
+      "urutan": 4
+    },
+    {
+      "kode": "MONTH",
+      "nama": "bulan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "seconds": null,
+      "urutan": 5
+    },
+    {
+      "kode": "YEAR",
+      "nama": "tahun",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "seconds": null,
+      "urutan": 6
+    }
+  ]
+}

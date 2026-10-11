@@ -34,5 +34,5 @@ body {
     width: 150px; /* Atur lebar gambar */
     object-fit: cover; /* Memastikan gambar terpotong dengan baik */
     margin: 0 auto; /* Memusatkan gambar dalam modal */
-    border: 5px solid #09AD74; /* Menambahkan border hijau tosca */
+    border: 5px solid #1F6F4B; /* Menambahkan border hijau tosca */
 }

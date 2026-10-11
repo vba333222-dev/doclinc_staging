@@ -41,7 +41,7 @@ function getDuration($latitudeA, $longitudeA, $latitudeB, $longitudeB, $mode, $a
 	// return $duration;
 }
 
-// Mencari jarak antara pusat kesehatan dan pahlawan 1
+// Menghitung jarak antara pusat kesehatan dan lokasi warga
 
 $dokter = $_GET['nama'] ?? '';
 $latitudeA = '';
@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			--dk-text: var(--dl-text, var(--dl-color-text, #1f2a24));
 			--dk-muted: var(--dl-muted, var(--dl-color-muted, #66756d));
 			--dk-line: var(--dl-line, var(--dl-color-border, #e7ece9));
-			--dk-green: var(--dl-mint, var(--dl-color-primary, #379a69));
+			--dk-green: var(--dl-mint, var(--dl-color-primary, #1f6f4b));
 			--dk-accent: var(--dl-color-primary-soft, #e8f7f0);
 			--dk-surface: var(--dl-surface, var(--dl-color-surface, #ffffff));
 			--dk-soft: var(--dl-soft, var(--dl-color-surface-soft, #f4f8f6));
@@ -435,7 +435,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		</header>
 		<span id="result" class="d-none"></span>
 
-		<main id="pahlawan_1" class="consult-main content">
+		<main id="konsultasi-page" class="consult-main content">
 			<form id="form_konsul" action="<?= html_escape(base_url('konsultasi/save_konsultasi')); ?>" method="post" enctype="multipart/form-data">
 				<input type="hidden" id="nama" value="<?= html_escape($_SESSION['username'] ?? ''); ?>" placeholder="Nama Lengkap" readonly>
 				<input type="hidden" name="dokter_id" id="dokter_id" value="<?= html_escape($dokter_id); ?>" placeholder="Dokter ID" readonly>

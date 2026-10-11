@@ -32,7 +32,7 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 			<header class="completion-head">
 				<div class="completion-brand">DocLink</div>
 				<h1 id="completionTitle">Lengkapi data sebelum melanjutkan</h1>
-				<p><?= $is_command_center ? 'Lengkapi kontak operasional Puskesmas. Data unit dan staf lainnya dikelola Admin Dinas Kesehatan.' : 'Lengkapi data untuk mendukung identitas, penugasan, dan layanan kesehatan.'; ?></p>
+				<p><?= $is_command_center ? 'Lengkapi kontak operasional Puskesmas. Data unit dan staf lainnya dikelola Admin Dinas Kesehatan.' : 'Lengkapi data profil untuk melanjutkan.'; ?></p>
 			</header>
 			<?php if (!empty($profile_state['schema_gaps'])) : ?>
 			<div class="completion-notice" role="alert">
@@ -58,7 +58,7 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 			<?php if (!empty($managed_fields)) : ?>
 			<div class="completion-notice" role="status">
 				<strong>Perlu tindakan Admin Dinas Kesehatan</strong>
-				<span>Data kepegawaian Nakes, gelar, SIP, masa berlaku SIP, profesi, hubungan akun personal, dan data fasilitas dikelola Admin Dinas Kesehatan. NIP bersifat opsional sesuai kebutuhan administratif.</span>
+				<span>Data kepegawaian, SIP, dan fasilitas dikelola Admin Dinas Kesehatan. NIP bersifat opsional.</span>
 			</div>
 			<?php endif; ?>
 

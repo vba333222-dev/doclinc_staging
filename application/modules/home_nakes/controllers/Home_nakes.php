@@ -450,9 +450,19 @@ class Home_nakes extends MX_Controller
 			$d['request_staff_assignment_map'] = $d['staff_assignment_ready']
 				? $this->Home_nakes_m->get_active_staff_assignments_by_request_ids($assignment_request_ids)
 				: array();
+			// Satu sumber kebenaran penanggung jawab: ikuti mode alur aktif (care-team vs legacy),
+			// sama seperti jalur tulis dan halaman Operasional — bukan tabel assignment secara kaku.
+			$care_team_enabled = $this->config->item('care_team_workflow_enabled') === true;
 			$accepted_without_pic = 0;
-			foreach ($assignment_request_ids as $request_id) {
-				if (empty($d['request_staff_assignment_map'][(int) $request_id])) {
+			foreach ($d['data_request_accept']->result() as $request_row) {
+				if ($care_team_enabled) {
+					$canonical_user_id = strtolower((string) ($request_row->consultation_mode ?? '')) === 'visit'
+						? (int) ($request_row->visit_performer_user_id ?? 0)
+						: (int) ($request_row->responsible_doctor_user_id ?? 0);
+					if ($canonical_user_id < 1) {
+						$accepted_without_pic++;
+					}
+				} elseif (empty($d['request_staff_assignment_map'][(int) $request_row->request_id])) {
 					$accepted_without_pic++;
 				}
 			}
@@ -733,15 +743,6 @@ class Home_nakes extends MX_Controller
 		redirect('home_nakes#riwayat_konsul');
 	}
 
-	public function tes_save_lokasi()
-	{
-		show_404();
-	}
-
-	public function save_location()
-	{
-		show_404();
-	}
 	public function accept_request()
 	{
 		$this->output->set_content_type('application/json');
@@ -793,7 +794,11 @@ class Home_nakes extends MX_Controller
 				$id_user,
 				$result
 			);
-			$this->output->set_output(json_encode($orchestration['response']));
+			$response = $orchestration['response'];
+
+			// Penanggung jawab layanan ditetapkan setelah diterima, dari kartu permintaan
+			// (satu titik alur) — bukan saat menerima konsultasi.
+			$this->output->set_output(json_encode($response));
 			return;
 		}
 
@@ -887,17 +892,42 @@ class Home_nakes extends MX_Controller
 			return;
 		}
 		$access_context = doclinc_nakes_request_access_context($request, $identity_context);
-		if ((string) $request->request_status === 'Pending') {
-			if (empty($access_context['can_view']) || empty($access_context['tenant_match']) || (string) ($identity_context['account_type'] ?? '') !== 'command_center') {
-				$this->output->set_status_header(403)->set_output(json_encode(array('status' => false, 'message' => 'Anda tidak memiliki akses.')));
+		// Pending triage may expose patient context only to the owning command
+		// center. It must never enter the Nakes monitoring path (position, route,
+		// ETA, or visit updates), which remains gated by Visit_monitoring_policy.
+		if ((string) $request->request_status !== 'Accepted') {
+			if ((string) $request->request_status !== 'Pending') {
+				$this->output
+					->set_status_header(403)
+					->set_output(json_encode(array('status' => false, 'message' => 'Pelacakan kunjungan tidak tersedia.')));
 				return;
 			}
+			if (empty($access_context['can_view'])
+				|| empty($access_context['tenant_match'])
+				|| (string) ($identity_context['account_type'] ?? '') !== 'command_center') {
+				$this->output
+					->set_status_header(403)
+					->set_output(json_encode(array('status' => false, 'message' => 'Anda tidak memiliki akses.')));
+				return;
+			}
+			$patient = array(
+				'lat' => isset($request->lattitude) ? (float) $request->lattitude : (isset($request->patient_latitude) ? (float) $request->patient_latitude : null),
+				'lng' => isset($request->longitude) ? (float) $request->longitude : (isset($request->patient_longitude) ? (float) $request->patient_longitude : null),
+				'address' => isset($request->location) ? (string) $request->location : '',
+			);
 			$this->output->set_output(json_encode(array(
-				'status' => 'patient_only', 'success' => true, 'request_id' => $request_id,
-				'request_status' => 'Pending',
-				'patient' => array('lat' => isset($request->lattitude) ? (float) $request->lattitude : null, 'lng' => isset($request->longitude) ? (float) $request->longitude : null, 'address' => isset($request->location) ? (string) $request->location : ''),
-				'patient_location_only' => true, 'tracking_active' => false, 'nakes' => null, 'route' => null, 'eta' => null,
-				'viewer_can_update' => false, 'message' => 'Lokasi pasien untuk triase. Pelacakan kunjungan belum aktif.'
+				'status' => 'patient_only',
+				'success' => true,
+				'request_id' => $request_id,
+				'request_status' => (string) $request->request_status,
+				'patient' => $patient,
+				'patient_location_only' => true,
+				'tracking_active' => false,
+				'nakes' => null,
+				'route' => null,
+				'eta' => null,
+				'viewer_can_update' => false,
+				'message' => 'Lokasi pasien untuk triase. Pelacakan kunjungan belum aktif.',
 			)));
 			return;
 		}
@@ -912,7 +942,9 @@ class Home_nakes extends MX_Controller
 			? doclinc_normalize_visit_status($request->visit_status)
 			: '';
 		$current_visit_status = $current_visit_status !== '' ? $current_visit_status : 'not_started';
-		if ($request->request_status !== 'Accepted' || strtolower((string) ($request->consultation_mode ?? '')) !== 'visit' || $current_visit_status === 'completed') {
+		if ($request->request_status !== 'Accepted'
+			|| strtolower((string) ($request->consultation_mode ?? '')) !== 'visit'
+			|| $current_visit_status === 'completed') {
 			$this->output->set_output(json_encode(array(
 				'status' => 'inactive',
 				'success' => false,

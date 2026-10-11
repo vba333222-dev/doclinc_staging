@@ -1,0 +1,109 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_STATUS_KUNJUNGAN",
+    "judul": "Master Status Kunjungan",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 9,
+    "cakupan": "Status perjalanan kunjungan Nakes.",
+    "digunakan_pada": [
+      "Pelacakan warga",
+      "Operasional Nakes"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "NOT_REQUIRED",
+      "nama": "Tidak memerlukan kunjungan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "final": true,
+      "urutan": 1
+    },
+    {
+      "kode": "DECIDED",
+      "nama": "Kunjungan diputuskan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "final": false,
+      "urutan": 2
+    },
+    {
+      "kode": "ASSIGNED",
+      "nama": "Nakes ditugaskan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "final": false,
+      "urutan": 3
+    },
+    {
+      "kode": "EN_ROUTE",
+      "nama": "Nakes menuju lokasi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "final": false,
+      "urutan": 4
+    },
+    {
+      "kode": "ARRIVED",
+      "nama": "Nakes tiba",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "final": false,
+      "urutan": 5
+    },
+    {
+      "kode": "IN_SERVICE",
+      "nama": "Kunjungan berlangsung",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "final": false,
+      "urutan": 6
+    },
+    {
+      "kode": "COMPLETED",
+      "nama": "Kunjungan selesai",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "final": true,
+      "urutan": 7
+    },
+    {
+      "kode": "CANCELLED",
+      "nama": "Kunjungan dibatalkan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "final": true,
+      "urutan": 8
+    },
+    {
+      "kode": "FAILED",
+      "nama": "Kunjungan tidak terlaksana",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "final": true,
+      "urutan": 9
+    }
+  ]
+}

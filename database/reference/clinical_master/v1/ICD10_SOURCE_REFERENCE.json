@@ -1,0 +1,44 @@
+{
+  "dataset": "ICD-10 WHO 2019 reference for DocLink",
+  "generated_at": "2026-07-17T04:52:25+07:00",
+  "classification": {
+    "name": "International Statistical Classification of Diseases and Related Health Problems 10th Revision",
+    "release": "2019",
+    "language": "English",
+    "official_browser": "https://icd.who.int/browse10/2019/en",
+    "official_download_page": "https://icdcdn.who.int/icd10/index.html",
+    "official_metadata_package": "https://icdcdn.who.int/icd10/meta/icd102019enMeta.zip",
+    "official_metadata_format": "https://icdcdn.who.int/icd10/metainfo.html",
+    "official_updates": "https://www.who.int/standards/classifications/classification-of-diseases/list-of-official-icd-10-updates",
+    "who_copyright_policy": "https://www.who.int/about/policies/publishing/copyright"
+  },
+  "transformation_source": {
+    "package": "simple_icd_10",
+    "version": "2.1.1",
+    "project_page": "https://pypi.org/project/simple-icd-10/2.1.1/",
+    "package_data_statement": "Package documentation states that codes and descriptions are taken from WHO ICD-10 Version 2019.",
+    "local_xml_sha256": "c51a701421abfb12cdc06ec387168762eeb9839b01d8b5f458b86808814ab4f6"
+  },
+  "record_counts": {
+    "chapters": 22,
+    "blocks": 274,
+    "categories": 2050,
+    "subcategories": 10196,
+    "diagnosis_codes_total": 12246,
+    "leaf_codes": 10658,
+    "indonesian_alias_starter": 53,
+    "legacy_codes_requiring_review": 2
+  },
+  "governance": {
+    "official_english_titles_modified": false,
+    "indonesian_translation_official": false,
+    "production_requirements": [
+      "Review by clinical coder and physician",
+      "Use only leaf codes for final diagnosis selection unless local coding policy permits otherwise",
+      "Consult WHO browser/manual for inclusion and exclusion notes",
+      "Keep source release and import hash in database",
+      "Do not expose diagnosis suggestions to patients"
+    ],
+    "legacy_code_warning": "J30.9 and R19.7 are not valid WHO ICD-10 2019 codes and are isolated from the importable alias dataset."
+  }
+}

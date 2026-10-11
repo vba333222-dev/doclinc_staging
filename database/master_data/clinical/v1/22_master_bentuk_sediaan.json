@@ -1,0 +1,358 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_BENTUK_SEDIAAN",
+    "judul": "Master Bentuk Sediaan",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 34,
+    "cakupan": "Pilihan bentuk sediaan obat.",
+    "digunakan_pada": [
+      "Prescription builder"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "TABLET",
+      "nama": "Tablet",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Tablet",
+      "urutan": 1
+    },
+    {
+      "kode": "TABLET_SALUT",
+      "nama": "Tablet salut",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Tablet salut",
+      "urutan": 2
+    },
+    {
+      "kode": "TABLET_KUNYAH",
+      "nama": "Tablet kunyah",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Tablet kunyah",
+      "urutan": 3
+    },
+    {
+      "kode": "TABLET_DISPERSIBLE",
+      "nama": "Tablet dispersibel",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Tablet dispersibel",
+      "urutan": 4
+    },
+    {
+      "kode": "TABLET_SUBLINGUAL",
+      "nama": "Tablet sublingual",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Tablet sublingual",
+      "urutan": 5
+    },
+    {
+      "kode": "KAPSUL",
+      "nama": "Kapsul",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Kapsul",
+      "urutan": 6
+    },
+    {
+      "kode": "KAPLET",
+      "nama": "Kaplet",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Kaplet",
+      "urutan": 7
+    },
+    {
+      "kode": "SERBUK",
+      "nama": "Serbuk",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Serbuk",
+      "urutan": 8
+    },
+    {
+      "kode": "PULVERES",
+      "nama": "Puyer",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Puyer",
+      "urutan": 9
+    },
+    {
+      "kode": "GRANUL",
+      "nama": "Granul",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Granul",
+      "urutan": 10
+    },
+    {
+      "kode": "SIRUP",
+      "nama": "Sirup",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Sirup",
+      "urutan": 11
+    },
+    {
+      "kode": "SUSPENSI",
+      "nama": "Suspensi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Suspensi",
+      "urutan": 12
+    },
+    {
+      "kode": "LARUTAN_ORAL",
+      "nama": "Larutan oral",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Larutan oral",
+      "urutan": 13
+    },
+    {
+      "kode": "TETES_ORAL",
+      "nama": "Tetes oral",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Tetes oral",
+      "urutan": 14
+    },
+    {
+      "kode": "INJEKSI",
+      "nama": "Injeksi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Injeksi",
+      "urutan": 15
+    },
+    {
+      "kode": "INFUS",
+      "nama": "Infus",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Infus",
+      "urutan": 16
+    },
+    {
+      "kode": "KRIM",
+      "nama": "Krim",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Krim",
+      "urutan": 17
+    },
+    {
+      "kode": "SALEP",
+      "nama": "Salep",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Salep",
+      "urutan": 18
+    },
+    {
+      "kode": "GEL",
+      "nama": "Gel",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Gel",
+      "urutan": 19
+    },
+    {
+      "kode": "LOTION",
+      "nama": "Losion",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Losion",
+      "urutan": 20
+    },
+    {
+      "kode": "PASTA",
+      "nama": "Pasta",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Pasta",
+      "urutan": 21
+    },
+    {
+      "kode": "SUPPOSITORIA",
+      "nama": "Supositoria",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Supositoria",
+      "urutan": 22
+    },
+    {
+      "kode": "OVULA",
+      "nama": "Ovula atau tablet vagina",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Ovula atau tablet vagina",
+      "urutan": 23
+    },
+    {
+      "kode": "TETES_MATA",
+      "nama": "Tetes mata",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Tetes mata",
+      "urutan": 24
+    },
+    {
+      "kode": "SALEP_MATA",
+      "nama": "Salep mata",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Salep mata",
+      "urutan": 25
+    },
+    {
+      "kode": "TETES_TELINGA",
+      "nama": "Tetes telinga",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Tetes telinga",
+      "urutan": 26
+    },
+    {
+      "kode": "SEMPROT_HIDUNG",
+      "nama": "Semprot hidung",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Semprot hidung",
+      "urutan": 27
+    },
+    {
+      "kode": "TETES_HIDUNG",
+      "nama": "Tetes hidung",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Tetes hidung",
+      "urutan": 28
+    },
+    {
+      "kode": "INHALER_MDI",
+      "nama": "Inhaler dosis terukur",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Inhaler dosis terukur",
+      "urutan": 29
+    },
+    {
+      "kode": "INHALER_DPI",
+      "nama": "Inhaler serbuk kering",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Inhaler serbuk kering",
+      "urutan": 30
+    },
+    {
+      "kode": "NEBULIZER",
+      "nama": "Larutan nebulisasi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Larutan nebulisasi",
+      "urutan": 31
+    },
+    {
+      "kode": "PATCH",
+      "nama": "Plester transdermal",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Plester transdermal",
+      "urutan": 32
+    },
+    {
+      "kode": "SUPLEMEN_CAIR",
+      "nama": "Cairan khusus",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Cairan khusus",
+      "urutan": 33
+    },
+    {
+      "kode": "LAINNYA",
+      "nama": "Lainnya",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Lainnya",
+      "urutan": 34
+    }
+  ]
+}

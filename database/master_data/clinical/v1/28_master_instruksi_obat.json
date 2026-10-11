@@ -1,0 +1,169 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_INSTRUKSI_OBAT",
+    "judul": "Master Instruksi Obat",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 15,
+    "cakupan": "Potongan instruksi yang dipilih dokter; bukan aturan otomatis.",
+    "digunakan_pada": [
+      "Prescription builder",
+      "Ringkasan resep pasien"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "HABISKAN",
+      "nama": "Habiskan sesuai durasi yang diresepkan.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Habiskan sesuai durasi yang diresepkan.",
+      "urutan": 1
+    },
+    {
+      "kode": "KOCOK",
+      "nama": "Kocok dahulu sebelum digunakan.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Kocok dahulu sebelum digunakan.",
+      "urutan": 2
+    },
+    {
+      "kode": "GUNAKAN_ALAT_TAKAR",
+      "nama": "Gunakan alat takar obat, bukan sendok rumah tangga.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Gunakan alat takar obat, bukan sendok rumah tangga.",
+      "urutan": 3
+    },
+    {
+      "kode": "TELAN_UTUH",
+      "nama": "Telan utuh, jangan dihancurkan atau dikunyah.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Telan utuh, jangan dihancurkan atau dikunyah.",
+      "urutan": 4
+    },
+    {
+      "kode": "LARUTKAN",
+      "nama": "Larutkan sesuai petunjuk sebelum diminum.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Larutkan sesuai petunjuk sebelum diminum.",
+      "urutan": 5
+    },
+    {
+      "kode": "BILA_DEMAM",
+      "nama": "Gunakan bila demam.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Gunakan bila demam.",
+      "urutan": 6
+    },
+    {
+      "kode": "BILA_NYERI",
+      "nama": "Gunakan bila nyeri.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Gunakan bila nyeri.",
+      "urutan": 7
+    },
+    {
+      "kode": "BILA_SESAK",
+      "nama": "Gunakan bila sesak sesuai instruksi dokter.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Gunakan bila sesak sesuai instruksi dokter.",
+      "urutan": 8
+    },
+    {
+      "kode": "OLES_TIPIS",
+      "nama": "Oleskan tipis pada area yang ditentukan.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Oleskan tipis pada area yang ditentukan.",
+      "urutan": 9
+    },
+    {
+      "kode": "CUCI_TANGAN",
+      "nama": "Cuci tangan sebelum dan sesudah menggunakan obat.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Cuci tangan sebelum dan sesudah menggunakan obat.",
+      "urutan": 10
+    },
+    {
+      "kode": "HINDARI_MATA",
+      "nama": "Hindari kontak dengan mata.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Hindari kontak dengan mata.",
+      "urutan": 11
+    },
+    {
+      "kode": "SIMPAN_DINGIN",
+      "nama": "Simpan sesuai petunjuk suhu dingin.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Simpan sesuai petunjuk suhu dingin.",
+      "urutan": 12
+    },
+    {
+      "kode": "JANGAN_BERBAGI",
+      "nama": "Jangan berbagi obat dengan orang lain.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Jangan berbagi obat dengan orang lain.",
+      "urutan": 13
+    },
+    {
+      "kode": "HENTIKAN_CARI_BANTUAN",
+      "nama": "Hentikan penggunaan dan cari bantuan bila timbul reaksi alergi berat.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Hentikan penggunaan dan cari bantuan bila timbul reaksi alergi berat.",
+      "urutan": 14
+    },
+    {
+      "kode": "CUSTOM",
+      "nama": "Instruksi khusus dokter.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Instruksi khusus dokter.",
+      "urutan": 15
+    }
+  ]
+}

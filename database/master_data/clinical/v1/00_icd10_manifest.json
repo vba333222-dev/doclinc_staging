@@ -1,0 +1,67 @@
+{
+  "package": "DocLink ICD-10 WHO 2019 Reference",
+  "version": "1.0.0",
+  "generated_at": "2026-07-17T04:52:25+07:00",
+  "file_count": 5,
+  "total_records": 12597,
+  "files": [
+    {
+      "file": "20_master_icd10_chapter_who_2019.json",
+      "dataset_code": "MASTER_ICD10_CHAPTER_WHO_2019",
+      "judul": "Master Bab ICD-10 WHO 2019",
+      "jumlah_data": 22,
+      "digunakan_pada": [
+        "Navigasi diagnosis dokter",
+        "Filter bab diagnosis",
+        "Referensi hierarchy ICD-10"
+      ],
+      "sha256": "5ee196bc91ccf90f66269913971f1750961a6e0ca7929bd30e7addd48e74c10f"
+    },
+    {
+      "file": "20a_master_icd10_block_who_2019.json",
+      "dataset_code": "MASTER_ICD10_BLOCK_WHO_2019",
+      "judul": "Master Blok ICD-10 WHO 2019",
+      "jumlah_data": 274,
+      "digunakan_pada": [
+        "Navigasi diagnosis dokter",
+        "Filter blok diagnosis",
+        "Referensi hierarchy ICD-10"
+      ],
+      "sha256": "77260d0d5d764728ce0751e606a46754062f957260a7891b48958ab662582093"
+    },
+    {
+      "file": "20b_master_diagnosis_icd10_who_2019.json",
+      "dataset_code": "MASTER_DIAGNOSIS_ICD10_WHO_2019",
+      "judul": "Master Diagnosis ICD-10 WHO 2019",
+      "jumlah_data": 12246,
+      "digunakan_pada": [
+        "Autocomplete diagnosis dokter",
+        "Pencatatan diagnosis kerja/utama/penyerta/banding",
+        "Validasi kode diagnosis"
+      ],
+      "sha256": "2ae4fb063475472060498da847b11205408344481b0772acc21efee4051108d7"
+    },
+    {
+      "file": "20c_master_diagnosis_alias_indonesia_starter.json",
+      "dataset_code": "MASTER_DIAGNOSIS_ALIAS_INDONESIA_STARTER",
+      "judul": "Alias Diagnosis Bahasa Indonesia Starter",
+      "jumlah_data": 53,
+      "digunakan_pada": [
+        "Pencarian diagnosis dokter",
+        "Sinonim lokal yang wajib divalidasi"
+      ],
+      "sha256": "9dc64dfd1a5fb613f3e0be139b36b02be5624f531f85d1d6682ce955342f49f4"
+    },
+    {
+      "file": "20d_icd10_legacy_code_review.json",
+      "dataset_code": "ICD10_LEGACY_CODE_REVIEW",
+      "judul": "Review Kode ICD-10 Legacy Tidak Valid",
+      "jumlah_data": 2,
+      "digunakan_pada": [
+        "Validasi migrasi diagnosis legacy",
+        "Daftar koreksi manual clinical coder"
+      ],
+      "sha256": "c5d553f3aebe89aebf5b814325039a68833450b8851efe942c44aa81b263dfc6"
+    }
+  ]
+}

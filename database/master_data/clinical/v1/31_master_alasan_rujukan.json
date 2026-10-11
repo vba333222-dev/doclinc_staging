@@ -1,0 +1,128 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_ALASAN_RUJUKAN",
+    "judul": "Master Alasan Rujukan",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 11,
+    "cakupan": "Alasan klinis dan operasional rujukan.",
+    "digunakan_pada": [
+      "Workspace tindak lanjut Nakes"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "EMERGENCY",
+      "nama": "Kondisi darurat atau berpotensi mengancam nyawa",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Kondisi darurat atau berpotensi mengancam nyawa",
+      "urutan": 1
+    },
+    {
+      "kode": "NEED_PHYSICAL_EXAM",
+      "nama": "Membutuhkan pemeriksaan fisik langsung",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Membutuhkan pemeriksaan fisik langsung",
+      "urutan": 2
+    },
+    {
+      "kode": "NEED_DIAGNOSTIC_TEST",
+      "nama": "Membutuhkan pemeriksaan penunjang",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Membutuhkan pemeriksaan penunjang",
+      "urutan": 3
+    },
+    {
+      "kode": "NEED_SPECIALIST",
+      "nama": "Membutuhkan dokter spesialis",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Membutuhkan dokter spesialis",
+      "urutan": 4
+    },
+    {
+      "kode": "NEED_PROCEDURE",
+      "nama": "Membutuhkan tindakan yang tidak tersedia",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Membutuhkan tindakan yang tidak tersedia",
+      "urutan": 5
+    },
+    {
+      "kode": "FAILED_OUTPATIENT",
+      "nama": "Tidak membaik dengan penanganan awal",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Tidak membaik dengan penanganan awal",
+      "urutan": 6
+    },
+    {
+      "kode": "MEDICATION_MONITORING",
+      "nama": "Membutuhkan pemantauan obat atau efek samping",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Membutuhkan pemantauan obat atau efek samping",
+      "urutan": 7
+    },
+    {
+      "kode": "PREGNANCY_RISK",
+      "nama": "Kehamilan membutuhkan evaluasi langsung",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Kehamilan membutuhkan evaluasi langsung",
+      "urutan": 8
+    },
+    {
+      "kode": "MENTAL_CRISIS",
+      "nama": "Krisis kesehatan mental",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Krisis kesehatan mental",
+      "urutan": 9
+    },
+    {
+      "kode": "PATIENT_REQUEST",
+      "nama": "Permintaan pasien setelah penjelasan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Permintaan pasien setelah penjelasan",
+      "urutan": 10
+    },
+    {
+      "kode": "OTHER",
+      "nama": "Alasan lainnya",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Alasan lainnya",
+      "urutan": 11
+    }
+  ]
+}

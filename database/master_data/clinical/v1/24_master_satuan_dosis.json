@@ -1,0 +1,188 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_SATUAN_DOSIS",
+    "judul": "Master Satuan Dosis",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 17,
+    "cakupan": "Satuan jumlah per pemberian.",
+    "digunakan_pada": [
+      "Prescription builder"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "TABLET",
+      "nama": "tablet",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "tablet",
+      "urutan": 1
+    },
+    {
+      "kode": "KAPSUL",
+      "nama": "kapsul",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "kapsul",
+      "urutan": 2
+    },
+    {
+      "kode": "KAPLET",
+      "nama": "kaplet",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "kaplet",
+      "urutan": 3
+    },
+    {
+      "kode": "SENDOK_TAKAR",
+      "nama": "sendok takar",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "sendok takar",
+      "urutan": 4
+    },
+    {
+      "kode": "ML",
+      "nama": "mL",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "mL",
+      "urutan": 5
+    },
+    {
+      "kode": "TETES",
+      "nama": "tetes",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "tetes",
+      "urutan": 6
+    },
+    {
+      "kode": "SEMPROTAN",
+      "nama": "semprotan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "semprotan",
+      "urutan": 7
+    },
+    {
+      "kode": "HISAPAN",
+      "nama": "hisapan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "hisapan",
+      "urutan": 8
+    },
+    {
+      "kode": "AMPUL",
+      "nama": "ampul",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "ampul",
+      "urutan": 9
+    },
+    {
+      "kode": "VIAL",
+      "nama": "vial",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "vial",
+      "urutan": 10
+    },
+    {
+      "kode": "SACHET",
+      "nama": "sachet",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "sachet",
+      "urutan": 11
+    },
+    {
+      "kode": "SUPPOSITORIA",
+      "nama": "supositoria",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "supositoria",
+      "urutan": 12
+    },
+    {
+      "kode": "OVULA",
+      "nama": "ovula",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "ovula",
+      "urutan": 13
+    },
+    {
+      "kode": "APLIKASI",
+      "nama": "aplikasi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "aplikasi",
+      "urutan": 14
+    },
+    {
+      "kode": "UNIT",
+      "nama": "unit",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "unit",
+      "urutan": 15
+    },
+    {
+      "kode": "GRAM",
+      "nama": "gram",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "gram",
+      "urutan": 16
+    },
+    {
+      "kode": "DOSIS",
+      "nama": "dosis",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "dosis",
+      "urutan": 17
+    }
+  ]
+}

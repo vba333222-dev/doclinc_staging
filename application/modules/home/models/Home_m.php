@@ -532,7 +532,7 @@ class Home_m extends MX_Controller
 		$row->assigned_pic_no_hp = $pic_no_hp;
 		$row->assigned_pic_label = $pic_name !== ''
 			? 'PIC layanan: ' . $pic_name . ($pic_profesi !== '' ? ' - ' . $pic_profesi : '')
-			: 'PIC layanan belum ditentukan';
+			: '';
 	}
 
 	private function warga_pic_assignment_table_ready()

@@ -8,9 +8,7 @@ $nakes_account_type = isset($nakes_account_type) ? (string) $nakes_account_type 
 $nakes_is_command_center = $nakes_account_type === 'command_center';
 $nakes_is_personal = $nakes_account_type === 'personal';
 $nakes_is_unclassified = !$nakes_is_command_center && !$nakes_is_personal;
-$can_coordinate_staff = !empty($can_coordinate_staff) && $nakes_is_command_center;
-
-if (!function_exists('doclinc_history_safe_text')) {
+$can_coordinate_staff = !empty($can_coordinate_staff) && $nakes_is_command_center;	if (!function_exists('doclinc_history_safe_text')) {
 	function doclinc_history_safe_text($value, $fallback = '-')
 	{
 		$text = trim((string) $value);
@@ -138,7 +136,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 <body class="bg-light dl-dashboard-body dl-nakes-dashboard">
 	<div id="preloader">
 		<div class="text-center">
-			<img class="mb-3" src="<?= base_url(); ?>assets/images/doklincwhite.png" alt="" height="50px">
+			<img class="mb-3" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" height="50px">
 			<p class="mb-0">
 			<div class="spinner-border spinner-border-sm text-light" role="status">
 				<span class="visually-hidden">Loading...</span>
@@ -185,7 +183,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 							<div id="profileImageFeedback" class="small text-danger mt-2 d-none" role="alert"></div>
 						</div>
 						<?php else : ?>
-						<div class="alert alert-info small" role="status">Nama, alamat, dan identitas unit Puskesmas dikelola oleh Administrator Dinas Kesehatan. Akun ini hanya mengubah kontak operasional.</div>
+						<div class="alert alert-info small" role="status">Identitas unit dikelola Admin Dinas Kesehatan. Akun ini hanya mengubah kontak operasional.</div>
 						<?php endif; ?>
 						<?php if (!empty($nakes_is_personal)) : ?>
 						<div class="form-floating nk-profile-modal__field">
@@ -546,12 +544,24 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			}
 		}
 
-		window.addEventListener('popstate', function() {
+		window.addEventListener('popstate', function(event) {
+			var hash = window.location.hash ? window.location.hash.replace('#', '') : '';
+			var knownSections = ['beranda', 'req_konsul', 'operasional', 'riwayat_konsul', 'profile'];
+			// 1) Navigasi hash eksplisit (Beranda/Permintaan/Riwayat) menang atas event.state —
+			//    navigasi hash mewarisi state entri sebelumnya (mis. entri pushState tab Operasional),
+			//    sehingga state saja tidak bisa dijadikan penanda tunggal.
+			if (hash && knownSections.indexOf(hash) !== -1) {
+				showContent(hash);
+				return;
+			}
+			// 2) Back/forward antar entri pushState (mis. tab Operasional).
+			if (event.state && event.state.doclincSection && knownSections.indexOf(event.state.doclincSection) !== -1) {
+				showContent(event.state.doclincSection);
+				return;
+			}
+			// 3) Entri tanpa hash & tanpa state — muatan halaman penuh: tentukan dari path.
 			var operationsPath = <?= json_encode(parse_url(site_url('puskesmas/operations'), PHP_URL_PATH)); ?>;
-			var tab = window.location.pathname === operationsPath
-				? 'operasional'
-				: (window.location.hash ? window.location.hash.replace('#', '') : 'beranda');
-			showContent(tab);
+			showContent(window.location.pathname === operationsPath ? 'operasional' : 'beranda');
 		});
 
 		$('#btn-logout').click(function(event) {
@@ -561,7 +571,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				icon: "warning",
 				showCancelButton: true,
 				confirmButtonText: "Keluar",
-				confirmButtonColor: "#09AD74",
+				confirmButtonColor: "#1F6F4B",
 				cancelButtonText: "Batal"
 			}).then((result) => {
 				if (result.isConfirmed) {
@@ -601,8 +611,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					title: "Terima konsultasi?",
 					showCancelButton: true,
 					confirmButtonText: "Terima konsultasi",
-					confirmButtonColor: "#09AD74",
-					denyButtonText: "Batal",
+					confirmButtonColor: "#1F6F4B",
 					cancelButtonText: "Batal"
 				}).then((result) => {
 					/* Read more about isConfirmed, isDenied below */
@@ -658,15 +667,10 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 										const salam = waktuSalam();
 										const message = `Selamat ${salam} <b>${namaPasien}</b>,<br><br>
-					Saya <b>Dr. ${namaDokter}</b>, dokter yang akan menangani Anda berdasarkan permintaan konsultasi sebelumnya.
-					<br><br>
-					Berdasarkan informasi yang kami terima, Anda mengalami:<br>
-					<b>${keluhan}</b>.<br><br>
-					<b>Riwayat penyakit</b> : <br>
-					<b>${riwayat}</b>
-					<br><br>
-					Saya siap membantu Anda dengan penanganan medis yang tepat.<br><br>
-					Silakan sampaikan pertanyaan atau keluhan yang Anda rasakan saat ini.`;
+					Saya <b>Dr. ${namaDokter}</b>, Nakes yang akan menangani Anda.<br><br>
+					Keluhan Anda: <b>${keluhan}</b>.<br><br>
+					Riwayat penyakit: <b>${riwayat}</b><br><br>
+					Silakan sampaikan keluhan atau pertanyaan Anda di sini.`;
 
 										const chatData = {
 											receiver: reqId,
@@ -711,12 +715,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 									text: response && response.message ? response.message : "Konsultasi diterima.",
 									icon: "success",
 									showConfirmButton: false,
-									timer: 800,
+									timer: 1600,
 									timerProgressBar: true
-								});
-								window.setTimeout(function() {
+								}).then(function() {
 									window.location.href = redirectUrl;
-								}, 300);
+								});
 							},
 							error: function() {
 								Swal.fire("Konsultasi belum diterima", "Terjadi kesalahan. Coba lagi.", "error");
@@ -736,7 +739,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					input: "text",
 					showCancelButton: true,
 					confirmButtonText: "Selesai",
-					confirmButtonColor: "#09AD74",
+					confirmButtonColor: "#1F6F4B",
 					denyButtonText: "Batal"
 				}).then((result) => {
 					/* Read more about isConfirmed, isDenied below */
@@ -833,7 +836,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			const locationAddressResolver = window.DoclincLocationAddress ? window.DoclincLocationAddress.create({
 				provider: <?= json_encode($map_provider); ?>,
 				mapboxToken: visitMapboxToken,
-				googleMaps: window.google && window.google.maps ? window.google.maps : null
+				endpoint: <?= json_encode(base_url('location/address')); ?>,
+				googleMaps: window.google && window.google.maps ? window.google.maps : null,
+				fetch: window.fetch
 			}) : null;
 			let monitorRefreshTimer = null;
 			let mapFetchGeneration = 0;
@@ -1148,7 +1153,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					mapState.leafletRouteLine = L.polyline(routePoints, {
 						weight: 6,
 						opacity: 0.95,
-						color: '#09AD74',
+						color: '#1F6F4B',
 						lineCap: 'round',
 						lineJoin: 'round'
 					}).addTo(mapState.leaflet);
@@ -1230,7 +1235,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						path: routePath,
 						strokeWeight: 6,
 						strokeOpacity: 0.95,
-						strokeColor: '#09AD74',
+						strokeColor: '#1F6F4B',
 						map: mapState.google
 					});
 					routePath.forEach(function(latLng) {
@@ -1309,6 +1314,16 @@ if (!function_exists('doclinc_nakes_short_text')) {
 							} catch (error) {}
 						}
 						if (response && response.status) {
+							if (response.status === 'patient_only' || response.patient_location_only === true) {
+								ns.stopNakesVisitTracking(requestId, trackingGeneration);
+								clearNakesRouteLayers();
+								setNakesArrivalNotice(requestId, null);
+								setRouteText(requestId, null);
+								renderVisitMap(requestId, response, fallbackPatientLocation);
+								setViewerMode(false);
+								setTrackingStatus(requestId, response.message || 'Lokasi pasien untuk triase.');
+								return;
+							}
 							if (response.tracking_active === false) {
 								ns.stopNakesVisitTracking(requestId, trackingGeneration);
 								clearNakesRouteLayers();
@@ -2286,7 +2301,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<?php endif; ?>
 	<?php $this->load->view('nakes_presence_runtime_v', array('nakes_presence_bootstrap' => $nakes_presence_bootstrap)); ?>
 	<?php if (!empty($puskesmas_operations_enabled)) : ?>
-		<script>window.DoclincPuskesmasOperationsConfig = <?= json_encode($puskesmas_operations_bootstrap, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
+		<script>window.DoclincPuskesmasOperationsConfig = <?= json_encode(array_merge($puskesmas_operations_bootstrap, array('dashboardUrl' => base_url('home_nakes'))), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-puskesmas-operations.js')); ?>"></script>
 	<?php endif; ?>
 	<?php if (!empty($can_coordinate_staff)) : ?>

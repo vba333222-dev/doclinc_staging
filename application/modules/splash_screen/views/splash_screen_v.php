@@ -28,7 +28,7 @@
 
             <center>
 
-                <img class="animate__animated animate__bounceIn" src="<?= base_url();?>assets/images/doklincwhite.png" alt="" height="100px">
+                <img class="animate__animated animate__bounceIn" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" height="100px">
 
                 <!-- <h2 class="mb-0 text-white animate__animated animate__fadeIn">SEHAT GEH (beta)</h2> -->
 

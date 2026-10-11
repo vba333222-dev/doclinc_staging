@@ -1,0 +1,1991 @@
+:root,
+html[data-theme="light"] {
+    --green-dark: #09AD74;
+    --green-medium: #34b89a;
+    --green-light: #48c9b0;
+    --grey-light: #f5f5f5;
+    --light-grey: #f5f7fb;
+    --grey-medium: #d9d9d9;
+    --white: #ffffff;
+    --shadow: rgba(0, 0, 0, 0.1);
+    --doclinc-primary: #09AD74;
+    --doclinc-primary-dark: #087f5b;
+    --doclinc-info: #38b6ff;
+    --doclinc-surface: #ffffff;
+    --doclinc-page: #f4f6fb;
+    --doclinc-border: #e5e9f2;
+    --doclinc-text: #263238;
+    --doclinc-muted: #718096;
+    --doclinc-radius: 8px;
+    --doclinc-sidebar-bg: linear-gradient(135deg, #087f5b 0%, #1f9bd1 100%);
+    --doclinc-sidebar-active: rgba(255, 255, 255, 0.17);
+    --doclinc-sidebar-hover: rgba(255, 255, 255, 0.10);
+    --doclinc-sidebar-active-border: #ffffff;
+    --doclinc-topbar-bg: #f8fafc;
+    --doclinc-input-bg: #ffffff;
+    --doclinc-input-text: #263238;
+    --doclinc-dropdown-bg: #ffffff;
+    --doclinc-shadow: rgba(46, 139, 87, 0.08);
+    --doclinc-table-head: #f7fafc;
+    --doclinc-table-hover: #f1fbf7;
+    --doclinc-button-surface: #ffffff;
+}
+
+html[data-theme="dark"] {
+    --green-dark: #31d09b;
+    --green-medium: #26b892;
+    --green-light: #62d7b4;
+    --grey-light: #15202b;
+    --light-grey: #111827;
+    --grey-medium: #334155;
+    --white: #0f172a;
+    --shadow: rgba(0, 0, 0, 0.35);
+    --doclinc-primary: #31d09b;
+    --doclinc-primary-dark: #7ce5c4;
+    --doclinc-info: #5bc8ff;
+    --doclinc-surface: #111827;
+    --doclinc-page: #0b1220;
+    --doclinc-border: #243244;
+    --doclinc-text: #e5edf5;
+    --doclinc-muted: #9fb0c3;
+    --doclinc-radius: 8px;
+    --doclinc-sidebar-bg: linear-gradient(135deg, #102a3f 0%, #075c64 100%);
+    --doclinc-sidebar-active: rgba(49, 208, 155, 0.18);
+    --doclinc-sidebar-hover: rgba(255, 255, 255, 0.08);
+    --doclinc-sidebar-active-border: #31d09b;
+    --doclinc-topbar-bg: #111827;
+    --doclinc-input-bg: #0f172a;
+    --doclinc-input-text: #e5edf5;
+    --doclinc-dropdown-bg: #111827;
+    --doclinc-shadow: rgba(0, 0, 0, 0.32);
+    --doclinc-table-head: #172033;
+    --doclinc-table-hover: #162b34;
+    --doclinc-button-surface: #172033;
+}
+.bg-success{
+    background-color: #09AD74 !important;
+}
+.btn-default-asoka {
+    background: var(--green-dark);
+    color: #fff;
+}
+.btn-default-asoka:hover {
+    color: #fff;
+    background: var(--green-light);
+}
+.bg-brown-100 {
+    background: var(--green-dark);
+}
+.bg-brown-50 {
+    background: var(--light-grey);
+}
+.bg-pink {
+    background: var(--green-light);
+}
+.text-pink {
+    color: var(--green-light);
+}
+#wrapper #content-wrapper {
+    background-color: var(--doclinc-page)!important;
+}
+.sidebar-brand-text > span {
+    color: var(--green-dark);
+}
+.sidebar-dark .nav-item.active .nav-link,
+.sidebar-dark .nav-item.active .nav-link i {
+    color: var(--green-dark);
+}
+.sidebar-dark hr.sidebar-divider {
+    border-top: 1px solid rgb(160 129 108 / 44%);
+}
+.sidebar-dark .sidebar-heading {
+    color: rgba(112, 189, 166, 0.63);
+}
+.sidebar-dark .nav-item .nav-link[data-toggle=collapse]::after {
+    color: var(--green-dark);
+}
+.sidebar .nav-item .collapse .collapse-inner .collapse-item.active,
+.sidebar .nav-item .collapsing .collapse-inner .collapse-item.active,
+.sidebar-dark .nav-item .nav-link:active,
+.sidebar-dark .nav-item .nav-link:focus,
+.sidebar-dark .nav-item .nav-link:hover,
+.sidebar-dark .nav-item .nav-link:active i,
+.sidebar-dark .nav-item .nav-link:focus i,
+.sidebar-dark .nav-item .nav-link:hover i {
+    color: var(--green-dark);
+}
+.btn-pink {
+    color: #fff;
+    background-color: var(--green-light);
+    border-color: var(--green-light);
+}
+#content>nav.navbar.topbar>button#sidebarToggleTop,
+.topbar.navbar-light .navbar-nav .nav-item .nav-link {
+    color: var(--light-grey);
+}
+.topbar #sidebarToggleTop:hover {
+    background-color: inherit;
+}
+.topbar #sidebarToggleTop:focus {
+    box-shadow: none;
+}
+.topbar .dropdown-list .dropdown-header {
+    background-color: var(--light-grey);
+    border: 1px solid var(--light-grey);
+    color: var(--green-dark);
+}
+.you-are-here {
+    background: var(--light-grey);
+    color: var(--green-dark);
+}
+.you-are-here + div {
+    margin-top: -25px;
+}
+.border-left-brown-100 {
+    border-left: 0.25rem solid var(--green-dark)!important;
+}
+.border-right-brown-100 {
+    border-right: 0.25rem solid var(--green-dark)!important;
+}
+.border-left-brown-50 {
+    border-left: 0.25rem solid var(--light-grey)!important;
+}
+.border-right-brown-50 {
+    border-right: 0.25rem solid var(--light-grey)!important;
+}
+.border-left-pink {
+    border-left: 0.25rem solid var(--green-light)!important;
+}
+.border-right-pink {
+    border-right: 0.25rem solid var(--green-light)!important;
+}
+.card.border-left-brown-100,
+.card.border-right-brown-100 {
+    color: var(--green-dark)!important;
+}
+.card.border-left-brown-50,
+.card.border-right-brown-50 {
+    color: var(--light-grey)!important;
+}
+.card.border-left-pink,
+.card.border-right-pink {
+    color: var(--green-light)!important;
+}
+.modal-fluid {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+}
+.modal-fluid > .modal-content {
+    height: auto !important;
+    min-height: 100% !important;
+    background-color: rgba(255, 255, 255, 0.93);
+}
+.modal-fluid.modal-dialog-scrollable {
+    max-height: 100%!important;
+}
+
+/* Modern Styling Updates */
+body {
+    /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */ 
+    font-family: 'Nunito', sans-serif;
+    color: var(--doclinc-text);
+    background-color: var(--doclinc-page);
+}
+
+.card, .btn {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-pink, .btn-default-asoka {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-pink:hover, .btn-default-asoka:hover {
+    background-color: #004d3f;
+    color: #ffffff;
+}
+
+.navbar, .sidebar {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-dark .nav-item.active .nav-link,
+.sidebar-dark .nav-item .nav-link:hover {
+    background-color: #e0f2f1;
+}
+
+.sidebar-dark .nav-item .nav-link {
+    font-size: 16px;
+}
+
+/* Doclinc admin visual system */
+body {
+    background: var(--doclinc-page);
+    font-family: 'Nunito', sans-serif;
+    color: var(--doclinc-text);
+}
+
+.doclinc-admin-page {
+    padding: 30px 20px;
+}
+
+.doclinc-sidebar {
+    top: 0;
+    left: 0;
+    z-index: 1030;
+    width: 220px;
+    overflow-y: auto;
+    background: var(--doclinc-sidebar-bg);
+}
+
+.doclinc-sidebar .sidebar-brand-icon img {
+    max-width: 68px;
+    max-height: 48px;
+    object-fit: contain;
+}
+
+.doclinc-sidebar .nav-item {
+    margin-bottom: 8px;
+}
+
+.doclinc-sidebar .nav-link {
+    border-radius: var(--doclinc-radius);
+    color: #fff;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.doclinc-sidebar .nav-link.active,
+.doclinc-sidebar .nav-link:hover,
+.doclinc-sidebar .nav-item.active .nav-link {
+    background: var(--doclinc-sidebar-active);
+    color: #fff;
+}
+
+.doclinc-sidebar .nav-link i {
+    margin-right: 8px;
+}
+
+.doclinc-sidebar-section {
+    margin-top: 0.35rem;
+}
+
+.doclinc-sidebar-heading {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06rem;
+    text-transform: uppercase;
+    padding: 0.65rem 1rem 0.2rem;
+}
+
+.doclinc-content-wrapper {
+    margin-left: 220px;
+}
+
+.doclinc-topbar {
+    background: var(--doclinc-topbar-bg);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    border-bottom: 1px solid var(--doclinc-border);
+    box-shadow: 0 2px 8px var(--doclinc-shadow);
+}
+
+.doclinc-topbar .navbar-nav .nav-link {
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-topbar .navbar-nav .nav-link:hover {
+    color: var(--doclinc-info);
+}
+
+.doclinc-topbar .dropdown-menu {
+    border-radius: 10px;
+}
+
+.doclinc-topbar-brand {
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-topbar-logo {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+}
+
+.doclinc-theme-toggle {
+    background: var(--doclinc-input-bg);
+    border: 1px solid var(--doclinc-border);
+    color: var(--doclinc-text);
+}
+
+.doclinc-theme-toggle:hover,
+.doclinc-theme-toggle:focus {
+    background: var(--doclinc-sidebar-active);
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-profile-image {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+}
+
+.doclinc-page-header,
+.you-are-here {
+    background: var(--light-grey);
+    color: var(--doclinc-primary-dark);
+    border-bottom: 1px solid var(--doclinc-border);
+}
+
+.doclinc-page-title {
+    color: var(--doclinc-primary-dark);
+    letter-spacing: 0;
+}
+
+.doclinc-page-subtitle {
+    color: rgba(8, 127, 91, 0.72) !important;
+    font-size: 0.92rem;
+}
+
+.doclinc-filter-card,
+.doclinc-table-card,
+.card {
+    border-radius: var(--doclinc-radius);
+    background: var(--doclinc-surface);
+    color: var(--doclinc-text);
+}
+
+.doclinc-filter-card,
+.doclinc-table-card {
+    border: 1px solid var(--doclinc-border);
+}
+
+.doclinc-filter-card .form-control,
+.doclinc-filter-card .btn {
+    min-height: 38px;
+}
+
+.doclinc-table-card .card-header,
+.card .card-header {
+    border-bottom-color: var(--doclinc-border);
+    background: var(--doclinc-surface);
+}
+
+.doclinc-table-card .table,
+.table {
+    color: var(--doclinc-text);
+    background: var(--doclinc-surface);
+}
+
+.doclinc-table-card .table th,
+.table thead th {
+    font-size: 0.78rem;
+    letter-spacing: 0;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.doclinc-table-card .table td,
+.table td {
+    vertical-align: middle;
+}
+
+.doclinc-status-badge,
+.badge {
+    border-radius: 999px;
+    font-weight: 700;
+    letter-spacing: 0;
+    padding: 0.35rem 0.55rem;
+}
+
+.doclinc-empty-state {
+    color: var(--doclinc-muted);
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.doclinc-meta-text {
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+}
+
+.doclinc-helper-note,
+.doclinc-warning-note {
+    border: 1px solid var(--doclinc-border);
+    border-left-width: 4px;
+    border-radius: var(--doclinc-radius);
+    background: var(--doclinc-surface);
+    color: var(--doclinc-text);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    padding: 0.85rem 1rem;
+}
+
+.doclinc-helper-note {
+    border-left-color: var(--doclinc-info);
+}
+
+.doclinc-warning-note {
+    border-left-color: #f6c23e;
+}
+
+.dropdown-menu {
+    background: var(--doclinc-dropdown-bg);
+    border-color: var(--doclinc-border);
+    color: var(--doclinc-text);
+}
+
+.dropdown-item {
+    color: var(--doclinc-text);
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: var(--doclinc-sidebar-active);
+    color: var(--doclinc-primary-dark);
+}
+
+.form-control,
+.custom-select,
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select {
+    background-color: var(--doclinc-input-bg);
+    border-color: var(--doclinc-border);
+    color: var(--doclinc-input-text);
+}
+
+.form-control:focus,
+.custom-select:focus {
+    background-color: var(--doclinc-input-bg);
+    color: var(--doclinc-input-text);
+    border-color: var(--doclinc-primary);
+    box-shadow: 0 0 0 0.15rem rgba(9, 173, 116, 0.18);
+}
+
+.table-bordered,
+.table-bordered td,
+.table-bordered th,
+.table td,
+.table th {
+    border-color: var(--doclinc-border);
+}
+
+.thead-light th,
+.table thead th {
+    background-color: var(--light-grey);
+    color: var(--doclinc-text);
+    border-color: var(--doclinc-border);
+}
+
+.modal-content,
+.modal-header,
+.modal-footer {
+    background: var(--doclinc-surface);
+    color: var(--doclinc-text);
+    border-color: var(--doclinc-border);
+}
+
+.bg-white,
+.card-header.bg-white,
+footer.sticky-footer {
+    background-color: var(--doclinc-surface) !important;
+}
+
+.text-gray-500,
+.text-gray-600,
+.text-gray-700,
+.text-muted {
+    color: var(--doclinc-muted) !important;
+}
+
+.doclinc-login-page {
+    background: var(--doclinc-page);
+}
+
+.doclinc-login-shell {
+    min-height: 100vh;
+    background: linear-gradient(135deg, rgba(9, 173, 116, 0.14) 0%, rgba(56, 182, 255, 0.12) 100%);
+}
+
+.doclinc-login-card {
+    background: var(--doclinc-surface);
+}
+
+.doclinc-login-logo {
+    width: 82px;
+    max-height: 82px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
+.alert {
+    border-radius: var(--doclinc-radius);
+}
+
+.btn {
+    border-radius: 999px;
+    letter-spacing: 0;
+}
+
+#content-wrapper,
+.doclinc-content-wrapper {
+    min-height: 100vh;
+}
+
+#content,
+.doclinc-admin-page {
+    min-height: calc(100vh - 90px);
+}
+
+.doclinc-sidebar .nav-item .nav-link {
+    border-left: 3px solid transparent;
+    margin: 0 0.65rem;
+    padding: 0.72rem 0.85rem;
+}
+
+.doclinc-sidebar .nav-link:hover {
+    background: var(--doclinc-sidebar-hover);
+    color: #fff;
+}
+
+.doclinc-sidebar .nav-link.active,
+.doclinc-sidebar .nav-item.active .nav-link {
+    background: var(--doclinc-sidebar-active);
+    border-left-color: var(--doclinc-sidebar-active-border);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.doclinc-sidebar .nav-link.active:hover,
+.doclinc-sidebar .nav-item.active .nav-link:hover {
+    background: var(--doclinc-sidebar-active);
+}
+
+.table-responsive {
+    border-radius: var(--doclinc-radius);
+    overflow-x: auto;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th,
+.table td {
+    padding: 0.82rem 0.9rem;
+    border-color: var(--doclinc-border);
+    overflow-wrap: anywhere;
+}
+
+.table thead th,
+.thead-light th,
+.table .bg-info,
+.table .bg-success {
+    background-color: var(--doclinc-table-head) !important;
+    color: var(--doclinc-text) !important;
+    border-color: var(--doclinc-border) !important;
+}
+
+.table tbody tr,
+.table tbody td,
+.table tbody th {
+    background-color: var(--doclinc-surface);
+    color: var(--doclinc-text);
+}
+
+.table-hover tbody tr:hover,
+.table tbody tr:hover,
+.table tbody tr:hover td {
+    background-color: var(--doclinc-table-hover);
+    color: var(--doclinc-text);
+}
+
+.table a {
+    color: var(--doclinc-primary-dark);
+}
+
+.table td .btn-group,
+.table td form.d-inline,
+.table td .dropdown {
+    white-space: nowrap;
+}
+
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_paginate {
+    color: var(--doclinc-muted) !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: var(--doclinc-primary-dark) !important;
+    border-color: transparent !important;
+}
+
+.page-link {
+    background-color: var(--doclinc-button-surface);
+    border-color: var(--doclinc-border);
+    color: var(--doclinc-primary-dark);
+}
+
+.page-link:hover {
+    background-color: var(--doclinc-table-hover);
+    border-color: var(--doclinc-primary);
+    color: var(--doclinc-primary-dark);
+}
+
+.page-item.active .page-link {
+    background-color: var(--doclinc-primary);
+    border-color: var(--doclinc-primary);
+    color: #fff;
+}
+
+.btn-sm {
+    padding: 0.38rem 0.72rem;
+}
+
+.btn-light,
+.btn-secondary,
+.btn-outline-secondary {
+    border-color: var(--doclinc-border);
+}
+
+.btn-light,
+.btn-outline-secondary {
+    background-color: var(--doclinc-button-surface);
+    color: var(--doclinc-text);
+}
+
+.btn-light:hover,
+.btn-outline-secondary:hover {
+    background-color: var(--doclinc-table-hover);
+    color: var(--doclinc-primary-dark);
+}
+
+.dropdown-header {
+    background: var(--doclinc-table-head);
+    color: var(--doclinc-primary-dark);
+}
+
+.topbar .nav-item .nav-link,
+.doclinc-theme-toggle,
+#alertsDropdown {
+    border-radius: 999px;
+}
+
+.doclinc-theme-toggle {
+    border: 1px solid var(--doclinc-border);
+    background: var(--doclinc-button-surface);
+    color: var(--doclinc-primary-dark);
+}
+
+.dropdown-list .dropdown-item {
+    white-space: normal;
+}
+
+.dropdown-list .text-center.small {
+    color: var(--doclinc-muted) !important;
+}
+
+.doclinc-notification-badge {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.1rem;
+}
+
+.doclinc-notification-menu {
+    min-width: 320px;
+    max-width: 360px;
+}
+
+.doclinc-notification-mark-read {
+    color: var(--doclinc-primary-dark);
+    font-size: 0.72rem;
+    text-decoration: none;
+}
+
+.doclinc-notification-mark-read:hover,
+.doclinc-notification-mark-read:focus {
+    color: var(--doclinc-info);
+    text-decoration: underline;
+}
+
+.doclinc-notification-item {
+    border-bottom: 1px solid var(--doclinc-border);
+    color: var(--doclinc-text);
+    white-space: normal;
+}
+
+.doclinc-notification-item:last-child {
+    border-bottom: 0;
+}
+
+.doclinc-notification-meta,
+.doclinc-notification-message,
+.doclinc-notification-time {
+    color: var(--doclinc-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.doclinc-notification-message {
+    margin-top: 0.18rem;
+}
+
+.doclinc-notification-time {
+    margin-top: 0.28rem;
+}
+
+.doclinc-dashboard-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.doclinc-dashboard-card {
+    align-items: center;
+    background: var(--doclinc-surface);
+    border: 1px solid var(--doclinc-border);
+    border-left: 4px solid var(--doclinc-primary);
+    border-radius: var(--doclinc-radius);
+    box-shadow: 0 2px 8px var(--doclinc-shadow);
+    color: var(--doclinc-text);
+    display: flex;
+    gap: 0.85rem;
+    min-height: 104px;
+    padding: 1rem;
+}
+
+.doclinc-dashboard-card-icon {
+    align-items: center;
+    background: var(--doclinc-table-head);
+    border-radius: 999px;
+    color: var(--doclinc-primary-dark);
+    display: inline-flex;
+    height: 42px;
+    justify-content: center;
+    width: 42px;
+}
+
+.doclinc-dashboard-card-value {
+    color: var(--doclinc-text);
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.doclinc-dashboard-card-label {
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.doclinc-dashboard-card-warning {
+    border-left-color: #f6c23e;
+}
+
+.doclinc-dashboard-card-info,
+.doclinc-dashboard-card-service {
+    border-left-color: var(--doclinc-info);
+}
+
+.doclinc-dashboard-card-success {
+    border-left-color: var(--doclinc-primary);
+}
+
+.doclinc-dashboard-card-legacy {
+    border-left-color: #e74a3b;
+}
+
+.doclinc-dashboard-panel {
+    border: 1px solid var(--doclinc-border);
+}
+
+.doclinc-dashboard-panel .card-header {
+    min-height: 56px;
+}
+
+.doclinc-distribution-row + .doclinc-distribution-row {
+    margin-top: 1rem;
+}
+
+.doclinc-distribution-bar {
+    background: var(--doclinc-table-head);
+    border-radius: 999px;
+    height: 8px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.doclinc-distribution-bar > div {
+    background: var(--doclinc-primary);
+    height: 100%;
+}
+
+.doclinc-dashboard-note {
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+    padding: 0.75rem 0.85rem;
+}
+
+.doclinc-section-kicker {
+    color: var(--doclinc-muted);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    margin: 0 0 0.8rem;
+    text-transform: uppercase;
+}
+
+.doclinc-diagnosis-row + .doclinc-diagnosis-row,
+.doclinc-diagnosis-puskesmas + .doclinc-diagnosis-puskesmas {
+    margin-top: 0.95rem;
+}
+
+.doclinc-diagnosis-row strong,
+.doclinc-diagnosis-puskesmas strong {
+    color: var(--doclinc-text);
+    font-size: 0.9rem;
+}
+
+.doclinc-diagnosis-bar {
+    background: var(--doclinc-table-head);
+    border-radius: 999px;
+    height: 7px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.doclinc-diagnosis-bar > div {
+    background: #4f8f7b;
+    height: 100%;
+}
+
+.doclinc-record-card {
+    border: 1px solid var(--doclinc-border);
+}
+
+.doclinc-record-table {
+    color: var(--doclinc-text);
+    font-size: 0.86rem;
+}
+
+.doclinc-record-table thead th {
+    background: var(--doclinc-table-head);
+    border-bottom: 1px solid var(--doclinc-border);
+    color: var(--doclinc-muted);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.doclinc-record-table td {
+    border-top: 1px solid var(--doclinc-border);
+    vertical-align: middle;
+}
+
+.doclinc-record-badge {
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    color: var(--doclinc-text);
+    display: inline-flex;
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 0.28rem 0.55rem;
+}
+
+.doclinc-record-empty {
+    background: var(--doclinc-table-head);
+    border: 1px dashed var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-muted);
+    padding: 1rem;
+    text-align: center;
+}
+
+.doclinc-record-detail-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.doclinc-record-detail-grid > div {
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    padding: 0.75rem;
+}
+
+.doclinc-record-detail-grid span {
+    color: var(--doclinc-muted);
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+}
+
+.doclinc-record-detail-grid strong {
+    color: var(--doclinc-text);
+    font-size: 0.9rem;
+}
+
+.doclinc-shortcut-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.doclinc-shortcut-grid a {
+    align-items: center;
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-text);
+    display: flex;
+    gap: 0.65rem;
+    min-height: 58px;
+    padding: 0.8rem;
+}
+
+.doclinc-shortcut-grid a:hover,
+.doclinc-shortcut-grid a:focus {
+    border-color: var(--doclinc-primary);
+    color: var(--doclinc-primary-dark);
+    text-decoration: none;
+}
+
+.doclinc-attention-item,
+.doclinc-activity-item {
+    background: var(--doclinc-surface);
+    color: var(--doclinc-text);
+}
+
+.doclinc-monitor-summary {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.doclinc-monitor-summary-card {
+    align-items: center;
+    background: var(--doclinc-surface);
+    border: 1px solid var(--doclinc-border);
+    border-left: 4px solid var(--doclinc-primary);
+    border-radius: var(--doclinc-radius);
+    box-shadow: 0 2px 8px var(--doclinc-shadow);
+    color: var(--doclinc-text);
+    display: flex;
+    gap: 0.85rem;
+    min-height: 96px;
+    padding: 0.95rem;
+}
+
+.doclinc-monitor-summary-icon {
+    align-items: center;
+    background: var(--doclinc-table-head);
+    border-radius: 999px;
+    color: var(--doclinc-primary-dark);
+    display: inline-flex;
+    height: 40px;
+    justify-content: center;
+    width: 40px;
+}
+
+.doclinc-monitor-summary-value {
+    color: var(--doclinc-text);
+    font-size: 1.55rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.doclinc-monitor-summary-label {
+    color: var(--doclinc-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.doclinc-monitor-summary-warning {
+    border-left-color: #f6c23e;
+}
+
+.doclinc-monitor-summary-info,
+.doclinc-monitor-summary-service {
+    border-left-color: var(--doclinc-info);
+}
+
+.doclinc-monitor-summary-success {
+    border-left-color: var(--doclinc-primary);
+}
+
+.doclinc-monitor-summary-legacy {
+    border-left-color: #e74a3b;
+}
+
+.doclinc-monitor-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.doclinc-monitor-table thead th {
+    border-top: 0;
+    color: var(--doclinc-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+}
+
+.doclinc-request-card td {
+    border-left: 0;
+    border-right: 0;
+}
+
+.doclinc-request-meta {
+    color: var(--doclinc-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.doclinc-staff-note {
+    align-items: flex-start;
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-left: 4px solid var(--doclinc-info);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-text);
+    display: flex;
+    gap: 0.6rem;
+    line-height: 1.45;
+    margin-bottom: 1rem;
+    padding: 0.8rem 0.95rem;
+}
+
+.doclinc-staff-note i {
+    color: var(--doclinc-info);
+    margin-top: 0.15rem;
+}
+
+.doclinc-staff-table thead th {
+    color: var(--doclinc-text);
+    font-size: 0.76rem;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.doclinc-staff-table td {
+    color: var(--doclinc-text);
+    vertical-align: middle;
+}
+
+.doclinc-staff-chip,
+.doclinc-pic-chip {
+    align-items: center;
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    color: var(--doclinc-text);
+    display: inline-flex;
+    font-size: 0.78rem;
+    font-weight: 700;
+    gap: 0.35rem;
+    padding: 0.25rem 0.55rem;
+}
+
+.doclinc-staff-chip-active {
+    background: rgba(9, 173, 116, 0.12);
+    border-color: rgba(9, 173, 116, 0.42);
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-staff-chip-inactive {
+    background: var(--doclinc-button-surface);
+    color: var(--doclinc-muted);
+}
+
+.doclinc-pic-empty {
+    color: var(--doclinc-muted);
+}
+
+.doclinc-staff-account-empty {
+    background: var(--doclinc-table-head);
+    border: 1px dashed var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-muted);
+    font-size: 0.86rem;
+    padding: 0.9rem;
+}
+
+.doclinc-action-stack {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: center;
+}
+
+.doclinc-action-stack form {
+    margin: 0;
+}
+
+.doclinc-timeline-pill {
+    background: var(--doclinc-table-head);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-text);
+    max-width: 260px;
+    padding: 0.45rem 0.6rem;
+}
+
+.doclinc-timeline-pill span {
+    color: var(--doclinc-muted);
+    display: block;
+    font-size: 0.74rem;
+    margin-top: 0.18rem;
+}
+
+.doclinc-timeline-list {
+    border-left: 2px solid var(--doclinc-border);
+    margin-left: 0.35rem;
+    padding-left: 0.9rem;
+}
+
+.doclinc-timeline-row {
+    padding-bottom: 0.9rem;
+    position: relative;
+}
+
+.doclinc-timeline-row::before {
+    background: var(--doclinc-primary);
+    border-radius: 999px;
+    content: "";
+    height: 9px;
+    left: -1.18rem;
+    position: absolute;
+    top: 0.35rem;
+    width: 9px;
+}
+
+.doclinc-monitor-thumb {
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    height: 54px;
+    object-fit: cover;
+    width: 54px;
+}
+
+.doclinc-detail-modal .modal-dialog {
+    max-width: 1100px;
+}
+
+.doclinc-detail-block {
+    background: var(--doclinc-surface);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-text);
+    padding: 1rem;
+}
+
+.doclinc-detail-block h6 {
+    color: var(--doclinc-primary-dark);
+    font-weight: 800;
+    margin-bottom: 0.85rem;
+}
+
+.doclinc-report-summary {
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.doclinc-report-summary-card {
+    align-items: center;
+    background: var(--doclinc-surface);
+    border: 1px solid var(--doclinc-border);
+    border-left: 4px solid var(--doclinc-primary);
+    border-radius: var(--doclinc-radius);
+    box-shadow: 0 2px 8px var(--doclinc-shadow);
+    color: var(--doclinc-text);
+    display: flex;
+    gap: 0.85rem;
+    min-height: 88px;
+    padding: 0.9rem;
+}
+
+.doclinc-report-breakdown {
+    background: var(--doclinc-surface);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-text);
+    padding: 1rem;
+}
+
+.doclinc-report-breakdown thead th,
+.doclinc-report-table thead th {
+    border-top: 0;
+    color: var(--doclinc-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+}
+
+.doclinc-report-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.doclinc-report-table tbody td {
+    border-left: 0;
+    border-right: 0;
+    vertical-align: top;
+}
+
+.doclinc-report-meta {
+    color: var(--doclinc-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.doclinc-report-progress {
+    background: var(--doclinc-table-head);
+    border-radius: 999px;
+    height: 7px;
+    margin-bottom: 0.25rem;
+    min-width: 92px;
+    overflow: hidden;
+}
+
+.doclinc-report-progress span {
+    background: var(--doclinc-primary);
+    display: block;
+    height: 100%;
+}
+
+.doclinc-akun-page .you-are-here {
+    background: var(--doclinc-page);
+    color: var(--doclinc-text);
+}
+
+.doclinc-akun-page .doclinc-page-title {
+    align-items: center;
+    display: inline-flex;
+    font-size: 1.35rem;
+    font-weight: 700;
+    gap: 0.45rem;
+    letter-spacing: 0;
+}
+
+.doclinc-akun-helper {
+    font-size: 0.86rem;
+    line-height: 1.5;
+    padding: 0.7rem 0.85rem;
+}
+
+.doclinc-table-body {
+    padding: 1rem;
+}
+
+.doclinc-admin-table {
+    color: var(--doclinc-text);
+    font-size: 0.86rem;
+}
+
+.doclinc-admin-table thead th {
+    background: var(--doclinc-table-head) !important;
+    border-bottom: 1px solid var(--doclinc-border) !important;
+    border-top: 0;
+    color: var(--doclinc-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 0.72rem 0.75rem;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.doclinc-admin-table tbody td {
+    border-color: var(--doclinc-border);
+    padding: 0.68rem 0.75rem;
+    vertical-align: middle;
+}
+
+.doclinc-admin-table tbody tr:hover {
+    background: var(--doclinc-table-hover);
+}
+
+.doclinc-akun-table td:nth-child(2) {
+    min-width: 150px;
+}
+
+.doclinc-akun-table td:nth-child(3) {
+    max-width: 210px;
+}
+
+.doclinc-akun-table td:nth-child(5) {
+    min-width: 190px;
+}
+
+.doclinc-account-name {
+    color: var(--doclinc-text);
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.doclinc-text-wrap {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.doclinc-muted-text {
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+    line-height: 1.35;
+}
+
+.doclinc-warning-text {
+    color: #9f6b13;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    margin-top: 0.12rem;
+}
+
+.doclinc-code-chip,
+.doclinc-status-chip {
+    align-items: center;
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    padding: 0.26rem 0.48rem;
+    white-space: nowrap;
+}
+
+.doclinc-code-chip {
+    background: var(--doclinc-table-head);
+    color: var(--doclinc-text);
+}
+
+.doclinc-status-chip.is-active {
+    background: rgba(9, 173, 116, 0.1);
+    border-color: rgba(9, 173, 116, 0.28);
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-status-chip.is-inactive {
+    background: var(--doclinc-button-surface);
+    color: var(--doclinc-muted);
+}
+
+.doclinc-table-actions {
+    align-items: center;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: center;
+    min-width: 170px;
+}
+
+.doclinc-table-actions form {
+    margin: 0;
+}
+
+.doclinc-action-btn {
+    align-items: center;
+    background: var(--doclinc-button-surface);
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    color: var(--doclinc-text);
+    display: inline-flex;
+    font-size: 0.75rem;
+    font-weight: 700;
+    gap: 0.32rem;
+    justify-content: center;
+    line-height: 1;
+    min-height: 31px;
+    padding: 0.42rem 0.68rem;
+    white-space: nowrap;
+}
+
+.doclinc-action-btn:hover {
+    background: var(--doclinc-table-hover);
+    border-color: var(--doclinc-primary);
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-action-btn--primary {
+    background: var(--doclinc-primary) !important;
+    border-color: var(--doclinc-primary) !important;
+    color: #ffffff !important;
+}
+
+.doclinc-action-btn--primary:hover {
+    background: var(--doclinc-primary-dark) !important;
+    border-color: var(--doclinc-primary-dark) !important;
+    color: #ffffff !important;
+}
+
+.doclinc-action-btn--secondary {
+    background: var(--doclinc-button-surface) !important;
+    border-color: var(--doclinc-border) !important;
+    color: var(--doclinc-text) !important;
+}
+
+.doclinc-action-btn--secondary:hover {
+    background: var(--doclinc-table-hover) !important;
+    border-color: rgba(9, 173, 116, 0.3) !important;
+    color: var(--doclinc-primary-dark) !important;
+}
+
+.doclinc-action-btn--danger {
+    background: transparent !important;
+    border-color: rgba(220, 53, 69, 0.35) !important;
+    color: #b02a37 !important;
+}
+
+.doclinc-action-btn--danger:hover {
+    background: rgba(220, 53, 69, 0.08) !important;
+    border-color: rgba(220, 53, 69, 0.52) !important;
+    color: #9b1c2c !important;
+}
+
+.doclinc-action-primary {
+    background: rgba(9, 173, 116, 0.11) !important;
+    border-color: rgba(9, 173, 116, 0.3) !important;
+    color: var(--doclinc-primary-dark) !important;
+}
+
+.doclinc-action-danger {
+    background: rgba(220, 53, 69, 0.06) !important;
+    border-color: rgba(220, 53, 69, 0.32) !important;
+    color: #b02a37 !important;
+}
+
+.doclinc-action-danger:hover {
+    background: rgba(220, 53, 69, 0.12) !important;
+    border-color: rgba(220, 53, 69, 0.48) !important;
+}
+
+.doclinc-table-card .dataTables_wrapper .dataTables_length,
+.doclinc-table-card .dataTables_wrapper .dataTables_filter {
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+    margin-bottom: 0.85rem;
+}
+
+.doclinc-table-card .dataTables_wrapper .dataTables_filter input,
+.doclinc-table-card .dataTables_wrapper .dataTables_length select {
+    background: var(--doclinc-input-bg);
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    color: var(--doclinc-input-text);
+    font-size: 0.82rem;
+    min-height: 32px;
+    padding: 0.28rem 0.65rem;
+}
+
+.doclinc-account-list-card .card-header {
+    gap: 1rem;
+}
+
+.doclinc-account-toolbar {
+    align-items: flex-end;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-bottom: 1.15rem;
+}
+
+.doclinc-account-toolbar label {
+    color: var(--doclinc-muted);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+}
+
+.doclinc-puskesmas-selector {
+    background: var(--doclinc-input-bg);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-input-text);
+    font-size: 0.88rem;
+    max-width: 360px;
+    min-height: 38px;
+    padding: 0.42rem 0.75rem;
+}
+
+.doclinc-puskesmas-selector:focus {
+    background: var(--doclinc-input-bg);
+    border-color: rgba(9, 173, 116, 0.42);
+    box-shadow: 0 0 0 0.12rem rgba(9, 173, 116, 0.12);
+    color: var(--doclinc-input-text);
+}
+
+.doclinc-account-search {
+    background: var(--doclinc-input-bg);
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    color: var(--doclinc-input-text);
+    font-size: 0.86rem;
+    max-width: 360px;
+    min-height: 36px;
+    padding: 0.42rem 0.9rem;
+}
+
+.doclinc-account-search:focus {
+    background: var(--doclinc-input-bg);
+    border-color: var(--doclinc-primary);
+    box-shadow: 0 0 0 0.12rem rgba(9, 173, 116, 0.12);
+    color: var(--doclinc-input-text);
+}
+
+.doclinc-account-list {
+    display: grid;
+    gap: 1.05rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.doclinc-account-card {
+    background: var(--doclinc-surface);
+    border: 1px solid var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    color: var(--doclinc-text);
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 1.05rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.doclinc-account-card:hover {
+    border-color: rgba(9, 173, 116, 0.24);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.doclinc-account-card__header {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.85rem;
+    justify-content: space-between;
+    min-height: 34px;
+}
+
+.doclinc-account-card__title {
+    color: var(--doclinc-text);
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.doclinc-account-card__status {
+    align-items: center;
+    border: 1px solid var(--doclinc-border);
+    border-radius: 999px;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 0.28rem 0.52rem;
+    white-space: nowrap;
+}
+
+.doclinc-account-card__status.is-active {
+    background: rgba(9, 173, 116, 0.09);
+    border-color: rgba(9, 173, 116, 0.24);
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-account-card__status.is-inactive {
+    background: var(--doclinc-button-surface);
+    color: var(--doclinc-muted);
+}
+
+.doclinc-account-card__body {
+    display: grid;
+    gap: 0.72rem;
+    margin-top: 0.95rem;
+}
+
+.doclinc-account-card__meta {
+    min-width: 0;
+}
+
+.doclinc-account-card__meta span {
+    color: var(--doclinc-muted);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.18rem;
+    text-transform: uppercase;
+}
+
+.doclinc-account-card__meta strong {
+    color: var(--doclinc-text);
+    display: block;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: break-word;
+}
+
+.doclinc-account-card__note {
+    background: rgba(9, 173, 116, 0.07);
+    border: 1px solid rgba(9, 173, 116, 0.16);
+    border-left: 3px solid rgba(9, 173, 116, 0.38);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-primary-dark);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.35;
+    padding: 0.58rem 0.68rem;
+}
+
+.doclinc-account-card__note.is-warning {
+    background: rgba(246, 194, 62, 0.11);
+    border-color: rgba(246, 194, 62, 0.22);
+    border-left-color: rgba(246, 194, 62, 0.62);
+    color: #9f6b13;
+}
+
+.doclinc-account-card__note.is-muted {
+    background: var(--doclinc-table-head);
+    border-color: var(--doclinc-border);
+    border-left-color: var(--doclinc-muted);
+    color: var(--doclinc-muted);
+}
+
+.doclinc-account-card__footer {
+    border-top: 1px solid var(--doclinc-border);
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+}
+
+.doclinc-account-card__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.42rem;
+}
+
+.doclinc-account-card__actions form {
+    margin: 0;
+}
+
+.doclinc-account-header {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.8rem;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+}
+
+.doclinc-account-header .doclinc-status-chip {
+    flex: 0 0 auto;
+    margin-top: 0.1rem;
+}
+
+.doclinc-account-meta {
+    color: var(--doclinc-muted);
+    font-size: 0.82rem;
+    line-height: 1.35;
+    margin-top: 0.18rem;
+    overflow-wrap: anywhere;
+}
+
+.doclinc-account-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.doclinc-account-field {
+    min-width: 0;
+}
+
+.doclinc-account-field span {
+    color: var(--doclinc-muted);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.18rem;
+    text-transform: uppercase;
+}
+
+.doclinc-account-field strong {
+    color: var(--doclinc-text);
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.doclinc-account-field-wide {
+    grid-column: 1 / -1;
+}
+
+.doclinc-account-puskesmas {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.doclinc-account-puskesmas strong {
+    flex: 1 1 160px;
+}
+
+.doclinc-account-actions {
+    align-items: center;
+    border-top: 1px solid var(--doclinc-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+}
+
+.doclinc-account-actions form {
+    margin: 0;
+}
+
+.doclinc-account-danger {
+    margin-left: auto;
+}
+
+.doclinc-account-empty {
+    background: var(--doclinc-table-head);
+    border: 1px dashed var(--doclinc-border);
+    border-radius: var(--doclinc-radius);
+    color: var(--doclinc-muted);
+    font-size: 0.9rem;
+    padding: 1.25rem;
+    text-align: center;
+}
+
+.doclinc-account-card {
+    min-width: 0;
+}
+
+.doclinc-account-card__title,
+.doclinc-account-card__meta strong,
+.doclinc-account-field strong {
+    overflow-wrap: anywhere;
+}
+
+.doclinc-account-toolbar__field {
+    max-width: 360px;
+    width: 100%;
+}
+
+.doclinc-account-card__meta small {
+    color: var(--doclinc-muted);
+    display: block;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    margin-top: 0.12rem;
+    overflow-wrap: anywhere;
+}
+
+.doclinc-account-card__status.is-warning {
+    background: rgba(246, 194, 62, 0.12);
+    border-color: rgba(246, 194, 62, 0.36);
+    color: #8a5b0a;
+}
+
+.doclinc-account-card__meta .doclinc-code-chip,
+.doclinc-account-card__meta .doclinc-status-chip {
+    display: inline-flex;
+    font-size: 0.72rem;
+    letter-spacing: 0;
+    margin-bottom: 0;
+    text-transform: none;
+    width: auto;
+}
+
+.doclinc-account-card__meta .doclinc-code-chip {
+    color: var(--doclinc-text);
+}
+
+.doclinc-account-card__meta .doclinc-status-chip.is-active {
+    color: var(--doclinc-primary-dark);
+}
+
+.doclinc-account-card__meta .doclinc-status-chip.is-inactive,
+.doclinc-account-card__meta strong.doclinc-muted-text {
+    color: var(--doclinc-muted);
+}
+
+.doclinc-staff-filter-toolbar {
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.doclinc-staff-filter-toolbar .doclinc-puskesmas-selector,
+.doclinc-staff-filter-toolbar .doclinc-account-search {
+    max-width: none;
+    width: 100%;
+}
+
+.doclinc-action-btn--warning {
+    background: rgba(246, 194, 62, 0.08) !important;
+    border-color: rgba(180, 120, 20, 0.38) !important;
+    color: #8a5b0a !important;
+}
+
+.doclinc-action-btn--warning:hover {
+    background: rgba(246, 194, 62, 0.16) !important;
+    border-color: rgba(180, 120, 20, 0.56) !important;
+    color: #714a07 !important;
+}
+
+html[data-theme="dark"] .doclinc-account-card__status.is-warning,
+html[data-theme="dark"] .doclinc-account-card__note.is-warning,
+html[data-theme="dark"] .doclinc-action-btn--warning {
+    color: #f6c56f !important;
+}
+
+.doclinc-card-highlight {
+    border-color: rgba(9, 173, 116, 0.46);
+    box-shadow: 0 0 0 3px rgba(9, 173, 116, 0.1), 0 14px 30px rgba(15, 23, 42, 0.1);
+}
+
+html[data-theme="dark"] .bg-light,
+html[data-theme="dark"] .modal-body.bg-light {
+    background-color: #0f172a !important;
+    color: var(--doclinc-text);
+}
+
+html[data-theme="dark"] .border-info,
+html[data-theme="dark"] .border-success,
+html[data-theme="dark"] .border {
+    border-color: var(--doclinc-border) !important;
+}
+
+html[data-theme="dark"] .close {
+    color: var(--doclinc-text);
+    text-shadow: none;
+    opacity: 0.8;
+}
+
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .modal-content,
+html[data-theme="dark"] .dropdown-menu,
+html[data-theme="dark"] .list-group-item {
+    background-color: var(--doclinc-surface);
+    color: var(--doclinc-text);
+}
+
+html[data-theme="dark"] .badge-light,
+html[data-theme="dark"] .badge-secondary {
+    background-color: #263445;
+    color: #dbe7f3;
+}
+
+html[data-theme="dark"] .doclinc-warning-text {
+    color: #f6c56f;
+}
+
+html[data-theme="dark"] .doclinc-action-danger {
+    color: #ff9aa5 !important;
+}
+
+.print-signature {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .doclinc-sidebar {
+        background: var(--doclinc-sidebar-bg);
+    }
+
+    .doclinc-content-wrapper {
+        margin-left: 0;
+    }
+
+    .doclinc-admin-page {
+        padding: 22px 12px;
+    }
+
+    .admin-map {
+        height: 300px;
+    }
+
+    .admin-directions-panel {
+        max-height: 300px;
+    }
+
+    .doclinc-account-list {
+        grid-template-columns: 1fr;
+    }
+
+    .doclinc-account-toolbar {
+        justify-content: stretch;
+    }
+
+    .doclinc-account-search {
+        max-width: none;
+        width: 100%;
+    }
+
+    .doclinc-puskesmas-selector {
+        max-width: none;
+        width: 100%;
+    }
+
+    .doclinc-account-card__actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .doclinc-account-card__actions .doclinc-action-btn,
+    .doclinc-account-card__actions form {
+        width: 100%;
+    }
+
+    .doclinc-account-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .doclinc-account-actions .doclinc-action-btn,
+    .doclinc-account-actions form {
+        width: 100%;
+    }
+
+    .doclinc-account-danger {
+        margin-left: 0;
+    }
+}
+
+@media print {
+    .print-signature {
+        display: block;
+        margin-top: 60px;
+        text-align: center;
+    }
+}

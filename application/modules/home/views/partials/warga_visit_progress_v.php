@@ -9,11 +9,13 @@
 			<?= doclinc_warga_visit_timeline($visit_timeline); ?>
 		</div>
 	<?php endif; ?>
-	<div class="mt-3">
-		<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="btn btn-success btn-sm rounded-pill dl-btn-primary">
-			<i class="fas fa-comments me-1"></i> Buka chat
-		</a>
-	</div>
+	<?php if (!empty($pic_assigned)) : ?>
+		<div class="mt-3">
+			<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="btn btn-success btn-sm rounded-pill dl-btn-primary">
+				<i class="fas fa-comments me-1"></i> Buka chat
+			</a>
+		</div>
+	<?php endif; ?>
 	<?php if (!empty($is_visit) && !empty($visit_location_available)) : ?>
 		<button type="button" class="btn btn-outline-success btn-sm rounded-pill visit-location-toggle" data-request-id="<?= html_escape((int) $request_id); ?>" data-map-id="visit-map-<?= html_escape((int) $request_id); ?>">
 			<i class="fas fa-map-marker-alt me-1"></i> Lihat lokasi

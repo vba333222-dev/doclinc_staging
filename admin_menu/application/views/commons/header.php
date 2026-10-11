@@ -57,18 +57,23 @@
 		(function($) {
 			if (!$) return;
 			$(function() {
-				var name = document.querySelector('meta[name="csrf-token-name"]')?.content || '';
-				var hash = document.querySelector('meta[name="csrf-token-hash"]')?.content || '';
-				$('form[method="post"], form[method="POST"]').each(function() {
-					if (name && !this.querySelector('input[name="' + name + '"]')) $('<input>', {type: 'hidden', name: name, value: hash}).appendTo(this);
-				});
-				$.ajaxSetup({ data: function(data) {
+			var name = document.querySelector('meta[name="csrf-token-name"]')?.content || '';
+			var hash = document.querySelector('meta[name="csrf-token-hash"]')?.content || '';
+			$('form[method="post"], form[method="POST"]').each(function() {
+				if (name && !this.querySelector('input[name="' + name + '"]')) {
+					$('<input>', {type: 'hidden', name: name, value: hash}).appendTo(this);
+				}
+			});
+			$.ajaxSetup({ data: (function(original) {
+				return function() {
+					var data = typeof original === 'function' ? original.apply(this, arguments) : original;
 					if (!name) return data;
 					if (typeof data === 'string') return data + (data ? '&' : '') + encodeURIComponent(name) + '=' + encodeURIComponent(hash);
 					data = data || {};
 					if (typeof data === 'object' && data[name] === undefined) data[name] = hash;
 					return data;
-				} });
+				};
+			})($.ajaxSettings.data) });
 			});
 		})(window.jQuery);
 	</script>
@@ -208,7 +213,7 @@
 						<!-- User Profile Dropdown -->
 						<li class="nav-item dropdown no-arrow">
 							<a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-								<img class="img-profile rounded-circle mr-2 doclinc-profile-image" src="https://c1.klipartz.com/pngpicture/823/765/sticker-png-login-icon-system-administrator-user-user-profile-icon-design-avatar-face-head-thumbnail.png">
+								<img class="img-profile rounded-circle mr-2 doclinc-profile-image" src="<?= html_escape(base_url("assets/images/admin-avatar.svg")); ?>" onerror="this.src="data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"%3E%3Ccircle cx=\"50\" cy=\"35\" r=\"20\" fill=\"%23e5e9f2\"/%3E%3Cellipse cx=\"50\" cy=\"80\" rx=\"35\" ry=\"25\" fill=\"%23e5e9f2\"/%3E%3C/svg%3E"">
 								<span class="d-none d-lg-inline text-gray-700 small font-weight-bold"><?= html_escape($this->session->userdata('username') ?: '') ?></span>
 							</a>
 							<div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
@@ -300,6 +305,8 @@
 									url: summaryUrl,
 									type: 'GET',
 									dataType: 'json',
+									// CI3 query-string routing treats an appended jQuery cache
+									// key as part of the route and returns 400.
 									cache: true,
 									xhrFields: {
 										withCredentials: true

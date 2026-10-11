@@ -6,6 +6,12 @@ $google_maps_api_key = $this->config->item('google_maps_api_key') ?: '';
 $firebase_enabled = (bool) $this->config->item('firebase_enabled');
 $legacy_superapp_url = $this->config->item('legacy_superapp_url') ?: '';
 $can_handle_request = !empty($can_handle_request);
+$is_command_center = !empty($is_command_center);
+$record_readonly = isset($record_readonly) ? $record_readonly : null;
+$handling_nakes_name = isset($handling_nakes_name) ? trim((string) $handling_nakes_name) : '';
+// Puskesmas (command center) tidak melihat form pemeriksaan Nakes dalam
+// kondisi apa pun; hanya laporan status dan rekam medis read-only.
+$monitor_hide_form = $is_command_center;
 $visit_proof_required = !empty($visit_proof_required);
 $additional_diagnoses_enabled = !empty($additional_diagnoses_enabled) && $can_handle_request;
 $clinical_suggestions_enabled = (bool) $this->config->item('clinical_suggestions_enabled') && $can_handle_request;
@@ -160,6 +166,9 @@ if (!function_exists('formatComplaintText')) {
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
 	<?php if ($clinical_suggestions_enabled) : ?>
 		<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-clinical-suggestions.css')); ?>">
@@ -174,18 +183,27 @@ if (!function_exists('formatComplaintText')) {
 
 	<style>
 		:root {
-			--doclinc-green: #379A69;
+			--doclinc-green: #1F6F4B;
+			--doclinc-green-dark: #177a42;
 			--doclinc-mint: #50BFA5;
 			--doclinc-bg: #F7F7F7;
-			--doclinc-border: #CECECE;
+			--doclinc-surface: #FFFFFF;
+			--doclinc-surface-soft: #FBFDFC;
+			--doclinc-border: #DCE6E1;
+			--doclinc-border-light: #E7ECE9;
 			--doclinc-text: #1F2A24;
 			--doclinc-muted: #66756D;
+			--doclinc-radius-sm: 10px;
+			--doclinc-radius-md: 14px;
+			--doclinc-radius-lg: 18px;
 		}
 
 		body {
 			background: var(--doclinc-bg);
 			color: var(--doclinc-text);
-			font-size: 15px;
+			font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+			font-size: 14px;
+			line-height: 1.5;
 		}
 
 		.consult-shell {
@@ -200,7 +218,7 @@ if (!function_exists('formatComplaintText')) {
 			display: flex;
 			align-items: center;
 			gap: 12px;
-			padding: 8px 0 16px;
+			padding: 12px 0 20px;
 		}
 
 		.consult-back {
@@ -223,38 +241,41 @@ if (!function_exists('formatComplaintText')) {
 
 		.consult-title h1 {
 			margin: 0;
-			font-size: 20px;
-			font-weight: 700;
+			font-size: 18px;
+			font-weight: 800;
 			letter-spacing: 0;
 			color: var(--doclinc-text);
+			line-height: 1.3;
 		}
 
 		.consult-subtitle {
 			margin: 2px 0 0;
 			color: var(--doclinc-muted);
 			font-size: 12px;
+			font-weight: 600;
 		}
 
 		.status-badge {
 			display: inline-flex;
 			align-items: center;
-			gap: 6px;
-			padding: 6px 10px;
+			gap: 5px;
+			padding: 5px 10px;
 			border-radius: 999px;
-			background: rgba(80, 191, 165, 0.18);
+			background: #E8F7F0;
 			color: var(--doclinc-green);
-			font-size: 12px;
-			font-weight: 700;
+			font-size: 11px;
+			font-weight: 800;
+			letter-spacing: .02em;
 			white-space: nowrap;
 		}
 
 		.consult-card {
 			width: 100%;
-			background: #fff;
-			border: 1px solid rgba(80, 191, 165, 0.45);
-			border-radius: 20px;
-			box-shadow: 0 10px 28px rgba(31, 42, 36, 0.06);
-			padding: 16px;
+			background: var(--doclinc-surface);
+			border: 1px solid var(--doclinc-border);
+			border-radius: var(--doclinc-radius-lg);
+			box-shadow: 0 2px 12px rgba(31, 42, 36, 0.04);
+			padding: 18px;
 			margin-bottom: 14px;
 		}
 
@@ -262,10 +283,11 @@ if (!function_exists('formatComplaintText')) {
 			display: flex;
 			align-items: center;
 			gap: 8px;
-			margin: 0 0 12px;
+			margin: 0 0 14px;
 			color: var(--doclinc-green);
 			font-size: 15px;
-			font-weight: 700;
+			font-weight: 800;
+			line-height: 1.3;
 		}
 
 		.summary-grid {
@@ -275,27 +297,29 @@ if (!function_exists('formatComplaintText')) {
 		}
 
 		.summary-item {
-			padding: 10px;
-			border: 1px solid #E7ECE9;
-			border-radius: 14px;
-			background: #FBFDFC;
+			padding: 11px 12px;
+			border: 1px solid var(--doclinc-border-light);
+			border-radius: var(--doclinc-radius-md);
+			background: var(--doclinc-surface-soft);
 			min-width: 0;
 		}
 
 		.summary-label {
 			display: block;
-			margin-bottom: 4px;
+			margin-bottom: 3px;
 			color: var(--doclinc-muted);
 			font-size: 11px;
-			font-weight: 700;
+			font-weight: 800;
 			text-transform: uppercase;
+			letter-spacing: .03em;
 		}
 
 		.summary-value {
 			display: block;
 			color: var(--doclinc-text);
 			font-size: 14px;
-			font-weight: 600;
+			font-weight: 700;
+			line-height: 1.4;
 			overflow-wrap: anywhere;
 		}
 
@@ -313,17 +337,18 @@ if (!function_exists('formatComplaintText')) {
 		}
 
 		.complaint-group {
-			padding: 12px;
-			border: 1px solid #E7ECE9;
-			border-radius: 16px;
-			background: #FBFDFC;
+			padding: 13px;
+			border: 1px solid var(--doclinc-border-light);
+			border-radius: var(--doclinc-radius-md);
+			background: var(--doclinc-surface-soft);
 		}
 
 		.complaint-group-title {
 			margin: 0 0 10px;
 			color: var(--doclinc-green);
-			font-size: 15px;
+			font-size: 14px;
 			font-weight: 800;
+			line-height: 1.3;
 		}
 
 		.complaint-items {
@@ -345,21 +370,22 @@ if (!function_exists('formatComplaintText')) {
 
 		.complaint-label {
 			color: var(--doclinc-muted);
-			font-size: 12px;
-			font-weight: 700;
+			font-size: 11px;
+			font-weight: 800;
 		}
 
 		.complaint-value,
 		.complaint-free-text {
 			margin: 0;
 			color: var(--doclinc-text);
-			font-size: 14px;
-			line-height: 1.45;
+			font-size: 13px;
+			font-weight: 600;
+			line-height: 1.5;
 			overflow-wrap: anywhere;
 		}
 
 		.chat-card {
-			background: linear-gradient(135deg, #379A69 0%, #50BFA5 100%);
+			background: linear-gradient(135deg, #1F6F4B 0%, #50BFA5 100%);
 			color: #fff;
 			border: 0;
 		}
@@ -373,15 +399,23 @@ if (!function_exists('formatComplaintText')) {
 		.chat-button,
 		.primary-action {
 			width: 100%;
-			min-height: 48px;
+			min-height: 46px;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
 			gap: 8px;
 			border: 0;
-			border-radius: 14px;
-			font-weight: 700;
+			border-radius: var(--doclinc-radius-md);
+			font-family: 'Manrope', sans-serif;
+			font-weight: 800;
+			font-size: 14px;
 			text-decoration: none;
+			transition: background .2s, transform .1s;
+		}
+
+		.chat-button:active,
+		.primary-action:active {
+			transform: scale(.98);
 		}
 
 		.chat-button {
@@ -397,6 +431,7 @@ if (!function_exists('formatComplaintText')) {
 			margin: 0 0 14px;
 			color: var(--doclinc-muted);
 			font-size: 13px;
+			font-weight: 500;
 			line-height: 1.5;
 		}
 
@@ -407,14 +442,14 @@ if (!function_exists('formatComplaintText')) {
 		}
 
 		.service-decision-option {
-			min-height: 74px;
-			padding: 12px;
-			border: 1px solid var(--doclinc-border);
-			border-radius: 14px;
-			background: #fff;
+			min-height: 78px;
+			padding: 14px;
+			border: 1.5px solid var(--doclinc-border);
+			border-radius: var(--doclinc-radius-md);
+			background: var(--doclinc-surface);
 			color: var(--doclinc-text);
 			text-align: left;
-			transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+			transition: border-color .2s, box-shadow .2s, background .2s;
 		}
 
 		.service-decision-option strong,
@@ -425,19 +460,21 @@ if (!function_exists('formatComplaintText')) {
 		.service-decision-option strong {
 			font-size: 14px;
 			font-weight: 800;
+			line-height: 1.3;
 		}
 
 		.service-decision-option span {
-			margin-top: 4px;
+			margin-top: 5px;
 			color: var(--doclinc-muted);
 			font-size: 12px;
-			line-height: 1.35;
+			font-weight: 500;
+			line-height: 1.4;
 		}
 
 		.service-decision-option.is-selected {
 			border-color: var(--doclinc-green);
-			background: #F0FBF6;
-			box-shadow: 0 10px 24px rgba(9, 173, 116, 0.12);
+			background: #E8F7F0;
+			box-shadow: 0 0 0 3px rgba(31, 111, 75, .1);
 		}
 
 		.service-decision-state {
@@ -454,18 +491,31 @@ if (!function_exists('formatComplaintText')) {
 		.form-control,
 		.form-select {
 			width: 100%;
-			border-color: var(--doclinc-border);
-			border-radius: 10px;
+			min-height: 44px;
+			border: 1.5px solid var(--doclinc-border);
+			border-radius: var(--doclinc-radius-sm);
+			font-family: 'Manrope', sans-serif;
+			font-size: 14px;
+			font-weight: 600;
+			color: var(--doclinc-text);
+			transition: border-color .2s, box-shadow .2s;
 		}
 
 		.form-control:focus,
 		.form-select:focus {
-			border-color: var(--doclinc-mint);
-			box-shadow: 0 0 0 0.2rem rgba(80, 191, 165, 0.18);
+			border-color: var(--doclinc-green);
+			box-shadow: 0 0 0 3px rgba(31, 111, 75, .1);
 		}
 
 		.form-floating>label {
 			color: var(--doclinc-muted);
+			font-weight: 700;
+		}
+
+		.form-label {
+			color: var(--doclinc-muted);
+			font-size: 12px;
+			font-weight: 800;
 		}
 
 		.optional-note {
@@ -513,21 +563,23 @@ if (!function_exists('formatComplaintText')) {
 		}
 
 		.terapi-helper {
-			margin: -4px 0 10px;
+			margin: -4px 0 12px;
 			color: var(--doclinc-muted);
 			font-size: 12px;
+			font-weight: 500;
 			line-height: 1.5;
 		}
 
 		.terapi-row-message {
 			display: none;
-			margin: 0 0 10px;
-			padding: 9px 11px;
-			border-radius: 12px;
+			margin: 0 0 12px;
+			padding: 10px 12px;
+			border-radius: var(--doclinc-radius-sm);
 			background: #FFF7E6;
 			color: #9A5B00;
 			font-size: 13px;
-			font-weight: 600;
+			font-weight: 700;
+			border: 1px solid #FEE7A8;
 		}
 
 		.terapi-row-message.is-visible {
@@ -555,29 +607,39 @@ if (!function_exists('formatComplaintText')) {
 
 		.mobile-field-label {
 			display: block;
-			margin-bottom: 5px;
+			margin-bottom: 6px;
 			color: var(--doclinc-muted);
-			font-size: 12px;
+			font-size: 11px;
 			font-weight: 800;
+			text-transform: uppercase;
+			letter-spacing: .03em;
 		}
 
 		.mobile-terapi-add {
 			min-height: 46px;
 			border: 0;
-			border-radius: 14px;
+			border-radius: var(--doclinc-radius-md);
 			background: var(--doclinc-green);
 			color: #fff;
+			font-family: 'Manrope', sans-serif;
 			font-weight: 800;
+			font-size: 14px;
+			transition: background .2s;
+		}
+
+		.mobile-terapi-add:hover {
+			background: var(--doclinc-green-dark);
 		}
 
 		.mobile-terapi-message {
 			display: none;
-			padding: 9px 11px;
-			border-radius: 12px;
+			padding: 10px 12px;
+			border-radius: var(--doclinc-radius-sm);
 			background: #FFF7E6;
 			color: #9A5B00;
 			font-size: 13px;
-			font-weight: 600;
+			font-weight: 700;
+			border: 1px solid #FEE7A8;
 		}
 
 		.mobile-terapi-message.is-visible {
@@ -591,23 +653,25 @@ if (!function_exists('formatComplaintText')) {
 
 		.mobile-terapi-empty {
 			margin: 0;
-			padding: 12px;
+			padding: 14px;
 			border: 1px dashed #BFDCD2;
-			border-radius: 14px;
-			background: #fff;
+			border-radius: var(--doclinc-radius-md);
+			background: var(--doclinc-surface);
 			color: var(--doclinc-muted);
 			font-size: 13px;
+			font-weight: 600;
 			line-height: 1.5;
+			text-align: center;
 		}
 
 		.mobile-terapi-item {
 			display: grid;
 			gap: 8px;
-			padding: 12px;
-			border: 1px solid #DDEAE5;
-			border-radius: 14px;
-			background: #fff;
-			box-shadow: 0 8px 18px rgba(31, 42, 36, 0.05);
+			padding: 13px;
+			border: 1px solid var(--doclinc-border-light);
+			border-radius: var(--doclinc-radius-md);
+			background: var(--doclinc-surface);
+			box-shadow: 0 1px 4px rgba(31, 42, 36, 0.04);
 		}
 
 		.mobile-terapi-name {
@@ -615,22 +679,25 @@ if (!function_exists('formatComplaintText')) {
 			color: var(--doclinc-text);
 			font-size: 14px;
 			font-weight: 800;
+			line-height: 1.3;
 			overflow-wrap: anywhere;
 		}
 
 		.mobile-terapi-meta {
 			display: grid;
-			gap: 5px;
+			gap: 4px;
 			margin: 0;
 			color: var(--doclinc-muted);
 			font-size: 12px;
-			line-height: 1.45;
+			font-weight: 600;
+			line-height: 1.5;
 		}
 
 		.mobile-terapi-remove {
 			min-height: 40px;
-			border-radius: 12px;
+			border-radius: var(--doclinc-radius-sm);
 			font-weight: 700;
+			font-size: 13px;
 		}
 
 		.btn-terapi-action {
@@ -639,6 +706,7 @@ if (!function_exists('formatComplaintText')) {
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
+			border-radius: var(--doclinc-radius-sm);
 		}
 
 		.ui-autocomplete {
@@ -675,6 +743,14 @@ if (!function_exists('formatComplaintText')) {
 		}
 
 		@media (max-width: 480px) {
+			.consult-shell {
+				padding: 12px;
+			}
+
+			.consult-card {
+				padding: 16px;
+			}
+
 			#tabelTerapi {
 				min-width: 0;
 				width: 100%;
@@ -777,7 +853,7 @@ if (!function_exists('formatComplaintText')) {
 				<i class="fas fa-arrow-left"></i>
 			</a>
 			<div class="consult-title">
-				<h1>Pemeriksaan Pasien</h1>
+				<h1><?= $monitor_hide_form ? 'Detail Konsultasi' : 'Pemeriksaan Pasien'; ?></h1>
 				<p class="consult-subtitle">No. Antrian: <?= html_escape($queue_code) ?></p>
 			</div>
 			<span class="status-badge"><i class="bi bi-check-circle-fill"></i> Diterima</span>
@@ -869,9 +945,10 @@ if (!function_exists('formatComplaintText')) {
 
 		<input type="hidden" name="userid" id="userId" value="<?= html_escape($userid) ?>">
 		<input type="hidden" name="dokterid" id="dokterId" value="<?= html_escape($_SESSION['id']) ?>">
-		<?php if (!$can_handle_request) : ?>
-			<div class="alert alert-info" role="status"><?= !empty($is_visit_performer) ? 'Anda bertugas mencatat hasil kunjungan.' : 'Permintaan ini hanya dapat dipantau.'; ?></div>
+		<?php if (!$can_handle_request || $monitor_hide_form) : ?>
+			<div class="alert alert-info" role="status"><?= $monitor_hide_form ? 'Puskesmas dapat melihat laporan status dan rekam medis konsultasi ini.' : (!empty($is_visit_performer) ? 'Anda bertugas mencatat hasil kunjungan.' : 'Permintaan ini hanya dapat dipantau.'); ?></div>
 		<?php endif; ?>
+		<?php if (!$monitor_hide_form) : ?>
 		<form id="form_konsul_nakes" enctype="multipart/form-data" data-can-handle="<?= $can_handle_request ? '1' : '0'; ?>">
 			<input type="hidden" name="request_id" id="idReq" value="<?= html_escape($request_id) ?>">
 			<fieldset <?= $can_handle_request ? '' : 'disabled'; ?>>
@@ -919,7 +996,7 @@ if (!function_exists('formatComplaintText')) {
 				<?php endif; ?>
 				<div class="mb-3">
 					<h3 class="section-heading"><i class="bi bi-capsule"></i> Obat / Farmakoterapi</h3>
-					<p class="terapi-helper">Bagian ini digunakan untuk mencatat obat/farmakoterapi bila diberikan. Kosongkan bila tidak ada obat.</p>
+					<p class="terapi-helper">Catat obat/farmakoterapi bila diberikan. Kosongkan jika tidak ada.</p>
 					<div id="terapiRowMessage" class="terapi-row-message" role="alert"></div>
 					<div class="mobile-terapi-editor" aria-label="Editor farmakoterapi mobile">
 						<div class="mobile-terapi-card">
@@ -957,7 +1034,7 @@ if (!function_exists('formatComplaintText')) {
 							</button>
 						</div>
 						<div id="ui_mobile_terapi_list" class="mobile-terapi-list">
-							<p class="mobile-terapi-empty">Belum ada obat yang ditambahkan. Kosongkan jika tidak ada farmakoterapi.</p>
+							<p class="mobile-terapi-empty">Belum ada obat yang ditambahkan.</p>
 						</div>
 					</div>
 					<div class="terapi-scroll">
@@ -1052,6 +1129,53 @@ if (!function_exists('formatComplaintText')) {
 			<?php endif; ?>
 			</section>
 		</form>
+		<?php else : ?>
+			<section class="consult-card">
+				<h2 class="section-heading"><i class="bi bi-clipboard-data"></i> Laporan Status</h2>
+				<div class="summary-grid">
+					<div class="summary-item"><span class="summary-label">Status</span><span class="summary-value">Diterima</span></div>
+					<?php if ($handling_nakes_name !== '') : ?>
+						<div class="summary-item"><span class="summary-label">Nakes penanggung jawab</span><span class="summary-value"><?= html_escape($handling_nakes_name); ?></span></div>
+					<?php endif; ?>
+					<?php if (isset($record_readonly) && !empty($record_readonly->created_at) && strtotime($record_readonly->created_at)) : ?>
+						<div class="summary-item"><span class="summary-label">Rekam medis disimpan</span><span class="summary-value"><?= html_escape(date('d M Y H:i', strtotime($record_readonly->created_at))); ?></span></div>
+					<?php endif; ?>
+				</div>
+			</section>
+			<section class="consult-card">
+				<h2 class="section-heading"><i class="bi bi-journal-medical"></i> Rekam Medis</h2>
+				<?php
+				$rm_diagnosa = isset($record_readonly->diagnoses_display) && trim((string) $record_readonly->diagnoses_display) !== ''
+					? (string) $record_readonly->diagnoses_display
+					: (isset($record_readonly->diagnosa) ? (string) $record_readonly->diagnosa : (isset($record_readonly->diagnosis) ? (string) $record_readonly->diagnosis : ''));
+				$rm_anamnesis = isset($record_readonly->anamnesis) ? trim((string) $record_readonly->anamnesis) : '';
+				$rm_treatment = isset($record_readonly->treatment) ? trim((string) $record_readonly->treatment) : '';
+				$rm_saran = isset($record_readonly->saran) ? trim((string) $record_readonly->saran) : (isset($record_readonly->recommendations) ? (string) $record_readonly->recommendations : '');
+				$rm_has_content = $rm_diagnosa !== '' || $rm_anamnesis !== '' || $rm_treatment !== '' || $rm_saran !== '';
+				?>
+				<?php if ($record_readonly && $rm_has_content) : ?>
+					<div class="summary-grid">
+						<?php if ($rm_diagnosa !== '') : ?>
+							<div class="summary-item"><span class="summary-label">Diagnosis</span><span class="summary-value"><?= html_escape($rm_diagnosa); ?></span></div>
+						<?php endif; ?>
+						<?php if ($rm_anamnesis !== '') : ?>
+							<div class="summary-item"><span class="summary-label">Anamnesis</span><span class="summary-value"><?= nl2br(html_escape($rm_anamnesis), false); ?></span></div>
+						<?php endif; ?>
+						<?php if ($rm_treatment !== '') : ?>
+							<div class="summary-item"><span class="summary-label">Terapi / Tindakan</span><span class="summary-value"><?= nl2br(html_escape($rm_treatment), false); ?></span></div>
+						<?php endif; ?>
+						<?php if ($rm_saran !== '') : ?>
+							<div class="summary-item"><span class="summary-label">Rekomendasi</span><span class="summary-value"><?= nl2br(html_escape($rm_saran), false); ?></span></div>
+						<?php endif; ?>
+						<?php if (isset($record_readonly->recorded_by_name) && trim((string) $record_readonly->recorded_by_name) !== '') : ?>
+							<div class="summary-item"><span class="summary-label">Dicatat oleh</span><span class="summary-value"><?= html_escape($record_readonly->recorded_by_name); ?></span></div>
+						<?php endif; ?>
+					</div>
+				<?php else : ?>
+					<p class="mb-0 text-muted">Rekam medis akan tersedia setelah Nakes menyelesaikan pemeriksaan.</p>
+				<?php endif; ?>
+			</section>
+		<?php endif; ?>
 		</main>
 	</div>
 
@@ -1225,7 +1349,7 @@ if (!function_exists('formatComplaintText')) {
 			$list.empty();
 
 			if (mobileTerapiRows.length === 0) {
-				$list.append('<p class="mobile-terapi-empty">Belum ada obat yang ditambahkan. Kosongkan jika tidak ada farmakoterapi.</p>');
+				$list.append('							<p class="mobile-terapi-empty">Belum ada obat yang ditambahkan.</p>');
 				return;
 			}
 

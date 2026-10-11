@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "dataset_code": "ICD10_LEGACY_CODE_REVIEW",
+    "judul": "Kode Diagnosis Legacy yang Tidak Valid pada WHO ICD-10 2019",
+    "versi": "1.0.0",
+    "jumlah_data": 2,
+    "status": "requires_clinical_coder_review",
+    "catatan": "Jangan seed ke master_diagnosis_icd10. Gunakan hanya sebagai daftar koreksi data starter/legacy."
+  },
+  "data": [
+    {
+      "legacy_code": "J30.9",
+      "legacy_label": "Rinitis alergi, tidak spesifik",
+      "asal_kemungkinan": "ICD-10-CM",
+      "status": "invalid_in_who_icd10_2019",
+      "candidate_who_icd10_2019": "J30.4",
+      "candidate_label": "Allergic rhinitis, unspecified",
+      "tindakan": "review_and_replace_only_after_clinical_coder_approval"
+    },
+    {
+      "legacy_code": "R19.7",
+      "legacy_label": "Diare, tidak spesifik",
+      "asal_kemungkinan": "ICD-10-CM",
+      "status": "invalid_in_who_icd10_2019",
+      "candidate_who_icd10_2019": null,
+      "candidate_label": null,
+      "tindakan": "review_documentation; possible coding depends on cause and clinical assessment, do_not_auto_map"
+    }
+  ]
+}

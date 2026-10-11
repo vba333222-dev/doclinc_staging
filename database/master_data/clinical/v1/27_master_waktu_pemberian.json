@@ -1,0 +1,91 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_WAKTU_PEMBERIAN",
+    "judul": "Master Waktu Pemberian Obat",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 8,
+    "cakupan": "Waktu pemberian relatif terhadap makan atau waktu hari.",
+    "digunakan_pada": [
+      "Prescription builder",
+      "Instruksi pasien"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "BEFORE_MEAL",
+      "nama": "Sebelum makan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 1
+    },
+    {
+      "kode": "WITH_MEAL",
+      "nama": "Bersama makan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 2
+    },
+    {
+      "kode": "AFTER_MEAL",
+      "nama": "Setelah makan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 3
+    },
+    {
+      "kode": "EMPTY_STOMACH",
+      "nama": "Saat perut kosong",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 4
+    },
+    {
+      "kode": "MORNING",
+      "nama": "Pagi hari",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 5
+    },
+    {
+      "kode": "NIGHT",
+      "nama": "Malam hari",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 6
+    },
+    {
+      "kode": "AS_NEEDED",
+      "nama": "Bila diperlukan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 7
+    },
+    {
+      "kode": "NO_SPECIFIC",
+      "nama": "Tidak ada waktu khusus",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 8
+    }
+  ]
+}

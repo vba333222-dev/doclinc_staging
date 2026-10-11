@@ -27,6 +27,7 @@
             snapshotUrl: typeof raw.snapshotUrl === 'string' ? raw.snapshotUrl : '',
             medicalRecordUrl: typeof raw.medicalRecordUrl === 'string' ? raw.medicalRecordUrl : '',
             pageUrl: typeof raw.pageUrl === 'string' ? raw.pageUrl : '',
+            dashboardUrl: typeof raw.dashboardUrl === 'string' ? raw.dashboardUrl : '',
             pollIntervalMs: positiveInteger(raw.pollIntervalMs, 30000, 15000),
             containerId: typeof raw.containerId === 'string' && raw.containerId ? raw.containerId : 'doclincPuskesmasOperations'
         };
@@ -81,6 +82,26 @@
         };
     }
 
+    function formatOperationDate(value) {
+        if (!value) return '';
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        var parts = String(value).split('-');
+        if (parts.length !== 3) return String(value);
+        var monthIndex = parseInt(parts[1], 10);
+        return String(parseInt(parts[2], 10)) + ' ' + (months[monthIndex - 1] || parts[1]) + ' ' + parts[0];
+    }
+
+    function rangeLabelText(filters) {
+        filters = filters && typeof filters === 'object' ? filters : {};
+        var from = formatOperationDate(filters.date_from);
+        var to = formatOperationDate(filters.date_to);
+        if (!from && !to) return '';
+        if (from === to) return 'Menampilkan: ' + (from || to);
+        if (!from) return 'Menampilkan sampai: ' + to;
+        if (!to) return 'Menampilkan sejak: ' + from;
+        return 'Menampilkan: ' + from + ' - ' + to;
+    }
+
     function section(documentRef, title, meta, modifier) {
         var wrapper = element(documentRef, 'section', 'dl-nakes-card dl-dashboard-section' + (modifier ? ' ' + modifier : ''));
         var heading = element(documentRef, 'div', 'dl-operations-section-title');
@@ -90,10 +111,11 @@
         return wrapper;
     }
 
-    function render(container, raw) {
+    function render(container, raw, extra) {
         if (!container || !container.ownerDocument) return false;
         var data = safeData(raw);
         var documentRef = container.ownerDocument;
+        var dashboardUrl = extra && typeof extra.dashboardUrl === 'string' ? extra.dashboardUrl : '';
         var summary = data.summary;
         clearNode(container);
         container.setAttribute('aria-busy', 'false');
@@ -138,13 +160,25 @@
 			exceptionList.appendChild(element(documentRef, 'div', 'dl-operations-empty', 'Tidak ada penugasan yang perlu diperiksa.'));
         } else {
             data.exceptions.forEach(function(row) {
-                var item = element(documentRef, 'div', 'dl-operations-exception-item');
-                item.setAttribute('data-request-id', String(row.request_id || ''));
+                var requestId = String(row.request_id || '');
+                var isLink = dashboardUrl !== '' && requestId !== '';
+                var item = element(documentRef, isLink ? 'a' : 'div', 'dl-operations-exception-item');
+                item.setAttribute('data-request-id', requestId);
+                if (isLink) item.href = dashboardUrl + (dashboardUrl.indexOf('?') >= 0 ? '&' : '?') + 'highlight_request_id=' + encodeURIComponent(requestId) + '#beranda';
                 var copy = element(documentRef, 'div', 'dl-operations-exception-copy');
-				var title = row.type === 'ambiguous_assignment' ? 'Penugasan perlu diperiksa' : 'Penanggung jawab belum ditentukan';
-				copy.appendChild(element(documentRef, 'strong', '', title));
-                copy.appendChild(element(documentRef, 'span', '', String(row.visit_status_label || 'Belum dimulai')));
+                var isAmbiguous = row.type === 'ambiguous_assignment';
+                var titleRow = element(documentRef, 'div', 'dl-operations-exception-title');
+                titleRow.appendChild(element(documentRef, 'strong', '', String(row.patient_name || (isAmbiguous ? 'Penugasan perlu diperiksa' : 'Penanggung jawab belum ditentukan'))));
+                if (row.service_mode_label) titleRow.appendChild(element(documentRef, 'span', 'dl-operations-exception-mode', String(row.service_mode_label)));
+                copy.appendChild(titleRow);
+                var metaParts = [];
+                if (row.queue_code) metaParts.push(String(row.queue_code));
+                if (row.patient_nik_masked) metaParts.push('NIK ' + String(row.patient_nik_masked));
+                if (row.visit_status_label) metaParts.push(String(row.visit_status_label));
+                copy.appendChild(element(documentRef, 'span', '', metaParts.join(' · ')));
+                if (isAmbiguous) copy.appendChild(element(documentRef, 'small', 'dl-operations-exception-note', 'Penugasan perlu diperiksa'));
                 item.appendChild(copy);
+                item.appendChild(element(documentRef, 'span', 'dl-operations-exception-open', isAmbiguous ? 'Periksa' : 'Atur PIC'));
                 exceptionList.appendChild(item);
             });
         }
@@ -180,6 +214,9 @@
 		}
 		requestSection.appendChild(requestList);
 		container.appendChild(requestSection);
+
+        var rangeLabel = root.document ? root.document.getElementById('doclincOperationsRangeLabel') : null;
+        if (rangeLabel) rangeLabel.textContent = rangeLabelText(data.filters);
         return true;
     }
 
@@ -227,7 +264,7 @@
             return root.fetch(snapshotUrl, options).then(function(response) {
                 return response.json().catch(function() { throw new Error('invalid_response'); }).then(function(body) {
                     if (!response.ok || !body || body.success !== true || !body.data) throw new Error('request_failed');
-                    if (!stopped) render(container, body.data);
+                    if (!stopped) render(container, body.data, { dashboardUrl: config.dashboardUrl });
                     return !stopped;
                 });
             }).catch(function() {
@@ -323,6 +360,8 @@
         safeData: safeData,
         stateLabel: stateLabel,
         presenceLabel: presenceLabel,
+        formatOperationDate: formatOperationDate,
+        rangeLabelText: rangeLabelText,
         resetForTests: resetForTests
     };
 });

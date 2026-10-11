@@ -1,0 +1,117 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_KATEGORI_LAMPIRAN",
+    "judul": "Master Kategori Lampiran",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 7,
+    "cakupan": "Kategori lampiran klinis.",
+    "digunakan_pada": [
+      "Unggah warga",
+      "Review Nakes"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "SYMPTOM_PHOTO",
+      "nama": "Foto keluhan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "urutan": 1
+    },
+    {
+      "kode": "WOUND_PHOTO",
+      "nama": "Foto luka",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "urutan": 2
+    },
+    {
+      "kode": "SKIN_PHOTO",
+      "nama": "Foto kulit",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "urutan": 3
+    },
+    {
+      "kode": "PRESCRIPTION",
+      "nama": "Foto resep lama",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "mime_types": [
+        "image/jpeg",
+        "image/png",
+        "application/pdf"
+      ],
+      "urutan": 4
+    },
+    {
+      "kode": "LAB_RESULT",
+      "nama": "Hasil laboratorium",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "mime_types": [
+        "image/jpeg",
+        "image/png",
+        "application/pdf"
+      ],
+      "urutan": 5
+    },
+    {
+      "kode": "RADIOLOGY_RESULT",
+      "nama": "Hasil radiologi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "mime_types": [
+        "image/jpeg",
+        "image/png",
+        "application/pdf"
+      ],
+      "urutan": 6
+    },
+    {
+      "kode": "OTHER",
+      "nama": "Lampiran lain",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "mime_types": [
+        "image/jpeg",
+        "image/png",
+        "application/pdf"
+      ],
+      "urutan": 7
+    }
+  ]
+}

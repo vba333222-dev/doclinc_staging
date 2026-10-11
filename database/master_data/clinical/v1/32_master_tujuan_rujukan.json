@@ -1,0 +1,98 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_TUJUAN_RUJUKAN",
+    "judul": "Master Tujuan Rujukan",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 8,
+    "cakupan": "Jenis tujuan rujukan.",
+    "digunakan_pada": [
+      "Workspace tindak lanjut Nakes"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "PUSKESMAS",
+      "nama": "Puskesmas",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "level": "FKTP",
+      "urutan": 1
+    },
+    {
+      "kode": "CLINIC",
+      "nama": "Klinik",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "level": "FKTP",
+      "urutan": 2
+    },
+    {
+      "kode": "HOSPITAL_ER",
+      "nama": "IGD rumah sakit",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "level": "FKRTL",
+      "urutan": 3
+    },
+    {
+      "kode": "HOSPITAL_OUTPATIENT",
+      "nama": "Poliklinik rumah sakit",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "level": "FKRTL",
+      "urutan": 4
+    },
+    {
+      "kode": "LAB",
+      "nama": "Laboratorium",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "level": "PENUNJANG",
+      "urutan": 5
+    },
+    {
+      "kode": "RADIOLOGY",
+      "nama": "Radiologi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "level": "PENUNJANG",
+      "urutan": 6
+    },
+    {
+      "kode": "MENTAL_HEALTH_SERVICE",
+      "nama": "Layanan kesehatan jiwa",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "level": "LAYANAN_KHUSUS",
+      "urutan": 7
+    },
+    {
+      "kode": "OTHER",
+      "nama": "Tujuan lainnya",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "level": "LAINNYA",
+      "urutan": 8
+    }
+  ]
+}
