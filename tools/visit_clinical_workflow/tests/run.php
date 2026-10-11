@@ -62,6 +62,7 @@ try {
             dirname(__DIR__, 3) . '/application/migrations/20260826000300_visit_performer_assignment_completion.php',
             dirname(__DIR__, 3) . '/application/migrations/20260826000400_visit_assignment_operation_foundation.php',
             dirname(__DIR__, 3) . '/application/migrations/20260826000500_clinical_review_reviewer_provenance.php',
+            dirname(__DIR__, 3) . '/application/migrations/20260826000600_clinical_closure_operation_foundation.php',
         );
         foreach ($migrations as $migration) {
             $command = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($migration);
