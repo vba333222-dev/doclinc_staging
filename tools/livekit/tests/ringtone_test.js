@@ -256,8 +256,8 @@ async function flush() {
     mediaController.release();
 
     const root = path.resolve(__dirname, '../../..');
-    const watcher = fs.readFileSync(path.join(root, 'assets/js/doclinc-livekit-incoming-watcher.js'), 'utf8');
-    const thread = fs.readFileSync(path.join(root, 'application/modules/chat/views/thread_v.php'), 'utf8');
+    const watcher = fs.readFileSync(path.join(root, 'assets/js/doclinc-livekit-incoming-watcher.js'), 'utf8').replace(/\r\n/g, '\n');
+    const thread = fs.readFileSync(path.join(root, 'application/modules/chat/views/thread_v.php'), 'utf8').replace(/\r\n/g, '\n');
     const home = fs.readFileSync(path.join(root, 'application/modules/home/views/home_v.php'), 'utf8');
     const consultation = fs.readFileSync(path.join(root, 'application/modules/konsultasi/views/konsultasi_v.php'), 'utf8');
     const callModel = fs.readFileSync(path.join(root, 'application/modules/chat/models/Call_session_m.php'), 'utf8');

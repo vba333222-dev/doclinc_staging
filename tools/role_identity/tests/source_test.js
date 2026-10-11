@@ -134,7 +134,7 @@ expect(schemaAwareRuntimeCredentialConsumers.every(source => source.includes('do
 expect(productionReadinessAudit.includes('Nakes_credential_policy')
 	&& productionReadinessAudit.includes('must_change_password, password_changed_at')
 	&& adminModel.includes('Nakes_credential_policy'), 'audit_and_admin_readiness_keep_raw_credential_state');
-expect(loginController.includes('if ($must_change_password === 0)') && loginController.includes('save_location'), 'credential_remediation_login_does_not_write_location');
+expect(!loginController.includes('save_location') && !loginController.includes("input->post('lattitude')"), 'credential_remediation_login_does_not_write_location');
 expect(adminController.includes('public function reset_personal_password')
 	&& adminController.includes("$this->require_post()")
 	&& adminController.includes("$policy->validate($password, $confirmation)"), 'personal_password_reset_is_post_only_and_uses_authoritative_policy');
