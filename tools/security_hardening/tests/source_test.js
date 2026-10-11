@@ -127,7 +127,7 @@ expect(!methodBody(consultation, 'send').includes("input->get('token'"), 'consul
 expect(!gatePolicy.includes("'notification' =>") && !gatePolicy.includes("array('save_konsultasi', 'send')"), 'first_login_policy_does_not_allow_retired_sender');
 
 expect(methodBody(login, 'auth').includes("method(TRUE) !== 'POST'"), 'login_auth_post_only');
-expect(methodBody(login, 'logout').includes("method(TRUE) !== 'POST'") && methodBody(login, 'logout').includes('show_404();'), 'logout_post_only');
+expect(methodBody(login, 'logout').includes("method(TRUE) !== 'POST'") && methodBody(login, 'logout').indexOf("redirect('login')") < methodBody(login, 'logout').indexOf('sess_destroy'), 'logout_post_only');
 expect(methodBody(signup, 'save_user').includes("method(TRUE) !== 'POST'"), 'signup_post_only');
 expect(methodBody(signup, 'save_user').includes('Password_strength_policy') && signup.includes('required|min_length[8]|max_length[72]'), 'signup_uses_authoritative_password_policy');
 expect(signupView.includes('minlength="8" maxlength="72"') && signupView.includes('huruf besar, huruf kecil, angka, dan karakter khusus'), 'signup_explains_password_contract');
