@@ -165,7 +165,7 @@ expect(methodBody(home, 'livekit_incoming_call').includes("method(TRUE) !== 'GET
 expect(methodBody(nakesConsultation, 'get_terapi').includes("method(TRUE) !== 'GET'"), 'medicine_suggestion_get_only');
 expect(methodBody(nakesConsultation, 'getICD_json').includes('show_404();'), 'legacy_diagnosis_suggestion_retired');
 expect(methodBody(home, 'save_konsultasi').includes('show_404();'), 'duplicate_warga_consultation_route_retired');
-expect(methodBody(nakes, 'tes_save_lokasi').includes('show_404();') && methodBody(nakes, 'save_location').includes('show_404();'), 'legacy_location_write_routes_retired');
+expect(methodBody(nakes, 'tes_save_lokasi') === '' && methodBody(nakes, 'save_location') === '', 'legacy_location_write_routes_retired');
 expect(methodBody(nakes, 'get_location_user').includes('show_404();'), 'legacy_location_read_route_retired');
 
 for (const name of ['livekit_token', 'answer_livekit_call', 'reject_livekit_call', 'livekit_call_status']) {

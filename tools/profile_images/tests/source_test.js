@@ -81,7 +81,6 @@ const applicationFiles = [
   'application/modules/home/views/home_v.php',
   'application/modules/home_nakes/views/home_nakes_v.php',
   'application/modules/home_nakes/views/partials/nakes_avatar_v.php',
-  'application/modules/chat/views/chat.php',
   'application/modules/chat/views/thread_v.php'
 ].map(read).join('\n');
 expect(!/base_url\s*\([^)]*uploads\/profile/i.test(applicationFiles), 'active_views_have_no_direct_profile_upload_url');

@@ -121,9 +121,7 @@ async function flushPermissionResult() { await Promise.resolve(); await Promise.
 	const repoRoot = path.resolve(__dirname, '../../..');
 	const runtimeViews = [
 		'application/modules/home_nakes/views/home_nakes_v.php',
-		'application/modules/konsultasi_nakes/views/chat.php',
-		'application/modules/konsultasi/views/chat.php',
-		'application/modules/chat/views/chat.php'
+		'application/modules/home/views/home_v.php'
 	];
 	const runtimeSources = runtimeViews.map((file) => fs.readFileSync(path.join(repoRoot, file), 'utf8'));
 	const homeView = fs.readFileSync(path.join(repoRoot, 'application/modules/home/views/home_v.php'), 'utf8');

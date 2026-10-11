@@ -44,7 +44,7 @@ expect(prerequisites.includes('facility_requirements($identity, $missing, $label
   && !nakesController.match(/\$account_type === 'command_center'[\s\S]{0,350}'nama'/), 'puskesmas_profile_uses_facility_not_personal_identity');
 expect(nakesProfile.includes('Identitas dan kontak unit') && nakesProfile.includes('Kode Puskesmas')
   && nakesProfile.includes('Alamat layanan'), 'puskesmas_profile_shows_natural_facility_fields');
-expect(nakesShell.includes('Nama, alamat, dan identitas unit Puskesmas dikelola')
+expect(nakesShell.includes('Identitas unit dikelola Admin Dinas Kesehatan')
   && nakesShell.includes("if (!empty($nakes_is_personal))")
   && completionView.includes('Akun Puskesmas tidak memerlukan foto pribadi'), 'puskesmas_editor_excludes_personal_demographics_and_photo');
 expect(!nakesDashboard.includes("'section_title' => 'Status Nakes'")
