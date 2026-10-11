@@ -1,0 +1,41 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>DokLinc Command Center Icon</title>
+  <desc>Central command hub icon with four connected nodes in DokLinc mint and green.</desc>
+
+  <defs>
+    <linearGradient id="hub-24" x1="8" y1="8" x2="16" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#20CC98"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+    <linearGradient id="mint-24" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DFF8EE"/>
+      <stop offset="1" stop-color="#A7F1DC"/>
+    </linearGradient>
+  </defs>
+
+  <!-- connector lines -->
+  <path d="M12 6.7V4.9M17.3 12H19.1M12 17.3V19.1M6.7 12H4.9"
+        stroke="url(#mint-24)"
+        stroke-width="1.8"
+        stroke-linecap="round"/>
+
+  <!-- outer nodes -->
+  <circle cx="12" cy="3.9" r="1.45" fill="url(#mint-24)"/>
+  <circle cx="20.1" cy="12" r="1.45" fill="url(#mint-24)"/>
+  <circle cx="12" cy="20.1" r="1.45" fill="url(#mint-24)"/>
+  <circle cx="3.9" cy="12" r="1.45" fill="url(#mint-24)"/>
+
+  <!-- central command module -->
+  <rect x="7" y="7" width="10" height="10" rx="3" fill="url(#hub-24)"/>
+
+  <!-- inner target / control point -->
+  <circle cx="12" cy="12" r="2.15" fill="#DFF8EE"/>
+  <circle cx="12" cy="12" r="0.95" fill="#00A651"/>
+
+  <!-- subtle corner indicators -->
+  <path d="M9.25 9.95H10.25M13.75 9.95H14.75M9.25 14.05H10.25M13.75 14.05H14.75"
+        stroke="#CFF7E7"
+        stroke-width="0.7"
+        stroke-linecap="round"
+        opacity="0.95"/>
+</svg>

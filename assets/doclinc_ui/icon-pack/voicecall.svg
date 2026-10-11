@@ -1,0 +1,62 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>DokLinc Telepon</title>
+  <desc>Two-tone mint and green rounded phone handset icon for DokLinc.</desc>
+
+  <defs>
+    <linearGradient id="mint-24" x1="5.2" y1="4.1" x2="18.5" y2="19.6" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DFF8EE"/>
+      <stop offset="1" stop-color="#A7F1DC"/>
+    </linearGradient>
+    <linearGradient id="green-24" x1="7.2" y1="5.1" x2="17.4" y2="18.4" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22CC9A"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main handset -->
+  <path d="M6.15 3.65
+           C5.56 3.65 5.02 3.98 4.77 4.51
+           L3.62 6.95
+           C3.42 7.37 3.39 7.86 3.55 8.30
+           C5.18 12.85 8.90 16.82 13.45 18.45
+           C13.89 18.61 14.38 18.58 14.80 18.38
+           L17.24 17.23
+           C17.77 16.98 18.10 16.44 18.10 15.85
+           V13.80
+           C18.10 13.13 17.56 12.58 16.88 12.58
+           H14.30
+           C13.87 12.58 13.47 12.81 13.25 13.18
+           L12.65 14.20
+           C10.86 13.26 9.32 11.72 8.38 9.93
+           L9.40 9.33
+           C9.77 9.11 10.00 8.71 10.00 8.28
+           V5.70
+           C10.00 5.02 9.45 4.48 8.78 4.48
+           H6.15V3.65Z"
+        fill="url(#mint-24)"/>
+
+  <!-- Green accent on upper receiver -->
+  <path d="M6.02 3.65H8.78
+           C9.45 3.65 10.00 4.20 10.00 4.87
+           V7.52
+           C10.00 7.95 9.77 8.35 9.40 8.57
+           L8.33 9.20
+           C7.78 8.28 7.30 7.30 6.98 6.28
+           L5.96 4.75
+           C5.67 4.32 5.98 3.65 6.50 3.65
+           H6.02Z"
+        fill="url(#green-24)"/>
+
+  <!-- Green accent on lower receiver -->
+  <path d="M12.72 14.18
+           L13.35 13.13
+           C13.57 12.76 13.97 12.53 14.40 12.53
+           H17.05
+           C17.72 12.53 18.27 13.08 18.27 13.75
+           V16.50
+           C18.27 17.02 17.60 17.33 17.17 17.04
+           L15.64 16.02
+           C14.62 15.70 13.64 15.22 12.72 14.67
+           V14.18Z"
+        fill="url(#green-24)"/>
+</svg>

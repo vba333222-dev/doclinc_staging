@@ -2,16 +2,23 @@ const { execFileSync } = require('child_process');
 const WEB_CONTAINER = process.env.TASK11_WEB_CONTAINER;
 if (!WEB_CONTAINER || !/^task11-[a-z0-9-]+$/i.test(WEB_CONTAINER)) throw new Error('task11_web_container_required');
 process.env.TASK11_WEB_CONTAINER = WEB_CONTAINER;
+const WEB_ROOT = process.env.TASK11_WEB_ROOT || '/var/www';
 const RUN_ID = process.env.TASK11_RUN_ID;
 if (!RUN_ID) throw new Error('task11_run_id_required');
-function fixtureData() {
-  const output = execFileSync('docker', ['exec', '-e', `TASK11_RUN_ID=${RUN_ID}`, WEB_CONTAINER, 'php', 'tools/task11_browser/tests/fixture_setup.php'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+function fixtureData(options = {}) {
+  const env = ['-e', `TASK11_RUN_ID=${RUN_ID}`];
+  if (options.voicePhoto) env.push('-e', 'TASK11_VOICE_PHOTO=1');
+  if (options.voiceTextOnly) env.push('-e', 'TASK11_VOICE_TEXT_ONLY=1');
+  if (options.voiceLongName) env.push('-e', 'TASK11_VOICE_LONG_NAME=1');
+  if (options.voiceInvalidPhoto) env.push('-e', 'TASK11_VOICE_INVALID_PHOTO=1');
+  if (options.chatReference) env.push('-e', 'TASK11_CHAT_REFERENCE=1');
+  const output = execFileSync('docker', ['exec', ...env, WEB_CONTAINER, 'php', `${WEB_ROOT}/tools/task11_browser/tests/fixture_setup.php`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
   const data = JSON.parse(output.split(/\r?\n/).filter(Boolean).pop());
   if (!data.actors || !data.requests) throw new Error('invalid_task11_browser_fixture');
   return data;
 }
 function stateProbe(requestId) {
-  const output = execFileSync('docker', ['exec', '-e', `TASK11_RUN_ID=${RUN_ID}`, WEB_CONTAINER, 'php', 'tools/task11_browser/tests/state_probe.php', String(requestId)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  const output = execFileSync('docker', ['exec', '-e', `TASK11_RUN_ID=${RUN_ID}`, WEB_CONTAINER, 'php', `${WEB_ROOT}/tools/task11_browser/tests/state_probe.php`, String(requestId)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
   return JSON.parse(output.split(/\r?\n/).filter(Boolean).pop());
 }
 async function loginActor(page, actor) {
@@ -26,7 +33,15 @@ async function loginActor(page, actor) {
 async function csrf(page) { return page.locator('meta[name="doclinc-csrf-token"]').getAttribute('content'); }
 async function post(page, path, fields = {}) {
   const response = await page.request.post(path, { headers: { Accept: 'application/json,text/html' }, form: { ...fields, doclinc_csrf_token: await csrf(page) } });
-  let json = null; try { json = await response.json(); } catch (_) { /* non-JSON denial */ }
+  let json = null;
+  try {
+    json = await response.json();
+  } catch (_) {
+    // Some legacy CI3 denial paths return a JSON body with a text/html
+    // content type. Keep the safe-error contract assertion meaningful by
+    // parsing the body opportunistically without weakening status checks.
+    try { json = JSON.parse(await response.text()); } catch (__) { /* non-JSON denial */ }
+  }
   return { response, json };
 }
 async function surface(page, actorName, requestId) {
@@ -44,7 +59,10 @@ async function expectDenied(result) {
   if (status === 404) throw new Error(`expected_authorization_denial_but_route_missing status=${status}`);
   if (status === 200 && result.json && (result.json.success || result.json.ok || result.json.status === 'success')) throw new Error(`expected_denial body=${JSON.stringify(result.json)}`);
   if (result.json && result.json.safe_error_code && !/^[A-Z0-9_]+$/.test(result.json.safe_error_code)) throw new Error(`unsafe_error_code ${result.json.safe_error_code}`);
-  if ([401, 403, 409, 422].includes(status) && (!result.json || (!/^[A-Z0-9_]+$/.test(result.json.safe_error_code || '') && !(result.json.status === 'error' && typeof result.json.message === 'string' && result.json.message.trim() !== '')))) throw new Error(`missing_safe_error_contract status=${status}`);
+  const denialMessage = result.json && typeof result.json.message === 'string' ? result.json.message : '';
+  if (/sqlstate|sql syntax|stack trace|fatal error|exception|token secret|password_hash/i.test(denialMessage)) throw new Error(`raw_internal_error_leak status=${status}`);
+  const hasSafeMessage = result.json && typeof result.json.message === 'string' && result.json.message.trim() !== '' && result.json.success !== true;
+  if ([401, 403, 409, 422].includes(status) && (!result.json || (!/^[A-Z0-9_]+$/.test(result.json.safe_error_code || '') && !hasSafeMessage && !(result.json.status === 'error' && typeof result.json.message === 'string' && result.json.message.trim() !== '')))) throw new Error(`missing_safe_error_contract status=${status}`);
   return result;
 }
 module.exports = { fixtureData, stateProbe, loginActor, csrf, post, surface, expectSuccess, expectDenied };

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-labelledby="title desc" role="img">
+  <title id="title">DokLinc Konsultasi Icon</title>
+  <desc id="desc">Icon-only consultation symbol using a stethoscope and medical cross for DokLinc, with transparent background.</desc>
+  <defs>
+    <linearGradient id="tubeGrad" x1="4" y1="5" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22CC9A"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+    <linearGradient id="softGrad" x1="7" y1="7" x2="17" y2="17" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DFF8EE"/>
+      <stop offset="1" stop-color="#A7F1DC"/>
+    </linearGradient>
+  </defs>
+
+  <!-- earpieces -->
+  <rect x="6.15" y="4.4" width="1.7" height="4.25" rx="0.85" fill="url(#tubeGrad)"/>
+  <rect x="16.15" y="4.4" width="1.7" height="4.25" rx="0.85" fill="url(#tubeGrad)"/>
+  <rect x="5.4" y="3.3" width="3.2" height="1.7" rx="0.85" fill="url(#softGrad)"/>
+  <rect x="15.4" y="3.3" width="3.2" height="1.7" rx="0.85" fill="url(#softGrad)"/>
+
+  <!-- stethoscope tubing -->
+  <path d="M7 8.1v3.2a5 5 0 0 0 10 0V8.1" stroke="url(#tubeGrad)" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 16.3v1.05a2.65 2.65 0 0 0 5.3 0v-1.55" stroke="url(#tubeGrad)" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- chest piece -->
+  <circle cx="17.3" cy="15.45" r="1.65" fill="url(#softGrad)" stroke="#00A651" stroke-width="1.1"/>
+  <circle cx="17.3" cy="15.45" r="0.52" fill="#00A651" opacity="0.9"/>
+
+  <!-- medical cross focal point -->
+  <circle cx="12" cy="10.95" r="3.35" fill="url(#softGrad)"/>
+  <path d="M11.25 9.1h1.5v1.5h1.5v1.5h-1.5v1.5h-1.5v-1.5h-1.5v-1.5h1.5V9.1Z" fill="url(#tubeGrad)"/>
+</svg>

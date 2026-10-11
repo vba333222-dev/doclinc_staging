@@ -1,0 +1,36 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>DokLinc Chat Icon</title>
+  <desc>Rounded chat bubble icon with three conversation dots in DokLinc mint and green.</desc>
+
+  <defs>
+    <linearGradient id="bubble-24" x1="4" y1="5" x2="19.5" y2="18.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DFF8EE"/>
+      <stop offset="1" stop-color="#A7F1DC"/>
+    </linearGradient>
+    <linearGradient id="accent-24" x1="8.5" y1="9" x2="15.8" y2="14.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22CC9A"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+  </defs>
+
+  <!-- main speech bubble -->
+  <path d="M5.15 4.55
+           H18.85
+           C20.30 4.55 21.45 5.70 21.45 7.15
+           V14.25
+           C21.45 15.70 20.30 16.85 18.85 16.85
+           H11.10
+           L6.65 20.00
+           C6.15 20.35 5.50 20.00 5.50 19.38
+           V16.85
+           H5.15
+           C3.70 16.85 2.55 15.70 2.55 14.25
+           V7.15
+           C2.55 5.70 3.70 4.55 5.15 4.55Z"
+        fill="url(#bubble-24)"/>
+
+  <!-- inner conversation dots -->
+  <circle cx="8.15" cy="10.75" r="1.15" fill="url(#accent-24)"/>
+  <circle cx="12" cy="10.75" r="1.30" fill="url(#accent-24)"/>
+  <circle cx="15.85" cy="10.75" r="1.15" fill="url(#accent-24)"/>
+</svg>

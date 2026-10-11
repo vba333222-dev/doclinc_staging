@@ -1,0 +1,18 @@
+{
+  "mode": "chat",
+  "viewport": { "cssWidth": 353, "cssHeight": 800, "deviceScaleFactor": 2, "physicalWidth": 706, "physicalHeight": 1600 },
+  "source": { "html": "authoring-reference/doklinc_active_chat/code.html", "screenshot": "authoring-reference/doklinc_active_chat/screen.png" },
+  "tokens": {
+    "fontFamily": "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
+    "rootBackground": "#F8FAFC",
+    "shellBackground": "#F7F9FB",
+    "header": { "background": "rgba(255,255,255,0.95)", "padding": "40px 16px 12px", "gap": "14px", "avatar": "44px", "borderRadius": "0", "border": "1px solid rgba(241,245,249,1)" },
+    "body": { "padding": "16px", "gap": "16px" },
+    "text": { "title": "16px/normal 700", "body": "14px/1.625 400", "status": "12px/1 500", "date": "11px/normal 500" },
+    "message": { "maxWidth": "85%", "padding": "14px", "radius": "16px", "shadow": "0 1px 2px rgba(0,0,0,0.05)" },
+    "composer": { "padding": "12px", "height": "52px", "radius": "9999px", "background": "#ffffff", "border": "1px solid rgba(226,232,240,0.9)" }
+  },
+  "colors": ["#f0fdf4", "#dcfce7", "#22c55e", "#16a34a", "#15803d", "#166534", "#2d8a64", "#f8fafc", "#f7f9fb", "#257353"],
+  "fixtureContent": { "date": "Hari Ini", "notice": "Sesi Rekam Medis DokLinc", "messages": 5, "prescription": true },
+  "dynamicMaskRegions": ["provider-avatar"]
+}

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-labelledby="title desc" role="img">
+  <title id="title">DokLinc Home Icon</title>
+  <desc id="desc">Home menu icon for a health app, showing a rounded house with a medical cross accent in DokLinc colors.</desc>
+  <defs>
+    <linearGradient id="houseGrad" x1="4" y1="5" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B8F5E2"/>
+      <stop offset="1" stop-color="#64D8AE"/>
+    </linearGradient>
+    <linearGradient id="crossGrad" x1="8" y1="10" x2="15" y2="17" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1DCB99"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+  </defs>
+
+  <!-- roof silhouette -->
+  <path d="M4.2 10.1L12 4.25l7.8 5.85c.42.31.49.91.14 1.29-.17.18-.41.29-.66.29h-.92v5.33a2 2 0 0 1-2 2H7.66a2 2 0 0 1-2-2v-5.33h-.92a.9.9 0 0 1-.54-1.57Z" fill="url(#houseGrad)"/>
+
+  <!-- inner card/home face -->
+  <rect x="7.35" y="10.2" width="9.3" height="7.95" rx="2.2" fill="#F7FFFB" opacity="0.96"/>
+
+  <!-- medical cross -->
+  <path d="M10.45 11.55h1.5v1.5h1.5v1.5h-1.5v1.5h-1.5v-1.5h-1.5v-1.5h1.5v-1.5Z" fill="url(#crossGrad)"/>
+
+  <!-- subtle health status lines -->
+  <rect x="13.3" y="12.1" width="2.1" height="0.78" rx="0.39" fill="#00A651" opacity="0.42"/>
+  <rect x="13.3" y="13.55" width="2.35" height="0.78" rx="0.39" fill="#00A651" opacity="0.28"/>
+  <rect x="9.35" y="17.05" width="5.3" height="0.88" rx="0.44" fill="#00A651" opacity="0.12"/>
+
+  <!-- soft base accent to make it feel app-like -->
+  <path d="M7.2 9.4h9.6" stroke="#00A651" stroke-width="0.8" stroke-linecap="round" opacity="0.16"/>
+</svg>

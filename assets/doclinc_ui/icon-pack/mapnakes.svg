@@ -1,0 +1,30 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+xmlns="http://www.w3.org/2000/svg">
+  <title>DokLinc LiveKit Map Pin</title>
+  <desc>Mint map pin built from the exact DokLinc logo silhouette with original green logo centered.</desc>
+
+  <defs>
+    <linearGradient id="mint-24v3" x1="5" y1="2.5" x2="18.5" y2="21.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DFF8EE"/>
+      <stop offset="0.50" stop-color="#A7F1DC"/>
+      <stop offset="1" stop-color="#6FE2C0"/>
+    </linearGradient>
+
+    <linearGradient id="green-24v3" x1="7.5" y1="5" x2="16.5" y2="17" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22CC9A"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Mint pinpoint shell derived from the DokLinc silhouette -->
+  <path d="M14.000,1.680 L10.220,1.660 L9.260,1.920 L8.540,2.500 L8.160,3.160 L8.020,3.760 L7.980,5.260 L7.700,5.420 L6.140,5.460 L5.460,5.700 L5.080,5.960 L4.680,6.400 L4.400,6.920 L4.260,7.480 L4.260,11.300 L4.580,12.240 L5.040,12.800 L5.500,13.120 L6.060,13.320 L6.560,13.380 L6.740,13.520 L12.000,21.600 L17.260,13.520 L17.440,13.380 L18.460,13.140 L18.960,12.800 L19.420,12.240 L19.720,11.400 L19.720,7.380 L19.420,6.560 L18.940,5.980 L18.220,5.560 L17.740,5.440 L16.120,5.360 L15.980,5.160 L15.940,3.520 L15.700,2.860 L15.440,2.480 L15.000,2.080 Z"
+        fill="url(#mint-24v3)"
+        fill-rule="evenodd"
+        clip-rule="evenodd"/>
+
+  <!-- Exact DokLinc logo silhouette from the source artwork -->
+  <path d="M18.100,6.900 L17.780,6.720 L17.520,6.660 L15.460,6.660 L15.460,8.000 L17.140,8.020 L17.140,10.760 L14.380,10.780 L14.100,10.840 L13.800,11.000 L13.540,11.280 L13.380,11.800 L13.360,14.540 L10.620,14.540 L10.600,10.180 L10.920,10.160 L9.940,9.180 L8.940,10.160 L9.260,10.180 L9.260,14.900 L9.380,15.320 L9.620,15.620 L10.140,15.880 L13.860,15.880 L14.060,15.820 L14.480,15.520 L14.720,15.020 L14.760,12.120 L17.620,12.120 L17.920,12.020 L18.220,11.780 L18.480,11.260 L18.480,7.520 L18.340,7.180 Z M14.340,3.140 L13.780,2.900 L10.220,2.900 L9.880,3.000 L9.480,3.320 L9.280,3.760 L9.240,6.660 L6.480,6.660 L6.040,6.800 L5.740,7.060 L5.600,7.280 L5.500,7.620 L5.500,11.160 L5.660,11.620 L5.880,11.880 L6.380,12.120 L8.540,12.120 L8.540,10.780 L6.860,10.760 L6.860,8.020 L9.720,8.000 L10.160,7.820 L10.460,7.500 L10.600,7.120 L10.620,4.260 L13.360,4.260 L13.380,8.620 L13.060,8.640 L14.060,9.620 L15.040,8.660 L14.740,8.620 L14.720,3.780 L14.620,3.480 Z"
+        fill="url(#green-24v3)"
+        fill-rule="evenodd"
+        clip-rule="evenodd"/>
+</svg>

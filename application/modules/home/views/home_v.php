@@ -1254,7 +1254,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 								<span class="dl-btn-secondary" aria-disabled="true">Hubungi pengelola <i class="fas fa-headset"></i></span>
 							<?php elseif ($doclinc_has_active_request) : ?>
 								<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">
-									Lihat konsultasi <i class="fas fa-clipboard-list"></i>
+									Lihat konsultasi <img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('consultation')); ?>" alt="" aria-hidden="true">
 								</a>
 								<p class="history-empty-text mt-2 mb-0">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan terlebih dahulu.</p>
 							<?php else : ?>
@@ -1267,14 +1267,14 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 					<div class="dl-feature-grid">
 						<a href="<?= html_escape($doclinc_has_active_request ? base_url('home#riwayat') : '#'); ?>" class="feature-menu dl-feature-card<?= $doclinc_has_active_request ? ' disabled' : ''; ?>" onclick="<?= $doclinc_has_active_request ? 'openActiveConsultation(' . html_escape($doclinc_active_request_id) . '); return false;' : "showContent('konsultasi_kesehatan'); return false;"; ?>">
 							<div class="icon-wrapper">
-								<i class="fas fa-user-md"></i>
+								<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('nakes')); ?>" alt="" aria-hidden="true">
 								<span class="filler"></span>
 							</div>
 							<span class="small"><?= $doclinc_has_active_request ? 'Konsultasi aktif' : 'Buat permintaan'; ?></span>
 						</a>
 						<a href="#" data-bs-toggle="modal" class="feature-menu dl-feature-card" onclick="showContent('riwayat')">
 							<div class="icon-wrapper">
-								<i class="fas fa-briefcase-medical"></i>
+								<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('examination')); ?>" alt="" aria-hidden="true">
 								<span class="filler"></span>
 							</div>
 							<span class="small">Catatan kesehatan</span>
@@ -1323,7 +1323,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											<?php if ($dl_performer_name !== '') : ?><div class="history-meta">Petugas kunjungan: <?= html_escape($dl_performer_name); ?></div><?php endif; ?>
 										</div>
 										<div class="icon-wrapper">
-											<i class="fas fa-clipboard-list"></i>
+												<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('consultation')); ?>" alt="" aria-hidden="true">
 											<span class="filler"></span>
 										</div>
 									</div>
@@ -1611,7 +1611,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 										</div>
 								<div class="history-meta mb-2" data-warga-pic-label="<?= html_escape((int) $id_request); ?>"><?= html_escape($handling_nakes_label); ?></div>
 										<div class="history-section mb-3">
-											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan</div>
+										<div class="history-section-title"><img class="dl-semantic-icon dl-semantic-icon--sm" src="<?= html_escape(doclinc_ui_asset('examination')); ?>" alt="" aria-hidden="true"> Keluhan</div>
 											<?= doclinc_warga_complaint_summary($keluhan); ?>
 										</div>
 										<?php $this->load->view('partials/warga_visit_progress_v', array(
@@ -1742,12 +1742,12 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 									<input type="hidden" id="reqIdRat" value="<?= $id_request; ?>">
 									<div class="card-body">
 										<div class="history-section">
-											<div class="history-section-title"><i class="fas fa-notes-medical me-1"></i> Keluhan awal</div>
+										<div class="history-section-title"><img class="dl-semantic-icon dl-semantic-icon--sm" src="<?= html_escape(doclinc_ui_asset('examination')); ?>" alt="" aria-hidden="true"> Keluhan awal</div>
 											<?= doclinc_warga_complaint_summary($keluhan); ?>
 										</div>
 										<?php if ((string) ($data->consultation_mode ?? '') === 'visit' && ($visit_status_completed !== 'not_started' || !empty($visit_timeline_completed))) : ?>
 											<div class="history-section">
-												<div class="history-section-title"><i class="fas fa-route me-1"></i> Status layanan</div>
+												<div class="history-section-title"><img class="dl-semantic-icon dl-semantic-icon--sm" src="<?= html_escape(doclinc_ui_asset('map_nakes')); ?>" alt="" aria-hidden="true"> Status layanan</div>
 												<div class="doclinc-visit-summary">
 													<p class="doclinc-visit-summary__label"><?= html_escape($visit_label_completed); ?></p>
 													<?php if ($visit_updated_completed !== '') : ?>
@@ -1758,7 +1758,7 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 											</div>
 										<?php endif; ?>
 										<div class="history-section">
-											<div class="history-section-title"><i class="fas fa-file-medical-alt me-1"></i> Hasil konsultasi</div>
+										<div class="history-section-title"><img class="dl-semantic-icon dl-semantic-icon--sm" src="<?= html_escape(doclinc_ui_asset('examination')); ?>" alt="" aria-hidden="true"> Hasil konsultasi</div>
 											<div class="history-result-row">
 												<span class="history-result-label">Diagnosis</span>
 												<div class="history-result-value"><?= doclinc_history_safe_lines($diagnosa); ?></div>
@@ -1804,10 +1804,10 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 										<?php endif; ?>
 										<input type="hidden" id="doktId" value="<?= html_escape($dokter_id); ?>">
 										<button class="btn btn-sm btn-outline-success mt-2 dl-btn-secondary" onclick="downloadCard('card-<?= html_escape($card_id); ?>')">
-											<i class="fas fa-file-download"></i> Unduh resep
+							<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('prescription')); ?>" alt="" aria-hidden="true"> Unduh resep
 										</button>
 										<a href="<?= html_escape(base_url('chat?request_id=' . (int) $id_request)); ?>" class="btn btn-sm btn-outline-secondary mt-2 dl-btn-secondary">
-											<i class="fas fa-comments"></i> Buka chat
+							<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('chat')); ?>" alt="" aria-hidden="true"> Buka chat
 										</a>
 									</div>
 								</div>
@@ -1920,15 +1920,15 @@ $doclinc_active_request_id = $doclinc_has_active_request && isset($doclinc_activ
 		<div class="container-fluid px-0">
 			<div class="row g-0 text-center p-2 menu">
 				<a href="#" id="beranda-tab" class="col menu-item active" onclick="showContent('beranda')">
-					<i class="fas fa-home fs-4"></i>
+					<img class="dl-semantic-icon dl-semantic-icon--lg" src="<?= html_escape(doclinc_ui_asset('home')); ?>" alt="" aria-hidden="true">
 					<span class="d-block small mt-1">Beranda</span>
 				</a>
 				<a href="#" id="konsultasi_kesehatan-tab" class="col menu-item" onclick="showContent('konsultasi_kesehatan')">
-					<i class="fas fa-user-md fs-4"></i>
+					<img class="dl-semantic-icon dl-semantic-icon--lg" src="<?= html_escape(doclinc_ui_asset('nakes')); ?>" alt="" aria-hidden="true">
 					<span class="d-block small mt-1">Konsultasi</span>
 				</a>
 				<a href="#" id="riwayat-tab" class="col menu-item" onclick="showContent('riwayat')">
-					<i class="fas fa-file-medical fs-4"></i>
+					<img class="dl-semantic-icon dl-semantic-icon--lg" src="<?= html_escape(doclinc_ui_asset('consultation')); ?>" alt="" aria-hidden="true">
 					<span class="d-block small mt-1">Riwayat</span>
 				</a>
 				<a href="#" id="profile-tab" class="col menu-item" onclick="showContent('profile')">

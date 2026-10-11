@@ -1,0 +1,42 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>DokLinc Mute Call</title>
+  <desc>Two-tone mint and green muted microphone icon.</desc>
+
+  <defs>
+    <linearGradient id="mint-24" x1="6" y1="3" x2="18" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DFF8EE"/>
+      <stop offset="1" stop-color="#A7F1DC"/>
+    </linearGradient>
+    <linearGradient id="green-24" x1="5" y1="8" x2="19" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22CC9A"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+  </defs>
+
+  <!-- microphone head -->
+  <rect x="8" y="3" width="8" height="11" rx="4"
+        fill="url(#mint-24)"/>
+
+  <!-- microphone stand -->
+  <path d="M7.2 11.8V12.35
+           C7.2 15 9.35 17.15 12 17.15
+           C14.65 17.15 16.8 15 16.8 12.35V11.8"
+        stroke="url(#green-24)"
+        stroke-width="1.6"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <path d="M12 17.15V19.45" 
+        stroke="url(#green-24)"
+        stroke-width="1.6"
+        stroke-linecap="round"/>
+
+  <rect x="8.15" y="19.15" width="7.7" height="1.9" rx="0.95"
+        fill="url(#green-24)"/>
+
+  <!-- mute slash -->
+  <path d="M6.1 6.1L17.9 17.9"
+        stroke="url(#mint-24)"
+        stroke-width="2.5"
+        stroke-linecap="round"/>
+</svg>

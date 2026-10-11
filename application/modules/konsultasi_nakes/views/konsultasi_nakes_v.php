@@ -895,10 +895,10 @@ if (!function_exists('formatComplaintText')) {
 
 			<?php if (!empty($can_open_patient_chat)) : ?>
 				<section class="consult-card chat-card">
-					<h2 class="section-heading text-white"><i class="bi bi-chat-dots"></i> Chat Konsultasi</h2>
+				<h2 class="section-heading text-white"><img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('chat')); ?>" alt="" aria-hidden="true"> Chat Konsultasi</h2>
 					<p class="chat-copy">Hubungi warga untuk melanjutkan konsultasi.</p>
 					<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="chat-button">
-						<i class="bi bi-chat-dots-fill"></i> Buka chat
+						<img class="dl-semantic-icon dl-semantic-icon--sm" src="<?= html_escape(doclinc_ui_asset('chat')); ?>" alt="" aria-hidden="true"> Buka chat
 					</a>
 				</section>
 			<?php endif; ?>
@@ -908,7 +908,7 @@ if (!function_exists('formatComplaintText')) {
 
 			<?php if (!empty($care_team_workflow_enabled) && (!empty($latest_vital_signs) || !empty($can_record_vital_signs))) : ?>
 				<section class="consult-card">
-					<h2 class="section-heading"><i class="bi bi-activity"></i> Tanda Vital</h2>
+				<h2 class="section-heading"><img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('examination')); ?>" alt="" aria-hidden="true"> Tanda Vital</h2>
 					<?php if (!empty($latest_vital_signs)) : ?>
 						<div class="summary-grid mb-3">
 							<div class="summary-item"><span class="summary-label">Tekanan darah</span><span class="summary-value"><?= html_escape(($latest_vital_signs->systolic ?? '-') . '/' . ($latest_vital_signs->diastolic ?? '-')); ?> mmHg</span></div>
@@ -995,7 +995,7 @@ if (!function_exists('formatComplaintText')) {
 					</div>
 				<?php endif; ?>
 				<div class="mb-3">
-					<h3 class="section-heading"><i class="bi bi-capsule"></i> Obat / Farmakoterapi</h3>
+				<h3 class="section-heading"><img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('prescription')); ?>" alt="" aria-hidden="true"> Obat / Farmakoterapi</h3>
 					<p class="terapi-helper">Catat obat/farmakoterapi bila diberikan. Kosongkan jika tidak ada.</p>
 					<div id="terapiRowMessage" class="terapi-row-message" role="alert"></div>
 					<div class="mobile-terapi-editor" aria-label="Editor farmakoterapi mobile">
@@ -1112,7 +1112,7 @@ if (!function_exists('formatComplaintText')) {
 				<div id="visitDocumentationField" class="<?= $kriteria === 'Kunjungan Nakes' ? '' : 'd-none'; ?>">
 					<div class="form-floating mb-2">
 						<input type="file" class="form-control" id="file" name="file" accept=".jpg,.jpeg,image/jpeg" capture="environment"<?= $visit_proof_required ? ' required' : ''; ?>>
-						<label for="file"><i class="bi bi-camera"></i> Foto Bukti Kunjungan<?= $visit_proof_required ? '*' : ''; ?></label>
+						<label for="file"><img class="dl-semantic-icon dl-semantic-icon--sm" src="<?= html_escape(doclinc_ui_asset('camera')); ?>" alt="" aria-hidden="true"> Foto Bukti Kunjungan<?= $visit_proof_required ? '*' : ''; ?></label>
 						<img id="preview-image" src="#" alt="Preview Foto" style="display:none;" class="img-thumbnail" />
 					</div>
 					<div id="clinicalAttachmentFeedback" class="small text-danger d-none" role="alert"></div>

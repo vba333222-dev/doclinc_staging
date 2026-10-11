@@ -1,0 +1,1448 @@
+/* Scoped premium call shell. It intentionally does not style application-wide controls. */
+.doclinc-call-modal {
+  background: rgba(4, 9, 10, .78);
+  backdrop-filter: blur(14px);
+}
+
+.doclinc-call-panel {
+  position: relative;
+  max-width: 1280px;
+  width: min(100%, 1280px);
+  height: min(100dvh, 960px);
+  margin: auto;
+  padding: clamp(18px, 2.2vw, 32px);
+  gap: clamp(14px, 2vw, 24px);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: clamp(20px, 3vw, 32px);
+  background: #101719;
+  box-shadow: 0 28px 90px rgba(0,0,0,.42);
+}
+
+.doclinc-call-head {
+  min-height: 62px;
+  padding: 0;
+  gap: 18px;
+}
+
+.doclinc-call-context { gap: 14px; }
+.doclinc-call-eyebrow { display: block; color: rgba(255,255,255,.58); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.doclinc-call-status-dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #43d79b; box-shadow: 0 0 0 4px rgba(67,215,155,.14); vertical-align: 1px; }
+.doclinc-call-avatar { width: 44px; height: 44px; flex-basis: 44px; border-color: rgba(70, 220, 157, .4); }
+.doclinc-call-title { font-size: clamp(16px, 1.5vw, 22px); letter-spacing: -.02em; }
+.doclinc-call-status { color: rgba(255,255,255,.62); }
+.doclinc-call-close { border: 0; background: rgba(255,255,255,.08); }
+.doclinc-call-close img { display: block; filter: brightness(0) invert(1); }
+
+.doclinc-call-stage {
+  margin: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  border-radius: clamp(20px, 2.6vw, 30px);
+  background: linear-gradient(135deg, #f7fbf8, #e7f3ec 72%, #d7ede2);
+  box-shadow: 0 16px 40px rgba(0,0,0,.18), inset 0 0 0 1px rgba(255,255,255,.72);
+}
+
+.doclinc-call-remote {
+  color: #19241f;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255,255,255,.96), transparent 42%),
+    linear-gradient(145deg, rgba(255,255,255,.74), rgba(218,240,227,.76));
+}
+.doclinc-call-empty { color: #475b51; }
+.doclinc-call-empty-avatar {
+  width: clamp(112px, 15vw, 190px);
+  height: clamp(112px, 15vw, 190px);
+  border: 0;
+  box-shadow: 0 18px 44px rgba(46, 95, 71, .18);
+}
+.doclinc-call-empty-name { color: #1b2a22; font-size: clamp(20px, 2.1vw, 30px); }
+.doclinc-call-local {
+  right: clamp(14px, 2vw, 28px);
+  top: clamp(14px, 2vw, 28px);
+  bottom: auto;
+  width: clamp(118px, 15vw, 220px);
+  height: clamp(84px, 11vw, 142px);
+  border: 2px solid rgba(255,255,255,.92);
+  box-shadow: 0 14px 32px rgba(19, 53, 37, .24);
+}
+
+.doclinc-call-prejoin { padding: 0; }
+.doclinc-call-controls {
+  align-items: stretch;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding: 14px 12px max(14px, env(safe-area-inset-bottom));
+  border-radius: 22px;
+  background: #171f21;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+}
+.doclinc-call-control {
+  width: clamp(64px, 8vw, 92px);
+  height: 68px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px;
+  background: #202a2b;
+  box-shadow: none;
+  flex-direction: column;
+  gap: 5px;
+}
+.doclinc-call-control img { width: 24px; height: 24px; filter: brightness(0) invert(1); }
+.doclinc-call-control-label { display: block; font-size: 11px; line-height: 1; color: rgba(255,255,255,.8); }
+.doclinc-call-control:hover, .doclinc-call-control:focus-visible { background: #2b3938; outline: 2px solid rgba(67,215,155,.72); outline-offset: 2px; }
+.doclinc-call-control.end-call {
+  width: clamp(116px, 13vw, 170px);
+  height: 68px;
+  flex-direction: row;
+  border-radius: 999px;
+  background: #ef403a;
+  border-color: #ef403a;
+}
+.doclinc-call-control.end-call img { filter: brightness(0) invert(1); }
+.doclinc-call-control.end-call .doclinc-call-control-label { font-size: 14px; color: #fff; font-weight: 800; }
+.doclinc-call-popover {
+  position: absolute;
+  right: clamp(18px, 3vw, 36px);
+  bottom: 104px;
+  max-width: min(320px, calc(100% - 36px));
+  padding: 14px 16px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  background: #202a2b;
+  color: rgba(255,255,255,.85);
+  font-size: 13px;
+  box-shadow: 0 14px 30px rgba(0,0,0,.28);
+}
+
+@media (max-width: 1100px) {
+  .doclinc-call-panel { border-radius: 0; height: 100dvh; padding: 16px; }
+  .doclinc-call-controls { gap: 6px; }
+  .doclinc-call-control { width: 64px; height: 64px; }
+  .doclinc-call-control.end-call { width: 132px; }
+  .doclinc-call-popover { bottom: clamp(190px, 24vh, 300px); }
+}
+
+@media (max-width: 640px) {
+  .doclinc-call-panel { padding: max(14px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); gap: 12px; }
+  .doclinc-call-head { min-height: 58px; }
+  .doclinc-call-context { gap: 9px; }
+  .doclinc-call-avatar { width: 36px; height: 36px; flex-basis: 36px; }
+  .doclinc-call-title { font-size: 16px; }
+  .doclinc-call-status { font-size: 11px; }
+  .doclinc-call-stage { border-radius: 24px; }
+  .doclinc-call-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 20px 12px max(20px, env(safe-area-inset-bottom)); border-radius: 24px; }
+  .doclinc-call-popover { bottom: clamp(245px, 33vh, 300px); }
+  .doclinc-call-control, .doclinc-call-control.end-call { width: 100%; height: 70px; min-width: 0; }
+  .doclinc-call-control.end-call { grid-column: span 2; }
+  .doclinc-call-control-label { font-size: 10px; }
+}
+
+@media (max-width: 380px) {
+  .doclinc-call-control, .doclinc-call-control.end-call { height: 62px; }
+  .doclinc-call-control-label { font-size: 9px; }
+}
+
+/* Fidelity pass: horizontal premium shell, dominant stage, and dedicated mobile dock. */
+.doclinc-call-panel { display: flex; flex-direction: column; max-width: 1320px; width: min(100%, 1320px); padding: clamp(20px, 2.4vw, 34px) clamp(20px, 2.8vw, 38px) clamp(18px, 2.2vw, 30px); gap: clamp(16px, 2vw, 24px); border-radius: clamp(24px, 3vw, 34px); background: #0f1719; }
+.doclinc-call-head { display: flex; align-items: center; justify-content: space-between; min-height: 72px; gap: 24px; }
+.doclinc-call-brand-lockup, .doclinc-call-head-actions, .doclinc-call-provider-meta { display: flex; align-items: center; }
+.doclinc-call-brand-lockup { min-width: 0; gap: 20px; }
+.doclinc-call-brand { display: block; width: clamp(122px, 11vw, 164px); height: auto; max-height: 46px; object-fit: contain; }
+.doclinc-call-divider { width: 1px; height: 42px; background: rgba(255,255,255,.18); flex: 0 0 auto; }
+.doclinc-call-context { display: grid; min-width: 0; gap: 3px; }
+.doclinc-call-eyebrow { color: rgba(255,255,255,.58); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.doclinc-call-title { margin: 0; color: #fff; font-size: clamp(18px, 1.65vw, 24px); font-weight: 760; letter-spacing: -.02em; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doclinc-call-provider-meta { gap: 8px; min-width: 0; }
+.doclinc-call-provider-role { color: rgba(255,255,255,.66); font-size: 12px; }
+.doclinc-call-verified { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #2fbd82; color: #082218; font-size: 11px; font-weight: 900; }
+.doclinc-call-head-actions { gap: 10px; flex: 0 0 auto; }
+.doclinc-call-security { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border: 1px solid rgba(77,216,162,.26); border-radius: 999px; background: rgba(47,189,130,.10); color: #b4efd5; font-size: 12px; font-weight: 650; white-space: nowrap; }
+.doclinc-call-security-icon { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid currentColor; border-radius: 50%; font-size: 13px; line-height: 1; }
+.doclinc-call-signal { display: inline-flex; align-items: end; gap: 3px; height: 22px; padding: 0 4px; }
+.doclinc-call-signal span { width: 4px; border-radius: 3px; background: #44d99c; }
+.doclinc-call-signal span:nth-child(1) { height: 7px; opacity: .55; }
+.doclinc-call-signal span:nth-child(2) { height: 11px; opacity: .72; }
+.doclinc-call-signal span:nth-child(3) { height: 16px; opacity: .85; }
+.doclinc-call-signal span:nth-child(4) { height: 21px; }
+.doclinc-call-head-more, .doclinc-call-close { display: inline-grid; place-items: center; width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.12); border-radius: 50%; background: rgba(255,255,255,.06); color: #fff; }
+.doclinc-call-head-more img, .doclinc-call-close img { display: block; width: 20px; height: 20px; filter: brightness(0) invert(1); }
+.doclinc-call-stage { position: relative; flex: 1 1 auto; min-height: 0; margin: 0; overflow: hidden; border-radius: clamp(24px, 2.5vw, 32px); background: radial-gradient(circle at 50% 36%, rgba(255,255,255,.98), rgba(246,252,248,.92) 40%, rgba(224,243,232,.96) 100%); box-shadow: 0 20px 50px rgba(0,0,0,.2), inset 0 0 0 1px rgba(255,255,255,.82); }
+.doclinc-call-remote { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #203229; background: radial-gradient(circle at 50% 30%, rgba(255,255,255,.88), transparent 44%), linear-gradient(145deg, rgba(255,255,255,.55), rgba(218,240,227,.54)); }
+.doclinc-call-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #50675a; }
+.doclinc-call-empty-avatar { display: grid; place-items: center; width: clamp(132px, 14vw, 184px); height: clamp(132px, 14vw, 184px); border: 0; border-radius: 50%; object-fit: cover; box-shadow: 0 18px 48px rgba(46,95,71,.2); }
+.doclinc-call-empty-name { color: #1b2a22; font-size: clamp(22px, 2.2vw, 30px); font-weight: 760; }
+.doclinc-call-waveform { display: inline-flex; align-items: center; gap: 4px; height: 24px; margin-top: 2px; color: #2fbd82; }
+.doclinc-call-waveform span { display: block; width: 4px; border-radius: 999px; background: currentColor; }
+.doclinc-call-waveform span:nth-child(1) { height: 8px; opacity: .55; }
+.doclinc-call-waveform span:nth-child(2) { height: 16px; opacity: .72; }
+.doclinc-call-waveform span:nth-child(3) { height: 22px; }
+.doclinc-call-waveform span:nth-child(4) { height: 13px; opacity: .78; }
+.doclinc-call-waveform span:nth-child(5) { height: 7px; opacity: .55; }
+.doclinc-call-local { position: absolute; right: clamp(18px, 2.1vw, 30px); top: clamp(18px, 2.1vw, 30px); bottom: auto; width: clamp(172px, 17vw, 238px); height: clamp(112px, 12vw, 158px); border: 2px solid rgba(255,255,255,.95); border-radius: 20px; box-shadow: 0 16px 36px rgba(19,53,37,.28); }
+.doclinc-call-controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 100px; padding: 16px 20px max(16px, env(safe-area-inset-bottom)); border-radius: 26px; background: #182223; box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 10px 30px rgba(0,0,0,.2); }
+.doclinc-call-control { position: relative; width: clamp(76px, 7.2vw, 102px); height: 68px; gap: 7px; border: 0; border-radius: 18px; background: transparent; box-shadow: none; }
+.doclinc-call-control:not(.end-call) + .doclinc-call-control:not(.end-call)::before { content: ''; position: absolute; left: -5px; top: 14px; width: 1px; height: 40px; background: rgba(255,255,255,.18); }
+.doclinc-call-control img { width: 25px; height: 25px; }
+.doclinc-call-control-label { color: rgba(255,255,255,.82); font-size: 11px; font-weight: 650; }
+.doclinc-call-control.end-call { width: clamp(160px, 14vw, 206px); height: 64px; gap: 10px; border-color: #f04d47; border-radius: 999px; background: #ef403a; box-shadow: 0 12px 24px rgba(239,64,58,.24); }
+.doclinc-call-control.end-call .doclinc-call-control-label { font-size: 14px; font-weight: 800; }
+
+@media (max-width: 1100px) {
+  .doclinc-call-panel { width: 100%; height: 100dvh; border-radius: 0; padding: 18px; }
+  .doclinc-call-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 6px; }
+  .doclinc-call-control, .doclinc-call-control.end-call { width: 100%; min-width: 0; }
+  .doclinc-call-control.end-call { grid-column: span 2; }
+  .doclinc-call-popover { bottom: clamp(190px, 24vh, 310px); }
+}
+@media (min-width: 821px) and (max-width: 1100px) {
+  .doclinc-call-controls { display: flex; gap: 6px; }
+  .doclinc-call-control, .doclinc-call-control.end-call { width: auto; min-width: 72px; flex: 1 1 0; }
+  .doclinc-call-control.end-call { flex: 0 0 150px; }
+}
+@media (max-width: 640px) {
+  .doclinc-call-panel { padding: max(14px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); gap: 12px; background: #101718; }
+  .doclinc-call-head { align-items: flex-start; min-height: 80px; gap: 10px; }
+  .doclinc-call-brand-lockup { gap: 10px; }
+  .doclinc-call-brand-lockup { flex: 1 1 auto; min-width: 0; }
+  .doclinc-call-brand { width: 76px; max-height: 30px; }
+  .doclinc-call-divider { height: 34px; }
+  .doclinc-call-eyebrow { font-size: 9px; }
+  .doclinc-call-title { max-width: none; font-size: 15px; }
+  .doclinc-call-provider-role { font-size: 10px; }
+  .doclinc-call-security { width: 28px; height: 28px; padding: 0; justify-content: center; gap: 0; font-size: 0; }
+  .doclinc-call-security > span:last-child { display: none; }
+  .doclinc-call-security-icon { width: 14px; height: 14px; font-size: 10px; }
+  .doclinc-call-signal { height: 18px; gap: 2px; }
+  .doclinc-call-signal span { width: 3px; }
+  .doclinc-call-signal span:nth-child(1) { height: 5px; }
+  .doclinc-call-signal span:nth-child(2) { height: 8px; }
+  .doclinc-call-signal span:nth-child(3) { height: 12px; }
+  .doclinc-call-signal span:nth-child(4) { height: 16px; }
+  .doclinc-call-head-actions { gap: 4px; }
+  .doclinc-call-head-more, .doclinc-call-close { width: 30px; height: 30px; }
+  .doclinc-call-head-more img, .doclinc-call-close img { width: 18px; height: 18px; }
+  .doclinc-call-stage { border-radius: 26px; }
+  .doclinc-call-empty-avatar { width: 112px; height: 112px; }
+  .doclinc-call-empty-name { font-size: 20px; }
+  .doclinc-call-local { right: 14px; top: 14px; width: 124px; height: 92px; border-radius: 16px; }
+  .doclinc-call-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 6px; min-height: 194px; padding: 16px 12px max(18px, env(safe-area-inset-bottom)); border-radius: 26px; }
+  .doclinc-call-control { width: 70px; min-width: 0; height: 70px; justify-self: center; border-radius: 50%; }
+  .doclinc-call-control img { width: 27px; height: 27px; }
+  .doclinc-call-control-label { font-size: 10px; }
+  .doclinc-call-control.end-call { grid-column: 2 / span 2; width: min(100%, 190px); height: 58px; justify-self: center; border-radius: 999px; }
+  .doclinc-call-control.end-call .doclinc-call-control-label { font-size: 13px; }
+  .doclinc-call-popover { right: 12px; bottom: 280px; max-width: calc(100% - 24px); }
+}
+@media (max-width: 820px) {
+  .doclinc-call-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 6px; }
+  .doclinc-call-control, .doclinc-call-control.end-call { width: 100%; min-width: 0; }
+  .doclinc-call-control.end-call { grid-column: span 2; }
+}
+@media (max-width: 380px) {
+  .doclinc-call-title { max-width: 128px; }
+  .doclinc-call-control, .doclinc-call-control.end-call { height: 64px; }
+  .doclinc-call-control-label { font-size: 9px; }
+}
+
+/* Keep the compact dock circular on phones even after tablet grid rules apply. */
+@media (max-width: 640px) {
+  .doclinc-call-control { width: 70px; height: 70px; min-width: 0; border-radius: 50%; justify-self: center; }
+  .doclinc-call-control.end-call { grid-column: 2 / span 2; width: min(100%, 190px); height: 58px; border-radius: 999px; justify-self: center; }
+}
+
+/* Reference fidelity correction: use a full premium canvas and a deliberate
+   seven-action call dock. All rules remain scoped to the LiveKit shell. */
+.doclinc-call-modal {
+  background: radial-gradient(circle at 50% 12%, #f7fffb 0, #edf8f2 42%, #dcefe6 100%);
+  padding: clamp(18px, 4vh, 42px) clamp(18px, 4vw, 58px);
+}
+.doclinc-call-panel {
+  width: min(92vw, 1320px);
+  height: min(92dvh, 900px);
+  padding: clamp(22px, 2.4vw, 34px) clamp(24px, 2.8vw, 40px) clamp(20px, 2.2vw, 32px);
+  gap: clamp(18px, 2.1vw, 28px);
+  border-radius: clamp(28px, 3vw, 38px);
+  background: linear-gradient(180deg, #121a1b 0%, #0d1517 100%);
+}
+.doclinc-call-head { min-height: 78px; gap: 28px; }
+.doclinc-call-brand-lockup { gap: 22px; }
+.doclinc-call-brand { width: clamp(142px, 12vw, 188px); max-height: 52px; }
+.doclinc-call-divider { height: 48px; background: rgba(255,255,255,.22); }
+.doclinc-call-context { gap: 5px; }
+.doclinc-call-eyebrow { font-size: 13px; letter-spacing: .01em; text-transform: none; color: rgba(255,255,255,.7); }
+.doclinc-call-title { font-size: clamp(21px, 1.8vw, 28px); font-weight: 780; }
+.doclinc-call-provider-role { font-size: 13px; color: rgba(255,255,255,.65); }
+.doclinc-call-head-actions { gap: 16px; }
+.doclinc-call-security { padding: 12px 18px; gap: 9px; background: rgba(58,196,137,.13); border-color: rgba(82,220,165,.3); font-size: 13px; }
+.doclinc-call-security-icon { width: 22px; height: 22px; font-size: 15px; }
+.doclinc-call-head-more { width: 46px; height: 46px; border-color: rgba(255,255,255,.18); }
+.doclinc-call-head-more img { width: 22px; height: 22px; }
+.doclinc-call-close { display: none; }
+.doclinc-call-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  border-radius: clamp(28px, 3vw, 38px);
+  background:
+    radial-gradient(ellipse at 20% 110%, rgba(207,239,219,.86) 0 17%, transparent 48%),
+    radial-gradient(ellipse at 104% 68%, rgba(214,241,225,.78) 0 14%, transparent 48%),
+    linear-gradient(135deg, #fbfcfa 0%, #f3f9f5 48%, #dff1e5 100%);
+  box-shadow: 0 24px 58px rgba(23,65,43,.22), inset 0 0 0 1px rgba(255,255,255,.9);
+}
+.doclinc-call-remote { background: radial-gradient(circle at 50% 30%, rgba(255,255,255,.75), transparent 42%); }
+.doclinc-call-empty { gap: 8px; }
+.doclinc-call-empty-avatar {
+  width: clamp(160px, 17vw, 224px);
+  height: clamp(160px, 17vw, 224px);
+  background: radial-gradient(circle at 50% 34%, #b4d1bf 0 19%, transparent 20%), radial-gradient(ellipse at 50% 78%, #b4d1bf 0 31%, transparent 32%), rgba(190,218,200,.45);
+  box-shadow: 0 20px 48px rgba(74,132,96,.18);
+}
+.doclinc-call-empty-name { font-size: clamp(25px, 2.35vw, 34px); font-weight: 780; }
+.doclinc-call-empty-role { color: #65756b; font-size: clamp(16px, 1.4vw, 20px); }
+.doclinc-call-empty-waiting { color: #82938a; font-size: 12px; }
+.doclinc-call-waveform { margin-top: 8px; }
+.doclinc-call-local {
+  right: clamp(22px, 2.5vw, 34px);
+  top: clamp(22px, 2.5vw, 34px);
+  width: clamp(190px, 19vw, 260px);
+  height: clamp(128px, 14vw, 176px);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(242,250,245,.9), rgba(213,235,222,.82));
+}
+.doclinc-call-local.is-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #43594b; }
+.doclinc-call-local.is-placeholder::before {
+  content: '';
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 34%, #aac9b5 0 18%, transparent 19%), radial-gradient(ellipse at 50% 80%, #aac9b5 0 30%, transparent 31%), rgba(191,220,201,.62);
+  display: block;
+  margin: 0 auto 8px;
+}
+.doclinc-call-local-placeholder {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  background: rgba(27, 44, 35, .62);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.doclinc-call-controls {
+  min-height: 116px;
+  padding: 18px 26px max(18px, env(safe-area-inset-bottom));
+  border-radius: 28px;
+  gap: 10px;
+  background: #182122;
+}
+.doclinc-call-control {
+  width: clamp(88px, 8vw, 116px);
+  height: 80px;
+  border-radius: 18px;
+  gap: 8px;
+  color: #f2f7f4;
+}
+.doclinc-call-control img { width: 30px; height: 30px; filter: brightness(0) invert(1); }
+.doclinc-call-control:nth-child(-n+3) img { filter: brightness(0) saturate(100%) invert(73%) sepia(52%) saturate(640%) hue-rotate(103deg) brightness(95%); }
+.doclinc-call-control-label { font-size: 15px; font-weight: 650; color: rgba(255,255,255,.88); }
+.doclinc-call-control:not(.end-call) + .doclinc-call-control:not(.end-call)::before { left: -5px; top: 18px; height: 44px; background: rgba(255,255,255,.22); }
+.doclinc-call-control.end-call { width: clamp(172px, 15vw, 222px); height: 68px; gap: 12px; }
+.doclinc-call-control.end-call img { width: 32px; height: 32px; }
+.doclinc-call-control.end-call .doclinc-call-control-label { font-size: 17px; }
+.doclinc-call-popover { bottom: 126px; right: 26px; padding: 16px; border-radius: 18px; background: #202b2c; }
+.doclinc-call-popover-title { margin: 0 0 10px; color: rgba(255,255,255,.62); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.doclinc-call-secondary { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 8px; border: 0; border-radius: 10px; background: transparent; color: #fff; cursor: pointer; text-align: left; }
+.doclinc-call-secondary:hover { background: rgba(255,255,255,.08); }
+.doclinc-call-secondary:focus-visible { background: rgba(255,255,255,.08); outline: 2px solid #55d9a2; outline-offset: 2px; }
+.doclinc-call-secondary img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+
+@media (max-width: 1100px) {
+  .doclinc-call-modal { padding: 16px; }
+  .doclinc-call-panel { width: 100%; max-width: none; height: 100dvh; padding: 20px; border-radius: 28px; }
+  .doclinc-call-controls { min-height: 108px; padding-inline: 18px; }
+  .doclinc-call-control { width: 90px; }
+}
+@media (max-width: 640px) {
+  .doclinc-call-modal { padding: 0; background: #101718; }
+  .doclinc-call-panel { width: 100%; height: 100dvh; padding: max(18px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)); gap: 14px; border-radius: 0; }
+  .doclinc-call-head { min-height: 88px; gap: 10px; }
+  .doclinc-call-brand-lockup { gap: 10px; }
+  .doclinc-call-brand { width: 86px; max-height: 34px; }
+  .doclinc-call-divider { height: 40px; }
+  .doclinc-call-eyebrow { font-size: 10px; }
+  .doclinc-call-title { font-size: 17px; }
+  .doclinc-call-provider-role { font-size: 11px; }
+  .doclinc-call-head-actions { gap: 6px; }
+  .doclinc-call-security { width: 30px; height: 30px; padding: 0; justify-content: center; font-size: 0; }
+  .doclinc-call-security-icon { width: 16px; height: 16px; font-size: 10px; }
+  .doclinc-call-head-more { width: 32px; height: 32px; }
+  .doclinc-call-head-more img { width: 18px; height: 18px; }
+  .doclinc-call-stage { min-height: 0; border-radius: 28px; }
+  .doclinc-call-empty { transform: translateY(64px); }
+  .doclinc-call-empty-avatar { width: 148px; height: 148px; }
+  .doclinc-call-empty-name { font-size: 23px; }
+  .doclinc-call-empty-role { font-size: 16px; }
+  .doclinc-call-local { right: 16px; top: 16px; width: 132px; height: 102px; border-radius: 18px; }
+  .doclinc-call-controls { grid-template-columns: repeat(4, minmax(0, 1fr)); min-height: 236px; gap: 10px 4px; padding: 16px 8px max(18px, env(safe-area-inset-bottom)); border-radius: 28px; }
+  .doclinc-call-control { width: 80px; height: 96px; gap: 6px; border-radius: 18px; background: transparent; border: 0; padding: 0; }
+  .doclinc-call-control img { width: 56px; height: 56px; padding: 13px; border-radius: 50%; background: rgba(39, 49, 50, .92); box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); }
+  .doclinc-call-control-label { font-size: 11px; }
+  .doclinc-call-control.end-call { grid-column: 3 / span 2; width: min(100%, 190px); height: 62px; border-radius: 999px; }
+  .doclinc-call-control.end-call .doclinc-call-control-label { font-size: 15px; }
+  .doclinc-call-popover { right: 14px; bottom: 308px; }
+  .doclinc-call-stage.is-panel-open .doclinc-call-empty { transform: translate(-70px, 64px); }
+}
+
+@media (min-width: 381px) and (max-width: 640px) {
+  .doclinc-call-security { width: auto; min-width: 54px; height: 30px; padding: 0 8px; gap: 4px; font-size: 10px; }
+  .doclinc-call-security > span:last-child { display: inline; font-size: 0; }
+  .doclinc-call-security > span:last-child::after { content: 'Aman'; font-size: 10px; font-weight: 700; }
+}
+
+/* Local preview treatment is independent from control state colors. */
+.doclinc-call-local.is-camera-off {
+  font-size: 0;
+  justify-content: flex-end;
+  padding: 12px;
+}
+.doclinc-call-local.is-camera-off .doclinc-call-local-status {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  color: #43594b;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.doclinc-call-local.is-camera-off .doclinc-call-local-placeholder { bottom: 10px; left: 12px; }
+.doclinc-call-local.is-preview { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 12px; }
+.doclinc-call-local-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 34%, #aac9b5 0 18%, transparent 19%), radial-gradient(ellipse at 50% 80%, #aac9b5 0 30%, transparent 31%), rgba(191,220,201,.62);
+}
+.doclinc-call-local-status { color: #43594b; font-size: 12px; line-height: 1.2; }
+.doclinc-call-stage::before,
+.doclinc-call-stage::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  opacity: .32;
+}
+.doclinc-call-stage::before { width: 70%; height: 56%; left: -18%; bottom: -28%; background: radial-gradient(ellipse, rgba(179,226,196,.58), transparent 68%); }
+.doclinc-call-stage::after { width: 62%; height: 50%; right: -22%; bottom: -24%; background: radial-gradient(ellipse, rgba(205,237,216,.6), transparent 70%); }
+.doclinc-call-remote, .doclinc-call-local { z-index: 1; }
+.doclinc-call-stage.is-media-failure .doclinc-call-remote { background: linear-gradient(145deg, rgba(255,255,255,.72), rgba(244,237,220,.72)); }
+
+@media (min-width: 641px) {
+  .doclinc-call-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .8fr) minmax(0, 1fr); }
+  .doclinc-call-brand-lockup { grid-column: 1; }
+  .doclinc-call-head-actions { grid-column: 2 / 4; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; justify-items: end; }
+  .doclinc-call-security { justify-self: center; }
+}
+@media (max-width: 640px) {
+  .doclinc-call-head { display: flex; }
+  .doclinc-call-head-actions { display: flex; }
+  .doclinc-call-control.is-off { background: transparent; border: 0; }
+  .doclinc-call-control img,
+  .doclinc-call-control.is-off img { filter: none; }
+  .doclinc-call-control.end-call img { width: 32px; height: 32px; padding: 0; background: transparent; box-shadow: none; filter: brightness(0) invert(1); }
+}
+
+/* Task 11 control polish: technical header indicators are intentionally
+   hidden; media state is communicated by the glyph color only. */
+.doclinc-call-head-actions,
+.doclinc-call-security,
+.doclinc-call-signal,
+.doclinc-call-head-more { display: none !important; }
+.doclinc-call-control:not(.end-call) img {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  filter: brightness(0) invert(1) !important;
+}
+.doclinc-call-control:not(.end-call).is-active img {
+  filter: brightness(0) saturate(100%) invert(73%) sepia(52%) saturate(640%) hue-rotate(103deg) brightness(95%) !important;
+}
+.doclinc-call-control:not(.end-call).is-off img { filter: brightness(0) invert(1) !important; }
+.doclinc-call-control:not(.end-call).is-off {
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  color: inherit !important;
+}
+.doclinc-call-control:not(.end-call).is-off .doclinc-call-control-label { color: rgba(255,255,255,.88) !important; }
+.doclinc-call-control:not(.end-call):focus-visible {
+  outline: 2px solid #55d9a2;
+  outline-offset: 3px;
+}
+
+/* Final LiveKit control bar: five compact icon-only actions in one row at
+   every supported breakpoint.  The neutral hit target is never used as the
+   media-state indicator; only the glyph color communicates state. */
+.doclinc-call-controls {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 1.5vw, 22px) !important;
+  width: 100%;
+  min-height: 92px;
+  overflow: visible;
+}
+.doclinc-call-control,
+.doclinc-call-control.end-call {
+  flex: 0 0 auto;
+  width: clamp(56px, 6vw, 76px) !important;
+  min-width: 48px !important;
+  height: clamp(56px, 6vw, 76px) !important;
+  min-height: 48px !important;
+  padding: 0 !important;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  box-shadow: none !important;
+  gap: 0 !important;
+}
+.doclinc-call-control img,
+.doclinc-call-control.end-call img {
+  display: block;
+  width: clamp(24px, 2vw, 30px) !important;
+  height: clamp(24px, 2vw, 30px) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.doclinc-call-control-label { display: none !important; }
+.doclinc-call-control.end-call {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+.doclinc-call-control.end-call img { filter: brightness(0) invert(1) !important; }
+.doclinc-call-control:not(.end-call):hover,
+.doclinc-call-control:not(.end-call):focus-visible {
+  background: rgba(255,255,255,.14) !important;
+}
+
+/* Camera-first presentation: local video owns the stage until a remote
+   video is actually available, then returns to the floating preview. */
+.doclinc-call-stage.is-local-main .doclinc-call-remote {
+  opacity: 0;
+  pointer-events: none;
+}
+.doclinc-call-stage.is-local-main .doclinc-call-local {
+  inset: 0;
+  right: auto;
+  top: auto;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: inherit;
+  box-shadow: none;
+  z-index: 2;
+}
+.doclinc-call-stage.is-local-main .doclinc-call-local video {
+  object-fit: cover;
+}
+.doclinc-call-stage.is-remote-main .doclinc-call-local {
+  top: auto;
+  right: clamp(18px, 2.1vw, 30px);
+  bottom: clamp(18px, 2.1vw, 30px);
+  width: clamp(172px, 17vw, 238px);
+  height: clamp(112px, 12vw, 158px);
+  z-index: 3;
+}
+.doclinc-call-stage.is-remote-main .doclinc-call-local video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+@media (max-width: 1100px) {
+  .doclinc-call-controls { gap: clamp(6px, 1.2vw, 16px) !important; }
+}
+@media (max-width: 640px) {
+  .doclinc-call-controls {
+    min-height: 78px;
+    padding: 10px 4px max(14px, env(safe-area-inset-bottom)) !important;
+    gap: clamp(4px, 1.8vw, 10px) !important;
+  }
+  .doclinc-call-control,
+  .doclinc-call-control.end-call {
+    width: clamp(48px, 14vw, 60px) !important;
+    min-width: 48px !important;
+    height: clamp(48px, 14vw, 60px) !important;
+    min-height: 48px !important;
+    border-radius: 14px !important;
+  }
+  .doclinc-call-control img,
+  .doclinc-call-control.end-call img {
+    width: 23px !important;
+    height: 23px !important;
+  }
+  /* Mobile self-preview remains purely visual; status/badge copy belongs
+     outside the compact frame and must never collide with the video. */
+  .doclinc-call-local-status,
+  .doclinc-call-local-placeholder { display: none !important; }
+  .doclinc-call-local.is-placeholder::before { margin: 0; }
+}
+
+/* Modern call controls and chat composer: compact, circular interaction
+   targets with the glyph carrying state instead of a card surface. */
+.doclinc-call-control,
+.doclinc-call-control.end-call {
+  width: clamp(48px, 4vw, 54px) !important;
+  height: clamp(48px, 4vw, 54px) !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  border: 0 !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-radius: 50% !important;
+  box-shadow: none !important;
+  background: rgba(255,255,255,.09) !important;
+}
+.doclinc-call-control.end-call {
+  width: clamp(50px, 4.2vw, 56px) !important;
+  height: clamp(50px, 4.2vw, 56px) !important;
+  background: #dc2626 !important;
+}
+.doclinc-call-control:not(.end-call).is-off {
+  border: 0 !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  background: rgba(255,255,255,.09) !important;
+}
+.doclinc-call-control:not(.end-call).is-active {
+  border: 0 !important;
+  background: rgba(255,255,255,.09) !important;
+}
+.doclinc-call-control:not(.end-call) + .doclinc-call-control:not(.end-call)::before {
+  content: none !important;
+  display: none !important;
+}
+.doclinc-call-control:not(.end-call):hover,
+.doclinc-call-control:not(.end-call):focus-visible {
+  background: rgba(255,255,255,.16) !important;
+}
+.doclinc-call-control:focus-visible {
+  outline: 2px solid #55d9a2 !important;
+  outline-offset: 3px;
+}
+/* Optical corrections derived from the SVG visible-content bounds.  The
+   canonical assets retain their original viewBoxes; these sub-pixel offsets
+   only compensate for their asymmetric artwork inside a centered box. */
+#doclincCallCamera img { transform: translateY(0.61px); }
+#doclincCallSpeaker img { transform: translateX(-1.19px); }
+#doclincCallEnd img { transform: translateY(0.60px); }
+.doclinc-call-popover {
+  width: min(220px, calc(100vw - 28px));
+  padding: 6px;
+  border-radius: 16px;
+}
+.doclinc-call-popover-title { display: none !important; }
+.doclinc-call-secondary {
+  min-height: 42px;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+@media (max-width: 640px) {
+  .doclinc-call-popover {
+    right: 12px;
+    bottom: 86px;
+    max-height: min(220px, calc(100dvh - 180px));
+    overflow: auto;
+  }
+}
+.chat-input-row {
+  min-height: 48px !important;
+  border-radius: 24px !important;
+  padding: 3px 5px 3px 8px !important;
+  border-color: rgba(67, 122, 19, .28) !important;
+  box-shadow: 0 4px 14px rgba(28, 64, 35, .08) !important;
+}
+.chat-icon-button,
+.chat-send {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  padding: 8px !important;
+  border-radius: 50% !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+.chat-icon-button:hover,
+.chat-icon-button:focus-visible {
+  background: rgba(67, 122, 19, .10) !important;
+  outline: 2px solid rgba(67, 122, 19, .45);
+  outline-offset: 2px;
+}
+.chat-send {
+  background: #3f8d68 !important;
+  box-shadow: 0 4px 10px rgba(63, 141, 104, .25);
+}
+.chat-send:hover,
+.chat-send:focus-visible {
+  background: #347858 !important;
+  outline: 2px solid #2b6249;
+  outline-offset: 2px;
+}
+.chat-send img,
+.chat-icon-button img { width: 20px !important; height: 20px !important; }
+
+/* Short landscape phones need a minimum stage height for the floating local
+   preview. Keep the production call composition intact while giving the
+   media stage and controls enough vertical room to remain usable. */
+@media (orientation: landscape) and (max-width: 900px) and (max-height: 500px) {
+  .doclinc-call-panel {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .doclinc-call-head {
+    min-height: 52px;
+  }
+  .doclinc-call-brand {
+    width: 76px;
+    max-height: 30px;
+  }
+  .doclinc-call-stage {
+    min-height: 128px;
+  }
+  .doclinc-call-local,
+  .doclinc-call-stage.is-remote-main .doclinc-call-local {
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    width: 120px;
+    height: 80px;
+  }
+  .doclinc-call-controls {
+    min-height: 64px;
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+  }
+  .doclinc-call-local-status,
+  .doclinc-call-local-placeholder {
+    display: none !important;
+  }
+}
+
+/* Active communication reference treatments.  Mode classes are applied by
+   the call state machine so voice and video never share an ambiguous stage. */
+.doclinc-call-modal.is-video .doclinc-call-panel {
+  background: linear-gradient(180deg, #0b151a 0%, #0a1115 100%);
+}
+.doclinc-call-modal.is-video .doclinc-call-stage {
+  background: #18252a;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12), 0 24px 60px rgba(0,0,0,.28);
+}
+.doclinc-call-stage.is-video { background: #18252a; }
+.doclinc-call-modal.is-video .doclinc-call-remote {
+  background: radial-gradient(circle at 50% 40%, rgba(74,109,116,.26), transparent 58%), #172328;
+  color: #f4faf7;
+}
+.doclinc-call-modal.is-video .doclinc-call-empty-name,
+.doclinc-call-modal.is-video .doclinc-call-empty-role { color: #f4faf7; }
+.doclinc-call-modal.is-video .doclinc-call-empty-waiting { color: rgba(228,242,235,.7); }
+
+.doclinc-call-modal.is-audio .doclinc-call-panel {
+  background: linear-gradient(180deg, #0a1518 0%, #071013 100%);
+}
+.doclinc-call-modal.is-audio .doclinc-call-stage {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(180,245,222,.66), transparent 34%),
+    radial-gradient(circle at 84% 82%, rgba(184,226,206,.62), transparent 42%),
+    linear-gradient(145deg, #f8fffb 0%, #e3f5eb 52%, #c7e6d6 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.86), 0 24px 60px rgba(10,47,30,.24);
+}
+.doclinc-call-stage.is-audio {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(180,245,222,.66), transparent 34%),
+    radial-gradient(circle at 84% 82%, rgba(184,226,206,.62), transparent 42%),
+    linear-gradient(145deg, #f8fffb 0%, #e3f5eb 52%, #c7e6d6 100%);
+}
+.doclinc-call-modal.is-audio .doclinc-call-remote {
+  background: transparent;
+  color: #162c26;
+}
+.doclinc-call-modal.is-audio .doclinc-call-empty {
+  transform: none;
+  gap: 10px;
+  color: #46675c;
+}
+.doclinc-call-modal.is-audio .doclinc-call-empty-avatar {
+  width: clamp(150px, 18vw, 220px);
+  height: clamp(150px, 18vw, 220px);
+  border: 4px solid rgba(255,255,255,.76);
+  box-shadow: 0 20px 54px rgba(48,119,84,.22);
+}
+.doclinc-call-modal.is-audio .doclinc-call-empty-name { color: #102b24; }
+.doclinc-call-modal.is-audio .doclinc-call-empty-role { color: #56766b; }
+.doclinc-call-modal.is-audio .doclinc-call-empty-waiting {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid rgba(47,189,130,.22);
+  border-radius: 999px;
+  background: rgba(255,255,255,.22);
+  color: #167b5a;
+  font-size: 13px;
+}
+.doclinc-call-modal.is-audio .doclinc-call-local { display: none !important; }
+
+/* The chat route is a light, active conversation shell rather than an admin
+   panel.  Keep these rules scoped to the existing chat view. */
+.chat-shell.is-active {
+  max-width: 760px;
+  background: #f3f7f8;
+  border-radius: 0;
+  box-shadow: 0 18px 48px rgba(28,64,58,.1);
+}
+.chat-shell.is-active .chat-header {
+  min-height: 82px;
+  padding: 14px 22px;
+  border-bottom: 1px solid rgba(84,117,109,.12);
+}
+.chat-shell.is-active .chat-title-text {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+.chat-shell.is-active .chat-title-subtext {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 12px;
+  font-weight: 500;
+  color: #059669;
+}
+.chat-shell.is-active .chat-header {
+  padding: 12px 16px 10px !important;
+  gap: 12px !important;
+}
+.chat-shell.is-active .chat-avatar,
+.chat-shell.is-active .chat-avatar-fallback {
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+  border-radius: 50%;
+}
+.chat-shell.is-active .chat-title-text {
+  max-width: 145px;
+  font-size: 14px;
+  line-height: 18px;
+}
+.chat-shell.is-active .chat-list {
+  padding: 28px clamp(18px, 4vw, 42px) 24px;
+  background: #f4f8f9;
+}
+.chat-shell.is-active .chat-bubble {
+  border-radius: 18px 18px 18px 6px;
+  padding: 14px 17px;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(45,76,70,.08);
+}
+.chat-shell.is-active .chat-bubble.mine {
+  border-radius: 18px 18px 6px 18px;
+  background: #dff4e8;
+  color: #17352a;
+}
+.chat-shell.is-active .chat-form {
+  padding: 12px clamp(14px, 3vw, 28px) max(14px, env(safe-area-inset-bottom));
+  background: rgba(255,255,255,.92);
+  border-top: 1px solid rgba(84,117,109,.12);
+}
+.chat-shell.is-active .chat-input-row {
+  display: grid;
+  grid-template-columns: 32px 32px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px !important;
+  border-radius: 26px !important;
+  border-color: rgba(115,145,137,.24) !important;
+  box-shadow: 0 6px 18px rgba(28,64,58,.1) !important;
+}
+.chat-shell.is-active .chat-input { font-size: 15px; }
+.chat-shell.is-active .chat-send { background: #2f9c73 !important; }
+
+@media (max-width: 640px) {
+  .chat-shell.is-active .chat-header { padding-inline: 12px; }
+  .chat-shell.is-active .chat-list { padding-inline: 14px; }
+  .doclinc-call-modal.is-audio .doclinc-call-empty-avatar { width: 142px; height: 142px; }
+}
+
+/* Strict reference reproduction pass (scoped to the existing communication
+   surfaces). These tokens mirror the supplied DokLinc chat/call references
+   without importing their demo dependencies or remote assets. */
+.chat-shell.is-active {
+  width: min(100%, 390px);
+  max-width: 390px;
+  min-height: 100dvh;
+  border-radius: 0;
+  background: #f7f9fb;
+  box-shadow: 0 18px 42px rgba(15, 35, 28, .08);
+}
+.chat-shell.is-active .chat-header {
+  min-height: 88px;
+  padding: 30px 16px 12px;
+  gap: 14px;
+  background: rgba(255,255,255,.96);
+  border-bottom: 1px solid #edf1f4;
+  box-shadow: 0 1px 4px rgba(17,43,35,.04);
+}
+.chat-shell.is-active .chat-avatar {
+  width: 44px;
+  height: 44px;
+  flex-basis: 44px;
+  border-radius: 50%;
+  box-shadow: 0 1px 5px rgba(17,43,35,.12);
+}
+.chat-shell.is-active .chat-title-text {
+  color: #0f172a;
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 750;
+  letter-spacing: -.02em;
+}
+.chat-shell.is-active .chat-title-subtext {
+  margin-top: 4px;
+  color: #16a36d;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+}
+.chat-shell.is-active .chat-list {
+  padding: 18px 16px 24px;
+  background: #f7f9fb;
+}
+.chat-shell.is-active .chat-message-row { gap: 10px; margin-bottom: 18px; }
+.chat-shell.is-active .chat-message-avatar { width: 30px; height: 30px; flex-basis: 30px; }
+.chat-shell.is-active .chat-bubble {
+  max-width: 85%;
+  padding: 14px 16px;
+  border-radius: 18px 18px 18px 6px;
+  border: 1px solid rgba(227,234,238,.92);
+  background: #fff;
+  color: #13233c;
+  font-size: 16px;
+  line-height: 1.58;
+  box-shadow: 0 2px 5px rgba(19,44,37,.08);
+}
+.chat-shell.is-active .chat-bubble.mine {
+  border: 0;
+  border-radius: 18px 18px 6px 18px;
+  background: #08a36f;
+  color: #fff;
+  box-shadow: 0 3px 7px rgba(8,113,78,.16);
+}
+.chat-shell.is-active .chat-time { width: 44px; flex-basis: 44px; font-size: 11px; color: #8ea1b8; }
+.chat-shell.is-active .chat-form {
+  min-height: 82px;
+  padding: 12px 12px 16px;
+  background: linear-gradient(180deg, rgba(247,249,251,.2), #f7f9fb 35%);
+  border-top: 0;
+  box-shadow: none;
+}
+.chat-shell.is-active .chat-title-text {
+  font-size: 15px;
+  line-height: 21px;
+  font-weight: 750;
+  letter-spacing: -.3px;
+}
+.chat-shell.is-active .chat-title { transform: translateY(-8px); }
+.chat-shell.is-active .chat-input-row {
+  min-height: 56px !important;
+  padding: 4px 7px 4px 9px !important;
+  border: 1px solid #e1e8ee !important;
+  border-radius: 28px !important;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(23,55,44,.1) !important;
+}
+.chat-shell.is-active .chat-input {
+  height: 44px;
+  padding: 11px 4px;
+  color: #12223a;
+  font-size: 16px;
+  line-height: 22px;
+}
+.chat-shell.is-active .chat-icon-button,
+.chat-shell.is-active .chat-send {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  padding: 10px !important;
+}
+.chat-shell.is-active .chat-icon-button img { width: 22px !important; height: 22px !important; }
+.chat-shell.is-active .chat-send { width: 48px !important; height: 48px !important; min-width: 48px !important; min-height: 48px !important; background: #0b9e6d !important; }
+.chat-shell.is-active .chat-send img { width: 24px !important; height: 24px !important; }
+
+/* Reference media states: the remote track becomes the hero in video mode,
+   while audio mode keeps the large light stage and centred identity. */
+.doclinc-call-stage.has-remote-video .doclinc-call-remote-video,
+.doclinc-call-stage .doclinc-call-remote-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+.doclinc-call-stage.has-remote-video .doclinc-call-empty { display: none; }
+.doclinc-call-stage.has-remote-video .doclinc-call-local { z-index: 3; }
+.doclinc-call-stage.is-audio .doclinc-call-remote-video { display: none; }
+.doclinc-call-stage.is-audio .doclinc-call-empty { display: flex; }
+.doclinc-call-stage.is-audio .doclinc-call-local { display: none !important; }
+.doclinc-call-stage .doclinc-call-provider-overlay {
+  position: absolute;
+  z-index: 4;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(12,19,24,.74);
+  border: 1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(12px);
+}
+.doclinc-call-stage .doclinc-call-provider-overlay strong { font-size: 14px; line-height: 1.1; }
+.doclinc-call-stage .doclinc-call-provider-overlay span { display: block; color: rgba(255,255,255,.72); font-size: 11px; line-height: 1.2; }
+
+@media (max-width: 640px) {
+  .chat-shell.is-active .chat-header { height: 88px; min-height: 88px; padding: 40px 16px 3px; gap: 7px; }
+  .chat-shell.is-active .chat-list { padding-inline: 15px; }
+  .doclinc-call-stage .doclinc-call-provider-overlay { top: 12px; left: 12px; padding: 8px 11px; }
+  .doclinc-call-stage .doclinc-call-provider-overlay strong { font-size: 12px; }
+  .doclinc-call-stage .doclinc-call-provider-overlay span { font-size: 10px; }
+}
+
+/* Keep the reference-sized conversation on desktop; the 390px shell is a
+   mobile-only constraint. Provider overlay is meaningful only for active
+   remote video, never for audio or waiting/local-main presentation. */
+@media (min-width: 641px) {
+  .chat-shell.is-active { max-width: 760px; }
+}
+.doclinc-call-modal.is-audio .doclinc-call-provider-overlay,
+.doclinc-call-stage:not(.is-remote-main) .doclinc-call-provider-overlay {
+  display: none !important;
+}
+
+/* Active chat strict-reference alignment.  The chat view remains data-driven;
+   these rules only establish the reference-sized viewport composition. */
+.chat-shell.is-active {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 390px);
+  max-width: 390px;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  background: #f7f9fb;
+  border-left: 1px solid rgba(226,232,240,.8);
+  border-right: 1px solid rgba(226,232,240,.8);
+}
+.chat-shell.is-active .chat-header {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  height: 88px;
+  min-height: 88px;
+  padding: 40px 16px 3px;
+  gap: 7px;
+  background: rgba(255,255,255,.96);
+  border-bottom: 1px solid #edf1f4;
+}
+.chat-shell.is-active .chat-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 15px 24px;
+  background: #f7f9fb;
+}
+.chat-shell.is-active .chat-message-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex: 0 0 auto;
+  width: 100%;
+  gap: 0;
+  margin-bottom: 14.5px;
+}
+.chat-shell.is-active .chat-message-row.mine { justify-content: flex-end; }
+.chat-shell.is-active .chat-message-avatar { display: none !important; }
+.chat-shell.is-active .chat-bubble {
+  width: 274px;
+  max-width: 274px;
+  padding: 11.5px 13px 12px;
+  border-radius: 16px 16px 16px 4px;
+  border: 1px solid rgba(227,234,238,.92);
+  background: #fff;
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -.5px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.chat-shell.is-active .chat-bubble.mine {
+  border: 0;
+  border-radius: 16px 16px 4px 16px;
+  background: #059669;
+  color: #fff;
+  padding: 11.5px 13px 13.5px;
+}
+.chat-shell.is-active .chat-time {
+  display: block;
+  width: auto;
+  flex-basis: auto;
+  margin-top: 4px;
+  text-align: right;
+  font-size: 10px;
+  line-height: 14px;
+  color: #94a3b8;
+}
+.chat-shell.is-active .chat-bubble.mine .chat-time { color: #d1fae5; }
+.chat-shell.is-active .chat-form {
+  flex: 0 0 auto;
+  min-height: 78px;
+  padding: 18px 12px 12px;
+  background: linear-gradient(180deg, rgba(247,249,251,.2), #f7f9fb 35%);
+  border-top: 0;
+  box-shadow: none;
+}
+.chat-shell.is-active .chat-input-row {
+  min-height: 48px !important;
+  height: 48px !important;
+  display: grid;
+  grid-template-columns: 32px 32px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px !important;
+  border: 1px solid rgba(226,232,240,.9);
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(23,55,44,.1);
+}
+.chat-shell.is-active .chat-input {
+  height: 32px;
+  min-height: 32px;
+  padding: 6px 4px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  color: #12223a;
+}
+.chat-shell.is-active .chat-input { width: auto; max-width: none; min-width: 0; }
+.chat-shell.is-active .chat-send { margin-left: 2px; }
+.chat-shell.is-active .chat-icon-button,
+.chat-shell.is-active .chat-send {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 6px;
+}
+.chat-shell.is-active .chat-send {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  padding: 0;
+}
+.chat-shell.is-active .chat-icon-button img,
+.chat-shell.is-active .chat-send img { width: 20px !important; height: 20px !important; }
+.chat-shell.is-active .chat-send { background: #2d8a64; }
+@media (min-width: 641px) {
+  .chat-shell.is-active { max-width: 760px; }
+}
+
+/* Final active-chat reference alignment.  These rules affect only the Chat
+   surface; call modal/incoming-call presentation remains unchanged. */
+.chat-shell.is-active {
+  width: min(100%, 390px) !important;
+  max-width: 390px !important;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.chat-shell.is-active .chat-header {
+  height: 72px !important;
+  min-height: 72px !important;
+  padding: 12px 16px 10px !important;
+  gap: 10px !important;
+}
+.chat-shell.is-active .chat-avatar,
+.chat-shell.is-active .chat-avatar-fallback {
+  width: 42px;
+  height: 42px;
+  flex-basis: 42px;
+}
+.chat-shell.is-active .chat-title { transform: none; }
+.chat-shell.is-active .chat-message-row {
+  align-items: flex-end;
+  gap: 9px;
+  margin-bottom: 20px;
+}
+.chat-shell.is-active .chat-message-avatar,
+.chat-shell.is-active .chat-message-avatar-fallback { display: inline-flex !important; }
+.chat-shell.is-active .chat-message-stack { max-width: calc(100% - 39px); min-width: 0; }
+.chat-shell.is-active .chat-message-stack.mine { max-width: calc(100% - 24px); margin-left: auto; }
+.chat-shell.is-active .chat-bubble {
+  width: auto;
+  max-width: 274px;
+  padding: 13px 15px 10px;
+  font-size: 13.5px;
+  line-height: 22px;
+}
+.chat-shell.is-active .chat-message-sender { margin: 0 0 5px 4px; }
+.chat-shell.is-active .chat-message-stack.mine .chat-message-sender { margin: 0 4px 5px 0; text-align: right; }
+.chat-shell.is-active .chat-info-banner { min-height: 26px; height: 26px; padding-block: 0; }
+.chat-shell.is-active .chat-info-banner__icon { width: 10px; height: 10px; padding: 0; border-radius: 50%; }
+.chat-shell.is-active .chat-input-row { min-height: 54px !important; height: 54px !important; }
+@media (min-width: 421px) and (max-width: 520px) {
+  body:has(.chat-shell.is-active) { min-height: 1600px; display: flex; align-items: center; justify-content: center; }
+  .chat-shell.is-active { width: 390px !important; height: 1078px !important; min-height: 1078px !important; margin: auto; }
+  .chat-shell.is-active .chat-info-banner__label,
+  .chat-shell.is-active .chat-info-banner__meta { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+}
+
+/* Active Chat reference tokens: keep the production message flow while
+   matching the supplied light consultation composition. */
+.chat-shell.is-active .chat-list {
+  background: #f8f6f6 !important;
+  padding: 16px !important;
+}
+.chat-shell.is-active .chat-bubble {
+  background: #ffffff !important;
+  border: 1px solid rgba(226, 232, 240, .9) !important;
+  color: #1e293b !important;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, .06) !important;
+}
+.chat-shell.is-active .chat-bubble.mine {
+  background: #d1fae5 !important;
+  border-color: #a7f3d0 !important;
+  color: #0f172a !important;
+}
+.chat-shell.is-active .chat-bubble.mine .chat-time,
+.chat-shell.is-active .chat-bubble.mine .chat-status { color: #047857 !important; }
+.chat-shell.is-active .chat-header .chat-icon-button,
+.chat-shell.is-active .chat-header .doclinc-call-start { color: #334155 !important; }
+.chat-shell.is-active .chat-call-button img { filter: brightness(0) saturate(100%) invert(22%) sepia(11%) saturate(1155%) hue-rotate(176deg) brightness(91%) contrast(88%); }
+.chat-shell.is-active .chat-input-row {
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #f1f5f9 !important;
+  box-shadow: none !important;
+}
+.chat-shell.is-active .chat-send {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #059669 !important;
+}
+.chat-shell.is-active .chat-send img { filter: none !important; }
+.chat-shell.is-active .chat-send img { width: 24px !important; height: 24px !important; }
+.chat-shell.is-active .chat-icon-button { color: #64748b !important; }
+
+/* Final strict active-chat geometry: the footer is a white surface and only
+   the message field is pill-shaped. Bubble widths follow the reference
+   conversation rather than shrinking outgoing content into a dashboard card. */
+.chat-shell.is-active .chat-title-subtext {
+  display: flex;
+  align-items: center;
+  min-height: 17px;
+  color: #059669 !important;
+}
+.chat-shell.is-active .chat-back { margin-left: -6px; }
+.chat-shell.is-active .chat-call-actions { gap: 2px; margin-right: 17px; }
+.chat-shell.is-active .chat-call-button { width: 38px; height: 38px; flex-basis: 38px; padding: 9px; }
+.chat-shell.is-active .chat-presence-status { display: inline-flex; align-items: center; gap: 5px; }
+.chat-shell.is-active .chat-presence-status__dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #10b981;
+}
+.chat-shell.is-active .chat-bubble {
+  max-width: 285px;
+  width: fit-content;
+  font-size: 13.5px;
+  line-height: 22px;
+  letter-spacing: 0;
+}
+.chat-shell.is-active .chat-message-text {
+  font-size: 14px;
+  line-height: 22px;
+  letter-spacing: 0.1px;
+}
+.chat-shell.is-active .chat-message-stack.mine .chat-bubble {
+  width: 313px;
+  max-width: min(313px, calc(100vw - 75px));
+}
+.chat-shell.is-active .chat-form {
+  min-height: 80px;
+  padding: 12px 12px 12px;
+  background: #ffffff !important;
+  border-top: 1px solid #e2e8f0;
+}
+.chat-shell.is-active .chat-input-row {
+  min-height: 54px !important;
+  height: 54px !important;
+  padding: 0 !important;
+  grid-template-columns: 36px 36px minmax(0, 1fr) 40px;
+  gap: 11px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.chat-shell.is-active .chat-input {
+  min-width: 0;
+  height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #1e293b;
+}
+.chat-shell.is-active .chat-icon-button,
+.chat-shell.is-active .chat-send {
+  width: 34px !important;
+  height: 44px !important;
+  min-width: 34px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.chat-shell.is-active .chat-icon-button img { width: 20px !important; height: 20px !important; }
+.chat-shell.is-active .chat-send img { width: 24px !important; height: 24px !important; }
+
+/* Strict active-chat rhythm/width correction: incoming bubbles shrink to the
+   reference content width instead of inheriting the stack's full measure. */
+.chat-shell.is-active .chat-date-separator {
+  margin: 0 0 14px !important;
+}
+.chat-shell.is-active .chat-date-separator span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e9ecf2;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 13px;
+}
+.chat-shell.is-active .chat-message-row {
+  margin-bottom: 16.5px !important;
+}
+.chat-shell.is-active .chat-message-row:not(.mine) { gap: 14px; }
+.chat-shell.is-active .chat-message-stack-long { margin-top: 8px; }
+.chat-shell.is-active .chat-message-stack-long .chat-bubble { padding-right: 23px; }
+.chat-shell.is-active .chat-list {
+  padding-top: 16px !important;
+}
+.chat-shell.is-active .chat-bubble {
+  padding: 13px 17px 17px 13px;
+  font-size: 14px;
+}
+.chat-shell.is-active .chat-bubble.chat-bubble-compact {
+  max-width: 270px;
+}
+.chat-shell.is-active .chat-bubble.mine {
+  padding: 13px 17px 18px 13px;
+}
+.chat-shell.is-active .chat-message-stack:not(.mine) {
+  width: fit-content;
+}
+
+/* Voice-call presentation: a calm, text-first audio stage.  This is scoped
+   to audio mode so video and chat geometry remain unchanged. */
+.doclinc-call-modal.is-audio .doclinc-call-empty {
+  width: min(100%, 480px);
+  gap: 12px;
+  text-align: center;
+}
+.doclinc-call-modal.is-audio .doclinc-call-empty-avatar {
+  width: clamp(132px, 16vw, 184px);
+  height: clamp(132px, 16vw, 184px);
+  border-radius: 50%;
+  border: 4px solid rgba(255,255,255,.8);
+  box-shadow: 0 20px 54px rgba(48,119,84,.2);
+}
+.doclinc-call-modal.is-audio .doclinc-call-empty-name {
+  color: #102b24;
+  font-size: clamp(24px, 2.5vw, 34px);
+  font-weight: 780;
+  line-height: 1.15;
+}
+.doclinc-call-modal.is-audio .doclinc-call-empty-role {
+  color: #56766b;
+  font-size: clamp(15px, 1.35vw, 19px);
+  line-height: 1.25;
+}
+.doclinc-call-modal.is-audio .doclinc-call-empty-waiting {
+  margin-top: 8px;
+  padding: 8px 14px;
+  border: 1px solid rgba(47,189,130,.22);
+  border-radius: 999px;
+  background: rgba(255,255,255,.28);
+  color: #167b5a;
+  font-size: 13px;
+}
+.doclinc-call-modal.is-audio .doclinc-call-empty-support {
+  color: #668077;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.doclinc-call-modal.is-audio .doclinc-call-context { min-width: 0; }
+.doclinc-call-modal.is-audio .doclinc-call-title {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.18;
+}
+.doclinc-call-modal.is-audio .doclinc-call-waveform {
+  display: block;
+  width: 180px;
+  height: 52px;
+  margin-top: 4px;
+}
+.doclinc-call-modal.is-audio .doclinc-call-waveform svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.doclinc-call-modal.is-audio .doclinc-call-waveform.is-fallback { opacity: .35; }
+@keyframes doclincVoiceWave {
+  0% { transform: scaleY(.58); opacity: .65; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+@media (max-width: 640px) {
+  .doclinc-call-modal.is-audio .doclinc-call-empty { width: min(100%, 340px); gap: 9px; }
+  .doclinc-call-modal.is-audio .doclinc-call-empty-avatar { width: 132px; height: 132px; }
+  .doclinc-call-modal.is-audio .doclinc-call-empty-name {
+    max-width: min(100%, 34rem);
+    font-size: 23px;
+    line-height: 1.22;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .doclinc-call-modal.is-audio .doclinc-call-empty-role { font-size: 15px; }
+  .doclinc-call-modal.is-audio .doclinc-call-empty-support { font-size: 12px; }
+}

@@ -1,0 +1,40 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>DokLinc Camera Icon</title>
+  <desc>Rounded camera icon in DokLinc mint and green colors.</desc>
+
+  <defs>
+    <linearGradient id="body-24" x1="4" y1="6" x2="20" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DFF8EE"/>
+      <stop offset="1" stop-color="#A7F1DC"/>
+    </linearGradient>
+    <linearGradient id="lens-24" x1="8.6" y1="8.6" x2="15.4" y2="15.4" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22CC9A"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+  </defs>
+
+  <!-- top hump -->
+  <path d="M8.05 6.10
+           C8.28 5.45 8.90 5.00 9.60 5.00
+           H12.85
+           C13.55 5.00 14.17 5.45 14.40 6.10
+           L14.75 7.05
+           H8.70
+           L8.05 6.10Z"
+        fill="url(#body-24)"/>
+
+  <!-- camera body -->
+  <rect x="3.10" y="7.05" width="17.80" height="11.95" rx="3.10" fill="url(#body-24)"/>
+
+  <!-- shutter / small indicator -->
+  <circle cx="17.30" cy="9.65" r="0.95" fill="#00A651" opacity="0.95"/>
+
+  <!-- main lens outer -->
+  <circle cx="12" cy="13.05" r="4.10" fill="url(#lens-24)"/>
+
+  <!-- lens inner -->
+  <circle cx="12" cy="13.05" r="2.15" fill="#DFF8EE" opacity="0.95"/>
+
+  <!-- lens highlight -->
+  <circle cx="10.95" cy="11.95" r="0.70" fill="#F6FFFB" opacity="0.95"/>
+</svg>

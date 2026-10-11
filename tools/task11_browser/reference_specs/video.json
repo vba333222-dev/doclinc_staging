@@ -1,0 +1,18 @@
+{
+  "mode": "video",
+  "viewport": { "cssWidth": 353, "cssHeight": 800, "deviceScaleFactor": 2, "physicalWidth": 706, "physicalHeight": 1600 },
+  "source": { "html": "authoring-reference/doklinc_active_video_call_ui/code.html", "screenshot": "authoring-reference/doklinc_active_video_call_ui/screen.png" },
+  "tokens": {
+    "fontFamily": "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
+    "shellBackground": "#0e151a",
+    "stageBackground": "radial-gradient(circle at 50% 30%, #f1fbf6 0%, #e2f4ec 50%, #cae8db 100%)",
+    "header": { "height": "72px", "padding": "16px", "radius": "14px" },
+    "stage": { "minHeight": "560px", "radius": "14px", "shadow": "0 12px 36px -4px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)" },
+    "providerOverlay": { "background": "rgba(0,0,0,0.45)", "radius": "12px", "padding": "10px 12px" },
+    "selfPreview": { "width": "104px", "height": "136px", "radius": "14px" },
+    "controls": { "height": "92px", "gap": "12px", "radius": "20px" }
+  },
+  "colors": ["#00bfa5", "#00897b", "#00e5ff", "#0b1116", "#161f26", "#f1fbf6", "#e2f4ec", "#cae8db", "#0e151a", "#0c1318", "#00c9a7", "#00e5be", "#00b4d8", "#121b21", "#27343d", "#32424d", "#e52d27", "#f0352e", "#c9241f"],
+  "fixtureContent": { "remoteVideo": true, "provider": "dr. Rani Dokter", "role": "Dokter" },
+  "dynamicMaskRegions": ["remote-media", "self-preview-media"]
+}

@@ -567,15 +567,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		<nav class="consult-bottom-nav" aria-label="Navigasi utama">
 			<a class="consult-nav-link" href="<?= html_escape(base_url('home')); ?>" aria-label="Beranda">
-				<i class="fas fa-home"></i>
+				<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('home')); ?>" alt="" aria-hidden="true">
 				<span>Beranda</span>
 			</a>
 			<a class="consult-nav-link active" href="<?= html_escape(base_url('home#konsultasi_kesehatan')); ?>" aria-label="Konsultasi">
-				<i class="fas fa-user-md"></i>
+				<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('nakes')); ?>" alt="" aria-hidden="true">
 				<span>Konsultasi</span>
 			</a>
 			<a class="consult-nav-link" href="<?= html_escape(base_url('home#riwayat')); ?>" aria-label="Riwayat">
-				<i class="fas fa-file-medical"></i>
+				<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('consultation')); ?>" alt="" aria-hidden="true">
 				<span>Riwayat</span>
 			</a>
 			<a class="consult-nav-link" href="<?= html_escape(base_url('home#profile')); ?>" aria-label="Profil">

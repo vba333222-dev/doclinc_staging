@@ -12,9 +12,9 @@ test('LiveKit call shell retains semantic controls and responsive layouts', asyn
   expect(thread).toMatch(/min-width:\s*560px/i);
   expect(thread).toMatch(/end|hang/i);
   expect(thread).toMatch(/grid-template-columns/);
-  await page.setContent('<div class="doclinc-call-controls"><button aria-label="Mute microphone">Mute</button><button aria-label="Akhiri"><img alt="" src="/assets/doclinc_ui/clinical_workflow/voicecall.svg"></button></div>');
-  await expect(page.getByRole('button', { name: 'Mute microphone' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Akhiri' })).toBeVisible();
+  await page.setContent('<div class="doclinc-call-controls"><button aria-label="Bisukan mikrofon">Mikrofon</button><button aria-label="Akhiri panggilan"><img alt="" src="/assets/doclinc_ui/clinical_workflow/voicecall.svg"></button></div>');
+  await expect(page.getByRole('button', { name: 'Bisukan mikrofon' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Akhiri panggilan' })).toBeVisible();
 });
 
 test('LiveKit backend/token/session integration remains unchanged and local-safe', () => {

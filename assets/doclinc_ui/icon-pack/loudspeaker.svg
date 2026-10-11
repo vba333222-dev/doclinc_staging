@@ -1,0 +1,54 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>DokLinc Loud Speaker</title>
+  <desc>Two-tone mint and green loud speaker icon with sound waves.</desc>
+
+  <defs>
+    <linearGradient id="mint-24" x1="4.8" y1="6.2" x2="15.8" y2="17.8" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DFF8EE"/>
+      <stop offset="1" stop-color="#A7F1DC"/>
+    </linearGradient>
+
+    <linearGradient id="green-24" x1="8.5" y1="5.4" x2="20.2" y2="18.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22CC9A"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Speaker cone -->
+  <path d="M4.05 9.25
+           C4.05 8.58 4.58 8.05 5.25 8.05
+           H8.15
+           L12.65 4.85
+           C13.23 4.44 14.05 4.85 14.05 5.56
+           V18.44
+           C14.05 19.15 13.23 19.56 12.65 19.15
+           L8.15 15.95
+           H5.25
+           C4.58 15.95 4.05 15.42 4.05 14.75
+           V9.25Z"
+        fill="url(#mint-24)"/>
+
+  <!-- Inner cone accent -->
+  <path d="M8.15 8.05L12.65 4.85
+           C13.23 4.44 14.05 4.85 14.05 5.56
+           V18.44
+           C14.05 19.15 13.23 19.56 12.65 19.15
+           L8.15 15.95V8.05Z"
+        fill="url(#green-24)"/>
+
+  <!-- Sound wave 1 -->
+  <path d="M16.10 8.85
+           C17.05 9.63 17.55 10.67 17.55 12
+           C17.55 13.33 17.05 14.37 16.10 15.15"
+        stroke="url(#green-24)"
+        stroke-width="1.55"
+        stroke-linecap="round"/>
+
+  <!-- Sound wave 2 -->
+  <path d="M18.55 6.80
+           C20.00 8.05 20.75 9.78 20.75 12
+           C20.75 14.22 20.00 15.95 18.55 17.20"
+        stroke="url(#green-24)"
+        stroke-width="1.55"
+        stroke-linecap="round"/>
+</svg>

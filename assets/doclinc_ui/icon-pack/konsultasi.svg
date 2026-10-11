@@ -1,0 +1,80 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>DokLinc Catatan Kesehatan</title>
+  <desc>Rounded medical clipboard with note lines and edit pencil badge</desc>
+
+  <defs>
+    <linearGradient id="paper-24" x1="5.2" y1="4.4" x2="17.9" y2="20.2" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F3FFF9"/>
+      <stop offset="0.52" stop-color="#DFF8EE"/>
+      <stop offset="1" stop-color="#C8F5E7"/>
+    </linearGradient>
+
+    <linearGradient id="clip-24" x1="8.1" y1="2.2" x2="15.9" y2="7.6" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22CC9A"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+
+    <linearGradient id="badge-24" x1="15.1" y1="15.1" x2="21.1" y2="21.1" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22CC9A"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Clipboard body -->
+  <rect x="4.15" y="4.45" width="14.25" height="15.4" rx="2.45" fill="url(#paper-24)"/>
+
+  <!-- Clipboard clip -->
+  <path d="M8.35 4.85
+           V4.05
+           C8.35 2.92 9.27 2.0 10.4 2.0
+           H12.15
+           C13.28 2.0 14.2 2.92 14.2 4.05
+           V4.85
+           H15.0
+           C16.05 4.85 16.9 5.70 16.9 6.75
+           V7.0
+           C16.9 7.78 16.27 8.4 15.5 8.4
+           H7.05
+           C6.28 8.4 5.65 7.78 5.65 7.0
+           V6.75
+           C5.65 5.70 6.50 4.85 7.55 4.85
+           H8.35Z"
+        fill="url(#clip-24)"/>
+
+  <!-- Clip hole -->
+  <circle cx="11.27" cy="4.15" r="0.72" fill="#DFF8EE"/>
+
+  <!-- Medical cross -->
+  <path d="M10.55 9.15
+           H11.95
+           V10.55
+           H13.35
+           V11.95
+           H11.95
+           V13.35
+           H10.55
+           V11.95
+           H9.15
+           V10.55
+           H10.55
+           V9.15Z"
+        fill="#00A651"/>
+
+  <!-- Note lines -->
+  <rect x="6.45" y="14.15" width="8.8" height="1.05" rx="0.525" fill="#A7F1DC"/>
+  <rect x="6.45" y="16.45" width="7.45" height="1.08" rx="0.54" fill="#22CC9A"/>
+  <rect x="6.45" y="18.65" width="5.1" height="1.02" rx="0.51" fill="#A7F1DC"/>
+
+  <!-- Edit badge rim -->
+  <circle cx="17.75" cy="17.55" r="4.0" fill="#DFF8EE"/>
+
+  <!-- Edit badge -->
+  <circle cx="17.75" cy="17.55" r="3.3" fill="url(#badge-24)"/>
+
+  <!-- Pencil -->
+  <g transform="rotate(-45 17.75 17.55)">
+    <rect x="17.15" y="15.65" width="1.2" height="3.55" rx="0.34" fill="#F3FFF9"/>
+    <path d="M17.15 19.2H18.35L17.75 20.15L17.15 19.2Z" fill="#F3FFF9"/>
+    <rect x="17.15" y="15.15" width="1.2" height="0.62" rx="0.24" fill="#DFF8EE"/>
+  </g>
+</svg>

@@ -1,0 +1,47 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>DokLinc Attachment</title>
+  <desc>Two-tone mint and green rounded paperclip attachment icon.</desc>
+
+  <defs>
+    <linearGradient id="mint-24" x1="5.2" y1="4.4" x2="18.4" y2="19.8" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DFF8EE"/>
+      <stop offset="1" stop-color="#A7F1DC"/>
+    </linearGradient>
+    <linearGradient id="green-24" x1="8.0" y1="6.0" x2="17.2" y2="17.6" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22CC9A"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer paperclip -->
+  <path d="M8.35 18.95
+           C6.10 18.95 4.25 17.10 4.25 14.85
+           C4.25 13.75 4.67 12.72 5.45 11.95
+           L12.20 5.20
+           C13.70 3.70 16.15 3.70 17.65 5.20
+           C19.15 6.70 19.15 9.15 17.65 10.65
+           L10.55 17.75
+           C9.95 18.35 9.17 18.95 8.35 18.95Z"
+        stroke="url(#mint-24)"
+        stroke-width="2.45"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- Inner overlap -->
+  <path d="M8.15 14.95
+           L14.75 8.35
+           C15.40 7.70 16.45 7.70 17.10 8.35
+           C17.75 9.00 17.75 10.05 17.10 10.70
+           L10.25 17.55
+           C9.25 18.55 7.60 18.55 6.60 17.55"
+        stroke="url(#green-24)"
+        stroke-width="2.10"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- Small inner highlight to keep the loop readable at 24 px -->
+  <path d="M9.55 13.55L14.95 8.15"
+        stroke="#DFF8EE"
+        stroke-width="0.85"
+        stroke-linecap="round"/>
+</svg>

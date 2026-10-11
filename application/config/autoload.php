@@ -90,7 +90,7 @@ $autoload['drivers'] = array();
 |
 |	$autoload['helper'] = array('url', 'file');
 */
-$autoload['helper'] = array('url', 'form', 'login', 'profile_image', 'csrf_bootstrap', 'nakes_credential_enforcement');
+$autoload['helper'] = array('url', 'form', 'login', 'profile_image', 'csrf_bootstrap', 'nakes_credential_enforcement', 'clinical_workflow_assets');
 
 /*
 | -------------------------------------------------------------------

@@ -1,0 +1,115 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>DokLinc Dokter</title>
+  <desc>Two-tone mint and green doctor icon with ears, hair under the cap, lab coat, and stethoscope.</desc>
+
+  <defs>
+    <linearGradient id="mint-24v3" x1="5" y1="3" x2="18" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DFF8EE"/>
+      <stop offset="1" stop-color="#A7F1DC"/>
+    </linearGradient>
+    <linearGradient id="green-24v3" x1="7" y1="3" x2="17" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22CC9A"/>
+      <stop offset="1" stop-color="#00A651"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ears -->
+  <ellipse cx="6.62" cy="9.65" rx="1.12" ry="1.55" fill="url(#mint-24v3)"/>
+  <ellipse cx="17.38" cy="9.65" rx="1.12" ry="1.55" fill="url(#mint-24v3)"/>
+
+  <!-- Hair behind cap, visible under the brim -->
+  <path d="M7.2 7.15
+           C7.8 5.8 9.35 5.05 12 5.05
+           C14.65 5.05 16.2 5.8 16.8 7.15
+           V9.2
+           C16.35 8.65 15.85 8.2 15.1 7.7
+           C14.35 8.45 13.25 8.85 11.95 8.95
+           C10.65 9.05 9.55 8.85 8.7 8.25
+           C8.25 8.85 7.8 9.2 7.2 9.55
+           V7.15Z"
+        fill="url(#green-24v3)"/>
+
+  <!-- Head: intentionally less circular, more face-like -->
+  <path d="M7.45 8.25
+           C7.45 6.25 9.05 5.15 12 5.15
+           C14.95 5.15 16.55 6.25 16.55 8.25
+           V10.35
+           C16.55 12.85 14.75 14.85 12 14.85
+           C9.25 14.85 7.45 12.85 7.45 10.35
+           V8.25Z"
+        fill="url(#mint-24v3)"/>
+
+  <!-- Hair front edge under hat -->
+  <path d="M7.55 7.65
+           C8.35 7.9 9.15 7.8 9.95 7.35
+           C10.35 7.85 11.15 8.05 12.1 7.95
+           C13.45 7.85 14.45 7.35 15.15 6.65
+           C15.55 7.05 16.05 7.35 16.45 7.55
+           V8.45
+           C15.85 8.1 15.35 7.75 15.1 7.35
+           C14.15 8.15 13.05 8.55 11.85 8.6
+           C10.65 8.65 9.6 8.45 8.75 7.95
+           C8.35 8.3 7.95 8.55 7.55 8.75
+           V7.65Z"
+        fill="url(#green-24v3)"/>
+
+  <!-- Medical cap -->
+  <path d="M6.75 6.9
+           V5.5
+           C6.75 3.85 8.1 2.5 9.75 2.5
+           H14.25
+           C15.9 2.5 17.25 3.85 17.25 5.5
+           V6.9
+           C15.8 6.5 14.0 6.3 12 6.3
+           C10.0 6.3 8.2 6.5 6.75 6.9Z"
+        fill="url(#mint-24v3)"/>
+
+  <!-- Cap band -->
+  <path d="M6.65 6.55
+           C8.15 6.1 9.95 5.9 12 5.9
+           C14.05 5.9 15.85 6.1 17.35 6.55
+           V7.35
+           C15.9 6.95 14.05 6.75 12 6.75
+           C9.95 6.75 8.1 6.95 6.65 7.35
+           V6.55Z"
+        fill="url(#green-24v3)"/>
+
+  <!-- Cap cross -->
+  <path d="M11.2 3.2H12.8V4.2H13.8V5.8H12.8V6.8H11.2V5.8H10.2V4.2H11.2V3.2Z"
+        fill="url(#green-24v3)"/>
+
+  <!-- Neck -->
+  <path d="M10.35 14.25H13.65V16.05H10.35V14.25Z" fill="url(#mint-24v3)"/>
+
+  <!-- Shoulders / lab coat -->
+  <path d="M4.45 20.25
+           C4.45 17.45 6.7 15.2 9.5 15.2
+           H14.5
+           C17.3 15.2 19.55 17.45 19.55 20.25
+           C19.55 20.65 19.22 20.98 18.82 20.98
+           H5.18
+           C4.78 20.98 4.45 20.65 4.45 20.25Z"
+        fill="url(#mint-24v3)"/>
+
+  <!-- Green scrub V -->
+  <path d="M9.25 15.25L12 18.35L14.75 15.25H13.35L12 16.75L10.65 15.25H9.25Z"
+        fill="url(#green-24v3)"/>
+
+  <!-- Coat lapels -->
+  <path d="M8.15 15.55L10.25 20.9H8.6L6.95 17.15C6.72 16.62 7.05 16.02 7.62 15.83L8.15 15.55Z"
+        fill="#DFF8EE"/>
+  <path d="M15.85 15.55L13.75 20.9H15.4L17.05 17.15C17.28 16.62 16.95 16.02 16.38 15.83L15.85 15.55Z"
+        fill="#DFF8EE"/>
+
+  <!-- Stethoscope -->
+  <path d="M8.45 15.45V17.35
+           C8.45 18.7 9.55 19.8 10.9 19.8H11.65"
+        stroke="url(#green-24v3)" stroke-width="1.0" stroke-linecap="round"/>
+  <path d="M15.55 15.45V17.35
+           C15.55 18.7 14.45 19.8 13.1 19.8H12.35"
+        stroke="url(#green-24v3)" stroke-width="1.0" stroke-linecap="round"/>
+  <circle cx="8.45" cy="15.15" r="0.72" fill="url(#green-24v3)"/>
+  <circle cx="15.55" cy="15.15" r="0.72" fill="url(#green-24v3)"/>
+  <circle cx="12" cy="20.05" r="1.0" fill="url(#green-24v3)"/>
+  <circle cx="12" cy="20.05" r="0.40" fill="#DFF8EE"/>
+</svg>

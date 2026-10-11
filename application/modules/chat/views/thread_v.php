@@ -41,6 +41,13 @@ if ($request_status === 'Accepted') {
 } elseif ($request_status === 'Cancelled') {
 	$status_label = 'Riwayat chat dibatalkan';
 }
+$partner_presence_online = false;
+if ($request_status === 'Accepted') {
+	$partner_presence_online = $current_role === 'dokter'
+		? !empty($request->chat_patient_online)
+		: !empty($request->chat_clinician_online);
+}
+$header_status_label = $partner_presence_online ? 'Online' : $status_label;
 $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), true)
 	? 'Konsultasi sudah selesai. Riwayat chat hanya dapat dibaca.'
 	: 'Chat ini hanya dapat dibaca.';
@@ -48,20 +55,48 @@ $asset_base = base_url('assets/doclinc_ui/chat/');
 $partner_user_id = $current_role === 'dokter'
 	? (isset($request->user_id) ? (int) $request->user_id : 0)
 	: (isset($request->chat_clinician_user_id) ? (int) $request->chat_clinician_user_id : 0);
-$profile_photo_fallback = $asset_base . 'doctor-placeholder.jpg';
-$partner_photo_src = $current_role === 'dokter' && $partner_user_id > 0
-	? base_url('profile/photo/' . $partner_user_id)
-	: (!empty($request->chat_clinician_photo_url) ? (string) $request->chat_clinician_photo_url : $profile_photo_fallback);
+$profile_photo_fallback = '';
+$partner_photo_src = '';
+if ($current_role === 'dokter' && $partner_user_id > 0 && !empty($request->chat_patient_photo_available)) {
+	$partner_photo_src = base_url('profile/photo/' . $partner_user_id);
+} elseif (!empty($request->chat_clinician_photo_available) && !empty($request->chat_clinician_photo_url)) {
+	$partner_photo_src = (string) $request->chat_clinician_photo_url;
+}
+$voice_photo_src = '';
+if ($current_role === 'dokter' && $partner_user_id > 0 && !empty($request->chat_patient_photo_available)) {
+	$voice_photo_src = base_url('profile/photo/' . $partner_user_id);
+} elseif (!empty($request->chat_clinician_photo_available) && !empty($request->chat_clinician_photo_url)) {
+	$voice_photo_src = (string) $request->chat_clinician_photo_url;
+}
+$voice_has_photo = $voice_photo_src !== '';
 $partner_name = 'Petugas Puskesmas';
 $partner_subtitle = 'Konsultasi kesehatan';
 if ($current_role === 'dokter') {
-	$partner_name = isset($request->nama) && $request->nama !== '' ? $request->nama : 'Pasien';
+	$partner_name = isset($request->chat_patient_name) && trim((string) $request->chat_patient_name) !== ''
+		? trim((string) $request->chat_patient_name)
+		: (isset($request->nama) && $request->nama !== '' ? $request->nama : 'Pasien');
 	$partner_subtitle = isset($request->assigned_puskesmas_name) && $request->assigned_puskesmas_name !== '' ? $request->assigned_puskesmas_name : 'Permintaan konsultasi';
 } else {
 	$partner_name = isset($request->chat_clinician_name) && trim((string) $request->chat_clinician_name) !== ''
 		? trim((string) $request->chat_clinician_name)
 		: 'Tenaga kesehatan';
 	$partner_subtitle = 'Nakes penanganan Anda';
+}
+$partner_initials = '';
+$partner_name_parts = preg_split('/\s+/', trim((string) $partner_name));
+foreach (array_slice($partner_name_parts ?: array(), 0, 2) as $partner_name_part) {
+	$partner_initials .= function_exists('mb_substr') ? mb_substr($partner_name_part, 0, 1) : substr($partner_name_part, 0, 1);
+}
+$partner_initials = strtoupper($partner_initials !== '' ? $partner_initials : 'DK');
+$partner_placeholder_name = implode(' ', array_slice($partner_name_parts ?: array(), 0, 2));
+$partner_placeholder_name = $partner_placeholder_name !== '' ? $partner_placeholder_name : $partner_name;
+$voice_partner_role = '';
+if ($current_role === 'dokter') {
+	$voice_partner_role = 'Warga';
+} elseif (!empty($request->chat_clinician_role)) {
+	$voice_partner_role = trim((string) $request->chat_clinician_role);
+} elseif ($partner_name !== 'Tenaga kesehatan') {
+	$voice_partner_role = 'Tenaga kesehatan';
 }
 $auto_visit_location = $current_role === 'dokter'
 	&& !$is_command_center
@@ -845,12 +880,13 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 
 		.doclinc-incoming-actions {
 			display: flex;
-			align-items: center;
-			gap: 10px;
+			flex-direction: column;
+			align-items: stretch;
+			gap: 14px;
 		}
 
 		.doclinc-incoming-action {
-			flex: 1;
+			flex: 0 0 auto;
 			min-height: 44px;
 			border: 0;
 			border-radius: 999px;
@@ -937,39 +973,176 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 				border-radius: 28px;
 			}
 		}
+
+		/* Screenshot-authoritative active Chat and incoming-call presentation. */
+		body:has(.chat-shell.is-active) {
+			background: #eef3f4;
+			color: #14221e;
+		}
+		.chat-shell.is-active {
+			width: min(100%, 468px);
+			max-width: 468px;
+			min-height: 100dvh;
+			border-radius: 0;
+			background: #f7f8f8;
+			box-shadow: 0 18px 48px rgba(22, 52, 45, .12);
+		}
+		.chat-shell.is-active .chat-header {
+			position: sticky;
+			min-height: 72px;
+			padding: 12px 18px;
+			gap: 12px;
+			border-bottom: 1px solid #e9eeee;
+			box-shadow: none;
+		}
+		.chat-shell.is-active .chat-back { width: 38px; height: 38px; flex-basis: 38px; }
+		.chat-shell.is-active .chat-back img { width: 18px; height: 14px; }
+		.chat-avatar-wrap { position: relative; width: 42px; height: 42px; flex: 0 0 42px; }
+		.chat-avatar, .chat-avatar-fallback {
+			width: 42px; height: 42px; border-radius: 50%;
+			object-fit: cover; background: #e8f0ed; border: 2px solid #d8ebe2;
+		}
+		.chat-avatar-fallback {
+			display: inline-flex; align-items: center; justify-content: center;
+			color: #2a6b4f; font-size: 14px; font-weight: 800; letter-spacing: .04em;
+		}
+		.chat-avatar-wrap .chat-presence-dot {
+			position: absolute; right: 0; bottom: 1px; width: 12px; height: 12px;
+			border: 2px solid #fff; border-radius: 50%; background: #24b47e;
+		}
+		.chat-title-text { color: #12201c; font-size: 16px; line-height: 21px; }
+		.chat-title-subtext { color: #1b9b67; font-size: 12px; line-height: 17px; font-weight: 650; }
+		.chat-call-actions { gap: 2px; }
+		.chat-call-button { width: 42px; height: 42px; flex-basis: 42px; color: #477066; padding: 10px; }
+		.chat-call-button:hover, .chat-call-button:focus-visible { background: #eaf6f0; color: #188c5e; }
+		.chat-call-button img { width: 21px; height: 21px; display: block; }
+		.chat-info-banner {
+			display: flex; align-items: center; justify-content: space-between; gap: 10px;
+			min-height: 28px; padding: 3px 18px; background: #fffaf3; border-bottom: 1px solid #f4eadf;
+			color: #586761; font-size: 12px;
+		}
+		.chat-info-banner__lead { display: flex; align-items: center; gap: 9px; min-width: 0; }
+		.chat-info-banner__icon { width: 10px; height: 10px; padding: 0; border-radius: 50%; background: #ffd9b8; object-fit: contain; }
+		.chat-info-banner__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		.chat-info-banner__meta { color: #d56d25; white-space: nowrap; font-weight: 750; }
+		.chat-list { padding: 20px 18px 22px; background: #f6f7f8; }
+		.chat-date-separator { display: flex; justify-content: center; margin: 0 0 22px; }
+		.chat-date-separator span { padding: 7px 14px; border-radius: 999px; background: #e9eef2; color: #53656b; font-size: 12px; font-weight: 650; }
+		.chat-message-row { justify-content: flex-start; gap: 9px; margin-bottom: 20px; align-items: flex-end; }
+		.chat-message-row.mine { justify-content: flex-end; }
+		.chat-message-avatar { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; object-fit: cover; border: 1px solid #dce7e4; background: #e5f1ec; }
+		.chat-message-avatar-fallback { width: 30px; height: 30px; flex: 0 0 30px; align-self: flex-end; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #dfefe8; color: #2d7458; font-size: 10px; font-weight: 800; }
+		.chat-message-stack { max-width: calc(100% - 39px); min-width: 0; }
+		.chat-message-stack.mine { max-width: calc(100% - 24px); margin-left: auto; }
+		.chat-message-sender { margin: 0 0 5px 4px; color: #5a7067; font-size: 11px; font-weight: 500; }
+		.chat-delivery { display: inline-block; margin-left: 3px; color: currentColor; font-size: 11px; line-height: 1; letter-spacing: -2px; vertical-align: 0; }
+		.chat-bubble { max-width: none; padding: 13px 15px 10px; border-radius: 19px 19px 19px 5px; background: #fff; border: 1px solid #e0e7e8; box-shadow: 0 3px 12px rgba(34, 65, 59, .07); color: #17241f; font-size: 13.5px; line-height: 22px; }
+		.chat-bubble.mine { border-radius: 19px 19px 5px 19px; background: #d7f5e5; border-color: #9ee5c0; }
+		.chat-time { width: auto; margin-top: 7px; color: #8b9b9e; font-size: 10px; line-height: 13px; text-align: right; }
+		.chat-message-stack.mine .chat-message-sender { text-align: right; margin: 0 4px 5px 0; }
+		.chat-form { min-height: 78px; padding: 11px 14px max(14px, env(safe-area-inset-bottom)); border-top: 1px solid #e2e9e8; box-shadow: 0 -3px 14px rgba(40, 68, 61, .05); }
+		.chat-input-row { min-height: 54px; gap: 4px; padding: 4px 6px 4px 8px; border: 1px solid #e1e9eb; border-radius: 28px; background: #fff; box-shadow: 0 5px 18px rgba(45, 74, 67, .08); }
+		.chat-input { height: 42px; min-height: 42px; min-width: 0; width: auto; flex: 1 1 auto; padding: 10px 5px; color: #1a2824; font-size: 14px; line-height: 21px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+		.chat-icon-button, .chat-send { width: 42px; height: 42px; min-width: 42px; padding: 10px; border-radius: 50%; }
+		.chat-icon-button img, .chat-send img { width: 20px; height: 20px; }
+		.chat-send { background: #28a86f; box-shadow: 0 5px 12px rgba(40, 168, 111, .22); }
+		.chat-send img { filter: brightness(0) invert(1); }
+		@media (min-width: 421px) and (max-width: 520px) {
+			body:has(.chat-shell.is-active) { min-height: 1600px; display: flex; align-items: center; justify-content: center; }
+			.chat-shell.is-active { width: 390px; height: 1078px; min-height: 1078px; margin: auto; }
+			.chat-shell.is-active .chat-info-banner { min-height: 26px; height: 26px; padding-block: 0; }
+			.chat-shell.is-active .chat-info-banner__label,
+			.chat-shell.is-active .chat-info-banner__meta { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+		}
+
+		.doclinc-incoming-call {
+			position: fixed; inset: 0; left: 0; top: 0; transform: none; width: 100%; max-width: none; padding: 0;
+			z-index: 100; display: flex; align-items: stretch; justify-content: center; background: rgba(240, 247, 246, .96); color: #13221e;
+		}
+		.doclinc-incoming-call.is-hidden { display: none !important; }
+		.doclinc-incoming-surface { width: min(100%, 390px); min-height: 100dvh; padding: 24px 24px max(26px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; background: radial-gradient(circle at 50% 34%, rgba(122, 224, 183, .18), transparent 38%), #f8fffd; }
+		.doclinc-incoming-badge { align-self: flex-end; display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: 1px solid #a4e8ca; border-radius: 999px; background: #edfff7; color: #0d7c57; font-size: 11px; font-weight: 800; letter-spacing: .11em; }
+		.doclinc-incoming-badge::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #21bd83; box-shadow: 0 0 0 5px rgba(33, 189, 131, .13); }
+		.doclinc-incoming-identity { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+		.doclinc-incoming-avatar-wrap { position: relative; width: 148px; height: 148px; margin: 14px 0 25px; display: grid; place-items: center; }
+		.doclinc-incoming-avatar-wrap::before, .doclinc-incoming-avatar-wrap::after { content: ''; position: absolute; inset: 0; border: 1px solid rgba(53, 201, 152, .22); border-radius: 50%; animation: doclincIncomingPulse 2.8s ease-out infinite; }
+		.doclinc-incoming-avatar-wrap::after { inset: 13px; animation-delay: .9s; }
+		@keyframes doclincIncomingPulse { from { transform: scale(.76); opacity: .72; } to { transform: scale(1.14); opacity: 0; } }
+		.doclinc-incoming-avatar { position: relative; z-index: 1; width: 126px; height: 126px; border-radius: 50%; border: 3px solid #56dbaf; background: #111b2e; box-shadow: 0 10px 28px rgba(26, 155, 111, .18); object-fit: cover; }
+		.doclinc-incoming-identity:not(:has(.doclinc-incoming-avatar-wrap)) { gap: 14px; }
+		.doclinc-incoming-name { max-width: 100%; margin: 0; color: #14221e; font-size: 27px; line-height: 33px; font-weight: 850; letter-spacing: -.03em; overflow-wrap: anywhere; }
+		.doclinc-incoming-mode { display: inline-flex; align-items: center; gap: 9px; margin-top: 12px; padding: 9px 16px; border: 1px solid #b2efd7; border-radius: 999px; background: rgba(237, 255, 247, .88); color: #15825c; font-size: 14px; font-weight: 750; }
+		.doclinc-incoming-mode img { width: 18px; height: 18px; object-fit: contain; }
+		.doclinc-incoming-waveform { display: inline-flex; align-items: center; justify-content: center; width: 88px; height: 28px; min-height: 24px; margin-top: 12px; color: #1cb985; }
+		.doclinc-incoming-waveform.is-hidden { display: none !important; }
+		.doclinc-incoming-waveform svg { width: 72px; height: 26px; }
+		.doclinc-incoming-waveform.is-fallback::before { content: ''; display: block; width: 72px; height: 24px; border-radius: 12px; background: linear-gradient(to right, transparent 0 7px, #1cb985 7px 11px, transparent 11px 18px, #1cb985 18px 22px, transparent 22px 29px, #1cb985 29px 33px, transparent 33px 40px, #1cb985 40px 44px, transparent 44px 51px, #1cb985 51px 55px, transparent 55px 62px, #1cb985 62px 66px, transparent 66px); opacity: .92; }
+		.doclinc-incoming-slider { position: relative; width: 100%; height: 68px; padding: 6px; border: 1px solid #dde8ec; border-radius: 999px; background: #eef3f7; box-shadow: inset 0 2px 8px rgba(24, 52, 59, .06); }
+		.doclinc-incoming-slider-label { position: absolute; inset: 0; display: grid; place-items: center; padding: 0 10px 0 66px; color: #516371; font-size: 14px; font-weight: 750; pointer-events: none; text-align: center; }
+		.doclinc-incoming-answer { position: relative; z-index: 1; display: inline-flex; width: 56px; height: 56px; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: #39c99a; color: #fff; box-shadow: 0 5px 18px rgba(40, 186, 137, .34); cursor: pointer; }
+		.doclinc-incoming-answer img { width: 24px; height: 24px; filter: brightness(0) invert(1); transform: rotate(-12deg); }
+		.doclinc-incoming-action.reject { align-self: center; min-height: 46px; padding: 0 20px; background: #fff2f3; border: 1px solid #ffc8ce; color: #c53947; }
+		.doclinc-incoming-security { margin: 14px 0 0; color: #5f7078; font-size: 11px; text-align: center; }
+		@media (max-width: 520px) {
+			.chat-shell.is-active { box-shadow: none; }
+			.chat-shell.is-active .chat-header { padding-inline: 12px; }
+			.chat-list { padding-inline: 14px; }
+			.chat-form { padding-inline: 12px; }
+			.doclinc-incoming-surface { padding-inline: 24px; }
+		}
+		@media (min-width: 421px) and (max-width: 520px) {
+			body:has(.chat-shell.is-active) { min-height: 1600px; display: flex; align-items: center; justify-content: center; }
+			.chat-shell.is-active { width: 390px; height: 1078px; min-height: 1078px; margin: auto; }
+			.chat-shell.is-active .chat-info-banner { min-height: 26px; height: 26px; padding-block: 0; }
+			.chat-shell.is-active .chat-info-banner__label,
+			.chat-shell.is-active .chat-info-banner__meta { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+		}
+		@media (min-width: 768px) {
+			.chat-shell.is-active { min-height: min(100dvh, 900px); margin: 18px auto; border-radius: 22px; }
+			.doclinc-incoming-call { align-items: center; background: rgba(17, 30, 28, .64); }
+			.doclinc-incoming-surface { min-height: 844px; max-height: calc(100dvh - 40px); border-radius: 28px; box-shadow: 0 22px 80px rgba(0, 0, 0, .24); }
+		}
 	</style>
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-livekit.css')); ?>">
 </head>
 
 <body>
-	<div class="chat-shell">
-		<header class="chat-header">
+	<div class="chat-shell is-active" data-chat-role="<?= html_escape($current_role); ?>" data-request-id="<?= html_escape($request_id); ?>">
+		<header class="chat-header" data-chat-surface="active-room">
 			<a href="<?= html_escape($back_url); ?>" class="chat-back" aria-label="Kembali">
 				<img src="<?= html_escape($asset_base . 'icon-chat-back.svg'); ?>" alt="">
 			</a>
-			<img class="chat-avatar js-profile-photo" id="chatPartnerAvatar" src="<?= html_escape($partner_photo_src); ?>" data-fallback-src="<?= html_escape($profile_photo_fallback); ?>" alt="Foto <?= html_escape($partner_name); ?>">
+			<span class="chat-avatar-wrap" aria-hidden="true">
+				<?php if ($partner_photo_src !== '') : ?><img class="chat-avatar js-profile-photo" id="chatPartnerAvatar" src="<?= html_escape($partner_photo_src); ?>" data-chat-photo-state="photo" alt="">
+				<?php else : ?><span class="chat-avatar-fallback" id="chatPartnerAvatarFallback" data-chat-photo-state="fallback"><?= html_escape($partner_initials); ?></span><?php endif; ?>
+				<span class="chat-presence-dot"></span>
+			</span>
 			<div class="chat-title">
 				<p class="chat-title-text" id="chatPartnerName"><?= html_escape($partner_name); ?></p>
-				<p class="chat-title-subtext"><?= html_escape($status_label); ?> · <?= html_escape($queue_display); ?></p>
+			<p class="chat-title-subtext"><span class="chat-presence-status"><span class="chat-presence-status__dot" aria-hidden="true"></span><?= html_escape($header_status_label); ?></span></p>
 			</div>
 			<?php if ($can_start_call) : ?>
 				<div class="chat-call-actions" aria-label="Aksi panggilan">
 					<button type="button" class="chat-call-button doclinc-call-start" data-call-mode="audio" data-request-id="<?= html_escape($request_id); ?>" aria-label="Mulai panggilan suara">
-						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-							<path d="M22 16.92v2.2a2 2 0 0 1-2.18 2 19.74 19.74 0 0 1-8.59-3.05 19.35 19.35 0 0 1-5.96-5.96 19.74 19.74 0 0 1-3.05-8.59A2 2 0 0 1 4.21 1.34h2.2a2 2 0 0 1 2 1.72c.13.96.35 1.9.65 2.8a2 2 0 0 1-.45 2.11L7.68 8.9a15.78 15.78 0 0 0 6.42 6.42l.93-.93a2 2 0 0 1 2.11-.45c.9.3 1.84.52 2.8.65A2 2 0 0 1 22 16.92Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
+						<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('voice_call')); ?>" alt="" aria-hidden="true">
 					</button>
 					<button type="button" class="chat-call-button doclinc-call-start" data-call-mode="video" data-request-id="<?= html_escape($request_id); ?>" aria-label="Mulai panggilan video">
-						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-							<path d="M4.5 6.5h9.2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4.5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-							<path d="m15.7 10 4.8-2.8v9.6L15.7 14" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
+						<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('video_call')); ?>" alt="" aria-hidden="true">
 					</button>
 				</div>
 			<?php endif; ?>
 		</header>
+		<section class="chat-info-banner" aria-label="Informasi konsultasi">
+			<div class="chat-info-banner__lead">
+				<img class="chat-info-banner__icon" src="<?= html_escape(base_url('assets/doclinc_ui/icon-pack/konsultasi.svg')); ?>" alt="" aria-hidden="true">
+				<span class="chat-info-banner__label"><?= html_escape($status_label === 'Chat aktif' ? 'Konsultasi sedang berlangsung' : $status_label); ?></span>
+			</div>
+			<span class="chat-info-banner__meta"><?= html_escape($queue_display); ?></span>
+		</section>
 
 		<main class="chat-list" id="chatMessages">
 			<?php if ($auto_visit_location) : ?><div class="chat-muted" id="chatVisitLocationStatus" role="status" aria-live="polite"></div><?php endif; ?>
+			<div class="chat-date-separator" id="chatDateSeparator" hidden><span></span></div>
 			<div class="chat-muted">Memuat pesan...</div>
 		</main>
 
@@ -977,15 +1150,15 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			<?php if ($can_send) : ?>
 				<div class="chat-input-row">
 					<input type="file" id="imageInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden>
-					<button class="chat-icon-button chat-upload" id="imageButton" type="button" aria-label="Kirim gambar">
-						<img src="<?= html_escape($asset_base . 'icon-chat-camera.svg'); ?>" alt="">
-					</button>
 					<button class="chat-icon-button chat-attach" id="attachmentButton" type="button" aria-label="Lampirkan gambar">
-						<img src="<?= html_escape($asset_base . 'icon-chat-attach.svg'); ?>" alt="">
+						<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('attachment')); ?>" alt="" aria-hidden="true">
 					</button>
-					<textarea class="chat-input" id="messageText" rows="1" maxlength="2000" placeholder="Tulis pesan..." required></textarea>
+					<button class="chat-icon-button chat-upload" id="imageButton" type="button" aria-label="Kirim gambar">
+						<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('camera')); ?>" alt="" aria-hidden="true">
+					</button>
+					<textarea class="chat-input" id="messageText" rows="1" maxlength="2000" placeholder="<?= html_escape('Ketik pesan untuk ' . $partner_placeholder_name . '...'); ?>" required></textarea>
 					<button class="chat-send" type="submit" aria-label="Kirim pesan">
-						<img src="<?= html_escape($asset_base . 'icon-chat-send.svg'); ?>" alt="">
+						<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('send')); ?>" alt="" aria-hidden="true">
 					</button>
 				</div>
 				<div class="chat-image-feedback" id="chatImageFeedback" role="status" aria-live="polite" hidden></div>
@@ -999,22 +1172,32 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		<div class="doclinc-call-modal" id="doclincCallModal" role="dialog" aria-modal="true" aria-labelledby="doclincCallTitle" aria-hidden="true">
 			<div class="doclinc-call-panel">
 				<div class="doclinc-call-head">
-					<div class="doclinc-call-context">
-						<img class="doclinc-call-avatar js-profile-photo" id="doclincCallAvatar" src="<?= html_escape($partner_photo_src); ?>" data-fallback-src="<?= html_escape($profile_photo_fallback); ?>" alt="Foto <?= html_escape($partner_name); ?>">
-						<div>
+					<div class="doclinc-call-brand-lockup">
+						<img class="doclinc-call-brand" src="<?= html_escape(doclinc_ui_asset('livekit.brand_logo')); ?>" alt="DokLinc" width="164" height="73">
+						<span class="doclinc-call-divider" aria-hidden="true"></span>
+						<div class="doclinc-call-context">
+							<span class="doclinc-call-eyebrow">Konsultasi dengan</span>
 							<h2 class="doclinc-call-title" id="doclincCallTitle"><?= html_escape($partner_name); ?></h2>
-							<div class="doclinc-call-status" id="doclincCallStatus">Siap bergabung</div>
+							<div class="doclinc-call-provider-meta"><span class="doclinc-call-provider-role"><?= html_escape($partner_subtitle); ?></span></div>
 						</div>
 					</div>
-					<button type="button" class="doclinc-call-close" id="doclincCallClose" aria-label="Minimalkan panggilan">&times;</button>
 				</div>
-				<div class="doclinc-call-stage">
+				<div class="doclinc-call-stage" data-call-mode="video">
 					<div class="doclinc-call-remote" id="doclincCallRemote">
 						<div class="doclinc-call-empty" id="doclincCallEmpty">
-							<img class="doclinc-call-empty-avatar" src="<?= html_escape($partner_photo_src); ?>" alt="">
+							<?php if ($voice_has_photo) : ?>
+								<img class="doclinc-call-empty-avatar" data-voice-profile-photo src="<?= html_escape($voice_photo_src); ?>" alt="">
+							<?php endif; ?>
 							<span class="doclinc-call-empty-name"><?= html_escape($partner_name); ?></span>
-							<span id="doclincCallEmptyText">Menunggu lawan bicara bergabung</span>
+							<?php if ($voice_partner_role !== '') : ?><span class="doclinc-call-empty-role"><?= html_escape($voice_partner_role); ?></span><?php endif; ?>
+							<span class="doclinc-call-empty-waiting" id="doclincCallEmptyText">Menunggu video</span>
+							<span class="doclinc-call-empty-support">Kami akan membantu konsultasi Anda</span>
+							<span class="doclinc-call-waveform" data-voice-waveform data-lottie-src="<?= html_escape(base_url('assets/doclinc_ui/lottie/soundwave.json')); ?>" data-lottie-autoplay="true" data-lottie-loop="true" aria-hidden="true"></span>
 						</div>
+					</div>
+					<div class="doclinc-call-provider-overlay" aria-hidden="true">
+						<span class="doclinc-call-status-dot" aria-hidden="true"></span>
+						<div><strong id="doclincCallOverlayName"><?= html_escape($partner_name); ?></strong><span id="doclincCallOverlayRole"><?= html_escape($partner_subtitle); ?></span></div>
 					</div>
 					<div class="doclinc-call-local is-hidden" id="doclincCallLocal"></div>
 				</div>
@@ -1024,46 +1207,45 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					<button type="button" class="doclinc-call-join" id="doclincCallJoin">Gabung sekarang</button>
 				</div>
 				<div class="doclinc-call-controls is-hidden" id="doclincCallControls">
-					<button type="button" class="doclinc-call-control" id="doclincCallMic" title="Mikrofon" aria-label="Mikrofon">
-						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-							<path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-							<path d="M19 11a7 7 0 0 1-14 0M12 18v4M8 22h8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
+					<button type="button" class="doclinc-call-control" id="doclincCallMore" title="Lainnya" aria-label="Buka opsi lainnya" aria-expanded="false">
+						<img src="<?= html_escape(doclinc_ui_asset('more')); ?>" alt="" aria-hidden="true" width="24" height="24">
 					</button>
-					<button type="button" class="doclinc-call-control" id="doclincCallCamera" title="Kamera" aria-label="Kamera">
-						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-							<path d="M4.5 6.5h9.2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4.5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-							<path d="m15.7 10 4.8-2.8v9.6L15.7 14" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
+					<button type="button" class="doclinc-call-control is-active" id="doclincCallCamera" title="Matikan kamera" aria-label="Matikan kamera" aria-pressed="false">
+						<img src="<?= html_escape(doclinc_ui_asset('video_call')); ?>" alt="" aria-hidden="true" width="24" height="24">
 					</button>
-					<button type="button" class="doclinc-call-control speaker" id="doclincCallSpeaker" title="Aktifkan loudspeaker" aria-label="Aktifkan loudspeaker" aria-pressed="false">
-						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-							<path d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4Z" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-							<path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11" stroke-width="1.9" stroke-linecap="round" />
-						</svg>
+					<button type="button" class="doclinc-call-control is-active" id="doclincCallSpeaker" title="Aktifkan suara" aria-label="Aktifkan suara" aria-pressed="false">
+						<img src="<?= html_escape(doclinc_ui_asset('speaker')); ?>" alt="" aria-hidden="true" width="24" height="24">
 					</button>
-					<button type="button" class="doclinc-call-control" id="doclincCallSwitch" title="Ganti kamera" aria-label="Ganti kamera">
-						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-							<path d="M16 3h5v5M20.5 3.5 15 9M8 21H3v-5M3.5 20.5 9 15" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-							<path d="M21 12a9 9 0 0 1-9 9M3 12a9 9 0 0 1 9-9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
+					<button type="button" class="doclinc-call-control is-active" id="doclincCallMic" title="Bisukan mikrofon" aria-label="Bisukan mikrofon" aria-pressed="false">
+						<img src="<?= html_escape(doclinc_ui_asset('mute')); ?>" alt="" aria-hidden="true" width="24" height="24">
 					</button>
-					<button type="button" class="doclinc-call-control" id="doclincCallMinimize" title="Minimalkan" aria-label="Minimalkan panggilan">
-						<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-							<path d="M6 12h12" stroke-width="2.2" stroke-linecap="round" />
-						</svg>
-					</button>
-					<button type="button" class="doclinc-call-control end-call" id="doclincCallEnd" title="Akhiri" aria-label="Akhiri">
-						<img src="<?= html_escape(clinical_workflow_asset('livekit.end_call')); ?>" alt="" aria-hidden="true" width="24" height="24">
+					<button type="button" class="doclinc-call-control end-call" id="doclincCallEnd" title="Akhiri panggilan" aria-label="Akhiri panggilan">
+						<img src="<?= html_escape(doclinc_ui_asset('livekit.end_call')); ?>" alt="" aria-hidden="true" width="24" height="24">
 					</button>
 				</div>
+				<aside class="doclinc-call-popover is-hidden" id="doclincCallMorePanel" aria-label="Opsi panggilan">
+					<button type="button" class="doclinc-call-secondary" id="doclincCallChat" title="Buka obrolan" aria-label="Buka obrolan">
+						<img src="<?= html_escape(doclinc_ui_asset('chat')); ?>" alt="" aria-hidden="true" width="20" height="20">
+						<span>Obrolan</span>
+					</button>
+					<button type="button" class="doclinc-call-secondary" id="doclincCallSwitch" title="Ganti kamera" aria-label="Ganti kamera">
+						<img src="<?= html_escape(doclinc_ui_asset('camera')); ?>" alt="" aria-hidden="true" width="20" height="20">
+						<span>Ganti kamera</span>
+					</button>
+					<button type="button" class="doclinc-call-secondary" id="doclincCallMinimize" title="Minimalkan" aria-label="Minimalkan panggilan">
+						<img src="<?= html_escape(doclinc_ui_asset('livekit.minimize')); ?>" alt="" aria-hidden="true" width="20" height="20">
+						<span>Minimalkan</span>
+					</button>
+					<button type="button" class="doclinc-call-secondary" id="doclincCallClose" title="Tutup tampilan panggilan" aria-label="Tutup tampilan panggilan">
+						<img src="<?= html_escape(doclinc_ui_asset('livekit.close')); ?>" alt="" aria-hidden="true" width="20" height="20">
+						<span>Tutup tampilan</span>
+					</button>
+				</aside>
 			</div>
 		</div>
 		<button type="button" class="doclinc-active-call is-hidden" id="doclincActiveCall" aria-label="Buka panggilan aktif">
 			<span class="doclinc-active-call-icon" aria-hidden="true">
-				<svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-					<path d="M22 16.92v2.2a2 2 0 0 1-2.18 2 19.74 19.74 0 0 1-8.59-3.05 19.35 19.35 0 0 1-5.96-5.96 19.74 19.74 0 0 1-3.05-8.59A2 2 0 0 1 4.21 1.34h2.2a2 2 0 0 1 2 1.72c.13.96.35 1.9.65 2.8a2 2 0 0 1-.45 2.11L7.68 8.9a15.78 15.78 0 0 0 6.42 6.42l.93-.93a2 2 0 0 1 2.11-.45c.9.3 1.84.52 2.8.65A2 2 0 0 1 22 16.92Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-				</svg>
+				<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('voice_call')); ?>" alt="" width="18" height="18">
 			</span>
 			<span class="doclinc-active-call-main">
 				<span class="doclinc-active-call-title">Panggilan aktif</span>
@@ -1074,19 +1256,30 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-ringtone.js')); ?>"></script>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-livekit-audio.js')); ?>"></script>
+		<script src="<?= html_escape(base_url('assets/js/doclinc-voice-waveform.js')); ?>"></script>
 	<?php else : ?>
 		<?php /* TODO #16D: render incoming call invitation here after reliable call invite signaling exists. */ ?>
 	<?php endif; ?>
 
 	<?php if ($can_receive_call) : ?>
 		<div class="doclinc-incoming-call is-hidden" id="doclincIncomingCall" aria-live="polite">
-			<p class="doclinc-incoming-kicker">Panggilan masuk</p>
-			<p class="doclinc-incoming-name" id="doclincIncomingCaller">Nakes DocLink</p>
-			<p class="doclinc-incoming-type" id="doclincIncomingType">Panggilan video</p>
-			<div class="doclinc-incoming-actions">
-				<button type="button" class="doclinc-incoming-action reject" id="doclincIncomingReject">Tolak</button>
-				<button type="button" class="doclinc-incoming-action answer" id="doclincIncomingAnswer">Terima</button>
-			</div>
+			<section class="doclinc-incoming-surface" aria-labelledby="doclincIncomingCaller">
+				<div class="doclinc-incoming-badge">PANGGILAN MASUK</div>
+				<div class="doclinc-incoming-identity">
+					<?php if ($voice_has_photo) : ?><div class="doclinc-incoming-avatar-wrap"><img class="doclinc-incoming-avatar" id="doclincIncomingAvatar" src="<?= html_escape($voice_photo_src); ?>" alt=""></div><?php endif; ?>
+					<p class="doclinc-incoming-name" id="doclincIncomingCaller"><?= html_escape($partner_name); ?></p>
+					<p class="doclinc-incoming-mode" id="doclincIncomingType"><img id="doclincIncomingModeIcon" src="<?= html_escape(doclinc_ui_asset('voice_call') . '?v=1'); ?>" alt="" aria-hidden="true">Panggilan suara</p>
+					<span class="doclinc-incoming-waveform" id="doclincIncomingWaveform" data-incoming-waveform data-lottie-src="<?= html_escape(base_url('assets/doclinc_ui/lottie/soundwave.json')); ?>" aria-hidden="true"></span>
+				</div>
+				<div class="doclinc-incoming-actions">
+					<div class="doclinc-incoming-slider" id="doclincIncomingSlider">
+						<span class="doclinc-incoming-slider-label">Geser untuk menjawab</span>
+						<button type="button" class="doclinc-incoming-answer" id="doclincIncomingAnswer" aria-label="Terima panggilan" title="Terima panggilan"><img src="<?= html_escape(doclinc_ui_asset('voice_call') . '?v=1'); ?>" alt="" aria-hidden="true"></button>
+					</div>
+					<button type="button" class="doclinc-incoming-action reject" id="doclincIncomingReject" aria-label="Tolak panggilan">Tolak Panggilan</button>
+				</div>
+				<p class="doclinc-incoming-security">Panggilan aman melalui DokLinc</p>
+			</section>
 		</div>
 	<?php endif; ?>
 
@@ -1094,6 +1287,11 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		<script>
 			(function() {
 				const requestId = <?= json_encode($request_id); ?>;
+				const initialCounterpart = {
+					name: <?= json_encode($partner_name); ?>,
+					role: <?= json_encode($current_role === 'dokter' ? 'Warga' : 'Dokter'); ?>
+				};
+				const voiceCounterpartRole = <?= json_encode($voice_partner_role); ?>;
 				const canStartCall = <?= json_encode($can_start_call); ?>;
 				const canReceiveCall = <?= json_encode($can_receive_call); ?>;
 				const startCallUrl = <?= json_encode($call_start_url); ?>;
@@ -1122,7 +1320,10 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					statusPollMs: 3000,
 					incomingFailures: 0,
 					incomingPollSequence: 0,
-					incomingRejecting: false,
+							incomingRejecting: false,
+							incomingAnswering: false,
+							incomingSliderPointerId: null,
+							incomingSliderStartX: 0,
 					audioController: null,
 					incomingRingtone: null
 				};
@@ -1130,6 +1331,8 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 				const remoteTrackRegistry = new Map();
 				const remoteTrackFallbackKeys = new WeakMap();
 				let remoteTrackFallbackSequence = 0;
+				let activeRemoteParticipantKey = '';
+				let activeRemoteParticipantIdentity = '';
 
 				function byId(id) {
 					return document.getElementById(id);
@@ -1141,9 +1344,23 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 
 				function cacheElements() {
 					elements.modal = byId('doclincCallModal');
+					elements.callTitle = byId('doclincCallTitle');
+					elements.providerRole = document.querySelector('.doclinc-call-provider-role');
+					elements.emptyName = document.querySelector('.doclinc-call-empty-name');
+					elements.emptyRole = document.querySelector('.doclinc-call-empty-role');
+					elements.overlayName = byId('doclincCallOverlayName');
+					elements.overlayRole = byId('doclincCallOverlayRole');
 					elements.status = byId('doclincCallStatus');
 					elements.remote = byId('doclincCallRemote');
+					elements.stage = document.querySelector('.doclinc-call-stage');
 					elements.empty = byId('doclincCallEmpty');
+					elements.voicePhoto = document.querySelector('[data-voice-profile-photo]');
+					elements.voiceFallback = null;
+					if (elements.voicePhoto) {
+						elements.voicePhoto.addEventListener('error', function() {
+							elements.voicePhoto.classList.add('is-hidden');
+						});
+					}
 					elements.emptyText = byId('doclincCallEmptyText');
 					elements.local = byId('doclincCallLocal');
 					elements.prejoin = byId('doclincCallPrejoin');
@@ -1152,17 +1369,131 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					elements.mic = byId('doclincCallMic');
 					elements.camera = byId('doclincCallCamera');
 					elements.speaker = byId('doclincCallSpeaker');
+					elements.chat = byId('doclincCallChat');
 					elements.switchCamera = byId('doclincCallSwitch');
 					elements.end = byId('doclincCallEnd');
 					elements.close = byId('doclincCallClose');
 					elements.minimize = byId('doclincCallMinimize');
+					elements.more = byId('doclincCallMore');
+					elements.morePanel = byId('doclincCallMorePanel');
 					elements.activeCall = byId('doclincActiveCall');
 					elements.elapsed = byId('doclincCallElapsed');
 					elements.incoming = byId('doclincIncomingCall');
 					elements.incomingCaller = byId('doclincIncomingCaller');
 					elements.incomingType = byId('doclincIncomingType');
+					elements.incomingModeIcon = byId('doclincIncomingModeIcon');
+					elements.incomingWaveform = byId('doclincIncomingWaveform');
+					elements.incomingSlider = byId('doclincIncomingSlider');
 					elements.incomingAnswer = byId('doclincIncomingAnswer');
 					elements.incomingReject = byId('doclincIncomingReject');
+				}
+
+				function remoteParticipantMetadata(participant) {
+					if (!participant || participant.metadata == null) {
+						return null;
+					}
+					if (typeof participant.metadata === 'object' && !Array.isArray(participant.metadata)) {
+						return participant.metadata;
+					}
+					if (typeof participant.metadata !== 'string' || participant.metadata.trim() === '') {
+						return null;
+					}
+					try {
+						const parsed = JSON.parse(participant.metadata);
+						return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+					} catch (error) {
+						return null;
+					}
+				}
+
+				function remoteParticipantIdentity(participant) {
+					if (!participant || participant.isLocal === true) {
+						return null;
+					}
+					const metadata = remoteParticipantMetadata(participant);
+					if (!metadata || Number(metadata.request_id) !== Number(requestId)) {
+						return null;
+					}
+					const role = String(metadata.role || '').toLowerCase();
+					const roleLabel = role === 'warga' ? 'Warga' : (role === 'dokter' ? 'Dokter' : (role === 'nakes' ? 'Tenaga kesehatan' : ''));
+					const name = String(participant.name || metadata.name || '').trim();
+					const participantIdentity = String(participant.identity || '').trim();
+					const expectedIdentity = role + '-' + String(metadata.user_id || '').trim();
+					if (!roleLabel || !name || name.length > 160 || !participantIdentity || (metadata.user_id && participantIdentity !== expectedIdentity)) {
+						return null;
+					}
+					return {
+						name: name,
+						role: roleLabel,
+						key: remoteParticipantKey(participant)
+					};
+				}
+
+				function setCounterpartIdentity(identity) {
+					const value = identity || initialCounterpart;
+					if (elements.callTitle) {
+						elements.callTitle.textContent = value.name;
+					}
+					if (elements.emptyName) {
+						elements.emptyName.textContent = value.name;
+					}
+					if (elements.emptyRole) {
+						elements.emptyRole.textContent = value.role;
+					}
+					if (elements.overlayName) {
+						elements.overlayName.textContent = value.name;
+					}
+					if (elements.overlayRole) {
+						elements.overlayRole.textContent = value.role;
+					}
+					if (elements.modal) {
+						elements.modal.setAttribute('aria-label', 'Panggilan dengan ' + value.name);
+					}
+				}
+
+				function updateCounterpartFromParticipant(participant) {
+					const identity = remoteParticipantIdentity(participant);
+					if (!identity) {
+						return false;
+					}
+					activeRemoteParticipantKey = identity.key;
+					activeRemoteParticipantIdentity = String(participant.identity || '');
+					if (elements.remote) {
+						elements.remote.dataset.participantIdentity = activeRemoteParticipantIdentity;
+					}
+					setCounterpartIdentity(identity);
+					return true;
+				}
+
+				function applyCallModePresentation() {
+					const isAudio = state.mode === 'audio';
+					if (elements.modal) {
+						elements.modal.classList.toggle('is-audio', isAudio);
+						elements.modal.classList.toggle('is-video', !isAudio);
+						elements.modal.setAttribute('data-call-mode', isAudio ? 'audio' : 'video');
+					}
+					if (elements.stage) {
+						elements.stage.classList.toggle('is-audio', isAudio);
+						elements.stage.classList.toggle('is-video', !isAudio);
+						elements.stage.setAttribute('data-call-mode', isAudio ? 'audio' : 'video');
+					}
+					if (elements.providerRole && !isAudio) {
+						elements.providerRole.textContent = <?= json_encode($partner_subtitle); ?>;
+					} else if (elements.providerRole) {
+						elements.providerRole.textContent = voiceCounterpartRole;
+					}
+					if (elements.emptyText && isAudio) {
+						elements.emptyText.textContent = 'Audio tersambung';
+					}
+				}
+
+				function toggleMore() {
+					if (!elements.morePanel) return;
+					const hidden = elements.morePanel.classList.toggle('is-hidden');
+					if (elements.more) {
+						elements.more.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+						elements.more.classList.toggle('is-active', !hidden);
+					}
 				}
 
 				function audioController() {
@@ -1225,8 +1556,8 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					}
 					elements.speaker.classList.toggle('is-active', state.speakerEnabled);
 					elements.speaker.setAttribute('aria-pressed', state.speakerEnabled ? 'true' : 'false');
-					elements.speaker.setAttribute('aria-label', state.speakerEnabled ? 'Nonaktifkan loudspeaker' : 'Aktifkan loudspeaker');
-					elements.speaker.title = state.speakerEnabled ? 'Nonaktifkan loudspeaker' : 'Aktifkan loudspeaker';
+					elements.speaker.setAttribute('aria-label', state.speakerEnabled ? 'Matikan suara' : 'Aktifkan suara');
+					elements.speaker.title = state.speakerEnabled ? 'Matikan suara' : 'Aktifkan suara';
 				}
 
 				function releaseRemoteAudio() {
@@ -1248,7 +1579,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 				function toggleSpeakerOutput() {
 					const controller = audioController();
 					if (!controller || typeof controller.toggleSpeaker !== 'function') {
-						setStatus('Kontrol loudspeaker belum didukung perangkat ini.', true);
+						setStatus('Kontrol suara belum didukung perangkat ini.', true);
 						return;
 					}
 					if (elements.speaker) {
@@ -1258,21 +1589,21 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						const enabled = !!(result && result.enabled);
 						updateSpeakerControl(enabled);
 						if (!enabled) {
-							setStatus('Loudspeaker nonaktif.');
+							setStatus('Suara nonaktif.');
 							return;
 						}
 						if (result.outputSelected) {
-							setStatus('Loudspeaker aktif' + (result.outputLabel ? ': ' + result.outputLabel : '.'));
+							setStatus('Suara aktif' + (result.outputLabel ? ': ' + result.outputLabel : '.'));
 							return;
 						}
 						if (result.boosted) {
-							setStatus('Loudspeaker aktif. Volume suara diperkuat.');
+							setStatus('Suara aktif. Volume diperkuat.');
 							return;
 						}
 						setStatus('Perangkat membatasi pemilihan output. Gunakan kontrol speaker perangkat.', true);
 					}).catch(function() {
 						updateSpeakerControl(false);
-						setStatus('Loudspeaker belum dapat diaktifkan di perangkat ini.', true);
+						setStatus('Suara belum dapat diaktifkan di perangkat ini.', true);
 					}).finally(function() {
 						if (elements.speaker) {
 							elements.speaker.disabled = false;
@@ -1351,6 +1682,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						return;
 					}
 					state.minimized = false;
+					applyCallModePresentation();
 					elements.modal.classList.add('is-open');
 					elements.modal.setAttribute('aria-hidden', 'false');
 					updateFloatingCall();
@@ -1378,7 +1710,22 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					if (!elements.empty || !elements.remote) {
 						return;
 					}
-					elements.empty.classList.toggle('is-hidden', hasRegisteredRemoteVideo());
+					const hasRemoteVideo = hasRegisteredRemoteVideo();
+					const hasLocalVideo = !!(elements.local && elements.local.querySelector('video'));
+					elements.empty.classList.toggle('is-hidden', hasRemoteVideo || hasLocalVideo);
+					applyStagePresentation(hasLocalVideo, hasRemoteVideo);
+				}
+
+				function applyStagePresentation(hasLocalVideo, hasRemoteVideo) {
+					if (!elements.stage) {
+						return;
+					}
+					const localMain = state.mode === 'video' && !!hasLocalVideo && !hasRemoteVideo;
+					elements.stage.classList.toggle('is-local-main', localMain);
+					elements.stage.classList.toggle('is-remote-main', !!hasRemoteVideo);
+					if (elements.local) {
+						elements.local.classList.toggle('is-main', localMain);
+					}
 				}
 
 				function stopLocalTracks() {
@@ -1391,8 +1738,10 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					if (elements.local) {
 						clearNode(elements.local);
 						elements.local.classList.remove('is-placeholder');
+						elements.local.classList.remove('is-camera-off');
 						elements.local.classList.add('is-hidden');
 					}
+					applyStagePresentation(false, hasRegisteredRemoteVideo());
 				}
 
 				function cleanupCall(message) {
@@ -1433,11 +1782,18 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						return;
 					}
 					state.mode = mode === 'audio' ? 'audio' : 'video';
+					applyCallModePresentation();
 					state.micEnabled = true;
 					state.cameraEnabled = state.mode === 'video';
 					updateSpeakerControl(false);
 					if (elements.camera) {
 						elements.camera.classList.toggle('is-off', state.mode !== 'video');
+						elements.camera.classList.toggle('is-active', state.mode === 'video');
+						elements.camera.setAttribute('aria-pressed', state.mode !== 'video' ? 'true' : 'false');
+					}
+					if (elements.mic) {
+						elements.mic.classList.add('is-active');
+						elements.mic.classList.remove('is-off');
 					}
 					setCallActive(false);
 					setStatus('Siap bergabung');
@@ -1682,6 +2038,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						nodes: storedNodes
 					};
 					remoteTrackRegistry.set(key, entry);
+					updateCounterpartFromParticipant(participant);
 					updateEmptyState();
 					return entry;
 				}
@@ -1693,6 +2050,12 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						return;
 					}
 					removeRemoteTrackEntry(match.key, match.entry);
+					if (!hasRegisteredRemoteVideo() && activeRemoteParticipantKey === remoteParticipantKey(participant)) {
+						activeRemoteParticipantKey = '';
+						activeRemoteParticipantIdentity = '';
+						if (elements.remote) delete elements.remote.dataset.participantIdentity;
+						setCounterpartIdentity(null);
+					}
 					updateEmptyState();
 				}
 
@@ -1712,6 +2075,12 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					entriesToRemove.forEach(function(item) {
 						removeRemoteTrackEntry(item.key, item.entry);
 					});
+					if (activeRemoteParticipantKey === participantKey) {
+						activeRemoteParticipantKey = '';
+						activeRemoteParticipantIdentity = '';
+						if (elements.remote) delete elements.remote.dataset.participantIdentity;
+						setCounterpartIdentity(null);
+					}
 					updateEmptyState();
 				}
 
@@ -1727,10 +2096,36 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						removeRemoteTrackEntry(item.key, item.entry);
 					});
 					remoteTrackRegistry.clear();
+					activeRemoteParticipantKey = '';
+					activeRemoteParticipantIdentity = '';
+					if (elements.remote) delete elements.remote.dataset.participantIdentity;
+					setCounterpartIdentity(null);
 					if (elements.remote) {
 						Array.prototype.slice.call(elements.remote.querySelectorAll('video,audio')).forEach(removeRemoteMediaNode);
 					}
 					updateEmptyState();
+				}
+
+				function handleTrackSubscribed(room, track, publication, participant) {
+					if (room && state.room !== room) {
+						return;
+					}
+					attachRemoteTrack(track, publication, participant);
+				}
+
+				function handleTrackUnsubscribed(room, track, publication, participant) {
+					if (room && state.room !== room) {
+						return;
+					}
+					detachRemoteTrack(track, publication, participant);
+				}
+
+				function handleParticipantDisconnected(room, participant) {
+					if (room && state.room !== room) {
+						return;
+					}
+					clearRemoteParticipant(participant);
+					setStatus('Menunggu lawan bicara bergabung');
 				}
 
 				function wireRoom(room) {
@@ -1740,26 +2135,26 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						if (state.room !== room) {
 							return;
 						}
-						attachRemoteTrack(track, publication, participant);
+						handleTrackSubscribed(room, track, publication, participant);
 					});
 					room.on(events.TrackUnsubscribed || 'trackUnsubscribed', function(track, publication, participant) {
 						if (state.room !== room) {
 							return;
 						}
-						detachRemoteTrack(track, publication, participant);
+						handleTrackUnsubscribed(room, track, publication, participant);
 					});
 					room.on(events.ParticipantConnected || 'participantConnected', function(participant) {
 						if (state.room !== room) {
 							return;
 						}
+						updateCounterpartFromParticipant(participant);
 						setStatus('Terhubung');
 					});
 					room.on(events.ParticipantDisconnected || 'participantDisconnected', function(participant) {
 						if (state.room !== room) {
 							return;
 						}
-						clearRemoteParticipant(participant);
-						setStatus('Menunggu lawan bicara bergabung');
+						handleParticipantDisconnected(room, participant);
 					});
 					room.on(events.Disconnected || 'disconnected', function() {
 						if (state.room !== room) {
@@ -1932,8 +2327,10 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					}
 					clearNode(elements.local);
 					elements.local.classList.remove('is-placeholder');
+					elements.local.classList.remove('is-camera-off');
 					attachTrack(track, elements.local);
 					elements.local.classList.remove('is-hidden');
+					updateEmptyState();
 				}
 
 				function showLocalPlaceholder(message) {
@@ -1941,9 +2338,36 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						return;
 					}
 					clearNode(elements.local);
-					elements.local.textContent = message || 'Kamera nonaktif';
+					const status = document.createElement('span');
+					status.className = 'doclinc-call-local-status';
+					status.textContent = message || 'Kamera nonaktif';
+					elements.local.appendChild(status);
 					elements.local.classList.add('is-placeholder');
+					elements.local.classList.toggle('is-camera-off', /kamera/i.test(message || ''));
 					elements.local.classList.remove('is-hidden');
+					updateEmptyState();
+				}
+
+				function setMediaPresentationState(kind, enabled) {
+					if (kind !== 'audio' && kind !== 'video') {
+						return;
+					}
+					const enabledKey = kind === 'audio' ? 'micEnabled' : 'cameraEnabled';
+					const button = kind === 'audio' ? elements.mic : elements.camera;
+					state[enabledKey] = !!enabled;
+					if (button) {
+						button.classList.toggle('is-off', !state[enabledKey]);
+						button.classList.toggle('is-active', !!state[enabledKey]);
+						button.setAttribute('aria-pressed', state[enabledKey] ? 'false' : 'true');
+						const label = kind === 'audio'
+							? (state[enabledKey] ? 'Bisukan mikrofon' : 'Aktifkan mikrofon')
+							: (state[enabledKey] ? 'Matikan kamera' : 'Aktifkan kamera');
+						button.setAttribute('aria-label', label);
+						button.title = label;
+					}
+					if (kind === 'video' && !state[enabledKey]) {
+						showLocalPlaceholder('Kamera nonaktif');
+					}
 				}
 
 				function connectWithPayload(response, waitingText) {
@@ -1965,6 +2389,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					if (response.call_type === 'audio' || response.call_type === 'video') {
 						state.mode = response.call_type;
 					}
+					applyCallModePresentation();
 					state.room = room;
 					wireRoom(room);
 					return room.connect(response.ws_url, response.token).then(function() {
@@ -1980,6 +2405,10 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 							state.micEnabled = false;
 							if (elements.mic) {
 								elements.mic.classList.add('is-off');
+								elements.mic.classList.remove('is-active');
+								elements.mic.setAttribute('aria-pressed', 'true');
+								elements.mic.setAttribute('aria-label', 'Aktifkan mikrofon');
+								elements.mic.title = 'Aktifkan mikrofon';
 							}
 							setStatus('Mikrofon tidak tersedia di perangkat ini.');
 						});
@@ -1992,6 +2421,10 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 							state.cameraEnabled = true;
 							if (elements.camera) {
 								elements.camera.classList.remove('is-off');
+								elements.camera.classList.add('is-active');
+								elements.camera.setAttribute('aria-pressed', 'false');
+								elements.camera.setAttribute('aria-label', 'Matikan kamera');
+								elements.camera.title = 'Matikan kamera';
 							}
 							showLocalPreview(track);
 							return publishTrack(track);
@@ -1999,6 +2432,10 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 							state.cameraEnabled = false;
 							if (elements.camera) {
 								elements.camera.classList.add('is-off');
+								elements.camera.classList.remove('is-active');
+								elements.camera.setAttribute('aria-pressed', 'true');
+								elements.camera.setAttribute('aria-label', 'Aktifkan kamera');
+								elements.camera.title = 'Aktifkan kamera';
 							}
 							showLocalPlaceholder('Kamera nonaktif');
 							setStatus('Kamera tidak tersedia. Panggilan suara tetap aktif.');
@@ -2063,6 +2500,16 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						}
 						if (button) {
 							button.classList.toggle('is-off', !state[enabledKey]);
+							button.classList.toggle('is-active', !!state[enabledKey]);
+							button.setAttribute('aria-pressed', state[enabledKey] ? 'false' : 'true');
+							if (kind === 'audio') {
+								button.setAttribute('aria-label', state[enabledKey] ? 'Bisukan mikrofon' : 'Aktifkan mikrofon');
+								button.title = state[enabledKey] ? 'Bisukan mikrofon' : 'Aktifkan mikrofon';
+							}
+							if (kind === 'video') {
+								button.setAttribute('aria-label', state[enabledKey] ? 'Matikan kamera' : 'Aktifkan kamera');
+								button.title = state[enabledKey] ? 'Matikan kamera' : 'Aktifkan kamera';
+							}
 						}
 						if (kind === 'video') {
 							if (state[enabledKey]) {
@@ -2080,6 +2527,10 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						state[enabledKey] = true;
 						if (button) {
 							button.classList.remove('is-off');
+							button.classList.add('is-active');
+							button.setAttribute('aria-pressed', 'false');
+							button.setAttribute('aria-label', kind === 'audio' ? 'Bisukan mikrofon' : 'Matikan kamera');
+							button.title = kind === 'audio' ? 'Bisukan mikrofon' : 'Matikan kamera';
 						}
 						return publishTrack(newTrack);
 					}).catch(function() {
@@ -2110,6 +2561,61 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					});
 				}
 
+				/*
+				 * Test-only presentation seam.  The browser harness sets this explicit
+				 * flag before loading the page and then drives the same production media
+				 * attachment/state functions used by LiveKit.  No markup or lifecycle
+				 * state is fabricated by the application; the seam is inert for normal
+				 * sessions.
+				 */
+				function exposePresentationTestHooks() {
+					if (window.__DOCLINC_LIVEKIT_TEST__ !== true) {
+						return;
+					}
+					window.__DOCLINC_LIVEKIT_TEST_HOOKS__ = {
+						openCall: function() {
+							cacheElements();
+							showCallScreen();
+							setCallActive(true);
+						},
+						setMode: function(mode) {
+							state.mode = mode === 'audio' ? 'audio' : 'video';
+							applyCallModePresentation();
+						},
+						setActive: function() {
+							setCallActive(true);
+						},
+						showLocalPreview: showLocalPreview,
+						showLocalPlaceholder: showLocalPlaceholder,
+						setMediaPresentationState: setMediaPresentationState,
+						attachRemoteTrack: attachRemoteTrack,
+						detachRemoteTrack: detachRemoteTrack,
+						trackSubscribed: function(track, publication, participant) {
+							return handleTrackSubscribed(null, track, publication, participant);
+						},
+						trackUnsubscribed: function(track, publication, participant) {
+							return handleTrackUnsubscribed(null, track, publication, participant);
+						},
+						participantDisconnected: function(participant) {
+							return handleParticipantDisconnected(null, participant);
+						},
+						showIncomingCall: showIncomingCall,
+						hideIncomingCall: hideIncomingCall,
+						clearRemoteTracks: clearRemoteTracks,
+						getSnapshot: function() {
+							return {
+								mode: state.mode,
+								localVideo: !!(elements.local && elements.local.querySelector('video')),
+								remoteVideo: hasRegisteredRemoteVideo(),
+								stageClasses: elements.stage ? elements.stage.className : '',
+								remoteParticipantIdentity: activeRemoteParticipantIdentity,
+								counterpartName: elements.callTitle ? elements.callTitle.textContent : '',
+								counterpartRole: elements.emptyRole ? elements.emptyRole.textContent : ''
+							};
+						}
+					};
+				}
+
 				function callTypeLabel(callType) {
 					return callType === 'audio' ? 'Panggilan suara' : 'Panggilan video';
 				}
@@ -2120,6 +2626,10 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					stopIncomingRingtone(callId);
 					if (elements.incoming) {
 						elements.incoming.classList.add('is-hidden');
+					}
+					state.incomingAnswering = false;
+					if (elements.incomingAnswer) {
+						elements.incomingAnswer.style.transform = '';
 					}
 				}
 
@@ -2137,7 +2647,35 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						elements.incomingCaller.textContent = call.caller_name || 'Nakes DocLink';
 					}
 					if (elements.incomingType) {
-						elements.incomingType.textContent = callTypeLabel(call.call_type);
+						elements.incomingType.setAttribute('data-call-mode', call.call_type === 'audio' ? 'audio' : 'video');
+						var modeLabel = callTypeLabel(call.call_type);
+						elements.incomingType.replaceChildren();
+						if (elements.incomingModeIcon) {
+							var modeIconSrc = call.call_type === 'audio'
+								? <?= json_encode(doclinc_ui_asset('voice_call') . '?v=1'); ?>
+								: <?= json_encode(base_url('assets/doclinc_ui/icon-pack/videocall.svg?v=1')); ?>;
+							// Reset the existing image request before showing an incoming call. The
+							// disposable single-process runtime can leave the initial request
+							// pending while the page is still booting; a fresh URL lets the
+							// browser decode the supplied glyph once the route is interactive.
+							var modeIcon = elements.incomingModeIcon.cloneNode(false);
+							modeIcon.id = 'doclincIncomingModeIcon';
+							modeIcon.alt = '';
+							elements.incomingModeIcon = modeIcon;
+							elements.incomingType.appendChild(modeIcon);
+							modeIcon.src = modeIconSrc + '&call=' + encodeURIComponent(String(call.call_id));
+						}
+						var answerIcon = elements.incomingAnswer ? elements.incomingAnswer.querySelector('img') : null;
+						if (answerIcon) {
+							var freshAnswerIcon = answerIcon.cloneNode(false);
+							freshAnswerIcon.alt = '';
+							answerIcon.replaceWith(freshAnswerIcon);
+							freshAnswerIcon.src = <?= json_encode(doclinc_ui_asset('voice_call') . '?v=1&incoming=answer'); ?> + '&call=' + encodeURIComponent(String(call.call_id));
+						}
+						elements.incomingType.appendChild(document.createTextNode(modeLabel));
+					}
+					if (elements.incomingWaveform) {
+						elements.incomingWaveform.classList.toggle('is-hidden', call.call_type !== 'audio');
 					}
 					if (!state.incomingRejecting) {
 						setIncomingActionsDisabled(false);
@@ -2152,6 +2690,9 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					}
 					if (elements.incomingReject) {
 						elements.incomingReject.disabled = !!disabled;
+					}
+					if (elements.incomingSlider) {
+						elements.incomingSlider.setAttribute('aria-disabled', disabled ? 'true' : 'false');
 					}
 				}
 
@@ -2219,14 +2760,61 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 
 				function answerIncomingCall() {
 					const call = state.incomingCall;
-					if (state.incomingRejecting || !call || !call.call_id) {
+					if (state.incomingRejecting || state.incomingAnswering || !call || !call.call_id) {
 						return;
 					}
+					state.incomingAnswering = true;
+					setIncomingActionsDisabled(true);
 					hideIncomingCall();
 					state.callId = call.call_id;
 					state.mode = call.call_type === 'audio' ? 'audio' : 'video';
 					showCallScreen();
 					joinCall();
+				}
+
+				function resetIncomingSlider() {
+					if (elements.incomingAnswer) {
+						elements.incomingAnswer.style.transform = '';
+					}
+					state.incomingSliderPointerId = null;
+				}
+
+				function bindIncomingSlider() {
+					if (!elements.incomingSlider || !elements.incomingAnswer) {
+						return;
+					}
+					elements.incomingSlider.addEventListener('pointerdown', function(event) {
+						if (state.incomingRejecting || state.incomingAnswering || elements.incomingAnswer.disabled) {
+							return;
+						}
+						state.incomingSliderPointerId = event.pointerId;
+						state.incomingSliderStartX = event.clientX;
+						elements.incomingSlider.setPointerCapture(event.pointerId);
+						event.preventDefault();
+					});
+					elements.incomingSlider.addEventListener('pointermove', function(event) {
+						if (state.incomingSliderPointerId !== event.pointerId) {
+							return;
+						}
+						var maxTravel = Math.max(0, elements.incomingSlider.clientWidth - elements.incomingAnswer.offsetWidth - 12);
+						var travel = Math.max(0, Math.min(maxTravel, event.clientX - state.incomingSliderStartX));
+						elements.incomingAnswer.style.transform = 'translateX(' + travel + 'px)';
+					});
+					function finishSlide(event) {
+						if (state.incomingSliderPointerId !== event.pointerId) {
+							return;
+						}
+						var maxTravel = Math.max(0, elements.incomingSlider.clientWidth - elements.incomingAnswer.offsetWidth - 12);
+						var travel = Math.max(0, Math.min(maxTravel, event.clientX - state.incomingSliderStartX));
+						resetIncomingSlider();
+						if (maxTravel > 0 && travel >= maxTravel * 0.72) {
+							answerIncomingCall();
+						}
+					}
+					elements.incomingSlider.addEventListener('pointerup', finishSlide);
+					elements.incomingSlider.addEventListener('pointercancel', function(event) {
+						if (state.incomingSliderPointerId === event.pointerId) resetIncomingSlider();
+					});
 				}
 
 				function answerCallById(callId) {
@@ -2282,8 +2870,21 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					});
 				}
 
-				document.addEventListener('DOMContentLoaded', function() {
-					cacheElements();
+			document.addEventListener('DOMContentLoaded', function() {
+				cacheElements();
+				window.setTimeout(function() {
+					if (window.DoclincVoiceWaveform && typeof window.DoclincVoiceWaveform.play === 'function') {
+						var voiceWaveform = document.querySelector('[data-voice-waveform]');
+						if (voiceWaveform) {
+							window.DoclincVoiceWaveform.play(voiceWaveform);
+						}
+						var incomingWaveform = document.querySelector('[data-incoming-waveform]');
+						if (incomingWaveform) {
+							window.DoclincVoiceWaveform.play(incomingWaveform);
+						}
+					}
+				}, 0);
+				exposePresentationTestHooks();
 					incomingRingtone();
 					window.addEventListener('pagehide', releaseIncomingRingtone);
 					document.querySelectorAll('.doclinc-call-start').forEach(function(button) {
@@ -2308,6 +2909,9 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					if (elements.speaker) {
 						elements.speaker.addEventListener('click', toggleSpeakerOutput);
 					}
+					if (elements.chat) {
+						elements.chat.addEventListener('click', minimizeCallScreen);
+					}
 					if (elements.switchCamera) {
 						elements.switchCamera.addEventListener('click', switchCamera);
 					}
@@ -2320,12 +2924,16 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					if (elements.minimize) {
 						elements.minimize.addEventListener('click', minimizeCallScreen);
 					}
+					if (elements.more) {
+						elements.more.addEventListener('click', toggleMore);
+					}
 					if (elements.activeCall) {
 						elements.activeCall.addEventListener('click', showCallScreen);
 					}
 					if (elements.incomingAnswer) {
 						elements.incomingAnswer.addEventListener('click', answerIncomingCall);
 					}
+					bindIncomingSlider();
 					if (elements.incomingReject) {
 						elements.incomingReject.addEventListener('click', rejectIncomingCall);
 					}
@@ -2341,11 +2949,11 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						cleanupCall('Panggilan berakhir');
 					});
 					const autoAnswerCallId = <?= json_encode($auto_answer_call_id); ?>;
-					if (autoAnswerCallId > 0) {
-						answerCallById(autoAnswerCallId);
-					} else {
-						startIncomingPolling();
-					}
+			if (autoAnswerCallId > 0) {
+				answerCallById(autoAnswerCallId);
+			} else if (window.__DOCLINC_LIVEKIT_TEST__ !== true) {
+				startIncomingPolling();
+			}
 				});
 			})();
 		</script>
@@ -2363,6 +2971,8 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		const markReadUrl = <?= json_encode(base_url('chat/mark_read')); ?>;
 		let lastMessageId = 0;
 		let hasLoaded = false;
+		const chatPartnerName = <?= json_encode($partner_name); ?>;
+		const chatPartnerInitials = <?= json_encode($partner_initials); ?>;
 		let markReadInFlight = false;
 		let markReadStopped = false;
 		const chatMessageRegistry = window.DoclincChatParticipant
@@ -2397,14 +3007,28 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						chatParticipant.update(data.participant);
 					}
 					if (!hasLoaded && (!data.messages || data.messages.length === 0)) {
-						document.getElementById('chatMessages').innerHTML = '<div class="chat-muted">Belum ada pesan pada konsultasi ini.</div>';
+						const list = document.getElementById('chatMessages');
+						if (list) {
+							list.querySelectorAll('.chat-muted, .chat-error').forEach(function(node) { node.remove(); });
+							const empty = document.createElement('div');
+							empty.className = 'chat-muted';
+							empty.textContent = 'Belum ada pesan pada konsultasi ini.';
+							list.appendChild(empty);
+						}
 						hasLoaded = true;
 					}
 					(data.messages || []).forEach(appendMessage);
 				},
-				onError: function() {
+					onError: function() {
 					if (!hasLoaded) {
-						document.getElementById('chatMessages').innerHTML = '<div class="chat-error">Chat belum dapat dimuat. Coba lagi.</div>';
+						const list = document.getElementById('chatMessages');
+						if (list) {
+							list.querySelectorAll('.chat-muted, .chat-error').forEach(function(node) { node.remove(); });
+							const error = document.createElement('div');
+							error.className = 'chat-error';
+							error.textContent = 'Chat belum dapat dimuat. Coba lagi.';
+							list.appendChild(error);
+						}
 						hasLoaded = true;
 					}
 				}
@@ -2419,10 +3043,24 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			if (isNaN(date.getTime())) {
 				return '';
 			}
-			return date.toLocaleTimeString('id-ID', {
-				hour: '2-digit',
-				minute: '2-digit'
-			});
+			const hours = String(date.getHours()).padStart(2, '0');
+			const minutes = String(date.getMinutes()).padStart(2, '0');
+			return hours + ':' + minutes;
+		}
+
+		function updateChatDateSeparator(value) {
+			const separator = document.getElementById('chatDateSeparator');
+			if (!separator || !value) return;
+			const date = new Date(String(value).replace(' ', 'T'));
+			if (isNaN(date.getTime())) return;
+			const today = new Date();
+			const isToday = date.getFullYear() === today.getFullYear() &&
+				date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
+			const formattedDate = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+			const label = isToday ? 'Hari ini, ' + formattedDate : formattedDate;
+			const text = separator.querySelector('span');
+			if (text) text.textContent = label;
+			separator.hidden = false;
 		}
 
 		function isSafeImageUrl(value) {
@@ -2451,6 +3089,30 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			}
 		}
 
+		function appendMessageAvatar(row, message) {
+			const photoUrl = isSafeProfilePhotoUrl(message && message.sender_photo_url) ? message.sender_photo_url : '';
+			if (photoUrl) {
+				const image = document.createElement('img');
+				image.className = 'chat-message-avatar';
+				image.src = photoUrl;
+				image.alt = '';
+				image.setAttribute('aria-hidden', 'true');
+				image.addEventListener('error', function() {
+					const fallback = document.createElement('span');
+					fallback.className = 'chat-message-avatar-fallback';
+					fallback.textContent = chatPartnerInitials;
+					image.replaceWith(fallback);
+				}, { once: true });
+				row.appendChild(image);
+				return;
+			}
+			const fallback = document.createElement('span');
+			fallback.className = 'chat-message-avatar-fallback';
+			fallback.textContent = chatPartnerInitials;
+			fallback.setAttribute('aria-hidden', 'true');
+			row.appendChild(fallback);
+		}
+
 		function appendMessage(message) {
 			const list = document.getElementById('chatMessages');
 			if (!list) {
@@ -2462,9 +3124,10 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 				return;
 			}
 			if (!hasLoaded) {
-				list.innerHTML = '';
+				list.querySelectorAll('.chat-muted, .chat-error').forEach(function(node) { node.remove(); });
 				hasLoaded = true;
 			}
+			updateChatDateSeparator(message.created_at);
 
 			const isMine = parseInt(message.sender_user_id, 10) === currentUserId;
 			const row = document.createElement('div');
@@ -2473,19 +3136,33 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 
 			const bubble = document.createElement('div');
 			bubble.className = 'chat-bubble' + (isMine ? ' mine' : '');
-			const avatar = document.createElement('img');
-			avatar.className = 'chat-message-avatar';
-			avatar.alt = isMine ? 'Foto Anda' : 'Foto lawan bicara';
-			avatar.src = isSafeProfilePhotoUrl(message.sender_photo_url) ? message.sender_photo_url : <?= json_encode($profile_photo_fallback); ?>;
-			avatar.addEventListener('error', function() {
-				if (avatar.src !== <?= json_encode($profile_photo_fallback); ?>) {
-					avatar.src = <?= json_encode($profile_photo_fallback); ?>;
-				}
-			}, { once: true });
 
 			const time = document.createElement('div');
 			time.className = 'chat-time';
 			time.textContent = formatDate(message.created_at);
+
+			if (!isMine) {
+				appendMessageAvatar(row, message);
+				const sender = document.createElement('div');
+				sender.className = 'chat-message-sender';
+				sender.textContent = (typeof message.sender_display_name === 'string' && message.sender_display_name.trim() !== '')
+					? message.sender_display_name.trim()
+					: chatPartnerName;
+				const stack = document.createElement('div');
+				stack.className = 'chat-message-stack';
+				stack.appendChild(sender);
+				row.appendChild(stack);
+				row._messageStack = stack;
+			} else {
+				const sender = document.createElement('div');
+				sender.className = 'chat-message-sender';
+				sender.textContent = 'Anda';
+				const stack = document.createElement('div');
+				stack.className = 'chat-message-stack mine';
+				stack.appendChild(sender);
+				row.appendChild(stack);
+				row._messageStack = stack;
+			}
 
 			if (message.message_type === 'image' && isSafeImageUrl(message.attachment_url)) {
 				const link = document.createElement('a');
@@ -2502,18 +3179,31 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 				bubble.appendChild(link);
 			} else {
 				const text = document.createElement('div');
+				text.className = 'chat-message-text';
 				text.textContent = message.message_text || '';
+				if (!isMine && text.textContent.length < 120) {
+					bubble.classList.add('chat-bubble-compact');
+				}
+				if (!isMine && text.textContent.length >= 160 && row._messageStack) {
+					row._messageStack.classList.add('chat-message-stack-long');
+				}
 				bubble.appendChild(text);
 			}
+			if (isMine && Number(message.is_read) === 1) {
+				const delivery = document.createElement('span');
+				delivery.className = 'chat-delivery';
+				delivery.setAttribute('aria-label', 'Dibaca');
+				delivery.textContent = '✓✓';
+				time.appendChild(document.createTextNode(' '));
+				time.appendChild(delivery);
+			}
+			bubble.appendChild(time);
 
-			if (isMine) {
-				row.appendChild(time);
-				row.appendChild(bubble);
-				row.appendChild(avatar);
+			if (row._messageStack) {
+				row._messageStack.appendChild(bubble);
+				delete row._messageStack;
 			} else {
-				row.appendChild(avatar);
 				row.appendChild(bubble);
-				row.appendChild(time);
 			}
 
 			list.appendChild(row);

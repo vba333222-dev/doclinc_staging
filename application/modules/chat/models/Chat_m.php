@@ -19,7 +19,31 @@ class Chat_m extends CI_Model
 		$participant = $this->get_chat_participant_context((int) $request_id, $request);
 		$request->chat_clinician_user_id = $participant['user_id'];
 		$request->chat_clinician_name = $participant['name'];
+		$request->chat_clinician_role = $participant['role'];
 		$request->chat_clinician_photo_url = $participant['photo_url'];
+		$request->chat_clinician_photo_available = !empty($participant['photo_available']);
+		$request->chat_patient_name = '';
+		$request->chat_patient_photo_available = false;
+		$request->chat_patient_online = false;
+		$request->chat_clinician_online = false;
+		if ((int) ($request->user_id ?? 0) > 0) {
+			$patient = $this->db
+				->select('nama, foto')
+				->where('userId', (int) $request->user_id)
+				->limit(1)
+				->get('users')
+				->row();
+			if ($patient && trim((string) $patient->nama) !== '') {
+				$request->chat_patient_name = trim((string) $patient->nama);
+			}
+			$request->chat_patient_photo_available = $patient && $this->chat_photo_available($patient->foto ?? '');
+		}
+		if ((int) ($request->user_id ?? 0) > 0) {
+			$request->chat_patient_online = $this->chat_participant_recently_active((int) $request_id, (int) $request->user_id);
+		}
+		if ((int) ($participant['user_id'] ?? 0) > 0) {
+			$request->chat_clinician_online = $this->chat_participant_recently_active((int) $request_id, (int) $participant['user_id']);
+		}
 		return $request;
 	}
 
@@ -36,7 +60,7 @@ class Chat_m extends CI_Model
 	public function get_chat_participant_context($request_id, $request = null)
 	{
 		$request_id = (int) $request_id;
-		$neutral = array('user_id' => 0, 'name' => 'Tenaga kesehatan', 'photo_url' => '');
+		$neutral = array('user_id' => 0, 'name' => 'Tenaga kesehatan', 'role' => '', 'photo_url' => '', 'photo_available' => false);
 		if ($request_id < 1) {
 			return $neutral;
 		}
@@ -112,13 +136,70 @@ class Chat_m extends CI_Model
 			$clinician_user_id = (int) array_key_first($candidates);
 		}
 		if ($clinician_user_id > 0 && isset($candidates[$clinician_user_id])) {
+			$profile = $this->db
+				->select('foto')
+				->where('userId', $clinician_user_id)
+				->limit(1)
+				->get('users')
+				->row();
+			$photo_available = $profile && $this->chat_photo_available($profile->foto ?? '');
+			$role = '';
+			if ($this->db->table_exists('puskesmas_staff') && $this->db->field_exists('profesi', 'puskesmas_staff')) {
+				$staff = $this->db
+					->select('profesi')
+					->where('user_id', $clinician_user_id)
+					->where('status', 'aktif')
+					->limit(1)
+					->get('puskesmas_staff')
+					->row();
+				$role = $staff ? trim((string) ($staff->profesi ?? '')) : '';
+			}
 			return array(
 				'user_id' => $clinician_user_id,
 				'name' => trim((string) $candidates[$clinician_user_id]),
-				'photo_url' => base_url('profile/photo/' . $clinician_user_id),
+				'role' => $role,
+				'photo_url' => $photo_available ? base_url('profile/photo/' . $clinician_user_id) : '',
+				'photo_available' => $photo_available,
 			);
 		}
 		return $neutral;
+	}
+
+	private function chat_photo_available($photo_key)
+	{
+		$photo_key = trim((string) $photo_key);
+		if ($photo_key === '') {
+			return false;
+		}
+		$storage_path = $this->config->item('profile_image_storage_path');
+		if (!is_string($storage_path) || $storage_path === '') {
+			return false;
+		}
+		require_once APPPATH . 'libraries/Profile_image_storage.php';
+		$storage = new Profile_image_storage(array(
+			'storage_path' => $storage_path,
+			'public_root' => FCPATH,
+		));
+		$resolved = $storage->resolve_stored_file($photo_key);
+		return $resolved !== false && $storage->allowed_mime($resolved) !== '';
+	}
+
+	private function chat_participant_recently_active($request_id, $user_id)
+	{
+		if (!$this->messages_ready() || (int) $request_id < 1 || (int) $user_id < 1) {
+			return false;
+		}
+		$row = $this->db
+			->select('message_id')
+			->where('request_id', (int) $request_id)
+			->where('sender_user_id', (int) $user_id)
+			->where('deleted_at IS NULL', null, false)
+			->where('created_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)', null, false)
+			->order_by('message_id', 'DESC')
+			->limit(1)
+			->get('consultation_messages')
+			->row();
+		return (bool) $row;
 	}
 
 	public function get_messages($request_id, $current_user_id, $limit = 50, $after_id = 0)
