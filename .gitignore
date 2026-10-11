@@ -91,3 +91,6 @@ implementation_plan.md
 !database/master_data/clinical/v1/SHA256SUMS.txt
 !tools/personal_nakes/staging_readonly_inventory.sql.txt
 !admin_menu/application/third_party/vendor_2/mpdf/mpdf/**/*.txt
+
+# ReStructuredText documentation
+*.rst
