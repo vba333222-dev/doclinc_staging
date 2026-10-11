@@ -1,0 +1,430 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_RED_FLAG",
+    "judul": "Master Tanda Bahaya",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 24,
+    "cakupan": "Pemicu keselamatan dari jawaban warga. Bukan mesin diagnosis.",
+    "digunakan_pada": [
+      "Peringatan warga",
+      "Prioritas antrean Nakes",
+      "Audit triage"
+    ],
+    "dependensi": [
+      "04_master_pertanyaan_klinis.json"
+    ],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "RF_SULIT_BERNAPAS_BERAT",
+      "nama": "Gangguan napas berat",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_SULIT_BERNAPAS_BERAT",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 1
+    },
+    {
+      "kode": "RF_NYERI_DADA_BERAT",
+      "nama": "Nyeri dada berisiko tinggi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_NYERI_DADA_BERAT",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 2
+    },
+    {
+      "kode": "RF_TIDAK_SADAR",
+      "nama": "Penurunan kesadaran",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_TIDAK_SADAR",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 3
+    },
+    {
+      "kode": "RF_STROKE",
+      "nama": "Tanda stroke akut",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_STROKE",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 4
+    },
+    {
+      "kode": "RF_KEJANG_AKTIF",
+      "nama": "Kejang aktif atau status pascakejang abnormal",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_KEJANG_AKTIF",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 5
+    },
+    {
+      "kode": "RF_SAKIT_KEPALA_TERBERAT",
+      "nama": "Sakit kepala thunderclap",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_SAKIT_KEPALA_TERBERAT",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 6
+    },
+    {
+      "kode": "RF_KAKU_KUDUK",
+      "nama": "Kecurigaan infeksi sistem saraf",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_KAKU_KUDUK",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 7
+    },
+    {
+      "kode": "RF_PERDARAHAN_BANYAK",
+      "nama": "Perdarahan berat",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_PERDARAHAN_BANYAK",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 8
+    },
+    {
+      "kode": "RF_MUNTAH_DARAH_BAB_HITAM",
+      "nama": "Perdarahan saluran cerna",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_MUNTAH_DARAH_BAB_HITAM",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 9
+    },
+    {
+      "kode": "RF_DEHIDRASI_BERAT",
+      "nama": "Dehidrasi berat",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_DEHIDRASI_BERAT",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "SEGERA",
+      "pesan_pasien": "Keluhan perlu dinilai tenaga kesehatan secepatnya.",
+      "blokir_pengiriman_biasa": false,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 10
+    },
+    {
+      "kode": "RF_PERUT_KAKU",
+      "nama": "Abdomen akut",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_PERUT_KAKU",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 11
+    },
+    {
+      "kode": "RF_TIDAK_BISA_BAK",
+      "nama": "Retensi urin akut",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_TIDAK_BISA_BAK",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "SEGERA",
+      "pesan_pasien": "Keluhan perlu dinilai tenaga kesehatan secepatnya.",
+      "blokir_pengiriman_biasa": false,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 12
+    },
+    {
+      "kode": "RF_MATA_PENGLIHATAN_HILANG",
+      "nama": "Kehilangan penglihatan akut",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_MATA_PENGLIHATAN_HILANG",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 13
+    },
+    {
+      "kode": "RF_MATA_KIMIA",
+      "nama": "Cedera kimia mata",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_MATA_KIMIA",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 14
+    },
+    {
+      "kode": "RF_ALERGI_NAPAS_BENGKAK",
+      "nama": "Anafilaksis atau ancaman jalan napas",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_ALERGI_NAPAS_BENGKAK",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 15
+    },
+    {
+      "kode": "RF_LUKA_GIGITAN_BERISIKO",
+      "nama": "Paparan rabies berisiko",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_LUKA_GIGITAN_BERISIKO",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "SEGERA",
+      "pesan_pasien": "Keluhan perlu dinilai tenaga kesehatan secepatnya.",
+      "blokir_pengiriman_biasa": false,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 16
+    },
+    {
+      "kode": "RF_LUKA_BAKAR_BERAT",
+      "nama": "Luka bakar berisiko tinggi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_LUKA_BAKAR_BERAT",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 17
+    },
+    {
+      "kode": "RF_PUNGGUNG_BAK_BAB",
+      "nama": "Sindrom kauda ekuina dicurigai",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_PUNGGUNG_BAK_BAB",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 18
+    },
+    {
+      "kode": "RF_HAMIL_PERDARAHAN_NYERI",
+      "nama": "Kegawatdaruratan obstetri",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_HAMIL_PERDARAHAN_NYERI",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 19
+    },
+    {
+      "kode": "RF_GERAK_JANIN_TURUN",
+      "nama": "Penurunan gerak janin",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_GERAK_JANIN_TURUN",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "SEGERA",
+      "pesan_pasien": "Keluhan perlu dinilai tenaga kesehatan secepatnya.",
+      "blokir_pengiriman_biasa": false,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 20
+    },
+    {
+      "kode": "RF_PIKIRAN_BUNUH_DIRI",
+      "nama": "Risiko menyakiti diri",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_PIKIRAN_BUNUH_DIRI",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 21
+    },
+    {
+      "kode": "RF_BAHAYA_ORANG_LAIN",
+      "nama": "Risiko kekerasan terhadap orang lain",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_BAHAYA_ORANG_LAIN",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 22
+    },
+    {
+      "kode": "RF_ANAK_SANGAT_LEMAS",
+      "nama": "Tanda bahaya anak",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_ANAK_SANGAT_LEMAS",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "DARURAT",
+      "pesan_pasien": "Segera cari pertolongan darurat atau hubungi layanan gawat darurat.",
+      "blokir_pengiriman_biasa": true,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 23
+    },
+    {
+      "kode": "RF_DEMAM_RUAM_PERDARAHAN",
+      "nama": "Demam dengan tanda bahaya",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "pertanyaan_kode": "Q_RF_DEMAM_RUAM_PERDARAHAN",
+      "nilai_pemicu": [
+        "YA"
+      ],
+      "tingkat_urgensi": "SEGERA",
+      "pesan_pasien": "Keluhan perlu dinilai tenaga kesehatan secepatnya.",
+      "blokir_pengiriman_biasa": false,
+      "jangan_tampilkan_diagnosis": true,
+      "urutan": 24
+    }
+  ]
+}

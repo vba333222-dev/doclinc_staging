@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_STATUS_KESADARAN",
+    "judul": "Master Status Kesadaran",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 4,
+    "cakupan": "Pilihan sederhana tingkat kesadaran untuk Nakes.",
+    "digunakan_pada": [
+      "Asesmen Nakes",
+      "Triage"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "ALERT",
+      "nama": "Sadar penuh",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Sadar penuh",
+      "label_klinis": "Alert",
+      "skala": "AVPU",
+      "urutan": 1
+    },
+    {
+      "kode": "VOICE",
+      "nama": "Merespons saat dipanggil",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Merespons saat dipanggil",
+      "label_klinis": "Responds to voice",
+      "skala": "AVPU",
+      "urutan": 2
+    },
+    {
+      "kode": "PAIN",
+      "nama": "Merespons rangsang nyeri",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Merespons rangsang nyeri",
+      "label_klinis": "Responds to pain",
+      "skala": "AVPU",
+      "urutan": 3
+    },
+    {
+      "kode": "UNRESPONSIVE",
+      "nama": "Tidak merespons",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Tidak merespons",
+      "label_klinis": "Unresponsive",
+      "skala": "AVPU",
+      "urutan": 4
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_SATUAN_KEKUATAN",
+    "judul": "Master Satuan Kekuatan Obat",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 12,
+    "cakupan": "Satuan kekuatan produk obat.",
+    "digunakan_pada": [
+      "Varian obat",
+      "Prescription builder"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "MCG",
+      "nama": "mcg",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "mcg",
+      "ucum_code": "mcg",
+      "urutan": 1
+    },
+    {
+      "kode": "MG",
+      "nama": "mg",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "mg",
+      "ucum_code": "mg",
+      "urutan": 2
+    },
+    {
+      "kode": "G",
+      "nama": "g",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "g",
+      "ucum_code": "g",
+      "urutan": 3
+    },
+    {
+      "kode": "MCG_ML",
+      "nama": "mcg/mL",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "mcg/mL",
+      "ucum_code": "mcg/mL",
+      "urutan": 4
+    },
+    {
+      "kode": "MG_ML",
+      "nama": "mg/mL",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "mg/mL",
+      "ucum_code": "mg/mL",
+      "urutan": 5
+    },
+    {
+      "kode": "MG_5ML",
+      "nama": "mg/5 mL",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "mg/5 mL",
+      "ucum_code": "mg/5 mL",
+      "urutan": 6
+    },
+    {
+      "kode": "G_100ML",
+      "nama": "g/100 mL",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "g/100 mL",
+      "ucum_code": "g/100 mL",
+      "urutan": 7
+    },
+    {
+      "kode": "UNIT",
+      "nama": "unit",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "unit",
+      "ucum_code": "unit",
+      "urutan": 8
+    },
+    {
+      "kode": "UNIT_ML",
+      "nama": "unit/mL",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "unit/mL",
+      "ucum_code": "unit/mL",
+      "urutan": 9
+    },
+    {
+      "kode": "PERCENT",
+      "nama": "%",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "%",
+      "ucum_code": "%",
+      "urutan": 10
+    },
+    {
+      "kode": "MEQ",
+      "nama": "mEq",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "mEq",
+      "ucum_code": "mEq",
+      "urutan": 11
+    },
+    {
+      "kode": "MMOL",
+      "nama": "mmol",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "simbol": "mmol",
+      "ucum_code": "mmol",
+      "urutan": 12
+    }
+  ]
+}

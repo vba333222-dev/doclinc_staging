@@ -19,7 +19,7 @@
 								<div>
 									<strong><?= $role_prerequisite_blocked ? 'Data profil wajib dilengkapi.' : (!empty($nakes_is_command_center) ? 'Data Puskesmas belum lengkap.' : 'Data profesi Anda belum lengkap.'); ?></strong>
 									<span><?= html_escape(!empty($role_prerequisite_labels) ? 'Data yang belum tercatat: ' . implode(', ', $role_prerequisite_labels) . ($role_prerequisite_extra_count > 0 ? ', serta ' . $role_prerequisite_extra_count . ' data lainnya' : '') . '.' : 'Lengkapi data profil untuk melanjutkan.'); ?></span>
-									<?php if (!$role_prerequisite_blocked) : ?><span class="d-block small mt-1">Anda tetap dapat menggunakan aplikasi sementara data diperbarui.</span><?php endif; ?>
+									<?php if (!$role_prerequisite_blocked) : ?><span class="d-block small mt-1">Aplikasi tetap dapat digunakan.</span><?php endif; ?>
 								</div>
 								<?php if ($role_prerequisite_cta_url !== '') : ?>
 									<a class="btn btn-warning btn-sm" href="#profile" onclick="showContent('profile')"><?= html_escape($role_prerequisite_cta_label !== '' ? $role_prerequisite_cta_label : 'Lengkapi profil'); ?></a>
@@ -135,13 +135,57 @@
 						<?php
 						$this->load->view('partials/nakes_section_header_v', array(
 							'section_title' => !empty($nakes_is_personal) ? 'Tugas Anda' : 'Diterima',
+							'section_meta' => (string) $nakes_active_count . (!empty($nakes_is_personal) ? ' tugas' : ' diterima'),
 							'section_link_label' => 'Lihat',
 							'section_link_target' => '#riwayat_konsul',
 						));
 						$this->load->view('partials/nakes_active_task_card_v', get_defined_vars());
-						if (!empty($nakes_is_command_center)) :
+						?>
+						<?php if (!empty($nakes_active_rows) && count($nakes_active_rows) > 1) : ?>
+						<?php
+						$secondary_active_rows = array_slice($nakes_active_rows, 1);
+						$secondary_active_total = count($secondary_active_rows);
+						$secondary_active_index = 0;
+						$secondary_care_team_enabled = !empty($care_team_workflow_enabled);
+						$secondary_current_user_id = (int) $this->session->userdata('id');
+						?>
+						<div class="dl-nakes-card dl-dashboard-section">
+							<?php foreach ($secondary_active_rows as $secondary_request) :
+								$secondary_queue_code = doclinc_request_queue_code($secondary_request);
+								$secondary_mode_label = doclinc_consultation_mode_label(isset($secondary_request->consultation_mode) ? $secondary_request->consultation_mode : '');
+								$secondary_responsible = $secondary_care_team_enabled
+									&& isset($secondary_request->responsible_doctor_user_id)
+									&& (int) $secondary_request->responsible_doctor_user_id === $secondary_current_user_id;
+								$secondary_performer = $secondary_care_team_enabled
+									&& (string) ($secondary_request->consultation_mode ?? '') === 'visit'
+									&& isset($secondary_request->visit_performer_user_id)
+									&& (int) $secondary_request->visit_performer_user_id === $secondary_current_user_id;
+								$secondary_visit_status = isset($secondary_request->visit_status) ? doclinc_normalize_visit_status($secondary_request->visit_status) : 'not_started';
+								$secondary_visit_status = $secondary_visit_status !== '' ? $secondary_visit_status : 'not_started';
+								if ($secondary_performer) {
+									$secondary_link = base_url('home_nakes#riwayat_konsul');
+									$secondary_link_label = $secondary_visit_status === 'in_service' ? 'Catat hasil pemeriksaan' : 'Buka tugas kunjungan';
+								} else {
+									$secondary_link = base_url('konsultasi_nakes/konsultasi/' . (int) $secondary_request->request_id);
+									$secondary_link_label = $secondary_care_team_enabled && !$secondary_responsible ? 'Lihat konsultasi' : 'Lanjutkan konsultasi';
+								}
+								$secondary_is_last = ++$secondary_active_index >= $secondary_active_total;
+							?>
+								<div class="dl-latest-row <?= $secondary_is_last ? '' : 'mb-2 pb-2 border-bottom'; ?>">
+									<div class="dl-task-avatar"><i class="fas fa-user-check"></i></div>
+									<div class="flex-grow-1 min-w-0">
+										<p class="dl-latest-name"><?= html_escape(strtoupper((string) $secondary_request->nama)); ?></p>
+										<div class="dl-latest-meta">No. Antrian: <?= html_escape($secondary_queue_code); ?> · <?= html_escape($secondary_mode_label); ?></div>
+									</div>
+									<a href="<?= html_escape($secondary_link); ?>" class="btn btn-outline-success btn-sm rounded-pill fw-bold"><?= html_escape($secondary_link_label); ?></a>
+								</div>
+							<?php endforeach; ?>
+						</div>
+						<?php endif; ?>
+						<?php if (!empty($nakes_is_command_center)) :
 						$this->load->view('partials/nakes_section_header_v', array(
 							'section_title' => 'Permintaan masuk Puskesmas',
+							'section_meta' => (string) $nakes_pending_count . ' menunggu',
 							'section_link_label' => 'Semua',
 							'section_link_target' => '#req_konsul',
 						));

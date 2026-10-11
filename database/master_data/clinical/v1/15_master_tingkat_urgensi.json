@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_TINGKAT_URGENSI",
+    "judul": "Master Tingkat Urgensi",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 4,
+    "cakupan": "Prioritas operasional, bukan diagnosis otomatis.",
+    "digunakan_pada": [
+      "Triage",
+      "Antrean Nakes",
+      "Notifikasi"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "ROUTINE",
+      "nama": "Rutin",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Rutin",
+      "prioritas": 1,
+      "warna_semantik": "neutral",
+      "target_respons_menit": null,
+      "urutan": 1
+    },
+    {
+      "kode": "SOON",
+      "nama": "Perlu segera dinilai",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Perlu segera dinilai",
+      "prioritas": 2,
+      "warna_semantik": "warning",
+      "target_respons_menit": null,
+      "urutan": 2
+    },
+    {
+      "kode": "URGENT",
+      "nama": "Mendesak",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Mendesak",
+      "prioritas": 3,
+      "warna_semantik": "danger",
+      "target_respons_menit": null,
+      "urutan": 3
+    },
+    {
+      "kode": "EMERGENCY",
+      "nama": "Darurat",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label": "Darurat",
+      "prioritas": 4,
+      "warna_semantik": "critical",
+      "target_respons_menit": 0,
+      "urutan": 4
+    }
+  ]
+}

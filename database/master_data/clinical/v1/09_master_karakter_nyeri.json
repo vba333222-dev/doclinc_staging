@@ -1,0 +1,140 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_KARAKTER_NYERI",
+    "judul": "Master Karakter Nyeri",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 11,
+    "cakupan": "Deskripsi nyeri menurut pasien.",
+    "digunakan_pada": [
+      "Pertanyaan nyeri warga",
+      "Ringkasan anamnesis"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "PAIN_01",
+      "nama": "Tajam atau menusuk",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Tajam atau menusuk",
+      "label_klinis": "Tajam atau menusuk",
+      "urutan": 1
+    },
+    {
+      "kode": "PAIN_02",
+      "nama": "Tertekan atau terasa berat",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Tertekan atau terasa berat",
+      "label_klinis": "Tertekan atau terasa berat",
+      "urutan": 2
+    },
+    {
+      "kode": "PAIN_03",
+      "nama": "Panas atau terbakar",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Panas atau terbakar",
+      "label_klinis": "Panas atau terbakar",
+      "urutan": 3
+    },
+    {
+      "kode": "PAIN_04",
+      "nama": "Mulas atau melilit",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Mulas atau melilit",
+      "label_klinis": "Mulas atau melilit",
+      "urutan": 4
+    },
+    {
+      "kode": "PAIN_05",
+      "nama": "Berdenyut",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Berdenyut",
+      "label_klinis": "Berdenyut",
+      "urutan": 5
+    },
+    {
+      "kode": "PAIN_06",
+      "nama": "Pegal atau kaku",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Pegal atau kaku",
+      "label_klinis": "Pegal atau kaku",
+      "urutan": 6
+    },
+    {
+      "kode": "PAIN_07",
+      "nama": "Seperti tersetrum",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Seperti tersetrum",
+      "label_klinis": "Seperti tersetrum",
+      "urutan": 7
+    },
+    {
+      "kode": "PAIN_08",
+      "nama": "Menjalar",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Menjalar",
+      "label_klinis": "Menjalar",
+      "urutan": 8
+    },
+    {
+      "kode": "PAIN_09",
+      "nama": "Hilang timbul",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Hilang timbul",
+      "label_klinis": "Hilang timbul",
+      "urutan": 9
+    },
+    {
+      "kode": "PAIN_10",
+      "nama": "Terus-menerus",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Terus-menerus",
+      "label_klinis": "Terus-menerus",
+      "urutan": 10
+    },
+    {
+      "kode": "PAIN_11",
+      "nama": "Lainnya",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Lainnya",
+      "label_klinis": "Lainnya",
+      "urutan": 11
+    }
+  ]
+}

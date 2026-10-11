@@ -166,6 +166,17 @@ class Konsultasi_nakes extends MX_Controller
 		$x['can_open_patient_chat'] = !empty($identity_context['valid'])
 			&& (string) ($identity_context['account_type'] ?? '') === 'personal'
 			&& doclinc_can_view_chat((int) $x['request_id'], $doctor_id, 'dokter');
+		$x['is_command_center'] = !empty($identity_context['valid'])
+			&& (string) ($identity_context['account_type'] ?? '') === 'command_center';
+		$x['record_readonly'] = $this->load_command_center_record((int) $x['request_id']);
+		$x['handling_nakes_name'] = '';
+		if (function_exists('doclinc_request_handling_nakes_id')) {
+			$handling_id = doclinc_request_handling_nakes_id($request);
+			if ($handling_id !== null && (int) $handling_id > 0) {
+				$nakes_user = $this->db->select('nama')->where('userId', (int) $handling_id)->limit(1)->get('users')->row();
+				$x['handling_nakes_name'] = $nakes_user ? trim((string) $nakes_user->nama) : '';
+			}
+		}
 		$x['visit_proof_required'] = doclinc_visit_proof_required();
 		$x['additional_diagnoses_enabled'] = (bool) $this->config->item('additional_diagnoses_enabled');
 		$x['anamnesis_schema_ready'] = false;
@@ -627,5 +638,39 @@ class Konsultasi_nakes extends MX_Controller
 			'diagnosis_write_failed' => 'Diagnosis belum dapat disimpan. Coba lagi.',
 		);
 		return isset($messages[$code]) ? $messages[$code] : 'Konsultasi belum dapat diselesaikan.';
+	}
+
+	/**
+	 * Rekam medis read-only untuk akun command center (Puskesmas):
+	 * laporan status pemeriksaan tanpa form klinis Nakes.
+	 */
+	private function load_command_center_record($request_id)
+	{
+		if ($request_id < 1) {
+			return null;
+		}
+		$record = null;
+		if ($this->db->table_exists('medicalrecords')) {
+			if ($this->db->field_exists('recorded_by_user_id', 'medicalrecords')) {
+				$this->db
+					->select('mr.*, u.nama AS recorded_by_name')
+					->from('medicalrecords AS mr')
+					->join('users AS u', 'u.userId = mr.recorded_by_user_id', 'left');
+			} else {
+				$this->db->from('medicalrecords AS mr');
+			}
+			$this->db
+				->where('mr.request_id', $request_id)
+				->order_by('mr.record_id', 'DESC')
+				->limit(1);
+			$record = $this->db->get()->row();
+		}
+		if (!$record && $this->db->table_exists('konsultasi')) {
+			$legacy = $this->db->get_where('konsultasi', array('request_id' => $request_id))->row();
+			if ($legacy) {
+				$record = $legacy;
+			}
+		}
+		return $record;
 	}
 }

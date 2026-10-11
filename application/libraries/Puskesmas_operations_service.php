@@ -8,8 +8,10 @@ class Puskesmas_operations_service
 	private $db;
 	private $policy;
 	private $online_timeout_seconds;
+	private $care_team_schema_ready;
+	private $care_team_enabled;
 
-	public function __construct($db = null, $online_timeout_seconds = 90)
+	public function __construct($db = null, $online_timeout_seconds = 90, $care_team_workflow_enabled = null)
 	{
 		if ($db === null && function_exists('get_instance')) {
 			$CI = &get_instance();
@@ -18,6 +20,17 @@ class Puskesmas_operations_service
 		$this->db = $db;
 		$this->policy = new Puskesmas_operations_policy();
 		$this->online_timeout_seconds = max(30, min(300, (int) $online_timeout_seconds));
+
+		// Sumber kebenaran penanggung jawab mengikuti flag care-team (sama dengan jalur tulis
+		// aplikasi), bukan sekadar keberadaan kolom — schema bisa tertinggal atau lebih dulu
+		// dari flag dan menyebabkan dua layar menghitung PIC dari sumber berbeda.
+		$this->care_team_schema_ready = $db !== null
+			&& $db->field_exists('responsible_doctor_user_id', 'requests')
+			&& $db->field_exists('visit_performer_user_id', 'requests')
+			&& $db->field_exists('consultation_mode', 'requests');
+		$this->care_team_enabled = $care_team_workflow_enabled === null
+			? $this->care_team_schema_ready
+			: ($care_team_workflow_enabled === true && $this->care_team_schema_ready);
 	}
 
 	public function schemaReady()
@@ -100,18 +113,21 @@ class Puskesmas_operations_service
 		}
 		$aggregate = $aggregate_query->row();
 
-		$care_team_ready = $this->db->field_exists('responsible_doctor_user_id', 'requests')
-			&& $this->db->field_exists('visit_performer_user_id', 'requests')
-			&& $this->db->field_exists('consultation_mode', 'requests');
-		$request_select = 'request_id, request_status, visit_status, assigned_nakes_user_id';
-		if ($care_team_ready) {
-			$request_select .= ', responsible_doctor_user_id, visit_performer_user_id, consultation_mode';
+		$date_field = $this->dateField('requests');
+		$nik_ready = $this->db->field_exists('nik', 'users');
+		$request_select = 'requests.request_id, requests.request_status, requests.visit_status, requests.assigned_nakes_user_id';
+		$request_select .= ', DATE(' . $date_field . ') AS service_date';
+		$request_select .= ', patient.nama AS patient_name';
+		$request_select .= $nik_ready ? ', patient.nik AS patient_nik' : ', NULL AS patient_nik';
+		if ($this->care_team_enabled) {
+			$request_select .= ', requests.responsible_doctor_user_id, requests.visit_performer_user_id, requests.consultation_mode';
 		}
 		$request_query = $this->db
-			->select($request_select)
-			->where('assigned_puskesmas_code', $puskesmas_code)
-			->where('request_status', 'Accepted')
-			->order_by('request_id', 'DESC')
+			->select($request_select, false)
+			->join('users patient', 'patient.userId = requests.user_id', 'inner')
+			->where('requests.assigned_puskesmas_code', $puskesmas_code)
+			->where('requests.request_status', 'Accepted')
+			->order_by('requests.request_id', 'DESC')
 			->limit($request_limit + 1)
 			->get('requests');
 		if (!$request_query) {
@@ -130,7 +146,7 @@ class Puskesmas_operations_service
 			$request_ids[] = $request_id;
 			$request_by_id[$request_id] = $request;
 			$canonical_user_id = 0;
-			if ($care_team_ready) {
+			if ($this->care_team_enabled) {
 				$canonical_user_id = strtolower((string) $request->consultation_mode) === 'visit'
 					? (int) $request->visit_performer_user_id
 					: (int) $request->responsible_doctor_user_id;
@@ -139,14 +155,17 @@ class Puskesmas_operations_service
 				'request_id' => $request_id,
 				'request_status' => 'Accepted',
 				'visit_status' => $request->visit_status,
-				'assigned_nakes_user_id' => $care_team_ready ? $canonical_user_id : $request->assigned_nakes_user_id,
+				'assigned_nakes_user_id' => $this->care_team_enabled ? $canonical_user_id : $request->assigned_nakes_user_id,
 				'assignment_id' => null,
 				'assignment_staff_id' => null,
 				'assignment_user_id' => null,
+				'patient_name' => isset($request->patient_name) ? (string) $request->patient_name : '',
+				'patient_nik' => isset($request->patient_nik) ? (string) $request->patient_nik : '',
+				'service_date' => isset($request->service_date) ? (string) $request->service_date : '',
 			);
 		}
 
-		if (!empty($request_ids) && !$care_team_ready) {
+		if (!empty($request_ids) && !$this->care_team_enabled) {
 			$assignment_limit = ($request_limit * 3) + 1;
 			$assignment_query = $this->db
 				->select('rsa.assignment_id, rsa.request_id, rsa.staff_id AS assignment_staff_id, aps.user_id AS assignment_user_id', false)
@@ -179,6 +198,9 @@ class Puskesmas_operations_service
 					'assignment_id' => $assignment->assignment_id,
 					'assignment_staff_id' => $assignment->assignment_staff_id,
 					'assignment_user_id' => $assignment->assignment_user_id,
+					'patient_name' => isset($request->patient_name) ? (string) $request->patient_name : '',
+					'patient_nik' => isset($request->patient_nik) ? (string) $request->patient_nik : '',
+					'service_date' => isset($request->service_date) ? (string) $request->service_date : '',
 				);
 			}
 		}
@@ -193,7 +215,8 @@ class Puskesmas_operations_service
 			$request_rows,
 			max(0, (int) $aggregate->pending_count),
 			time(),
-			$accepted_count
+			$accepted_count,
+			$this->care_team_enabled
 		);
 		$data['requests'] = $operational['rows'];
 		$data['filters'] = $operational['filters'];
@@ -252,32 +275,29 @@ class Puskesmas_operations_service
 
 	private function operationalRows($puskesmas_code, array $filters, $limit)
 	{
-		$date_from = isset($filters['date_from']) ? (string) $filters['date_from'] : date('Y-m-d');
-		$date_to = isset($filters['date_to']) ? (string) $filters['date_to'] : $date_from;
+		$date_from = isset($filters['date_from']) ? (string) $filters['date_from'] : date('Y-m-d', strtotime('-7 days'));
+		$date_to = isset($filters['date_to']) ? (string) $filters['date_to'] : date('Y-m-d');
 		$search = isset($filters['q']) ? trim((string) $filters['q']) : '';
-		$date_field = $this->db->field_exists('date', 'requests') ? 'r.date' : ($this->db->field_exists('created_at', 'requests') ? 'r.created_at' : ($this->db->field_exists('updated_at', 'requests') ? 'r.updated_at' : 'CURRENT_DATE()'));
+		$date_field = $this->dateField('r');
 		$nik_ready = $this->db->field_exists('nik', 'users');
-		$care_team_ready = $this->db->field_exists('responsible_doctor_user_id', 'requests')
-			&& $this->db->field_exists('visit_performer_user_id', 'requests')
-			&& $this->db->field_exists('consultation_mode', 'requests');
 		$this->db
 			->select('r.request_id, r.request_status, r.visit_status')
-			->select($care_team_ready ? 'r.consultation_mode' : 'NULL AS consultation_mode', false)
+			->select($this->care_team_enabled ? 'r.consultation_mode' : 'NULL AS consultation_mode', false)
 			->select("DATE({$date_field}) AS service_date", false)
 			->select('patient.nama AS patient_name')
-			->select($care_team_ready ? 'doctor.nama AS responsible_doctor_name, performer.nama AS visit_performer_name' : 'NULL AS responsible_doctor_name, NULL AS visit_performer_name', false)
+			->select($this->care_team_enabled ? 'doctor.nama AS responsible_doctor_name, performer.nama AS visit_performer_name' : 'NULL AS responsible_doctor_name, NULL AS visit_performer_name', false)
 			->select($nik_ready ? 'patient.nik AS patient_nik' : 'NULL AS patient_nik', false)
 			->from('requests r')
 			->join('users patient', 'patient.userId = r.user_id', 'inner');
-		if ($care_team_ready) {
+		if ($this->care_team_enabled) {
 			$this->db->join($this->validStaffSubquery() . ' doctor_staff', 'doctor_staff.user_id = r.responsible_doctor_user_id AND CONVERT(doctor_staff.kode_pkm USING utf8mb4) COLLATE utf8mb4_unicode_ci = CONVERT(r.assigned_puskesmas_code USING utf8mb4) COLLATE utf8mb4_unicode_ci', 'left', false)
 				->join('users doctor', 'doctor.userId = doctor_staff.user_id', 'left')
 				->join($this->validStaffSubquery() . ' performer_staff', 'performer_staff.user_id = r.visit_performer_user_id AND CONVERT(performer_staff.kode_pkm USING utf8mb4) COLLATE utf8mb4_unicode_ci = CONVERT(r.assigned_puskesmas_code USING utf8mb4) COLLATE utf8mb4_unicode_ci', 'left', false)
 				->join('users performer', 'performer.userId = performer_staff.user_id', 'left');
 		}
 		$this->db->where('r.assigned_puskesmas_code', $puskesmas_code)
-			->where("DATE({$date_field}) >=", $date_from)
-			->where("DATE({$date_field}) <=", $date_to);
+			->where('DATE(' . $date_field . ') >= ' . $this->db->escape($date_from), null, false)
+			->where('DATE(' . $date_field . ') <= ' . $this->db->escape($date_to), null, false);
 		if ($search !== '') {
 			$this->db->group_start()->like('patient.nama', $search);
 			$nik_search = preg_replace('/\D+/', '', $search);
@@ -286,7 +306,7 @@ class Puskesmas_operations_service
 			}
 			$this->db->group_end();
 		}
-		$query = $this->db->order_by($date_field, 'ASC')->order_by('r.request_id', 'ASC')->limit($limit + 1)->get();
+		$query = $this->db->order_by($date_field, 'ASC', false)->order_by('r.request_id', 'ASC')->limit($limit + 1)->get();
 		if (!$query) {
 			return array('ok' => false, 'code' => 'read_failed');
 		}
@@ -313,7 +333,7 @@ class Puskesmas_operations_service
 		return array('ok' => true, 'rows' => $result, 'filters' => array('q' => $search, 'date_from' => $date_from, 'date_to' => $date_to));
 	}
 
-	public function composeSnapshot($puskesmas_code, array $staff_rows, array $request_rows, $pending_count, $generated_at_epoch, $accepted_count = null)
+	public function composeSnapshot($puskesmas_code, array $staff_rows, array $request_rows, $pending_count, $generated_at_epoch, $accepted_count = null, $care_team_enabled = null)
 	{
 		$puskesmas_code = trim((string) $puskesmas_code);
 		$staff = array();
@@ -354,6 +374,10 @@ class Puskesmas_operations_service
 					'visit_status' => $this->visitStatus($this->value($row, 'visit_status')),
 					'direct_user_id' => (int) $this->value($row, 'assigned_nakes_user_id'),
 					'assignments' => array(),
+					'patient_name' => (string) $this->value($row, 'patient_name'),
+					'patient_nik' => (string) $this->value($row, 'patient_nik'),
+					'service_date' => (string) $this->value($row, 'service_date'),
+					'consultation_mode' => strtolower(trim((string) $this->value($row, 'consultation_mode'))),
 				);
 			}
 			$assignment_id = (int) $this->value($row, 'assignment_id');
@@ -397,26 +421,33 @@ class Puskesmas_operations_service
 				}
 				$assignment_users[$assignment['user_id']] = true;
 			}
+			$care_team_enabled = $care_team_enabled === null ? $this->care_team_enabled : (bool) $care_team_enabled;
 			$assigned_user_id = 0;
 			$ambiguous = $invalid_assignment || count($request['assignments']) > 1 || count($assignment_users) > 1;
+			// Akun staf fasilitas ini (bukan akun puskesmas yang menerima, bukan staf fasilitas lain).
+			$direct_is_staff = $request['direct_user_id'] > 0 && isset($staff_by_user[$request['direct_user_id']]);
 			if (!$ambiguous && count($assignment_users) === 1) {
 				$assigned_user_id = (int) array_key_first($assignment_users);
-				if ($request['direct_user_id'] > 0 && $request['direct_user_id'] !== $assigned_user_id) {
+				// Legacy: penugasan staf adalah sumber kebenaran. Handler langsung hanya konflik
+				// bila ia akun staf fasilitas ini dan berbeda (akun puskesmas yang menerima bukan konflik).
+				if ($direct_is_staff && $request['direct_user_id'] !== $assigned_user_id) {
 					$ambiguous = true;
 				}
-			} elseif (!$ambiguous && empty($request['assignments']) && $request['direct_user_id'] > 0) {
-				$assigned_user_id = isset($staff_by_user[$request['direct_user_id']]) ? $request['direct_user_id'] : 0;
-				$ambiguous = $assigned_user_id < 1;
+			} elseif (!$ambiguous && $direct_is_staff) {
+				$assigned_user_id = $request['direct_user_id'];
+			} elseif (!$ambiguous && $care_team_enabled && $request['direct_user_id'] > 0) {
+				// Care-team: handler kanonik menunjuk akun di luar fasilitas → perlu diperiksa.
+				$ambiguous = true;
 			}
 
 			if ($ambiguous) {
 				$summary['ambiguous_assignments']++;
-				$exceptions[] = $this->exceptionRow($request, 'ambiguous_assignment');
+				$exceptions[] = $this->exceptionRow($request, 'ambiguous_assignment', $puskesmas_code);
 				continue;
 			}
 			if ($assigned_user_id < 1) {
 				$summary['unassigned_requests']++;
-				$exceptions[] = $this->exceptionRow($request, 'unassigned_request');
+				$exceptions[] = $this->exceptionRow($request, 'unassigned_request', $puskesmas_code);
 				continue;
 			}
 
@@ -468,15 +499,53 @@ class Puskesmas_operations_service
 		);
 	}
 
-	private function exceptionRow(array $request, $type)
+	private function exceptionRow(array $request, $type, $puskesmas_code)
 	{
-		return array(
+		$row = array(
 			'request_id' => (int) $request['request_id'],
 			'type' => (string) $type,
 			'request_status' => 'Accepted',
 			'visit_status' => (string) $request['visit_status'],
 			'visit_status_label' => $this->visitStatusLabel($request['visit_status']),
 		);
+		// Identitas pasien + nomor antrian agar operator tahu request mana yang perlu ditindak
+		// dan bisa membukanya langsung (hanya disertakan bila tersedia).
+		$patient_name = $this->safeText($this->value($request, 'patient_name'), 100, '');
+		if ($patient_name !== '') {
+			$row['patient_name'] = $patient_name;
+		}
+		$queue_code = $this->queueCode($puskesmas_code, $this->value($request, 'service_date'), (int) $request['request_id']);
+		if ($queue_code !== '') {
+			$row['queue_code'] = $queue_code;
+		}
+		$nik_masked = $this->maskNik($this->value($request, 'patient_nik'));
+		if ($nik_masked !== '') {
+			$row['patient_nik_masked'] = $nik_masked;
+		}
+		$mode = strtolower(trim((string) $this->value($request, 'consultation_mode')));
+		if (in_array($mode, array('visit', 'non_visit'), true)) {
+			$row['service_mode_label'] = $this->serviceModeLabel($mode);
+		}
+		return $row;
+	}
+
+	private function queueCode($puskesmas_code, $service_date, $request_id)
+	{
+		$date_part = preg_replace('/\D+/', '', (string) $service_date);
+		if ($date_part === '' || strlen($date_part) < 8) {
+			return '';
+		}
+		$date_part = substr($date_part, 0, 4) . '-' . substr($date_part, 4, 2) . '-' . substr($date_part, 6, 2);
+		return trim((string) $puskesmas_code) . '-' . $date_part . '-' . str_pad((string) max(1, (int) $request_id), 3, '0', STR_PAD_LEFT);
+	}
+
+	private function dateField($table_alias)
+	{
+		$parts = array();
+		$parts[] = $this->db->field_exists('date', 'requests') ? $table_alias . '.date' : 'NULL';
+		$parts[] = $this->db->field_exists('created_at', 'requests') ? $table_alias . '.created_at' : 'NULL';
+		$parts[] = $this->db->field_exists('updated_at', 'requests') ? $table_alias . '.updated_at' : 'CURRENT_DATE()';
+		return 'COALESCE(' . implode(', ', $parts) . ')';
 	}
 
 	private function visitStatus($value)

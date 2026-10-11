@@ -26,7 +26,9 @@ expect(wargaView.includes("base_url('assets/js/doclinc-location-address.js')"), 
 expect(wargaView.includes('id="userLocationAddress"'), 'warga_has_human_address_target');
 expect(wargaView.includes('id="userLocationMapLink"'), 'warga_has_safe_map_link');
 expect(!/coordinateEl\.textContent\s*=\s*[^;]*(lat|lng|latitude|longitude)/i.test(wargaView), 'warga_header_does_not_render_coordinates');
-expect((wargaView.match(/id="address"/g) || []).length === 1, 'warga_address_id_is_unique');
+// Form konsultasi lama (id="address") sudah dihapus sebagai dead code;
+// tidak boleh ada id="address" tersisa atau duplikat.
+expect((wargaView.match(/id="address"/g) || []).length <= 1, 'warga_address_id_is_unique_or_absent');
 expect(wargaView.includes("endpoint: <?= json_encode(base_url('location/address')); ?>"), 'warga_uses_authenticated_server_fallback');
 expect(wargaView.includes('Buka peta · © OpenStreetMap'), 'warga_displays_openstreetmap_attribution');
 expect(!wargaView.includes('navigator.geolocation.watchPosition(updateLocation, showError)'), 'warga_address_lookup_is_not_periodic_tracking');

@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_TIPE_DIAGNOSIS",
+    "judul": "Master Tipe Diagnosis",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 5,
+    "cakupan": "Jenis kedudukan diagnosis dalam satu konsultasi.",
+    "digunakan_pada": [
+      "Workspace diagnosis Nakes"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "DIFFERENTIAL",
+      "nama": "Diagnosis banding",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 1
+    },
+    {
+      "kode": "WORKING",
+      "nama": "Diagnosis kerja",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 2
+    },
+    {
+      "kode": "PRIMARY",
+      "nama": "Diagnosis utama",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 3
+    },
+    {
+      "kode": "SECONDARY",
+      "nama": "Diagnosis penyerta",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 4
+    },
+    {
+      "kode": "RULED_OUT",
+      "nama": "Diagnosis disingkirkan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 5
+    }
+  ]
+}

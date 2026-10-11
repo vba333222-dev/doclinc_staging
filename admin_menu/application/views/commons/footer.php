@@ -111,7 +111,19 @@
 						localStorage.setItem('doclinc_admin_theme', nextTheme);
 					} catch (error) {}
 					applyTheme(nextTheme);
-				});
+				
+		// Scroll to Top Button
+		var scrollBtn = document.querySelector('.scroll-to-top');
+		if (scrollBtn) {
+			window.addEventListener('scroll', function() {
+				if (window.pageYOffset > 300) {
+					scrollBtn.classList.add('visible');
+				} else {
+					scrollBtn.classList.remove('visible');
+				}
+			});
+		}
+	});
 			}
         		if ($(window).width() < 481) {
         			$('body').addClass('sidebar-toggled');

@@ -1,0 +1,186 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_FREKUENSI_OBAT",
+    "judul": "Master Frekuensi Obat",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 14,
+    "cakupan": "Frekuensi umum peresepan. Dosis tetap keputusan dokter.",
+    "digunakan_pada": [
+      "Prescription builder"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "ONCE",
+      "nama": "Sekali pemberian",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Sekali pemberian",
+      "jumlah_per_periode": 1,
+      "interval_jam": null,
+      "urutan": 1
+    },
+    {
+      "kode": "OD",
+      "nama": "1 kali sehari",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "1 kali sehari",
+      "jumlah_per_periode": 1,
+      "interval_jam": 24,
+      "urutan": 2
+    },
+    {
+      "kode": "BID",
+      "nama": "2 kali sehari",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "2 kali sehari",
+      "jumlah_per_periode": 2,
+      "interval_jam": 24,
+      "urutan": 3
+    },
+    {
+      "kode": "TID",
+      "nama": "3 kali sehari",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "3 kali sehari",
+      "jumlah_per_periode": 3,
+      "interval_jam": 24,
+      "urutan": 4
+    },
+    {
+      "kode": "QID",
+      "nama": "4 kali sehari",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "4 kali sehari",
+      "jumlah_per_periode": 4,
+      "interval_jam": 24,
+      "urutan": 5
+    },
+    {
+      "kode": "Q4H",
+      "nama": "Setiap 4 jam",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Setiap 4 jam",
+      "jumlah_per_periode": null,
+      "interval_jam": 4,
+      "urutan": 6
+    },
+    {
+      "kode": "Q6H",
+      "nama": "Setiap 6 jam",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Setiap 6 jam",
+      "jumlah_per_periode": null,
+      "interval_jam": 6,
+      "urutan": 7
+    },
+    {
+      "kode": "Q8H",
+      "nama": "Setiap 8 jam",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Setiap 8 jam",
+      "jumlah_per_periode": null,
+      "interval_jam": 8,
+      "urutan": 8
+    },
+    {
+      "kode": "Q12H",
+      "nama": "Setiap 12 jam",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Setiap 12 jam",
+      "jumlah_per_periode": null,
+      "interval_jam": 12,
+      "urutan": 9
+    },
+    {
+      "kode": "PRN",
+      "nama": "Bila diperlukan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Bila diperlukan",
+      "jumlah_per_periode": null,
+      "interval_jam": null,
+      "urutan": 10
+    },
+    {
+      "kode": "NOCTE",
+      "nama": "Setiap malam",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Setiap malam",
+      "jumlah_per_periode": 1,
+      "interval_jam": 24,
+      "urutan": 11
+    },
+    {
+      "kode": "MORNING",
+      "nama": "Setiap pagi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Setiap pagi",
+      "jumlah_per_periode": 1,
+      "interval_jam": 24,
+      "urutan": 12
+    },
+    {
+      "kode": "WEEKLY",
+      "nama": "1 kali seminggu",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "1 kali seminggu",
+      "jumlah_per_periode": 1,
+      "interval_jam": 168,
+      "urutan": 13
+    },
+    {
+      "kode": "CUSTOM",
+      "nama": "Aturan khusus",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Aturan khusus",
+      "jumlah_per_periode": null,
+      "interval_jam": null,
+      "urutan": 14
+    }
+  ]
+}

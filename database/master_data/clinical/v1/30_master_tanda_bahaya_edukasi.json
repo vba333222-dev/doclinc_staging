@@ -1,0 +1,161 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_TANDA_BAHAYA_EDUKASI",
+    "judul": "Master Tanda Bahaya untuk Edukasi",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 13,
+    "cakupan": "Pesan kapan pasien harus segera mencari pertolongan.",
+    "digunakan_pada": [
+      "Hasil konsultasi pasien"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "BREATHING",
+      "nama": "Napas semakin sulit, bibir membiru, atau tidak dapat berbicara dengan baik.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Napas semakin sulit, bibir membiru, atau tidak dapat berbicara dengan baik.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 1
+    },
+    {
+      "kode": "CHEST_PAIN",
+      "nama": "Nyeri atau tekanan dada berat, berkeringat dingin, atau pingsan.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Nyeri atau tekanan dada berat, berkeringat dingin, atau pingsan.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 2
+    },
+    {
+      "kode": "CONSCIOUSNESS",
+      "nama": "Sulit dibangunkan, kebingungan berat, atau tidak sadar.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Sulit dibangunkan, kebingungan berat, atau tidak sadar.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 3
+    },
+    {
+      "kode": "STROKE",
+      "nama": "Wajah mencong, bicara pelo, atau salah satu sisi tubuh mendadak lemah.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Wajah mencong, bicara pelo, atau salah satu sisi tubuh mendadak lemah.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 4
+    },
+    {
+      "kode": "SEIZURE",
+      "nama": "Kejang berlangsung, berulang, atau belum kembali sadar.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Kejang berlangsung, berulang, atau belum kembali sadar.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 5
+    },
+    {
+      "kode": "BLEEDING",
+      "nama": "Perdarahan banyak atau tidak berhenti.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Perdarahan banyak atau tidak berhenti.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 6
+    },
+    {
+      "kode": "DEHYDRATION",
+      "nama": "Tidak dapat minum, sangat lemas, atau hampir tidak buang air kecil.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Tidak dapat minum, sangat lemas, atau hampir tidak buang air kecil.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 7
+    },
+    {
+      "kode": "ABDOMEN",
+      "nama": "Nyeri perut sangat berat atau perut terasa kaku.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Nyeri perut sangat berat atau perut terasa kaku.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 8
+    },
+    {
+      "kode": "ALLERGY",
+      "nama": "Bengkak pada bibir atau tenggorokan, suara serak, atau sesak setelah paparan.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Bengkak pada bibir atau tenggorokan, suara serak, atau sesak setelah paparan.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 9
+    },
+    {
+      "kode": "EYE",
+      "nama": "Penglihatan mendadak menurun atau mata terkena bahan kimia.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Penglihatan mendadak menurun atau mata terkena bahan kimia.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 10
+    },
+    {
+      "kode": "PREGNANCY",
+      "nama": "Perdarahan, nyeri berat, pingsan, cairan terus keluar, atau gerak janin berkurang.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Perdarahan, nyeri berat, pingsan, cairan terus keluar, atau gerak janin berkurang.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 11
+    },
+    {
+      "kode": "MENTAL",
+      "nama": "Ada pikiran atau rencana menyakiti diri maupun orang lain.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Ada pikiran atau rencana menyakiti diri maupun orang lain.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 12
+    },
+    {
+      "kode": "CUSTOM",
+      "nama": "Tanda bahaya khusus yang ditulis Nakes.",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "teks_pasien": "Tanda bahaya khusus yang ditulis Nakes.",
+      "tingkat_urgensi": "DARURAT",
+      "urutan": 13
+    }
+  ]
+}

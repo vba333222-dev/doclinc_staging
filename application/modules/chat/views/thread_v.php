@@ -61,7 +61,7 @@ if ($current_role === 'dokter') {
 	$partner_name = isset($request->chat_clinician_name) && trim((string) $request->chat_clinician_name) !== ''
 		? trim((string) $request->chat_clinician_name)
 		: 'Tenaga kesehatan';
-	$partner_subtitle = 'Nakes akan membantu konsultasi Anda';
+	$partner_subtitle = 'Nakes penanganan Anda';
 }
 $auto_visit_location = $current_role === 'dokter'
 	&& !$is_command_center
@@ -82,16 +82,38 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Chat Konsultasi</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<style>
+		:root {
+			--chat-green: #1F6F4B;
+			--chat-green-dark: #177a42;
+			--chat-green-accent: #437a13;
+			--chat-bg: #F7F7F7;
+			--chat-surface: #FFFFFF;
+			--chat-text: #1F2A24;
+			--chat-muted: #66756D;
+			--chat-border: #E7ECE9;
+			--chat-bubble-in: #f0f7f3;
+			--chat-bubble-out: #E8F7F0;
+			--chat-bubble-in-alt: #f9f0da;
+			--chat-bubble-out-alt: #e1f0d6;
+			--chat-time: #9CA3AF;
+			--chat-input-border: #D1D5DB;
+			--chat-red: #dc2626;
+			--chat-red-light: #fecaca;
+		}
+
 		* {
 			box-sizing: border-box;
 		}
 
 		body {
 			margin: 0;
-			background: #ececec;
-			color: #333333;
-			font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			background: var(--chat-bg);
+			color: var(--chat-text);
+			font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 			line-height: 1.45;
 		}
 
@@ -109,30 +131,36 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		}
 
 		.chat-header {
-			min-height: 72px;
-			background: #ffffff;
-			color: #333333;
-			padding: 10px 12px;
+			min-height: 68px;
+			background: var(--chat-surface);
+			color: var(--chat-text);
+			padding: 12px 14px;
 			display: flex;
 			align-items: center;
-			gap: 10px;
+			gap: 12px;
 			top: 0;
 			z-index: 4;
-			box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+			box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
 		}
 
 		.chat-back {
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			width: 34px;
-			height: 34px;
+			width: 36px;
+			height: 36px;
 			border: 0;
+			border-radius: 10px;
 			background: transparent;
-			color: #333333;
+			color: var(--chat-text);
 			line-height: 1;
 			text-decoration: none;
-			flex: 0 0 34px;
+			flex: 0 0 36px;
+			transition: background 0.15s ease;
+		}
+
+		.chat-back:hover {
+			background: rgba(31, 111, 75, 0.08);
 		}
 
 		.chat-back img {
@@ -157,8 +185,8 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 
 		.chat-title-text {
 			margin: 0;
-			color: #333333;
-			font-weight: 700;
+			color: var(--chat-text);
+			font-weight: 800;
 			font-size: 15px;
 			line-height: 19px;
 			white-space: nowrap;
@@ -168,9 +196,9 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 
 		.chat-title-subtext {
 			margin: 2px 0 0;
-			color: #6b7280;
+			color: var(--chat-muted);
 			font-size: 11px;
-			font-weight: 650;
+			font-weight: 600;
 			line-height: 15px;
 			white-space: nowrap;
 			overflow: hidden;
@@ -218,20 +246,21 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 
 		.chat-bubble {
 			max-width: min(300px, 86%);
-			border-radius: 15px;
-			padding: 12px 14px;
-			background: #f9f0da;
+			border-radius: 16px 16px 16px 4px;
+		padding: 12px 14px;
+			background: var(--chat-bubble-in-alt);
 			border: 0;
-			box-shadow: none;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 			white-space: pre-wrap;
 			word-break: break-word;
-			color: #333333;
+			color: var(--chat-text);
 			font-size: 14px;
 			line-height: 20px;
 		}
 
 		.chat-bubble.mine {
-			background: #e1f0d6;
+			background: var(--chat-bubble-out-alt);
+			border-radius: 16px 16px 4px 16px;
 		}
 
 		.chat-image {
@@ -252,11 +281,12 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			width: 52px;
 			flex: 0 0 52px;
 			font-size: 11px;
-			color: #a8a8a8;
-			margin-top: 3px;
+			color: var(--chat-time);
+			margin-top: 4px;
 			text-align: left;
 			white-space: normal;
 			line-height: 14px;
+			font-weight: 500;
 		}
 
 		.chat-message-row:not(.mine) .chat-time {
@@ -264,13 +294,12 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		}
 
 		.chat-form {
-			min-height: 75px;
-			background: #ffffff;
-			padding: 17px 20px 18px;
-			border-top: 0;
+			min-height: 72px;
+			background: var(--chat-surface);
+			padding: 14px 16px 16px;
+			border-top: 1px solid var(--chat-border);
 			position: relative;
 			bottom: 0;
-			box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.04);
 			flex: 0 0 auto;
 		}
 
@@ -278,28 +307,38 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			display: flex;
 			align-items: center;
 			gap: 6px;
-			min-height: 40px;
-			border: 1px solid #a8a8a8;
-			border-radius: 20px;
-			padding: 0 9px 0 10px;
-			background: #ffffff;
+			min-height: 44px;
+			border: 1.5px solid var(--chat-input-border);
+			border-radius: 22px;
+			padding: 0 8px 0 10px;
+			background: var(--chat-surface);
+			transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		.chat-input-row:focus-within {
+			border-color: var(--chat-green);
+			box-shadow: 0 0 0 3px rgba(31, 111, 75, 0.12);
 		}
 
 		.chat-input {
 			flex: 1;
 			min-width: 0;
-			height: 38px;
-			min-height: 38px;
+			height: 42px;
+			min-height: 42px;
 			max-height: 86px;
 			resize: none;
 			border: 0;
 			border-radius: 0;
-			padding: 9px 4px;
+			padding: 10px 4px;
 			font: inherit;
 			font-size: 14px;
 			line-height: 20px;
 			background: transparent;
-			color: #333333;
+			color: var(--chat-text);
+		}
+
+		.chat-input::placeholder {
+			color: var(--chat-muted);
 		}
 
 		.chat-input:focus {
@@ -344,39 +383,42 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		.chat-readonly {
 			text-align: center;
 			font-size: 13px;
-			margin-top: 24px;
+			margin-top: 20px;
 		}
 
 		.chat-muted {
-			color: #6c757d;
-			background: #fff;
-			border: 1px solid #eeeeee;
-			border-radius: 15px;
-			padding: 12px;
+			color: var(--chat-muted);
+			background: var(--chat-surface);
+			border: 1px solid var(--chat-border);
+			border-radius: 14px;
+			padding: 14px 16px;
+			font-weight: 600;
 		}
 
 		.chat-error {
-			color: #b42318;
+			color: var(--chat-red);
 		}
 
 		.chat-image-feedback {
 			margin: 8px 4px 0;
 			text-align: center;
 			font-size: 12px;
-			color: #6c757d;
+			color: var(--chat-muted);
+			font-weight: 500;
 		}
 
 		.chat-image-feedback.is-error {
-			color: #b42318;
+			color: var(--chat-red);
 		}
 
 		.chat-readonly {
 			margin: 0;
-			padding: 12px;
-			border-radius: 20px;
-			background: #f7f7f7;
-			color: #606060;
-			border: 1px solid #e5e5e5;
+			padding: 14px 16px;
+			border-radius: 14px;
+			background: var(--chat-bg);
+			color: var(--chat-muted);
+			border: 1px solid var(--chat-border);
+			font-weight: 500;
 		}
 
 		.chat-call-actions {
@@ -390,22 +432,27 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		.chat-call-button {
 			border: 0;
 			background: transparent;
-			color: #315d0d;
-			width: 38px;
-			height: 38px;
-			border-radius: 999px;
+			color: var(--chat-green);
+			width: 40px;
+			height: 40px;
+			border-radius: 12px;
 			padding: 8px;
 			cursor: pointer;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			flex: 0 0 38px;
+			flex: 0 0 40px;
+			transition: background 0.15s ease, transform 0.1s ease;
 		}
 
 		.chat-call-button:hover,
 		.chat-call-button:focus-visible {
-			background: #eef8e8;
+			background: rgba(31, 111, 75, 0.1);
 			outline: 0;
+		}
+
+		.chat-call-button:active {
+			transform: scale(0.95);
 		}
 
 		.chat-call-button svg {
@@ -437,7 +484,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			margin: 0 auto;
 			overflow: hidden;
 			background:
-				radial-gradient(circle at 50% 12%, rgba(69, 128, 92, 0.45) 0, rgba(69, 128, 92, 0) 33%),
+				radial-gradient(circle at 50% 12%, rgba(31, 111, 75, 0.35) 0, rgba(31, 111, 75, 0) 33%),
 				linear-gradient(180deg, #17313b 0%, #101820 46%, #070d12 100%);
 			display: flex;
 			flex-direction: column;
@@ -487,7 +534,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		}
 
 		.doclinc-call-status.is-error {
-			color: #fecaca;
+			color: var(--chat-red-light);
 		}
 
 		.doclinc-call-close {
@@ -614,13 +661,23 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 
 		.doclinc-call-join {
 			width: 100%;
-			min-height: 50px;
+			min-height: 52px;
 			border: 0;
-			border-radius: 999px;
-			background: #437a13;
+			border-radius: 16px;
+			background: var(--chat-green-accent);
 			color: #ffffff;
 			font-weight: 800;
+			font-size: 16px;
 			cursor: pointer;
+			transition: background 0.15s ease, transform 0.1s ease;
+		}
+
+		.doclinc-call-join:hover {
+			background: #3a6b10;
+		}
+
+		.doclinc-call-join:active {
+			transform: scale(0.98);
 		}
 
 		.doclinc-call-controls {
@@ -665,16 +722,21 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		}
 
 		.doclinc-call-control.speaker.is-active {
-			background: #437a13;
+			background: var(--chat-green-accent);
 			border-color: #5f9d27;
 			color: #ffffff;
 		}
 
 		.doclinc-call-control.end-call {
-			background: #dc2626;
-			border-color: #dc2626;
+			background: var(--chat-red);
+			border-color: var(--chat-red);
 			width: 64px;
 			height: 64px;
+		}
+
+		.doclinc-call-control.end-call:hover {
+			background: #b91c1c;
+			border-color: #b91c1c;
 		}
 
 		.doclinc-active-call {
@@ -685,7 +747,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			transform: translateX(-50%);
 			width: min(360px, calc(100vw - 28px));
 			border: 0;
-			border-radius: 20px;
+			border-radius: 18px;
 			background: linear-gradient(135deg, #14232d, #0d151c);
 			color: #ffffff;
 			padding: 12px 14px;
@@ -694,17 +756,27 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			align-items: center;
 			gap: 12px;
 			cursor: pointer;
+			transition: transform 0.15s ease, box-shadow 0.15s ease;
+		}
+
+		.doclinc-active-call:hover {
+			transform: translateX(-50%) translateY(-2px);
+			box-shadow: 0 20px 52px rgba(0, 0, 0, 0.32);
+		}
+
+		.doclinc-active-call:active {
+			transform: translateX(-50%) scale(0.98);
 		}
 
 		.doclinc-active-call-icon {
-			width: 38px;
-			height: 38px;
-			border-radius: 999px;
-			background: #437a13;
+			width: 40px;
+			height: 40px;
+			border-radius: 12px;
+			background: var(--chat-green-accent);
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			flex: 0 0 38px;
+			flex: 0 0 40px;
 		}
 
 		.doclinc-active-call-main {
@@ -744,8 +816,8 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			border-radius: 24px;
 			background: linear-gradient(145deg, #132730, #0c151b);
 			color: #ffffff;
-			padding: 18px;
-			box-shadow: 0 20px 52px rgba(0, 0, 0, 0.28);
+			padding: 20px;
+			box-shadow: 0 20px 52px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255,255,255,0.06);
 		}
 
 		.doclinc-incoming-kicker {
@@ -788,11 +860,21 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		}
 
 		.doclinc-incoming-action.answer {
-			background: #437a13;
+			background: var(--chat-green-accent);
+			transition: background 0.15s ease;
+		}
+
+		.doclinc-incoming-action.answer:hover {
+			background: #3a6b10;
 		}
 
 		.doclinc-incoming-action.reject {
-			background: #dc2626;
+			background: var(--chat-red);
+			transition: background 0.15s ease;
+		}
+
+		.doclinc-incoming-action.reject:hover {
+			background: #b91c1c;
 		}
 
 		.is-hidden {

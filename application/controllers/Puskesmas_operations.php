@@ -41,7 +41,8 @@ class Puskesmas_operations extends CI_Controller
 		require_once APPPATH . 'libraries/Puskesmas_operations_service.php';
 		$service = new Puskesmas_operations_service(
 			$this->db,
-			(int) $this->config->item('nakes_presence_online_timeout_seconds')
+			(int) $this->config->item('nakes_presence_online_timeout_seconds'),
+			$this->config->item('care_team_workflow_enabled') === true
 		);
 		$result = $service->snapshot(
 			$actor,
@@ -100,7 +101,7 @@ class Puskesmas_operations extends CI_Controller
 			return;
 		}
 		require_once APPPATH . 'libraries/Puskesmas_operations_service.php';
-		$service = new Puskesmas_operations_service($this->db, (int) $this->config->item('nakes_presence_online_timeout_seconds'));
+		$service = new Puskesmas_operations_service($this->db, (int) $this->config->item('nakes_presence_online_timeout_seconds'), $this->config->item('care_team_workflow_enabled') === true);
 		$result = $service->medicalRecord($actor, (int) $request_id);
 		if (empty($result['ok'])) {
 			$this->respond($result['code'] === 'schema_unavailable' ? 503 : 403, false, $result['code']);
@@ -119,8 +120,8 @@ class Puskesmas_operations extends CI_Controller
 			}
 		}
 		$q = trim((string) ($input['q'] ?? ''));
-		$from = trim((string) ($input['date_from'] ?? date('Y-m-d')));
-		$to = trim((string) ($input['date_to'] ?? $from));
+		$from = trim((string) ($input['date_from'] ?? date('Y-m-d', strtotime('-7 days'))));
+		$to = trim((string) ($input['date_to'] ?? date('Y-m-d')));
 		if (strlen($q) > 100 || !$this->validDate($from) || !$this->validDate($to)) {
 			return false;
 		}

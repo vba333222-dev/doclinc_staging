@@ -42,12 +42,12 @@ expect(
     && service.includes("aps.kode_pkm = ' . $this->db->escape($puskesmas_code)"),
   'all_queries_tenant_scoped'
 );
-expect(service.includes("->where('request_status', 'Accepted')") && service.includes("->where('rsa.status', 'aktif')"), 'workload_uses_active_requests_and_assignments');
+expect(service.includes("->where('requests.request_status', 'Accepted')") && service.includes("->where('rsa.status', 'aktif')"), 'workload_uses_active_requests_and_assignments');
 expect(service.includes('np.puskesmas_code COLLATE utf8mb4_unicode_ci = CONVERT(ps.kode_pkm USING utf8mb4) COLLATE utf8mb4_unicode_ci'), 'presence_join_normalizes_real_collation_boundary');
 expect(service.includes("->limit($staff_limit + 1)") && service.includes('count($staff_rows) > $staff_limit'), 'staff_overflow_fails_closed_without_truncation');
 expect(service.includes("->limit($request_limit + 1)") && service.includes("'code' => 'result_too_large'") && controller.includes("'result_too_large'"), 'bounded_snapshot_overflow_fails_closed');
 expect(service.includes('patient_nik_masked') && service.includes('maskNik') && !/(no_kk|bpjs|nip|nomor_sip|no_hp|latitude|longitude|request_description)/i.test(service), 'operations_payload_limits_sensitive_fields_and_masks_nik');
-expect(service.includes('responsible_doctor_user_id') && service.includes('visit_performer_user_id') && service.includes("$care_team_ready ? $canonical_user_id"), 'workload_prefers_canonical_care_team_owners');
+expect(service.includes('responsible_doctor_user_id') && service.includes('visit_performer_user_id') && service.includes("$this->care_team_enabled ? $canonical_user_id"), 'workload_prefers_canonical_care_team_owners');
 expect(service.includes("->where('r.assigned_puskesmas_code', $puskesmas_code)") && service.includes("->where('r.assigned_puskesmas_code', (string) $scope['puskesmas_code'])"), 'search_and_record_access_are_facility_scoped');
 expect(homeController.includes("$this->initial_section = 'operasional'") && homeController.includes("account_type'] ?? '') !== 'command_center'"), 'dedicated_page_rejects_non_command_center');
 expect(

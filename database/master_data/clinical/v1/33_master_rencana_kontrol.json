@@ -1,0 +1,118 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_RENCANA_KONTROL",
+    "judul": "Master Rencana Kontrol",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 9,
+    "cakupan": "Pilihan jadwal tindak lanjut.",
+    "digunakan_pada": [
+      "Hasil konsultasi",
+      "Pengingat kontrol"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "SAME_DAY",
+      "nama": "Hari ini",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "hari_min": 0,
+      "hari_max": 0,
+      "urutan": 1
+    },
+    {
+      "kode": "NEXT_DAY",
+      "nama": "Besok",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "hari_min": 1,
+      "hari_max": 1,
+      "urutan": 2
+    },
+    {
+      "kode": "THREE_DAYS",
+      "nama": "Dalam 3 hari",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "hari_min": 1,
+      "hari_max": 3,
+      "urutan": 3
+    },
+    {
+      "kode": "ONE_WEEK",
+      "nama": "Dalam 1 minggu",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "hari_min": 4,
+      "hari_max": 7,
+      "urutan": 4
+    },
+    {
+      "kode": "TWO_WEEKS",
+      "nama": "Dalam 2 minggu",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "hari_min": 8,
+      "hari_max": 14,
+      "urutan": 5
+    },
+    {
+      "kode": "ONE_MONTH",
+      "nama": "Dalam 1 bulan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "hari_min": 15,
+      "hari_max": 30,
+      "urutan": 6
+    },
+    {
+      "kode": "AS_NEEDED",
+      "nama": "Bila keluhan belum membaik atau memburuk",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "hari_min": null,
+      "hari_max": null,
+      "urutan": 7
+    },
+    {
+      "kode": "NO_ROUTINE",
+      "nama": "Tidak perlu kontrol rutin",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "hari_min": null,
+      "hari_max": null,
+      "urutan": 8
+    },
+    {
+      "kode": "CUSTOM",
+      "nama": "Jadwal khusus",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "hari_min": null,
+      "hari_max": null,
+      "urutan": 9
+    }
+  ]
+}

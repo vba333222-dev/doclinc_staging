@@ -1,7 +1,7 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 	<div class="nav-bottom-wrapper dl-bottom-nav" id="nav-bottom-wrapper">
 		<nav class="dl-bottom-nav-menu menu" aria-label="Navigasi nakes">
-			<a href="#" id="beranda-tab" class="menu-item <?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? '' : 'active'; ?>" onclick="showContent('beranda')" aria-label="Beranda">
+			<a href="#beranda" id="beranda-tab" class="menu-item <?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? '' : 'active'; ?>" onclick="showContent('beranda')" aria-label="Beranda">
 				<i class="fas fa-home"></i>
 				<span>Beranda</span>
 			</a>

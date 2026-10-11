@@ -1,0 +1,206 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_RUTE_OBAT",
+    "judul": "Master Rute Pemberian Obat",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 17,
+    "cakupan": "Cara pemberian obat.",
+    "digunakan_pada": [
+      "Prescription builder",
+      "Instruksi pasien"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "ORAL",
+      "nama": "Diminum",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Diminum",
+      "label_klinis": "oral",
+      "urutan": 1
+    },
+    {
+      "kode": "SUBLINGUAL",
+      "nama": "Diletakkan di bawah lidah",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Diletakkan di bawah lidah",
+      "label_klinis": "sublingual",
+      "urutan": 2
+    },
+    {
+      "kode": "BUCCAL",
+      "nama": "Diletakkan di antara pipi dan gusi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Diletakkan di antara pipi dan gusi",
+      "label_klinis": "buccal",
+      "urutan": 3
+    },
+    {
+      "kode": "TOPICAL",
+      "nama": "Dioleskan pada kulit",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Dioleskan pada kulit",
+      "label_klinis": "topical",
+      "urutan": 4
+    },
+    {
+      "kode": "TRANSDERMAL",
+      "nama": "Ditempelkan pada kulit",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Ditempelkan pada kulit",
+      "label_klinis": "transdermal",
+      "urutan": 5
+    },
+    {
+      "kode": "INHALATION",
+      "nama": "Dihirup",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Dihirup",
+      "label_klinis": "inhalation",
+      "urutan": 6
+    },
+    {
+      "kode": "NEBULIZATION",
+      "nama": "Melalui nebulizer",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Melalui nebulizer",
+      "label_klinis": "inhalation",
+      "urutan": 7
+    },
+    {
+      "kode": "NASAL",
+      "nama": "Melalui hidung",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Melalui hidung",
+      "label_klinis": "nasal",
+      "urutan": 8
+    },
+    {
+      "kode": "OPHTHALMIC",
+      "nama": "Diberikan pada mata",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Diberikan pada mata",
+      "label_klinis": "ophthalmic",
+      "urutan": 9
+    },
+    {
+      "kode": "OTIC",
+      "nama": "Diberikan pada telinga",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Diberikan pada telinga",
+      "label_klinis": "otic",
+      "urutan": 10
+    },
+    {
+      "kode": "RECTAL",
+      "nama": "Melalui rektum",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Melalui rektum",
+      "label_klinis": "rectal",
+      "urutan": 11
+    },
+    {
+      "kode": "VAGINAL",
+      "nama": "Melalui vagina",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Melalui vagina",
+      "label_klinis": "vaginal",
+      "urutan": 12
+    },
+    {
+      "kode": "INTRAVENOUS",
+      "nama": "Melalui pembuluh darah vena",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Melalui pembuluh darah vena",
+      "label_klinis": "intravenous",
+      "urutan": 13
+    },
+    {
+      "kode": "INTRAMUSCULAR",
+      "nama": "Disuntikkan ke otot",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Disuntikkan ke otot",
+      "label_klinis": "intramuscular",
+      "urutan": 14
+    },
+    {
+      "kode": "SUBCUTANEOUS",
+      "nama": "Disuntikkan di bawah kulit",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Disuntikkan di bawah kulit",
+      "label_klinis": "subcutaneous",
+      "urutan": 15
+    },
+    {
+      "kode": "INTRADERMAL",
+      "nama": "Disuntikkan ke dalam kulit",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Disuntikkan ke dalam kulit",
+      "label_klinis": "intradermal",
+      "urutan": 16
+    },
+    {
+      "kode": "OTHER",
+      "nama": "Rute lainnya",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "label_pasien": "Rute lainnya",
+      "label_klinis": "other",
+      "urutan": 17
+    }
+  ]
+}

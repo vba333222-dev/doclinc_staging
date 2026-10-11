@@ -11,9 +11,10 @@
 						</div>
 						<form id="doclincOperationsFilters" class="dl-nakes-card dl-dashboard-section dl-operations-filters">
 							<label><span>Cari pasien</span><input type="search" name="q" maxlength="100" autocomplete="off" placeholder="Nama atau NIK"></label>
-							<label><span>Dari tanggal</span><input type="date" name="date_from" value="<?= html_escape(date('Y-m-d')); ?>"></label>
+							<label><span>Dari tanggal</span><input type="date" name="date_from" value="<?= html_escape(date('Y-m-d', strtotime('-7 days'))); ?>"></label>
 							<label><span>Sampai tanggal</span><input type="date" name="date_to" value="<?= html_escape(date('Y-m-d')); ?>"></label>
 							<button type="submit" class="btn btn-success">Tampilkan</button>
+							<p class="dl-operations-range-label" id="doclincOperationsRangeLabel" aria-live="polite"></p>
 						</form>
 						<div id="doclincPuskesmasOperations" class="dl-operations-runtime" aria-live="polite" aria-busy="true">
 							<div class="dl-nakes-card dl-dashboard-section dl-operations-loading">

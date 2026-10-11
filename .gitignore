@@ -1,4 +1,10 @@
 .env
+
+.agents/
+.stitch/
+.freebuff/
+.playwright-cli/
+implementation_plan.md
 .env.*
 !.env.example
 

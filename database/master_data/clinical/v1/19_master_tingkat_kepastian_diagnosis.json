@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "dataset_code": "MASTER_KEPASTIAN_DIAGNOSIS",
+    "judul": "Master Tingkat Kepastian Diagnosis",
+    "versi": "1.0.0-draft",
+    "dibuat_pada": "2026-07-15T02:00:00+07:00",
+    "jumlah_data": 5,
+    "cakupan": "Tingkat keyakinan klinis yang dipilih Nakes.",
+    "digunakan_pada": [
+      "Workspace diagnosis Nakes"
+    ],
+    "dependensi": [],
+    "catatan_sumber": [],
+    "peringatan": "Dataset ini adalah rancangan master data MVP DocLink. Semua konten klinis, pertanyaan, red flag, edukasi, dan pemetaan diagnosis wajib divalidasi dan disetujui dokter penanggung jawab serta tim tata kelola klinis sebelum produksi."
+  },
+  "data": [
+    {
+      "kode": "SUSPECTED",
+      "nama": "Diduga",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 1
+    },
+    {
+      "kode": "PROBABLE",
+      "nama": "Kemungkinan besar",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 2
+    },
+    {
+      "kode": "CONFIRMED",
+      "nama": "Terkonfirmasi",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 3
+    },
+    {
+      "kode": "RULED_OUT",
+      "nama": "Disingkirkan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 4
+    },
+    {
+      "kode": "UNKNOWN",
+      "nama": "Belum ditentukan",
+      "aktif": true,
+      "sumber": "internal_doclink_draft",
+      "versi_sumber": "1.0.0-draft",
+      "status_review_klinis": "draft_requires_clinical_validation",
+      "urutan": 5
+    }
+  ]
+}

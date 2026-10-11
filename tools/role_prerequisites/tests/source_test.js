@@ -118,7 +118,7 @@ expect(methodBody(service, 'facility_requirements').includes("array('kode_pkm', 
   && methodBody(service, 'facility_requirements').includes('if ($strict_operational)'), 'facility_contract_matches_role_specific_schema');
 expect(service.includes("$actor_type === 'personal'") && service.includes('facility_requirements($identity, $missing, $labels, $schema_gaps, false)')
   && !methodBody(nakes, 'validated_profile_input').match(/\$account_type === 'command_center'[\s\S]{0,350}'nama'/), 'command_center_uses_facility_identity_without_personal_demographics');
-expect(nakesProfileForm.includes('Nama, alamat, dan identitas unit Puskesmas dikelola')
+expect(nakesProfileForm.includes('Identitas unit dikelola Admin Dinas Kesehatan')
   && nakesProfileForm.includes("if (!empty($nakes_is_personal))"), 'command_center_profile_form_excludes_personal_photo_and_demographics');
 expect(service.includes("$allowed = !$enforced || $complete"), 'missing_profile_compatibility_mode');
 expect(service.includes("'self_service_fields'") && service.includes("'managed_fields'") && service.includes("'remediation_mode'"), 'remediation_ownership_is_explicit');
@@ -150,7 +150,7 @@ expect(!methodBody(nakes, 'cancel_request').includes('require_role_prerequisites
 expect(!methodBody(home, 'cancel_request').includes('role_prerequisite') && prerequisiteGatePolicy.includes("'home' => array") && prerequisiteGatePolicy.includes("'cancel_request'"), 'warga_cancel_is_owned_by_global_gate');
 expect(wargaView.includes('data-role-prerequisite-alert') && wargaView.includes("showContent('profile')"), 'warga_banner_has_profile_cta');
 expect(nakesDashboard.includes('data-role-prerequisite-alert') && nakesDashboard.includes("showContent('profile')") && nakesDashboard.includes('Hubungi Admin Dinas Kesehatan.'), 'nakes_banner_distinguishes_self_service_and_managed_remediation');
-expect(wargaView.includes('$role_prerequisite_incomplete') && wargaView.includes('data-enforced=') && wargaView.includes('sementara data diperbarui'), 'warga_incomplete_profile_is_visible_before_enforcement');
+expect(wargaView.includes('$role_prerequisite_incomplete') && wargaView.includes('data-enforced=') && wargaView.includes('Aplikasi tetap dapat digunakan.'), 'warga_incomplete_profile_is_visible_before_enforcement');
 expect(nakesDashboard.includes('$role_prerequisite_incomplete') && nakesDashboard.includes('data-puskesmas-readiness') && nakesDashboard.includes('SIP belum dilengkapi'), 'nakes_readiness_is_visible_before_enforcement');
 expect(puskesmasReadiness.includes("'facility_complete'") && puskesmasReadiness.includes("'staff_missing_sip'") && puskesmasReadiness.includes("'staff_invalid_account'"), 'puskesmas_readiness_has_exact_safe_counts');
 expect(nakesDashboard.includes('data-puskesmas-exception-board') && nakesDashboard.includes('Belum ada penanggung jawab layanan'), 'puskesmas_has_advanced_safe_exception_board');
@@ -217,7 +217,7 @@ const phaseOneStaticText = [wargaView, nakesDashboard, nakesProfile, profileComp
 expect(forbiddenPresentationPhrases.every(phrase => !phaseOnePresentation.includes(phrase))
   && !/\b(tenant|schema|readiness|enforcement|account_type)\b/.test(phaseOneStaticText), 'normal_phase1_copy_excludes_implementation_vocabulary');
 expect(wargaView.includes('Lokasi terdeteksi')
-  && wargaView.includes('Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan konsultasi tersebut sebelum membuat permintaan baru.')
+  && wargaView.includes('Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan terlebih dahulu.')
   && !wargaView.includes('Lokasi perangkat ditemukan'), 'warga_uat_copy_is_natural_and_concise');
 
 process.stdout.write(`ROLE_PREREQUISITE_SOURCE_PASSED=${passed}\n`);
