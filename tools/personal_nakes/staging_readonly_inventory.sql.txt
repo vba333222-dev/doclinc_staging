@@ -1,0 +1,87 @@
+-- DokLinc Phase 2/3 acceptance inventory.
+-- READ ONLY: this file contains SELECT/CTE statements only.
+-- Output is limited to aggregate counts and non-sensitive numeric IDs.
+
+WITH
+command_centers AS (
+	SELECT TRIM(remark) AS kode_pkm, MIN(userId) AS command_center_user_id
+	FROM users
+	WHERE role = 'dokter' AND status = 'aktif' AND TRIM(COALESCE(remark, '')) <> ''
+	GROUP BY TRIM(remark)
+),
+active_link_counts AS (
+	SELECT user_id, COUNT(*) AS active_link_count
+	FROM puskesmas_staff
+	WHERE status = 'aktif' AND user_id IS NOT NULL
+	GROUP BY user_id
+),
+valid_personal AS (
+	SELECT ps.staff_id, u.userId
+	FROM puskesmas_staff ps
+	JOIN users u ON u.userId = ps.user_id
+	JOIN m_puskesmas mp ON mp.kode_pkm = ps.kode_pkm AND mp.status = 'aktif'
+	JOIN active_link_counts alc ON alc.user_id = u.userId AND alc.active_link_count = 1
+	LEFT JOIN command_centers cc ON cc.kode_pkm = ps.kode_pkm
+	WHERE ps.status = 'aktif'
+	  AND u.role = 'dokter'
+	  AND u.status = 'aktif'
+	  AND TRIM(COALESCE(u.remark, '')) = TRIM(ps.kode_pkm)
+	  AND (cc.command_center_user_id IS NULL OR cc.command_center_user_id <> u.userId)
+)
+SELECT 'active_personal_staff_rows' AS metric, COUNT(*) AS total FROM valid_personal
+UNION ALL SELECT 'active_personal_users', COUNT(DISTINCT userId) FROM valid_personal
+UNION ALL SELECT 'active_staff_without_user', COUNT(*) FROM puskesmas_staff WHERE status = 'aktif' AND user_id IS NULL
+UNION ALL SELECT 'linked_user_missing', COUNT(*) FROM puskesmas_staff ps LEFT JOIN users u ON u.userId = ps.user_id WHERE ps.user_id IS NOT NULL AND u.userId IS NULL
+UNION ALL SELECT 'active_staff_linked_inactive_user', COUNT(*) FROM puskesmas_staff ps JOIN users u ON u.userId = ps.user_id WHERE ps.status = 'aktif' AND COALESCE(u.status, '') <> 'aktif'
+UNION ALL SELECT 'facility_mismatch', COUNT(*) FROM puskesmas_staff ps JOIN users u ON u.userId = ps.user_id WHERE TRIM(COALESCE(u.remark, '')) <> TRIM(ps.kode_pkm)
+UNION ALL SELECT 'users_with_multiple_active_staff_links', COUNT(*) FROM active_link_counts WHERE active_link_count > 1
+UNION ALL SELECT 'command_center_linked_as_staff', COUNT(*) FROM puskesmas_staff ps JOIN command_centers cc ON cc.kode_pkm = ps.kode_pkm AND cc.command_center_user_id = ps.user_id
+;
+
+SELECT ps.staff_id, ps.user_id
+FROM puskesmas_staff ps
+LEFT JOIN users u ON u.userId = ps.user_id
+WHERE ps.user_id IS NOT NULL AND u.userId IS NULL
+ORDER BY ps.staff_id;
+
+SELECT ps.staff_id, ps.user_id
+FROM puskesmas_staff ps
+JOIN users u ON u.userId = ps.user_id
+WHERE TRIM(COALESCE(u.remark, '')) <> TRIM(ps.kode_pkm)
+ORDER BY ps.staff_id;
+
+SELECT user_id, GROUP_CONCAT(staff_id ORDER BY staff_id) AS staff_ids, COUNT(*) AS active_link_count
+FROM puskesmas_staff
+WHERE status = 'aktif' AND user_id IS NOT NULL
+GROUP BY user_id
+HAVING COUNT(*) > 1
+ORDER BY user_id;
+
+WITH command_centers AS (
+	SELECT TRIM(remark) AS kode_pkm, MIN(userId) AS command_center_user_id
+	FROM users
+	WHERE role = 'dokter' AND status = 'aktif' AND TRIM(COALESCE(remark, '')) <> ''
+	GROUP BY TRIM(remark)
+)
+SELECT ps.staff_id, ps.user_id
+FROM puskesmas_staff ps
+JOIN command_centers cc ON cc.kode_pkm = ps.kode_pkm AND cc.command_center_user_id = ps.user_id
+ORDER BY ps.staff_id;
+
+SELECT GROUP_CONCAT(userId ORDER BY userId) AS user_ids, COUNT(*) AS conflict_count
+FROM users
+WHERE TRIM(COALESCE(username, '')) <> ''
+GROUP BY LOWER(TRIM(username))
+HAVING COUNT(*) > 1
+UNION ALL
+SELECT GROUP_CONCAT(userId ORDER BY userId), COUNT(*)
+FROM users
+WHERE TRIM(COALESCE(email, '')) <> ''
+GROUP BY LOWER(TRIM(email))
+HAVING COUNT(*) > 1;
+
+SELECT GROUP_CONCAT(staff_id ORDER BY staff_id) AS staff_ids, COUNT(*) AS conflict_count
+FROM puskesmas_staff
+WHERE nip IS NOT NULL AND TRIM(nip) <> ''
+GROUP BY nip
+HAVING COUNT(*) > 1;
