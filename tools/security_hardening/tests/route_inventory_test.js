@@ -66,6 +66,7 @@ const inventory = {
     save_konsultasi: 'TOMBSTONE', updateRequestById: 'POST_HELPER', deleterequestbyid: 'POST_HELPER',
     cancel_request: 'POST_HELPER', visit_location: 'GET', submit_rating: 'POST_HELPER',
     getDokterRating: 'POST_HELPER', getDuration: 'POST_HELPER', update_profile: 'POST_HELPER', update_profile_photo: 'POST',
+    clinical_workflow: 'GET',
   },
   'application/modules/home/controllers/Notification.php': {
     index: 'TOMBSTONE', test: 'TOMBSTONE', send: 'TOMBSTONE', service_worker: 'TOMBSTONE',
@@ -77,6 +78,8 @@ const inventory = {
 	assign_responsible_doctor: 'POST', choose_service_mode: 'POST', assign_visit_performer: 'POST',
     accept_request: 'POST', cancel_request: 'POST_HELPER', visit_location: 'GET', update_visit_location: 'POST',
     update_visit_status: 'POST', get_location_user: 'TOMBSTONE', updateprofile: 'POST_HELPER', operations: 'READ',
+	clinical_workflow: 'GET_SURFACE', clinical_review: 'POST_SURFACE', clinical_disposition: 'POST_SURFACE',
+	clinical_finalize: 'POST_SURFACE', clinical_close: 'POST_SURFACE', clinical_amend: 'POST_SURFACE',
   },
   'application/modules/konsultasi/controllers/Konsultasi.php': {
     index: 'READ', chat: 'TOMBSTONE', save_konsultasi: 'POST', send: 'TOMBSTONE', service_worker: 'TOMBSTONE',
@@ -86,6 +89,7 @@ const inventory = {
   },
 	'application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php': {
 		index: 'READ', konsultasi: 'READ', get_terapi: 'GET', chat: 'TOMBSTONE', save_vital_signs: 'POST', save_konsultasi_nakes: 'POST', getICD_json: 'TOMBSTONE',
+		visit_result_draft: 'POST_SURFACE', visit_result_submit: 'POST_SURFACE', visit_result_correction: 'POST_SURFACE',
 	},
   'application/modules/notifikasi/controllers/Notifikasi.php': {
     index: 'READ_DELEGATE', list_json: 'GET', snapshot: 'GET', mark_read: 'POST',
@@ -109,7 +113,7 @@ const inventory = {
     index: 'GET',
   },
   'application/controllers/Puskesmas_operations.php': {
-    snapshot: 'GET', medical_record: 'GET',
+    snapshot: 'GET', medical_record: 'GET', clinical_workflow: 'GET_SURFACE',
   },
   'application/controllers/Clinical_suggestions.php': {
     search: 'GET',
@@ -160,6 +164,18 @@ function hasMethodGuard(body, method) {
   return body.includes(`method(TRUE) !== '${method}'`) || body.includes(`method(true) !== '${method}'`);
 }
 
+function hasSurfaceMethodGuard(body, method) {
+  return hasMethodGuard(body, method) || body.includes(`strtoupper($this->input->method()) !== '${method}'`);
+}
+
+function hasReadGuard(body) {
+  return hasSurfaceMethodGuard(body, 'GET') || body.includes("method(true) === 'GET'");
+}
+
+function hasActorGate(body) {
+  return /require_[a-z_]+\(\)/.test(body);
+}
+
 Object.keys(inventory).forEach((file) => {
   const contents = source(file);
   const expected = Object.keys(inventory[file]).sort();
@@ -171,6 +187,8 @@ Object.keys(inventory).forEach((file) => {
     const contract = inventory[file][method];
     let valid = body !== '';
     if (contract === 'GET' || contract === 'POST') valid = hasMethodGuard(body, contract);
+    if (contract === 'GET_SURFACE') valid = hasReadGuard(body);
+    if (contract === 'POST_SURFACE') valid = hasSurfaceMethodGuard(body, 'POST') && hasActorGate(body);
     if (contract === 'POST_HELPER') valid = body.includes('require_post_json()');
     if (contract === 'POST_LIVEKIT') valid = body.includes('require_livekit_post()');
     if (contract === 'POST_UPLOAD') valid = body.includes('authorize_upload_request()');
