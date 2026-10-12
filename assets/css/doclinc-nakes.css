@@ -1,5 +1,5 @@
 /* Personal Nakes workspace layer. Scoped to Nakes shells; no global Bootstrap overrides. */
-:root { --nakes-ink:#1F2A24; --nakes-muted:#66756D; --nakes-brand:#379A69; --nakes-brand-soft:#E8F7F0; --nakes-line:#E7ECE9; --nakes-surface:#FFFFFF; --nakes-bg:#F7F7F7; --nakes-danger:#D94B4B; }
+:root { --nakes-ink:#1F2A24; --nakes-muted:#64736B; --nakes-brand:#2D7D56; --nakes-brand-soft:#E8F7F0; --nakes-line:#E7ECE9; --nakes-surface:#FFFFFF; --nakes-bg:#F7F7F7; --nakes-danger:#D32E2E; }
 .dl-nakes-dashboard { background:var(--nakes-bg); color:var(--nakes-ink); }
 .dl-nakes-dashboard .dl-dashboard-stack { max-width:1180px; margin:0 auto; padding:20px 24px 92px; display:grid; grid-template-columns:minmax(0,1.85fr) minmax(260px,.85fr); gap:18px; align-items:start; }
 .dl-nakes-dashboard .dl-dashboard-stack > [data-role-prerequisite-alert], .dl-nakes-dashboard .dl-dashboard-stack > .alert.alert-info, .dl-nakes-dashboard .dl-dashboard-stack > .dl-dashboard-stats { grid-column:2; }

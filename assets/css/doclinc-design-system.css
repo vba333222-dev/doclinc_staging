@@ -6,15 +6,20 @@
   --dl-surface-subtle: #F4F8F6;
   --dl-text: #1F2A24;
   --dl-text-secondary: #4E5F57;
-  --dl-text-muted: #66756D;
+  --dl-text-muted: #64736B;
   --dl-border: #E7ECE9;
+  --dl-border-strong: #8A9490;
   --dl-divider: #EFF3F1;
   --dl-brand: #379A69;
+  --dl-brand-ink: #2D7D56;
   --dl-brand-strong: #1f6f4b;
   --dl-brand-subtle: #E8F7F0;
   --dl-success: #2E8A5C;
+  --dl-success-ink: #2A7E54;
   --dl-warning: #B7791F;
+  --dl-warning-ink: #98641A;
   --dl-danger: #D94B4B;
+  --dl-danger-ink: #D32E2E;
   --dl-info: #2e6685;
   --dl-focus: #0c7c87;
   --dl-radius-sm: 8px;
@@ -43,7 +48,7 @@ h1 { font-size: clamp(1.55rem, 2.2vw, 2.2rem); }
 h2 { font-size: clamp(1.2rem, 1.6vw, 1.55rem); }
 h3 { font-size: 1.08rem; }
 p, .text-muted { color: var(--dl-text-secondary); }
-a { color: var(--dl-brand); }
+a { color: var(--dl-brand-ink); }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent); outline-offset: 2px; }
 
 .dl-surface, .dl-panel, .dl-summary, .dl-context, .dl-workspace, .dl-list, .dl-action-group,
@@ -58,20 +63,20 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .btn { min-height: 42px; border-radius: var(--dl-radius-sm); font-weight: 700; letter-spacing: -.01em; padding: .58rem 1rem; transition: background-color .16s ease, border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
 .btn:active { transform: translateY(1px); }
-.btn-success, .btn-primary { background: var(--dl-brand); border-color: var(--dl-brand); }
+.btn-success, .btn-primary { background: var(--dl-brand-ink); border-color: var(--dl-brand-ink); }
 .btn-success:hover, .btn-primary:hover { background: var(--dl-brand-strong); border-color: var(--dl-brand-strong); }
-.btn-outline-success, .btn-outline-primary { color: var(--dl-brand); border-color: var(--dl-brand); }
-.btn-outline-success:hover, .btn-outline-primary:hover { color: #fff; background: var(--dl-brand); border-color: var(--dl-brand); }
-.btn-danger { background: var(--dl-danger); border-color: var(--dl-danger); }
+.btn-outline-success, .btn-outline-primary { color: var(--dl-brand-ink); border-color: var(--dl-brand-ink); }
+.btn-outline-success:hover, .btn-outline-primary:hover { color: #fff; background: var(--dl-brand-ink); border-color: var(--dl-brand-ink); }
+.btn-danger { background: var(--dl-danger-ink); border-color: var(--dl-danger-ink); }
 .btn-link { min-height: 42px; }
 
-.form-control, .form-select, textarea { min-height: 44px; border: 1px solid var(--dl-border); border-radius: var(--dl-radius-sm); color: var(--dl-text); background: var(--dl-surface); }
+.form-control, .form-select, textarea { min-height: 44px; border: 1px solid var(--dl-border-strong); border-radius: var(--dl-radius-sm); color: var(--dl-text); background: var(--dl-surface); }
 .form-control:focus, .form-select:focus, textarea:focus { border-color: var(--dl-focus); box-shadow: 0 0 0 3px rgba(12, 124, 135, .12); }
 .form-label, .form-floating > label { color: var(--dl-text-secondary); font-weight: 650; }
 .form-text, .small, small { color: var(--dl-text-muted); }
 
 .badge, .status-badge, .status-chip { border-radius: 999px !important; font-size: .72rem; font-weight: 750; letter-spacing: .01em; padding: .35rem .62rem; }
-.badge.bg-success { background-color: var(--dl-success) !important; }
+.badge.bg-success { background-color: var(--dl-success-ink) !important; }
 .badge.bg-warning { background-color: #f5e3b9 !important; color: #704610 !important; }
 .badge.bg-danger { background-color: #f8d9d9 !important; color: #8f3030 !important; }
 
@@ -80,7 +85,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .dl-dashboard-body .hero-card, .dl-dashboard-body .dl-profile-card__head { background: linear-gradient(135deg, var(--dl-brand-strong), var(--dl-brand)) !important; color: #fff; }
 .dl-dashboard-body .hero-card h1, .dl-dashboard-body .hero-card h2, .dl-dashboard-body .hero-card h3, .dl-dashboard-body .hero-card p { color: #fff; }
 .dl-dashboard-body .feature-menu { color: var(--dl-text); }
-.dl-dashboard-body .feature-menu .icon-wrapper { width: 42px; height: 42px; border-radius: var(--dl-radius-sm); background: var(--dl-brand-subtle); color: var(--dl-brand); }
+.dl-dashboard-body .feature-menu .icon-wrapper { width: 42px; height: 42px; border-radius: var(--dl-radius-sm); background: var(--dl-brand-subtle); color: var(--dl-brand-ink); }
 .dl-dashboard-body .dl-quick-links { display: flex; gap: .6rem; border-top: 1px solid var(--dl-divider); border-bottom: 1px solid var(--dl-divider); padding: .65rem 0; margin: 1rem 0 1.4rem; }
 .dl-dashboard-body .dl-quick-links .dl-feature-card { flex: 1 1 0; display: flex; align-items: center; gap: .65rem; padding: .65rem .75rem; border: 0; background: transparent; text-align: left; }
 .dl-dashboard-body .dl-quick-links .dl-feature-card + .dl-feature-card { border-left: 1px solid var(--dl-divider); }
@@ -90,7 +95,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .dl-dashboard-body .section-title, .dl-dashboard-body .dl-section-title { margin-bottom: var(--dl-space-3); color: var(--dl-text); font-weight: 750; }
 .dl-bottom-nav, .nav-bottom-wrapper { background: var(--dl-surface-elevated) !important; border-top: 1px solid var(--dl-border); box-shadow: 0 -4px 18px rgba(23,53,43,.06) !important; }
 .nav-bottom-wrapper .menu > .menu-item { min-height: 56px; padding: .55rem .25rem; color: var(--dl-text-muted); }
-.nav-bottom-wrapper .menu > .menu-item.active { border-radius: var(--dl-radius-sm); background: var(--dl-brand-subtle); color: var(--dl-brand); }
+.nav-bottom-wrapper .menu > .menu-item.active { border-radius: var(--dl-radius-sm); background: var(--dl-brand-subtle); color: var(--dl-brand-ink); }
 
 .dl-nakes-dashboard .request-card, .dl-nakes-dashboard .consult-card, .dl-nakes-dashboard .visit-route-card { border: 1px solid var(--dl-border); border-radius: var(--dl-radius-md); background: var(--dl-surface); box-shadow: var(--dl-shadow-1); }
 .dl-nakes-workspace .dl-dashboard-stack { max-width: 1240px; margin: 0 auto; }

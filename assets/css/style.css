@@ -2,18 +2,18 @@
     background-color: #e0f2f1;
 }*/
 .bg-success{
-    background-color: #09AD74!important;
+    background-color: #2D7D56!important;
 }
 .text-success{
-    color: #09AD74!important;
+    color: #2D7D56!important;
 }
 .border-success{
-    border-color: #09AD74!important;
+    border-color: #2D7D56!important;
 }
 .btn-success {
     --bs-btn-color: #fff;
-    --bs-btn-bg: #09AD74!important;
-    --bs-btn-border-color: #09AD74!important;
+    --bs-btn-bg: #2D7D56!important;
+    --bs-btn-border-color: #2D7D56!important;
     --bs-btn-hover-color: #fff;
     --bs-btn-hover-bg: #157347;
     --bs-btn-hover-border-color: #146c43;
@@ -23,18 +23,18 @@
     --bs-btn-active-border-color: #13653f;
     --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
     --bs-btn-disabled-color: #fff;
-    --bs-btn-disabled-bg: #09AD74!important;
-    --bs-btn-disabled-border-color: #09AD74!important;
+    --bs-btn-disabled-bg: #2D7D56!important;
+    --bs-btn-disabled-border-color: #2D7D56!important;
 }
 .btn-outline-success {
-    --bs-btn-color: #09AD74!important;
-    --bs-btn-border-color: #09AD74!important;
-    --bs-btn-hover-bg: #09AD74!important;
-    --bs-btn-hover-border-color: #09AD74!important;
-    --bs-btn-active-bg: #09AD74!important;
-    --bs-btn-active-border-color: #09AD74!important;
-    --bs-btn-disabled-color: #09AD74!important;
-    --bs-btn-disabled-border-color: #09AD74!important;
+    --bs-btn-color: #2D7D56!important;
+    --bs-btn-border-color: #2D7D56!important;
+    --bs-btn-hover-bg: #2D7D56!important;
+    --bs-btn-hover-border-color: #2D7D56!important;
+    --bs-btn-active-bg: #2D7D56!important;
+    --bs-btn-active-border-color: #2D7D56!important;
+    --bs-btn-disabled-color: #2D7D56!important;
+    --bs-btn-disabled-border-color: #2D7D56!important;
 }
 /*.navbar-brand {
     color: white;
@@ -68,14 +68,14 @@
     width: 150px;
     object-fit: cover;
     margin: 0 auto;
-    border: 5px solid #09AD74;
+    border: 5px solid #2D7D56;
 }*/
 .nav-bottom-wrapper {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    background: #09AD74;
+    background: #2D7D56;
     z-index: 1030;
 }
 .nav-bottom-wrapper .menu > .menu-item{
@@ -124,7 +124,7 @@ a.notify > span.notify-number{
 .icon-wrapper {
     width: 50px;
     height: 50px;
-    background: #09AD74;
+    background: #2D7D56;
     border-radius: 20%;
     color: white;
     font-size: 20px;
@@ -136,7 +136,7 @@ a.notify > span.notify-number{
 }
 a.feature-menu {
     text-decoration: none;
-    color: #09AD74;
+    color: #2D7D56;
     font-weight: 400;
 }
 .feature-menu>.icon-wrapper>i {
@@ -154,7 +154,7 @@ a.feature-menu {
 }
 .backtohome{
     color: white;
-    background: #09AD74;
+    background: #2D7D56;
     padding: 15px;
     display: flex !important;
     align-items: center !important;
@@ -182,7 +182,7 @@ a.feature-menu {
     border-radius: 50%;
 }
 .carousel-indicators [data-bs-target]{
-    background-color: #09AD74!important;
+    background-color: #2D7D56!important;
 }
 .horizontal-scroll-container {
     width: 100%;
@@ -197,7 +197,7 @@ a.feature-menu {
     width: 360px;
     height: 200px;
     margin-right: 20px;
-    background-color: #09AD74   ;
+    background-color: #2D7D56   ;
     color: white;
     text-align: center;
     line-height: 180px;
@@ -209,7 +209,7 @@ a.feature-menu {
     color: #000000!important;
 }
 .nav-link.active{
-    color: #09AD74!important;
+    color: #2D7D56!important;
     font-weight: bold;
 }
 
@@ -217,13 +217,13 @@ a.feature-menu {
     --dl-bg: #F7F7F7;
     --dl-surface: #FFFFFF;
     --dl-surface-soft: #FBFDFC;
-    --dl-primary: #379A69;
-    --dl-mint: #50BFA5;
+    --dl-primary: #2D7D56;
+    --dl-mint: #2D7C69;
     --dl-text: #1F2A24;
     --dl-muted: #66756D;
     --dl-line: #E7ECE9;
     --dl-input-line: #CECECE;
-    --dl-color-primary: #379A69;
+    --dl-color-primary: #2D7D56;
     --dl-color-primary-dark: #1f6f4b;
     --dl-color-primary-soft: #E8F7F0;
     --dl-color-text: #1F2A24;
@@ -233,7 +233,7 @@ a.feature-menu {
     --dl-color-surface-soft: #F4F8F6;
     --dl-color-danger: #D94B4B;
     --dl-color-warning: #B7791F;
-    --dl-color-success: #379A69;
+    --dl-color-success: #2D7D56;
     --dl-font-family: "Manrope", "Inter", "Segoe UI", Arial, sans-serif;
     --dl-font-size-xs: 11px;
     --dl-font-size-sm: 12px;
