@@ -3075,7 +3075,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 			field.hidden = hasSummary;
 			toggle.hidden = !hasSummary;
 			toggle.setAttribute('aria-expanded', 'false');
-			toggle.textContent = 'Ubah detail';
+			toggle.textContent = 'Ubah';
 			hint.hidden = hasSummary;
 		}
 
@@ -3160,7 +3160,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 
 			const expanded = this.getAttribute('aria-expanded') === 'true';
 			this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-			this.textContent = expanded ? 'Ubah detail' : 'Sembunyikan teks detail';
+			this.textContent = expanded ? 'Ubah' : 'Sembunyikan';
 			field.hidden = expanded;
 			if (hint) {
 				hint.hidden = expanded;
@@ -3231,8 +3231,15 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 				icon: 'warning',
 				showCancelButton: true,
 				confirmButtonText: 'Batalkan',
-				confirmButtonColor: '#dc3545',
-				cancelButtonText: 'Batal'
+				cancelButtonText: 'Tutup',
+				// Same button shape as the rest of the application: Bootstrap classes
+				// with SweetAlert's own styling switched off, so radius, weight and
+				// height match instead of falling back to SweetAlert's defaults.
+				buttonsStyling: false,
+				customClass: {
+					confirmButton: 'btn btn-danger shadow-sm dl-swal-btn',
+					cancelButton: 'btn btn-outline-secondary shadow-sm dl-swal-btn'
+				}
 			}).then((result) => {
 				if (!result.isConfirmed) {
 					return;

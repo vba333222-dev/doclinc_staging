@@ -1109,6 +1109,26 @@
 /* Tinjau permintaan and Batalkan share one row. They are different actions of
    equal weight, so they get equal width instead of sizing themselves from their
    own label lengths. */
+/* SweetAlert's own button styling is switched off for the cancel-request dialog,
+   so these two classes carry the shape: the same 8px radius, 13px at weight 800
+   and 44px height as the modal footer. Without them the dialog would keep
+   SweetAlert's defaults and read as a different component from the rest. */
+.dl-swal-btn {
+  min-height: 44px;
+  padding: .6rem 1.4rem;
+  border-radius: 8px;
+  font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.dl-swal-btn + .dl-swal-btn {
+  margin-left: 8px;
+}
+
 .dl-consult-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
