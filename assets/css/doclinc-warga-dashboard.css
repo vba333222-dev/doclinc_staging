@@ -1120,6 +1120,18 @@
   margin-right: 0 !important;
 }
 
+/* The destructive answer in this footer uses #A8443F instead of the theme's
+   #D32E2E, at the user's instruction. Scoped to this modal only: every other solid
+   danger button in the application still resolves to #D32E2E, so the two values
+   differ until that is settled either way. !important is needed because the theme
+   sets .btn colours with it - established when the radius in this same block would
+   not apply without it. */
+#editRequestModal .modal-footer .btn-danger {
+  background-color: #A8443F !important;
+  border-color: #A8443F !important;
+  color: #FFFFFF !important;
+}
+
 /* No icon belongs inside a button; the label carries the meaning. */
 .dl-request-modal .modal-footer .btn i,
 .dl-request-modal .modal-footer .btn svg {
