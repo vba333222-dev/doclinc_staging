@@ -275,7 +275,12 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--dl-brand-ink);
 
 .swal2-popup .swal2-styled,
 .swal2-popup .dl-swal-btn {
-  display: inline-flex !important;
+  /* No !important on display. SweetAlert hides the buttons it is not using with an
+     inline display:none - the deny button in a confirm-only dialog, for instance -
+     and an !important here overrides that, which made a red "No" appear in every
+     dialog. A plain declaration loses to the inline style when hidden and applies
+     as soon as SweetAlert clears it. */
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   height: 44px !important;
