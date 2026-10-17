@@ -309,7 +309,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						</span>
 					</div>
 					<div class="visit-route-card-row align-items-start">
-						<span>Posisi Nakes</span>
+						<span>Lokasi Anda</span>
 						<span class="text-end">
 							<strong id="nakesVisitNakesAddress">Menunggu lokasi Nakes</strong>
 							<a id="nakesVisitNakesMapLink" class="small d-none" href="#" target="_blank" rel="noopener noreferrer">Buka peta</a>

@@ -1114,9 +1114,12 @@
    and 44px height as the modal footer. Without them the dialog would keep
    SweetAlert's defaults and read as a different component from the rest. */
 .dl-swal-btn {
-  min-height: 44px;
-  padding: .6rem 1.4rem;
-  border-radius: 8px;
+  /* !important on the three properties the theme also sets. Measured without it:
+     38px tall at a 20px radius, because a bare class selector ties with .btn and
+     loses on source order. The same trap as the modal footer earlier. */
+  min-height: 44px !important;
+  padding: .6rem 1.4rem !important;
+  border-radius: 8px !important;
   font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
   font-size: 13px;
   font-weight: 800;
