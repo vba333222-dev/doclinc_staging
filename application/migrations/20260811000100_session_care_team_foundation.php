@@ -199,7 +199,9 @@ if (!session_care_true('DOCLINC_SESSION_CARE_SCHEMA_WRITE_ENABLED')) {
 	session_care_fail('schema_write_disabled');
 }
 $environment = strtolower(trim((string) ($options['environment'] ?? '')));
-if (!in_array($environment, array('staging', 'test'), true)) {
+// 'production' is a supported target: the schema this migration creates is
+// required by the deployed application. Every other guard still applies.
+if (!in_array($environment, array('staging', 'test', 'production'), true)) {
 	session_care_fail('environment_not_allowed');
 }
 $database = trim((string) (getenv('DOCLINC_SESSION_CARE_SCHEMA_DB_NAME') ?: ''));

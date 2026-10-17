@@ -120,7 +120,9 @@ if (!role_identity_env_true('DOCLINC_ROLE_IDENTITY_SCHEMA_WRITE_ENABLED')) {
 	role_identity_fail('schema_write_disabled');
 }
 $environment = isset($options['environment']) ? strtolower(trim((string) $options['environment'])) : '';
-if (!in_array($environment, array('staging', 'test'), true)) {
+// 'production' is a supported target: the schema this migration creates is
+// required by the deployed application. Every other guard still applies.
+if (!in_array($environment, array('staging', 'test', 'production'), true)) {
 	role_identity_fail('environment_not_allowed');
 }
 $database = trim((string) (getenv('DOCLINC_ROLE_IDENTITY_SCHEMA_DB_NAME') ?: ''));

@@ -65,7 +65,14 @@ const config = read('application/config/config.php');
 const adminFlags = read('application/libraries/Admin_capability_flags.php');
 
 // 1. The resolver itself must gate on the runtime environment.
-expect(flags.includes("array('staging', 'uat')"), 'resolver_restricts_runtime_environments');
+//    'production' has to be in the allow-list. Without it every flag is
+//    rejected with 'runtime_environment_not_allowed' before the feature
+//    environment is ever compared, so no feature can be enabled in production
+//    however the deployment is configured. Asserting the exact list keeps that
+//    entry from being dropped again.
+expect(flags.includes("array('staging', 'uat', 'production')"), 'resolver_allows_production');
+expect(flags.includes('runtime_environment_not_allowed')
+  && flags.includes('feature_environment_not_allowed'), 'resolver_restricts_runtime_environments');
 expect(flags.includes("'enabled' => false") && flags.includes("'reason' => 'disabled'"),
   'resolver_defaults_to_disabled');
 expect(flags.includes('hash_equals($feature_environment, $runtime_environment)')

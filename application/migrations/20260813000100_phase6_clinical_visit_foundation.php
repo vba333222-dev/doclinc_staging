@@ -131,7 +131,9 @@ if (!phase6_true('DOCLINC_PHASE6_SCHEMA_WRITE_ENABLED')) {
 	phase6_fail('schema_write_disabled');
 }
 $environment = strtolower(trim((string) ($options['environment'] ?? '')));
-if (!in_array($environment, array('staging', 'test'), true)) {
+// 'production' is a supported target: the schema this migration creates is
+// required by the deployed application. Every other guard still applies.
+if (!in_array($environment, array('staging', 'test', 'production'), true)) {
 	phase6_fail('environment_not_allowed');
 }
 $database = trim((string) (getenv('DOCLINC_PHASE6_SCHEMA_DB_NAME') ?: ''));

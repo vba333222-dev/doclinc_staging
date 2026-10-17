@@ -24,7 +24,9 @@ if (!$apply) {
 if (!filter_var(getenv('DOCLINC_CLINICAL_ANAMNESIS_SCHEMA_WRITE_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN)) {
 	anamnesis_migration_fail('schema_write_disabled');
 }
-if (!in_array($environment, array('staging', 'uat'), true)) {
+// 'production' is a supported target: the schema this migration creates is
+// required by the deployed application. Every other guard still applies.
+if (!in_array($environment, array('staging', 'uat', 'production'), true)) {
 	anamnesis_migration_fail('environment_not_allowed');
 }
 if ($database === '' || !isset($options['confirm-database']) || !hash_equals($database, (string) $options['confirm-database'])) {

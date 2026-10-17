@@ -3,7 +3,17 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Doclinc_feature_flags
 {
-	private const ALLOWED_ENVIRONMENTS = array('staging', 'uat');
+	/**
+	 * Environments a flag may be resolved in.
+	 *
+	 * 'production' belongs here. Omitting it does not make production safer — it
+	 * makes every feature unreachable there, because resolve() rejects the
+	 * runtime environment before it ever compares the feature environment. The
+	 * deployment then reports features as off with reason
+	 * 'runtime_environment_not_allowed', which reads like a configuration
+	 * mistake rather than a missing allow-list entry.
+	 */
+	private const ALLOWED_ENVIRONMENTS = array('staging', 'uat', 'production');
 	private const TRUE_VALUES = array('1', 'true', 'yes', 'on');
 	private const FALSE_VALUES = array('0', 'false', 'no', 'off');
 

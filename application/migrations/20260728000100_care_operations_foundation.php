@@ -530,7 +530,9 @@ if (!care_operations_env_true('DOCLINC_CARE_OPERATIONS_SCHEMA_WRITE_ENABLED')) {
 	care_operations_fail('schema_write_disabled');
 }
 $environment = isset($options['environment']) ? strtolower(trim((string) $options['environment'])) : '';
-if (!in_array($environment, array('staging', 'uat', 'test'), true)) {
+// 'production' is a supported target: the schema this migration creates is
+// required by the deployed application. Every other guard still applies.
+if (!in_array($environment, array('staging', 'uat', 'test', 'production'), true)) {
 	care_operations_fail('environment_not_allowed');
 }
 $database = trim((string) (getenv('DOCLINC_CARE_OPERATIONS_SCHEMA_DB_NAME') ?: ''));

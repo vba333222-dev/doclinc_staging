@@ -77,7 +77,9 @@ if (!nakes_profile_v2_env_true('DOCLINC_NAKES_PROFILE_V2_SCHEMA_WRITE_ENABLED'))
 	nakes_profile_v2_fail('schema_write_disabled');
 }
 $environment = strtolower(trim((string) ($options['environment'] ?? '')));
-if (!in_array($environment, array('staging', 'test'), true)) {
+// 'production' is a supported target: the schema this migration creates is
+// required by the deployed application. Every other guard still applies.
+if (!in_array($environment, array('staging', 'test', 'production'), true)) {
 	nakes_profile_v2_fail('environment_not_allowed');
 }
 $database = trim((string) (getenv('DOCLINC_NAKES_PROFILE_V2_SCHEMA_DB_NAME') ?: ''));

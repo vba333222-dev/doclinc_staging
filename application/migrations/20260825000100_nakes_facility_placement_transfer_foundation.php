@@ -21,7 +21,9 @@ if (!array_key_exists('apply', $options)) {
 if (!nakes_placement_true('DOCLINC_NAKES_PLACEMENT_SCHEMA_WRITE_ENABLED')) nakes_placement_fail('schema_write_disabled');
 $environment = strtolower(trim((string) ($options['environment'] ?? '')));
 $database = trim((string) (getenv('DOCLINC_NAKES_PLACEMENT_SCHEMA_DB_NAME') ?: ''));
-if (!in_array($environment,array('test','staging'),true)) nakes_placement_fail('environment_not_allowed');
+// 'production' is a supported target: the schema this migration creates is
+// required by the deployed application. Every other guard still applies.
+if (!in_array($environment,array('test','staging','production'),true)) nakes_placement_fail('environment_not_allowed');
 if ($database === '' || !isset($options['confirm-database']) || !hash_equals($database, (string)$options['confirm-database'])) nakes_placement_fail('database_confirmation_mismatch');
 if ($environment === 'test' && (!nakes_placement_true('DOCLINC_NAKES_PLACEMENT_DISPOSABLE_TEST') || !isset($options['confirm-disposable-test']) || !hash_equals('true', strtolower((string)$options['confirm-disposable-test'])) || preg_match('/\A(?:doclinc_nakes_placement_test|doclinc_governance_test)_[a-z0-9_]+\z/', strtolower($database)) !== 1)) nakes_placement_fail('disposable_test_database_required');
 if ($environment === 'staging') { if ($database !== 'doclinc-staging' || nakes_placement_true('DOCLINC_NAKES_PLACEMENT_DISPOSABLE_TEST') || !nakes_placement_true('DOCLINC_NAKES_PLACEMENT_SCHEMA_STAGING_WRITE_ENABLED')) nakes_placement_fail('staging_database_required'); $b=trim((string)($options['backup-reference']??''));$h=strtolower(trim((string)($options['confirm-backup-sha256']??'')));if($b===''||!is_readable($b)||!preg_match('/\A[a-f0-9]{64}\z/',$h)||!hash_equals($h,strtolower((string)hash_file('sha256',$b))))nakes_placement_fail('backup_confirmation_mismatch'); }

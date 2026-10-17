@@ -53,8 +53,13 @@
  *     production
  *
  * NOTE: If you change these, also change the error_reporting() code below
+ *
+ * The fallback is 'production' so a missing CI_ENV fails safe. When the
+ * variable is absent the application hides errors instead of printing stack
+ * traces, file paths and query fragments to whoever loads the page. Local
+ * development sets CI_ENV=development explicitly.
  */
-define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
+define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'production');
 
 /*
  *---------------------------------------------------------------

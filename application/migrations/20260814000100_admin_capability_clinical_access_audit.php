@@ -18,7 +18,9 @@ if (!array_key_exists('apply', $options)) {
 if (!admin_capability_true(getenv('DOCLINC_ADMIN_SCHEMA_WRITE_ENABLED'))) admin_capability_fail('schema_write_disabled');
 $environment = strtolower(trim((string) ($options['environment'] ?? '')));
 $database = trim((string) (getenv('DOCLINC_ADMIN_SCHEMA_DB_NAME') ?: ''));
-if (!in_array($environment,array('test','staging'),true)) admin_capability_fail('environment_not_allowed');
+// 'production' is a supported target: the schema this migration creates is
+// required by the deployed application. Every other guard still applies.
+if (!in_array($environment,array('test','staging','production'),true)) admin_capability_fail('environment_not_allowed');
 if (!isset($options['confirm-database']) || !hash_equals($database,(string)$options['confirm-database'])) admin_capability_fail('database_confirmation_mismatch');
 if ($environment === 'test' && (!admin_capability_true(getenv('DOCLINC_ADMIN_DISPOSABLE_TEST'))
 	|| !isset($options['confirm-disposable-test']) || !hash_equals('true', strtolower((string) $options['confirm-disposable-test']))
