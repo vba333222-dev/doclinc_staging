@@ -1511,12 +1511,12 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 								$dl_performer_name = !empty($dlCurrentRequest->visit_performer_name) ? trim((string) $dlCurrentRequest->visit_performer_name) : '';
 								$dl_pic_label = $dl_responsible_name !== ''
 									? $dl_responsible_name
-									: (!empty($dlCurrentRequest->assigned_pic_label) ? $dlCurrentRequest->assigned_pic_label : 'Dokter belum dipilih.');
+									: (!empty($dlCurrentRequest->assigned_pic_label) ? $dlCurrentRequest->assigned_pic_label : 'Dokter belum ditentukan');
 							?>
 								<div class="dl-surface dl-current-consultation-card dl-consultation-record dl-consultation-record--current p-3" data-request-id="<?= (int) $dlCurrentRequest->request_id; ?>">
 									<div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-										<div>
-											<div class="d-flex align-items-center gap-2 mb-1">
+										<div class="flex-grow-1">
+											<div class="d-flex align-items-center justify-content-between gap-2 mb-1">
 												<strong><?= html_escape($dl_puskesmas_label); ?></strong>
 												<span class="dl-badge px-2 py-1" data-warga-top-status="<?= html_escape((int) $dlCurrentRequest->request_id); ?>"><?= html_escape($dl_status_label); ?></span>
 											</div>
@@ -2434,7 +2434,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 				if (!patientAvailable) {
 					statusText = 'Lokasi pasien belum tersedia';
 				} else if (!nakesAvailable) {
-					statusText = 'Menunggu lokasi Nakes';
+					statusText = 'Menunggu lokasi petugas';
 				} else if (isValhallaRoute) {
 					statusText = 'Estimasi berdasarkan rute jalan';
 				} else if (!hasGeometry && hasDistance) {
@@ -3233,8 +3233,8 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 				// height match instead of falling back to SweetAlert's defaults.
 				buttonsStyling: false,
 				customClass: {
-					confirmButton: 'btn btn-danger dl-swal-btn',
-					cancelButton: 'btn btn-outline-secondary dl-swal-btn'
+					confirmButton: 'btn btn-danger shadow-sm dl-swal-btn',
+					cancelButton: 'btn btn-outline-secondary shadow-sm dl-swal-btn'
 				}
 			}).then((result) => {
 				if (!result.isConfirmed) {
