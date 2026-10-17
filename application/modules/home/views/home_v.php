@@ -2187,9 +2187,9 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 							<textarea class="form-control" name="alamat" id="edit_request_alamat" rows="3"></textarea>
 						</div>
 					</div>
-					<div class="modal-footer dl-request-modal__footer">
-						<button type="button" class="btn dl-request-modal__btn dl-request-modal__btn--ghost" data-bs-dismiss="modal">Batal</button>
-						<button type="submit" class="btn dl-request-modal__btn dl-request-modal__btn--primary">Simpan</button>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary shadow-sm" data-bs-dismiss="modal">Batal</button>
+						<button type="submit" class="btn btn-success shadow-sm">Simpan</button>
 					</div>
 				</form>
 			</div>
