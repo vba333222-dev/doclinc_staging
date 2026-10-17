@@ -7,9 +7,62 @@
 	background: #F4F8F6;
 }
 
+/* Header and navigation run edge to edge. The shell used to cap the whole page at
+   1320px and centre it, so a strip of page background sat beside a header that is
+   meant to read as the top of the page. The measure moves to the content beneath
+   the header instead: the appbar and its nav take the full width, and everything
+   below it keeps a 1320px ceiling so lines do not run the length of a wide screen. */
 .dl-puskesmas-shell .dl-shell {
-	max-width: 1320px;
+	max-width: none;
+	width: 100%;
+	margin-inline: 0;
+}
+
+.dl-puskesmas-shell .contents {
+	padding-inline: 0;
+}
+
+.dl-puskesmas-shell .contents > .position-relative {
+	width: min(1320px, calc(100% - 48px));
 	margin-inline: auto;
+}
+
+/* doclinc-bento.css later shapes this bar as an inset card
+   (`.dl-nakes-dashboard .dl-nakes-appbar`, width minus two page gutters). Bento is
+   loaded after this file, so equal specificity loses on source order; the shell
+   class is repeated on the selector to outrank it instead of adding !important to
+   four properties. `top` still needs !important because bento sets it that way. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-nakes-appbar {
+	top: 0 !important;
+	width: 100%;
+	margin-inline: 0;
+	border-radius: 0;
+}
+
+/* The nav was a 620px pill centred in the header. It now spans the header's own
+   padding box, with each link taking an equal share. */
+.dl-puskesmas-shell .dl-puskesmas-desktop-nav {
+	max-width: none;
+	width: 100%;
+	margin-inline: 0;
+}
+
+.dl-puskesmas-shell .dl-puskesmas-desktop-nav a {
+	flex: 1 1 0;
+}
+
+/* The bottom nav carried a 414px cap and a centring translate, which left gaps on
+   any screen wider than a small phone. */
+/* Same story below: the shell repeats its class to outrank the bento rules that
+   cap and inset the bar. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-bottom-nav {
+	left: 0;
+	right: 0;
+	width: auto;
+	max-width: none;
+	margin-inline: 0;
+	transform: none;
+	border-radius: 0;
 }
 
 .dl-puskesmas-shell .dl-nakes-appbar {
