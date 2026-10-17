@@ -265,7 +265,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<div class="offcanvas offcanvas-top" style="height: 100vh;" tabindex="-1" id="offcanvasMapTujuan" aria-labelledby="offcanvasMapTujuanLabel">
 		<div class="offcanvas-header bg-success text-white">
 			<h5 class="offcanvas-title d-flex align-items-center" id="offcanvasMapTujuanLabel">
-				<i class="bi bi-geo-alt-fill me-2 fs-4"></i><span id="nakesVisitMapTitle">Rute Anda ke Pasien</span>
+				<i class="bi bi-geo-alt-fill me-2 fs-4"></i><span id="nakesVisitMapTitle">Rute Anda</span>
 			</h5>
 			<button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
 		</div>
@@ -286,7 +286,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				</div>
 				<div class="visit-route-card">
 					<div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-						<div class="visit-route-card-title" id="nakesVisitRouteTitle">Rute Anda ke pasien</div>
+						<div class="visit-route-card-title" id="nakesVisitRouteTitle">Rute Andas</div>
 						<span class="visit-route-status" id="nakesVisitRouteStatus">Menghitung...</span>
 					</div>
 					<div class="visit-route-card-row">
@@ -302,7 +302,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						<strong id="nakesVisitRouteUpdated">-</strong>
 					</div>
 					<div class="visit-route-card-row align-items-start">
-						<span>Alamat pasien</span>
+						<span>Lokasi pasien</span>
 						<span class="text-end">
 							<strong id="nakesVisitPatientAddress">Mencari alamat...</strong>
 							<a id="nakesVisitPatientMapLink" class="small d-none" href="#" target="_blank" rel="noopener noreferrer">Buka peta</a>
@@ -311,7 +311,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					<div class="visit-route-card-row align-items-start">
 						<span>Lokasi Anda</span>
 						<span class="text-end">
-							<strong id="nakesVisitNakesAddress">Menunggu lokasi Nakes</strong>
+							<strong id="nakesVisitNakesAddress">Menunggu lokasi petugas</strong>
 							<a id="nakesVisitNakesMapLink" class="small d-none" href="#" target="_blank" rel="noopener noreferrer">Buka peta</a>
 						</span>
 					</div>
@@ -636,10 +636,17 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 				Swal.fire({
 					title: "Terima konsultasi?",
+					text: "Permintaan ini akan langsung masuk ke daftar konsultasi Anda.",
 					showCancelButton: true,
 					confirmButtonText: "Terima konsultasi",
-					confirmButtonColor: "#1F6F4B",
-					cancelButtonText: "Batal"
+					cancelButtonText: "Tutup",
+					// Same treatment as the cancel-request dialog on the warga side:
+					// SweetAlert's own styling off, application button classes on.
+					buttonsStyling: false,
+					customClass: {
+						confirmButton: "btn btn-success shadow-sm dl-swal-btn",
+						cancelButton: "btn btn-outline-secondary shadow-sm dl-swal-btn"
+					}
 				}).then((result) => {
 					/* Read more about isConfirmed, isDenied below */
 					if (result.isConfirmed) {
@@ -924,8 +931,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			}
 
 			function setViewerMode(canUpdate) {
-				setTextById('nakesVisitMapTitle', canUpdate ? 'Rute Anda ke Pasien' : 'Monitoring Rute Nakes');
-				setTextById('nakesVisitRouteTitle', canUpdate ? 'Rute Anda ke pasien' : 'Rute petugas menuju pasien');
+				setTextById('nakesVisitMapTitle', canUpdate ? 'Rute Anda' : 'Monitoring Rute Nakes');
+				setTextById('nakesVisitRouteTitle', canUpdate ? 'Rute Anda' : 'Rute petugas menuju pasien');
 				const arrivalNotice = document.getElementById('nakesVisitArrivalNotice');
 				if (arrivalNotice && !canUpdate) arrivalNotice.classList.add('d-none');
 			}
@@ -963,7 +970,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				if (!patientAvailable) {
 					statusText = 'Lokasi pasien belum tersedia';
 				} else if (!nakesAvailable) {
-					statusText = 'Menunggu lokasi nakes';
+					statusText = 'Menunggu lokasi petugas';
 				} else if (isValhallaRoute) {
 					statusText = 'Estimasi berdasarkan rute jalan';
 				} else if (!hasGeometry && hasDistance) {
@@ -1017,7 +1024,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 			function setVisitAddressPresentations(requestId, patientLocation, nakesLocation) {
 				setAddressPresentation(requestId, patientLocation, 'nakesVisitPatientAddress', 'nakesVisitPatientMapLink', 'Lokasi pasien belum tersedia');
-				setAddressPresentation(requestId, nakesLocation, 'nakesVisitNakesAddress', 'nakesVisitNakesMapLink', 'Menunggu lokasi Nakes');
+				setAddressPresentation(requestId, nakesLocation, 'nakesVisitNakesAddress', 'nakesVisitNakesMapLink', 'Menunggu lokasi petugas');
 			}
 
 			function parseLocation(location) {
