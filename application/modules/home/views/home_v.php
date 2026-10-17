@@ -1523,10 +1523,6 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 											<div class="history-meta" data-warga-pic-label="<?= html_escape((int) $dlCurrentRequest->request_id); ?>"><?= html_escape($dl_pic_label); ?></div>
 											<?php if ($dl_performer_name !== '') : ?><div class="history-meta">Petugas kunjungan: <?= html_escape($dl_performer_name); ?></div><?php endif; ?>
 										</div>
-										<div class="icon-wrapper">
-												<i class="fas fa-clipboard-list"></i>
-											<span class="filler"></span>
-										</div>
 									</div>
 										<!-- Kartu antrian bento. Blok "Langkah berikutnya" sampai tombol "Lihat
 										     detail" yang sebelumnya ada di sini sudah dihapus: seluruh isinya -
