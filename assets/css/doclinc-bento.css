@@ -4203,13 +4203,9 @@
   border: 0;
   border-radius: var(--bd-r-md);
   background-color: var(--bd-green-700);
-  /* Texture and gradient share one background-image declaration. Only one
-     background-image can apply to an element, so declaring the gradient here and
-     the texture elsewhere meant the texture silently lost - which is why the cross
-     pattern disappeared when the gradient was added. The texture sits as the first
-     layer, above the gradient, and repeats while the gradient does not. */
-  background-image: var(--bd-texture-plus-light), linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-900) 100%);
-  background-repeat: repeat, no-repeat;
+  background-image: linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-900) 100%);
+  position: relative;
+  overflow: hidden;
   color: #FFFFFF;
   font-family: inherit;
   font-size: inherit;
@@ -4219,6 +4215,43 @@
   transition: box-shadow .15s, transform .15s;
   touch-action: manipulation;
   cursor: pointer;
+}
+
+/* Healthcare mark as a single texture in the bottom-right corner, rotated so it
+   leans toward the top-left. Drawn as a pseudo-element rather than a background
+   layer because a background cannot be rotated; the file is referenced relative to
+   this stylesheet, so it resolves from whatever base path the app is served at.
+   Tinted white to read the way the previous cross did on green, and pointed at
+   nothing so it never intercepts a tap meant for the card. */
+.dl-warga-app #beranda .dl-action-tile::after {
+  content: '';
+  position: absolute;
+  right: -20px;
+  bottom: -22px;
+  width: 104px;
+  height: 104px;
+  background-image: url("../images/healthcare.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: brightness(0) invert(1);
+  opacity: .16;
+  transform: rotate(-18deg);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Locked and blocked states are not the primary action, so they keep a quiet
+   surface and carry no texture. */
+.dl-warga-app #beranda .dl-action-tile.is-locked::after,
+.dl-warga-app #beranda .dl-action-tile.is-blocked::after {
+  content: none;
+}
+
+/* The texture sits above the background but must stay behind the copy. */
+.dl-warga-app #beranda .dl-action-tile > span {
+  position: relative;
+  z-index: 1;
 }
 
 .dl-warga-app #beranda .dl-action-tile:hover {

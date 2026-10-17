@@ -2187,7 +2187,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 								aria-describedby="edit_request_keluhan_hint" spellcheck="false"></textarea>
 							<button type="button" class="dl-request-modal__edit-toggle" id="edit_request_keluhan_toggle"
 								aria-controls="edit_request_keluhan" aria-expanded="false" hidden>Ubah detail</button>
-							<p class="dl-request-modal__hint" id="edit_request_keluhan_hint" hidden>Ringkasan di atas mengikuti isi kolom ini.</p>
+							<p class="dl-request-modal__hint" id="edit_request_keluhan_hint" hidden></p>
 						</div>
 						<div class="mb-0">
 							<label for="edit_request_alamat" class="form-label fw-semibold">Alamat atau patokan</label>
