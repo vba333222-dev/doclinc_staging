@@ -2058,10 +2058,10 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 						</div>
 						<div class="dl-profile-actions">
 							<button type="button" class="btn btn-outline-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#modalProfil">
-								<i class="fas fa-edit me-1"></i> Ubah profil
+								Ubah profil
 							</button>
 							<button type="button" class="btn btn-outline-danger w-100" id="btn-logout">
-								<i class="fas fa-sign-out-alt me-1"></i> Keluar
+								Keluar
 							</button>
 						</div>
 					</div>
