@@ -508,7 +508,17 @@ class Home extends MX_Controller
 		$lat = trim((string) $this->input->post('lat', TRUE));
 		$lng = trim((string) $this->input->post('lng', TRUE));
 
-		if ($gejala_utama !== '' && stripos($keluhan, 'Gejala/Keluhan utama:') === false) {
+		// The edit form pre-fills this field with the stored description, so the
+		// posted text may already be composed. Only skip composing when it really
+		// is, detected by the exact header this code writes at the start.
+		//
+		// The previous check used stripos and matched the marker anywhere in the
+		// text. Two things went wrong with that: a patient who typed the phrase
+		// "Gejala/Keluhan utama:" into their own detail bypassed composition, and
+		// a request whose detail had been stored as bare text - because the
+		// dropdown was empty at creation time - was never given the structure it
+		// should have carried.
+		if (strpos($keluhan, 'Anamnesa') !== 0) {
 			$keluhan = $this->build_request_description($gejala_utama, $keluhan);
 		}
 		if ($keluhan === '') {

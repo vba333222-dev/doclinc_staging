@@ -134,12 +134,18 @@ class Konsultasi extends MX_Controller
 				? 'Puskesmas tujuan: ' . $assigned_puskesmas_name
 				: 'Alamat belum tersedia';
 		}
-		if ($gejala_utama !== '' && stripos($keluhan, 'Gejala/Keluhan utama:') === false) {
-			$keluhan = $this->build_request_description($gejala_utama, $keluhan);
-		}
-		if (empty($keluhan)) {
-			$keluhan = $this->build_request_description($gejala_utama, '');
-		}
+		// Assemble the description unconditionally so every request carries the same
+		// structure, whichever fields the patient filled.
+		//
+		// The previous form only assembled when a dropdown choice was present. A
+		// patient who typed a detail but left the dropdown empty - which is the
+		// only thing possible while the keluhan master table is empty - had that
+		// detail stored as bare text: no Anamnesa header, no "Detail keluhan:"
+		// label. The receiving nakes could not tell a structured chief complaint
+		// from free text, and the "Gejala/Keluhan utama:" marker that this code
+		// itself looks for when a request is later edited was absent, so an edit
+		// composed the description differently from the original submission.
+		$keluhan = $this->build_request_description($gejala_utama, $keluhan);
 		if (empty($keluhan)) {
 			log_message('error', 'Konsultasi warga gagal: keluhan kosong. user_id=' . $id_user . ' puskesmas_code=' . $assigned_puskesmas_code);
 			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Masukkan keluhan.']));
