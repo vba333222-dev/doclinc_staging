@@ -1113,10 +1113,12 @@
    so these two classes carry the shape: the same 8px radius, 13px at weight 800
    and 44px height as the modal footer. Without them the dialog would keep
    SweetAlert's defaults and read as a different component from the rest. */
+.swal2-popup .dl-swal-btn,
 .dl-swal-btn {
-  /* !important on the three properties the theme also sets. Measured without it:
-     38px tall at a 20px radius, because a bare class selector ties with .btn and
-     loses on source order. The same trap as the modal footer earlier. */
+  /* !important plus a two-class selector. Measured in three steps: class alone gave
+     38px at a 20px radius, class with !important gave 44px but still 20px radius,
+     which means the theme sets the radius with !important too and won on source
+     order. Two classes break the tie. */
   min-height: 44px !important;
   padding: .6rem 1.4rem !important;
   border-radius: 8px !important;
