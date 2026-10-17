@@ -644,8 +644,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					// SweetAlert's own styling off, application button classes on.
 					buttonsStyling: false,
 					customClass: {
-						confirmButton: "btn btn-success shadow-sm dl-swal-btn",
-						cancelButton: "btn btn-outline-secondary shadow-sm dl-swal-btn"
+						confirmButton: "btn btn-success dl-swal-btn",
+						cancelButton: "btn btn-outline-secondary dl-swal-btn"
 					}
 				}).then((result) => {
 					/* Read more about isConfirmed, isDenied below */

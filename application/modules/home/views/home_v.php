@@ -3237,8 +3237,8 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 				// height match instead of falling back to SweetAlert's defaults.
 				buttonsStyling: false,
 				customClass: {
-					confirmButton: 'btn btn-danger shadow-sm dl-swal-btn',
-					cancelButton: 'btn btn-outline-secondary shadow-sm dl-swal-btn'
+					confirmButton: 'btn btn-danger dl-swal-btn',
+					cancelButton: 'btn btn-outline-secondary dl-swal-btn'
 				}
 			}).then((result) => {
 				if (!result.isConfirmed) {

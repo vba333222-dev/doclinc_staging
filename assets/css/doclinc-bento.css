@@ -4361,35 +4361,8 @@
   opacity: 1;
 }
 
-/* --- Dialog buttons -------------------------------------------------------
-   SweetAlert's own styling is switched off for the confirmation dialogs so the
-   buttons can carry the application's own classes. These two rules supply the
-   shape: 8px radius, 13px at weight 800, 44px tall.
-
-   The three properties need !important, measured in three steps. A bare class
-   gave 38px at a 20px radius; adding !important gave 44px but the radius stayed
-   at 20px; so the theme sets the radius with !important as well and won on
-   source order. Two classes break that tie.
-
-   Kept in this stylesheet because both dashboards load it and the nakes side
-   needs the same dialog buttons. */
-.swal2-popup .dl-swal-btn,
-.dl-swal-btn {
-  height: 44px !important;
-  min-height: 44px !important;
-  padding: .6rem 1.4rem !important;
-  border-radius: 8px !important;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: .01em;
-  white-space: nowrap;
-  box-shadow: none;
-}
-
-.dl-swal-btn + .dl-swal-btn {
-  margin-left: 8px;
-}
+/* The dialog button shape now lives in doclinc-design-system.css, which every
+   page that opens a dialog loads. */
 
 
 /* --- B23.2 Petak ringkasan -------------------------------------------------

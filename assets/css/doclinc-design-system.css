@@ -255,3 +255,46 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--dl-brand-ink);
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+
+/* ---------------------------------------------------------------------------
+   Dialog buttons
+   SweetAlert dialogs are written across a dozen views and most of them still
+   let the library style its own buttons, so the shape is normalised here rather
+   than at sixty-odd call sites. .swal2-styled is present on every dialog button
+   whether or not buttonsStyling has been switched off, which makes it the one
+   point they all pass through.
+
+   Three properties need !important because SweetAlert writes them inline when it
+   styles the buttons itself. Measured before this rule: 38px tall at a 20px
+   radius, against 44px at 8px for the buttons in the modal footer.
+   --------------------------------------------------------------------------- */
+.swal2-popup .swal2-actions {
+  gap: 8px;
+}
+
+.swal2-popup .swal2-styled,
+.swal2-popup .dl-swal-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  height: 44px !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: .6rem 1.4rem !important;
+  border-radius: 8px !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: .01em !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+  box-shadow: none !important;
+}
+
+/* An icon inside a dialog button must not change its height. */
+.swal2-popup .swal2-styled i,
+.swal2-popup .swal2-styled .fas {
+  font-size: 13px;
+  line-height: 1;
+}
