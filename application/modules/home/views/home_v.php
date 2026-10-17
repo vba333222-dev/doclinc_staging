@@ -1519,22 +1519,6 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 												<span class="dl-queue-ticket__date"><i class="far fa-calendar-alt" aria-hidden="true"></i><?= html_escape($dl_current_date); ?></span>
 											</div>
 										</div>
-										<?php if ($dl_current_status === 'Pending') : ?>
-											<div class="d-grid gap-2 mt-3">
-												<button type="button"
-												  class="btn btn-success rounded-pill shadow-sm edit-warga-request"
-												  data-request-id="<?= html_escape((int) $dlCurrentRequest->request_id); ?>"
-												  data-keluhan="<?= html_escape($dl_current_keluhan); ?>"
-												  data-location="<?= html_escape(isset($dlCurrentRequest->location) ? $dlCurrentRequest->location : ''); ?>"
-												  data-lat="<?= html_escape(isset($dlCurrentRequest->patient_latitude) && $dlCurrentRequest->patient_latitude !== null ? $dlCurrentRequest->patient_latitude : (isset($dlCurrentRequest->lattitude) ? $dlCurrentRequest->lattitude : '')); ?>"
-												  data-lng="<?= html_escape(isset($dlCurrentRequest->patient_longitude) && $dlCurrentRequest->patient_longitude !== null ? $dlCurrentRequest->patient_longitude : (isset($dlCurrentRequest->longitude) ? $dlCurrentRequest->longitude : '')); ?>">
-												  Ubah permintaan
-												</button>
-												<button type="button" class="btn btn-outline-danger rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $dlCurrentRequest->request_id); ?>">
-												  Batalkan
-												</button>
-											</div>
-										<?php endif; ?>
 								</div>
 						</section>
 						<?php endif; ?>
@@ -2188,7 +2172,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-outline-secondary shadow-sm" data-bs-dismiss="modal">Batal</button>
+						<button type="button" class="btn btn-danger shadow-sm" data-bs-dismiss="modal">Batal</button>
 						<button type="submit" class="btn btn-success shadow-sm">Simpan</button>
 					</div>
 				</form>
