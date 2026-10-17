@@ -811,9 +811,21 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				text: 'Permintaan yang dibatalkan tidak dapat dilanjutkan.',
 				icon: 'warning',
 				showCancelButton: true,
+				// Dialog ini punya satu keputusan (batalkan) dan satu jalan keluar
+				// (tutup). Tombol ketiga dinyatakan mati secara eksplisit karena
+				// SweetAlert memberi warna merah bawaan pada tombol deny, sehingga
+				// tombol tambahan yang tidak sengaja aktif terbaca sebagai aksi
+				// berbahaya kedua di sebelah "Batalkan".
+				showDenyButton: false,
 				confirmButtonText: 'Batalkan',
-				confirmButtonColor: '#dc3545',
-				cancelButtonText: 'Batal'
+				cancelButtonText: 'Tutup',
+				// Bentuk dan warna tombol mengikuti dialog lain di aplikasi:
+				// class Bootstrap asli, penataan SweetAlert dimatikan.
+				buttonsStyling: false,
+				customClass: {
+					confirmButton: 'btn btn-danger dl-swal-btn',
+					cancelButton: 'btn btn-outline-secondary dl-swal-btn'
+				}
 			}).then((result) => {
 				if (!result.isConfirmed) {
 					return;
