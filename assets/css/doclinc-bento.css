@@ -4143,15 +4143,32 @@
 }
 
 @media (max-width: 575.98px) {
+  /* The reference is a phone-width layout and keeps the two-column bento, so the
+     arrangement does not collapse here. Stacking turned three related cells into a
+     list and lost the pairing between the action and the two supporting cells.
+     Only padding and type step down. */
   .dl-warga-app #beranda .dl-bento-actions {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .dl-warga-app #beranda .dl-clock-tile {
+    min-height: 96px;
+    padding: 12px;
+  }
+
+  .dl-warga-app #beranda .dl-clock-tile__time {
+    font-size: clamp(1.65rem, 8vw, 2.1rem);
+  }
+
+  .dl-warga-app #beranda .dl-clock-tile__date,
+  .dl-warga-app #beranda .dl-clock-tile__day {
+    font-size: 11px;
   }
 
   .dl-warga-app #beranda .dl-bento-actions > .dl-action-tile,
-  .dl-warga-app #beranda .dl-bento-actions > .dl-clock-tile,
-  .dl-warga-app #beranda .dl-bento-actions > .dl-summary-tile {
-    grid-column: auto;
-    grid-row: auto;
+  .dl-warga-app #beranda .dl-summary-tile {
+    padding: 12px;
   }
 }
 
