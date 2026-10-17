@@ -1572,7 +1572,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 					<?php if ($doclinc_has_active_request) : ?>
 						<div class="dl-empty-state text-center">
 							<p class="history-empty-text mb-3">Anda masih memiliki konsultasi aktif. Selesaikan atau batalkan terlebih dahulu.</p>
-							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-btn-secondary warga-action warga-action--secondary" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat konsultasi</a>
+							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="btn btn-success shadow-sm warga-action" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">Lihat konsultasi</a>
 						</div>
 					<?php else : ?>
 					<div class="card shadow mb-2 rounded-4 bg-white clickable-card dl-card dl-puskesmas-cta"
@@ -2139,7 +2139,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 							<select class="form-control" name="gejala_utama" id="edit_request_gejala">
 								<option value="">Pilih keluhan</option>
 								<?php /* Sentinel resolved by Home::updateRequestById. */ ?>
-								<option value="__custom__">Tulis sendiri…</option>
+								<option value="__custom__">Lainnya…</option>
 								<?php foreach ($master_gejala_keluhan_options as $option): ?>
 									<?php $option_name = trim((string) ($option->nama_keluhan ?? '')); ?>
 									<?php if ($option_name === '') continue; ?>
@@ -2148,7 +2148,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 							</select>
 							<input type="text" id="edit_request_gejala_custom" name="gejala_utama_custom"
 								class="form-control mt-2" maxlength="120" hidden
-								placeholder="Tulis keluhan utama dengan kata Anda sendiri">
+								placeholder="Ketik disini...">
 							<script>
 							(function () {
 								var select = document.getElementById('edit_request_gejala');
