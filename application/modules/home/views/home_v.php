@@ -1798,7 +1798,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 										endif;
 										?>
 										<?php if ($request_status === 'Pending') : ?>
-											<div class="mt-3">
+											<div class="mt-3 dl-consult-actions">
 												<button type="button"
 													class="btn btn-outline-success btn-sm rounded-pill edit-warga-request me-1"
 													data-request-id="<?= html_escape((int) $id_request); ?>"
@@ -2170,8 +2170,8 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-danger shadow-sm" data-bs-dismiss="modal">Batal</button>
 						<button type="submit" class="btn btn-success shadow-sm">Simpan</button>
+						<button type="button" class="btn btn-danger shadow-sm" data-bs-dismiss="modal">Batal</button>
 					</div>
 				</form>
 			</div>

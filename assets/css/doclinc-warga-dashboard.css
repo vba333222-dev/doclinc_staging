@@ -1106,6 +1106,30 @@
   white-space: nowrap;
 }
 
+/* The destructive button takes the same red as "Batalkan" on the consultation
+   card (rgb(220,53,69)) instead of the theme's darker danger. Two reds for the
+   same action on adjacent screens is a difference the eye notices but cannot name,
+   which is worse than either colour alone. */
+#editRequestModal .modal-footer .btn-danger {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: #FFFFFF !important;
+}
+
+/* Tinjau permintaan and Batalkan share one row. They are different actions of
+   equal weight, so they get equal width instead of sizing themselves from their
+   own label lengths. */
+.dl-consult-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.dl-consult-actions .btn {
+  width: 100%;
+  margin-right: 0 !important;
+}
+
 /* No icon belongs inside a button; the label carries the meaning. */
 .dl-request-modal .modal-footer .btn i,
 .dl-request-modal .modal-footer .btn svg {
