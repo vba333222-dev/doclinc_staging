@@ -4090,7 +4090,11 @@
   min-height: 108px;
   padding: var(--bd-pad, 16px);
   border-radius: var(--bd-r-md);
-  background: #12472F;
+  /* Same gradient construction as .dl-action-tile: a solid background-color with a
+     150deg gradient layered over it, so the tile degrades to flat #12472F if the
+     gradient cannot paint. #12472F stays the dominant mid stop. */
+  background-color: #12472F;
+  background-image: linear-gradient(150deg, #1A6442 0%, #12472F 55%, #0C3221 100%);
   color: #FFFFFF;
   box-shadow: var(--bd-shadow-1);
   overflow: hidden;
