@@ -1088,12 +1088,15 @@
   padding: var(--dl-space-3, .75rem) var(--dl-space-5, 1.5rem) var(--dl-space-4, 1rem);
 }
 
-.dl-request-modal .modal-footer .btn {
+#editRequestModal .modal-footer .btn {
   width: 100%;
   margin: 0;
   min-height: 44px;
   padding: .6rem 1rem;
   border-width: 1px;
+  /* Scoped by id because the theme sets a 20px radius on .btn at a specificity a
+     class-only selector cannot outrank; the measured value stayed 20px until this
+     selector was raised. */
   border-radius: 8px;
   font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
   font-size: 13px;
