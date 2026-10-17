@@ -2115,8 +2115,8 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 
 	<div class="modal fade" id="editRequestModal" tabindex="-1" aria-labelledby="editRequestModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
-				<div class="modal-header">
+			<div class="modal-content dl-request-modal">
+				<div class="modal-header dl-request-modal__header">
 					<div>
 						<h1 class="modal-title fs-5" id="editRequestModalLabel">Ubah permintaan</h1>
 						<p class="text-muted small mb-0">Hanya dapat diubah sebelum diterima.</p>
@@ -2149,16 +2149,22 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 						</div>
 						<div class="mb-3">
 							<label for="edit_request_keluhan" class="form-label fw-semibold">Detail keluhan</label>
-							<textarea class="form-control" name="keluhan" id="edit_request_keluhan" rows="4" required></textarea>
+							<div class="dl-anamnesis" id="edit_request_anamnesis" hidden>
+								<p class="dl-anamnesis__title">Ringkasan anamnesis</p>
+								<dl class="dl-anamnesis__list" id="edit_request_anamnesis_list"></dl>
+							</div>
+							<textarea class="form-control" name="keluhan" id="edit_request_keluhan" rows="4" required
+								aria-describedby="edit_request_keluhan_hint"></textarea>
+							<p class="dl-request-modal__hint" id="edit_request_keluhan_hint">Ringkasan di atas mengikuti isi kolom ini.</p>
 						</div>
 						<div class="mb-0">
 							<label for="edit_request_alamat" class="form-label fw-semibold">Alamat atau patokan</label>
 							<textarea class="form-control" name="alamat" id="edit_request_alamat" rows="3"></textarea>
 						</div>
 					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-						<button type="submit" class="btn btn-success">Simpan</button>
+					<div class="modal-footer dl-request-modal__footer">
+						<button type="button" class="btn dl-request-modal__btn dl-request-modal__btn--ghost" data-bs-dismiss="modal">Batal</button>
+						<button type="submit" class="btn dl-request-modal__btn dl-request-modal__btn--primary">Simpan</button>
 					</div>
 				</form>
 			</div>
@@ -2909,12 +2915,23 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 
 			$('#edit_request_id').val(requestId);
 			const parsedComplaint = parseWargaComplaintForEdit(button.attr('data-keluhan') || '');
-			$('#edit_request_gejala').val(parsedComplaint.gejala);
-			if (parsedComplaint.gejala !== '' && $('#edit_request_gejala').val() !== parsedComplaint.gejala) {
-				parsedComplaint.detail = 'Gejala/Keluhan utama: ' + parsedComplaint.gejala + (parsedComplaint.detail !== '' ? "\n" + parsedComplaint.detail : '');
-				$('#edit_request_gejala').val('');
+			const gejalaField = $('#edit_request_gejala');
+			if (parsedComplaint.gejala !== '') {
+				// The stored wording is free text ("Batuk kering") while the master
+				// list holds canonical names ("Batuk"). A plain val() would be
+				// rejected by the select, which then fell back to its placeholder
+				// and pushed the value into the detail box - the patient saw an
+				// empty field and could not tell that their answer had survived.
+				// Keep the stored wording selectable so the field carries it.
+				const hasOption = gejalaField.is('select')
+					&& gejalaField.find('option').filter(function () { return $(this).val() === parsedComplaint.gejala; }).length > 0;
+				if (gejalaField.is('select') && !hasOption) {
+					gejalaField.append($('<option>').attr('value', parsedComplaint.gejala).text(parsedComplaint.gejala));
+				}
+				gejalaField.val(parsedComplaint.gejala);
 			}
 			$('#edit_request_keluhan').val(parsedComplaint.detail);
+			renderEditAnamnesis(parsedComplaint.detail);
 			$('#edit_request_alamat').val(button.attr('data-location') || '');
 			$('#edit_request_lat').val(button.attr('data-lat') || '');
 			$('#edit_request_lng').val(button.attr('data-lng') || '');
@@ -2953,7 +2970,12 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 
 				const key = cleanLine.slice(0, separatorIndex).trim().toLowerCase();
 				const value = cleanLine.slice(separatorIndex + 1).trim();
-				if (key === 'gejala/keluhan utama') {
+				// Both spellings appear in stored descriptions: the consultation form
+				// composes "Gejala/Keluhan utama:" while older records carry
+				// "Keluhan utama:". Recognising only the first sent the second into
+				// the detail block, so the dropdown kept showing its placeholder even
+				// though the value was sitting in the same string.
+				if (key === 'gejala/keluhan utama' || key === 'keluhan utama') {
 					result.gejala = value;
 					return;
 				}
@@ -2961,13 +2983,56 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 					detailParts.push(value);
 					return;
 				}
-				if (key === 'keluhan utama' || key === 'lama keluhan' || key === 'gejala tambahan') {
+				if (key === 'lama keluhan' || key === 'gejala tambahan') {
 					detailParts.push(cleanLine);
 				}
 			});
 
 			result.detail = detailParts.length > 0 ? detailParts.join("\n") : text;
 			return result;
+		}
+
+		// Renders the stored complaint as label/value rows so it reads as an
+		// anamnesis instead of a run of text. The textarea remains the editable
+		// source of truth; this block is a reading aid that follows it. Built with
+		// textContent so whatever the patient typed is never interpreted as markup.
+		function renderEditAnamnesis(rawDetail) {
+			const box = document.getElementById('edit_request_anamnesis');
+			const list = document.getElementById('edit_request_anamnesis_list');
+			if (!box || !list) {
+				return;
+			}
+
+			list.textContent = '';
+
+			const lines = String(rawDetail || '')
+				.split(/\r?\n/)
+				.map(function (line) { return line.trim(); })
+				.filter(function (line) { return line !== ''; });
+
+			if (lines.length === 0) {
+				box.hidden = true;
+				return;
+			}
+
+			lines.forEach(function (line) {
+				const separator = line.indexOf(':');
+				const term = document.createElement('dt');
+				const value = document.createElement('dd');
+
+				if (separator === -1) {
+					term.textContent = 'Catatan';
+					value.textContent = line;
+				} else {
+					term.textContent = line.slice(0, separator).trim();
+					value.textContent = line.slice(separator + 1).trim();
+				}
+
+				list.appendChild(term);
+				list.appendChild(value);
+			});
+
+			box.hidden = false;
 		}
 
 		$('#editRequestForm').on('submit', function(event) {

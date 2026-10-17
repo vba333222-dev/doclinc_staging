@@ -1000,3 +1000,201 @@
     transition: none;
   }
 }
+
+
+/* ---------------------------------------------------------------------------
+   Ubah permintaan modal
+
+   Mirrors the house pattern used by nk-profile-modal: a named block with
+   __header/__footer modifiers. Everything is expressed with the --dl-* tokens
+   from doclinc-design-system.css so this modal cannot drift away from the rest
+   of the application. Where a token might be missing (this stylesheet is also
+   loaded on pages that do not import the design system) a literal fallback
+   carries the same value.
+   --------------------------------------------------------------------------- */
+.dl-request-modal {
+  border: 0;
+  border-radius: var(--dl-radius-lg, 20px);
+  box-shadow: var(--dl-shadow-2, 0 10px 30px rgba(31, 42, 36, .08));
+  overflow: hidden;
+}
+
+.dl-request-modal__header {
+  align-items: flex-start;
+  gap: var(--dl-space-2, .5rem);
+  padding: var(--dl-space-5, 1.5rem) var(--dl-space-5, 1.5rem) var(--dl-space-3, .75rem);
+  border-bottom: 0;
+}
+
+.dl-request-modal__header .modal-title {
+  font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -.01em;
+  color: var(--dl-text, #1F2A24);
+}
+
+.dl-request-modal .modal-body {
+  padding: var(--dl-space-3, .75rem) var(--dl-space-5, 1.5rem) var(--dl-space-4, 1rem);
+}
+
+.dl-request-modal .form-label {
+  margin-bottom: var(--dl-space-2, .5rem);
+  font-size: var(--dl-text-sm, 13px);
+  font-weight: 600;
+  color: var(--dl-text-secondary, #4E5F57);
+}
+
+.dl-request-modal .form-control {
+  min-height: 46px;
+  padding: .7rem .9rem;
+  border: 1px solid var(--dl-border, #E7ECE9);
+  border-radius: var(--dl-radius-md, 14px);
+  background: var(--dl-surface, #FFFFFF);
+  color: var(--dl-text, #1F2A24);
+  font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
+  font-size: var(--dl-body-size, 15px);
+  line-height: var(--dl-body-leading, 1.55);
+  box-shadow: none;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.dl-request-modal textarea.form-control {
+  min-height: auto;
+  resize: vertical;
+}
+
+.dl-request-modal .form-control:focus {
+  border-color: var(--dl-brand, #379A69);
+  box-shadow: 0 0 0 3px rgba(55, 154, 105, .16);
+  outline: none;
+}
+
+.dl-request-modal__hint {
+  margin: var(--dl-space-2, .5rem) 0 0;
+  font-size: var(--dl-text-sm, 13px);
+  line-height: 1.5;
+  color: var(--dl-text-muted, #64736B);
+}
+
+/* Structured anamnesis: a reading aid above the editable textarea.
+
+   The stored complaint arrives as a composed block ("Keluhan utama: …" /
+   "Lama keluhan: …"). Rendered inside a textarea it reads as a wall of text and
+   the patient cannot see the answers they gave. As label/value pairs the same
+   data reads as an anamnesis, which is what it is. */
+.dl-anamnesis {
+  margin-bottom: var(--dl-space-3, .75rem);
+  padding: var(--dl-space-3, .75rem) var(--dl-space-4, 1rem);
+  border: 1px solid var(--dl-divider, #EFF3F1);
+  border-left: 3px solid var(--dl-brand, #379A69);
+  border-radius: var(--dl-radius-sm, 8px);
+  background: var(--dl-surface-subtle, #F4F8F6);
+}
+
+.dl-anamnesis__title {
+  margin: 0 0 var(--dl-space-2, .5rem);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  color: var(--dl-brand-ink, #2D7D56);
+}
+
+.dl-anamnesis__list {
+  display: grid;
+  grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr);
+  gap: var(--dl-space-1, .25rem) var(--dl-space-3, .75rem);
+  margin: 0;
+}
+
+.dl-anamnesis__list dt {
+  font-size: var(--dl-text-sm, 13px);
+  font-weight: 600;
+  color: var(--dl-text-muted, #64736B);
+}
+
+.dl-anamnesis__list dd {
+  margin: 0;
+  font-size: var(--dl-body-size, 15px);
+  color: var(--dl-text, #1F2A24);
+  overflow-wrap: anywhere;
+}
+
+/* Footer actions. Pill geometry matches .dl-btn-secondary elsewhere in the app,
+   and the 44px floor keeps both targets reachable on a phone. */
+.dl-request-modal__footer {
+  gap: var(--dl-space-2, .5rem);
+  padding: var(--dl-space-3, .75rem) var(--dl-space-5, 1.5rem) var(--dl-space-4, 1rem);
+  border-top: 1px solid var(--dl-divider, #EFF3F1);
+}
+
+.dl-request-modal__btn {
+  min-height: 44px;
+  padding: .6rem 1.4rem;
+  border-radius: 999px;
+  font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
+  font-size: .9rem;
+  font-weight: 700;
+  transition: filter .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.dl-request-modal__btn--ghost {
+  border: 1px solid var(--dl-border-strong, #8A9490);
+  background: transparent;
+  color: var(--dl-text-secondary, #4E5F57);
+}
+
+.dl-request-modal__btn--ghost:hover {
+  background: var(--dl-surface-subtle, #F4F8F6);
+  color: var(--dl-text, #1F2A24);
+}
+
+.dl-request-modal__btn--primary {
+  border: 1px solid var(--dl-brand-strong, #1f6f4b);
+  background: linear-gradient(135deg, #45b37f 0%, var(--dl-brand, #379A69) 52%, var(--dl-brand-strong, #1f6f4b) 100%);
+  color: #FFFFFF;
+  box-shadow: 0 8px 18px rgba(31, 111, 75, .24);
+}
+
+.dl-request-modal__btn--primary:hover {
+  color: #FFFFFF;
+  filter: brightness(1.06);
+  box-shadow: 0 12px 24px rgba(31, 111, 75, .3);
+}
+
+.dl-request-modal__btn:active {
+  transform: translateY(1px);
+}
+
+.dl-request-modal__btn:focus-visible,
+.dl-request-modal .form-control:focus-visible {
+  outline: 2px solid var(--dl-focus, #0c7c87);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-request-modal .form-control,
+  .dl-request-modal__btn {
+    transition: none;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .dl-anamnesis__list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .dl-anamnesis__list dt {
+    margin-top: var(--dl-space-2, .5rem);
+  }
+
+  .dl-request-modal__footer {
+    flex-direction: column-reverse;
+  }
+
+  .dl-request-modal__btn {
+    width: 100%;
+  }
+}
