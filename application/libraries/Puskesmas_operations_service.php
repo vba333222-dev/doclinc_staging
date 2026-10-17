@@ -119,6 +119,9 @@ class Puskesmas_operations_service
 		$request_select .= ', DATE(' . $date_field . ') AS service_date';
 		$request_select .= ', patient.nama AS patient_name';
 		$request_select .= $nik_ready ? ', patient.nik AS patient_nik' : ', NULL AS patient_nik';
+		/* Nomor antrian dipakai untuk label pendek di daftar pengecualian.
+		   Kolomnya berasal dari migrasi queue number, jadi dijaga field_exists. */
+		$request_select .= $this->db->field_exists('queue_number', 'requests') ? ', requests.queue_number' : ', NULL AS queue_number';
 		if ($this->care_team_enabled) {
 			$request_select .= ', requests.responsible_doctor_user_id, requests.visit_performer_user_id, requests.consultation_mode';
 		}
@@ -517,6 +520,16 @@ class Puskesmas_operations_service
 		$queue_code = $this->queueCode($puskesmas_code, $this->value($request, 'service_date'), (int) $request['request_id']);
 		if ($queue_code !== '') {
 			$row['queue_code'] = $queue_code;
+		}
+		/* Antarmuka menampilkan nomor antrian saja, bukan kode lengkapnya.
+		   Helper yang sama dipakai halaman Puskesmas lain supaya nomornya
+		   konsisten; fallback ke request_id ada di dalam helper. */
+		if (function_exists('doclinc_request_queue_number_label')) {
+			$row['queue_label'] = doclinc_request_queue_number_label((object) array(
+				'queue_number' => isset($request['queue_number']) ? (int) $request['queue_number'] : 0,
+				'queue_code' => $queue_code,
+				'request_id' => (int) $request['request_id'],
+			));
 		}
 		$nik_masked = $this->maskNik($this->value($request, 'patient_nik'));
 		if ($nik_masked !== '') {

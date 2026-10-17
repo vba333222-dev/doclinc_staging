@@ -1,0 +1,403 @@
+/* DokLinc — gaya bersama halaman autentikasi (masuk, daftar, ganti password, aktivasi).
+ *
+ * Sebelum ini setiap halaman auth menyalin blok <style> yang sama dengan warna
+ * mentah (#1F6F4B, #8fa8a0, #dce6e1, ...). Nilai-nilai itu sebenarnya SUDAH ADA
+ * sebagai token di doclinc-design-system.css, hanya ditulis ulang dengan hex.
+ * Berkas ini memakai token tersebut sehingga ada satu sumber kebenaran.
+ *
+ * Ukuran sengaja TIDAK diperbesar: tinggi bidang dan tombol dipertahankan
+ * seperti sebelumnya (48px), karena ukurannya sudah tepat dan proporsional.
+ * Yang ditambahkan hanya kedalaman visual, bukan dimensi.
+ */
+
+.dl-auth-body {
+  /* Warna solid sebagai lapisan dasar: apa pun yang terjadi pada gradien,
+   * tidak akan pernah muncul latar putih di sela-sela. */
+  background-color: var(--dl-brand-strong);
+  background-image:
+    radial-gradient(1200px 620px at 12% -10%, rgba(255, 255, 255, .16) 0%, transparent 58%),
+    radial-gradient(900px 520px at 100% 108%, rgba(0, 0, 0, .18) 0%, transparent 60%),
+    linear-gradient(160deg, var(--dl-brand-strong) 0%, var(--dl-brand) 52%, var(--dl-brand-ink) 100%);
+  background-repeat: no-repeat;
+  /* Sengaja TIDAK memakai background-attachment: fixed. Dengan fixed, latar
+   * tertinggal di tempat saat halaman digulir sehingga terasa terlepas dari
+   * isinya. Tanpa fixed, gradien membentang mengikuti tinggi kotak body
+   * sehingga ikut bergulir bersama konten. */
+  background-size: 100% 100%;
+  font-family: var(--dl-font);
+  min-height: 100vh;
+  color: var(--dl-text);
+  /* Konteks posisi untuk lapisan ornamen ::before di atas.
+   * CATATAN: JANGAN menambahkan overflow-x: hidden di sini. Pada elemen body,
+   * overflow-x:hidden memaksa overflow-y menjadi auto sehingga body menjadi
+   * kontainer gulir sendiri dan gulir viewport berhenti bekerja — bagian bawah
+   * formulir jadi tidak bisa dijangkau. Overlay ::before memakai inset:0
+   * sehingga tidak mungkin meluber horizontal. */
+  position: relative;
+}
+
+/* Ornamen lembut: memberi kedalaman tanpa mengganggu keterbacaan.
+ * position:absolute (bukan fixed) supaya ikut bergulir bersama halaman. */
+.dl-auth-body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, .10) 0 2px, transparent 3px),
+    radial-gradient(circle at 72% 68%, rgba(255, 255, 255, .08) 0 2px, transparent 3px);
+  background-size: 46px 46px, 62px 62px;
+  opacity: .7;
+}
+
+.dl-auth-logo {
+  height: 64px;
+  width: auto;
+  max-width: 100%;
+  margin-bottom: 22px;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .22));
+}
+
+/* CATATAN: .dl-auth-heading sudah dihapus. Sebelumnya halaman daftar memakai
+ * <p class="dl-auth-heading">Daftar</p> di atas kartu, sementara halaman masuk
+ * tidak punya judul sama sekali. Sekarang judul berada DI DALAM kartu sebagai
+ * <h1 class="dl-auth-title"> di ketiga halaman auth, sehingga seragam dan
+ * halaman tetap punya satu heading utama untuk pembaca layar. */
+
+.dl-auth-card {
+  border: 1px solid rgba(255, 255, 255, .5);
+  border-radius: var(--dl-radius-lg);
+  background: var(--dl-surface);
+  box-shadow: 0 24px 60px rgba(15, 40, 28, .26), 0 2px 0 rgba(255, 255, 255, .6) inset;
+  overflow: hidden;
+}
+
+.dl-auth-card-body {
+  padding: 30px 26px 26px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbf9 100%);
+}
+
+/* ---- Bidang isian ----
+ * Struktur: label (opsional, di luar) → .dl-auth-control (pembungkus input).
+ * PENTING: ikon diposisikan relatif terhadap .dl-auth-control, BUKAN terhadap
+ * .dl-auth-field. Kalau diposisikan terhadap field, top:50% ikut menghitung
+ * tinggi label sehingga ikon terdorong ke atas pada halaman yang labelnya
+ * terlihat (halaman daftar), sementara di halaman masuk tampak normal karena
+ * labelnya tersembunyi. Itulah sebabnya kedua halaman terlihat tidak seragam. */
+
+.dl-auth-field {
+  margin-bottom: 16px;
+}
+
+.dl-auth-control {
+  position: relative;
+}
+
+.dl-auth-control .dl-auth-icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: var(--dl-text-muted);
+  font-size: 15px;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.dl-auth-field input.form-control {
+  min-height: 48px;
+  padding: 10px 44px 10px 42px;
+  border: 1.5px solid var(--dl-border);
+  border-radius: var(--dl-radius-sm);
+  background: #fff;
+  font-family: var(--dl-font);
+  /* 16px, bukan 14px. Dua alasan:
+   * 1) Safari di iOS otomatis memperbesar (zoom) seluruh halaman begitu pengguna
+   *    menyentuh bidang isian yang ukuran hurufnya di bawah 16px. Pada halaman
+   *    masuk, zoom mendadak itu membuat tombol "Masuk" terlempar keluar layar.
+   * 2) Halaman lain memakai 15px (--dl-body-size) karena .form-control tidak
+   *    mematok ukuran huruf; 14px di sini membuat teks isian halaman auth lebih
+   *    kecil daripada di halaman lain. */
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dl-text);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.dl-auth-field input.form-control::placeholder {
+  color: var(--dl-text-muted);
+  font-weight: 500;
+}
+
+/* Gaya fokus disamakan PERSIS dengan .form-control:focus milik design system
+ * (doclinc-design-system.css:74) supaya halaman auth tidak memakai "bahasa"
+ * fokus yang berbeda dari halaman lain di aplikasi. Sebelumnya di sini dipakai
+ * cincin hijau sendiri, sehingga saat :focus-visible aktif akan tampak dua
+ * cincin berbeda warna bertumpuk (hijau + outline teal bawaan sistem). */
+.dl-auth-field input.form-control:focus {
+  border-color: var(--dl-focus);
+  box-shadow: 0 0 0 3px rgba(12, 124, 135, .12);
+  outline: none;
+}
+
+/* ---- Tombol tampilkan password ----
+ * Ukuran tetap 44x44 (sudah memenuhi target sentuh minimum), posisi tetap di
+ * kanan bidang. Yang ditambah hanya keadaan hover yang lebih jelas. */
+
+.dl-auth-toggle-pw {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--dl-radius-sm);
+  background: transparent;
+  color: var(--dl-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  transition: color .18s ease, background-color .18s ease;
+  z-index: 2;
+}
+
+.dl-auth-toggle-pw:hover {
+  color: var(--dl-brand-ink);
+  background: color-mix(in srgb, var(--dl-brand) 8%, transparent);
+}
+
+.dl-auth-toggle-pw:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent);
+  outline-offset: 2px;
+}
+
+/* ---- Tombol utama ----
+ * Tinggi dipertahankan 48px sesuai ukuran yang sudah ada. Kedalaman ditambah
+ * lewat bayangan berlapis dan umpan balik tekanan, bukan lewat ukuran. */
+
+.dl-auth-btn {
+  min-height: 48px;
+  border: 1px solid var(--dl-brand-strong);
+  border-radius: var(--dl-radius-sm);
+  background: linear-gradient(180deg, var(--dl-brand) 0%, var(--dl-brand-ink) 100%);
+  color: #fff;
+  font-family: var(--dl-font);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  box-shadow: 0 6px 16px rgba(31, 111, 75, .24), 0 1px 0 rgba(255, 255, 255, .22) inset;
+  transition: transform .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+
+.dl-auth-btn:hover {
+  background: linear-gradient(180deg, var(--dl-brand-ink) 0%, var(--dl-brand-strong) 100%);
+  box-shadow: 0 10px 24px rgba(31, 111, 75, .30), 0 1px 0 rgba(255, 255, 255, .22) inset;
+  transform: translateY(-1px);
+}
+
+.dl-auth-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(31, 111, 75, .26);
+}
+
+.dl-auth-btn:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent);
+  outline-offset: 2px;
+}
+
+.dl-auth-btn:disabled {
+  opacity: .7;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ---- Tautan & pemisah ---- */
+
+.dl-auth-divider {
+  border: none;
+  border-top: 1px solid var(--dl-border);
+  margin: 18px 0;
+}
+
+.dl-auth-link {
+  color: var(--dl-brand-ink);
+  font-weight: 700;
+  text-decoration: none;
+  transition: color .18s ease;
+}
+
+.dl-auth-link:hover {
+  color: var(--dl-brand-strong);
+  text-decoration: underline;
+}
+
+.dl-auth-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Tombol yang tampil seperti tautan (mis. "Keluar" / "Batalkan aktivasi" pada
+ * halaman ganti password). Sebelumnya gaya ini ditulis sebagai atribut style
+ * inline di dalam view, sehingga tidak bisa diwariskan, tidak ikut aturan
+ * fokus, dan tidak muncul di media query prefers-reduced-motion. */
+.dl-auth-linkbtn {
+  display: inline-block;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--dl-radius-sm);
+  background: none;
+  color: var(--dl-brand-ink);
+  font-family: inherit;
+  font-size: var(--dl-text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: color .18s ease;
+}
+
+.dl-auth-linkbtn:hover {
+  color: var(--dl-brand-strong);
+  text-decoration: underline;
+}
+
+.dl-auth-linkbtn:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent);
+  outline-offset: 2px;
+}
+
+/* Catatan pengantar di bawah subjudul (mis. penjelasan password sementara pada
+ * halaman aktivasi). Berbeda dari .dl-auth-hint yang menempel pada satu bidang. */
+.dl-auth-note {
+  margin: 0 0 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--dl-divider);
+  border-left: 3px solid var(--dl-brand);
+  border-radius: var(--dl-radius-sm);
+  background: var(--dl-surface-subtle);
+  color: var(--dl-text-secondary);
+  font-size: var(--dl-text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.dl-auth-footer-text {
+  color: var(--dl-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 0;
+}
+
+/* ---- Judul & subjudul kartu (dipakai halaman ganti password) ---- */
+
+.dl-auth-title {
+  font-family: var(--dl-font);
+  font-size: 22px;
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  color: var(--dl-text);
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.dl-auth-subtitle {
+  color: var(--dl-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* ---- Label bidang ----
+ * Halaman daftar memakai label terlihat (lebih baik untuk aksesibilitas);
+ * halaman masuk memakai label tersembunyi + ikon. Keduanya memakai gaya sama.
+ * Ukurannya .875rem (14px) — sama persis dengan .form-label di
+ * doclinc-design-system.css. Sebelumnya di sini dipatok 12px sehingga label
+ * halaman auth lebih kecil daripada label di halaman lain. */
+
+.dl-auth-field > label {
+  color: var(--dl-text-secondary);
+  font-size: .875rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+/* .dl-auth-pw-wrap sudah tidak dipakai: seluruh bidang kini memakai
+ * .dl-auth-control sebagai pembungkus, sehingga ikon, input, tombol mata, dan
+ * badge karakter terakhir semuanya diposisikan dari satu acuan yang sama. */
+
+/* Petunjuk di bawah bidang (mis. syarat password). Dinaikkan dari 11px ke 12px
+ * karena 11px berada di bawah batas minimum teks baca (12px) dan sulit dibaca
+ * pada layar ponsel. Karena kini berada DI DALAM .dl-auth-field (seperti di
+ * halaman ganti password), jarak bawah diambil alih oleh margin field. */
+.dl-auth-hint {
+  display: block;
+  color: var(--dl-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+/* ---- Tombol sekunder (mis. "Batal") ----
+ * Ukuran disamakan dengan tombol utama (48px) supaya sejajar dalam satu baris. */
+
+.dl-auth-btn-outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid var(--dl-border);
+  border-radius: var(--dl-radius-sm);
+  background: transparent;
+  color: var(--dl-brand-ink);
+  font-family: var(--dl-font);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.dl-auth-btn-outline:hover {
+  background: color-mix(in srgb, var(--dl-brand) 8%, transparent);
+  border-color: var(--dl-brand);
+  color: var(--dl-brand-ink);
+  text-decoration: none;
+}
+
+.dl-auth-btn-outline:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent);
+  outline-offset: 2px;
+}
+
+/* Badge "karakter terakhir" dari doclinc-password-mask.js diposisikan pada
+ * right:14px secara inline, yaitu TEPAT DI BAWAH tombol mata. Akibatnya karakter
+ * yang seharusnya terlihat justru tertutup tombol. Di sini badge digeser ke kiri
+ * tombol supaya benar-benar terbaca. Selektor memakai !important karena posisi
+ * ditulis sebagai inline style oleh skrip tersebut. */
+.dl-auth-control .doclinc-password-last-character {
+  right: 56px !important;
+  color: var(--dl-text-secondary) !important;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+/* Menghormati preferensi pengguna yang mematikan animasi. */
+@media (prefers-reduced-motion: reduce) {
+  .dl-auth-btn,
+  .dl-auth-toggle-pw,
+  .dl-auth-field input.form-control {
+    transition: none;
+  }
+  .dl-auth-btn:hover,
+  .dl-auth-btn:active {
+    transform: none;
+  }
+}

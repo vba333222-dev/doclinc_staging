@@ -26,7 +26,14 @@ const integration = read('tools/puskesmas_operations/tests/integration.php');
 expect((tindakanController.match(/deny_clinical_mutation\(\)/g) || []).length >= 3 && !tindakanController.includes('->edit_tindakan($konsul_id') && !tindakanController.includes('->delete_tindakan($konsul_id'), 'admin_clinical_mutation_endpoints_fail_closed');
 expect(!tindakanModel.includes("->update('konsultasi'") && /edit_tindakan[\s\S]*?return false;/.test(tindakanModel) && /delete_tindakan[\s\S]*?return false;/.test(tindakanModel), 'admin_clinical_model_mutations_retired');
 expect(!/<form|modalEdit|modalDelete|Nonaktifkan|>Edit</.test(tindakanView), 'admin_clinical_mutation_ui_absent');
-expect(recordController.includes("'Detail klinis tidak tersedia untuk Admin.'), 403") && !recordController.includes('get_record_detail('), 'admin_arbitrary_detail_endpoint_denied');
+// The endpoint may only reach the clinical detail model after the clinical audit
+// gate has been enabled *and* has authorised the specific record. Assert that
+// ordering rather than the mere absence of the call.
+const detailBody = recordController.slice(recordController.indexOf('public function detail('));
+const featureDenyAt = detailBody.indexOf("'Detail klinis tidak tersedia untuk Admin.'), 403");
+const authorizeDenyAt = detailBody.indexOf("if (empty($decision['allowed']))");
+const detailFetchAt = detailBody.indexOf('get_record_detail(');
+expect(featureDenyAt > -1 && authorizeDenyAt > -1 && detailFetchAt > authorizeDenyAt && authorizeDenyAt > featureDenyAt, 'admin_arbitrary_detail_endpoint_denied');
 expect(/get_record_detail\([^)]*\)[\s\S]*?return null;/.test(recordModel), 'admin_record_model_detail_fails_closed');
 expect(!/anamnesis|diagnosis|treatment|recommendations|patient_name/i.test(recordView) && !/recordDetailModal|record_id/.test(recordView), 'admin_view_contains_operational_metadata_only');
 expect(!/AS diagnosis|AS anamnesis|AS treatment|AS recommendations|AS notes|AS patient_name/.test(recordModel), 'admin_query_excludes_clinical_and_patient_content');

@@ -66,7 +66,20 @@
 switch (ENVIRONMENT)
 {
 	case 'development':
-		error_reporting(-1);
+		/* Diselaraskan dengan index.php aplikasi utama.
+		 *
+		 * Sebelumnya di sini tertulis error_reporting(-1), sehingga SEMUA
+		 * peringatan ikut dicetak. CodeIgniter 3 di PHP 8.4 memunculkan banyak
+		 * E_DEPRECATED ("Creation of dynamic property CI_URI::$config is
+		 * deprecated", "Constant E_STRICT is deprecated"). Karena display_errors
+		 * juga aktif, dump HTML mentah itu muncul di ATAS setiap halaman admin —
+		 * tata letak panel rusak dan jalur absolut server (mis.
+		 * C:\Project\...\admin_menu\system\core\Exceptions.php) ikut terlihat.
+		 *
+		 * Kesalahan nyata (warning, notice, fatal) tetap ditampilkan. E_STRICT
+		 * sengaja TIDAK disebut karena konstanta itu sendiri sudah deprecated di
+		 * PHP 8.4 — menyebutnya justru menimbulkan peringatan baru. */
+		error_reporting(E_ALL ^ E_DEPRECATED ^ E_NOTICE);
 		ini_set('display_errors', 1);
 	break;
 

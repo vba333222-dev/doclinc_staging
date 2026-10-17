@@ -91,14 +91,39 @@ class Profile_image_storage
 			return '';
 		}
 
+		$allowed = array('image/jpeg', 'image/png', 'image/webp');
+
 		$finfo = function_exists('finfo_open') ? finfo_open(FILEINFO_MIME_TYPE) : false;
 		$mime = $finfo ? finfo_file($finfo, $path) : '';
 		if ($finfo) {
 			finfo_close($finfo);
 		}
 		$mime = is_string($mime) ? strtolower(trim($mime)) : '';
+		if (in_array($mime, $allowed, true)) {
+			return $mime;
+		}
 
-		return in_array($mime, array('image/jpeg', 'image/png', 'image/webp'), true) ? $mime : '';
+		/* fileinfo adalah ekstensi opsional dan sebagian build PHP tidak
+		   memuatnya. Sebelum ini, ketiadaannya membuat allowed_mime() selalu
+		   mengembalikan '' sehingga Profile_media::photo() menutup setiap
+		   permintaan foto dengan 404 - semua avatar jatuh ke fallback walau
+		   berkasnya ada. getimagesize() ada di pustaka standar dan membaca
+		   header berkas yang sama, jadi jalur ini menjaga endpoint tetap
+		   bekerja tanpa fileinfo. */
+		if (function_exists('getimagesize')) {
+			$info = @getimagesize($path);
+			$type = is_array($info) && isset($info[2]) ? (int) $info[2] : 0;
+			$by_type = array(
+				IMAGETYPE_JPEG => 'image/jpeg',
+				IMAGETYPE_PNG => 'image/png',
+				IMAGETYPE_WEBP => 'image/webp',
+			);
+			if (isset($by_type[$type])) {
+				return $by_type[$type];
+			}
+		}
+
+		return '';
 	}
 
 	public function upload_is_valid($path, $stored_key, $max_size_kb)

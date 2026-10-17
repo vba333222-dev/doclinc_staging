@@ -36,7 +36,7 @@
             ?>
               <tr>
                 <td><?= $i;?></td>
-                <td><img src="<?= base_url('../assets/img/' . rawurlencode($x->logo));?>"   style="width:auto;height:70px;"></td>
+                <td><img src="<?= base_url('../assets/img/' . rawurlencode($x->logo));?>"   style="width:auto;height:70px;"></td alt="">
                 <td><?= html_escape($x->alt_name ?? '-');?></td>
                 <td><?= html_escape($x->create_user ?? '-');?></td>
                 <td><?= html_escape($x->modify_date ?? '-');?></td>
@@ -87,11 +87,11 @@
     </div>
   </div>
 </div>
-<div class="modal fade" id="modalEdit" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalEdit" tabindex="-1" aria-labelledby="modalEditLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel"></h5>
+        <h5 class="modal-title" id="modalEditLabel"></h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>

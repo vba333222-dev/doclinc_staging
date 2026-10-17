@@ -1,7 +1,7 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 <div class="dl-nakes-card dl-dashboard-section nakes-current-task-surface">
 	<?php if ($nakes_primary_active) :
-		$active_queue_code = doclinc_request_queue_code($nakes_primary_active);
+		$active_queue_label = doclinc_request_queue_number_label($nakes_primary_active);
 		$active_mode_label = doclinc_consultation_mode_label(isset($nakes_primary_active->consultation_mode) ? $nakes_primary_active->consultation_mode : '');
 		$primary_assignment_map = isset($request_staff_assignment_map) && is_array($request_staff_assignment_map) ? $request_staff_assignment_map : array();
 		$primary_pic_assignment = isset($primary_assignment_map[(int) $nakes_primary_active->request_id]) ? $primary_assignment_map[(int) $nakes_primary_active->request_id] : null;
@@ -37,7 +37,7 @@
 				'not_started' => 'Mulai perjalanan',
 				'en_route' => 'Tiba di lokasi',
 				'arrived' => 'Mulai pemeriksaan',
-				'in_service' => 'Catat hasil pemeriksaan',
+				'in_service' => 'Catat Hasil',
 				'completed' => 'Kunjungan selesai',
 			);
 			$primary_next_action = isset($primary_visit_actions[$primary_visit_status]) ? $primary_visit_actions[$primary_visit_status] : 'Lihat tugas kunjungan';
@@ -68,12 +68,26 @@
 			}
 			return '';
 		};
+		$primary_patient_photo = '';
+		foreach (array('patient_photo', 'foto', 'photo', 'profile_photo', 'profile_image', 'avatar') as $primary_photo_key) {
+			if (isset($nakes_primary_active->{$primary_photo_key}) && trim((string) $nakes_primary_active->{$primary_photo_key}) !== '') {
+				$primary_patient_photo = trim((string) $nakes_primary_active->{$primary_photo_key});
+				break;
+			}
+		}
 	?>
 		<div class="dl-task-row">
-			<div class="dl-task-avatar"><i class="fas fa-user-check"></i></div>
+			<?php $this->load->view('partials/nakes_avatar_v', array(
+				'avatar_name' => $nakes_primary_active->nama,
+				'avatar_photo' => $primary_patient_photo,
+				'avatar_user_id' => (int) $nakes_primary_active->user_id,
+				'avatar_alt' => 'Foto pasien',
+				'avatar_class' => 'nk-avatar--md nk-avatar--patient',
+				'avatar_icon' => 'fas fa-user-check',
+			)); ?>
 			<div class="flex-grow-1 min-w-0">
 				<p class="dl-task-title"><?= html_escape(strtoupper((string) $nakes_primary_active->nama)); ?></p>
-				<div class="dl-task-meta">No. Antrian: <?= html_escape($active_queue_code); ?> · <?= html_escape($active_mode_label); ?></div>
+				<div class="dl-task-meta"><?= html_escape($active_queue_label); ?> · <?= html_escape($active_mode_label); ?></div>
 			</div>
 		</div>
 		<?php if ($care_team_enabled && ($is_responsible_doctor || $is_visit_performer)) : ?>
@@ -83,18 +97,6 @@
 			</div>
 		<?php endif; ?>
 		<?php if (!empty($can_coordinate_staff)) : ?>
-		<div class="nk-pic-inline" data-pic-summary data-request-id="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
-			<span><?= $care_team_enabled ? 'Dokter penanggung jawab' : 'Penanggung jawab layanan'; ?></span>
-			<strong data-pic-name>
-				<?php if ($care_team_enabled && $responsible_doctor_name !== '') : ?>
-					<?= html_escape($responsible_doctor_name); ?>
-				<?php elseif (!$care_team_enabled && $primary_pic_assignment) : ?>
-					<?= html_escape($primary_pic_assignment->staff_nama); ?><?= !empty($primary_pic_assignment->staff_profesi) ? ' · ' . html_escape($primary_pic_assignment->staff_profesi) : ''; ?>
-				<?php else : ?>
-					Belum ditentukan
-				<?php endif; ?>
-			</strong>
-		</div>
 		<div class="nk-action-panel nk-action-panel--pic nk-card-section nk-pic-dashboard-panel" data-pic-panel data-request-id="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
 			<div class="nk-action-panel__title"><?= $care_team_enabled ? 'Dokter penanggung jawab' : 'Penanggung jawab layanan'; ?></div>
 			<div class="nk-action-panel__body">
@@ -106,22 +108,22 @@
 					<form method="post" action="<?= html_escape(base_url($care_team_enabled ? 'home_nakes/assign_responsible_doctor' : 'home_nakes/assign_staff')); ?>" class="<?= $care_team_enabled ? 'nk-care-team-form' : 'nk-pic-form'; ?>">
 						<input type="hidden" name="request_id" value="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
 						<select name="staff_id" class="form-select form-select-sm" required>
-							<option value=""><?= $care_team_enabled ? 'Pilih dokter' : 'Pilih staf'; ?></option>
+							<option value=""><?= $care_team_enabled ? 'Pilih Dokter' : 'Pilih staf'; ?></option>
 							<?php foreach ($primary_staff_options as $staff_option) : ?>
-								<?php if ($care_team_enabled && empty($staff_option->responsible_doctor_eligible)) { continue; } ?>
+								<?php if ($care_team_enabled && empty($staff_option->responsible_doctor_available)) { continue; } ?>
 								<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= $care_team_enabled ? ((int) ($nakes_primary_active->responsible_doctor_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : '') : ($primary_pic_assignment && (int) $primary_pic_assignment->staff_id === (int) $staff_option->staff_id ? 'selected' : ''); ?> <?= ($staff_option->personal_account_state ?? '') === 'invalid' ? 'disabled' : ''; ?>>
-									<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Status belum tersedia' : 'Belum ada akun'); ?>
+									<?= html_escape($staff_option->nama); ?>
 								</option>
 							<?php endforeach; ?>
 						</select>
 						<input type="text" name="note" class="form-control form-control-sm" maxlength="255" placeholder="Catatan opsional">
 						<div class="nk-pic-actions">
-							<button type="submit" class="btn btn-outline-success btn-sm rounded-pill" <?= $care_team_enabled ? '' : 'data-pic-submit'; ?>><?= $care_team_enabled ? ($responsible_doctor_name !== '' ? 'Ganti dokter' : 'Pilih dokter') : ($primary_pic_assignment ? 'Ganti penanggung jawab' : 'Tetapkan penanggung jawab'); ?></button>
+							<button type="submit" class="btn btn-outline-success btn-sm rounded-pill" <?= $care_team_enabled ? '' : 'data-pic-submit'; ?>><?= $care_team_enabled ? ($responsible_doctor_name !== '' ? 'Ganti Dokter' : 'Pilih Dokter') : ($primary_pic_assignment ? 'Ganti Dokter' : 'Tetapkan Dokter'); ?></button>
 						</div>
 					</form>
 					<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form" <?= !$care_team_enabled && $primary_pic_assignment ? '' : 'hidden'; ?>>
 						<input type="hidden" name="request_id" value="<?= html_escape((int) $nakes_primary_active->request_id); ?>">
-						<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Hapus penugasan</button>
+						<button type="submit" class="btn btn-outline-danger btn-sm rounded-pill">Hapus</button>
 					</form>
 					<div class="nk-pic-native-feedback" data-pic-feedback role="status" aria-live="polite" hidden></div>
 				<?php endif; ?>
@@ -167,7 +169,7 @@
 								<?php foreach ($primary_staff_options as $staff_option) : ?>
 									<?php if (empty($staff_option->visit_performer_eligible)) { continue; } ?>
 									<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= (int) ($nakes_primary_active->visit_performer_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : ''; ?>>
-										<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?><?= isset($staff_option->is_online) ? ' · ' . ((int) $staff_option->is_online === 1 ? 'Online' : 'Offline') : ''; ?>
+										<?= html_escape($staff_option->nama); ?><?= isset($staff_option->is_online) ? ' · ' . ((int) $staff_option->is_online === 1 ? 'Online' : 'Offline') : ''; ?>
 									</option>
 								<?php endforeach; ?>
 							</select>
@@ -180,7 +182,7 @@
 		<a href="<?= html_escape($is_visit_performer && $primary_visit_status !== 'in_service'
 			? base_url('home_nakes#riwayat_konsul')
 			: base_url('konsultasi_nakes/konsultasi/' . (int) $nakes_primary_active->request_id)); ?>" class="btn btn-success rounded-pill w-100 mt-3 py-2 fw-bold">
-			<?= $is_visit_performer ? ($primary_visit_status === 'in_service' ? 'Catat hasil pemeriksaan' : 'Buka tugas kunjungan') : ($care_team_enabled && !$is_responsible_doctor ? 'Lihat konsultasi' : 'Lanjutkan konsultasi'); ?>
+			<?= $is_visit_performer ? ($primary_visit_status === 'in_service' ? 'Catat Hasil' : 'Buka Tugas') : ($care_team_enabled && !$is_responsible_doctor ? 'Lihat' : 'Lanjutkan'); ?>
 		</a>
 	<?php else : ?>
 		<?php

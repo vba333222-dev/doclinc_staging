@@ -33,7 +33,7 @@
 .clinical-suggestion-option:last-child { border-bottom: 0; }
 .clinical-suggestion-option:hover,
 .clinical-suggestion-option.is-active { background: #e8f7f0; }
-.clinical-suggestion-option small { color: #66756d; font-size: 11px; }
+.clinical-suggestion-option small { color: #66756d; font-size: 12px; }
 .clinical-suggestion-message { padding: 10px 12px; color: #66756d; font-size: 12px; }
 
 @media (max-width: 576px) {

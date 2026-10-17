@@ -22,37 +22,17 @@
         <!-- End of Page Wrapper -->
 
         <!-- Scroll to Top Button-->
-        <a class="scroll-to-top rounded" href="#page-top">
-        	<i class="fas fa-angle-up"></i>
+        <!-- Tombol ini hanya berisi ikon, jadi tanpa aria-label pembaca layar mengumumkan tautan tanpa keterangan. -->
+        <a class="scroll-to-top rounded" href="#page-top" aria-label="Kembali ke atas">
+        	<i class="fas fa-angle-up" aria-hidden="true"></i>
         </a>
 
-        <!-- Logout Modal-->
-        <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        	<div class="modal-dialog" role="document">
-        		<div class="modal-content">
-        			<div class="modal-header">
-					<h5 class="modal-title" id="exampleModalLabel">Keluar dari akun?</h5>
-					<button class="close" type="button" data-dismiss="modal" aria-label="Tutup">
-        					<span aria-hidden="true">×</span>
-        				</button>
-        			</div>
-				<div class="modal-body">Anda perlu masuk kembali.</div>
-        			<div class="modal-footer">
-					<button class="btn btn-secondary" type="button" data-dismiss="modal">Batal</button>
-					<form method="post" action="<?php echo site_url('login/logout'); ?>">
-						<input type="hidden" name="_logout_token" value="<?= html_escape((string) $this->session->userdata('admin_logout_token')); ?>">
-						<button type="submit" class="btn btn-primary">Keluar</button>
-					</form>
-        			</div>
-        		</div>
-        	</div>
-        </div>
         <!-- Password Modal-->
-        <div class="modal fade" id="modalPassword" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal fade" id="modalPassword" tabindex="-1" role="dialog" aria-labelledby="modalPasswordLabel" aria-hidden="true">
         	<div class="modal-dialog modal-sm" role="document">
         		<div class="modal-content">
         			<div class="modal-header">
-					<h5 class="modal-title" id="exampleModalLabel">Ubah password</h5>
+					<h5 class="modal-title" id="modalPasswordLabel">Ubah password</h5>
 					<button class="close" type="button" data-dismiss="modal" aria-label="Tutup">
         					<span aria-hidden="true">×</span>
         				</button>
@@ -111,25 +91,30 @@
 						localStorage.setItem('doclinc_admin_theme', nextTheme);
 					} catch (error) {}
 					applyTheme(nextTheme);
-				
-		// Scroll to Top Button
-		var scrollBtn = document.querySelector('.scroll-to-top');
-		if (scrollBtn) {
-			window.addEventListener('scroll', function() {
-				if (window.pageYOffset > 300) {
-					scrollBtn.classList.add('visible');
-				} else {
-					scrollBtn.classList.remove('visible');
-				}
-			});
-		}
-	});
+				});
 			}
-        		if ($(window).width() < 481) {
-        			$('body').addClass('sidebar-toggled');
-        			$('#accordionSidebar').addClass('toggled');
-        		}
-        		$('form#change_password').submit(function(event) {
+
+			// Tombol kembali ke atas.
+			// Sebelumnya blok ini tidak sengaja tertulis DI DALAM penangan klik tombol tema,
+			// sehingga: (1) tombol kembali ke atas baru muncul setelah pengguna menekan
+			// tombol tema, dan (2) setiap penekanan menambah satu pendengar scroll baru.
+			// Sekarang dipasang sekali saat halaman siap.
+			var scrollBtn = document.querySelector('.scroll-to-top');
+			if (scrollBtn) {
+				window.addEventListener('scroll', function() {
+					if (window.pageYOffset > 300) {
+						scrollBtn.classList.add('visible');
+					} else {
+						scrollBtn.classList.remove('visible');
+					}
+				});
+			}
+
+			if ($(window).width() < 481) {
+				$('body').addClass('sidebar-toggled');
+				$('#accordionSidebar').addClass('toggled');
+			}
+			$('form#change_password').submit(function(event) {
         			if ($('#new_password').val() != $('#c_new_password').val()) {
         				Swal.fire({
         					icon: 'error',

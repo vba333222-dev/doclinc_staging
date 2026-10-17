@@ -36,13 +36,27 @@
   --dl-space-7: 3rem;
   --dl-body-size: 15px;
   --dl-body-leading: 1.55;
+  /* Ukuran teks sekunder: petunjuk bidang, keterangan, dan metadata.
+   * 13px dipilih karena 12px berada tepat di batas bawah keterbacaan dan 14px
+   * sudah dipakai label bidang (lihat .form-label). Sebelumnya tiap halaman
+   * menulis sendiri (11px, 12px, 13px, .72rem) sehingga teks sekunder
+   * berbeda-beda ukurannya antar layar. */
+  --dl-text-sm: 13px;
+  /* Warna placeholder. Dijadikan token supaya placeholder tidak lagi ditulis
+   * dengan hex berbeda-beda di tiap halaman. */
+  --dl-placeholder: #64736B;
   /* Typography follows the DocLinc visual refresh: Manrope first, system fallbacks. */
   --dl-font: "Manrope", "Inter", "Segoe UI", Arial, sans-serif;
 }
 
 html { background: var(--dl-bg); }
 body { color: var(--dl-text); background: var(--dl-bg); font-family: var(--dl-font); font-size: var(--dl-body-size); line-height: var(--dl-body-leading); }
-body.bg-success { background: linear-gradient(135deg, #1f6f4b 0%, #379A69 55%, #1f6f4b 100%) !important; }
+/* Dipakai halaman auth versi lama dan seluruh halaman splash/loading.
+ * Warna solid #2D7D56 dari style.css tetap ada sebagai lapisan dasar, gradien
+ * ini yang menggantikannya sehingga splash dan auth memakai latar yang sama.
+ * Jenis huruf dan warna teks ikut disamakan supaya perpindahan
+ * splash -> masuk -> beranda tidak terasa berganti "kulit". */
+body.bg-success { background: linear-gradient(135deg, #1f6f4b 0%, #379A69 55%, #1f6f4b 100%) !important; color: #fff; font-family: var(--dl-font); }
 h1, h2, h3, h4, h5, h6 { color: var(--dl-text); font-weight: 750; letter-spacing: -.02em; }
 h1 { font-size: clamp(1.55rem, 2.2vw, 2.2rem); }
 h2 { font-size: clamp(1.2rem, 1.6vw, 1.55rem); }
@@ -72,8 +86,54 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .form-control, .form-select, textarea { min-height: 44px; border: 1px solid var(--dl-border-strong); border-radius: var(--dl-radius-sm); color: var(--dl-text); background: var(--dl-surface); }
 .form-control:focus, .form-select:focus, textarea:focus { border-color: var(--dl-focus); box-shadow: 0 0 0 3px rgba(12, 124, 135, .12); }
-.form-label, .form-floating > label { color: var(--dl-text-secondary); font-weight: 650; }
+/* Label bidang dan label floating dipisah dengan sengaja: label floating
+ * mengubah ukurannya sendiri saat bidang terisi (Bootstrap), jadi ukurannya
+ * tidak boleh dipatok. Label biasa dipatok ke .875rem (14px) — satu langkah di
+ * bawah ukuran isi (15px) supaya hierarki terbaca tetapi label tetap nyaman
+ * dibaca pengguna lanjut usia. Sebelumnya label mewarisi 15px tanpa bobot
+ * khusus, sehingga label dan nilai isian tampak sama penting. */
+.form-label { color: var(--dl-text-secondary); font-size: .875rem; font-weight: 700; }
+.form-floating > label { color: var(--dl-text-secondary); font-weight: 650; }
 .form-text, .small, small { color: var(--dl-text-muted); }
+
+/* ---- Bidang isian: placeholder, terisi, dan nonaktif ----
+ * Sebelumnya hanya keadaan normal dan fokus yang didefinisikan, sehingga
+ * placeholder memakai abu-abu bawaan peramban (kontras tidak terjamin) dan
+ * bidang nonaktif tidak terlihat berbeda dari bidang yang bisa diisi. */
+.form-control::placeholder, .form-select::placeholder, textarea::placeholder { color: var(--dl-placeholder); opacity: 1; }
+.form-control:disabled, .form-control[readonly], .form-select:disabled, textarea:disabled {
+  border-color: var(--dl-border);
+  background: var(--dl-surface-subtle);
+  color: var(--dl-text-muted);
+  cursor: not-allowed;
+}
+.form-control:disabled::placeholder, textarea:disabled::placeholder { color: var(--dl-text-muted); }
+/* Satu warna aksen untuk kotak centang dan tombol radio di seluruh aplikasi. */
+input[type="checkbox"], input[type="radio"] { accent-color: var(--dl-brand-ink); }
+
+/* ---- Umpan balik (alert) ----
+ * Bootstrap membawa warna alert yang cukup pekat dan tidak berasal dari palet
+ * DokLinc, sehingga pesan galat/berhasil terlihat seperti komponen asing.
+ * Blok ini memetakan keempat varian ke token yang sudah ada. Selektor yang
+ * lebih spesifik di halaman tertentu (mis. doclinc-nakes.css) tetap menang. */
+.alert { padding: .75rem .9rem; border: 1px solid var(--dl-border); border-radius: var(--dl-radius-sm); font-size: .875rem; font-weight: 600; line-height: 1.5; }
+.alert-success { color: var(--dl-success-ink); background: var(--dl-brand-subtle); border-color: color-mix(in srgb, var(--dl-brand) 34%, transparent); }
+.alert-danger { color: var(--dl-danger-ink); background: #FDECEC; border-color: color-mix(in srgb, var(--dl-danger) 34%, transparent); }
+.alert-warning { color: var(--dl-warning-ink); background: #FCF5E6; border-color: color-mix(in srgb, var(--dl-warning) 34%, transparent); }
+.alert-info { color: var(--dl-info); background: #EDF4F8; border-color: color-mix(in srgb, var(--dl-info) 30%, transparent); }
+.alert a { color: inherit; font-weight: 750; }
+
+/* ---- Keadaan kosong (empty state) ----
+ * Satu pola untuk "belum ada data" supaya tidak ada lagi kotak kosong tanpa
+ * penjelasan. Dipakai dengan menambahkan class pada wadah yang sudah ada. */
+.dl-empty-state { display: grid; gap: .35rem; justify-items: center; padding: var(--dl-space-5) var(--dl-space-4); border: 1px dashed var(--dl-border-strong); border-radius: var(--dl-radius-md); background: var(--dl-surface-subtle); text-align: center; }
+.dl-empty-state > i, .dl-empty-state > .dl-empty-state-icon { color: var(--dl-text-muted); font-size: 1.5rem; line-height: 1; }
+.dl-empty-state-title { margin: 0; color: var(--dl-text); font-size: 1rem; font-weight: 750; }
+.dl-empty-state-copy { margin: 0; max-width: 34rem; color: var(--dl-text-secondary); font-size: var(--dl-text-sm); line-height: 1.5; }
+
+/* Tombol yang tidak bisa dipakai harus terlihat tidak bisa dipakai.
+ * (Bootstrap sudah menangani pointer-events untuk .btn:disabled.) */
+.btn:disabled, .btn.disabled, .btn[aria-disabled="true"] { opacity: .62; }
 
 .badge, .status-badge, .status-chip { border-radius: 999px !important; font-size: .72rem; font-weight: 750; letter-spacing: .01em; padding: .35rem .62rem; }
 .badge.bg-success { background-color: var(--dl-success-ink) !important; }
@@ -111,7 +171,22 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .dl-nakes-dashboard .visit-route-card { background: var(--dl-surface-subtle); }
 .dl-nakes-dashboard .visit-route-card-title { color: var(--dl-brand-strong); font-weight: 750; }
 
-/* Admin governance shell: dense, ordered, and intentionally less decorative. */
+/* ---- Shell admin (SAAT INI TIDAK AKTIF) ----
+ * Blok ini ditulis untuk panel admin di admin_menu/, tetapi
+ * admin_menu/application/views/commons/header.php hanya memuat sb-admin-2.min.css
+ * dan custom.css — doclinc-design-system.css TIDAK pernah dimuat di sana.
+ * custom.css sudah punya tema lengkapnya sendiri (token --doclinc-*, termasuk
+ * mode gelap lewat html[data-theme="dark"]) dan mendefinisikan ulang selektor
+ * yang sama (.doclinc-sidebar, .doclinc-topbar, .doclinc-dashboard-card).
+ *
+ * Akibatnya aturan di bawah ini tidak pernah mengenai elemen mana pun, dan
+ * beberapa di antaranya (.dl-data-page, .dl-data-surface,
+ * .doclinc-dashboard-summary) tidak dipakai di satu view pun. Blok ini
+ * DIBIARKAN apa adanya sebagai catatan, tetapi jangan dimuatkan design system
+ * ke admin tanpa lebih dulu menghapus salah satu dari dua definisi tersebut,
+ * karena keduanya akan saling menimpa.
+ *
+ * Gaya governance yang sebenarnya berlaku: admin_menu/assets/css/custom.css. */
 #page-top, #wrapper, #content-wrapper { background: var(--dl-bg) !important; color: var(--dl-text); }
 .doclinc-sidebar { background: var(--dl-brand-strong) !important; width: 14rem !important; }
 .doclinc-sidebar .sidebar-brand { min-height: 72px; border-bottom: 1px solid rgba(255,255,255,.16); }
@@ -151,22 +226,27 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .doclinc-dashboard-summary { grid-template-columns: 1fr; }
 }
 
-/* Auth: calm, compact, and legible rather than a giant centered card. */
-body.bg-success > .container { max-width: 100%; }
-body.bg-success > .container .row { min-height: 100vh; padding: var(--dl-space-6) var(--dl-space-4); }
-body.bg-success > .container .col-md-4 { width: min(100%, 440px); }
-body.bg-success > .container .card { margin-top: var(--dl-space-4) !important; background: rgba(255,255,255,.94); }
-body.bg-success > .container .card-body { padding: clamp(1.25rem, 4vw, 2rem); background: var(--dl-surface) !important; }
-body.bg-success > .container input { min-height: 48px; border-radius: var(--dl-radius-sm) !important; }
-body.bg-success > .container .btn { min-height: 48px; }
-body.bg-success > .container hr { border-color: var(--dl-divider); opacity: 1; }
+/* CATATAN: blok gaya auth yang dulu ada di sini sudah dihapus.
+ *
+ * Blok itu berbentuk `body.bg-success > .container ...` — sebuah usaha
+ * "menambal" halaman masuk/daftar dari luar karena saat itu halaman-halaman
+ * tersebut memakai Bootstrap polos (body.bg-success + .card). Halaman masuk,
+ * daftar, ganti password, dan aktivasi sekarang memakai .dl-auth-body dan
+ * kelas .dl-auth-* dari doclinc-auth.css, jadi tidak ada satu pun elemen di
+ * aplikasi yang cocok dengan selektor tersebut: aturannya sudah mati dan hanya
+ * menyisakan dua sumber kebenaran untuk masalah yang sama.
+ *
+ * Seluruh gaya halaman auth kini berada di assets/css/doclinc-auth.css.
+ * body.bg-success masih dipakai halaman splash/loading (lihat di atas). */
 
 @media (max-width: 767.98px) {
   body { font-size: 14px; }
   .dl-dashboard-body .container, .dl-dashboard-body .container-fluid { padding-left: var(--dl-space-4); padding-right: var(--dl-space-4); }
   .dl-dashboard-body .card-body { padding: var(--dl-space-4) !important; }
   .table-responsive { border: 1px solid var(--dl-border); border-radius: var(--dl-radius-sm); }
-  .nav-bottom-wrapper .menu > .menu-item { font-size: .72rem; }
+  /* 12px, bukan .72rem (11,5px): label navigasi bawah adalah teks utama yang
+   * paling sering dibaca di layar ponsel. */
+  .nav-bottom-wrapper .menu > .menu-item { font-size: .75rem; }
 }
 @media (min-width: 768px) and (max-width: 1199.98px) {
   .dl-dashboard-body .container, .dl-dashboard-body .container-fluid { max-width: 960px; }

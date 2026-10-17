@@ -21,8 +21,19 @@ test('production LiveKit view names destructive and dismissal controls distinctl
   expect(thread).toContain('title="Akhiri panggilan"');
 });
 
-test('legacy chat attachment choices remain keyboard-operable', () => {
-  const chat = fs.readFileSync(path.join(repoRoot, 'application/modules/chat/views/chat.php'), 'utf8');
-  expect(chat).toMatch(/<button[^>]+type="button"[^>]+class="popup-item"/);
-  expect(chat).not.toMatch(/<div[^>]+class="popup-item"[^>]+onclick=/);
+test('chat attachment choices remain keyboard-operable', () => {
+  // The legacy chat.php popup was consolidated into thread_v.php, so assert the
+  // current attachment controls are real buttons with accessible names rather
+  // than divs carrying inline onclick handlers.
+  //
+  // Tombol "Lampirkan gambar" dihapus atas permintaan: ia dan tombol kamera
+  // membuka pemilih berkas yang sama, jadi yang tersisa satu jalur - kamera.
+  // Karena itu `chat-attach` dan `aria-label="Lampirkan gambar"` tidak lagi
+  // ada, dan digantikan oleh kontrol yang benar-benar tersisa.
+  const chat = fs.readFileSync(path.join(repoRoot, 'application/modules/chat/views/thread_v.php'), 'utf8');
+  expect(chat).toMatch(/<button[^>]+class="[^"]*chat-upload[^"]*"[^>]*type="button"/);
+  expect(chat).toContain('aria-label="Kirim gambar"');
+  expect(chat).toContain('id="imageInput"');
+  expect(chat, 'tombol lampiran sudah dihapus').not.toContain('aria-label="Lampirkan gambar"');
+  expect(chat).not.toMatch(/<div[^>]+class="[^"]*popup-item[^"]*"[^>]+onclick=/);
 });

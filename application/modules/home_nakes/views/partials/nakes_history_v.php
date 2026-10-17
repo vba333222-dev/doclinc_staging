@@ -128,7 +128,7 @@ $history_event_time = static function ($event) {
 					<div class="dl-history-page-head">
 						<div>
 							<span>Konsultasi</span>
-							<h2>Riwayat konsultasi</h2>
+							<h2 class="dl-section-title">Riwayat konsultasi</h2>
 						</div>
 						<div class="dl-history-counts">
 							<strong><?= html_escape((string) $nakes_active_count); ?></strong>
@@ -165,7 +165,7 @@ $history_event_time = static function ($event) {
 								foreach ($data_request_accept->result() as $x) {
 									$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 									$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
-									$queue_code = doclinc_request_queue_code($x);
+									$queue_label = doclinc_request_queue_number_label($x);
 									$visit_status = isset($x->visit_status) ? doclinc_normalize_visit_status($x->visit_status) : '';
 									$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
 									$visit_status_label = doclinc_visit_status_label($visit_status);
@@ -222,7 +222,7 @@ $history_event_time = static function ($event) {
 										}
 									} elseif ($history_is_performer) {
 										$next_action_label = $visit_status === 'in_service'
-											? 'Catat hasil pemeriksaan'
+											? 'Catat Hasil'
 											: ($next_visit_status !== '' && isset($visit_next_label[$next_visit_status]) ? $visit_next_label[$next_visit_status] : 'Kunjungan selesai');
 									}
 								?>
@@ -239,7 +239,7 @@ $history_event_time = static function ($event) {
 											?>
 											<div class="dl-history-title-wrap">
 												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
-												<span>No. Antrian <?= html_escape($queue_code); ?><?= $area_label !== '' ? ' · ' . html_escape($area_label) : ''; ?></span>
+												<span><?= html_escape($queue_label); ?><?= $area_label !== '' ? ' · ' . html_escape($area_label) : ''; ?></span>
 											</div>
 											<span class="dl-status-pill dl-status-pill-active">Diterima</span>
 										</div>
@@ -275,7 +275,7 @@ $history_event_time = static function ($event) {
 													<?php if ($address_label !== '') : ?>
 														<div class="nk-detail-row"><span class="nk-detail-label">Alamat</span><strong class="nk-detail-value"><?= doclinc_history_safe_text($address_label); ?></strong></div>
 													<?php endif; ?>
-													<div class="nk-detail-row"><span class="nk-detail-label">Rute</span><strong class="nk-detail-value"><span class="visit-route-distance dl-route-soft" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span><span class="visit-route-eta dl-route-soft dl-route-duration" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung...</span></strong></div>
+													<div class="nk-detail-row"><span class="nk-detail-label">Rute</span><strong class="nk-detail-value"><span class="visit-route-distance dl-route-soft" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung…</span><span class="visit-route-eta dl-route-soft dl-route-duration" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung…</span></strong></div>
 												</div>
 											</div>
 											<?php if ($can_coordinate_staff) : ?>
@@ -288,7 +288,7 @@ $history_event_time = static function ($event) {
 													<?php if (!empty($care_team_workflow_enabled) && !empty($x->responsible_doctor_name)) : ?>
 														<?= html_escape($x->responsible_doctor_name); ?>
 											<?php elseif (empty($care_team_workflow_enabled) && $pic_assignment) : ?>
-																<?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_profesi) ? ' · ' . html_escape($pic_assignment->staff_profesi) : ''; ?>
+																<?= html_escape($pic_assignment->staff_nama); ?>
 															<?php else : ?>
 																Belum ditentukan
 															<?php endif; ?>
@@ -303,22 +303,22 @@ $history_event_time = static function ($event) {
 												<form method="post" action="<?= html_escape(base_url(!empty($care_team_workflow_enabled) ? 'home_nakes/assign_responsible_doctor' : 'home_nakes/assign_staff')); ?>" class="<?= !empty($care_team_workflow_enabled) ? 'nk-care-team-form' : 'nk-pic-form'; ?>">
 															<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
 															<select name="staff_id" class="form-select form-select-sm" required>
-														<option value=""><?= !empty($care_team_workflow_enabled) ? 'Pilih dokter' : 'Pilih staf'; ?></option>
+														<option value=""><?= !empty($care_team_workflow_enabled) ? 'Pilih Dokter' : 'Pilih staf'; ?></option>
 														<?php foreach ($puskesmas_staff_options as $staff_option) : ?>
-															<?php if (!empty($care_team_workflow_enabled) && empty($staff_option->responsible_doctor_eligible)) { continue; } ?>
+															<?php if (!empty($care_team_workflow_enabled) && empty($staff_option->responsible_doctor_available)) { continue; } ?>
 													<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= !empty($care_team_workflow_enabled) ? ((int) ($x->responsible_doctor_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : '') : ($pic_assignment && (int) $pic_assignment->staff_id === (int) $staff_option->staff_id ? 'selected' : ''); ?> <?= ($staff_option->personal_account_state ?? '') === 'invalid' ? 'disabled' : ''; ?>>
-																			<?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?> · <?= ($staff_option->personal_account_state ?? '') === 'linked' ? 'Akun terhubung' : (($staff_option->personal_account_state ?? '') === 'invalid' ? 'Status belum tersedia' : 'Belum ada akun'); ?>
+																			<?= html_escape($staff_option->nama); ?>
 																	</option>
 																<?php endforeach; ?>
 															</select>
 														<input type="text" name="note" class="form-control form-control-sm" maxlength="255" placeholder="Catatan opsional">
 														<div class="nk-pic-actions">
-													<button type="submit" class="btn btn-outline-success btn-sm rounded-pill" <?= !empty($care_team_workflow_enabled) ? '' : 'data-pic-submit'; ?>><?= !empty($care_team_workflow_enabled) ? (!empty($x->responsible_doctor_name) ? 'Ganti dokter' : 'Pilih dokter') : ($pic_assignment ? 'Ganti penanggung jawab' : 'Tetapkan penanggung jawab'); ?></button>
+													<button type="submit" class="btn btn-outline-success btn-sm rounded-pill" <?= !empty($care_team_workflow_enabled) ? '' : 'data-pic-submit'; ?>><?= !empty($care_team_workflow_enabled) ? (!empty($x->responsible_doctor_name) ? 'Ganti Dokter' : 'Pilih Dokter') : ($pic_assignment ? 'Ganti Dokter' : 'Tetapkan Dokter'); ?></button>
 															</div>
 														</form>
 										<form method="post" action="<?= html_escape(base_url('home_nakes/clear_staff_assignment')); ?>" class="nk-pic-clear-form" <?= empty($care_team_workflow_enabled) && $pic_assignment ? '' : 'hidden'; ?>>
 														<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
-														<button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill">Hapus penugasan</button>
+														<button type="submit" class="btn btn-outline-danger btn-sm rounded-pill">Hapus</button>
 														</form>
 														<div class="nk-pic-native-feedback" data-pic-feedback role="status" aria-live="polite" hidden></div>
 													<?php endif; ?>
@@ -363,7 +363,7 @@ $history_event_time = static function ($event) {
 																	<option value="">Pilih Nakes</option>
 																	<?php foreach ($puskesmas_staff_options as $staff_option) : ?>
 																<?php if (empty($staff_option->visit_performer_eligible)) { continue; } ?>
-																						<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= (int) ($x->visit_performer_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : ''; ?>><?= html_escape($staff_option->nama); ?><?= !empty($staff_option->profesi) ? ' - ' . html_escape($staff_option->profesi) : ''; ?><?= isset($staff_option->is_online) ? ' · ' . ((int) $staff_option->is_online === 1 ? 'Online' : 'Offline') : ''; ?></option>
+																						<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= (int) ($x->visit_performer_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : ''; ?>><?= html_escape($staff_option->nama); ?><?= isset($staff_option->is_online) ? ' · ' . ((int) $staff_option->is_online === 1 ? 'Online' : 'Offline') : ''; ?></option>
 																	<?php endforeach; ?>
 																</select>
 																<button type="submit" class="btn btn-outline-success btn-sm rounded-pill mt-2">Pilih Nakes</button>
@@ -398,19 +398,19 @@ $history_event_time = static function ($event) {
 										</div>
 										<div class="card-footer dl-history-actions">
 											<?php if ($can_open_consultation) : ?><a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id)); ?>" class="btn <?= $history_is_responsible || ($history_is_performer && $visit_status === 'in_service') ? 'btn-success' : 'btn-outline-success'; ?> shadow-sm rounded-pill dl-history-primary-action py-2 px-3">
-												<i class="fas fa-notes-medical me-2"></i> <?= $history_is_responsible ? (((string) ($x->consultation_mode ?? '') === 'visit' && $visit_status !== 'completed') ? 'Lihat hasil kunjungan' : 'Lanjutkan konsultasi') : ($history_is_performer && $visit_status === 'in_service' ? 'Catat hasil pemeriksaan' : 'Lihat konsultasi'); ?>
+												<?= $history_is_responsible ? (((string) ($x->consultation_mode ?? '') === 'visit' && $visit_status !== 'completed') ? 'Lihat Hasil' : 'Lanjutkan') : ($history_is_performer && $visit_status === 'in_service' ? 'Catat Hasil' : 'Lihat'); ?>
 											</a><?php endif; ?>
 											<div class="dl-history-secondary-actions">
 												<?php if (!$nakes_is_command_center) : ?><a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
-													<i class="fas fa-comments me-2"></i> Buka chat
+													Chat
 												</a><?php endif; ?>
 												<?php if ($show_visit_tools) : ?><button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>" data-monitor-only="<?= $visit_monitor_only ? '1' : '0'; ?>">
-													<i class="fas fa-map-marker-alt me-2"></i> <?= $visit_monitor_only ? 'Pantau rute Nakes' : 'Lihat lokasi'; ?>
+													<?= $visit_monitor_only ? 'Posisi' : 'Lokasi'; ?>
 												</button><?php endif; ?>
 											</div>
 											<div class="dl-history-secondary-actions">
 												<button type="button" class="btn btn-outline-danger shadow-sm rounded-pill cancel-nakes-request" data-request-id="<?= html_escape((int) $x->request_id); ?>">
-													<i class="fas fa-times-circle me-2"></i> Batalkan
+													Batalkan
 												</button>
 											</div>
 											<span class="small text-muted w-100 visit-tracking-status" data-tracking-status="<?= html_escape((int) $x->request_id); ?>" data-auto-location="<?= $auto_location_enabled ? '1' : '0'; ?>"></span>
@@ -430,7 +430,8 @@ $history_event_time = static function ($event) {
 									$this->load->view('partials/nakes_empty_state_v', array(
 										'empty_title' => 'Belum ada riwayat selesai',
 										'empty_message' => 'Konsultasi yang selesai akan tersimpan di sini.',
-										'empty_image' => base_url('assets/images/not found.svg'),
+										'empty_icon' => 'fas fa-file-medical',
+										'empty_image' => '',
 										'empty_class' => 'dl-soft-empty dl-history-empty text-center',
 									));
 									?>
@@ -455,7 +456,7 @@ $history_event_time = static function ($event) {
 									$completed_preview = $history_short_text($completed_source, 130);
 									$puskesmas = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : '';
 									$tanggal_selesai = !empty($x->created_at) ? date('d M Y H:i', strtotime($x->created_at)) : '';
-									$queue_code = doclinc_request_queue_code($x);
+									$queue_label = doclinc_request_queue_number_label($x);
 									$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
 									$handling_nakes_name = doclinc_request_handling_nakes_name($x);
 									$patient_photo = $history_patient_photo($x);
@@ -476,7 +477,7 @@ $history_event_time = static function ($event) {
 											?>
 											<div class="dl-history-title-wrap">
 												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
-												<span>No. Antrian <?= html_escape($queue_code); ?><?= $tanggal_selesai !== '' ? ' · ' . html_escape($tanggal_selesai) : ''; ?></span>
+												<span><?= html_escape($queue_label); ?><?= $tanggal_selesai !== '' ? ' · ' . html_escape($tanggal_selesai) : ''; ?></span>
 											</div>
 											<span class="dl-status-pill dl-status-pill-done">Selesai</span>
 										</div>
@@ -493,7 +494,7 @@ $history_event_time = static function ($event) {
 													<div class="nk-info-row"><span class="nk-info-label">Puskesmas</span><strong class="nk-info-value"><?= doclinc_history_safe_text($puskesmas); ?></strong></div>
 											<?php endif; ?>
 											<?php if ($can_coordinate_staff && empty($care_team_workflow_enabled) && $pic_assignment) : ?>
-													<div class="nk-info-row"><span class="nk-info-label">Penanggung jawab layanan</span><strong class="nk-info-value"><?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_profesi) ? ' · ' . html_escape($pic_assignment->staff_profesi) : ''; ?><?= !empty($pic_assignment->staff_no_hp) ? ' · ' . html_escape($pic_assignment->staff_no_hp) : ''; ?></strong></div>
+													<div class="nk-info-row"><span class="nk-info-label">Penanggung jawab layanan</span><strong class="nk-info-value"><?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_no_hp) ? ' · ' . html_escape($pic_assignment->staff_no_hp) : ''; ?></strong></div>
 												<?php endif; ?>
 												<?php if ($completed_preview !== '') : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Hasil</span><strong class="nk-info-value"><?= html_escape($completed_preview); ?></strong></div>
@@ -524,7 +525,7 @@ $history_event_time = static function ($event) {
 										</div>
 										<div class="card-footer dl-history-actions dl-history-actions-inline">
 											<?php if (!$nakes_is_command_center) : ?><a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-secondary btn-sm rounded-pill">
-												<i class="fas fa-comments me-1"></i> Lihat chat
+												Chat
 											</a><?php endif; ?>
 										</div>
 									</div>

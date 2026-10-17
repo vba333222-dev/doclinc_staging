@@ -24,10 +24,10 @@ if ($avatar_name !== '') {
 ?>
 <div class="nk-avatar <?= html_escape($avatar_class); ?>">
 	<?php if ($avatar_photo !== '' && $avatar_user_id > 0) : ?>
-		<img class="nk-avatar__image" src="<?= doclinc_profile_image_src($avatar_user_id, $avatar_photo); ?>" alt="<?= html_escape($avatar_alt); ?>">
+		<img class="nk-avatar__image" src="<?= html_escape(doclinc_profile_image_src($avatar_user_id, $avatar_photo)); ?>" alt="<?= html_escape($avatar_alt); ?>" decoding="async">
 	<?php elseif ($avatar_initials !== '') : ?>
 		<span class="nk-avatar__fallback"><?= html_escape($avatar_initials); ?></span>
 	<?php else : ?>
-		<i class="<?= html_escape($avatar_icon); ?>"></i>
+		<i class="<?= html_escape($avatar_icon); ?>" aria-hidden="true"></i>
 	<?php endif; ?>
 </div>

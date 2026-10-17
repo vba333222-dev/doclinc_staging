@@ -176,7 +176,8 @@
                 if (row.service_mode_label) titleRow.appendChild(element(documentRef, 'span', 'dl-operations-exception-mode', String(row.service_mode_label)));
                 copy.appendChild(titleRow);
                 var metaParts = [];
-                if (row.queue_code) metaParts.push(String(row.queue_code));
+                if (row.queue_label) metaParts.push(String(row.queue_label));
+                else if (row.queue_code) metaParts.push(String(row.queue_code));
                 if (row.patient_nik_masked) metaParts.push('NIK ' + String(row.patient_nik_masked));
                 if (row.visit_status_label) metaParts.push(String(row.visit_status_label));
                 copy.appendChild(element(documentRef, 'span', '', metaParts.join(' · ')));

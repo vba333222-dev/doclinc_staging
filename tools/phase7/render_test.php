@@ -22,6 +22,32 @@ function doclinc_request_queue_code($request)
 	return 'A-' . (int) $request->request_id;
 }
 
+function doclinc_request_queue_number_label($request)
+{
+	$number = null;
+	if ($request && isset($request->queue_number) && (int) $request->queue_number > 0) {
+		$number = (int) $request->queue_number;
+	} elseif ($request && isset($request->queue_code) && preg_match('/-(\d+)$/', trim((string) $request->queue_code), $match)) {
+		$number = (int) $match[1];
+	} elseif ($request && isset($request->request_id) && (int) $request->request_id > 0) {
+		$number = (int) $request->request_id;
+	}
+
+	if ($number === null || $number < 1) {
+		return 'No. -';
+	}
+
+	return 'No. ' . str_pad((string) $number, 2, '0', STR_PAD_LEFT);
+}
+
+function doclinc_profile_image_src($user_id, $path, $fallbackPath = 'assets/doclinc/img/default-profile.png')
+{
+	$path = trim((string) $path);
+	return preg_match('#^profile-images/[a-f0-9]{16,64}\.(?:jpe?g|png|webp)$#i', $path) === 1
+		? base_url('profile/photo/' . (int) $user_id)
+		: '/' . ltrim((string) $fallbackPath, '/');
+}
+
 function doclinc_consultation_mode_label($mode)
 {
 	return $mode === 'visit' ? 'Kunjungan' : ($mode === 'non_visit' ? 'Tanpa kunjungan' : 'Belum dipilih');
@@ -81,10 +107,32 @@ class Phase7Session
 	public function userdata($key) { return $key === 'id' ? $this->user_id : null; }
 }
 
+class Phase7ViewLoader
+{
+	/* Mirrors CI_Loader::view() closely enough for a render test: the data array
+	   becomes local scope, and the partial is included so its markup is
+	   exercised rather than skipped. */
+	public function view($name, $data = array())
+	{
+		$path = dirname(__DIR__, 2) . '/application/modules/home_nakes/views/' . $name . '.php';
+		if (!is_file($path)) {
+			return;
+		}
+		extract(is_array($data) ? $data : array());
+		include $path;
+	}
+}
+
 class Phase7ViewContext
 {
 	public $session;
-	public function __construct($user_id) { $this->session = new Phase7Session(); $this->session->user_id = $user_id; }
+	public $load;
+	public function __construct($user_id)
+	{
+		$this->session = new Phase7Session();
+		$this->session->user_id = $user_id;
+		$this->load = new Phase7ViewLoader();
+	}
 }
 
 $passed = 0;

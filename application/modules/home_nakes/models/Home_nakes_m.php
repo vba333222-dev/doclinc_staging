@@ -22,6 +22,13 @@ class Home_nakes_m extends MX_Controller
 	private function select_request_base()
 	{
 		$this->db->select('requests.*, users.nama');
+		/* Avatar pasien di kartu permintaan, kartu tugas aktif, dan riwayat
+		   membaca jalur foto dari baris request. Tanpa kolom ini setiap
+		   avatar pasien jatuh ke inisial walau pengguna sudah mengunggah
+		   foto. Dijaga dengan field_exists seperti profile_photo pada daftar
+		   staf, karena kolomnya tidak ada di semua instalasi. */
+		$has_patient_photo = $this->db->table_exists('users') && $this->db->field_exists('foto', 'users');
+		$this->db->select($has_patient_photo ? 'users.foto AS patient_photo' : 'NULL AS patient_photo', false);
 		$handler_name_parts = array();
 		if ($this->config->item('care_team_workflow_enabled') === true
 			&& $this->db->field_exists('visit_performer_user_id', 'requests')) {
@@ -1343,6 +1350,16 @@ class Home_nakes_m extends MX_Controller
 			);
 			$staff->responsible_doctor_eligible = $policy->responsibleDoctorEligible($identity, $kode_pkm);
 			$staff->visit_performer_eligible = $policy->visitPerformerEligible($identity, $kode_pkm);
+			// Ketersediaan = layak DAN - bila data kehadiran tersedia - sedang
+			// bertugas. Dipisahkan dari responsible_doctor_eligible dengan
+			// sengaja: otorisasi tidak boleh bergantung pada kehadiran, tetapi
+			// TAWARAN pilihan boleh. Menunjuk dokter yang offline membuat
+			// permintaan warga tidak ada yang menangani, jadi dokter yang tidak
+			// bertugas tidak perlu ditawarkan. Bila fitur presence mati,
+			// $presence_ready false dan penyaringan dilewati - supaya daftar
+			// tidak pernah kosong hanya karena kehadiran tidak terpantau.
+			$staff->responsible_doctor_available = $staff->responsible_doctor_eligible
+				&& (!$presence_ready || (int) ($staff->is_online ?? 0) === 1);
 		}
 
 		return $rows;

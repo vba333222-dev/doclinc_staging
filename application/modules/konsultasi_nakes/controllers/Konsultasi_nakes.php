@@ -138,6 +138,8 @@ class Konsultasi_nakes extends MX_Controller
 		$x['nama_pasien'] = $request->nama;
 		$x['keluhan'] = $request->request_description;
 		$x['queue_code'] = doclinc_request_queue_code($request);
+		/* Antarmuka menampilkan nomor antrian saja, bukan kode lengkapnya. */
+		$x['queue_label'] = doclinc_request_queue_number_label($request);
 		$x['return_url'] = doclinc_request_return_url(
 			'dokter',
 			isset($request->request_status) ? $request->request_status : ''

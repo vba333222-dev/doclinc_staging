@@ -127,26 +127,43 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
+	<!-- Design system dimuat SEBELUM CSS per-peran di bawah supaya
+	     nakes-dashboard.css / doclinc-nakes.css tetap menang saat ada aturan yang
+	     bertabrakan, sementara token, komponen bersama, cincin fokus, dan aturan
+	     prefers-reduced-motion ikut terpakai. Sebelumnya berkas ini tidak dimuat
+	     di sini, sehingga bagian design system yang memang ditulis untuk halaman
+	     Nakes (mis. .dl-nakes-workspace, .dl-command-center, .dl-nakes-dashboard)
+	     tidak pernah aktif dan halaman ini memakai bahasa visual yang berbeda. -->
+	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-design-system.css'); ?>">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/css/bootstrap-select.min.css" integrity="sha512-g2SduJKxa4Lbn3GW+Q7rNz+pKP9AWMR++Ta8fgwsZRCUsawjPvF/BxSMkGS61VsR9yinGoEgrHPGPn2mrj8+4w==" crossorigin="anonymous" referrerpolicy="no-referrer">
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/nakes-dashboard.css">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/doclinc-nakes.css">
 	<?php if (!empty($nakes_is_command_center)) : ?><link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-puskesmas.css')); ?>"><?php endif; ?>
 	<?php if (!empty($nakes_presence_enabled)) : ?><link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-nakes-presence.css')); ?>"><?php endif; ?>
+	<!-- DocLinc Mobile Design (Bento Grid). Dimuat paling akhir supaya token
+	     --bd-* dan komposisi bento di design.md menang atas lapisan Nakes
+	     sebelumnya tanpa mengubah berkas-berkas itu. Semua aturannya dibatasi
+	     pada .dl-nakes-dashboard dan hanya menyentuh tampilan. -->
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-bento.css')); ?>">
 </head>
 
 <body class="bg-light dl-dashboard-body dl-nakes-dashboard <?= !empty($nakes_is_command_center) ? 'dl-puskesmas-shell' : ''; ?>">
 	<div id="preloader">
 		<div class="text-center">
-			<img class="mb-3" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" height="50px">
-			<p class="mb-0">
-			<div class="spinner-border spinner-border-sm text-light" role="status">
-				<span class="visually-hidden">Loading...</span>
-			</div> Memuat... </p>
+			<!-- doklinc.png berukuran 3167x1396; atribut height lama ditulis "50px"
+			     yang bukan nilai sah untuk atribut HTML, sehingga diabaikan peramban
+			     dan logo sempat dirender pada ukuran aslinya. -->
+			<img class="mb-3" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" width="113" height="50" decoding="async">
+			<div class="mb-0" role="status">
+				<div class="spinner-border spinner-border-sm text-light" aria-hidden="true"></div>
+				Memuat&hellip;
+			</div>
 		</div>
 	</div>
 	<div class="content-wrapper dl-shell" id="content-wrapper">
 		<div class="contents">
+			<h1 class="visually-hidden">Beranda</h1>
 			<?php $this->load->view('partials/nakes_appbar_v', get_defined_vars()); ?>
 			<div class="position-relative">
 				<?php if ($nakes_is_unclassified) : ?>
@@ -184,8 +201,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 							<small>Klik untuk mengubah foto</small>
 							<div id="profileImageFeedback" class="small text-danger mt-2 d-none" role="alert"></div>
 						</div>
-						<?php else : ?>
-						<div class="alert alert-info small" role="status">Identitas unit dikelola Admin Dinas Kesehatan. Akun ini hanya mengubah kontak operasional.</div>
+
 						<?php endif; ?>
 						<?php if (!empty($nakes_is_personal)) : ?>
 						<div class="form-floating nk-profile-modal__field">
@@ -220,8 +236,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 						<?php endif; ?>
 					</div>
 					<div class="modal-footer nk-profile-modal__footer">
-						<button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x-circle me-2"></i>Tutup</button>
-						<button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-2"></i>Simpan</button>
+						<button type="submit" class="btn btn-success">Simpan</button>
+						<button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
 					</div>
 				</form>
 			</div>
@@ -241,7 +257,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			<div class="alert alert-light border p-2 mb-0" data-browser-notification-optin hidden>
 				<strong class="d-block small">Notifikasi perangkat</strong>
 				<small class="d-block text-muted" data-browser-notification-status></small>
-				<button type="button" class="btn btn-success btn-sm w-100 mt-2" data-browser-notification-enable>Aktifkan notifikasi perangkat</button>
+				<button type="button" class="btn btn-success btn-sm w-100 mt-2" data-browser-notification-enable>Aktifkan Notifikasi</button>
 			</div>
 			<div id="notificationList" class="notification-list nk-notification-list"></div>
 		</div>
@@ -262,10 +278,10 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				</div>
 				<div class="visit-map-toolbar">
 					<button type="button" class="btn btn-light border" id="nakesVisitRecenter">
-						<i class="fas fa-crosshairs me-1"></i> Pusatkan rute
+						Pusatkan
 					</button>
 					<button type="button" class="btn btn-success" id="nakesVisitRefresh">
-						<i class="fas fa-sync-alt me-1"></i> Perbarui
+						Perbarui
 					</button>
 				</div>
 				<div class="visit-route-card">
@@ -533,9 +549,18 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				activeMenus[menuIndex].classList.remove('active');
 			}
 
+			// Sinkronkan aria-current dengan kelas .active. Sebelumnya keadaan menu
+			// hanya ditandai warna, sehingga pembaca layar tidak pernah tahu bagian
+			// mana yang sedang dibuka.
+			let menuLinks = document.querySelectorAll('.nav-bottom-wrapper .menu a');
+			for (let linkIndex = 0; linkIndex < menuLinks.length; linkIndex++) {
+				menuLinks[linkIndex].removeAttribute('aria-current');
+			}
+
 			let targetMenu = document.getElementById(tab + '-tab');
 			if (targetMenu) {
 				targetMenu.classList.add('active');
+				targetMenu.setAttribute('aria-current', 'true');
 			}
 		}
 

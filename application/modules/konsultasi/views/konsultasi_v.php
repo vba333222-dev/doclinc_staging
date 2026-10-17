@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="id">
 
 <head>
 	<meta charset="UTF-8">
@@ -569,15 +569,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		<nav class="consult-bottom-nav" aria-label="Navigasi utama">
 			<a class="consult-nav-link" href="<?= html_escape(base_url('home')); ?>" aria-label="Beranda">
-				<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('home')); ?>" alt="" aria-hidden="true">
+				<i class="fas fa-home"></i>
 				<span>Beranda</span>
 			</a>
 			<a class="consult-nav-link active" href="<?= html_escape(base_url('home#konsultasi_kesehatan')); ?>" aria-label="Konsultasi">
-				<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('nakes')); ?>" alt="" aria-hidden="true">
+				<i class="fas fa-user-md"></i>
 				<span>Konsultasi</span>
 			</a>
 			<a class="consult-nav-link" href="<?= html_escape(base_url('home#riwayat')); ?>" aria-label="Riwayat">
-				<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('consultation')); ?>" alt="" aria-hidden="true">
+				<i class="fas fa-file-medical"></i>
 				<span>Riwayat</span>
 			</a>
 			<a class="consult-nav-link" href="<?= html_escape(base_url('home#profile')); ?>" aria-label="Profil">

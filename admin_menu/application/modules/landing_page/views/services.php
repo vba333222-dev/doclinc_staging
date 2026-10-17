@@ -67,29 +67,29 @@
   </div>
 </div>
 
-<div class="modal fade" id="addNewService" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="addNewService" tabindex="-1" aria-labelledby="addNewServiceLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah layanan</h5>
+        <h5 class="modal-title" id="addNewServiceLabel">Tambah layanan</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
         <form action="<?php echo base_url();?>landing_page/service_add_new" method="POST">
-          <input type="hidden" class="form-control" name="idnya" id="idnya">
+          <input type="hidden" class="form-control" name="idnya" id="add_idnya">
           <div class="form-group mb-3">
-            <label for="service" class="col-form-label">Nama layanan:</label>
-            <input type="text" class="form-control" name="service" id="service">
+            <label for="add_service" class="col-form-label">Nama layanan:</label>
+            <input type="text" class="form-control" name="service" id="add_service">
           </div>
           <div class="form-group mb-3">
-            <label for="short_desc" class="col-form-label">Deskripsi singkat:</label>
-            <textarea class="form-control" name="short_desc" id="short_desc"></textarea>
+            <label for="add_short_desc" class="col-form-label">Deskripsi singkat:</label>
+            <textarea class="form-control" name="short_desc" id="add_short_desc"></textarea>
           </div>
           <div class="form-group mb-3">
-            <label for="no_wa" class="col-form-label">No. Whatsapp (isi dengan format 62):</label>
-            <input type="text" class="form-control" name="no_wa" id="no_wa" placeholder="62xxxxxxxxxxx">
+            <label for="add_no_wa" class="col-form-label">No. Whatsapp (isi dengan format 62):</label>
+            <input type="text" class="form-control" name="no_wa" id="add_no_wa" placeholder="62xxxxxxxxxxx">
           </div>
           <button type="submit" class="btn btn-default-asoka float-right">Simpan</button>
         </form>
@@ -98,11 +98,11 @@
   </div>
 </div>
 
-<div class="modal fade" id="modalEdit" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalEdit" tabindex="-1" aria-labelledby="modalEditLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel"></h5>
+        <h5 class="modal-title" id="modalEditLabel"></h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>

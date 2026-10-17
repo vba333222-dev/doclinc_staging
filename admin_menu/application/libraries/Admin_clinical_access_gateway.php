@@ -12,7 +12,7 @@ class Admin_clinical_access_gateway
 	{
 		$this->CI = $CI;
 		$root = dirname(APPPATH, 2) . '/application/libraries/';
-		foreach (array('Doclinc_feature_flags','Admin_capability_policy','Admin_capability_flags','Admin_capability_store','Admin_audit_log_writer','Clinical_access_audit_policy','Clinical_access_audit_session','Clinical_access_audit_service','Clinical_access_audit_ledger') as $class) {
+		foreach (array('Doclinc_feature_flags','Admin_capability_policy','Admin_capability_flags','Admin_capability_store','Admin_capability_service','Admin_audit_log_writer','Clinical_access_audit_policy','Clinical_access_audit_session','Clinical_access_audit_service','Clinical_access_audit_ledger') as $class) {
 			$file = $root . $class . '.php';
 			if (is_file($file)) require_once $file;
 		}

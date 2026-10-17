@@ -104,15 +104,24 @@ if (!function_exists('doclinc_find_puskesmas_by_service_area')) {
 		foreach (doclinc_service_area_definitions() as $definition) {
 			$path = FCPATH . 'servicearea/' . $definition['file'];
 			if (!is_file($path) || !is_readable($path)) {
+				// Silent skips hide broken routing: a missing coverage file makes
+				// every point in that area fail the service-area test and the
+				// patient is told "Lokasi di luar area layanan" with no trace of
+				// the real cause. Log it so the failure is diagnosable.
+				log_message('error', 'Puskesmas routing: coverage file missing or unreadable: ' . $path);
 				continue;
 			}
 
 			$geojson = json_decode((string) file_get_contents($path), true);
-			if (!is_array($geojson) || !doclinc_geojson_contains_point($geojson, $lat, $lng)) {
+			if (!is_array($geojson)) {
+				log_message('error', 'Puskesmas routing: coverage file is not valid JSON: ' . $path);
+				continue;
+			}
+			if (!doclinc_geojson_contains_point($geojson, $lat, $lng)) {
 				continue;
 			}
 
-			$puskesmas = doclinc_resolve_service_area_puskesmas($definition);
+			$puskesmas = doclinc_resolve_service_area_puskesmas($definition, $lat, $lng);
 			if ($puskesmas) {
 				return $puskesmas;
 			}
@@ -139,24 +148,75 @@ if (!function_exists('doclinc_service_area_definitions')) {
 }
 
 if (!function_exists('doclinc_resolve_service_area_puskesmas')) {
-	function doclinc_resolve_service_area_puskesmas($definition)
+	/**
+	 * Resolve which puskesmas serves a matched coverage polygon.
+	 *
+	 * Seven of the eight Cilegon coverage polygons map to exactly one puskesmas
+	 * code. Kecamatan Citangkil is the exception: a single polygon covers two
+	 * facilities (10280501 Puskesmas Citangkil and 2241001 Puskesmas Citangkil
+	 * II), and the documented policy is that the patient goes to the NEAREST
+	 * one. Geometry cannot separate them because they share one ring, so the
+	 * tie is broken by distance from the patient's coordinates.
+	 *
+	 * Precedence is deliberate:
+	 *   1. Only facilities that can actually accept are considered - a puskesmas
+	 *      without an active command-centre account cannot take the request, and
+	 *      routing to it would strand the patient in Pending.
+	 *   2. Among those, the nearest wins.
+	 *   3. Without usable coordinates, or without at least two distances to
+	 *      compare, behaviour falls back to the declaration order exactly as it
+	 *      was before, so single-code areas are unaffected.
+	 */
+	function doclinc_resolve_service_area_puskesmas($definition, $lat = null, $lng = null)
 	{
 		$codes = isset($definition['codes']) && is_array($definition['codes']) ? $definition['codes'] : array();
-		$first_available = null;
+
+		$candidates = array();
 		foreach ($codes as $code) {
 			$puskesmas = doclinc_get_puskesmas_by_code($code);
-			if (!$puskesmas) {
-				continue;
+			if ($puskesmas) {
+				$candidates[] = $puskesmas;
 			}
-			if (!$first_available) {
-				$first_available = $puskesmas;
+		}
+		if (empty($candidates)) {
+			return null;
+		}
+
+		$accepting = array();
+		foreach ($candidates as $candidate) {
+			$code = isset($candidate->kode_pkm) ? (string) $candidate->kode_pkm : '';
+			if ($code !== '' && doclinc_get_queue_handler_user_id($code)) {
+				$accepting[] = $candidate;
 			}
-			if (doclinc_get_queue_handler_user_id($code)) {
-				return $puskesmas;
+		}
+		$pool = !empty($accepting) ? $accepting : $candidates;
+
+		if (count($pool) > 1 && is_numeric($lat) && is_numeric($lng)) {
+			$nearest = null;
+			$nearest_distance = null;
+			foreach ($pool as $candidate) {
+				if (!isset($candidate->latitude, $candidate->longitude)
+					|| !is_numeric($candidate->latitude)
+					|| !is_numeric($candidate->longitude)) {
+					continue;
+				}
+				$distance = doclinc_haversine_km(
+					(float) $lat,
+					(float) $lng,
+					(float) $candidate->latitude,
+					(float) $candidate->longitude
+				);
+				if ($nearest_distance === null || $distance < $nearest_distance) {
+					$nearest = $candidate;
+					$nearest_distance = $distance;
+				}
+			}
+			if ($nearest) {
+				return $nearest;
 			}
 		}
 
-		return $first_available;
+		return $pool[0];
 	}
 }
 

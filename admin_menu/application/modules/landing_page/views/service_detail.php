@@ -62,11 +62,11 @@
     </div>
   </div>
 </div>
-<div class="modal fade" id="addNew" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="addNew" tabindex="-1" aria-labelledby="addNewLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah detail layanan</h5>
+        <h5 class="modal-title" id="addNewLabel">Tambah detail layanan</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -74,12 +74,12 @@
       <div class="modal-body">
         <form action="<?php echo base_url('landing_page/service_detail_add_new/'.$this->uri->segment(3).'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST">
           <div class="form-group mb-3">
-            <label for="title" class="col-form-label">Title:</label>
-            <input type="text" class="form-control" name="title" id="title" value="">
+            <label for="add_title" class="col-form-label">Title:</label>
+            <input type="text" class="form-control" name="title" id="add_title" value="">
           </div>
           <div class="form-group mb-3">
-            <label for="content" class="col-form-label">Content:</label>
-            <textarea class="form-control tinymce" name="content" id="content" rows="10"></textarea>
+            <label for="add_content" class="col-form-label">Content:</label>
+            <textarea class="form-control tinymce" name="content" id="add_content" rows="10"></textarea>
           </div>
           <button type="submit" class="btn btn-default-asoka float-right">Simpan</button>
         </form>
@@ -92,11 +92,11 @@
   $url2 = $this->uri->segment(4);
   foreach ($data_service_detail->result() as $x) {
 ?>
-  <div class="modal fade" id="modalEdit<?= $x->id;?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal fade" id="modalEdit<?= $x->id;?>" tabindex="-1" aria-labelledby="modalEdit<?= $x->id;?>Label" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Ubah detail layanan</h5>
+          <h5 class="modal-title" id="modalEdit<?= $x->id;?>Label">Ubah detail layanan</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
             <span aria-hidden="true">&times;</span>
           </button>

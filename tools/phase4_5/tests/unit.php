@@ -34,7 +34,13 @@ phase45_expect($care->mode('other') === null, 'unknown_mode_denied');
 phase45_expect($care->responsibleDoctorEligible($personal_doctor, 'PKM01'), 'personal_doctor_responsible_allowed');
 phase45_expect(!$care->responsibleDoctorEligible($personal_nakes, 'PKM01'), 'non_doctor_responsible_denied');
 phase45_expect($care->visitPerformerEligible($personal_nakes, 'PKM01'), 'personal_nakes_performer_allowed');
-phase45_expect(!$care->visitPerformerEligible($personal_doctor, 'PKM01'), 'personal_doctor_performer_denied');
+// A doctor may perform a visit directly, or delegate it to a nakes, perawat or
+// bidan through the disposition workflow, so the performer check accepts any
+// personal with a recorded profession. Only the *responsible doctor* is
+// restricted to the doctor profession (asserted above).
+phase45_expect($care->visitPerformerEligible($personal_doctor, 'PKM01'), 'personal_doctor_performer_allowed');
+$personal_without_profession = array('valid' => true, 'account_type' => 'personal', 'user_id' => 23, 'staff_id' => 33, 'user_status' => 'aktif', 'staff_status' => 'aktif', 'puskesmas_code' => 'PKM01', 'staff_profesi' => '');
+phase45_expect(!$care->visitPerformerEligible($personal_without_profession, 'PKM01'), 'performer_without_profession_denied');
 phase45_expect(!$care->personalEligible($personal_nakes, 'PKM02'), 'cross_facility_personal_denied');
 phase45_expect($care->commandCenterEligible($command, 'PKM01'), 'command_center_coordinator_allowed');
 phase45_expect(!$care->personalEligible($command, 'PKM01'), 'command_center_performer_denied');

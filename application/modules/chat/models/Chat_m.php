@@ -22,6 +22,10 @@ class Chat_m extends CI_Model
 		$request->chat_clinician_role = $participant['role'];
 		$request->chat_clinician_photo_url = $participant['photo_url'];
 		$request->chat_clinician_photo_available = !empty($participant['photo_available']);
+		/* Kunci simpan mentah ikut diteruskan. View memakai resolver yang sama
+		   dengan dashboard (`doclinc_profile_image_src()`), dan resolver itu
+		   butuh kunci aslinya - bukan URL yang sudah jadi. */
+		$request->chat_clinician_photo_key = isset($participant['photo_key']) ? (string) $participant['photo_key'] : '';
 		$request->chat_patient_name = '';
 		$request->chat_patient_photo_available = false;
 		$request->chat_patient_online = false;
@@ -37,6 +41,7 @@ class Chat_m extends CI_Model
 				$request->chat_patient_name = trim((string) $patient->nama);
 			}
 			$request->chat_patient_photo_available = $patient && $this->chat_photo_available($patient->foto ?? '');
+			$request->chat_patient_photo_key = $patient ? (string) ($patient->foto ?? '') : '';
 		}
 		if ((int) ($request->user_id ?? 0) > 0) {
 			$request->chat_patient_online = $this->chat_participant_recently_active((int) $request_id, (int) $request->user_id);
@@ -60,7 +65,7 @@ class Chat_m extends CI_Model
 	public function get_chat_participant_context($request_id, $request = null)
 	{
 		$request_id = (int) $request_id;
-		$neutral = array('user_id' => 0, 'name' => 'Tenaga kesehatan', 'role' => '', 'photo_url' => '', 'photo_available' => false);
+		$neutral = array('user_id' => 0, 'name' => 'Tenaga kesehatan', 'role' => '', 'photo_url' => '', 'photo_available' => false, 'photo_key' => '');
 		if ($request_id < 1) {
 			return $neutral;
 		}
@@ -160,6 +165,7 @@ class Chat_m extends CI_Model
 				'role' => $role,
 				'photo_url' => $photo_available ? base_url('profile/photo/' . $clinician_user_id) : '',
 				'photo_available' => $photo_available,
+				'photo_key' => $profile ? (string) ($profile->foto ?? '') : '',
 			);
 		}
 		return $neutral;

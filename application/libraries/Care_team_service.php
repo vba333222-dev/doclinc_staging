@@ -76,6 +76,12 @@ class Care_team_service
 			if (!$this->policy->responsibleDoctorEligible($doctor, $puskesmas_code)) {
 				return $this->failure('Pilih dokter dari Puskesmas ini.');
 			}
+			// CATATAN: status online sengaja TIDAK diperiksa di sini. Kehadiran
+			// bersifat sementara - gangguan jaringan sesaat tidak boleh membuat
+			// dokter yang sah kehilangan otorisasinya. Penyaringan dokter yang
+			// sedang bertugas dilakukan saat MENAWARKAN pilihan kepada puskesmas
+			// (lihat get_active_staff_options_by_code), bukan saat mengotorisasi.
+			// Invarian ini dikunci oleh test presence_is_not_care_team_authorization.
 			$active = $this->lockedResponsibleAssignments($request_id);
 			if ($active === false || count($active) > 1) {
 				return $this->failure('Data dokter perlu diperiksa.');
@@ -201,6 +207,10 @@ class Care_team_service
 			$performer = $this->lockedStaffIdentity($staff_id);
 			if (!$this->policy->visitPerformerEligible($performer, $puskesmas_code)) {
 				return $this->failure('Pilih Nakes dari Puskesmas ini.');
+			}
+			$managed_failure = $this->managedAssignmentFailure($request_id, $puskesmas_code, $performer);
+			if ($managed_failure !== null) {
+				return $managed_failure;
 			}
 			$active = $this->lockedVisitAssignments($request_id);
 			if ($active === false || count($active) > 1) {
@@ -473,6 +483,93 @@ class Care_team_service
 			array((int) $request_id, 'aktif')
 		);
 		return $query ? $query->result() : false;
+	}
+
+	/**
+	 * The managed clinical workflow only permits the performer the responsible
+	 * doctor's own disposition authorises. The disposition is the clinical
+	 * decision that says a visit is required and which profession may perform
+	 * it, so an assignment that ignores it would let the responsible doctor
+	 * contradict their own recorded decision - the exact divergence between the
+	 * workflow state resolver and the assignment path this guard closes.
+	 *
+	 * Requests outside the managed workflow keep the legacy behaviour so
+	 * unenrolled consultations stay operable.
+	 *
+	 * Returns a failure array when the assignment must be refused, or null when
+	 * it may proceed.
+	 */
+	private function managedAssignmentFailure($request_id, $puskesmas_code, array $performer)
+	{
+		if (!$this->managedWorkflowRequest($request_id)) {
+			return null;
+		}
+		$disposition = $this->activeVisitDisposition($request_id);
+		if ($disposition === null) {
+			return $this->failure('Dokter penanggung jawab belum menetapkan kunjungan.');
+		}
+		$required = trim((string) ($disposition->required_profession ?? ''));
+		if ($required !== '' && strcasecmp(trim((string) ($performer['staff_profesi'] ?? '')), $required) !== 0) {
+			return $this->failure('Pilih Nakes dengan profesi ' . $required . '.');
+		}
+		if (!$this->activeFacilityPlacement((int) ($performer['staff_id'] ?? 0), $puskesmas_code)) {
+			return $this->failure('Nakes belum terdaftar di Puskesmas ini.');
+		}
+		return null;
+	}
+
+	private function managedWorkflowRequest($request_id)
+	{
+		// Enrollment is what makes a request managed, so without the enrollment
+		// table no request can be managed and the legacy path is the only path.
+		// Guarding here also keeps the check safe on strict-mysqli runtimes.
+		if (!$this->db->table_exists('visit_dispositions')) {
+			return false;
+		}
+		require_once __DIR__ . '/Visit_workflow_policy.php';
+		$enabled = false;
+		if (function_exists('get_instance')) {
+			$CI = &get_instance();
+			if (is_object($CI) && isset($CI->config) && is_object($CI->config)) {
+				$enabled = $CI->config->item('visit_clinical_workflow_enabled') === true;
+			}
+		}
+		return (new Visit_workflow_policy($this->db, $enabled))->isManagedWorkflowRequest((int) $request_id);
+	}
+
+	/**
+	 * Returns the active disposition only when it requires a visit. A missing
+	 * disposition, or one that decided against a visit, both mean no performer
+	 * may be assigned.
+	 */
+	private function activeVisitDisposition($request_id)
+	{
+		if (!$this->db->table_exists('visit_dispositions')) {
+			return null;
+		}
+		$query = $this->db->query(
+			'SELECT decision, required_profession FROM ' . $this->db->dbprefix('visit_dispositions')
+				. ' WHERE request_id = ? AND superseded_at IS NULL ORDER BY version_no DESC LIMIT 1 FOR UPDATE',
+			array((int) $request_id)
+		);
+		$row = $query ? $query->row() : null;
+		if (!$row || (string) $row->decision !== Care_team_policy::VISIT) {
+			return null;
+		}
+		return $row;
+	}
+
+	private function activeFacilityPlacement($staff_id, $puskesmas_code)
+	{
+		if ($staff_id < 1 || !$this->db->table_exists('nakes_facility_placements')) {
+			return false;
+		}
+		$query = $this->db->query(
+			'SELECT placement_id FROM ' . $this->db->dbprefix('nakes_facility_placements')
+				. ' WHERE staff_id = ? AND facility_code = ? AND status = ? LIMIT 1',
+			array((int) $staff_id, trim((string) $puskesmas_code), 'active')
+		);
+		return $query && $query->num_rows() === 1;
 	}
 
 	private function success($message, array $data = array())

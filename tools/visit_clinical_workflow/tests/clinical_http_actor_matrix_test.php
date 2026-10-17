@@ -111,6 +111,9 @@ function task11_prepare_visit_result(Task11FixtureFactory $factory, array $clien
 $report = task11_emit_defaults();
 $base = getenv('VCW_HTTP_BASE_URL') ?: '';
 $failure = null;
+// Initialised before the try block: the guard at the top of the block can throw
+// before this is assigned, and the catch block below cleans up using it.
+$flagStatePath = '';
 try {
     task11_assert($base !== '', 'VCW_HTTP_BASE_URL_required_external_real_ci3_server');
     $flagStatePath = getenv('TASK11_FLAG_OFF_STATE_FILE') ?: '';

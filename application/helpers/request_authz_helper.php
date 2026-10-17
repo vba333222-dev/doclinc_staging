@@ -434,6 +434,12 @@ if (!function_exists('doclinc_request_queue_number_label')) {
 			$number = (int) $request->queue_number;
 		} elseif ($request && isset($request->queue_code) && preg_match('/-(\d+)$/', trim((string) $request->queue_code), $match)) {
 			$number = (int) $match[1];
+		} elseif ($request && isset($request->request_id) && (int) $request->request_id > 0) {
+			/* Sebagian baris lama belum punya queue_number/queue_code. Kode
+			   lengkap sudah memakai request_id sebagai nomor cadangan, jadi
+			   label ini memakai cadangan yang sama supaya keduanya menyebut
+			   nomor yang sama dan tidak ada tampilan "No. -". */
+			$number = (int) $request->request_id;
 		}
 
 		if ($number === null || $number < 1) {

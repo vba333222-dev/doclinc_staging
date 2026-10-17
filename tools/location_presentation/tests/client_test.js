@@ -1,5 +1,7 @@
 const fs = require('fs');
 const vm = require('vm');
+const path = require('path');
+const root = path.resolve(__dirname, '../../..');
 
 let passed = 0;
 let failed = 0;
@@ -20,7 +22,7 @@ const window = {
 	fetch: null
 };
 const context = vm.createContext({ window, Map, Promise, Number, String, Object, Array, Error, AbortController, encodeURIComponent });
-vm.runInContext(fs.readFileSync('assets/js/doclinc-location-address.js', 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/doclinc-location-address.js'), 'utf8'), context);
 const api = window.DoclincLocationAddress;
 
 async function run() {

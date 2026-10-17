@@ -46,7 +46,11 @@
                       <i class="far fa-edit fa-fw"></i>
                     </a>
                     <form action="<?php echo base_url('landing_page/delete_faq/'.$x->id);?>" method="POST" class="d-inline" onsubmit="return confirm('Hapus FAQ? Data yang dihapus tidak dapat dipulihkan.');">
-                      <button type="submit" class="btn btn-danger tooltip-title"><i class="far fa-trash-alt fa-fw"></i></button>
+                      <!-- Tombol ini hanya berisi ikon dan tadinya tanpa title/aria-label,
+                           sehingga pembaca layar mengumumkan tombol tanpa keterangan.
+                           title dipakai sekaligus oleh inisialisasi .tooltip-title di
+                           bawah, sama seperti tombol "Ubah" di sebelahnya. -->
+                      <button type="submit" class="btn btn-danger tooltip-title" title="Hapus" aria-label="Hapus FAQ ini"><i class="far fa-trash-alt fa-fw" aria-hidden="true"></i></button>
                     </form>
                   </div>
                 </td>
@@ -62,11 +66,11 @@
   </div>
 </div>
 
-<div class="modal fade" id="modalTambah" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalTambah" tabindex="-1" aria-labelledby="modalTambahLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah FAQ</h5>
+        <h5 class="modal-title" id="modalTambahLabel">Tambah FAQ</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -88,11 +92,11 @@
   </div>
 </div>
 
-<div class="modal fade" id="modalEdit" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalEdit" tabindex="-1" aria-labelledby="modalEditLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel"></h5>
+        <h5 class="modal-title" id="modalEditLabel"></h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>

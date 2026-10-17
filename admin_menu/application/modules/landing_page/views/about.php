@@ -20,7 +20,7 @@
 <div class="row">
   <div class="col-12 col-lg-6 mb-3 position-relative">
     <!-- <img src="../../assets/img/<?= $pict;?>" class="img-fluid img-thumbnail shadow-sm"> -->
-    <img src="<?= base_url('../assets/img/' . rawurlencode($pict));?>" class="img-fluid img-thumbnail shadow-sm">
+    <img src="<?= base_url('../assets/img/' . rawurlencode($pict));?>" class="img-fluid img-thumbnail shadow-sm" alt="">
     <button class="btn btn-default-asoka float-right" style="position:absolute;top:20px;right:34px;" data-toggle="modal" data-target="#modalPict">Ubah</button>
   </div>
   <div class="col-12 col-lg-6 mb-3">
@@ -52,11 +52,11 @@
   </div>
 </div>
 
-<div class="modal fade" id="modalPict" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalPict" tabindex="-1" aria-labelledby="modalPictLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Ubah gambar</h5>
+        <h5 class="modal-title" id="modalPictLabel">Ubah gambar</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -70,11 +70,11 @@
     </div>
   </div>
 </div>
-<div class="modal fade" id="modalDesc" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalDesc" tabindex="-1" aria-labelledby="modalDescLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Ubah deskripsi</h5>
+        <h5 class="modal-title" id="modalDescLabel">Ubah deskripsi</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -88,11 +88,11 @@
     </div>
   </div>
 </div>
-<div class="modal fade" id="modalVisi" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalVisi" tabindex="-1" aria-labelledby="modalVisiLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Ubah visi</h5>
+        <h5 class="modal-title" id="modalVisiLabel">Ubah visi</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -106,11 +106,11 @@
     </div>
   </div>
 </div>
-<div class="modal fade" id="modalMisi" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalMisi" tabindex="-1" aria-labelledby="modalMisiLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Ubah misi</h5>
+        <h5 class="modal-title" id="modalMisiLabel">Ubah misi</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>

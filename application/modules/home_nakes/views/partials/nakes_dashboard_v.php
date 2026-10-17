@@ -34,51 +34,6 @@
 						<?php $this->load->view('partials/nakes_stat_cards_v', get_defined_vars()); ?>
 						<?php if (!empty($nakes_is_command_center)) : ?>
 						<?php
-						$puskesmas_readiness = isset($puskesmas_data_readiness) && is_array($puskesmas_data_readiness) ? $puskesmas_data_readiness : array();
-						$readiness_staff_total = isset($puskesmas_readiness['staff_total']) ? (int) $puskesmas_readiness['staff_total'] : 0;
-						$readiness_staff_ready = isset($puskesmas_readiness['staff_ready']) ? (int) $puskesmas_readiness['staff_ready'] : 0;
-						$readiness_attention_count = isset($puskesmas_readiness['attention_count']) ? (int) $puskesmas_readiness['attention_count'] : 0;
-						?>
-						<div class="dl-nakes-card dl-dashboard-section nk-readiness-card" data-puskesmas-readiness>
-							<div class="nk-readiness-head">
-								<div>
-									<strong>Kelengkapan data Puskesmas</strong>
-									<span>Ringkasan data unit dan staf aktif</span>
-								</div>
-								<span class="nk-readiness-state <?= !empty($puskesmas_readiness['complete']) ? 'is-ready' : 'needs-attention'; ?>">
-									<?= !empty($puskesmas_readiness['complete']) ? 'Lengkap' : html_escape((string) $readiness_attention_count . ' data perlu dilengkapi'); ?>
-								</span>
-							</div>
-							<div class="nk-readiness-grid">
-								<div><span>Data unit</span><strong><?= !empty($puskesmas_readiness['facility_complete']) ? 'Lengkap' : 'Perlu dilengkapi'; ?></strong></div>
-								<div><span>Data staf lengkap</span><strong><?= html_escape((string) $readiness_staff_ready); ?> / <?= html_escape((string) $readiness_staff_total); ?></strong></div>
-								<div><span>SIP belum lengkap</span><strong><?= html_escape((string) (isset($puskesmas_readiness['staff_missing_sip']) ? (int) $puskesmas_readiness['staff_missing_sip'] : 0)); ?></strong></div>
-								<div><span>SIP mendekati kedaluwarsa</span><strong><?= html_escape((string) (isset($puskesmas_readiness['staff_sip_expiring']) ? (int) $puskesmas_readiness['staff_sip_expiring'] : 0)); ?></strong></div>
-								<div><span>SIP kedaluwarsa</span><strong><?= html_escape((string) (isset($puskesmas_readiness['staff_sip_expired']) ? (int) $puskesmas_readiness['staff_sip_expired'] : 0)); ?></strong></div>
-								<div><span>Akun staf perlu diperiksa</span><strong><?= html_escape((string) ((isset($puskesmas_readiness['staff_unlinked']) ? (int) $puskesmas_readiness['staff_unlinked'] : 0) + (isset($puskesmas_readiness['staff_invalid_account']) ? (int) $puskesmas_readiness['staff_invalid_account'] : 0))); ?></strong></div>
-							</div>
-							<div class="nk-readiness-foot">
-								<a href="#profile" onclick="showContent('profile')">Lihat rincian</a>
-							</div>
-						</div>
-						<?php
-						$operation_exceptions = isset($puskesmas_operation_exceptions) && is_array($puskesmas_operation_exceptions) ? $puskesmas_operation_exceptions : array();
-						$pending_attention = isset($operation_exceptions['pending_requests']) ? (int) $operation_exceptions['pending_requests'] : 0;
-						$without_pic_attention = isset($operation_exceptions['accepted_without_pic']) ? (int) $operation_exceptions['accepted_without_pic'] : 0;
-						?>
-						<div class="dl-nakes-card dl-dashboard-section nk-readiness-card" data-puskesmas-exception-board>
-							<div class="nk-readiness-head">
-							<div><strong>Yang perlu ditangani</strong><span>Ringkasan permintaan saat ini</span></div>
-							<span class="nk-readiness-state <?= ($pending_attention + $without_pic_attention) > 0 ? 'needs-attention' : 'is-ready'; ?>"><?= html_escape((string) ($pending_attention + $without_pic_attention)); ?> permintaan</span>
-							</div>
-							<div class="nk-readiness-grid">
-								<div><span>Permintaan menunggu</span><strong><?= html_escape((string) $pending_attention); ?></strong></div>
-							<div><span>Belum ada penanggung jawab layanan</span><strong><?= html_escape((string) $without_pic_attention); ?></strong></div>
-								<div><span>Data staf/unit</span><strong><?= html_escape((string) (isset($operation_exceptions['staff_data_attention']) ? (int) $operation_exceptions['staff_data_attention'] : 0)); ?></strong></div>
-							</div>
-						<div class="nk-readiness-foot"><a href="#req_konsul" onclick="showContent('req_konsul')">Buka antrian</a></div>
-						</div>
-						<?php
 						$dashboard_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_list) ? $puskesmas_staff_list : array();
 						$dashboard_staff_count = isset($puskesmas_staff_count) ? (int) $puskesmas_staff_count : count($dashboard_staff_rows);
 						$this->load->view('partials/nakes_section_header_v', array(
@@ -87,10 +42,7 @@
 						));
 						?>
 						<div class="dl-nakes-card dl-dashboard-section nk-staff-card doclinc-presence-panel" id="doclincNakesPresence" data-presence-roster="true" aria-live="polite" aria-busy="<?= !empty($nakes_presence_enabled) ? 'true' : 'false'; ?>">
-							<div class="doclinc-presence-summary" data-presence-summary>
-								<span class="doclinc-presence-count doclinc-presence-count--online">0 online</span>
-								<span class="doclinc-presence-count doclinc-presence-count--offline"><?= html_escape((string) $dashboard_staff_count); ?> offline</span>
-							</div>
+
 							<?php if (empty($dashboard_staff_rows)) : ?>
 								<div class="nk-staff-empty">Belum ada staf.</div>
 							<?php else : ?>
@@ -118,13 +70,8 @@
 												<small class="nk-staff-presence is-offline" data-presence-label>Offline</small>
 												<small class="nk-staff-last-seen" data-presence-last-seen>Belum pernah online</small>
 											</div>
-											<?php if ($staff_phone !== '' || $staff_sip !== '') : ?>
-												<div class="nk-staff-meta">
-													<?php if ($staff_phone !== '') : ?><span><?= html_escape($staff_phone); ?></span><?php endif; ?>
-													<?php if ($staff_sip !== '') : ?><span>SIP <?= html_escape($staff_sip); ?></span><?php else : ?><span class="is-warning">SIP belum dilengkapi</span><?php endif; ?>
-												</div>
-											<?php elseif ($staff_sip === '') : ?>
-												<div class="nk-staff-meta"><span class="is-warning">SIP belum dilengkapi</span></div>
+											<?php if ($staff_phone !== '') : ?>
+												<div class="nk-staff-meta"><span><?= html_escape($staff_phone); ?></span></div>
 											<?php endif; ?>
 										</div>
 									<?php endforeach; ?>
@@ -152,7 +99,7 @@
 						?>
 						<div class="dl-nakes-card dl-dashboard-section">
 							<?php foreach ($secondary_active_rows as $secondary_request) :
-								$secondary_queue_code = doclinc_request_queue_code($secondary_request);
+								$secondary_queue_label = doclinc_request_queue_number_label($secondary_request);
 								$secondary_mode_label = doclinc_consultation_mode_label(isset($secondary_request->consultation_mode) ? $secondary_request->consultation_mode : '');
 								$secondary_responsible = $secondary_care_team_enabled
 									&& isset($secondary_request->responsible_doctor_user_id)
@@ -165,18 +112,34 @@
 								$secondary_visit_status = $secondary_visit_status !== '' ? $secondary_visit_status : 'not_started';
 								if ($secondary_performer) {
 									$secondary_link = base_url('home_nakes#riwayat_konsul');
-									$secondary_link_label = $secondary_visit_status === 'in_service' ? 'Catat hasil pemeriksaan' : 'Buka tugas kunjungan';
+									$secondary_link_label = $secondary_visit_status === 'in_service' ? 'Catat Hasil' : 'Buka Tugas';
 								} else {
 									$secondary_link = base_url('konsultasi_nakes/konsultasi/' . (int) $secondary_request->request_id);
-									$secondary_link_label = $secondary_care_team_enabled && !$secondary_responsible ? 'Lihat konsultasi' : 'Lanjutkan konsultasi';
+									$secondary_link_label = $secondary_care_team_enabled && !$secondary_responsible ? 'Lihat' : 'Lanjutkan';
 								}
 								$secondary_is_last = ++$secondary_active_index >= $secondary_active_total;
 							?>
 								<div class="dl-latest-row <?= $secondary_is_last ? '' : 'mb-2 pb-2 border-bottom'; ?>">
-									<div class="dl-task-avatar"><i class="fas fa-user-check"></i></div>
+									<?php
+									$secondary_patient_photo = '';
+									foreach (array('patient_photo', 'foto', 'photo', 'profile_photo', 'profile_image', 'avatar') as $secondary_photo_key) {
+										if (isset($secondary_request->{$secondary_photo_key}) && trim((string) $secondary_request->{$secondary_photo_key}) !== '') {
+											$secondary_patient_photo = trim((string) $secondary_request->{$secondary_photo_key});
+											break;
+										}
+									}
+									$this->load->view('partials/nakes_avatar_v', array(
+										'avatar_name' => $secondary_request->nama,
+										'avatar_photo' => $secondary_patient_photo,
+										'avatar_user_id' => (int) $secondary_request->user_id,
+										'avatar_alt' => 'Foto pasien',
+										'avatar_class' => 'nk-avatar--md nk-avatar--patient',
+										'avatar_icon' => 'fas fa-user-check',
+									));
+									?>
 									<div class="flex-grow-1 min-w-0">
 										<p class="dl-latest-name"><?= html_escape(strtoupper((string) $secondary_request->nama)); ?></p>
-										<div class="dl-latest-meta">No. Antrian: <?= html_escape($secondary_queue_code); ?> · <?= html_escape($secondary_mode_label); ?></div>
+										<div class="dl-latest-meta"><?= html_escape($secondary_queue_label); ?> · <?= html_escape($secondary_mode_label); ?></div>
 									</div>
 									<a href="<?= html_escape($secondary_link); ?>" class="btn btn-outline-success btn-sm rounded-pill fw-bold"><?= html_escape($secondary_link_label); ?></a>
 								</div>
@@ -185,7 +148,7 @@
 						<?php endif; ?>
 						<?php if (!empty($nakes_is_command_center)) :
 						$this->load->view('partials/nakes_section_header_v', array(
-							'section_title' => 'Permintaan masuk Puskesmas',
+							'section_title' => 'Permintaan Konsultasi',
 							'section_meta' => (string) $nakes_pending_count . ' menunggu',
 							'section_link_label' => 'Semua',
 							'section_link_target' => '#req_konsul',
@@ -206,7 +169,7 @@
 								$latest_index = 0;
 								foreach ($nakes_latest_pending_rows as $latest_request) :
 									$latest_keluhan = $CI->encryption->decrypt(base64_decode($latest_request->request_description));
-									$latest_queue_code = doclinc_request_queue_code($latest_request);
+									$latest_queue_label = doclinc_request_queue_number_label($latest_request);
 									$is_last_latest_request = ++$latest_index >= $latest_total;
 							?>
 									<?php $this->load->view('partials/nakes_compact_request_item_v', get_defined_vars()); ?>

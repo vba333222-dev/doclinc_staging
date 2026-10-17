@@ -1,0 +1,1002 @@
+/* ==========================================================================
+   DokLinc - Warga dashboard visual layer
+   --------------------------------------------------------------------------
+   Lapisan tampilan untuk beranda warga/pasien saja. Semua selektor diawali
+   `.dl-warga-app`, kelas yang HANYA dipasang pada <body> beranda warga
+   (application/modules/home/views/home_v.php), sehingga permukaan lain yang
+   memakai token `.dl-warga-*` (chat, konsultasi, profil, auth) tidak ikut
+   berubah.
+
+   Aturan main berkas ini:
+   1. Aditif. Tidak ada aturan di sini yang menghapus elemen, mengubah id,
+      atau menyembunyikan kontrol. Hanya warna, bentuk, jarak, dan gerak.
+   2. Dimuat setelah doclinc-warga.css supaya bisa memperhalus tampilan tanpa
+      harus menyunting aturan yang sudah teruji.
+   3. Ornamen selalu dekoratif: dibuat dari pseudo-element atau span
+      aria-hidden, jadi tidak ada teks palsu yang terbaca pembaca layar.
+   4. Setiap gerak punya pasangan prefers-reduced-motion.
+   ========================================================================== */
+
+.dl-warga-app {
+  /* Token lokal dashboard. Sengaja tidak menimpa --warga-* yang sudah dipakai
+     permukaan warga lain, supaya perubahan di sini tidak merembet. */
+  --wd-brand: #2D7D56;
+  --wd-brand-strong: #1F6F4B;
+  --wd-brand-bright: #379A69;
+  --wd-brand-soft: #E8F7F0;
+  --wd-brand-mist: #F3FBF7;
+  --wd-brand-ring: rgba(45, 125, 86, .22);
+
+  /* Abu-abu teks: #55665E tetap >= 4.5:1 di atas putih maupun di atas
+     --wd-brand-mist, jadi metadata kecil tetap terbaca. */
+  --wd-ink: #1B2621;
+  --wd-muted: #55665E;
+  --wd-line: #E2EDE7;
+  --wd-line-strong: #C9DED4;
+
+  /* Radius mengikuti skala aplikasi (style.css: lg 14px, xl 16px) supaya sudut
+     kartu di halaman ini tidak lebih bulat daripada halaman lain. */
+  --wd-radius-xl: 16px;
+  --wd-radius-lg: 14px;
+  --wd-radius-md: 12px;
+
+  --wd-shadow-soft: 0 10px 28px rgba(20, 58, 44, .07);
+  --wd-shadow-lift: 0 20px 44px rgba(20, 58, 44, .14);
+  --wd-ease: cubic-bezier(.22, .61, .36, 1);
+}
+
+/* --------------------------------------------------------------------------
+   1. Kerangka halaman
+   -------------------------------------------------------------------------- */
+
+.dl-warga-app {
+  /* Latar berlapis tipis: dua cahaya lembut di atas dasar netral. Ini yang
+     membuat halaman tidak terasa seperti kertas kosong, tanpa menambah
+     elemen dekoratif yang bisa mengganggu. */
+  background:
+    radial-gradient(60rem 28rem at 8% -8%, rgba(55, 154, 105, .10) 0%, rgba(55, 154, 105, 0) 62%),
+    radial-gradient(48rem 24rem at 108% 6%, rgba(45, 125, 86, .08) 0%, rgba(45, 125, 86, 0) 60%),
+    var(--dl-bg, #F7F7F7);
+  background-attachment: scroll;
+}
+
+.dl-warga-app .dl-warga-content {
+  position: relative;
+}
+
+/* Ruang bawah: navigasi tetap tidak boleh menutup kartu terakhir. Nilai ini
+   dipakai bersama oleh semua tab, jadi tinggi konten tidak pernah terpotong. */
+.dl-warga-app .contents {
+  padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Judul bagian diberi batang aksen. Batangnya dekoratif (pseudo-element),
+   jadi hierarki teks tetap h2/h3 yang sudah ada. */
+.dl-warga-app .dl-section-header {
+  margin: 1.5rem 0 .75rem;
+  gap: .75rem;
+}
+
+.dl-warga-app .dl-section-title {
+  position: relative;
+  padding-left: .75rem;
+  color: var(--wd-ink);
+  font-size: var(--dl-font-size-lg, 15px);
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+
+.dl-warga-app .dl-section-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 1.05em;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--wd-brand-bright), var(--wd-brand-strong));
+  transform: translateY(-50%);
+}
+
+/* Garis pemisah bawaan diganti gradien agar tidak terputus mendadak. */
+.dl-warga-app .dl-section-header hr {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(90deg, var(--wd-line-strong), rgba(201, 222, 212, 0));
+}
+
+/* --------------------------------------------------------------------------
+   2. Appbar (sapaan + lokasi)
+   -------------------------------------------------------------------------- */
+
+/* Appbar adalah bilah tetap (position: fixed) dari style.css. Tata letaknya
+   sengaja TIDAK disentuh di sini — hanya latarnya yang diberi kedalaman.
+   Ornamen dipasang sebagai lapisan background, bukan pseudo-element, karena
+   style.css memaksa `overflow: visible !important` pada bilah ini sehingga
+   pseudo-element akan meluber ke luar header dan mengotori halaman. */
+.dl-warga-app .dl-appbar {
+  background:
+    radial-gradient(15rem 15rem at 104% -46%, rgba(137, 246, 218, .34) 0%, rgba(137, 246, 218, 0) 70%),
+    radial-gradient(10rem 10rem at -8% 128%, rgba(255, 255, 255, .2) 0%, rgba(255, 255, 255, 0) 72%),
+    linear-gradient(148deg, #31895F 0%, #24744E 48%, #1A5A3C 100%) !important;
+}
+
+/* Gelombang yang sudah ada sedikit dinaikkan supaya terbaca sebagai ornamen.
+   Tidak ada margin atau ukuran yang diubah: elemen ini adalah item flex pada
+   bilah, jadi menambah margin akan menggeser barisnya. */
+.dl-warga-app .dl-appbar #wave {
+  opacity: .2;
+}
+
+/* Catatan penting: `.dl-location-row` (baris alamat hasil reverse-geocoding)
+   sengaja TIDAK ditata di sini. style.css menyembunyikannya dengan
+   `display: none !important` dan tidak ada lembar gaya lain yang
+   menampilkannya kembali, jadi gaya apa pun untuk elemen itu hanya akan
+   menjadi kode mati. Teks lokasi yang benar-benar terlihat warga adalah
+   `#userCoordinateLabel` di dalam `.dl-profile-copy`, yang sudah diatur
+   doclinc-warga.css. */
+
+/* Tombol notifikasi TETAP menjadi item flex pada bilah: style.css memakai
+   `margin-left: auto` untuk mendorongnya ke kanan. Posisinya sengaja tidak
+   dibuat absolut — mengeluarkannya dari alur flex membuat baris profil melebar
+   penuh dan nama pengguna berakhir di bawah tombol. Yang dinaikkan hanya
+   ukuran sasaran sentuh (40px -> 44px), dan lingkaran putih + ikon hijau
+   bawaan dipertahankan karena kontrasnya paling kuat di atas latar hijau. */
+.dl-warga-app .dl-appbar a.notify {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, .55);
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--wd-brand-strong) !important;
+  box-shadow: 0 6px 16px rgba(6, 32, 22, .22);
+  transition: transform .18s var(--wd-ease), box-shadow .18s var(--wd-ease), background-color .18s var(--wd-ease);
+}
+
+.dl-warga-app .dl-appbar a.notify > i {
+  position: static;
+  right: auto;
+  top: auto;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.dl-warga-app .dl-appbar a.notify:hover,
+.dl-warga-app .dl-appbar a.notify:focus-visible {
+  background: #F1FAF6;
+  box-shadow: 0 8px 20px rgba(6, 32, 22, .26);
+}
+
+.dl-warga-app .dl-appbar a.notify:active {
+  transform: scale(.94);
+}
+
+.dl-warga-app .dl-appbar a.notify:focus-visible {
+  outline: 3px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
+.dl-warga-app .dl-appbar a.notify > span.notify-number {
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 2px solid #24744E;
+  border-radius: 999px;
+  background: #D94B4B;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dl-warga-app .dl-appbar a.notify > span.notify-number:empty {
+  display: none;
+}
+
+/* Foto profil 42x42 sudah dipatok style.css dengan `!important`; di sini hanya
+   cincin pemisahnya yang dipertajam supaya tidak tenggelam di latar hijau.
+   `box-shadow: none !important` dari style.css juga perlu dilawan dengan
+   `!important` agar halo tipisnya benar-benar berlaku. */
+.dl-warga-app .dl-appbar .dl-profile-photo {
+  border: 2px solid rgba(255, 255, 255, .92);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .22) !important;
+  background: var(--wd-brand-soft);
+}
+
+/* Nama pengguna sengaja TIDAK diperbesar. style.css sudah menatanya pada 15px
+   dengan pemotongan elipsis satu baris (`white-space: nowrap` + `text-overflow:
+   ellipsis`); menaikkan ukuran font hanya membuat nama panjang terpotong lebih
+   cepat. */
+
+/* --------------------------------------------------------------------------
+   3. Kartu ajakan utama ("Mulai konsultasi")
+   -------------------------------------------------------------------------- */
+
+.dl-warga-app .dl-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid var(--wd-line);
+  border-radius: var(--wd-radius-xl);
+  background:
+    radial-gradient(80% 130% at 100% 0%, rgba(55, 154, 105, .13) 0%, rgba(55, 154, 105, 0) 62%),
+    linear-gradient(180deg, #FFFFFF 0%, var(--wd-brand-mist) 100%);
+  box-shadow: var(--wd-shadow-soft);
+  color: var(--wd-ink);
+}
+
+/* Garis aksen kiri: penanda "ini aksi utama halaman". */
+.dl-warga-app .dl-hero::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, var(--wd-brand-bright), var(--wd-brand-strong));
+}
+
+/* Watermark bawaan (.dl-hero::after memakai glyph Font Awesome) diwarnai ulang.
+   Di hero putih, watermark putih 16% sebelumnya tidak terlihat sama sekali. */
+.dl-warga-app .dl-hero::after {
+  color: rgba(45, 125, 86, .10);
+  right: -.7rem;
+  bottom: -1.5rem;
+  font-size: 6rem;
+  transform: rotate(10deg);
+}
+
+.dl-warga-app .dl-hero .dl-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+}
+
+/* Ukuran judul dan deskripsi dikembalikan ke skala aplikasi
+   (style.css: xl = 17px, md = 13px). Versi sebelumnya sempat dinaikkan ke 21px
+   sehingga hierarkinya lebih berat daripada judul di halaman lain. */
+.dl-warga-app .dl-hero .dl-hero-title {
+  margin: 0 0 .25rem;
+  color: var(--wd-ink);
+  font-size: var(--dl-font-size-xl, 17px);
+  font-weight: 800;
+  letter-spacing: -.01em;
+  line-height: 1.3;
+}
+
+.dl-warga-app .dl-hero .dl-hero-text {
+  margin: 0 0 .85rem;
+  max-width: 32rem;
+  color: var(--wd-muted);
+  font-size: var(--dl-font-size-md, 13px);
+  line-height: 1.5;
+}
+
+/* CTA tunggal di hero adalah aksi terpenting halaman, jadi dinaikkan ke
+   tampilan primer (isi penuh) meski kelasnya sekunder. Bentuknya tetap
+   tombol yang sama, hanya bobot visualnya yang naik. */
+.dl-warga-app .dl-hero .dl-btn-secondary,
+.dl-warga-app .dl-hero .dl-btn-primary {
+  min-height: 46px;
+  padding: .68rem 1.15rem;
+  border: 1px solid var(--wd-brand-strong);
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--wd-brand-bright) 0%, var(--wd-brand) 52%, var(--wd-brand-strong) 100%);
+  color: #FFFFFF !important;
+  font-size: .9rem;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(31, 111, 75, .24);
+  transition: transform .18s var(--wd-ease), box-shadow .18s var(--wd-ease), filter .18s var(--wd-ease);
+}
+
+.dl-warga-app .dl-hero .dl-btn-secondary:hover,
+.dl-warga-app .dl-hero .dl-btn-primary:hover {
+  color: #FFFFFF !important;
+  filter: brightness(1.06);
+  box-shadow: 0 14px 28px rgba(31, 111, 75, .34);
+}
+
+.dl-warga-app .dl-hero .dl-btn-secondary:active,
+.dl-warga-app .dl-hero .dl-btn-primary:active {
+  transform: translateY(1px) scale(.99);
+}
+
+/* Keadaan "tidak bisa diklik" tetap harus terlihat tidak bisa diklik. */
+.dl-warga-app .dl-hero .dl-btn-secondary[aria-disabled="true"],
+.dl-warga-app .dl-hero .dl-btn-secondary.disabled {
+  background: #E7EDEA;
+  border-color: #D3DED8;
+  color: #55665E !important;
+  box-shadow: none;
+  filter: none;
+}
+
+.dl-warga-app .dl-hero .history-empty-text {
+  color: #2F3D37;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   4. Akses cepat (Buat permintaan / Catatan kesehatan / Lainnya)
+   -------------------------------------------------------------------------- */
+
+.dl-warga-app .dl-quick-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .5rem;
+  margin: 1rem 0 1.25rem;
+  padding: 0;
+  border: 0;
+}
+
+.dl-warga-app .dl-quick-links .dl-feature-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: .45rem;
+  min-height: 88px;
+  padding: .7rem .45rem;
+  border: 1px solid var(--wd-line);
+  border-radius: var(--wd-radius-lg);
+  background: var(--dl-surface, #FFFFFF);
+  color: var(--wd-ink);
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgba(20, 58, 44, .05);
+  transition: transform .2s var(--wd-ease), box-shadow .2s var(--wd-ease), border-color .2s var(--wd-ease);
+}
+
+.dl-warga-app .dl-quick-links .dl-feature-card:hover,
+.dl-warga-app .dl-quick-links .dl-feature-card:focus-visible {
+  border-color: var(--wd-line-strong);
+  box-shadow: var(--wd-shadow-soft);
+  transform: translateY(-2px);
+}
+
+/* Kartu 2 dan 3 mewarisi garis pemisah kiri dari lembar gaya sebelumnya.
+   Karena tiap kartu sekarang punya bingkai sendiri, garis itu disamakan
+   warnanya supaya bingkai tidak terlihat timpang. */
+.dl-warga-app .dl-quick-links .dl-feature-card + .dl-feature-card {
+  border-left: 1px solid var(--wd-line);
+}
+
+.dl-warga-app .dl-quick-links .dl-feature-card:active {
+  transform: translateY(0) scale(.99);
+}
+
+.dl-warga-app .dl-quick-links .dl-feature-card.disabled {
+  opacity: .55;
+  box-shadow: none;
+}
+
+.dl-warga-app .dl-quick-links .icon-wrapper {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--wd-brand-soft);
+  color: var(--wd-brand-strong);
+  font-size: 1rem;
+  box-shadow: inset 0 0 0 1px rgba(45, 125, 86, .12);
+  transition: transform .2s var(--wd-ease);
+}
+
+/* Noda putih bawaan (.filler) dilepas di sini: kotak ikon sudah punya warna
+   sendiri, jadi nodanya hanya menambah kotoran visual. */
+.dl-warga-app .dl-quick-links .icon-wrapper .filler {
+  display: none;
+}
+
+/* Dua kartu, dua nuansa: hijau dan biru informasi. Tujuannya supaya keduanya
+   tidak terbaca sebagai satu blok yang sama. */
+.dl-warga-app .dl-quick-links .dl-feature-card:nth-child(2) .icon-wrapper {
+  background: #EAF2F8;
+  color: #2E6685;
+  box-shadow: inset 0 0 0 1px rgba(46, 102, 133, .14);
+}
+
+.dl-warga-app .dl-quick-links .dl-feature-card:hover .icon-wrapper,
+.dl-warga-app .dl-quick-links .dl-feature-card:focus-visible .icon-wrapper {
+  transform: translateY(-1px) scale(1.04);
+}
+
+.dl-warga-app .dl-quick-links .dl-feature-card .small {
+  display: block;
+  color: var(--wd-ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.dl-warga-app .dl-quick-links .dl-feature-card .text-muted {
+  color: var(--wd-muted) !important;
+}
+
+/* Di layar sempit tiap kartu hanya selebar ~95px, jadi jarak dan ukuran ikon
+   dirapatkan supaya label dua baris ("Catatan kesehatan") tetap muat tanpa
+   memaksa kartu jadi tinggi. */
+@media (max-width: 400px) {
+  .dl-warga-app .dl-quick-links .dl-feature-card {
+    padding: .6rem .35rem;
+    gap: .4rem;
+  }
+
+  .dl-warga-app .dl-quick-links .icon-wrapper {
+    width: 38px;
+    height: 38px;
+    font-size: .95rem;
+  }
+}
+
+/* Saat ada konsultasi aktif, akses cepat berubah menjadi daftar ringkas di
+   layar lebar supaya tidak bersaing dengan kartu konsultasi. */
+@media (min-width: 1000px) {
+  .dl-warga-app.has-active-request .dl-quick-links {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .45rem;
+    margin-top: .5rem;
+  }
+
+  .dl-warga-app.has-active-request .dl-quick-links .dl-feature-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: .65rem;
+    min-height: 56px;
+    padding: .5rem .7rem;
+    text-align: left;
+  }
+
+  .dl-warga-app.has-active-request .dl-quick-links .icon-wrapper {
+    width: 36px;
+    height: 36px;
+    font-size: .95rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. Kartu data, riwayat, dan keadaan kosong
+   -------------------------------------------------------------------------- */
+
+/* Kartu konsultasi aktif: garis aksen kiri dipertahankan (sudah dipakai
+   sebagai penanda "sedang berjalan"), ditambah sudut membulat dan bayangan
+   berlapis. */
+.dl-warga-app .dl-current-consultation-card {
+  border: 1px solid var(--wd-line);
+  border-left: 4px solid var(--wd-brand);
+  border-radius: var(--wd-radius-lg);
+  background: var(--dl-surface, #FFFFFF);
+  box-shadow: var(--wd-shadow-soft);
+}
+
+.dl-warga-app .dl-card {
+  border: 1px solid var(--wd-line);
+  border-radius: var(--wd-radius-lg);
+  background: var(--dl-surface, #FFFFFF);
+  box-shadow: 0 6px 18px rgba(20, 58, 44, .05);
+}
+
+.dl-warga-app .dl-card:hover {
+  border-color: var(--wd-line-strong);
+}
+
+.dl-warga-app .dl-card > .card-header,
+.dl-warga-app .dl-current-consultation-card > .card-header {
+  background: linear-gradient(180deg, var(--wd-brand-mist), var(--dl-surface, #FFFFFF));
+  border-bottom: 1px solid var(--wd-line);
+  color: var(--wd-ink);
+  font-weight: 750;
+}
+
+.dl-warga-app .history-section {
+  border: 1px solid var(--wd-line);
+  border-radius: var(--wd-radius-md);
+  background: var(--dl-surface, #FFFFFF);
+}
+
+.dl-warga-app .history-section-title {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  color: var(--wd-brand-strong);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+
+.dl-warga-app .history-section-title i {
+  color: var(--wd-brand);
+}
+
+/* Lencana status: satu bentuk pil untuk semua varian supaya baris status
+   tidak pernah terlihat "campur aduk". */
+.dl-warga-app .badge,
+.dl-warga-app .dl-badge,
+.dl-warga-app .history-status-badge,
+.dl-warga-app .visit-route-status {
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  padding: .34rem .62rem;
+}
+
+.dl-warga-app .badge.text-bg-light {
+  border: 1px solid var(--wd-line-strong);
+  background: var(--wd-brand-mist) !important;
+  color: var(--wd-ink) !important;
+}
+
+/* Keadaan kosong: cincin konsentris dekoratif supaya "belum ada data" tetap
+   punya bobot visual, bukan kotak kosong. */
+.dl-warga-app .dl-empty-state {
+  position: relative;
+  overflow: hidden;
+  border: 1px dashed var(--wd-line-strong);
+  border-radius: var(--wd-radius-lg);
+  background:
+    radial-gradient(70% 120% at 50% 0%, rgba(55, 154, 105, .08) 0%, rgba(55, 154, 105, 0) 70%),
+    var(--dl-surface, #FFFFFF);
+}
+
+.dl-warga-app .dl-empty-state::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -3rem;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 50%;
+  border: 1px solid rgba(45, 125, 86, .12);
+  box-shadow: 0 0 0 1.1rem rgba(45, 125, 86, .05), 0 0 0 2.2rem rgba(45, 125, 86, .03);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.dl-warga-app .dl-empty-state > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dl-warga-app .history-empty-text {
+  color: var(--wd-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Ringkasan kunjungan + linimasa: titik langkah diberi cincin agar posisi
+   aktif langsung terbaca tanpa mengandalkan warna saja. */
+.dl-warga-app .doclinc-visit-summary {
+  border: 1px solid var(--wd-line);
+  border-radius: var(--wd-radius-md);
+  background: var(--wd-brand-mist);
+}
+
+.dl-warga-app .doclinc-visit-step {
+  font-size: 12px;
+}
+
+.dl-warga-app .doclinc-visit-step-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--wd-line-strong);
+  box-shadow: 0 0 0 3px rgba(45, 125, 86, .08);
+}
+
+.dl-warga-app .doclinc-visit-step--active .doclinc-visit-step-dot {
+  border-color: var(--wd-brand-strong);
+  background: var(--wd-brand);
+  box-shadow: 0 0 0 4px rgba(45, 125, 86, .16);
+}
+
+/* Sakelar bagian (Aktif / Selesai). */
+.dl-warga-app .warga-segmented-control {
+  border: 1px solid var(--wd-line);
+  border-radius: 999px;
+  background: var(--wd-brand-mist);
+  padding: .25rem;
+}
+
+.dl-warga-app .warga-segmented-control .nav-link {
+  border-radius: 999px;
+  color: var(--wd-muted);
+  font-size: .875rem;
+  font-weight: 700;
+}
+
+.dl-warga-app .warga-segmented-control .nav-link.active {
+  background: var(--dl-surface, #FFFFFF);
+  color: var(--wd-brand-strong);
+  box-shadow: 0 4px 12px rgba(20, 58, 44, .1);
+}
+
+/* Sorotan berita: gambar diberi sudut membulat supaya tidak tampak seperti
+   gambar mentah yang ditempel. */
+.dl-warga-app .owl-carousel .item {
+  overflow: hidden;
+  border: 1px solid var(--wd-line);
+  border-radius: var(--wd-radius-lg);
+  background: var(--dl-surface, #FFFFFF);
+}
+
+.dl-warga-app .owl-carousel .item img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.dl-warga-app .owl-carousel .owl-dots .owl-dot span {
+  background: var(--wd-line-strong);
+}
+
+.dl-warga-app .owl-carousel .owl-dots .owl-dot.active span {
+  background: var(--wd-brand);
+}
+
+/* --------------------------------------------------------------------------
+   6. Navigasi bawah
+   -------------------------------------------------------------------------- */
+
+.dl-warga-app .dl-bottom-nav {
+  background: rgba(255, 255, 255, .94) !important;
+  border-top: 1px solid var(--wd-line);
+  border-radius: var(--wd-radius-xl) var(--wd-radius-xl) 0 0 !important;
+  box-shadow: 0 -10px 30px rgba(20, 58, 44, .1) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.dl-warga-app .dl-bottom-nav .menu {
+  padding: 6px 10px !important;
+}
+
+.dl-warga-app .dl-bottom-nav .menu > .menu-item {
+  position: relative;
+  min-height: 54px;
+  border-radius: 12px;
+  color: var(--wd-muted) !important;
+  transition: color .18s var(--wd-ease), background-color .18s var(--wd-ease), transform .18s var(--wd-ease);
+}
+
+.dl-warga-app .dl-bottom-nav .menu > .menu-item i {
+  font-size: 20px !important;
+  line-height: 1;
+  transition: transform .18s var(--wd-ease);
+}
+
+.dl-warga-app .dl-bottom-nav .menu > .menu-item span {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  margin-top: 2px !important;
+}
+
+.dl-warga-app .dl-bottom-nav .menu > .menu-item:hover {
+  color: var(--wd-brand-strong) !important;
+  background: var(--wd-brand-mist);
+}
+
+.dl-warga-app .dl-bottom-nav .menu > .menu-item:focus-visible {
+  outline: 3px solid var(--wd-brand-ring);
+  outline-offset: -2px;
+}
+
+/* Item aktif: pil mint yang sudah ada dipertahankan, ditambah gradien halus
+   dan penanda garis di tepi atas supaya tidak hanya bergantung pada warna. */
+.dl-warga-app .dl-bottom-nav .menu > .menu-item.active {
+  background: linear-gradient(180deg, #9DF8DE 0%, #89F6DA 100%) !important;
+  color: #00614F !important;
+  box-shadow: 0 6px 18px rgba(31, 111, 75, .16);
+}
+
+.dl-warga-app .dl-bottom-nav .menu > .menu-item.active::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 20px;
+  height: 3px;
+  border-radius: 999px;
+  background: #00614F;
+  transform: translateX(-50%);
+}
+
+.dl-warga-app .dl-bottom-nav .menu > .menu-item.active i {
+  transform: translateY(1px);
+}
+
+@media (max-width: 400px) {
+  .dl-warga-app .dl-bottom-nav .menu > .menu-item span {
+    font-size: 12px;
+  }
+
+  .dl-warga-app .dl-bottom-nav .menu > .menu-item i {
+    font-size: 18px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   7. Varian saat ada konsultasi aktif
+   -------------------------------------------------------------------------- */
+
+/* doclinc-warga.css mematikan bayangan hero saat ada konsultasi aktif. Gradien
+   tetap dipertahankan supaya hero tidak berubah wujud hanya karena status. */
+.dl-warga-app.has-active-request .dl-hero {
+  background:
+    radial-gradient(80% 130% at 100% 0%, rgba(55, 154, 105, .10) 0%, rgba(55, 154, 105, 0) 62%),
+    linear-gradient(180deg, #FFFFFF 0%, var(--wd-brand-mist) 100%);
+  box-shadow: none;
+}
+
+/* Saat ada konsultasi aktif, hero menyusut (padding dan teksnya dikecilkan
+   doclinc-warga.css), jadi watermark-nya ikut mengecil — bukan membesar —
+   supaya tidak menabrak tombol aksi. */
+.dl-warga-app.has-active-request .dl-hero::after {
+  font-size: 5rem;
+  opacity: .8;
+}
+
+/* --------------------------------------------------------------------------
+   8. Gerak masuk
+   -------------------------------------------------------------------------- */
+
+@keyframes wdRiseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Animasi hanya dikenakan pada anak langsung panel aktif, jadi tidak pernah
+   menimpa transform hover pada kartu di dalamnya (animasi menang atas
+   deklarasi biasa di kaskade). */
+.dl-warga-app .content.active > * {
+  animation: wdRiseIn .42s var(--wd-ease) both;
+}
+
+.dl-warga-app .content.active > *:nth-child(2) {
+  animation-delay: .05s;
+}
+
+.dl-warga-app .content.active > *:nth-child(3) {
+  animation-delay: .1s;
+}
+
+.dl-warga-app .content.active > *:nth-child(4) {
+  animation-delay: .14s;
+}
+
+.dl-warga-app .content.active > *:nth-child(n + 5) {
+  animation-delay: .18s;
+}
+
+/* --------------------------------------------------------------------------
+   9. Hormati preferensi pengurangan gerak
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-warga-app .content.active > * {
+    animation: none;
+  }
+
+  .dl-warga-app .dl-appbar a.notify,
+  .dl-warga-app .dl-quick-links .dl-feature-card,
+  .dl-warga-app .dl-quick-links .icon-wrapper,
+  .dl-warga-app .dl-bottom-nav .menu > .menu-item,
+  .dl-warga-app .dl-bottom-nav .menu > .menu-item i,
+  .dl-warga-app .dl-hero .dl-btn-secondary,
+  .dl-warga-app .dl-hero .dl-btn-primary {
+    transition: none;
+  }
+
+  .dl-warga-app .dl-quick-links .dl-feature-card:hover,
+  .dl-warga-app .dl-quick-links .dl-feature-card:focus-visible,
+  .dl-warga-app .dl-quick-links .dl-feature-card:active,
+  .dl-warga-app .dl-quick-links .dl-feature-card:hover .icon-wrapper,
+  .dl-warga-app .dl-quick-links .dl-feature-card:focus-visible .icon-wrapper,
+  .dl-warga-app .dl-appbar a.notify:active,
+  .dl-warga-app .dl-hero .dl-btn-secondary:active,
+  .dl-warga-app .dl-hero .dl-btn-primary:active,
+  .dl-warga-app .dl-bottom-nav .menu > .menu-item.active i {
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   10. Cetak
+   -------------------------------------------------------------------------- */
+
+@media print {
+  .dl-warga-app {
+    background: #FFFFFF;
+  }
+
+  .dl-warga-app .dl-hero::before,
+  .dl-warga-app .dl-hero::after,
+  .dl-warga-app .dl-hero-orn,
+  .dl-warga-app .dl-empty-state::before {
+    display: none;
+  }
+
+  .dl-warga-app .content.active > * {
+    animation: none;
+  }
+
+  .dl-warga-app .dl-card,
+  .dl-warga-app .dl-hero,
+  .dl-warga-app .dl-current-consultation-card {
+    box-shadow: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   11. Ornamen DOM
+   -------------------------------------------------------------------------- */
+
+/* Medali dekoratif di sudut kanan atas hero. Murni hiasan (`aria-hidden` di
+   markup), jadi tidak ada informasi yang hanya tersedia lewat elemen ini.
+   Ditaruh di atas — bukan di tengah secara vertikal — supaya tidak pernah
+   bertabrakan dengan watermark di sudut kanan bawah, dan baru muncul sejak
+   768px ketika ruangnya benar-benar cukup. */
+.dl-warga-app .dl-hero-orn {
+  position: absolute;
+  right: 1.1rem;
+  top: 1.1rem;
+  z-index: 1;
+  display: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--wd-brand-bright) 0%, var(--wd-brand-strong) 100%);
+  color: #FFFFFF;
+  font-size: 1.25rem;
+  box-shadow: 0 10px 22px rgba(31, 111, 75, .26), 0 0 0 6px rgba(55, 154, 105, .07);
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .dl-warga-app .dl-hero-orn {
+    display: grid;
+  }
+
+  /* Ruang medali disisihkan dari aliran teks, jadi judul dan tombol tidak
+     pernah menabraknya. */
+  .dl-warga-app .dl-hero .dl-hero-content {
+    max-width: calc(100% - 76px);
+  }
+
+  /* Watermark sudut kanan bawah dilepas saat medali tampil: dua ornamen di
+     sisi yang sama akan bertumpuk ketika teks hero lebih pendek. */
+  .dl-warga-app .dl-hero::after {
+    content: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12. Tab profil
+   -------------------------------------------------------------------------- */
+
+.dl-warga-app .dl-profile-card {
+  border: 1px solid var(--wd-line);
+  border-radius: var(--wd-radius-xl);
+  background: var(--dl-surface, #FFFFFF);
+  box-shadow: var(--wd-shadow-soft);
+}
+
+.dl-warga-app .dl-profile-card__head {
+  border-bottom: 1px solid var(--wd-line);
+  background: linear-gradient(135deg, var(--wd-brand-strong) 0%, var(--wd-brand) 100%);
+}
+
+.dl-warga-app .dl-profile-card__head h4 {
+  color: #FFFFFF;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+
+.dl-warga-app .dl-profile-card__head span {
+  color: #E8FAF2;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dl-warga-app .dl-profile-field {
+  border: 1px solid var(--wd-line);
+  border-radius: var(--wd-radius-md);
+  background: var(--wd-brand-mist);
+}
+
+.dl-warga-app .dl-profile-field label {
+  color: var(--wd-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dl-warga-app .dl-profile-field input,
+.dl-warga-app .dl-profile-field textarea {
+  color: var(--wd-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dl-warga-app .dl-profile-actions .btn {
+  min-height: 44px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   13. Panel notifikasi
+   -------------------------------------------------------------------------- */
+
+.dl-warga-app .dl-notification-header {
+  background: linear-gradient(135deg, var(--wd-brand-strong) 0%, var(--wd-brand) 100%);
+  border-bottom: 0;
+}
+
+.dl-warga-app .dl-notification-title {
+  color: #FFFFFF;
+}
+
+.dl-warga-app .dl-notification-title i {
+  background: rgba(255, 255, 255, .2);
+  color: #FFFFFF;
+}
+
+/* Tombol tutup panel notifikasi: lingkaran terang dengan glyph gelap bawaan
+   Bootstrap. `filter: invert()` sengaja tidak dipakai karena ikut membalik
+   warna latarnya sehingga lingkarannya berubah jadi gelap di atas header
+   hijau. */
+.dl-warga-app .dl-notification-close {
+  background-color: rgba(255, 255, 255, .92);
+  border-radius: 999px;
+}
+
+.dl-warga-app .dl-notification-item {
+  border: 1px solid var(--wd-line);
+  border-radius: var(--wd-radius-md);
+  background: var(--dl-surface, #FFFFFF);
+  transition: border-color .18s var(--wd-ease), box-shadow .18s var(--wd-ease);
+}
+
+.dl-warga-app .dl-notification-item:hover,
+.dl-warga-app .dl-notification-item:focus-visible {
+  border-color: var(--wd-line-strong);
+  box-shadow: 0 8px 18px rgba(20, 58, 44, .08);
+}
+
+.dl-warga-app .dl-notification-content .dl-notification-time {
+  color: var(--wd-muted);
+  font-size: 12px;
+}
+
+.dl-warga-app .dl-notification-empty {
+  color: var(--wd-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-warga-app .dl-notification-item {
+    transition: none;
+  }
+}

@@ -4,7 +4,7 @@
 						<div class="dl-nakes-card dl-dashboard-section dl-operations-intro">
 							<div>
 								<span class="dl-operations-kicker">Puskesmas</span>
-								<h2>Operasional layanan</h2>
+								<h2 class="dl-section-title">Operasional layanan</h2>
 								<p>Pantau layanan dan ketersediaan Nakes.</p>
 							</div>
 							<span class="dl-operations-readonly"><i class="fas fa-eye" aria-hidden="true"></i> Hanya pantau</span>

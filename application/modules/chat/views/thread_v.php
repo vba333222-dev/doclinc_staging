@@ -25,29 +25,25 @@ $call_reject_url = base_url('home/reject_livekit_call');
 $call_warga_status_url = base_url('home/livekit_call_status');
 $call_ringtone_url = base_url('assets/audio/doclinc-ringtone.wav');
 $auto_answer_call_id = isset($_GET['answer_call']) ? (int) $_GET['answer_call'] : 0;
-$queue_code = doclinc_request_queue_code($request);
-$queue_display = 'No. Antrian: ' . $queue_code;
-if ($current_role !== 'dokter') {
-	$queue_display = doclinc_request_puskesmas_label($request) . ' · ' . doclinc_request_queue_number_label($request);
-}
+/* Di sini dulu ada dua variabel: `$queue_display` (nomor antrian + nama
+   Puskesmas) dan `$status_label` ("Chat aktif" / "Riwayat chat" /
+   "Riwayat chat dibatalkan"). Keduanya hanya dipakai oleh petak identitas
+   konsultasi di kepala percakapan, yang markup-nya sudah dihapus atas
+   permintaan. Sudah dihapus supaya tidak ada pembaca berikutnya yang mengira
+   keduanya masih tampil di layar.
+
+   Nomor antrian tetap tersedia di beranda warga (petak B22.1) dan di halaman
+   Konsultasi; status sesi terbaca dari kompornya sendiri - aktif, atau
+   hanya-baca dengan pesan dari `$readonly_message`. */
 $back_url = isset($back_url) && is_string($back_url) && $back_url !== ''
 	? $back_url
 	: base_url($is_nakes_role ? 'home_nakes#riwayat_konsul' : 'home#riwayat');
-$status_label = 'Chat belum tersedia';
-if ($request_status === 'Accepted') {
-	$status_label = 'Chat aktif';
-} elseif ($request_status === 'Completed') {
-	$status_label = 'Riwayat chat';
-} elseif ($request_status === 'Cancelled') {
-	$status_label = 'Riwayat chat dibatalkan';
-}
 $partner_presence_online = false;
 if ($request_status === 'Accepted') {
 	$partner_presence_online = $current_role === 'dokter'
 		? !empty($request->chat_patient_online)
 		: !empty($request->chat_clinician_online);
 }
-$header_status_label = $partner_presence_online ? 'Online' : $status_label;
 $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), true)
 	? 'Konsultasi sudah selesai. Riwayat chat hanya dapat dibaca.'
 	: 'Chat ini hanya dapat dibaca.';
@@ -57,17 +53,27 @@ $partner_user_id = $current_role === 'dokter'
 	: (isset($request->chat_clinician_user_id) ? (int) $request->chat_clinician_user_id : 0);
 $profile_photo_fallback = '';
 $partner_photo_src = '';
-if ($current_role === 'dokter' && $partner_user_id > 0 && !empty($request->chat_patient_photo_available)) {
-	$partner_photo_src = base_url('profile/photo/' . $partner_user_id);
-} elseif (!empty($request->chat_clinician_photo_available) && !empty($request->chat_clinician_photo_url)) {
-	$partner_photo_src = (string) $request->chat_clinician_photo_url;
+/* Avatar memakai resolver yang SAMA dengan dashboard warga
+   (`doclinc_profile_image_src()`), bukan pemeriksaan berkas sendiri.
+
+   Sebelumnya view ini membangun URL-nya dari `chat_*_photo_available` - flag
+   yang dihitung model lewat `chat_photo_available()`, yang membaca sistem
+   berkas (`resolve_stored_file` + `allowed_mime`) dan bergantung pada
+   `profile_image_storage_path`. Dashboard memakai helper yang hanya
+   memvalidasi BENTUK kunci simpan lalu menyerahkan penyajiannya ke
+   `profile/photo/{id}`. Dua jalur berbeda untuk hal yang sama berarti foto
+   bisa tampil di dashboard tapi tidak di chat - dan itu yang terjadi.
+
+   Sekarang keduanya satu jalur: kalau dashboard menampilkan foto, chat
+   menampilkannya juga. Kunci mentahnya disediakan model sebagai
+   `chat_patient_photo_key` / `chat_clinician_photo_key`. */
+$partner_photo_key = $current_role === 'dokter'
+	? (string) (isset($request->chat_patient_photo_key) ? $request->chat_patient_photo_key : '')
+	: (string) (isset($request->chat_clinician_photo_key) ? $request->chat_clinician_photo_key : '');
+if ($partner_user_id > 0 && $partner_photo_key !== '' && function_exists('doclinc_profile_image_src')) {
+	$partner_photo_src = doclinc_profile_image_src($partner_user_id, $partner_photo_key);
 }
-$voice_photo_src = '';
-if ($current_role === 'dokter' && $partner_user_id > 0 && !empty($request->chat_patient_photo_available)) {
-	$voice_photo_src = base_url('profile/photo/' . $partner_user_id);
-} elseif (!empty($request->chat_clinician_photo_available) && !empty($request->chat_clinician_photo_url)) {
-	$voice_photo_src = (string) $request->chat_clinician_photo_url;
-}
+$voice_photo_src = $partner_photo_src;
 $voice_has_photo = $voice_photo_src !== '';
 $partner_name = 'Petugas Puskesmas';
 $partner_subtitle = 'Konsultasi kesehatan';
@@ -122,6 +128,13 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<!-- Design system dimuat SEBELUM blok <style> di bawah supaya gaya chat yang
+	     sudah ada tetap menang saat bertabrakan, sementara token, cincin fokus,
+	     komponen bersama, dan aturan prefers-reduced-motion ikut terpakai.
+	     doclinc-warga.css di atas tidak menjangkau .dl-warga-chat, jadi sebelum
+	     ini halaman chat tidak punya cincin fokus sama sekali untuk tombol/tautan
+	     di luar kontrol panggilan. -->
+	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-design-system.css'); ?>">
 	<style>
 		:root {
 			--chat-green: #1F6F4B;
@@ -1018,15 +1031,12 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		.chat-call-button { width: 42px; height: 42px; flex-basis: 42px; color: #477066; padding: 10px; }
 		.chat-call-button:hover, .chat-call-button:focus-visible { background: #eaf6f0; color: #188c5e; }
 		.chat-call-button img { width: 21px; height: 21px; display: block; }
-		.chat-info-banner {
-			display: flex; align-items: center; justify-content: space-between; gap: 10px;
-			min-height: 28px; padding: 3px 18px; background: #fffaf3; border-bottom: 1px solid #f4eadf;
-			color: #586761; font-size: 12px;
-		}
-		.chat-info-banner__lead { display: flex; align-items: center; gap: 9px; min-width: 0; }
-		.chat-info-banner__icon { width: 10px; height: 10px; padding: 0; border-radius: 50%; background: #ffd9b8; object-fit: contain; }
-		.chat-info-banner__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-		.chat-info-banner__meta { color: #d56d25; white-space: nowrap; font-weight: 750; }
+		/* Di sini dulu ada lima aturan `.chat-info-banner*` untuk petak
+		   "Konsultasi sedang berlangsung" beserta nomor antriannya. Markup-nya
+		   sudah dihapus atas permintaan, jadi aturannya ikut dihapus - lima
+		   selektor yang tidak cocok dengan apa pun hanya menuntun pembaca
+		   berikutnya ke struktur yang sudah tidak ada. Nomor antrian tetap
+		   tersedia di beranda warga (petak B22.1) dan di halaman Konsultasi. */
 		.chat-list { padding: 20px 18px 22px; background: #f6f7f8; }
 		.chat-date-separator { display: flex; justify-content: center; margin: 0 0 22px; }
 		.chat-date-separator span { padding: 7px 14px; border-radius: 999px; background: #e9eef2; color: #53656b; font-size: 12px; font-weight: 650; }
@@ -1105,42 +1115,63 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			.doclinc-incoming-surface { min-height: 844px; max-height: calc(100dvh - 40px); border-radius: 28px; box-shadow: 0 22px 80px rgba(0, 0, 0, .24); }
 		}
 	</style>
+	<!-- Lapisan bento dimuat SETELAH blok <style> di atas, bukan sebelumnya.
+	     Sebelumnya urutan itu disengaja supaya gaya chat yang lama menang; untuk
+	     lapisan ini kebalikannya yang diperlukan - B24 harus bisa menyetel ulang
+	     bentuk, warna dan ukuran tanpa menaikkan setiap selektor ke !important. -->
+	<!-- Urutan menentukan di sini, dan urutannya disengaja.
+	     `doclinc-bento.css` dimuat PALING AKHIR supaya lapisan B24 menang atas
+	     blok <style> milik view ini DAN atas doclinc-livekit.css. Keduanya
+	     memuat aturan avatar chat dengan spesifisitas yang sama
+	     (`.chat-shell.is-active .chat-avatar` = 0,3,0), dan sebelum ini
+	     livekit dimuat setelah bento - sehingga ukuran, bentuk dan
+	     penumpukan avatar yang ditulis di B24.8 selalu kalah, dan avatar
+	     dirender menurut aturan lama (40px, radius 50%, tanpa tumpukan
+	     fallback). livekit tidak punya aturan untuk permukaan lain di halaman
+	     ini, jadi memindahkannya ke atas tidak mengubah apa pun selain ini. -->
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-livekit.css')); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-bento.css')); ?>">
+	<!-- Font Awesome belum dimuat halaman ini sebelum lapisan bento. Sistem ikon
+	     aplikasi memakainya untuk glyph di luar konten (design.md), dan keadaan
+	     hanya-baca memakai satu glyph kunci dari keluarga itu. Tanpa baris ini
+	     `content: "\f023"` hanya akan jadi kotak kosong. -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 
-<body class="dl-warga-chat<?= $is_nakes_role ? ' nakes-chat' : ''; ?>">
+<body class="dl-warga-chat dl-chat-bento<?= $is_nakes_role ? ' nakes-chat' : ''; ?>">
 	<div class="chat-shell is-active" data-chat-role="<?= html_escape($current_role); ?>" data-request-id="<?= html_escape($request_id); ?>">
 		<header class="chat-header" data-chat-surface="active-room">
 			<a href="<?= html_escape($back_url); ?>" class="chat-back" aria-label="Kembali">
-				<img src="<?= html_escape($asset_base . 'icon-chat-back.svg'); ?>" alt="">
+				<i class="fas fa-chevron-left" aria-hidden="true"></i>
 			</a>
 			<span class="chat-avatar-wrap" aria-hidden="true">
-				<?php if ($partner_photo_src !== '') : ?><img class="chat-avatar js-profile-photo" id="chatPartnerAvatar" src="<?= html_escape($partner_photo_src); ?>" data-chat-photo-state="photo" alt="">
-				<?php else : ?><span class="chat-avatar-fallback" id="chatPartnerAvatarFallback" data-chat-photo-state="fallback"><?= html_escape($partner_initials); ?></span><?php endif; ?>
-				<span class="chat-presence-dot"></span>
+				<?php /* Fallback inisial SELALU ada di DOM, foto ditumpuk di atasnya.
+				         Sebelumnya keduanya alternatif: kalau tidak ada foto, hanya
+				         inisial yang dirender - sehingga poller peserta tidak punya
+				         <img> untuk diisi begitu foto tersedia, dan <img> yang gagal
+				         memuat tidak punya apa pun untuk jatuh ke belakangnya.
+				         `onerror` membuang gambar rusak supaya inisial di bawahnya
+				         yang terlihat, bukan ikon gambar pecah. */ ?>
+				<span class="chat-avatar-fallback" id="chatPartnerAvatarFallback" data-chat-photo-state="fallback"><?= html_escape($partner_initials); ?></span>
+				<?php if ($partner_photo_src !== '') : ?><img class="chat-avatar js-profile-photo" id="chatPartnerAvatar" src="<?= html_escape($partner_photo_src); ?>" data-chat-photo-state="photo" alt="" width="44" height="44" onerror="this.remove();">
+				<?php endif; ?>
+				<span class="chat-presence-dot" data-presence="<?= $partner_presence_online ? 'online' : 'offline'; ?>"></span>
 			</span>
 			<div class="chat-title">
 				<p class="chat-title-text" id="chatPartnerName"><?= html_escape($partner_name); ?></p>
-			<p class="chat-title-subtext"><span class="chat-presence-status"><span class="chat-presence-status__dot" aria-hidden="true"></span><?= html_escape($header_status_label); ?></span></p>
+			<p class="chat-title-subtext"><span class="chat-presence-status" data-presence="<?= $partner_presence_online ? 'online' : 'offline'; ?>"><span class="chat-presence-status__dot" aria-hidden="true"></span><?= $partner_presence_online ? 'Online' : 'Offline'; ?></span></p>
 			</div>
 			<?php if ($can_start_call) : ?>
 				<div class="chat-call-actions" aria-label="Aksi panggilan">
 					<button type="button" class="chat-call-button doclinc-call-start" data-call-mode="audio" data-request-id="<?= html_escape($request_id); ?>" aria-label="Mulai panggilan suara">
-						<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('voice_call')); ?>" alt="" aria-hidden="true">
+						<i class="fas fa-phone" aria-hidden="true"></i>
 					</button>
 					<button type="button" class="chat-call-button doclinc-call-start" data-call-mode="video" data-request-id="<?= html_escape($request_id); ?>" aria-label="Mulai panggilan video">
-						<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('video_call')); ?>" alt="" aria-hidden="true">
+						<i class="fas fa-video" aria-hidden="true"></i>
 					</button>
 				</div>
 			<?php endif; ?>
 		</header>
-		<section class="chat-info-banner" aria-label="Informasi konsultasi">
-			<div class="chat-info-banner__lead">
-				<img class="chat-info-banner__icon" src="<?= html_escape(base_url('assets/doclinc_ui/icon-pack/konsultasi.svg')); ?>" alt="" aria-hidden="true">
-				<span class="chat-info-banner__label"><?= html_escape($status_label === 'Chat aktif' ? 'Konsultasi sedang berlangsung' : $status_label); ?></span>
-			</div>
-			<span class="chat-info-banner__meta"><?= html_escape($queue_display); ?></span>
-		</section>
 
 		<main class="chat-list" id="chatMessages">
 			<?php if ($auto_visit_location) : ?><div class="chat-muted" id="chatVisitLocationStatus" role="status" aria-live="polite"></div><?php endif; ?>
@@ -1152,15 +1183,37 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			<?php if ($can_send) : ?>
 				<div class="chat-input-row">
 					<input type="file" id="imageInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden>
-					<button class="chat-icon-button chat-attach" id="attachmentButton" type="button" aria-label="Lampirkan gambar">
-						<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('attachment')); ?>" alt="" aria-hidden="true">
-					</button>
+					<?php /* Tombol "Lampirkan gambar" dihapus atas permintaan: ia dan tombol
+					         kamera membuka pemilih berkas yang sama, jadi yang tersisa
+					         hanya satu jalur - kamera. `#imageInput` dipertahankan
+					         karena tombol kamera memakainya. */ ?>
 					<button class="chat-icon-button chat-upload" id="imageButton" type="button" aria-label="Kirim gambar">
-						<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('camera')); ?>" alt="" aria-hidden="true">
+						<i class="fas fa-camera" aria-hidden="true"></i>
 					</button>
-					<textarea class="chat-input" id="messageText" rows="1" maxlength="2000" placeholder="<?= html_escape('Ketik pesan untuk ' . $partner_placeholder_name . '...'); ?>" required></textarea>
-					<button class="chat-send" type="submit" aria-label="Kirim pesan">
-						<img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('send')); ?>" alt="" aria-hidden="true">
+					<textarea class="chat-input" id="messageText" rows="1" maxlength="2000" placeholder="Ketik pesan . . ." required></textarea>
+					<?php /* Tombol kirim membawa gayanya sendiri sebagai inline style.
+					         Tiga lembar gaya memaku tombol ini dengan !important
+					         (doclinc-livekit.css:673 dan :691, thread_v.php:392), dan
+					         menyelesaikannya lewat urutan muat sudah dua kali gagal
+					         terlihat. Inline `!important` adalah satu-satunya deklarasi
+					         yang menang atas semua !important di lembar gaya, tanpa
+					         bergantung urutan.
+
+					         BENTUKNYA lingkaran 40px, sama persis dengan tombol kamera
+					         di sebelah kiri kolom pesan. Sebelumnya tombol ini memakai
+					         sudut 6px dari keluarga bentuk B17, dan di baris ini bentuk
+					         itu terbaca sebagai tombol asing: barisnya pil (radius 24px)
+					         dan tombol di dalamnya bulat. Satu kontrol yang bentuknya
+					         berbeda dari tetangganya dalam satu baris akan selalu
+					         terbaca sebagai kesalahan, bukan sebagai penekanan.
+
+					         Bibir inset 3px dari B17 juga dibuang di sini - pada
+					         lingkaran kecil ia terbaca sebagai bayangan aneh, dan
+					         tombol kamera tidak punya. Yang tersisa hanya bayangan
+					         jatuh tipis yang sama dengan tetangganya. */ ?>
+					<button class="chat-send" type="submit" aria-label="Kirim pesan"
+						style="width: 44px !important; height: 44px !important; min-width: 44px !important; min-height: 44px !important; padding: 0 !important; border: 0 !important; border-radius: 50% !important; background-color: #2D7D56 !important; background-image: linear-gradient(150deg, #2D7D56 0%, #1F6F4B 100%) !important; color: #FFFFFF !important; box-shadow: 0 4px 10px rgba(63, 141, 104, .25) !important;">
+						<i class="fas fa-paper-plane" aria-hidden="true" style="display: inline-block !important; color: #FFFFFF !important; font-family: 'Font Awesome 5 Free' !important; font-weight: 900 !important; font-style: normal !important; font-size: 16px !important; line-height: 1 !important; visibility: visible !important; opacity: 1 !important;"></i>
 					</button>
 				</div>
 				<div class="chat-image-feedback" id="chatImageFeedback" role="status" aria-live="polite" hidden></div>

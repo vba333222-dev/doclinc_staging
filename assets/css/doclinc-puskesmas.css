@@ -103,7 +103,7 @@
 }
 
 .dl-puskesmas-shell .dl-operations-metric:last-child { border-right: 0; }
-.dl-puskesmas-shell .dl-operations-metric span { font-size: 11px; color: var(--puskesmas-muted); }
+.dl-puskesmas-shell .dl-operations-metric span { font-size: 12px; color: var(--puskesmas-muted); }
 .dl-puskesmas-shell .dl-operations-metric strong { font-size: 21px; color: var(--puskesmas-ink); }
 
 .dl-puskesmas-shell .dl-operations-grid {
@@ -161,7 +161,7 @@
 .dl-puskesmas-shell .dl-operations-request-identity strong { color: var(--puskesmas-ink); font-size: 13px; }
 .dl-puskesmas-shell .dl-operations-request-identity span { color: #2e5142; font-size: 13px; font-weight: 700; }
 .dl-puskesmas-shell .dl-operations-request-identity small,
-.dl-puskesmas-shell .dl-operations-request-team span { color: var(--puskesmas-muted); font-size: 11px; line-height: 1.35; }
+.dl-puskesmas-shell .dl-operations-request-team span { color: var(--puskesmas-muted); font-size: 12px; line-height: 1.35; }
 .dl-puskesmas-shell .dl-operations-request-team { gap: 3px; }
 .dl-puskesmas-shell .dl-operations-request-item .btn { min-height: 38px; border-radius: 8px !important; white-space: nowrap; }
 
@@ -208,7 +208,7 @@
 	.dl-puskesmas-shell .dl-puskesmas-mobile-nav .dl-bottom-nav-menu { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 0 !important; }
 	.dl-puskesmas-shell .dl-puskesmas-mobile-nav .menu-item { min-height: 54px; padding: 6px 2px !important; }
 	.dl-puskesmas-shell .dl-puskesmas-mobile-nav .menu-item i { font-size: 17px !important; }
-	.dl-puskesmas-shell .dl-puskesmas-mobile-nav .menu-item span { font-size: 10px; }
+	.dl-puskesmas-shell .dl-puskesmas-mobile-nav .menu-item span { font-size: 12px; }
 	.dl-puskesmas-shell .content-wrapper { padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px)); }
 	.dl-puskesmas-shell .dl-puskesmas-operations { padding-inline: 12px; }
 	.dl-puskesmas-shell #doclincPuskesmasOperations { display: flex; flex-direction: column; }
@@ -233,7 +233,7 @@
 
 @media (max-width: 479.98px) {
 	.dl-puskesmas-shell .dl-operations-filters { gap: 8px; padding: 10px; }
-	.dl-puskesmas-shell .dl-operations-filters label { gap: 3px; font-size: 11px; }
+	.dl-puskesmas-shell .dl-operations-filters label { gap: 3px; font-size: 12px; }
 	.dl-puskesmas-shell .dl-operations-filters input { min-height: 38px; }
 	.dl-puskesmas-shell .dl-operations-intro { padding: 15px 14px; }
 	.dl-puskesmas-shell .dl-operations-intro h2 { font-size: 18px; }

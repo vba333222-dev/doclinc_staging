@@ -31,20 +31,20 @@ if (isset($puskesmas_staff_options) && is_array($puskesmas_staff_options)) {
 $profile_display_name = $profile_is_command_center ? $profile_puskesmas_display : $profile_name;
 if ($profile_is_command_center) {
 	$profile_rows = array(
-		array('id' => 'unit_name', 'label' => 'Nama unit', 'icon' => 'bi bi-hospital-fill', 'value' => $profile_puskesmas_display, 'type' => 'text'),
-		array('id' => 'unit_code', 'label' => 'Kode Puskesmas', 'icon' => 'bi bi-building', 'value' => $profile_puskesmas_code, 'type' => 'text'),
-		array('id' => 'email', 'label' => 'Email operasional', 'icon' => 'bi bi-envelope-fill', 'value' => $profile_email, 'type' => 'email'),
-		array('id' => 'no_hp', 'label' => 'Nomor kontak', 'icon' => 'bi bi-telephone-fill', 'value' => $profile_phone, 'type' => 'text'),
+		array('id' => 'unit_name', 'label' => 'Nama unit', 'icon' => 'fas fa-hospital', 'value' => $profile_puskesmas_display, 'type' => 'text'),
+		array('id' => 'unit_code', 'label' => 'Kode Puskesmas', 'icon' => 'fas fa-id-card', 'value' => $profile_puskesmas_code, 'type' => 'text'),
+		array('id' => 'email', 'label' => 'Email operasional', 'icon' => 'fas fa-envelope', 'value' => $profile_email, 'type' => 'email'),
+		array('id' => 'no_hp', 'label' => 'Nomor kontak', 'icon' => 'fas fa-phone-alt', 'value' => $profile_phone, 'type' => 'text'),
 	);
 } else {
 	$profile_rows = array(
-		array('id' => 'nama_lengkap', 'label' => 'Nama lengkap', 'icon' => 'bi bi-person-fill', 'value' => $profile_name, 'type' => 'text'),
-		array('id' => 'email', 'label' => 'Email', 'icon' => 'bi bi-envelope-fill', 'value' => $profile_email, 'type' => 'email'),
-		array('id' => 'no_hp', 'label' => 'Nomor HP', 'icon' => 'bi bi-telephone-fill', 'value' => $profile_phone, 'type' => 'text'),
+		array('id' => 'nama_lengkap', 'label' => 'Nama lengkap', 'icon' => 'fas fa-user', 'value' => $profile_name, 'type' => 'text'),
+		array('id' => 'email', 'label' => 'Email', 'icon' => 'fas fa-envelope', 'value' => $profile_email, 'type' => 'email'),
+		array('id' => 'no_hp', 'label' => 'Nomor HP', 'icon' => 'fas fa-phone-alt', 'value' => $profile_phone, 'type' => 'text'),
 	);
 	array_splice($profile_rows, 2, 0, array(
-		array('id' => 'tgl', 'label' => 'Tanggal lahir', 'icon' => 'bi bi-calendar-event-fill', 'value' => $profile_birthdate, 'type' => 'date'),
-		array('id' => 'jk', 'label' => 'Jenis kelamin', 'icon' => 'bi bi-gender-ambiguous', 'value' => $profile_gender, 'type' => 'text'),
+		array('id' => 'tgl', 'label' => 'Tanggal lahir', 'icon' => 'fas fa-calendar-alt', 'value' => $profile_birthdate, 'type' => 'date'),
+		array('id' => 'jk', 'label' => 'Jenis kelamin', 'icon' => 'fas fa-venus-mars', 'value' => $profile_gender, 'type' => 'text'),
 	));
 }
 ?>
@@ -64,55 +64,21 @@ if ($profile_is_command_center) {
 							<div class="min-w-0">
 								<span><?= $profile_is_command_center ? 'Puskesmas' : ($profile_is_personal ? 'Nakes' : 'Status belum tersedia'); ?></span>
 								<strong><?= html_escape($profile_display_name); ?></strong>
-								<small><?= $profile_is_command_center ? 'Puskesmas' : ($profile_is_personal ? 'Nakes' : 'Status belum tersedia'); ?></small>
+								<?php
+								/* Baris <small> dulu memuat string yang sama persis dengan <span>
+								   di atasnya, sehingga kartu ini menulis "Puskesmas" dua kali
+								   mengapit nama unit. Identitas unit yang lengkap sudah ada di
+								   kartu identitas di bawahnya. */
+								?>
 							</div>
 						</div>
 
-						<div class="nk-assignment-card">
-							<div class="dl-profile-section-title">Konteks penugasan</div>
-							<div class="nk-info-list">
-								<div class="nk-info-row">
-									<span class="nk-info-label">Puskesmas penugasan</span>
-									<strong class="nk-info-value"><?= html_escape($profile_puskesmas_display); ?></strong>
-								</div>
-								<div class="nk-info-row">
-									<span class="nk-info-label">Status akun</span>
-									<strong class="nk-info-value"><?= !empty($nakes_identity_valid) ? 'Aktif' : 'Perlu pemeriksaan'; ?></strong>
-								</div>
-								<?php if ($profile_is_personal && !empty($profile_identity_staff['staff_profesi'])) : ?>
-								<div class="nk-info-row">
-									<span class="nk-info-label">Profesi staf</span>
-									<strong class="nk-info-value"><?= html_escape($profile_identity_staff['staff_profesi']); ?></strong>
-								</div>
-								<?php endif; ?>
-								<?php if ($profile_is_personal) : ?>
-								<div class="nk-info-row">
-									<span class="nk-info-label">Gelar</span>
-									<strong class="nk-info-value"><?= html_escape((string) (!empty($profile_identity_staff['staff_gelar']) ? $profile_identity_staff['staff_gelar'] : 'Belum dilengkapi')); ?></strong>
-								</div>
-								<div class="nk-info-row">
-									<span class="nk-info-label">SIP</span>
-									<strong class="nk-info-value"><?= html_escape((string) (!empty($profile_identity_staff['staff_nomor_sip']) ? $profile_identity_staff['staff_nomor_sip'] : 'Belum dilengkapi')); ?></strong>
-								</div>
-								<div class="nk-info-row">
-									<span class="nk-info-label">Masa berlaku SIP</span>
-									<strong class="nk-info-value"><?= html_escape((string) (!empty($profile_identity_staff['staff_sip_expired_at']) ? $profile_identity_staff['staff_sip_expired_at'] : 'Belum dilengkapi')); ?></strong>
-								</div>
-								<div class="nk-info-row">
-									<span class="nk-info-label">Status data profesi</span>
-									<strong class="nk-info-value"><?= html_escape(doclinc_profile_readiness_label($role_prerequisite_state['readiness_state'] ?? '')); ?></strong>
-								</div>
-								<?php endif; ?>
-								<div class="nk-info-row">
-									<span class="nk-info-label">Jadwal unit</span>
-									<strong class="nk-info-value">Belum dikonfigurasi</strong>
-								</div>
-							</div>
+
 						</div>
 
 						<?php if ($profile_is_command_center) : ?>
 						<div class="nk-staff-card nk-staff-card--profile">
-							<div class="dl-profile-section-title">Staf Puskesmas</div>
+							<h2 class="dl-profile-section-title">Staf Puskesmas</h2>
 							<?php if (empty($profile_staff_rows)) : ?>
 								<div class="nk-staff-empty">Belum ada staf.</div>
 							<?php else : ?>
@@ -131,8 +97,6 @@ if ($profile_is_command_center) {
 											</div>
 											<div class="nk-staff-meta">
 												<?php if ($staff_phone !== '') : ?><span><?= html_escape($staff_phone); ?></span><?php endif; ?>
-												<?php if ($staff_sip !== '') : ?><span>SIP <?= html_escape($staff_sip); ?></span><?php else : ?><span class="is-warning">SIP belum dilengkapi</span><?php endif; ?>
-								<?php if ($staff_account_state === 'linked') : ?><span>Akun terhubung</span><?php elseif ($staff_account_state === 'unlinked') : ?><span class="is-warning">Belum ada akun</span><?php else : ?><span class="is-danger">Akun staf perlu diperiksa</span><?php endif; ?>
 											</div>
 										</div>
 									<?php endforeach; ?>
@@ -143,7 +107,7 @@ if ($profile_is_command_center) {
 						<?php endif; ?>
 
 						<div class="dl-profile-info-card">
-							<div class="dl-profile-section-title"><?= $profile_is_command_center ? 'Identitas dan kontak unit' : 'Informasi kontak'; ?></div>
+							<h2 class="dl-profile-section-title"><?= $profile_is_command_center ? 'Identitas dan kontak unit' : 'Informasi kontak'; ?></h2>
 							<?php foreach ($profile_rows as $profile_row) : ?>
 								<div class="dl-profile-field">
 									<div class="dl-profile-field-icon"><i class="<?= html_escape($profile_row['icon']); ?>"></i></div>
@@ -155,7 +119,7 @@ if ($profile_is_command_center) {
 							<?php endforeach; ?>
 							<?php if ($profile_is_personal) : ?>
 							<div class="dl-profile-field dl-profile-field-address">
-								<div class="dl-profile-field-icon"><i class="bi bi-geo-alt-fill"></i></div>
+								<div class="dl-profile-field-icon"><i class="fas fa-map-marker-alt"></i></div>
 								<div class="dl-profile-field-body">
 									<label for="alamat">Alamat</label>
 									<textarea id="alamat" placeholder="Alamat" readonly><?= html_escape($profile_address); ?></textarea>
@@ -163,7 +127,7 @@ if ($profile_is_command_center) {
 							</div>
 							<?php elseif ($profile_is_command_center) : ?>
 							<div class="dl-profile-field dl-profile-field-address">
-								<div class="dl-profile-field-icon"><i class="bi bi-geo-alt-fill"></i></div>
+								<div class="dl-profile-field-icon"><i class="fas fa-map-marker-alt"></i></div>
 								<div class="dl-profile-field-body">
 									<label for="unit_address">Alamat layanan</label>
 									<textarea id="unit_address" placeholder="Dikelola Administrator Dinas Kesehatan" readonly><?= html_escape($profile_puskesmas_address !== '' ? $profile_puskesmas_address : 'Belum dilengkapi oleh Administrator Dinas Kesehatan'); ?></textarea>
@@ -174,10 +138,10 @@ if ($profile_is_command_center) {
 
 						<div class="dl-profile-actions">
 							<button type="button" class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#modalProfil">
-								<i class="bi bi-pencil-fill me-2"></i>Edit profil
+								Edit
 							</button>
 							<button type="button" class="btn btn-outline-danger shadow-sm" id="btn-logout">
-								<i class="bi bi-box-arrow-right me-2"></i>Keluar
+								Keluar
 							</button>
 						</div>
 					</div>

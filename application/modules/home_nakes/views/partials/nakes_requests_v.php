@@ -3,7 +3,7 @@
 					<?php
 					$this->load->view('partials/nakes_section_header_v', array(
 						'section_kicker' => 'Antrian Puskesmas',
-						'section_title' => 'Permintaan Masuk Puskesmas',
+						'section_title' => 'Permintaan Konsultasi',
 						'section_meta' => (string) $nakes_pending_count . ' menunggu',
 						'section_class' => 'dl-nakes-page-header',
 					));
@@ -15,9 +15,21 @@
 						?>
 							<?php
 							$this->load->view('partials/nakes_empty_state_v', array(
-								'empty_message' => 'Belum ada permintaan konsultasi baru untuk Puskesmas ini.',
-								'empty_image' => base_url('assets/images/not found.svg'),
-								'empty_class' => 'dl-empty-state text-center',
+								/* CI3 menumpuk data view ke $_ci_cached_vars, sehingga nilai yang
+								   dikirim Beranda (nakes_dashboard_v) ikut terbaca di sini.
+								   Sebelumnya `empty_title` tidak dikirim sama sekali, jadi judul
+								   milik Beranda ("Belum ada permintaan baru") bocor ke bagian
+								   ini. Sekarang setiap kunci dikirim eksplisit, termasuk
+								   `empty_image` kosong supaya ilustrasi "not found" milik
+								   Beranda tidak ikut terbawa. */
+								'empty_title' => 'Belum ada permintaan baru',
+								/* Pesan ini mengulang judul di atasnya tanpa menambah
+								   arahan, jadi dikosongkan. Partikel empty_state_v
+								   sudah melewatkan barisnya saat nilainya kosong. */
+								'empty_message' => '',
+								'empty_icon' => 'fas fa-clipboard-list',
+								'empty_image' => '',
+								'empty_class' => 'dl-soft-empty text-center',
 							));
 							?>
 							<?php
@@ -34,7 +46,6 @@
 							foreach ($data_request_new->result() as $y => $x) {
 								$keluhan = $CI->encryption->decrypt(base64_decode($x->request_description));
 								$riwayat = $CI->encryption->decrypt(base64_decode($x->riwayat));
-								$queue_code = doclinc_request_queue_code($x);
 								$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
 								$handling_nakes_name = doclinc_request_handling_nakes_name($x);
 								$handling_nakes_label = $handling_nakes_name !== '' ? 'Ditangani oleh akun: ' . $handling_nakes_name : 'Menunggu akun koordinasi menerima konsultasi';

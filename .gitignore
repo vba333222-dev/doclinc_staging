@@ -94,3 +94,32 @@ application/third_party/firebase/*firebase-adminsdk*.json
 
 # ReStructuredText documentation
 *.rst
+
+# Local agent tooling. These directories hold editor/assistant skill definitions
+# used while developing. They are not part of the application and nothing at
+# runtime reads them.
+.claude/
+.codebuddy/
+.commandcode/
+.junie/
+agent/
+skills-lock.json
+
+# UI reference material and exported design assets. Kept locally for design work.
+docs/
+
+# Local test harnesses and fixture seeders.
+# devseed_cli.php inserts sample rows; it must never be run against a database
+# that holds real data, so it is kept out of the repository entirely.
+devseed_cli.php
+_seed_dummy_doctor.php
+tools/task11_browser/pw_*.config.js
+
+# Deployment runbooks and the SQL they reference must ship with the repository.
+# These re-inclusions are needed because of the broad *.md / *.txt / *.sql rules
+# above; gitignore negation works here because the deploy/ directory itself is
+# not excluded.
+!deploy/*.md
+!deploy/**/*.md
+!deploy/*.txt
+!deploy/**/*.sql

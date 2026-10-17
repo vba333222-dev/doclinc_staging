@@ -70,7 +70,15 @@ expect(nakesController.includes("'upload_path']   = $upload_directory"), 'nakes_
 expect(homeView.includes('wargaProfilePhotoForm') && homeView.includes("base_url('profile/photo/update')"), 'warga_photo_ui_connected_to_unified_endpoint');
 expect(nakesView.includes("base_url('profile/photo/update')") && nakesView.includes("formData.delete('foto')"), 'nakes_photo_ui_connected_to_unified_endpoint');
 expect(nakesView.includes('doclinc_profile_image_src') && avatar.includes('avatar_user_id'), 'nakes_views_use_subject_identity');
-expect(chatView.includes("base_url('profile/photo/' . $partner_user_id)") && (chatView.match(/\$partner_photo_src/g) || []).length >= 4, 'chat_and_call_use_authorized_partner_photo');
+// Foto mitra chat dan panggilan harus lewat endpoint berotorisasi
+// `profile/photo/{id}`. Dulu URL-nya dirakit langsung di view, dan test ini
+// mengunci string perakitannya. Perakitan itu kini dipindah ke satu helper
+// bersama - `doclinc_profile_image_src()`, yang mengembalikan
+// `base_url('profile/photo/' . $user_id)` yang sama
+// (application/helpers/profile_image_helper.php) - jadi yang diuji adalah
+// pemakaian helper itu, bukan salinan stringnya. Baris di atasnya sudah memakai
+// bentuk yang sama untuk view nakes.
+expect(chatView.includes('doclinc_profile_image_src') && (chatView.match(/\$partner_photo_src/g) || []).length >= 4, 'chat_and_call_use_authorized_partner_photo');
 expect(chatModel.includes("'sender_photo_url' => base_url('profile/photo/'")
   && chatView.includes('chat-message-avatar') && chatView.includes('isSafeProfilePhotoUrl'), 'chat_messages_render_authorized_personal_photos');
 expect(nakesModel.includes('users.foto AS profile_photo') && nakesDashboard.includes('avatar_photo')

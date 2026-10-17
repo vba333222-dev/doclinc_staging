@@ -37,7 +37,7 @@
                           <tr>
                               <td><?= $no;?></td>
                               <!-- <td><img src="../../assets/img/uploads/news/<?= $row->thumbnail;?>" class="img-thumbnail shadow-sm" style="height: 80px;"></td> -->
-                              <td><img src="<?= base_url('../assets/img/uploads/news/' . rawurlencode($row->thumbnail));?>" class="img-thumbnail shadow-sm" style="height: 80px;"></td>
+                              <td><img src="<?= base_url('../assets/img/uploads/news/' . rawurlencode($row->thumbnail));?>" class="img-thumbnail shadow-sm" style="height: 80px;"></td alt="">
                               <td><?= $row->title;?></td>
                               <td><?= $row->preview_content;?>...</td>
                               <?php if ($row->status=='hero'): ?>
@@ -108,11 +108,11 @@
 </div>
 <!-- End DataTables -->
 <!-- Modal Add -->
-<div class="modal fade" id="modalAdd" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalAdd" tabindex="-1" aria-labelledby="modalAddLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah berita</h5>
+        <h5 class="modal-title" id="modalAddLabel">Tambah berita</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -159,11 +159,11 @@
 <!-- End Modal Add -->
 <!-- Modal Edit -->
 <?php foreach ($data_news_events->result() as $row):?>
-<div class="modal fade" id="modalEdit<?= $row->id;?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalEdit<?= $row->id;?>" tabindex="-1" aria-labelledby="modalEdit<?= $row->id;?>Label" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Ubah berita</h5>
+        <h5 class="modal-title" id="modalEdit<?= $row->id;?>Label">Ubah berita</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -180,13 +180,13 @@
             <textarea class="form-control tinymce" name="content"><?= $row->content;?></textarea>
           </div>
           <div class="form-group mb-3">
-            <label for="preview" class="col-form-label">Preview Content:</label>
-            <textarea class="form-control" id="preview" name="preview" maxlength="250"><?= $row->preview_content;?></textarea>
+            <label for="preview<?= $row->id;?>" class="col-form-label">Preview Content:</label>
+            <textarea class="form-control" id="preview<?= $row->id;?>" name="preview" maxlength="250"><?= $row->preview_content;?></textarea>
           </div>
           <div class="form-group mb-3">
             <!-- <img src="../../assets/img/uploads/news/<?= $row->thumbnail;?>" class="img-thumbnail shadow-sm" style="height: 150px;"> -->
-            <img src="<?= base_url('../assets/img/uploads/news/' . rawurlencode($row->thumbnail));?>" class="img-thumbnail shadow-sm" style="height: 150px;">
-            <small id="taglineHelp" class="form-text text-muted mb-0">*Current Thumbnail</small>
+            <img src="<?= base_url('../assets/img/uploads/news/' . rawurlencode($row->thumbnail));?>" class="img-thumbnail shadow-sm" style="height: 150px;" alt="">
+            <small id="taglineHelp<?= $row->id;?>" class="form-text text-muted mb-0">*Current Thumbnail</small>
           </div>
           <div class="input-group mb-3">
             <div class="custom-file">
@@ -254,27 +254,27 @@
 <!-- End Modal Edit -->
 <!-- Modal Edit -->
 <?php foreach ($data_news_events->result() as $row):?>
-<div class="modal fade" id="modalHapus<?= $row->id;?>" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel"  aria-hidden="true">
+<div class="modal fade" id="modalHapus<?= $row->id;?>" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="modalHapus<?= $row->id;?>Label"  aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Arsipkan berita?</h5>
+        <h5 class="modal-title" id="modalHapus<?= $row->id;?>Label">Arsipkan berita?</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
         <form action="<?= base_url();?>landing_page/news_events_delete" method="POST">
-          <center>
+          <div class="text-center">
             <div class="form-group">
-                <label>Berita tidak lagi ditampilkan sebagai berita aktif.</label><br>
-                <img src="<?= base_url('../assets/img/uploads/news/' . rawurlencode($row->thumbnail));?>" class="img-thumbnail shadow-sm" style="height: 150px;">
+                <p class="mb-1 font-weight-bold">Berita tidak lagi ditampilkan sebagai berita aktif.</p><br>
+                <img src="<?= base_url('../assets/img/uploads/news/' . rawurlencode($row->thumbnail));?>" class="img-thumbnail shadow-sm" style="height: 150px;" alt="">
                 <input type="hidden" class="form-control" name="idnya" value="<?= $row->id;?>">
                 <p><b><?= $row->title; ?></b> - <?= substr($row->content, 157,300);?>...</p>
             </div>
             <button type="submit" class="btn btn-danger" name="hapus"><i class="fas fa-check-circle"></i> Arsipkan</button>
             <button class="btn btn-primary" data-dismiss="modal" aria-label="Batal"><i class="fas fa-times-circle"></i> Batal</button>
-          </center>
+          </div>
         </form>
       </div>
       <div class="modal-footer">

@@ -6,7 +6,7 @@ $doclinc_public_base_url = preg_replace('#/admin_menu$#', '', $doclinc_admin_bas
 $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
 
@@ -82,7 +82,7 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 								<label for="email" class="text-primary font-weight-bold">Email</label>
 								<div class="input-group">
 									<div class="input-group-prepend">
-										<span class="input-group-text bg-white border-right-0"><i class="fas fa-envelope text-primary"></i></span>
+										<span class="input-group-text bg-white border-right-0"><i class="fas fa-envelope text-primary" aria-hidden="true"></i></span>
 									</div>
 									<input type="email" class="form-control border-left-0 border-primary" id="email" name="email" placeholder="Masukkan alamat email">
 								</div>
@@ -92,22 +92,25 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 								<label for="password" class="text-primary font-weight-bold">Password</label>
 								<div class="input-group">
 									<div class="input-group-prepend">
-										<span class="input-group-text bg-white border-right-0"><i class="fas fa-lock text-primary"></i></span>
+										<span class="input-group-text bg-white border-right-0"><i class="fas fa-lock text-primary" aria-hidden="true"></i></span>
 									</div>
 									<input type="password" class="form-control border-left-0 border-primary" id="password" name="password" placeholder="Masukkan password">
-									<button type="button" class="doclinc-password-toggle" onclick="togglePassword()" aria-label="Tampilkan password">
-										<i class="fas fa-eye" id="passwordToggleIcon"></i>
+									<!-- aria-pressed memberi tahu pembaca layar apakah password sedang
+									     ditampilkan; sebelumnya tombol ini hanya berisi ikon sehingga
+									     keadaannya tidak terbaca. -->
+									<button type="button" class="doclinc-password-toggle" onclick="togglePassword()" aria-label="Tampilkan password" aria-pressed="false">
+										<i class="fas fa-eye" id="passwordToggleIcon" aria-hidden="true"></i>
 									</button>
 								</div>
 								<div class="invalid-feedback">Password tidak boleh kosong.</div>
 							</div>
 							<button id="login" class="btn btn-primary btn-block rounded-pill py-2 font-weight-bold shadow-sm">
-								<i class="fas fa-sign-in-alt mr-2"></i>Masuk
+								<i class="fas fa-sign-in-alt mr-2" aria-hidden="true"></i>Masuk
 							</button>
 						</form>
 						<div class="text-center mt-3">
 							<a href="#resetPassword" class="btn btn-link text-primary" data-toggle="modal">
-								<i class="fas fa-question-circle"></i> Lupa password?
+								<i class="fas fa-question-circle" aria-hidden="true"></i> Lupa password?
 							</a>
 						</div>
 					</div>
@@ -118,11 +121,14 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 			</div>
 		</div>
 	</div>
-	<div class="modal fade" id="resetPassword" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+	<div class="modal fade" id="resetPassword" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title">Lupa password?</h5>
+					<!-- aria-labelledby di atas menunjuk ke id "staticBackdropLabel",
+					     tetapi tidak ada elemen dengan id itu — sehingga modal tidak
+					     punya nama yang dibacakan. Id-nya ditambahkan di sini. -->
+					<h5 class="modal-title" id="staticBackdropLabel">Lupa password?</h5>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
 						<span aria-hidden="true">&times;</span>
 					</button>
@@ -135,13 +141,15 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 							<input type="email" class="form-control" id="email_cust" name="email_cust" placeholder="name@example.com" required>
 						</div>
 						<div class="form-group mb-3">
-							<label class="visually-hidden">Token</label>
-							<input type="hidden" class="form-control" id="g-recaptcha-response" placeholder="Token" readonly required>
+							<!-- Label untuk bidang tersembunyi tidak berguna: bidangnya tidak
+							     bisa difokuskan maupun dilihat, jadi label tanpa for="" hanya
+							     menyisakan label yatim di pohon aksesibilitas. -->
+							<input type="hidden" id="g-recaptcha-response" readonly required>
 						</div>
-						<center class="mb-3">
+						<div class="text-center mb-3">
 							<div class="g-recaptcha" id="g-recaptcha" data-sitekey="<?= SITE_KEY; ?>"></div>
 							<div id="invalid-captcha"></div>
-						</center>
+						</div>
 						<button class="btn btn-primary btn-block" type="submit" id="lupa_submit">Kirim password baru</button>
 					</form>
 				</div>
@@ -244,14 +252,23 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 		function togglePassword() {
 			var passwordInput = document.getElementById('password');
 			var icon = document.getElementById('passwordToggleIcon');
+			var button = document.querySelector('.doclinc-password-toggle');
 			if (passwordInput.type === 'password') {
 				passwordInput.type = 'text';
 				icon.classList.remove('fa-eye');
 				icon.classList.add('fa-eye-slash');
+				if (button) {
+					button.setAttribute('aria-pressed', 'true');
+					button.setAttribute('aria-label', 'Sembunyikan password');
+				}
 			} else {
 				passwordInput.type = 'password';
 				icon.classList.remove('fa-eye-slash');
 				icon.classList.add('fa-eye');
+				if (button) {
+					button.setAttribute('aria-pressed', 'false');
+					button.setAttribute('aria-label', 'Tampilkan password');
+				}
 			}
 		}
 	</script>

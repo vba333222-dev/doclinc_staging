@@ -18,7 +18,7 @@ class Home_nakes extends MX_Controller
 		$this->load->helper('nakes_presence_client');
 		$this->load->library('Visit_monitoring_policy');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment', 'assign_responsible_doctor', 'choose_service_mode', 'assign_visit_performer'), true)) {
+			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment', 'assign_responsible_doctor', 'choose_service_mode', 'assign_visit_performer', 'clinical_workflow', 'clinical_review', 'clinical_disposition', 'clinical_finalize', 'clinical_amend', 'clinical_close'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -426,6 +426,14 @@ class Home_nakes extends MX_Controller
 		$d['puskesmas_operation_exceptions'] = array();
 
 		if ($account_type === 'command_center') {
+			// Periksa permintaan yang belum direspons SEBELUM daftarnya dimuat,
+			// supaya warga yang menunggu terlalu lama terlihat - bukan hilang.
+			// Pengawas ini hanya menandai, mengingatkan, dan menaikkan ke dinas
+			// kesehatan; ia tidak memindahkan permintaan ke puskesmas lain,
+			// karena puskesmas tujuan ditentukan oleh area layanan lokasi warga.
+			$this->load->library('Pending_request_watchdog');
+			$this->pending_request_watchdog->sweep($puskesmas_code);
+
 			$d['data_request_new'] = $this->Home_nakes_m->request_keluhan_command_center($identity_context);
 			$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept_command_center($identity_context);
 			$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed_command_center($identity_context);

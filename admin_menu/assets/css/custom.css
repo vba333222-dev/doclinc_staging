@@ -278,7 +278,7 @@ body {
 
 .doclinc-sidebar-heading {
     color: rgba(255, 255, 255, 0.62);
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     font-weight: 800;
     letter-spacing: 0.06rem;
     text-transform: uppercase;
@@ -708,7 +708,7 @@ footer.sticky-footer {
 
 .doclinc-notification-mark-read {
     color: var(--doclinc-primary-dark);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     text-decoration: none;
 }
 
@@ -887,7 +887,7 @@ footer.sticky-footer {
     background: var(--doclinc-table-head);
     border-bottom: 1px solid var(--doclinc-border);
     color: var(--doclinc-muted);
-    font-size: 0.74rem;
+    font-size: 0.75rem;
     font-weight: 800;
     letter-spacing: 0;
     text-transform: uppercase;
@@ -936,7 +936,7 @@ footer.sticky-footer {
 .doclinc-record-detail-grid span {
     color: var(--doclinc-muted);
     display: block;
-    font-size: 0.74rem;
+    font-size: 0.75rem;
     font-weight: 800;
     margin-bottom: 0.25rem;
     text-transform: uppercase;
@@ -1048,7 +1048,7 @@ footer.sticky-footer {
 .doclinc-monitor-table thead th {
     border-top: 0;
     color: var(--doclinc-muted);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
 }
 
@@ -1157,7 +1157,7 @@ footer.sticky-footer {
 .doclinc-timeline-pill span {
     color: var(--doclinc-muted);
     display: block;
-    font-size: 0.74rem;
+    font-size: 0.75rem;
     margin-top: 0.18rem;
 }
 
@@ -1241,7 +1241,7 @@ footer.sticky-footer {
 .doclinc-report-table thead th {
     border-top: 0;
     color: var(--doclinc-muted);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
 }
 
@@ -1311,7 +1311,7 @@ footer.sticky-footer {
     border-bottom: 1px solid var(--doclinc-border) !important;
     border-top: 0;
     color: var(--doclinc-muted);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.02em;
     padding: 0.72rem 0.75rem;
@@ -1371,7 +1371,7 @@ footer.sticky-footer {
     border: 1px solid var(--doclinc-border);
     border-radius: 999px;
     display: inline-flex;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.01em;
     line-height: 1;
@@ -1517,7 +1517,7 @@ footer.sticky-footer {
 .doclinc-account-toolbar label {
     color: var(--doclinc-muted);
     display: block;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 800;
     letter-spacing: 0.03em;
     margin-bottom: 0.35rem;
@@ -1605,7 +1605,7 @@ footer.sticky-footer {
     border-radius: 999px;
     display: inline-flex;
     flex: 0 0 auto;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 800;
     line-height: 1;
     padding: 0.28rem 0.52rem;
@@ -1636,7 +1636,7 @@ footer.sticky-footer {
 .doclinc-account-card__meta span {
     color: var(--doclinc-muted);
     display: block;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 800;
     letter-spacing: 0.02em;
     margin-bottom: 0.18rem;
@@ -1729,7 +1729,7 @@ footer.sticky-footer {
 .doclinc-account-field span {
     color: var(--doclinc-muted);
     display: block;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.02em;
     margin-bottom: 0.18rem;
@@ -1820,7 +1820,7 @@ footer.sticky-footer {
 .doclinc-account-card__meta .doclinc-code-chip,
 .doclinc-account-card__meta .doclinc-status-chip {
     display: inline-flex;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     letter-spacing: 0;
     margin-bottom: 0;
     text-transform: none;
@@ -2474,9 +2474,20 @@ input, select, textarea, button {
 }
 
 /* Focus States for Accessibility */
-.btn:focus, .form-control:focus, .nav-link:focus {
+/* Dipakai :focus-visible, bukan :focus, supaya cincin hanya muncul untuk
+ * pengguna papan ketik — bukan setiap kali tombol diklik dengan tetikus.
+ * Warna memakai token penuh, bukan rgba(31,111,75,.25) yang hanya mencapai
+ * kontras sekitar 1,5:1 pada latar terang, sedangkan syarat minimum untuk
+ * indikator fokus adalah 3:1. */
+.btn:focus-visible, .form-control:focus-visible, .nav-link:focus-visible {
+    outline: 3px solid var(--doclinc-primary-dark);
+    outline-offset: 2px;
+}
+
+.btn:focus:not(:focus-visible),
+.form-control:focus:not(:focus-visible),
+.nav-link:focus:not(:focus-visible) {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(31, 111, 75, 0.25);
 }
 
 /* Print Styles */
@@ -2488,4 +2499,94 @@ input, select, textarea, button {
     .doclinc-content-wrapper {
         margin-left: 0 !important;
     }
+}
+
+
+/* =========================================================================
+   Penyempurnaan UI panel admin — lapisan terakhir
+   -------------------------------------------------------------------------
+   Ditulis di akhir berkas dengan sengaja supaya menang atas definisi
+   sebelumnya tanpa harus menyunting tiap blok. Semua warna memakai token
+   --doclinc-* sehingga tetap benar saat tema gelap (html[data-theme="dark"])
+   aktif.
+   ========================================================================= */
+
+/* ---- Cakupan cincin fokus ----
+ * Sebelumnya hanya .btn, .form-control, dan .nav-link yang punya penanda
+ * fokus. Tautan biasa, tombol ikon di topbar, item dropdown, dan kotak centang
+ * tidak punya sama sekali — sehingga pengguna papan ketik kehilangan jejak.
+ * Aturan di bawah memakai outline (bukan box-shadow) karena beberapa tempat di
+ * berkas ini menulis "box-shadow: none" untuk keadaan :focus, dan itu akan
+ * menghapus penanda berbasis box-shadow. */
+body a:focus-visible,
+body button:focus-visible,
+body input:focus-visible,
+body select:focus-visible,
+body textarea:focus-visible,
+body [tabindex]:focus-visible {
+    outline: 3px solid var(--doclinc-primary-dark);
+    outline-offset: 2px;
+}
+
+/* Di dalam sidebar yang berlatar hijau gelap, cincin hijau tidak akan terlihat,
+ * jadi di sana dipakai putih. */
+.doclinc-sidebar a:focus-visible,
+.doclinc-sidebar button:focus-visible {
+    outline-color: #ffffff;
+}
+
+/* ---- Judul seksi sidebar ----
+ * Sebelumnya <div> yang diletakkan langsung di dalam <ul>, sehingga daftar
+ * navigasi tidak sah menurut HTML. Sekarang <li>; list-style dimatikan
+ * eksplisit supaya tetap tampil sebagai judul, bukan butir daftar. */
+.doclinc-sidebar .doclinc-sidebar-heading {
+    list-style: none;
+}
+
+/* ---- Ringkasan akun di menu profil ----
+ * Menggantikan dua item "Profil"/"Pengaturan" yang href-nya "#" dan tidak
+ * menuju halaman apa pun — panel ini tidak punya route maupun view untuk
+ * keduanya, jadi tautan itu hanya menyesatkan. */
+.doclinc-account-summary {
+    max-width: 16rem;
+    padding: 0.5rem 1rem;
+    color: var(--doclinc-text);
+}
+
+.doclinc-account-summary strong {
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+/* ---- Bidang isian nonaktif ----
+ * Sebelumnya bidang terkunci tidak terlihat berbeda dari bidang yang bisa
+ * diisi, sehingga pengguna mencoba mengetik di kolom yang tidak bisa diubah. */
+.form-control:disabled,
+.form-control[readonly],
+.custom-select:disabled,
+.form-select:disabled {
+    background-color: var(--doclinc-table-head);
+    border-color: var(--doclinc-border);
+    color: var(--doclinc-muted);
+    cursor: not-allowed;
+}
+
+/* ---- Kepala tabel data ----
+ * Disamakan dengan tabel di aplikasi utama (doclinc-design-system.css):
+ * huruf kecil semua, tebal, berjarak, dan tidak membungkus. Semua tabel data
+ * di panel ini sudah berada di dalam .table-responsive, jadi baris yang panjang
+ * bisa digulir mendatar alih-alih memaksa kolom menjadi sempit. */
+.doclinc-admin-page .table thead th {
+    color: var(--doclinc-muted);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* Angka pada kolom aksi/status tidak perlu membungkus. */
+.doclinc-admin-page .table td .badge {
+    white-space: nowrap;
 }

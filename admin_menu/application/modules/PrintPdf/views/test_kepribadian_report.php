@@ -30,7 +30,7 @@
         $rekomendasi =$x['rekomendasi']; 
      }
 ?>
-<html lang="en">
+<html lang="id">
     <head>
         <title><php echo $title_pdf;?></title>
         <meta charset="UTF-8">

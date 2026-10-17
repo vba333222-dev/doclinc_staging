@@ -17,6 +17,21 @@ if ($nakes_puskesmas_display !== '' && stripos($nakes_puskesmas_display, 'puskes
 $nakes_header_name = !empty($nakes_is_command_center) && $nakes_puskesmas_display !== ''
 	? $nakes_puskesmas_display
 	: $nakes_name;
+/* Subjudul tidak boleh mengulang kata yang sudah ada di dalam nama Puskesmas.
+   Untuk akun command centre, $appbar_account_label bernilai "Puskesmas" dan
+   $nakes_puskesmas_display bernilai "Puskesmas Cilegon", sehingga bentuk lama
+   ("label · display") selalu terender sebagai "Puskesmas · Puskesmas Cilegon". */
+$appbar_subtitle = $nakes_puskesmas_display;
+if ($appbar_subtitle === '') {
+	$appbar_subtitle = 'Belum dikonfigurasi';
+} elseif (stripos($appbar_subtitle, $appbar_account_label) !== 0) {
+	$appbar_subtitle = $appbar_account_label . ' · ' . $appbar_subtitle;
+}
+/* Subjudul hanya berguna bila menambah informasi. Pada akun command centre
+   keduanya bernilai sama ("Puskesmas Cilegon"), sehingga baris kedua hanya
+   mengulang nama unit persis di bawahnya. Akun nakes tetap menampilkannya
+   karena di sana subjudul memuat profesi dan unit ("Dokter · Puskesmas X"). */
+$appbar_show_subtitle = $appbar_subtitle !== '' && $appbar_subtitle !== $nakes_header_name;
 ?>
 			<div class="hero bg-success p-3 overflow-hidden dl-appbar dl-nakes-appbar">
 				<div class="dl-nakes-appbar-top">
@@ -33,11 +48,13 @@ $nakes_header_name = !empty($nakes_is_command_center) && $nakes_puskesmas_displa
 						?>
 						<div class="min-w-0">
 							<strong><?= html_escape($nakes_header_name); ?></strong>
-							<small><?= html_escape($appbar_account_label); ?><?= $nakes_puskesmas_display !== '' ? ' · ' . html_escape($nakes_puskesmas_display) : ' · Belum dikonfigurasi'; ?></small>
+							<?php if (!empty($appbar_show_subtitle)) : ?>
+								<small><?= html_escape($appbar_subtitle); ?></small>
+							<?php endif; ?>
 						</div>
 					</div>
 					<a class="dl-nakes-icon-btn position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif" aria-label="Notifikasi">
-						<i class="bi bi-bell-fill"></i>
+						<i class="bi bi-bell-fill fs-4" aria-hidden="true"></i>
 						<span class="notify-number nk-notification-badge" id="badgeNotif" style="display: none;"></span>
 					</a>
 				</div>
@@ -46,13 +63,16 @@ $nakes_header_name = !empty($nakes_is_command_center) && $nakes_puskesmas_displa
 					<a href="#beranda" onclick="showContent('beranda'); return false;">Beranda</a>
 					<a href="#req_konsul" onclick="showContent('req_konsul'); return false;">Permintaan</a>
 					<a href="<?= html_escape(site_url('puskesmas/operations')); ?>" class="is-active" aria-current="page">Operasional</a>
-					<a href="#riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">Riwayat</a>
+					<a href="#riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">Konsultasi</a>
 					<a href="#profile" onclick="showContent('profile'); return false;">Profil</a>
 				</nav>
 				<?php else : ?>
 				<nav class="dl-nakes-desktop-nav" aria-label="Navigasi utama nakes">
-					<a href="#beranda" class="is-active" data-nakes-nav="beranda" onclick="showContent('beranda'); return false;">Beranda</a>
-					<a href="#riwayat_konsul" data-nakes-nav="riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">Riwayat</a>
+					<!-- aria-current disamakan dengan pola navigasi Puskesmas di atas.
+					     Tautan ini memang bertanda is-active tetap (tidak ada skrip yang
+					     memindahkannya), jadi aria-current juga tetap dan tidak menyesatkan. -->
+					<a href="#beranda" class="is-active" data-nakes-nav="beranda" onclick="showContent('beranda'); return false;" aria-current="page">Beranda</a>
+					<a href="#riwayat_konsul" data-nakes-nav="riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">Konsultasi</a>
 					<a href="#profil" data-nakes-nav="profil" data-bs-toggle="modal" data-bs-target="#modalProfil">Profil</a>
 				</nav>
 				<?php endif; ?>

@@ -36,7 +36,7 @@
             ?>
               <tr>
                 <td><?= $i;?></td>
-                <td><img src="<?= base_url('../assets/img/uploads/portofolio/' . rawurlencode($x->pict));?>"  style="width:auto;height:70px;"></td>
+                <td><img src="<?= base_url('../assets/img/uploads/portofolio/' . rawurlencode($x->pict));?>"  style="width:auto;height:70px;"></td alt="">
                 <td><?= html_escape($x->title ?? '-');?></td>
                 <td><?= html_escape($x->description ?? '-');?></td>
                 <td><?= html_escape($x->status ?? '-');?></td>
@@ -62,11 +62,11 @@
   </div>
 </div>
 
-<div class="modal fade" id="modalTambah" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalTambah" tabindex="-1" aria-labelledby="modalTambahLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah portofolio</h5>
+        <h5 class="modal-title" id="modalTambahLabel">Tambah portofolio</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -74,20 +74,20 @@
       <div class="modal-body">
         <form action="<?php echo base_url();?>landing_page/add_portofolio" method="POST" enctype="multipart/form-data"> 
           <div class="form-group mb-3">
-            <label for="title" class="col-form-label">Judul :</label>
-            <input type="text" class="form-control" name="title" id="title">
+            <label for="add_title" class="col-form-label">Judul :</label>
+            <input type="text" class="form-control" name="title" id="add_title">
           </div>
           <div class="form-group mb-3">
-            <label for="description" class="col-form-label">Deskripsi :</label> 
-            <textarea name="description" id="description" class="form-control" rows="3"></textarea>
+            <label for="add_description" class="col-form-label">Deskripsi :</label> 
+            <textarea name="description" id="add_description" class="form-control" rows="3"></textarea>
           </div>
           <div class="form-group mb-3">
-            <label for="pict" class="col-form-label">Gambar :</label>
-            <input type="file" class="form-control" name="pict" id="pict">
+            <label for="add_pict" class="col-form-label">Gambar :</label>
+            <input type="file" class="form-control" name="pict" id="add_pict">
           </div> 
           <div class="form-group mb-3">
-            <label for="status" class="form-label">Status :</label> 
-            <select class="form-control" id="status" name="status">
+            <label for="add_status" class="form-label">Status :</label> 
+            <select class="form-control" id="add_status" name="status">
               <option value="aktif">Aktif</option>
               <option value="non-aktif">Non-aktif</option>
             </select>
@@ -99,11 +99,11 @@
   </div>
 </div>
 
-<div class="modal fade" id="modalEdit" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalEdit" tabindex="-1" aria-labelledby="modalEditLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel"></h5>
+        <h5 class="modal-title" id="modalEditLabel"></h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>

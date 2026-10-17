@@ -78,13 +78,25 @@ function check(condition, name) {
   await new Promise(resolve => setImmediate(resolve));
   check(fetchCalls.length === 1 && fetchCalls[0].options.method === 'GET', 'snapshot_uses_get');
   check(fetchCalls[0].options.credentials === 'same-origin' && fetchCalls[0].options.cache === 'no-store', 'snapshot_transport_private');
-  check(container.children.length === 4, 'summary_staff_exception_and_request_sections_rendered');
-  const staffName = container.children[1].children[1].children[0].children[0].children[0].textContent;
+  // Layout is the summary strip plus a two-column grid: the primary column
+  // carries the exception and request sections, the supporting column carries
+  // the staff workload section.
+  check(container.children.length === 2, 'summary_and_operations_grid_rendered');
+  const operationsGrid = container.children[1];
+  check(operationsGrid.className === 'dl-operations-grid', 'operations_grid_wraps_sections');
+  const primaryOperations = operationsGrid.children[0];
+  const supportingOperations = operationsGrid.children[1];
+  check(primaryOperations.className === 'dl-operations-primary' && supportingOperations.className === 'dl-operations-supporting', 'operations_grid_splits_primary_and_supporting_columns');
+  const exceptionSection = primaryOperations.children[0];
+  const requestSection = primaryOperations.children[1];
+  const staffSection = supportingOperations.children[0];
+  const staffIdentity = staffSection.children[1].children[0].children[0];
+  const staffName = staffIdentity.children[0].textContent;
   check(staffName === '<img onerror=alert(1)>', 'staff_name_rendered_as_text');
-  const staffMeta = container.children[1].children[1].children[0].children[0].children[1].textContent;
+  const staffMeta = staffIdentity.children[1].textContent;
   check(staffMeta === 'Dokter · Aktif sekarang', 'staff_freshness_rendered_without_raw_timestamp');
-  check(container.children[2].children[1].children[0].attributes['data-request-id'] === '99', 'exception_request_identity_rendered');
-  const requestIdentity = container.children[3].children[1].children[0].children[0];
+  check(exceptionSection.children[1].children[0].attributes['data-request-id'] === '99', 'exception_request_identity_rendered');
+  const requestIdentity = requestSection.children[1].children[0].children[0];
   check(requestIdentity.children[0].textContent === 'Antrean 1', 'simple_queue_rendered');
   check(requestIdentity.children[1].textContent === '<script>alert(1)</script>', 'patient_name_rendered_as_text');
   check(requestIdentity.children[2].textContent === 'NIK 3671********0001', 'nik_remains_masked_in_list');

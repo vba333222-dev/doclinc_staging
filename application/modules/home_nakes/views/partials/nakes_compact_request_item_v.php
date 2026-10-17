@@ -38,7 +38,7 @@ foreach (array('foto', 'photo', 'profile_photo', 'profile_image', 'patient_photo
 	?>
 	<div class="flex-grow-1 min-w-0">
 		<p class="dl-latest-name"><?= html_escape(strtoupper((string) $latest_request->nama)); ?></p>
-		<div class="dl-latest-meta">No. Antrian: <?= html_escape($latest_queue_code); ?></div>
+		<div class="dl-latest-meta"><?= html_escape($latest_queue_label); ?></div>
 		<div class="dl-latest-complaint nk-complaint">
 			<span class="nk-complaint__title">Keluhan utama</span>
 			<strong class="nk-complaint__main"><?= html_escape($latest_primary); ?></strong>
@@ -49,5 +49,5 @@ foreach (array('foto', 'photo', 'profile_photo', 'profile_image', 'patient_photo
 			<?php endif; ?>
 		</div>
 	</div>
-	<a href="#req_konsul" class="btn btn-outline-success btn-sm rounded-pill fw-bold" onclick="showContent('req_konsul')">Lihat permintaan</a>
+	<a href="#req_konsul" class="btn btn-outline-success btn-sm rounded-pill fw-bold" onclick="showContent('req_konsul')">Lihat</a>
 </div>

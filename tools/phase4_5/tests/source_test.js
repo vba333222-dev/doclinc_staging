@@ -119,10 +119,17 @@ expect(homeNakesModel.includes('m_puskesmas.kode_pkm COLLATE utf8mb4_general_ci 
 expect(facilityJoinModels.every(model => model.includes('CONVERT(NULLIF(TRIM(requests.assigned_puskesmas_code)') || model.includes('CONVERT(NULLIF(TRIM($request_alias.assigned_puskesmas_code)')), 'legacy_request_facility_joins_normalize_charset');
 expect(care.includes("account_type'] !== 'command_center") === false && care.includes('commandCenterEligible'), 'command_center_checked_by_policy');
 expect(care.includes("consultation_mode !== Care_team_policy::VISIT") && care.includes('responsible_doctor_user_id'), 'visit_assignment_requires_decision_and_responsible_doctor');
+// A visit performer is any active personal of the facility with a recorded
+// profession. A doctor may perform the visit directly, or appoint a nakes /
+// perawat / bidan / other staff member through the disposition workflow, so the
+// performer check must NOT exclude doctors. Only the *responsible doctor* is
+// restricted to the doctor profession.
 expect(care.includes('visitPerformerEligible($performer, $puskesmas_code)')
   && care.includes('visitPerformerEligible($identity, $request->assigned_puskesmas_code)')
   && carePolicy.includes('public function visitPerformerEligible')
-  && carePolicy.includes('!$this->doctorProfession($profession)'), 'visit_performer_is_personal_non_doctor');
+  && carePolicy.includes("$profession !== ''")
+  && !carePolicy.includes('!$this->doctorProfession($profession)'), 'visit_performer_requires_profession_doctors_allowed');
+expect(carePolicy.includes("return $this->doctorProfession($identity['staff_profesi'] ?? '');"), 'responsible_doctor_still_requires_doctor_profession');
 expect(homeNakesModel.includes('responsible_doctor_eligible') && homeNakesModel.includes('visit_performer_eligible')
   && activeTask.includes('empty($staff_option->visit_performer_eligible)')
   && history.includes('empty($staff_option->visit_performer_eligible)'), 'care_team_candidate_lists_use_server_policy');

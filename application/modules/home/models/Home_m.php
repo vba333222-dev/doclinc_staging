@@ -442,9 +442,11 @@ class Home_m extends MX_Controller
 		if ($request_status === 'Accepted') {
 			return strtolower(trim((string) $consultation_mode)) === 'non_visit' ? 'Konsultasi tanpa kunjungan' : 'Sedang ditangani';
 		}
-		if ($request_status === 'in_service') {
-			return 'Sedang ditangani';
-		}
+
+		/* Di sini dulu ada cabang `$request_status === 'in_service'`. Nilainya
+		   tidak pernah bisa muncul: kolom `requests.request_status` adalah
+		   enum('Pending','Accepted','Completed','Cancelled') - diperiksa
+		   langsung ke information_schema. Cabang itu kode mati, sudah dihapus. */
 
 		return 'Status belum tersedia';
 	}
@@ -531,7 +533,7 @@ class Home_m extends MX_Controller
 		$row->assigned_pic_profesi = $pic_profesi;
 		$row->assigned_pic_no_hp = $pic_no_hp;
 		$row->assigned_pic_label = $pic_name !== ''
-			? 'PIC layanan: ' . $pic_name . ($pic_profesi !== '' ? ' - ' . $pic_profesi : '')
+			? $pic_name
 			: '';
 	}
 

@@ -22,13 +22,13 @@
 	<?php if (!empty($pic_assigned)) : ?>
 		<div class="mt-3">
 			<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="btn btn-success btn-sm dl-btn-primary warga-action warga-action--primary">
-				<img class="dl-semantic-icon dl-semantic-icon--sm" src="<?= html_escape(doclinc_ui_asset('chat')); ?>" alt="" aria-hidden="true"> Buka chat
+				<i class="fas fa-comments me-1"></i> Buka chat
 			</a>
 		</div>
 	<?php endif; ?>
 	<?php if (!empty($is_visit) && !empty($visit_location_available)) : ?>
 		<button type="button" class="btn btn-outline-success btn-sm visit-location-toggle warga-action warga-action--secondary" data-request-id="<?= html_escape((int) $request_id); ?>" data-map-id="visit-map-<?= html_escape((int) $request_id); ?>">
-			<img class="dl-semantic-icon dl-semantic-icon--sm" src="<?= html_escape(doclinc_ui_asset('map_nakes')); ?>" alt="" aria-hidden="true"> Lihat lokasi
+			<i class="fas fa-map-marker-alt me-1"></i> Lihat lokasi
 		</button>
 		<div class="doclinc-visit-status mt-2" data-visit-status="<?= html_escape((int) $request_id); ?>"></div>
 		<div class="visit-map-toolbar d-none" data-visit-toolbar="<?= html_escape((int) $request_id); ?>">

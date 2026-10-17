@@ -95,16 +95,16 @@
 			<form action="<?= site_url('kelola_keluhan/tambah_keluhan'); ?>" method="POST">
 				<div class="modal-body">
 					<div class="form-group">
-						<label for="kategori" class="col-form-label">Kategori :</label>
-						<input type="text" class="form-control" id="kategori" name="kategori" required>
+						<label for="add_kategori" class="col-form-label">Kategori :</label>
+						<input type="text" class="form-control" id="add_kategori" name="kategori" required>
 					</div>
 					<div class="form-group">
 						<label for="nama_keluhan" class="col-form-label">Nama Keluhan :</label>
 						<input type="text" class="form-control" id="nama_keluhan" name="nama_keluhan" required>
 					</div>
 					<div class="form-group mb-0">
-						<label for="deskripsi" class="col-form-label">Deskripsi :</label>
-						<textarea class="form-control" id="deskripsi" name="deskripsi" required></textarea>
+						<label for="add_deskripsi" class="col-form-label">Deskripsi :</label>
+						<textarea class="form-control" id="add_deskripsi" name="deskripsi" required></textarea>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -115,11 +115,11 @@
 		</div>
 	</div>
 </div>
-<div class="modal fade" id="modalEdit" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalEdit" tabindex="-1" role="dialog" aria-labelledby="modalEditLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="exampleModalLabel">Ubah keluhan</h5>
+				<h5 class="modal-title" id="modalEditLabel">Ubah keluhan</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -151,11 +151,11 @@
 		</div>
 	</div>
 </div>
-<div class="modal fade" id="modalAktif" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalAktif" tabindex="-1" role="dialog" aria-labelledby="modalAktifLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="exampleModalLabel">Aktifkan keluhan?</h5>
+				<h5 class="modal-title" id="modalAktifLabel">Aktifkan keluhan?</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -164,8 +164,8 @@
 				<div class="modal-body">
 					<input type="hidden" name="id_keluhan">
 					<div class="form-group">
-						<label for="remark" class="col-form-label">Catatan :</label>
-						<textarea class="form-control" id="remark" name="remark" required></textarea>
+						<label for="remark_aktif" class="col-form-label">Catatan :</label>
+						<textarea class="form-control" id="remark_aktif" name="remark" required></textarea>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -176,11 +176,11 @@
 		</div>
 	</div>
 </div>
-<div class="modal fade" id="modalDelete" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalDelete" tabindex="-1" role="dialog" aria-labelledby="modalDeleteLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="exampleModalLabel">Nonaktifkan keluhan?</h5>
+				<h5 class="modal-title" id="modalDeleteLabel">Nonaktifkan keluhan?</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -190,8 +190,8 @@
 					<input type="hidden" name="id_keluhan">
 					<p class="text-muted mb-2">Keluhan tidak lagi tersedia untuk pilihan baru.</p>
 					<div class="form-group">
-						<label for="remark" class="col-form-label">Catatan :</label>
-						<textarea class="form-control" id="remark" name="remark" required></textarea>
+						<label for="remark_hapus" class="col-form-label">Catatan :</label>
+						<textarea class="form-control" id="remark_hapus" name="remark" required></textarea>
 					</div>
 				</div>
 				<div class="modal-footer">

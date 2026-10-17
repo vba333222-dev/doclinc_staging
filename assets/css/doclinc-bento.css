@@ -1,0 +1,5064 @@
+/* ==========================================================================
+   DocLinc Mobile Design - Bento Grid layer
+   --------------------------------------------------------------------------
+   Implements the design system documented in /design.md for the two mobile
+   dashboards:
+
+     A. Pasien/warga  - application/modules/home/views/home_v.php
+     B. Nakes/dokter  - application/modules/home_nakes/views/home_nakes_v.php
+
+   Both surfaces share one token set (`--bd-*` below) and one component
+   vocabulary, so the two dashboards read as one product. Each surface is
+   scoped to its own body class (`.dl-warga-app` / `.dl-nakes-dashboard`), so
+   nothing here can reach the admin panel, the auth pages, or the chat and
+   consultation surfaces.
+
+   Why a separate file instead of extending the per-surface stylesheets: the
+   bento composition replaces each dashboard's card geometry. Keeping it in one
+   file means the whole "new" surface can be reviewed, diffed, and rolled back
+   in one place. It is loaded after every per-surface stylesheet, so it refines
+   the layers below it instead of rewriting them.
+
+   Rules followed here:
+   1. Additive and visual-only. Nothing is hidden, no id changes, no control is
+      removed, no handler or `data-*` contract is touched. Every element keeps
+      the classes the earlier layers and the views already rely on
+      (`dl-appbar`, `dl-nakes-appbar`, `dl-dashboard-stack`, `dl-nakes-card`,
+      `nakes-current-task-surface`, `dl-bottom-nav`, ...); the bento layer adds
+      the minimum markup needed and otherwise out-specifies the layer below.
+   2. Layout-shaping rules are scoped to the phone breakpoint, so the existing
+      desktop compositions (the Nakes 2-column stack, the hidden desktop nav)
+      keep working exactly as before. Surface styling (radii, borders, shadows,
+      type, accents) applies at every width.
+   3. Tokens first. Everything visual is expressed with `--bd-*` (see design.md
+      "Design Tokens"), so the palette, radii, gutter, and page margin each have
+      exactly one definition.
+   4. Ornaments are decorative: pseudo-elements and `aria-hidden` spans only,
+      never fake text.
+   5. Every motion has a prefers-reduced-motion counterpart.
+   ========================================================================== */
+
+.dl-warga-app,
+.dl-nakes-dashboard,
+/* Halaman chat memuat tokennya sendiri: ia bukan panel di dalam dashboard
+   warga, jadi `.dl-warga-app` tidak pernah ada di <body>-nya. Tanpa baris ini
+   seluruh lapisan bento chat di B24 hanya bisa menebak-nebak nilai. */
+.dl-chat-bento {
+  /* --- Palette ------------------------------------------------------------ */
+  --bd-green-900: #12472F;
+  --bd-green-800: #1A5A3C;
+  --bd-green-700: #1F6F4B;
+  --bd-green-600: #2D7D56;
+  --bd-green-500: #379A69;
+  --bd-mint: #89F6DA;
+  --bd-mint-ink: #00614F;
+  --bd-mint-soft: #E8F7F0;
+  --bd-mint-mist: #F3FBF7;
+  --bd-blue: #2E6685;
+  --bd-blue-soft: #EAF2F8;
+  --bd-ink: #16241D;
+  /* #55665E clears 4.5:1 on white and on --bd-mint-soft, so secondary copy
+     stays readable on every card surface used here. */
+  --bd-muted: #55665E;
+  --bd-line: #E2EDE7;
+  --bd-line-strong: #C4DED0;
+  --bd-surface: #FFFFFF;
+  --bd-page: #F6F7F6;
+  --bd-danger: #D94B4B;
+  /* Aksi destruktif. #D94B4B adalah merah titik notifikasi: kontrasnya hanya
+     sekitar 3.9:1 di atas putih, jadi tidak boleh dipakai untuk teks tombol.
+     #A8443F adalah rona yang sama, diturunkan saturasinya sampai melewati
+     5.9:1, dan #F7E7E6 adalah tintnya untuk latar. */
+  --bd-danger-ink: #A8443F;
+  --bd-danger-soft: #F7E7E6;
+  /* Tekstur bento. Satu motif, digambar sebagai SVG inline supaya tidak perlu
+     berkas baru maupun langkah build: kisi tanda plus, terbaca sebagai layanan
+     kesehatan tanpa menjadi ikon. Dua varian karena harus duduk di petak gelap
+     dan di kartu terang. */
+  --bd-texture-plus-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'%3E%3Cpath d='M9 3h4v6h6v4h-6v6H9v-6H3V9h6z' fill='%23FFFFFF' fill-opacity='0.07'/%3E%3C/svg%3E");
+  --bd-texture-plus-green: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'%3E%3Cpath d='M9 3h4v6h6v4h-6v6H9v-6H3V9h6z' fill='%232D7D56' fill-opacity='0.07'/%3E%3C/svg%3E");
+
+  /* --- Geometry ---------------------------------------------------------- */
+  --bd-r-lg: 22px;
+  --bd-r-md: 16px;
+  --bd-r-sm: 12px;
+  --bd-r-pill: 999px;
+  --bd-gap: 12px;
+  --bd-pad: 16px;
+  --bd-nav-space: 88px;
+
+  /* --- Elevation & motion ------------------------------------------------ */
+  --bd-shadow-1: 0 4px 14px rgba(18, 71, 47, .05);
+  --bd-shadow-2: 0 12px 30px rgba(18, 71, 47, .10);
+  --bd-ease: cubic-bezier(.22, .61, .36, 1);
+}
+
+/* --------------------------------------------------------------------------
+   1. Page frame
+   --------------------------------------------------------------------------
+   The reference screenshot is a card-based shell: the page margin is a single
+   16px gutter, every block is a card inside it, and the bottom bar floats.
+   So the header stops being a fixed bar and becomes the first card, and the
+   tab panels stop adding their own horizontal padding. */
+
+.dl-warga-app .contents {
+  width: calc(100% - (var(--bd-pad) * 2));
+  /* doclinc-warga.css menambahkan gutter 1rem pada `.contents` di layar ponsel;
+     gutter itu dibatalkan di sini supaya halaman hanya punya SATU margin 16px
+     (kartu selebar 398px pada viewport 430px), bukan dua yang bertumpuk. */
+  padding-inline: 0;
+  padding-bottom: calc(var(--bd-nav-space) + env(safe-area-inset-bottom, 0px));
+}
+
+/* The header card is in normal flow now, so the 74px reservation for a fixed
+   bar is no longer needed. */
+.dl-warga-app .dl-shell > .contents {
+  padding-top: 0;
+  margin-bottom: 0;
+}
+
+/* Horizontal padding is owned by `.contents`; tab panels only own rhythm. */
+.dl-warga-app .content {
+  padding: 0;
+}
+
+.dl-warga-app .content.active {
+  padding-top: var(--bd-gap);
+}
+
+/* The dashboard is one vertical stack of cards separated by one gutter. The id
+   keeps the panel from being shown while inactive: `.content` still hides it. */
+.dl-warga-app #beranda.content.active {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bd-gap);
+}
+
+/* --------------------------------------------------------------------------
+   2. Header card (sapaan + lokasi + notifikasi)
+   -------------------------------------------------------------------------- */
+
+.dl-warga-app .dl-bento-header {
+  position: static;
+  top: auto;
+  left: auto;
+  width: auto;
+  max-width: none;
+  transform: none;
+  z-index: auto;
+  min-height: 0;
+  margin: var(--bd-gap) var(--bd-pad) 0;
+  padding: 14px !important;
+  gap: var(--bd-gap);
+  align-items: center;
+  border: 0;
+  border-radius: var(--bd-r-lg);
+  /* A single soft highlight keeps the deep green from reading as a flat block
+     without turning into a decorative gradient. */
+  background:
+    radial-gradient(130% 150% at 100% -30%, rgba(255, 255, 255, .13) 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(135deg, var(--bd-green-600) 0%, var(--bd-green-700) 48%, var(--bd-green-900) 100%) !important;
+  box-shadow: var(--bd-shadow-2);
+}
+/* --------------------------------------------------------------------------
+   B2b. Header dan navigasi menyentuh tepi (full-bleed)
+   --------------------------------------------------------------------------
+   The reference draws both the header and the bottom bar as cards floating
+   inside the 16px page gutter: the header carried `margin: 12px 16px 0` with a
+   22px radius, and the bar was inset 16px on each side with the same radius.
+   The owner asked for the opposite on the warga account - the header's sides
+   filled edge to edge, and the bar spanning side to side.
+
+   The header is a child of `.contents`, which owns the 16px gutter, so its own
+   margin cannot reach the viewport edge on its own: it has to pull back by the
+   same amount with a negative inline margin. `--bd-pad` is the single source of
+   that gutter, so the two can never drift apart.
+
+   Scoped to `.dl-warga-app`, so the nakes and Puskesmas shells keep the card
+   header they were designed with. */
+
+.dl-warga-app .dl-bento-header {
+  margin: 0 calc(-1 * var(--bd-pad)) 0 !important;
+  border-radius: 0 !important;
+}
+
+/* The bar is pinned by lower layers with `!important` (Bootstrap's
+   `rounded-top-4` sets the two top corners as longhand properties, and
+   doclinc-warga-dashboard.css sets the whole radius). An id plus the class
+   outranks every class-based rule below, and the longhand corners are listed
+   so the utility class cannot win the two corners it owns. */
+.dl-warga-app #nav-bottom-wrapper.dl-bottom-nav {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  transform: none !important;
+  border-radius: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+
+
+/* style.css pins the photo at 42px with `!important`; the reference shows a
+   larger portrait, and 56px still fits inside the bar without forcing it tall. */
+.dl-warga-app .dl-bento-header .dl-profile-photo {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: var(--bd-r-pill) !important;
+  border: 2px solid rgba(255, 255, 255, .9);
+  background: var(--bd-mint-soft);
+  /* The header portrait is a crop, not a fit: without this a non-square upload
+     would be letterboxed inside the circle. It used to come from an inline style
+     on the element, which also carried a 100x100 size that the CSS overrode. */
+  object-fit: cover;
+}
+
+.dl-warga-app .dl-bento-header .dl-profile-row {
+  /* style.css puts `gap: 12px` on `.dl-appbar`, not on this inner row, and the
+     bento markup no longer carries Bootstrap's `ms-3`. Without a gutter here the
+     name and the meta line sit flush against the avatar. */
+  gap: var(--bd-gap);
+  align-items: center;
+  min-width: 0;
+}
+
+.dl-warga-app .dl-bento-header .dl-profile-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  color: #FFFFFF !important;
+}
+
+.dl-warga-app .dl-bento-header .dl-profile-copy > small {
+  color: rgba(233, 250, 242, .84) !important;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: .01em;
+}
+
+/* style.css already uppercases and ellipsises the name; only the scale changes
+   so a long patient name still resolves to one readable line. */
+.dl-warga-app .dl-bento-header .dl-profile-copy > h3 {
+  color: #FFFFFF !important;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+}
+
+/* Age and location share one line, the way the reference shows a single meta
+   row under the name. Both values are real session data - neither is dropped. */
+.dl-warga-app .dl-bento-header .dl-profile-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  min-width: 0;
+  color: rgba(216, 243, 231, .92) !important;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.dl-warga-app .dl-bento-header .dl-profile-meta > p {
+  margin: 0;
+  min-width: 0;
+  color: inherit !important;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.dl-warga-app .dl-bento-header .dl-profile-meta > .dl-user-age::after {
+  content: "\00b7";
+  margin-left: 6px;
+  opacity: .55;
+}
+
+/* The pin is the anchor the reference uses for "Lokasi terdeteksi". It is a CSS
+   glyph, so it never becomes text a screen reader would read. */
+.dl-warga-app .dl-bento-header .dl-profile-meta > .dl-user-coordinate {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dl-warga-app .dl-bento-header .dl-profile-meta > .dl-user-coordinate::before {
+  content: "\f3c5";
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--bd-mint);
+  flex: 0 0 auto;
+}
+
+.dl-warga-app .dl-bento-header a.notify {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  margin-left: auto;
+  border: 0;
+  border-radius: var(--bd-r-pill);
+  background: #FFFFFF;
+  color: var(--bd-green-700) !important;
+  box-shadow: 0 8px 20px rgba(6, 32, 22, .26);
+}
+
+.dl-warga-app .dl-bento-header a.notify > i {
+  font-size: 1.15rem;
+}
+
+.dl-warga-app .dl-bento-header a.notify:hover,
+.dl-warga-app .dl-bento-header a.notify:focus-visible {
+  background: #F1FAF6;
+}
+
+.dl-warga-app .dl-bento-header a.notify:focus-visible {
+  outline: 3px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
+/* The count badge keeps the reference's dot position but still carries the real
+   unread count; its ring matches the card it sits on. */
+.dl-warga-app .dl-bento-header a.notify > span.notify-number {
+  border-color: var(--bd-green-900);
+  background: var(--bd-danger);
+}
+
+/* --------------------------------------------------------------------------
+   3. Notice card (kelengkapan profil)
+   --------------------------------------------------------------------------
+   The view renders this card only while the profile is incomplete, and keeps
+   Bootstrap's alert-warning / alert-info class to say whether the app is
+   blocked. Those semantics are preserved: warning keeps a warm accent, info
+   uses the mint card from the reference. Copy is untouched. */
+
+.dl-warga-app .dl-bento-notice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #CDE9DC;
+  border-radius: var(--bd-r-lg);
+  background: var(--bd-mint-soft);
+  color: var(--bd-ink);
+  box-shadow: none;
+}
+
+.dl-warga-app .dl-bento-notice.alert-warning {
+  border-color: #EBD6A8;
+  background: #FFF8E8;
+}
+
+.dl-warga-app .dl-bento-notice__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--bd-r-md);
+  background: var(--bd-green-600);
+  color: #FFFFFF;
+  font-size: 18px;
+  flex: 0 0 auto;
+}
+
+.dl-warga-app .dl-bento-notice.alert-warning .dl-bento-notice__icon {
+  background: #B7791F;
+}
+
+.dl-warga-app .dl-bento-notice__body {
+  min-width: 0;
+}
+
+.dl-warga-app .dl-bento-notice__body > strong {
+  display: block;
+  color: var(--bd-ink);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -.01em;
+}
+
+.dl-warga-app .dl-bento-notice__body > span {
+  display: block;
+  margin-top: 2px;
+  color: var(--bd-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  overflow-wrap: break-word;
+}
+
+/* The CTA is a pill on the right, matching the reference's single button. It is
+   kept as narrow as the label allows so the sentence beside it keeps a readable
+   line length. */
+.dl-warga-app .dl-bento-notice__cta {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--bd-r-pill);
+  background: var(--bd-green-700);
+  color: #FFFFFF !important;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.dl-warga-app .dl-bento-notice.alert-warning .dl-bento-notice__cta {
+  background: #B7791F;
+}
+
+.dl-warga-app .dl-bento-notice__cta:hover,
+.dl-warga-app .dl-bento-notice__cta:focus-visible {
+  filter: brightness(1.06);
+  color: #FFFFFF !important;
+}
+
+.dl-warga-app .dl-bento-notice__cta:focus-visible {
+  outline: 3px solid var(--bd-green-700);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   4. Bento band (kartu ajakan + dua petak akses cepat)
+   --------------------------------------------------------------------------
+   One 2-column grid. The consultation card spans both rows on the left so it
+   outweighs its siblings; the wide tile spans both columns underneath. Rules
+   here are scoped with `#beranda` because that is the only panel that owns the
+   bento band, and the id lets this layer win without escalating every earlier
+   class chain or sprinkling `!important`. */
+
+.dl-warga-app #beranda .dl-bento-actions {
+  display: grid;
+  /* Equal halves. The reference draws the invitation card a shade wider, but
+     that 4% is what pushes "Mulai konsultasi" and "Catatan kesehatan" onto a
+     second line at 430px; equal columns keep both headlines on one line and
+     still read as a 2:1 bento band because the invitation card is deep green. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--bd-gap);
+  align-items: stretch;
+}
+
+/* The three quick links stay grouped in the markup: the group carries the
+   "Akses cepat" label and the has-active-request ordering hook. `display:
+   contents` lifts its children into the bento grid, which is what lets the wide
+   tile span both columns without a second wrapper element. */
+.dl-warga-app #beranda .dl-bento-actions > .dl-quick-links {
+  display: contents;
+}
+
+/* --- Kartu ajakan utama ("Mulai konsultasi") ------------------------------ */
+
+.dl-warga-app #beranda .dl-bento-cta.dl-hero {
+  grid-area: 1 / 1 / 3 / 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  /* doclinc-warga.css gives `.dl-hero` a 16px/20px vertical margin; inside the
+     bento grid that margin would stop the card from filling both rows. */
+  margin: 0;
+  padding: 18px 12px;
+  border: 0;
+  border-radius: var(--bd-r-lg);
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-700) 52%, var(--bd-green-900) 100%);
+  color: #F2FFF9;
+  box-shadow: var(--bd-shadow-2);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* The old left accent bar belonged to the pale hero; on a deep green card the
+   corner radius already carries the emphasis. */
+.dl-warga-app #beranda .dl-bento-cta.dl-hero::before {
+  content: none;
+}
+
+/* Watermark kept, but tuned so it reads as depth on the dark card. `content`,
+   font and position are re-declared because doclinc-warga-dashboard.css removes
+   the watermark from 768px up, where it used to be replaced by a corner badge. */
+.dl-warga-app #beranda .dl-bento-cta.dl-hero::after {
+  content: "\f0fa";
+  position: absolute;
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  line-height: 1;
+  right: -18px;
+  bottom: -20px;
+  font-size: 76px;
+  color: rgba(255, 255, 255, .09);
+  transform: rotate(8deg);
+  pointer-events: none;
+}
+
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-hero-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  max-width: 100%;
+}
+
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-hero-orn {
+  /* doclinc-warga-dashboard.css positions this badge absolutely in the top-right
+     corner and only reveals it from 768px up. In the bento card it is the
+     leading icon from the reference, so it is put back into the flow.
+     `grid` + `place-items: center` is what keeps the glyph centred inside the
+     tile; with a flex box and no alignment the 19px glyph was laid out from the
+     tile's top-left corner and read as if it had escaped the tile. `overflow`
+     is clipped as a second guarantee against the glyph's own bearing. */
+  position: static;
+  right: auto;
+  top: auto;
+  z-index: auto;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 14px;
+  border: 0;
+  border-radius: var(--bd-r-md);
+  background: rgba(255, 255, 255, .16);
+  color: #FFFFFF;
+  font-size: 19px;
+  line-height: 1;
+  box-shadow: none;
+  flex: 0 0 auto;
+  pointer-events: auto;
+}
+
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-hero-title {
+  margin: 0 0 6px;
+  color: #FFFFFF;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+}
+
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-hero-text {
+  margin: 0 0 16px;
+  max-width: 100%;
+  color: rgba(226, 247, 238, .9);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* The CTA is the only filled control on the dashboard, so it stays white on the
+   green card - the strongest contrast available, matching the reference. */
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-secondary,
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-primary {
+  margin-top: auto;
+  min-height: 46px;
+  max-width: 100%;
+  padding: 6px 6px 6px 14px;
+  gap: 6px;
+  border: 0;
+  border-radius: var(--bd-r-pill) !important;
+  background: #FFFFFF;
+  color: var(--bd-green-700) !important;
+  font-size: 13px;
+  font-weight: 800;
+  /* The label is a single action name, never a sentence: keep it on one line so
+     the card height stays predictable across 360-430px. */
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(4, 26, 16, .24);
+}
+
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-secondary:hover,
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-primary:hover,
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-secondary:focus-visible,
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-primary:focus-visible {
+  color: var(--bd-green-700) !important;
+  filter: none;
+  box-shadow: 0 12px 24px rgba(4, 26, 16, .3);
+}
+
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-secondary > i,
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-primary > i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 0;
+  border-radius: var(--bd-r-pill);
+  background: var(--bd-green-600);
+  color: #FFFFFF;
+  font-size: 12px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+/* A control that cannot be used must look like it. */
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-secondary[aria-disabled="true"],
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-secondary.disabled {
+  background: rgba(255, 255, 255, .2);
+  border: 1px solid rgba(255, 255, 255, .38);
+  color: #EAF7F1 !important;
+  box-shadow: none;
+}
+
+.dl-warga-app #beranda .dl-bento-cta.dl-hero .history-empty-text {
+  margin-top: 10px;
+  color: rgba(226, 247, 238, .92);
+  font-weight: 600;
+}
+
+/* --- Petak akses cepat --------------------------------------------------- */
+
+.dl-warga-app #beranda .dl-bento-actions .dl-bento-tile {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 72px;
+  padding: 10px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-md);
+  background: var(--bd-surface);
+  color: var(--bd-ink);
+  text-align: left;
+  text-decoration: none;
+  box-shadow: var(--bd-shadow-1);
+  transition: transform .18s var(--bd-ease), box-shadow .18s var(--bd-ease), border-color .18s var(--bd-ease);
+}
+
+.dl-warga-app #beranda .dl-bento-actions .dl-bento-tile:hover,
+.dl-warga-app #beranda .dl-bento-actions .dl-bento-tile:focus-visible {
+  border-color: var(--bd-line-strong);
+  box-shadow: var(--bd-shadow-2);
+  transform: translateY(-2px);
+}
+
+.dl-warga-app #beranda .dl-bento-actions .dl-bento-tile:active {
+  transform: translateY(0);
+}
+
+.dl-warga-app #beranda .dl-bento-actions .dl-bento-tile:focus-visible {
+  outline: 3px solid var(--bd-green-500);
+  outline-offset: 2px;
+}
+
+/* "Konsultasi aktif" keeps the tile reachable but visibly secondary. */
+.dl-warga-app #beranda .dl-bento-actions .dl-bento-tile.disabled {
+  opacity: .62;
+}
+
+.dl-warga-app #beranda .dl-bento-actions .dl-bento-tile .icon-wrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--bd-r-sm);
+  background: var(--bd-mint-soft);
+  color: var(--bd-green-700);
+  font-size: 14px;
+  box-shadow: none;
+}
+
+.dl-warga-app #beranda .dl-bento-actions .dl-bento-tile.dl-bento-tile--records .icon-wrapper {
+  background: var(--bd-blue-soft);
+  color: var(--bd-blue);
+  box-shadow: none;
+}
+
+/* The card lifts as a whole; nudging the icon as well made the hover read twice. */
+.dl-warga-app #beranda .dl-bento-actions .dl-bento-tile:hover .icon-wrapper,
+.dl-warga-app #beranda .dl-bento-actions .dl-bento-tile:focus-visible .icon-wrapper {
+  transform: none;
+}
+
+.dl-warga-app #beranda .dl-bento-tile__body {
+  min-width: 0;
+}
+
+.dl-warga-app #beranda .dl-bento-tile__title {
+  display: block;
+  color: var(--bd-ink);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+  overflow-wrap: break-word;
+}
+
+.dl-warga-app #beranda .dl-bento-tile__desc {
+  display: block;
+  margin-top: 2px;
+  color: var(--bd-muted);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+
+.dl-warga-app #beranda .dl-bento-tile__arrow {
+  flex: 0 0 auto;
+  color: var(--bd-green-700);
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* --------------------------------------------------------------------------
+   5. Section cards (Konsultasi saat ini, Berita)
+   -------------------------------------------------------------------------- */
+
+.dl-warga-app #beranda .dl-bento-section {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-lg);
+  background: var(--bd-surface);
+  box-shadow: var(--bd-shadow-1);
+}
+
+.dl-warga-app #beranda .dl-bento-section .dl-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.dl-warga-app #beranda .dl-bento-section .dl-section-title {
+  flex: 1 1 auto;
+  margin: 0;
+  padding-left: 12px;
+  color: var(--bd-ink);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+}
+
+/* The accent bar is what makes a section heading scannable on a white card, so
+   it is kept and only straightened to match the new radii. */
+.dl-warga-app #beranda .dl-bento-section .dl-section-title::before {
+  width: 4px;
+  height: 1.15em;
+  border-radius: var(--bd-r-pill);
+  background: linear-gradient(180deg, var(--bd-green-500), var(--bd-green-700));
+}
+
+/* "Lihat semua" stays a text action, not a second button, but its tap target
+   still meets 44px (the label itself stays 12px). */
+.dl-warga-app #beranda .dl-bento-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 2px;
+  color: var(--bd-green-700);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dl-warga-app #beranda .dl-bento-link > i {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.dl-warga-app #beranda .dl-bento-link:hover,
+.dl-warga-app #beranda .dl-bento-link:focus-visible {
+  color: var(--bd-green-600);
+}
+
+.dl-warga-app #beranda .dl-bento-link:focus-visible {
+  outline: 3px solid var(--bd-green-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* The Berita heading used a horizontal rule as a filler divider. Inside a card
+   the card edge already does that job, so the rule is dropped to keep both
+   section headings identical. */
+.dl-warga-app #beranda .dl-bento-news .dl-section-header hr {
+  display: none;
+}
+
+/* --- Keadaan kosong ------------------------------------------------------ */
+
+.dl-warga-app #beranda .dl-bento-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 118px;
+  padding: 20px 16px;
+  border: 1.5px dashed #B9DCCB;
+  border-radius: var(--bd-r-sm);
+  background: var(--bd-mint-mist);
+}
+
+/* The concentric rings from doclinc-warga-dashboard.css made the box read as a
+   decorated panel; the reference keeps this state quiet - one icon, one line. */
+.dl-warga-app #beranda .dl-bento-empty::before {
+  content: none;
+}
+
+.dl-warga-app #beranda .dl-bento-empty__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--bd-r-sm);
+  background: #E4F6EE;
+  color: var(--bd-green-600);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.dl-warga-app #beranda .dl-bento-empty .history-empty-text {
+  color: var(--bd-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* --- Konsultasi aktif di dalam kartu bagian ------------------------------
+   The record is a nested panel, so it drops the outer card treatment (border
+   stripe, shadow) and reads as a block inside the section card. */
+.dl-warga-app #beranda .dl-bento-section .dl-current-consultation-card {
+  border: 1px solid var(--bd-line);
+  border-left: 0;
+  border-radius: var(--bd-r-md);
+  background: var(--bd-mint-mist);
+  box-shadow: none;
+}
+
+/* --- Berita -------------------------------------------------------------- */
+
+/* Owl's prev/next controls are never used here: the reference shows dot
+   indicators only, and `nav` is left at its default of `false`. Owl still
+   renders the two buttons and relies on its own `.owl-nav.disabled` rule to hide
+   them, which leaves two 20x25 tap targets in the DOM if that sheet is late or
+   blocked. Hiding them in this layer makes the carousel independent of it. */
+.dl-warga-app #beranda .dl-bento-news .owl-nav {
+  display: none;
+}
+
+/* Bootstrap's `.row > .col` gutter would inset the carousel a second time,
+   inside the card padding the bento layer already applies. */
+.dl-warga-app #beranda .dl-bento-news > .col {
+  padding-inline: 0;
+  min-width: 0;
+}
+
+/* Sejak konfigurasi Owl di home_v.php memakai `items: 1`, tiap slide selebar
+   kolom. Bingkai kartu karena itu dipindah ke petaknya sendiri dan gambarnya
+   dipaksa memenuhi lebar itu - sebelumnya `width="400"` pada <img> dibiarkan
+   apa adanya sehingga gambar hanya menempati separuh kolom dan sisanya kosong.
+   `height: auto` diperlukan karena atribut `height="260"` tetap berlaku sebagai
+   tinggi tetap dan akan meregangkan gambar begitu lebarnya berubah. Rasionya
+   dituliskan sebagai `aspect-ratio` (400x260, sama dengan atributnya) supaya
+   ruangnya sudah dipesan sebelum gambar selesai dimuat. */
+.dl-warga-app #beranda .dl-bento-news .owl-carousel .item {
+  overflow: hidden;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-md);
+  background: var(--bd-surface);
+}
+
+.dl-warga-app #beranda .dl-bento-news .owl-carousel .item img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 400 / 260;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+.dl-warga-app #beranda .dl-bento-news .owl-theme .owl-dots {
+  margin-top: 6px;
+}
+
+/* Owl renders each indicator as an inline-block <button> and its own stylesheet
+   hard-codes `padding: 0 !important` on it, so the tap target has to be widened
+   with `!important` too. The visible dot stays 10px (as in the reference) and
+   the padding grows the button to 34x44, which clears the 24x24 WCAG 2.5.8
+   minimum and the 44px height this design system asks for. Spacing the dots out
+   to 44x44 would have turned a dot indicator into a row of separated marks. */
+.dl-warga-app #beranda .dl-bento-news .owl-theme .owl-dots .owl-dot {
+  padding: 17px 13px !important;
+  background: transparent;
+  border: 0;
+}
+
+.dl-warga-app #beranda .dl-bento-news .owl-theme .owl-dots .owl-dot span {
+  display: block;
+  width: 10px;
+  height: 10px;
+  margin: 0 4px;
+  background: #CFE3D9;
+}
+
+.dl-warga-app #beranda .dl-bento-news .owl-theme .owl-dots .owl-dot.active span,
+.dl-warga-app #beranda .dl-bento-news .owl-theme .owl-dots .owl-dot:hover span {
+  background: var(--bd-green-700);
+}
+
+.dl-warga-app #beranda .dl-bento-news .owl-theme .owl-dots .owl-dot:focus-visible {
+  outline: 3px solid var(--bd-green-500);
+  outline-offset: -3px;
+  border-radius: var(--bd-r-sm);
+}
+
+/* --------------------------------------------------------------------------
+   6. Floating bottom navigation
+   --------------------------------------------------------------------------
+   The bar is inset from the page edges and lifted off the bottom, so the last
+   card is visibly scrollable rather than hidden behind a full-width slab.
+   `.dl-bento-nav` is the extra class that lets this layer out-specify the
+   Warga dashboard layer and the Bootstrap `rounded-top-4` utility, both of
+   which use `!important` for the radius.
+
+   The `:not(.dl-history-mode)` guard is deliberate: in history mode
+   doclinc-warga.css moves the navigation back into the document flow so a long
+   history surface cannot hide it, and that behaviour is kept as-is. */
+
+.dl-warga-app:not(.dl-history-mode) .dl-bento-nav {
+  /* doclinc-warga.css turns the bar static from 768px up; the shell is a
+     430px phone column at every width, so the bar stays floating everywhere. */
+  position: fixed !important;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  width: min(calc(100% - (var(--bd-pad) * 2)), 398px);
+  padding-bottom: 0;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-lg) !important;
+  background: rgba(255, 255, 255, .97) !important;
+  box-shadow: 0 12px 30px rgba(18, 71, 47, .16) !important;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.dl-warga-app .dl-bento-nav .menu {
+  padding: 8px !important;
+}
+
+.dl-warga-app .dl-bento-nav .menu > .menu-item {
+  position: relative;
+  min-height: 56px;
+  border-radius: var(--bd-r-md);
+  color: var(--bd-muted) !important;
+}
+
+.dl-warga-app .dl-bento-nav .menu > .menu-item i {
+  font-size: 21px !important;
+  line-height: 1;
+  transition: transform .18s var(--bd-ease);
+}
+
+.dl-warga-app .dl-bento-nav .menu > .menu-item span {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  margin-top: 2px !important;
+}
+
+.dl-warga-app .dl-bento-nav .menu > .menu-item:hover {
+  color: var(--bd-green-700) !important;
+  background: var(--bd-mint-mist);
+}
+
+.dl-warga-app .dl-bento-nav .menu > .menu-item:focus-visible {
+  outline: 3px solid var(--bd-green-500);
+  outline-offset: -2px;
+}
+
+/* Active item: the mint pill from the reference. The previous top marker bar is
+   dropped because the pill fill already carries the state on its own. */
+.dl-warga-app .dl-bento-nav .menu > .menu-item.active {
+  background: var(--bd-mint) !important;
+  color: var(--bd-mint-ink) !important;
+  box-shadow: 0 4px 12px rgba(31, 111, 75, .14);
+}
+
+.dl-warga-app .dl-bento-nav .menu > .menu-item.active::before {
+  content: none;
+}
+
+.dl-warga-app .dl-bento-nav .menu > .menu-item.active i {
+  transform: none;
+}
+
+/* --------------------------------------------------------------------------
+   7. Varian saat ada konsultasi aktif
+   --------------------------------------------------------------------------
+   A running consultation outranks the invitation to start one. The order is
+   re-expressed here for the bento band; the previous layer's selectors targeted
+   `.dl-hero` / `.dl-quick-links` as direct children of the panel, which the
+   band now owns. */
+
+.dl-warga-app.has-active-request #beranda > .dl-current-consultation {
+  order: 1;
+}
+
+.dl-warga-app.has-active-request #beranda > .dl-bento-actions {
+  order: 2;
+}
+
+.dl-warga-app.has-active-request #beranda > .dl-bento-news {
+  order: 3;
+}
+
+/* doclinc-warga.css compacts the invitation into a bare text row while a
+   consultation is running (`padding: .4rem 0 !important`). The bento card keeps
+   its weight in both states — it is the only filled control on the page and the
+   reference does not shrink it — so the padding is re-asserted here. `!important`
+   is required because the rule being overridden uses it; this rule is later in
+   the cascade and scoped with `#beranda`, so it wins. */
+.dl-warga-app.has-active-request #beranda .dl-bento-cta.dl-hero {
+  padding: 18px 16px !important;
+  border: 0;
+  border-radius: var(--bd-r-lg);
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-700) 52%, var(--bd-green-900) 100%);
+  box-shadow: var(--bd-shadow-2);
+}
+
+/* Mirrors the explicit block list doclinc-warga.css already uses for history
+   mode, so the bento band follows the same rule as the blocks it replaced. */
+.dl-warga-app.dl-history-mode #beranda > .dl-bento-actions {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   8. Gerak & preferensi pengurangan gerak
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-warga-app #beranda .dl-bento-actions .dl-bento-tile,
+  .dl-warga-app #beranda .dl-bento-actions .dl-bento-tile .icon-wrapper,
+  .dl-warga-app .dl-bento-header a.notify,
+  .dl-warga-app .dl-bento-notice__cta,
+  .dl-warga-app .dl-bento-nav .menu > .menu-item,
+  .dl-warga-app .dl-bento-nav .menu > .menu-item i {
+    transition: none;
+  }
+
+  .dl-warga-app #beranda .dl-bento-actions .dl-bento-tile:hover,
+  .dl-warga-app #beranda .dl-bento-actions .dl-bento-tile:focus-visible {
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   9. Viewport sempit (<= 399px)
+   --------------------------------------------------------------------------
+   Below 400px the hero card's inner width can no longer hold the CTA on one
+   line at the reference's proportions, so the button stretches and distributes
+   its label and glyph instead of wrapping or clipping. */
+
+@media (max-width: 399.98px) {
+  .dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-secondary,
+  .dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-primary {
+    width: 100%;
+    justify-content: space-between;
+    font-size: 12px;
+    padding-left: 12px;
+  }
+
+  .dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-secondary > i,
+  .dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-btn-primary > i {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+
+  .dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-hero-title {
+    font-size: 18px;
+  }
+
+  /* Three columns can no longer hold the button and a readable sentence, so the
+     notice stacks its CTA under the message. */
+  .dl-warga-app .dl-bento-notice {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 10px;
+  }
+
+  .dl-warga-app .dl-bento-notice__cta {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   10. Viewport sempit (<= 374px)
+   --------------------------------------------------------------------------
+   At 360px the right-hand tiles are roughly 150px wide. The gutter, padding,
+   icon, and type all step down together so nothing overflows and no label is
+   forced into an unreadable column. */
+
+@media (max-width: 374.98px) {
+  .dl-warga-app #beranda .dl-bento-actions {
+    gap: 10px;
+  }
+
+  .dl-warga-app #beranda .dl-bento-actions .dl-bento-tile {
+    gap: 4px;
+    padding: 9px;
+    min-height: 66px;
+  }
+
+  .dl-warga-app #beranda .dl-bento-actions .dl-bento-tile .icon-wrapper {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+
+  .dl-warga-app #beranda .dl-bento-tile__title {
+    font-size: 11.5px;
+  }
+
+  .dl-warga-app #beranda .dl-bento-tile__desc {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .dl-warga-app #beranda .dl-bento-cta.dl-hero {
+    padding: 16px 12px;
+  }
+
+  .dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-hero-title {
+    font-size: 17px;
+  }
+
+  .dl-warga-app #beranda .dl-bento-cta.dl-hero .dl-hero-orn {
+    width: 38px;
+    height: 38px;
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  /* The notice card already stacks its CTA below 400px (see section 9). */
+  .dl-warga-app .dl-bento-header .dl-profile-copy > h3 {
+    font-size: 17px;
+  }
+
+  .dl-warga-app .dl-bento-header .dl-profile-photo {
+    width: 48px !important;
+    height: 48px !important;
+  }
+}
+
+/* ==========================================================================
+   B. Dashboard Nakes/dokter
+   --------------------------------------------------------------------------
+   Body scope: `.dl-nakes-dashboard` (both the personal Nakes and the
+   Puskesmas command-centre accounts).
+
+   The composition reuses the warga bento vocabulary - one floating header
+   card, one deep-green bento cell, section cards with an accent-bar heading,
+   a floating bottom bar - but the emphasis is different on purpose. A Nakes
+   screen answers "who do I treat right now", so the ACTIVE TASK is the largest
+   surface and the deep-green bento cell is the queue counter, not an
+   invitation. The existing mobile order (heading -> active task -> counters ->
+   notices -> unit sections) is untouched: it is expressed by `order` in
+   doclinc-nakes.css and every rule below respects it.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   B1. Kerangka halaman
+   --------------------------------------------------------------------------
+   Only the gutter and the reserved space for the floating bar change. The
+   `order`/`margin-bottom` rhythm from doclinc-nakes.css is left alone. */
+
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .dl-dashboard-stack {
+    padding: 12px var(--bd-pad) calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* doclinc-nakes.css gives `order` to the active-task heading, the task card,
+     the counters, the notices and the section cards - but not to a PLAIN
+     section heading. A plain heading therefore fell back to `order: 0` and
+     floated above the active task while its own card stayed at `order: 6`, so
+     "Staf Puskesmas" and "Permintaan masuk Puskesmas" appeared detached from
+     the cards they label. Matching the card's order restores the
+     heading-then-card sequence the DOM already expresses, and equal `order`
+     values keep document order. */
+  .dl-nakes-dashboard .dl-dashboard-stack > .dl-section-header:not(.nakes-current-section-heading) {
+    order: 6;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   B2. Kartu header
+   --------------------------------------------------------------------------
+   The bar stays `position: sticky` (nakes-dashboard.css pins that with
+   `!important`) because losing the sticky header would be a behaviour change.
+   Only its shape changes: inset, rounded, lifted, and offset from the very top
+   so it reads as the first card of the bento rather than a full-bleed slab. */
+
+.dl-nakes-dashboard .dl-nakes-appbar {
+  top: 12px !important;
+  width: calc(100% - (var(--bd-pad) * 2));
+  max-width: none;
+  margin-inline: auto;
+  padding: 10px 12px !important;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-lg);
+  box-shadow: var(--bd-shadow-2);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.dl-nakes-dashboard .dl-nakes-appbar-top {
+  gap: var(--bd-gap);
+}
+
+.dl-nakes-dashboard .dl-nakes-icon-btn {
+  /* 48px, sama dengan tombol notifikasi beranda warga
+     (`.dl-warga-app .dl-bento-header a.notify`) dan ambang "header controls"
+     di design.md. Sebelumnya 44px. */
+  width: 48px;
+  height: 48px;
+  border-radius: var(--bd-r-pill);
+  border-color: var(--bd-line);
+}
+
+/* Ukuran glyph lonceng sengaja TIDAK diatur di sini. Beranda warga menaruh
+   `fs-4` langsung pada elemennya (home_v.php: `bi bi-bell-fill fs-4`), dan
+   utilitas `fs-4` Bootstrap memakai `!important`, sehingga aturan font-size
+   apa pun di sini akan menjadi kode mati yang menyesatkan. Markup nakes kini
+   memakai kelas yang sama persis, jadi kedua lonceng memakai ukuran responsif
+   yang identik. */
+
+/* Lencana jumlah disalin dari beranda warga: pil 20px dengan cincin 2px
+   sewarna kartu supaya terbaca sebagai titik yang terpisah. Sebelumnya 17px
+   tanpa cincin dan berteks 11px, sehingga tepinya meleber ke tepi kartu header
+   dan teksnya berada di bawah ambang 12px. */
+
+.dl-nakes-dashboard .dl-nakes-icon-btn .notify-number {
+  right: -3px;
+  top: -3px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 2px solid var(--bd-surface);
+  border-radius: var(--bd-r-pill);
+  background: var(--bd-danger);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* --------------------------------------------------------------------------
+   B3. Bento penghitung antrian
+   --------------------------------------------------------------------------
+   The three counters are the one place where the grid deliberately breaks its
+   own rhythm: "Antrian" is the queue that demands action, so it takes the deep
+   green cell and spans both rows while Diterima/Selesai stack beside it. This
+   mirrors the pasien dashboard's 1-large + 2-stacked band, which is what makes
+   the two dashboards feel like one product. */
+
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .dl-dashboard-stats {
+    display: grid;
+    /* `width: 100%` is required, not cosmetic. The stack is
+       `display: flex; flex-direction: column` with `align-items: start`
+       (doclinc-nakes.css), so a flex item does NOT stretch: without an explicit
+       width the counter grid shrank to its content box (~167px at 430px) and the
+       three counters were squeezed into the left third of the row instead of
+       filling it. */
+    width: 100%;
+    grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr);
+    gap: var(--bd-gap);
+  }
+
+  .dl-nakes-dashboard .dl-dashboard-stats > .dl-dashboard-stat:first-child {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .dl-nakes-dashboard .dl-dashboard-stats > .dl-dashboard-stat:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .dl-nakes-dashboard .dl-dashboard-stats > .dl-dashboard-stat:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+.dl-nakes-dashboard .dl-dashboard-stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-height: 0;
+  padding: 12px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-md);
+  background: var(--bd-surface);
+  box-shadow: var(--bd-shadow-1);
+  transition: transform .18s var(--bd-ease), box-shadow .18s var(--bd-ease), border-color .18s var(--bd-ease);
+}
+
+.dl-nakes-dashboard .dl-dashboard-stat:hover,
+.dl-nakes-dashboard .dl-dashboard-stat:focus-visible {
+  border-color: var(--bd-line-strong);
+  box-shadow: var(--bd-shadow-2);
+  transform: translateY(-2px);
+}
+
+.dl-nakes-dashboard .dl-dashboard-stat span {
+  color: var(--bd-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dl-nakes-dashboard .dl-dashboard-stat strong {
+  color: var(--bd-ink);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -.02em;
+}
+
+/* The queue cell: the only deep green surface in the grid. Text is anchored to
+   the TOP so the texture below it has room to read; `flex-end` used to push the
+   pair to the bottom and left the top half of the tile empty. */
+.dl-nakes-dashboard .dl-dashboard-stats > .dl-dashboard-stat:first-child {
+  justify-content: flex-start;
+  padding: 14px;
+  border-color: transparent;
+  background-image:
+    linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-700) 52%, var(--bd-green-900) 100%),
+    var(--bd-texture-plus-light);
+  background-size: 100% 100%, 22px 22px;
+  background-position: left top, right bottom;
+  background-repeat: no-repeat, repeat;
+  box-shadow: var(--bd-shadow-2);
+}
+
+.dl-nakes-dashboard .dl-dashboard-stats > .dl-dashboard-stat:first-child span {
+  color: rgba(226, 247, 238, .86);
+}
+
+.dl-nakes-dashboard .dl-dashboard-stats > .dl-dashboard-stat:first-child strong {
+  color: #FFFFFF;
+  font-size: 2.1rem;
+}
+
+/* --- B3b. Band dua petak untuk akun dokter/nakes ---------------------------
+   The command centre counts three things (queue, accepted, finished) and the
+   band's 1-large + 2-stacked shape encodes that: the queue is the number that
+   demands action, so it takes the deep green cell. A personal doctor/nakes
+   account has no facility queue, so it renders only the two counters that are
+   actually theirs. Left alone, the band would keep its three-cell template and
+   the second tile would sit beside an empty cell - a hole where the queue used
+   to be.
+
+   So the personal band resets the template to two equal columns and releases
+   the two children from the explicit row/column placement above. The deep green
+   treatment still lands on the first tile, because that rule is not inside the
+   media query and only its placement is overridden here. `--personal` is the
+   only thing that separates the two accounts, so the command centre layout is
+   untouched. */
+
+.dl-nakes-dashboard .dl-dashboard-stats--personal {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .dl-dashboard-stats--personal > .dl-dashboard-stat:first-child,
+  .dl-nakes-dashboard .dl-dashboard-stats--personal > .dl-dashboard-stat:nth-child(2) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   B4. Kartu tugas aktif (permukaan terbesar)
+   --------------------------------------------------------------------------
+   This card is the reason the screen exists, so it gets the deepest shadow, the
+   widest radius and a brand accent along its top edge. It is deliberately NOT a
+   deep green surface: it holds selects, notes and submit buttons, and those
+   controls need a light backdrop to stay legible and to keep their native
+   affordances. The deep green is spent on the queue cell above instead. */
+
+.dl-nakes-dashboard .nakes-current-task-surface {
+  padding: 16px;
+  border: 1px solid var(--bd-line);
+  border-top: 5px solid var(--bd-green-600);
+  border-radius: var(--bd-r-lg);
+  background: var(--bd-surface);
+  box-shadow: var(--bd-shadow-2);
+}
+
+.dl-nakes-dashboard .nakes-current-task-surface .dl-task-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--bd-r-sm);
+  background: linear-gradient(150deg, var(--bd-green-600), var(--bd-green-800));
+  color: #FFFFFF;
+  font-size: 18px;
+}
+
+.dl-nakes-dashboard .nakes-current-task-surface .dl-task-title {
+  color: var(--bd-ink);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+
+.dl-nakes-dashboard .nakes-current-task-surface .dl-task-meta,
+.dl-nakes-dashboard .nakes-current-task-surface .summary-label {
+  color: var(--bd-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* The next-action panel is the instruction the Nakes must follow, so it reads
+   as a callout rather than a plain Bootstrap alert. */
+.dl-nakes-dashboard .nakes-current-task-surface [data-primary-next-action] {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 0;
+  border-left: 4px solid var(--bd-green-600);
+  border-radius: var(--bd-r-sm);
+  background: var(--bd-mint-soft);
+}
+
+.dl-nakes-dashboard .nakes-current-task-surface [data-primary-next-action] .small {
+  color: var(--bd-muted) !important;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dl-nakes-dashboard .nakes-current-task-surface [data-primary-next-action] strong {
+  display: block;
+  color: var(--bd-green-900);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* Secondary panels (penanggung jawab, riwayat, layanan) are nested blocks, so
+   they drop the outer card treatment and read as quiet inner sections. */
+.dl-nakes-dashboard .nakes-current-task-surface .nk-action-panel {
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-sm);
+  background: var(--bd-mint-mist);
+  box-shadow: none;
+}
+
+.dl-nakes-dashboard .nakes-current-task-surface .nk-action-panel__title {
+  color: var(--bd-green-900);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dl-nakes-dashboard .nakes-current-task-surface .btn {
+  border-radius: var(--bd-r-pill) !important;
+  font-weight: 700;
+}
+
+.dl-nakes-dashboard .nakes-current-task-surface > a.btn-success {
+  min-height: 48px;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(18, 71, 47, .18);
+}
+
+.dl-nakes-dashboard .nakes-current-task-surface .nk-pic-inline strong {
+  color: var(--bd-ink);
+  font-weight: 800;
+}
+
+.dl-nakes-dashboard .nakes-current-task-surface .nk-pic-inline span {
+  color: var(--bd-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   B5. Judul bagian
+   --------------------------------------------------------------------------
+   Same accent-bar heading as the pasien dashboard, so a section heading is
+   recognisable across both surfaces. */
+
+.dl-nakes-dashboard .dl-dashboard-stack > .dl-section-header {
+  margin: 4px 0 0;
+  gap: 10px;
+  align-items: center;
+}
+
+.dl-nakes-dashboard .dl-section-title {
+  position: relative;
+  padding-left: 12px;
+  color: var(--bd-ink);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+}
+
+.dl-nakes-dashboard .dl-section-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 1.15em;
+  border-radius: var(--bd-r-pill);
+  background: linear-gradient(180deg, var(--bd-green-500), var(--bd-green-700));
+  transform: translateY(-50%);
+}
+
+.dl-nakes-dashboard .dl-card-kicker {
+  color: var(--bd-green-700);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dl-nakes-dashboard .dl-header-count {
+  padding: 4px 10px;
+  border-radius: var(--bd-r-pill);
+  background: var(--bd-mint-soft);
+  color: var(--bd-green-900);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.dl-nakes-dashboard .dl-nakes-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--bd-green-700);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.dl-nakes-dashboard .dl-nakes-link:focus-visible {
+  outline: 3px solid var(--bd-green-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   B6. Kartu bagian
+   --------------------------------------------------------------------------
+   `:not(.nakes-current-task-surface)` keeps the hero's own padding intact
+   without depending on rule order. */
+
+.dl-nakes-dashboard .dl-dashboard-section:not(.nakes-current-task-surface) {
+  padding: 14px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-lg);
+  background: var(--bd-surface);
+  box-shadow: var(--bd-shadow-1);
+}
+
+/* --------------------------------------------------------------------------
+   B7. Kelengkapan unit & daftar pengecualian
+   --------------------------------------------------------------------------
+   These two cards report state, so their facts sit on their own tiles and the
+   status chip keeps its existing ready/attention colour semantics. */
+
+.dl-nakes-dashboard .nk-readiness-card {
+  gap: 12px;
+}
+
+.dl-nakes-dashboard .nk-readiness-head strong {
+  color: var(--bd-ink);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+
+.dl-nakes-dashboard .nk-readiness-head > div > span {
+  color: var(--bd-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dl-nakes-dashboard .nk-readiness-state {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dl-nakes-dashboard .nk-readiness-grid {
+  gap: 8px;
+}
+
+.dl-nakes-dashboard .nk-readiness-grid > div {
+  padding: 10px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-sm);
+  background: var(--bd-mint-mist);
+}
+
+.dl-nakes-dashboard .nk-readiness-grid span {
+  color: var(--bd-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dl-nakes-dashboard .nk-readiness-grid strong {
+  color: var(--bd-ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dl-nakes-dashboard .nk-readiness-foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--bd-green-700);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* --------------------------------------------------------------------------
+   B8. Roster staf
+   --------------------------------------------------------------------------
+   Only surface styling is touched. `.nk-staff-item--presence` keeps its
+   `grid-template-columns` and its meta row keeps `grid-column: 1 / -1`; both
+   are asserted by tools/role_prerequisites/tests/source_test.js and are what
+   stops a long staff name from collapsing the identity column. */
+
+.dl-nakes-dashboard .doclinc-presence-summary {
+  margin-bottom: 10px;
+}
+
+.dl-nakes-dashboard .doclinc-presence-count {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dl-nakes-dashboard .nk-staff-list {
+  gap: 8px;
+}
+
+.dl-nakes-dashboard .nk-staff-item {
+  padding: 10px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-sm);
+  background: var(--bd-mint-mist);
+}
+
+.dl-nakes-dashboard .nk-staff-main strong {
+  color: var(--bd-ink);
+}
+
+.dl-nakes-dashboard .nk-staff-main span {
+  color: var(--bd-muted);
+}
+
+.dl-nakes-dashboard .nk-staff-presence {
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dl-nakes-dashboard .nk-staff-last-seen {
+  color: var(--bd-muted);
+  font-size: 11px;
+}
+
+.dl-nakes-dashboard .nk-staff-meta span {
+  padding: 3px 8px;
+  background: var(--bd-surface);
+  color: var(--bd-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dl-nakes-dashboard .nk-staff-meta span.is-warning {
+  background: #FFF8E8;
+  color: #8A5A00;
+}
+
+.dl-nakes-dashboard .nk-staff-empty {
+  padding: 14px;
+  border: 1.5px dashed #B9DCCB;
+  border-radius: var(--bd-r-sm);
+  background: var(--bd-mint-mist);
+  color: var(--bd-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   B9. Baris permintaan masuk
+   --------------------------------------------------------------------------
+   These rows keep their Bootstrap `mb-2 / pb-2 / border-bottom` utilities (they
+   are `!important`, and fighting them would mean `!important` everywhere), so
+   only the inner pieces are restyled. The section card already frames them. */
+
+.dl-nakes-dashboard .dl-latest-row {
+  gap: 10px;
+}
+
+.dl-nakes-dashboard .dl-latest-name {
+  color: var(--bd-ink);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+
+.dl-nakes-dashboard .dl-latest-meta {
+  color: var(--bd-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dl-nakes-dashboard .nk-complaint {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-sm);
+  background: var(--bd-mint-mist);
+}
+
+.dl-nakes-dashboard .nk-complaint__title {
+  color: var(--bd-muted);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.dl-nakes-dashboard .nk-complaint__main {
+  color: var(--bd-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dl-nakes-dashboard .nk-fact-label {
+  color: var(--bd-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dl-nakes-dashboard .nk-fact-value {
+  color: var(--bd-ink);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dl-nakes-dashboard .dl-latest-row .btn {
+  min-height: 44px;
+  border-radius: var(--bd-r-pill) !important;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+/* --------------------------------------------------------------------------
+   B10. Kartu pemberitahuan (kelengkapan profil)
+   --------------------------------------------------------------------------
+   Same callout treatment as the pasien dashboard: a mint card when the app is
+   usable, an amber one when the profile gate is enforcing. Copy is untouched. */
+
+.dl-nakes-dashboard .dl-dashboard-stack > [data-role-prerequisite-alert] {
+  padding: 12px 14px;
+  border: 1px solid #EBD6A8;
+  border-left: 4px solid #B7791F;
+  border-radius: var(--bd-r-lg);
+  background: #FFF8E8;
+}
+
+.dl-nakes-dashboard .dl-dashboard-stack > [data-role-prerequisite-alert] strong {
+  color: var(--bd-ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.dl-nakes-dashboard .dl-dashboard-stack > [data-role-prerequisite-alert] span {
+  color: var(--bd-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.dl-nakes-dashboard .dl-dashboard-stack > .alert.alert-info {
+  padding: 10px 12px;
+  border: 1px solid var(--bd-line);
+  border-left: 4px solid var(--bd-green-600);
+  border-radius: var(--bd-r-md);
+  background: var(--bd-mint-soft);
+  color: var(--bd-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   B11. Navigasi bawah
+   --------------------------------------------------------------------------
+   Phone only: doclinc-nakes.css hides the bar from 768px up and the appbar
+   carries a desktop nav instead, which is existing behaviour and stays. */
+
+@media (max-width: 767.98px) {
+  /* nakes-dashboard.css hides this container with
+     `#nav-bottom-wrapper { display: none }`, and no script ever reveals it, so
+     the Personal Nakes navigation never rendered. The command centre is
+     unaffected because doclinc-puskesmas.css forces `display: block
+     !important`. The navigation markup, its active-item wiring and its
+     aria-current handling all already exist, so it is revealed here at the
+     phone breakpoint only. The desktop rule that hides the bar from 768px up
+     uses `!important` and therefore still wins. */
+  .dl-nakes-dashboard #nav-bottom-wrapper {
+    display: block;
+  }
+
+  .dl-nakes-dashboard .dl-bottom-nav {
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    width: min(calc(100% - (var(--bd-pad) * 2)), 398px);
+    padding-bottom: 0;
+    border: 1px solid var(--bd-line);
+    border-radius: var(--bd-r-lg) !important;
+    background: rgba(255, 255, 255, .97) !important;
+    box-shadow: 0 12px 30px rgba(18, 71, 47, .16) !important;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+
+  .dl-nakes-dashboard .dl-bottom-nav .menu {
+    padding: 8px !important;
+  }
+
+  /* doclinc-puskesmas.css memaku grid navigasi ke lima kolom, padahal item
+     "Operasional" hanya dirender bila `$puskesmas_operations_enabled` benar.
+     Untuk akun Puskesmas yang tidak mengaktifkannya, empat item hanya menempati
+     empat dari lima kolom sehingga bilahnya menyisakan satu kolom kosong di
+     kanan dan label "Permintaan" terpotong menjadi "Permint…". Kolom mengikuti
+     jumlah item yang benar-benar dirender, bukan angka tetap. */
+  .dl-nakes-dashboard .dl-puskesmas-mobile-nav .dl-bottom-nav-menu {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .dl-nakes-dashboard .dl-bottom-nav .menu > .menu-item {
+    min-height: 56px;
+    border-radius: var(--bd-r-md);
+    color: var(--bd-muted) !important;
+  }
+
+  .dl-nakes-dashboard .dl-bottom-nav .menu > .menu-item.active {
+    background: var(--bd-mint) !important;
+    color: var(--bd-mint-ink) !important;
+  }
+
+  /* Kedua selektor sengaja ditulis berdampingan. Bilah navigasi harus memakai
+     satu keluarga ikon, tetapi bila suatu saat ada item yang memakai berkas
+     gambar lagi, ikon itu tidak boleh diam-diam jatuh ke 24px milik
+     .dl-semantic-icon--lg dan merusak barisnya seperti sebelumnya. 20px adalah
+     ukuran yang dipakai navigasi beranda warga (doclinc-warga-dashboard.css). */
+  .dl-nakes-dashboard .dl-bottom-nav .menu > .menu-item i,
+  .dl-nakes-dashboard .dl-bottom-nav .menu > .menu-item img {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 20px !important;
+    line-height: 1;
+  }
+
+  .dl-nakes-dashboard .dl-bottom-nav .menu > .menu-item span {
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .dl-nakes-dashboard .dl-bottom-nav .menu > .menu-item:focus-visible {
+    outline: 3px solid var(--bd-green-500);
+    outline-offset: -2px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   B12. Gerak & preferensi pengurangan gerak
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-nakes-dashboard .dl-dashboard-stat,
+  .dl-nakes-dashboard .dl-bottom-nav .menu > .menu-item {
+    transition: none;
+  }
+
+  .dl-nakes-dashboard .dl-dashboard-stat:hover,
+  .dl-nakes-dashboard .dl-dashboard-stat:focus-visible {
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   B13. Viewport sempit (<= 374px)
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 374.98px) {
+  .dl-nakes-dashboard .dl-dashboard-stat {
+    padding: 10px;
+  }
+
+  .dl-nakes-dashboard .dl-dashboard-stat strong {
+    font-size: 1.3rem;
+  }
+
+  .dl-nakes-dashboard .dl-dashboard-stats > .dl-dashboard-stat:first-child strong {
+    font-size: 1.85rem;
+  }
+
+  .dl-nakes-dashboard .nakes-current-task-surface {
+    padding: 14px;
+  }
+
+  .dl-nakes-dashboard .dl-section-title {
+    font-size: 15px;
+  }
+
+  .dl-nakes-dashboard .dl-bottom-nav .menu > .menu-item span {
+    font-size: 10.5px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   B12. Dua perbaikan yang terukur saat validasi 360/390/430
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 767.98px) {
+  /* The prerequisite alert is the one surface in this dashboard that still uses
+     the plain Bootstrap `btn-sm` markup, so its CTA measured 38px tall - below
+     the 44px this design system asks for. Only the height changes; the button
+     keeps its own label and its own handler. */
+  .dl-nakes-dashboard .dl-dashboard-stack > [data-role-prerequisite-alert] .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 399.98px) {
+  /* `nk-fact-row` pins a 104px (86px on phones) label column beside a
+     `minmax(0, 1fr)` value. At 390px the request row's text column is only
+     ~109px and at 360px ~79px, so the row could not shrink below
+     label + gap and overflowed its card by up to 33px. Stacking the label above
+     the value removes the fixed column, so the row always fits. Scoped to the
+     request-row complaint facts; the active-task card keeps its two columns. */
+  .dl-nakes-dashboard .dl-latest-complaint .nk-fact-row,
+  .dl-nakes-dashboard .dl-latest-complaint .dl-complaint-facts > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  /* `dl-latest-row` is a non-wrapping flex row, so its "Lihat permintaan" button
+     stayed beside the text and squeezed the complaint column to ~79px at 360px,
+     where the main complaint was reduced to "Lemas dan pusing sej...".
+     Letting the row wrap puts the button on its own full-width line and gives
+     the complaint the whole first line. */
+  .dl-nakes-dashboard .dl-latest-row {
+    flex-wrap: wrap;
+  }
+
+  .dl-nakes-dashboard .dl-latest-row > .btn {
+    width: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   B13. Heading/card pairing on the Nakes dashboard
+   --------------------------------------------------------------------------
+   `doclinc-nakes.css` gives `.nakes-current-section-heading` `order: 1` so the
+   "current work" heading opens the screen. The view passes that class to more
+   than one heading, and equal `order` values keep document order - so every
+   heading carrying it was sorted to the top while the card it labels stayed at
+   `order: 6` far below. Measured on the live dashboard: "Diterima" sat 97px
+   above its card and "Permintaan masuk Puskesmas" sat 2238px above its card.
+
+   Only the FIRST such heading belongs at the top; any later one is put back with
+   the section cards, where it sits directly above its own card - the pairing the
+   warga dashboard already has. */
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .dl-dashboard-stack > .nakes-current-section-heading ~ .nakes-current-section-heading {
+    order: 6;
+  }
+
+  /* `nakes_dashboard_v.php` renders the OTHER accepted consultations as a
+     separate, unlabelled card straight after the active-task card. It carries
+     `.dl-dashboard-section`, so it inherited `order: 6` and landed ~2000px below
+     the "Diterima" heading it belongs to - the reader saw two unlabelled request
+     rows with no section. Matching the active-task card's order puts it back
+     directly underneath it, inside the "Diterima" section. */
+  .dl-nakes-dashboard .dl-dashboard-stack > .nakes-current-task-surface + .dl-nakes-card {
+    order: 2;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   B14. Ukuran sasaran sentuh pada permukaan Nakes
+   --------------------------------------------------------------------------
+   Measured on the live dashboard: the assignment form inside the active-task
+   card used Bootstrap's `-sm` sizing (select and textarea 40px tall, submit
+   button 42px), and the notification panel's close control was 34px. The warga
+   dashboard's controls are all at least 44px, so this brings the Nakes surfaces
+   to the same floor. Only the box grows; the glyph and the type keep their size. */
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .dl-dashboard-stack .form-select-sm,
+  .dl-nakes-dashboard .dl-dashboard-stack .form-control-sm,
+  .dl-nakes-dashboard .dl-dashboard-stack .btn-sm {
+    min-height: 44px;
+  }
+
+
+/* --------------------------------------------------------------------------
+   B15. Perbaikan dari tinjauan Web Interface Guidelines
+   --------------------------------------------------------------------------
+   Three rules from the guideline set that neither dashboard satisfied. Kept in
+   the bento layer because they are presentation-only and both surfaces need them. */
+
+/* Number columns and comparisons read better with fixed-width figures; the Nakes
+   counters are exactly that (00 / 03 / 00 change width as they update). */
+.dl-nakes-dashboard .dl-dashboard-stat strong {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Removes the ~300ms double-tap-zoom delay on the card-sized tap targets. */
+.dl-warga-app .dl-bento-tile,
+.dl-warga-app .dl-bento-link,
+.dl-warga-app .dl-bento-nav .menu > .menu-item,
+.dl-nakes-dashboard .dl-dashboard-stat,
+.dl-nakes-dashboard .dl-bottom-nav .menu > .menu-item,
+.dl-nakes-dashboard .dl-latest-row > .btn {
+  touch-action: manipulation;
+}
+
+/* Section headings are short and break awkwardly on phones - "Kelengkapan data /
+   Puskesmas". Balancing the wrap keeps the two words together. */
+.dl-warga-app .dl-section-title,
+.dl-nakes-dashboard .dl-section-title {
+  text-wrap: balance;
+}
+
+/* The sticky Nakes appbar would otherwise cover a section heading reached through
+   an in-page anchor (#beranda, #req_konsul, #riwayat_konsul). */
+.dl-nakes-dashboard .dl-dashboard-stack > .dl-section-header {
+  scroll-margin-top: 84px;
+}
+
+  .dl-nakes-dashboard .dl-dashboard-stack .btn-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Bootstrap sizes `.btn-close` at 1em plus padding; raising only the box keeps
+     the cross at its original size. */
+  .dl-nakes-dashboard .btn-close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ==========================================================================
+   B16. Sub-halaman akun Puskesmas - Permintaan, Riwayat, Profil
+   ==========================================================================
+   Beranda sudah memakai sistem bento; tiga bagian lain di akun Puskesmas masih
+   memakai aturan nakes-dashboard.css yang menulis warna dan radius mentah
+   (#dcece5, #087b55, #183c2f, #6b7f76, #eef7f3, radius 14px, gutter 9-10px).
+   Lapisan ini memindahkan ketiganya ke token --bd-* yang sama dengan beranda
+   warga, supaya satu akun tidak lagi memuat dua bahasa visual.
+
+   Irama yang dipakai ketiga halaman:
+     - satu kolom, gutter --bd-gap (12px), margin halaman --bd-pad (16px)
+     - kartu: --bd-surface, garis 1px --bd-line, radius --bd-r-lg, --bd-shadow-1
+     - blok di dalam kartu: --bd-r-md, lalu --bd-r-sm untuk elemen terkecil
+     - skala teks: kicker 12px/800/hijau, judul 17px/800/ink,
+       label 12px/700/muted, nilai 13px/700/ink, chip 11-12px/800
+     - petak ikon: 36px, --bd-r-sm, --bd-mint-soft, glyph 16px --bd-green-600 */
+
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard #req_konsul,
+  .dl-nakes-dashboard #riwayat_konsul,
+  .dl-nakes-dashboard #profile {
+    padding-inline: var(--bd-pad);
+    padding-bottom: var(--bd-nav-space);
+  }
+
+  /* --- Kepala bagian -------------------------------------------------------
+     Permintaan memakai nakes_section_header_v, Riwayat memakai
+     .dl-history-page-head dengan struktur yang sama: kicker, judul, chip. */
+  .dl-nakes-dashboard .dl-nakes-page-header,
+  .dl-nakes-dashboard .dl-history-page-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--bd-gap);
+    margin: 0 0 var(--bd-gap);
+    padding: 0;
+    background: transparent;
+  }
+
+  .dl-nakes-dashboard .dl-card-kicker,
+  .dl-nakes-dashboard .dl-history-page-head > div > span {
+    display: block;
+    color: var(--bd-green-600);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .01em;
+    line-height: 1.3;
+  }
+
+  .dl-nakes-dashboard .dl-nakes-page-header .dl-section-title,
+  .dl-nakes-dashboard .dl-history-page-head h2 {
+    margin: 2px 0 0;
+    color: var(--bd-ink);
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+
+  .dl-nakes-dashboard .dl-header-count {
+    flex: 0 0 auto;
+    padding: 6px 11px;
+    border-radius: var(--bd-r-pill);
+    background: var(--bd-mint-soft);
+    color: var(--bd-mint-ink);
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .dl-nakes-dashboard .dl-history-counts {
+    min-width: 58px;
+    padding: 7px 11px;
+    border: 1px solid var(--bd-line);
+    border-radius: var(--bd-r-sm);
+    background: var(--bd-surface);
+    box-shadow: var(--bd-shadow-1);
+    text-align: center;
+  }
+
+  .dl-nakes-dashboard .dl-history-counts strong {
+    display: block;
+    color: var(--bd-green-600);
+    font-size: 17px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .dl-nakes-dashboard .dl-history-counts span {
+    display: block;
+    margin-top: 2px;
+    color: var(--bd-muted);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  /* --- Keadaan kosong ------------------------------------------------------
+     Beranda warga memakai satu glyph di dalam petak (dl-bento-empty__icon),
+     bukan ilustrasi. Ilustrasi "not found" yang besar dengan lingkaran navy
+     gelap juga berada di luar palet bento, jadi di sini hanya glyph yang
+     dipakai - disesuaikan dengan glyph navigasi bagiannya. */
+  .dl-nakes-dashboard .dl-soft-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 118px;
+    padding: 20px 16px;
+    border: 1.5px dashed #B9DCCB;
+    border-radius: var(--bd-r-sm);
+    background: var(--bd-mint-mist);
+  }
+
+  .dl-nakes-dashboard .dl-soft-empty__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--bd-r-sm);
+    background: #E4F6EE;
+    color: var(--bd-green-600);
+    font-size: 17px;
+    line-height: 1;
+  }
+
+  .dl-nakes-dashboard .dl-soft-empty .dl-task-title {
+    margin: 0;
+    color: var(--bd-ink);
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+
+  .dl-nakes-dashboard .dl-soft-empty .dl-muted-copy {
+    margin: 0;
+    max-width: 34ch;
+    color: var(--bd-muted);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+}
+
+/* --- B16.2 Riwayat konsultasi ---------------------------------------------
+   Kartu riwayat masih memakai `card shadow` bawaan Bootstrap dengan warna
+   mentah. Di sini kartu memakai anatomi bento yang sama dengan Beranda.
+   Garis aksen hijau di tepi kiri kartu aktif dipertahankan karena itu penanda
+   status yang sudah dikenal pengguna. */
+@media (max-width: 767.98px) {
+  /* Tab "Saat ini / Konsultasi". Lintasan dan pil aktifnya sudah ditata style.css
+     (`.dl-dashboard-body .nav-tabs.dl-tabs`, selektor empat kelas): lintasan
+     putih bergaris, pil aktif #89f6da - persis --bd-mint, sama dengan pil aktif
+     navigasi beranda warga. Jadi di sini hanya jarak yang diatur; deklarasi
+     display/padding/border/background tidak ditulis karena akan kalah dan
+     menjadi kode mati. Tinggi sasaran sentuh dipatok 44px dengan !important
+     karena style.css memaku nav-link di 40px. */
+  .dl-nakes-dashboard .dl-history-tabs {
+    gap: 6px;
+    margin-bottom: var(--bd-gap) !important;
+  }
+
+  .dl-nakes-dashboard .dl-history-tabs .nav-link {
+    min-height: 44px !important;
+    font-weight: 800;
+  }
+
+  .dl-nakes-dashboard .dl-history-tabs .nav-link:focus-visible {
+    outline: 3px solid var(--bd-green-500);
+    outline-offset: -2px;
+  }
+
+  .dl-nakes-dashboard .dl-history-stack {
+    display: grid;
+    gap: var(--bd-gap);
+  }
+
+  .dl-nakes-dashboard .dl-history-card {
+    border: 1px solid var(--bd-line) !important;
+    border-radius: var(--bd-r-lg) !important;
+    background: var(--bd-surface);
+    box-shadow: var(--bd-shadow-1) !important;
+  }
+
+  .dl-nakes-dashboard .dl-history-card-active::before {
+    width: 4px;
+    background: var(--bd-green-600);
+  }
+
+  .dl-nakes-dashboard .dl-history-card-completed {
+    border-color: var(--bd-line) !important;
+    box-shadow: var(--bd-shadow-1) !important;
+  }
+
+  .dl-nakes-dashboard .dl-history-card-head {
+    gap: 10px;
+    padding: 12px var(--bd-pad);
+    border-bottom: 1px solid var(--bd-line);
+    background: transparent;
+  }
+
+  .dl-nakes-dashboard .dl-history-card-active .dl-history-card-head {
+    padding-left: calc(var(--bd-pad) + 4px);
+  }
+
+  .dl-nakes-dashboard .dl-history-title-wrap strong {
+    display: block;
+    color: var(--bd-ink);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .dl-nakes-dashboard .dl-history-title-wrap span {
+    display: block;
+    margin-top: 2px;
+    color: var(--bd-muted);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .dl-nakes-dashboard .dl-history-card .card-body,
+  .dl-nakes-dashboard .dl-history-card .card-footer {
+    padding: var(--bd-pad);
+    background: transparent;
+  }
+
+  .dl-nakes-dashboard .dl-history-card .card-footer {
+    border-top: 1px solid var(--bd-line);
+  }
+
+  .dl-nakes-dashboard .dl-history-card .nk-card-body {
+    display: grid;
+    gap: var(--bd-gap);
+  }
+}
+
+/* --- B16.3 Isi kartu Riwayat -----------------------------------------------
+   Satu tingkat lebih dalam dari kartu: radius menengah, latar mint paling
+   tipis, tanpa bayangan. Inilah yang membuat isi kartu terbaca sebagai bento
+   bersarang, bukan tumpukan kartu bershadow. */
+@media (max-width: 767.98px) {
+  /* Panel bersarang dipakai bersama oleh kartu Riwayat dan kartu Permintaan, jadi
+     keduanya ditulis dalam satu :is() - bukan diduplikasi - supaya nilai tokennya
+     tidak bisa menyimpang satu sama lain. */
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-card-section {
+    margin: 0;
+    padding: 12px;
+    border: 1px solid var(--bd-line);
+    border-radius: var(--bd-r-md);
+    background: var(--bd-mint-mist);
+  }
+
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-complaint__title,
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-detail-panel__title,
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-action-panel__title {
+    display: block;
+    margin: 0 0 8px;
+    color: var(--bd-green-600);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .01em;
+    line-height: 1.3;
+  }
+
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-complaint__main {
+    display: block;
+    margin: 0;
+    color: var(--bd-ink);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-fact-list {
+    display: grid;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--bd-line);
+  }
+
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-fact-row,
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-detail-row {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+  }
+
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-fact-label,
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-detail-label {
+    color: var(--bd-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-fact-value,
+  .dl-nakes-dashboard :is(.dl-history-card, .dl-nakes-request-card) .nk-detail-value {
+    color: var(--bd-ink);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .dl-nakes-dashboard .dl-history-card .nk-timeline-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .dl-nakes-dashboard .dl-history-card .nk-timeline-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--bd-line);
+  }
+
+  .dl-nakes-dashboard .dl-history-card .nk-timeline-item:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .dl-nakes-dashboard .dl-history-card .nk-timeline-item strong {
+    color: var(--bd-ink);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  .dl-nakes-dashboard .dl-history-card .nk-timeline-item span {
+    flex: 0 0 auto;
+    color: var(--bd-muted);
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  /* Panel "Riwayat" tanpa satu pun peristiwa hanya menyisakan judul dan ruang
+     kosong setinggi blok, yang terbaca sebagai kartu rusak. Panelnya
+     disembunyikan sampai ada isinya. :has() dipakai sebagai peningkatan
+     bertahap - di peramban tanpa dukungan, aturan ini diabaikan dan tampilannya
+     kembali seperti sebelumnya, bukan rusak. */
+  .dl-nakes-dashboard .dl-history-card .nk-action-panel--timeline:not(:has(.nk-timeline-item)) {
+    display: none;
+  }
+
+  /* --- Sasaran sentuh Riwayat ---------------------------------------------
+     Pengukuran menemukan 17 kontrol di bawah 44px pada bagian ini: select dan
+     input 40px, tombol 38px, tombol aksi 42px. Hanya tingginya yang dinaikkan;
+     label, warna dan penanganannya tidak berubah. */
+  .dl-nakes-dashboard .dl-history-card .form-select,
+  .dl-nakes-dashboard .dl-history-card .form-control {
+    min-height: 44px;
+    border-color: var(--bd-line);
+    border-radius: var(--bd-r-sm);
+    font-size: 13px;
+  }
+
+  .dl-nakes-dashboard .dl-history-card .form-select:focus,
+  .dl-nakes-dashboard .dl-history-card .form-control:focus {
+    border-color: var(--bd-green-500);
+    box-shadow: 0 0 0 3px rgba(55, 154, 105, .18);
+  }
+
+  .dl-nakes-dashboard .dl-history-actions {
+    display: grid;
+    gap: 8px;
+  }
+
+  /* Bentuk tombol bento, disalin dari CTA beranda warga
+     (`.dl-bento-cta .dl-btn-primary`): pil penuh, tinggi 46px, label di kiri,
+     dan glyph di dalam chip bulat 30px di ujung kanan. Padding asimetris
+     6px 6px 6px 16px inilah yang membuat tombol terbaca sebagai satu nama
+     tindakan dengan satu penanda, bukan tombol generik berikon di tengah.
+     Hanya berlaku untuk tombol selebar kartu; tombol ringkas yang berdampingan
+     (nk-pic-actions) tetap memakai ikon di depan karena labelnya panjang dan
+     tidak akan muat bila glyph dipindah ke ujung. */
+  /* Tanpa glyph di dalam tombol, tombol tidak lagi memerlukan susunan
+     asimetris: label di tengah dengan padding simetris, sesuai bentuk B17.
+     Tinggi dan radius tetap datang dari B17. */
+  .dl-nakes-dashboard .dl-history-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  /* Susunan bento: aksi utama selebar kartu, aksi sekunder berdampingan dua
+     kolom. Sebelumnya sekunder bertumpuk satu kolom penuh sehingga tiga tombol
+     panjang memakan tinggi kartu; dengan label pendek, dua kolom membuat
+     tingginya ringkas dan lebarnya seragam. */
+  .dl-nakes-dashboard .dl-history-secondary-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .dl-nakes-dashboard .dl-status-pill {
+    flex: 0 0 auto;
+    padding: 5px 11px;
+    border-radius: var(--bd-r-pill);
+    background: var(--bd-mint-soft);
+    color: var(--bd-mint-ink);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  /* Tombol "Ganti penanggung jawab" dan "Hapus penugasan" berada di panel
+     nk-pic-actions / nk-pic-clear-form, yaitu di luar .dl-history-actions,
+     sehingga aturan di atas tidak menjangkaunya. Yang memakunya di 38px adalah
+     `.dl-nakes-dashboard .btn-sm` (0,2,0); selektor tiga kelas di sini menang
+     tanpa perlu !important. */
+  .dl-nakes-dashboard .nk-pic-actions .btn,
+  .dl-nakes-dashboard .nk-pic-clear-form .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+  }
+}
+
+/* --- B16.4 Profil ----------------------------------------------------------
+   Kartu profil memakai token yang sama dengan Beranda. Judul bagian di sini
+   sekarang <h2 class="dl-profile-section-title">; sebelumnya <div>, sehingga
+   halaman ini tidak punya satu pun heading dan tidak muncul di daftar heading
+   pembaca layar. Bentuk visualnya tidak berubah, hanya elemennya. */
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .dl-profile-stack {
+    display: grid;
+    gap: var(--bd-gap);
+  }
+
+  .dl-nakes-dashboard .dl-profile-summary-card,
+  .dl-nakes-dashboard .nk-assignment-card,
+  .dl-nakes-dashboard .nk-staff-card,
+  .dl-nakes-dashboard .dl-profile-info-card,
+  .dl-nakes-dashboard .dl-profile-actions {
+    padding: var(--bd-pad);
+    border: 1px solid var(--bd-line);
+    border-radius: var(--bd-r-lg);
+    background: var(--bd-surface);
+    box-shadow: var(--bd-shadow-1);
+  }
+
+  .dl-nakes-dashboard .dl-profile-summary-card {
+    display: flex;
+    align-items: center;
+    gap: var(--bd-gap);
+  }
+
+  .dl-nakes-dashboard .dl-profile-summary-card span {
+    display: block;
+    color: var(--bd-green-600);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .01em;
+    line-height: 1.3;
+  }
+
+  .dl-nakes-dashboard .dl-profile-summary-card strong {
+    display: block;
+    margin: 2px 0 0;
+    color: var(--bd-ink);
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    line-height: 1.25;
+  }
+
+  .dl-nakes-dashboard .dl-profile-section-title {
+    margin: 0 0 10px;
+    color: var(--bd-green-600);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .01em;
+    line-height: 1.3;
+  }
+
+  .dl-nakes-dashboard .nk-info-list {
+    display: grid;
+    gap: 0;
+    margin: 0;
+  }
+
+  .dl-nakes-dashboard .nk-info-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: baseline;
+    padding: 9px 0;
+    border-top: 1px solid var(--bd-line);
+  }
+
+  .dl-nakes-dashboard .nk-info-row:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .dl-nakes-dashboard .nk-info-label {
+    color: var(--bd-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  .dl-nakes-dashboard .nk-info-value {
+    color: var(--bd-ink);
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.4;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  /* Petak ikon: 36px, satu tingkat radius di bawah kartu. Glyph-nya sekarang
+     Font Awesome, sama dengan kolom yang sama di beranda warga. */
+  .dl-nakes-dashboard .dl-profile-field {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    padding: 10px 0;
+    border-top: 1px solid var(--bd-line);
+  }
+
+  .dl-nakes-dashboard .dl-profile-field:first-of-type {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .dl-nakes-dashboard .dl-profile-field-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--bd-r-sm);
+    background: var(--bd-mint-soft);
+    color: var(--bd-green-600);
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .dl-nakes-dashboard .dl-profile-field-body label {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--bd-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .dl-nakes-dashboard .dl-profile-field-body input,
+  .dl-nakes-dashboard .dl-profile-field-body textarea {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--bd-ink);
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.45;
+    padding: 0;
+    resize: none;
+  }
+
+  /* Bidang ini memang tampil sebagai teks, bukan kotak isian, jadi tingginya
+     tetap ringkas. Karena tetap dapat difokus dan teksnya dapat disalin,
+     penanda fokusnya harus terlihat. */
+  .dl-nakes-dashboard .dl-profile-field-body input:focus-visible,
+  .dl-nakes-dashboard .dl-profile-field-body textarea:focus-visible {
+    outline: 2px solid var(--bd-green-500);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+/* --- B16.5 Daftar staf dan aksi Profil -------------------------------------
+   Setiap staf adalah blok di dalam kartu: radius menengah, latar mint paling
+   tipis. Metadata (nomor kontak, SIP, status akun) menjadi chip pil. Warna
+   peringatan dan bahaya yang sudah dipakai aplikasi (#fff4d6/#8a5a00 dan
+   #fde8e8/#a12626) dipertahankan apa adanya supaya artinya tidak berubah. */
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .nk-staff-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .dl-nakes-dashboard .nk-staff-item {
+    display: grid;
+    gap: 0;
+    padding: 12px;
+    border: 1px solid var(--bd-line);
+    border-radius: var(--bd-r-md);
+    background: var(--bd-mint-mist);
+  }
+
+  .dl-nakes-dashboard .nk-staff-main {
+    display: grid;
+    gap: 2px;
+  }
+
+  .dl-nakes-dashboard .nk-staff-main strong {
+    color: var(--bd-ink);
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .dl-nakes-dashboard .nk-staff-main span {
+    color: var(--bd-muted);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .dl-nakes-dashboard .nk-staff-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .dl-nakes-dashboard .nk-staff-meta span {
+    padding: 4px 10px;
+    border-radius: var(--bd-r-pill);
+    background: var(--bd-surface);
+    color: var(--bd-muted);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dl-nakes-dashboard .nk-staff-more,
+  .dl-nakes-dashboard .nk-staff-empty {
+    margin-top: 10px;
+    color: var(--bd-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  /* Aksi profil: dua tombol selebar kartu. nakes-dashboard sudah mematok 44px;
+     di sini radius, ukuran ikon dan penanda fokusnya disamakan dengan tombol
+     bento di halaman lain. */
+  .dl-nakes-dashboard .dl-profile-actions {
+    display: grid;
+    gap: 8px;
+  }
+
+  .dl-nakes-dashboard .dl-profile-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .dl-nakes-dashboard .dl-profile-actions .btn i {
+    font-size: 14px;
+    line-height: 1;
+  }
+}
+
+/* --- B16.6 Kartu permintaan masuk (Permintaan) -----------------------------
+   Kartu ini memakai anatomi yang sama dengan kartu konsultasi di Riwayat:
+   permukaan putih, satu garis, radius besar, dan garis aksen hijau di tepi kiri
+   karena barisnya memang menunggu tindakan. Panel di dalamnya (keluhan, lokasi)
+   sudah ditangani bersama oleh blok B16.3 lewat :is(). */
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .dl-nakes-request-list {
+    display: grid;
+    gap: var(--bd-gap);
+  }
+
+  .dl-nakes-dashboard .dl-nakes-request-item {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--bd-line) !important;
+    border-radius: var(--bd-r-lg) !important;
+    background: var(--bd-surface);
+    box-shadow: var(--bd-shadow-1) !important;
+  }
+
+  .dl-nakes-dashboard .dl-nakes-request-item::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--bd-green-600);
+  }
+
+  .dl-nakes-dashboard .dl-nakes-request-item .card-header {
+    display: grid;
+    gap: 10px;
+    padding: 12px var(--bd-pad) 12px calc(var(--bd-pad) + 4px);
+    border-bottom: 1px solid var(--bd-line);
+    background: transparent;
+  }
+
+  .dl-nakes-dashboard .dl-request-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Blok nomor antrian: label kecil di atas kode. Dibaca sebagai satu satuan,
+     bukan dua baris teks yang kebetulan berdampingan. nakes-dashboard.css
+     memakunya di kotak 40x40 sehingga label "ANTRIAN" meluber keluar kotaknya;
+     di sini kotaknya mengikuti isi. */
+  .dl-nakes-dashboard .dl-queue-badge {
+    flex: 0 0 auto;
+    width: auto;
+    height: auto;
+    min-width: 48px;
+    padding: 6px 10px;
+    border-radius: var(--bd-r-sm);
+    background: var(--bd-mint-soft);
+    text-align: center;
+  }
+
+  .dl-nakes-dashboard .dl-queue-badge small {
+    display: block;
+    color: var(--bd-green-600);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    line-height: 1.3;
+  }
+
+  .dl-nakes-dashboard .dl-queue-badge span {
+    display: block;
+    color: var(--bd-ink);
+    font-size: 14px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+
+  .dl-nakes-dashboard .dl-request-identity {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+
+  .dl-nakes-dashboard .dl-request-title {
+    color: var(--bd-ink);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .dl-nakes-dashboard .dl-request-subtitle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-top: 2px;
+  }
+
+  .dl-nakes-dashboard .dl-request-subtitle span {
+    color: var(--bd-muted);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  /* style.css memakai !important untuk latar dan warna chip ini, sedangkan
+     nakes-dashboard.css memberi garis tepi amber - hasilnya chip berteks mint
+     dengan tepi amber. Ketiganya dipatok di sini supaya jadi satu pil mint. */
+  .dl-nakes-dashboard .dl-nakes-request-item .dl-badge {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 5px 11px;
+    border: 0 !important;
+    border-radius: var(--bd-r-pill);
+    background: var(--bd-mint-soft) !important;
+    color: var(--bd-mint-ink) !important;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  .dl-nakes-dashboard .dl-nakes-request-item .card-body {
+    display: grid;
+    gap: var(--bd-gap);
+    padding: var(--bd-pad);
+    background: transparent;
+  }
+
+  .dl-nakes-dashboard .dl-nakes-request-item .card-footer {
+    padding: var(--bd-pad);
+    border-top: 1px solid var(--bd-line);
+    background: transparent;
+  }
+
+  /* Susunan bento yang sama dengan kartu konsultasi: aksi utama selebar kartu,
+     aksi sekunder dua kolom berdampingan. */
+  .dl-nakes-dashboard .dl-nakes-actions {
+    display: grid;
+    gap: 8px;
+  }
+
+  .dl-nakes-dashboard .dl-nakes-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .dl-nakes-dashboard .dl-nakes-secondary-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+
+/* ==========================================================================
+   B17. Bentuk tombol - dari snippet "button-29"
+   ==========================================================================
+   Bentuknya diambil dari snippet yang diminta: sudut 6px, tinggi 48px, bayangan
+   berlapis dengan bibir inset di bawah, terangkat 2px saat hover, tertekan 2px
+   saat aktif, dan cincin fokus inset.
+
+   Empat hal sengaja TIDAK diambil, dengan alasannya:
+     - Warna. Snippet memakai gradient biru (#5adaff -> #5468ff) di atas palet
+       hijau/mint aplikasi. Bayangannya di sini memakai rgba(18,71,47,..) yaitu
+       --bd-green-900, jadi kedalaman yang sama tanpa keluar palet.
+     - Font. Snippet meminta JetBrains Mono, yang tidak dimuat aplikasi ini;
+       memakainya akan jatuh ke monospace bawaan peramban dan tombol terbaca
+       seperti terminal. Teks tetap Manrope lewat `font-family: inherit`.
+     - `will-change`. Satu layar memuat sampai sembilan tombol; mempromosikan
+       semuanya ke lapisan kompositor sendiri secara permanen menambah memori
+       tanpa manfaat pada transisi 150ms.
+     - `:focus` diganti `:focus-visible`, supaya cincin tidak menyala saat
+       tombol diklik dengan tetikus.
+
+   Dua penyesuaian kecil demi keamanan: `height: 48px` menjadi `min-height`
+   supaya label yang terpaksa turun baris tidak terpotong oleh
+   `overflow: hidden`, dan `border: 0` hanya untuk tombol berisi - tombol
+   outline memakai garisnya sebagai satu-satunya penanda, jadi garisnya
+   dipertahankan.
+
+   Susunan isi (label di kiri, glyph di chip bulat di ujung kanan) dipertahankan
+   seperti yang sudah disetujui; snippet tidak mengatur susunan ikon. */
+
+@media (max-width: 767.98px) {
+  /* Dua selektor untuk satu aturan. Yang kedua diperlukan karena tiga aturan di
+     lembar lain memakai selektor tiga kelas dengan !important, dan tanpa
+     dinaikkan ke tingkat yang sama radiusnya tidak akan seragam:
+       - nakes-dashboard.css:1799 `.dl-nakes-request-card .card-footer .btn` -> 10px
+       - doclinc-nakes.css:23   `.dl-nakes-dashboard .nakes-current-task-surface .btn` -> 9px
+       - doclinc-puskesmas.css:166 `.dl-puskesmas-shell .dl-operations-request-item .btn` -> 8px
+     `.dl-shell` ada pada #content-wrapper, sehingga semua kartu memakai selektor
+     kedua; tombol di luar konten (modal) tetap tertangkap selektor pertama. */
+  .dl-nakes-dashboard .btn,
+  .dl-nakes-dashboard .dl-shell .btn {
+    /* `!important` juga diperlukan, bukan berlebihan, dan alasannya konkret:
+       - nakes-dashboard.css memaku `.btn-sm` di radius pil dan
+         `.dl-history-primary-action` di 9-10px, keduanya dengan !important;
+       - Bootstrap `.shadow-sm` adalah utilitas !important dan hampir semua
+         tombol di shell ini memakainya, sehingga tanpa !important bayangan
+         berlapis di bawah tidak akan pernah terender sama sekali. */
+    min-height: 48px !important;
+    border-radius: 6px !important;
+    padding-inline: 16px;
+    font-family: inherit;
+    box-shadow:
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px !important;
+    transition: box-shadow .15s, transform .15s;
+    overflow: hidden;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+
+  /* Tombol berisi: bibir inset di bawah, sama seperti snippet. `border-width: 0`
+     hanya menghapus lebarnya; style.css memaku border-color dengan !important
+     tetapi tidak lebarnya, jadi tidak ada garis yang terender. */
+  .dl-nakes-dashboard .btn-success,
+  .dl-nakes-dashboard .btn-primary,
+  .dl-nakes-dashboard .btn-info,
+  .dl-nakes-dashboard .btn-warning,
+  .dl-nakes-dashboard .btn-light {
+    border-width: 0;
+    box-shadow:
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px,
+      rgba(31, 111, 75, .45) 0 -3px 0 inset !important;
+  }
+
+  /* Tombol outline: bibir inset diganti bayangan jatuh saja, supaya garis tepi
+     dan bibir tidak terbaca sebagai dua tepi bertumpuk. */
+  .dl-nakes-dashboard .btn-outline-secondary,
+  .dl-nakes-dashboard .btn-outline-warning {
+    box-shadow:
+      rgba(18, 71, 47, .16) 0 2px 4px,
+      rgba(18, 71, 47, .10) 0 7px 13px -3px !important;
+  }
+}
+
+/* Hover: terangkat 2px, bibir inset menyala seperti snippet. */
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .dl-nakes-dashboard .btn-success:hover,
+  .dl-nakes-dashboard .btn-primary:hover,
+  .dl-nakes-dashboard .btn-info:hover,
+  .dl-nakes-dashboard .btn-warning:hover,
+  .dl-nakes-dashboard .btn-light:hover {
+    box-shadow:
+      rgba(18, 71, 47, .30) 0 4px 8px,
+      rgba(18, 71, 47, .18) 0 7px 13px -3px,
+      var(--bd-green-500) 0 -3px 0 inset !important;
+  }
+
+  .dl-nakes-dashboard .btn-outline-secondary:hover,
+  .dl-nakes-dashboard .btn-outline-warning:hover {
+    box-shadow:
+      rgba(18, 71, 47, .20) 0 4px 8px,
+      rgba(18, 71, 47, .12) 0 7px 13px -3px !important;
+  }
+
+  /* Aktif: tertekan 2px dengan bayangan masuk, seperti snippet. */
+  .dl-nakes-dashboard .btn:active {
+    transform: translateY(2px);
+  }
+
+  .dl-nakes-dashboard .btn-success:active,
+  .dl-nakes-dashboard .btn-primary:active,
+  .dl-nakes-dashboard .btn-info:active,
+  .dl-nakes-dashboard .btn-warning:active,
+  .dl-nakes-dashboard .btn-light:active {
+    box-shadow: var(--bd-green-700) 0 3px 7px inset !important;
+  }
+
+  .dl-nakes-dashboard .btn-outline-secondary:active,
+  .dl-nakes-dashboard .btn-outline-warning:active {
+    box-shadow: rgba(18, 71, 47, .22) 0 3px 7px inset !important;
+  }
+
+  /* Cincin fokus inset, bentuknya seperti snippet, tetapi hanya saat fokus
+     datang dari papan tombol. Bayangan jatuhnya dipertahankan supaya kedalaman
+     tombol tidak runtuh saat difokus. */
+  .dl-nakes-dashboard .btn:focus-visible {
+    outline: 0;
+    box-shadow:
+      var(--bd-green-500) 0 0 0 2px inset,
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px !important;
+  }
+}
+
+/* design.md mensyaratkan setiap gerak punya pasangan pengurangan gerak; angkat
+   dan tekan 2px dimatikan, bayangannya tetap supaya umpan balik tidak hilang. */
+@media (prefers-reduced-motion: reduce) {
+  .dl-nakes-dashboard .btn {
+    transition: none;
+  }
+
+  .dl-nakes-dashboard .btn:hover,
+  .dl-nakes-dashboard .btn:active {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   B18. Aksi destruktif & tekstur bento
+   ==========================================================================
+   Dua aturan yang berlaku di seluruh halaman akun, jadi ditulis sekali di sini
+   dan dipakai lewat token: warna aksi destruktif, dan tekstur plus untuk petak
+   antrian serta header. Menambah halaman baru tidak perlu menyalin apa pun. */
+
+@media (max-width: 767.98px) {
+  /* Aksi destruktif memakai --bd-danger-ink, merah yang diturunkan saturasinya,
+     bukan #dc3545 bawaan Bootstrap yang lebih terang. #A8443F melewati 5.9:1 di
+     atas putih, jadi teks putih di atasnya tetap terbaca.
+     .btn-outline-danger kini juga terisi; penataannya ada di B20.2. */
+  .dl-nakes-dashboard .btn-danger {
+    color: #FFFFFF !important;
+    border-color: #8F3A36 !important;
+    background-color: var(--bd-danger-ink) !important;
+  }
+}
+
+/* ==========================================================================
+   B19. Header selalu terlihat
+   ==========================================================================
+   Header sudah `position: sticky !important; top: 0 !important` di
+   nakes-dashboard.css, tetapi tetap ikut terangkat saat halaman di-scroll.
+   Penyebabnya bukan header-nya, melainkan leluhurnya:
+
+   `.dl-shell` (yaitu #content-wrapper) memakai `overflow-x: hidden` di
+   style.css:275 dan nakes-dashboard.css:462. Menurut spesifikasi, bila satu
+   sumbu `hidden` dan sumbu lain `visible`, sumbu `visible` dihitung menjadi
+   `auto`. Jadi `.dl-shell` menjadi kotak gulir sendiri; `position: sticky` pada
+   header mengikat ke kotak gulir itu, yang tidak pernah menggulir, sehingga
+   header tidak pernah menempel.
+
+   `overflow-x: clip` memotong secara horizontal tanpa membentuk kotak gulir,
+   jadi header menempel ke viewport seperti yang dimaksud. Baris `hidden`
+   dipertahankan sebagai fallback untuk peramban yang belum mengenal `clip`;
+   pada peramban itu perilakunya sama seperti sebelum perbaikan ini, bukan lebih
+   buruk. */
+.dl-nakes-dashboard .dl-shell {
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+/* Tekstur header. Motif plus yang sama dengan petak antrian, hanya di sisi kanan
+   dan memudar ke kiri supaya nama akun tetap bersih di atasnya. Ditulis sebagai
+   background-image, bukan pseudo-elemen, supaya urutan tumpukan anak-anak header
+   (avatar, lonceng, nav desktop) tidak perlu diubah sama sekali. `!important`
+   diperlukan karena nakes-dashboard.css memakai shorthand `background` dengan
+   !important, dan shorthand itu sekaligus mengosongkan background-image. */
+.dl-nakes-dashboard .dl-nakes-appbar {
+  background-image:
+    linear-gradient(to left,
+      rgba(247, 255, 251, 0) 0%,
+      rgba(247, 255, 251, .82) 40%,
+      rgba(247, 255, 251, 1) 62%),
+    var(--bd-texture-plus-green) !important;
+  background-size: 100% 100%, 62px 62px !important;
+  background-position: left center, right center !important;
+  background-repeat: no-repeat, repeat !important;
+}
+
+/* ==========================================================================
+   B20. Susunan aksi bento
+   ==========================================================================
+   Dua susunan yang diminta. Keduanya memakai pola bento yang sama dengan petak
+   penghitung di Beranda: satu petak membentang di samping dua petak bertumpuk. */
+
+@media (max-width: 767.98px) {
+  /* --- Panel penanggung jawab: "Ganti Dokter" dan "Hapus" berdampingan -------
+     Kedua tombol itu berada di DUA <form> terpisah - form penugasan memuat
+     select dan catatan, form hapus hanya memuat tombolnya - jadi keduanya tidak
+     akan pernah berdampingan selama masing-masing form punya kotak sendiri.
+     `display: contents` menghapus kotak kedua form tanpa memindahkan satu pun
+     elemen, sehingga anak-anaknya menjadi item grid dari .nk-action-panel__body
+     dan kedua tombol bisa berbagi satu baris dengan lebar yang sama.
+
+     `:not([hidden])` penting di sini: atribut `hidden` hanya menyetel
+     `display: none` lewat lembar gaya peramban, dan `display: contents` dari
+     sini akan mengalahkannya - form hapus yang seharusnya tersembunyi akan ikut
+     tampil. */
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-action-panel__body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-action-panel__body > .nk-care-team-form,
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-action-panel__body > .nk-pic-form,
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-pic-actions,
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-pic-clear-form:not([hidden]) {
+    display: contents;
+  }
+
+  /* Select, catatan dan umpan balik memakai lebar penuh; hanya tombol yang
+     berbagi baris.
+
+     Perhatikan jalur selektornya: `display: contents` membuat anak-anak form
+     menjadi item grid dari __body, TETAPI induk DOM-nya tetap form. Jadi
+     `__body > .form-control` tidak cocok - selektornya harus melewati form
+     lebih dulu. Versi pertama saya memakai `>` langsung dan akibatnya input
+     catatan berbagi baris dengan tombol Ganti Dokter, sementara tombol Hapus
+     terdorong ke baris berikutnya. */
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-action-panel__body > .nk-care-team-form > .form-select,
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-action-panel__body > .nk-care-team-form > .form-control,
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-action-panel__body > .nk-pic-form > .form-select,
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-action-panel__body > .nk-pic-form > .form-control,
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-pic-muted,
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-pic-native-feedback,
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-pic-actions > .btn {
+    grid-column: 1 / -1;
+  }
+
+  /* Bila tombol Hapus ada, tombol Ganti Dokter berbagi baris dengannya sehingga
+     lebarnya sama; bila tidak ada, tombol itu kembali selebar panel. */
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-action-panel__body:has(.nk-pic-clear-form:not([hidden])) > .nk-care-team-form > .nk-pic-actions > .btn,
+  .dl-nakes-dashboard .nk-action-panel--pic .nk-action-panel__body:has(.nk-pic-clear-form:not([hidden])) > .nk-pic-form > .nk-pic-actions > .btn {
+    grid-column: auto;
+  }
+
+  /* --- Kartu konsultasi: "Lihat" petak tinggi, "Posisi"+"Batalkan" bertumpuk -
+     Tinggi "Lihat" sama dengan tinggi "Posisi" + "Batalkan" tanpa angka tetap:
+     keduanya menempati dua baris grid yang sama. Kolom kiri satu petak
+     membentang dua baris, kolom kanan dua petak satu baris masing-masing, dan
+     tinggi barisnya ditentukan oleh isi kolom kanan sehingga selalu cocok. */
+  .dl-nakes-dashboard .dl-history-card-active .dl-history-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  /* Bawaan: satu baris. Aksi utama di kolom kiri, aksi sekunder di kolom kanan.
+     Inilah yang terjadi ketika hanya "Batalkan" yang ada. */
+  .dl-nakes-dashboard .dl-history-card-active .dl-history-actions > .dl-history-primary-action {
+    grid-column: 1;
+  }
+
+  .dl-nakes-dashboard .dl-history-card-active .dl-history-actions > .dl-history-secondary-actions {
+    grid-column: 2;
+    display: grid;
+    /* Satu kolom. Markup menaruh TIAP tombol sekunder di div
+       .dl-history-secondary-actions sendiri, jadi tiap div hanya berisi satu
+       tombol; tanpa baris ini B16.3 memberi dua kolom dan tombolnya menyusut
+       jadi setengah lebar kolomnya. */
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* Ketika aksi sekunder ada DUA ("Posisi" dan "Batalkan"), kolom kiri
+     membentang dua baris sehingga tinggi "Lihat" sama dengan tinggi
+     "Posisi" + "Batalkan", tanpa angka tetap.
+
+     Yang dihitung adalah PEMBUNGKUSNYA, bukan tombol di dalamnya. Versi pertama
+     saya memakai `:has(.dl-history-secondary-actions > :nth-child(2))`, yang
+     tidak pernah benar karena tiap pembungkus hanya punya satu anak - akibatnya
+     "Lihat" tetap 48px dan ada baris kosong di bawah "Posisi". */
+  .dl-nakes-dashboard .dl-history-card-active .dl-history-actions:has(> .dl-history-secondary-actions ~ .dl-history-secondary-actions) > .dl-history-primary-action {
+    grid-row: 1 / span 2;
+  }
+
+  .dl-nakes-dashboard .dl-history-card-active .dl-history-actions > .visit-tracking-status {
+    grid-column: 1 / -1;
+  }
+}
+
+/* --- B20.2 Tombol outline yang kini terisi ---------------------------------
+   Permintaan: tombol putih-outline-hijau menjadi terisi hijau dengan garis
+   hijau, dan tombol putih-outline-merah menjadi terisi merah dengan garis
+   merah. Hijau memakai gradien yang sama dengan petak antrian di Beranda,
+   supaya satu akun memakai satu bahan.
+
+   Kontras: putih di atas --bd-green-600 (#2D7D56) mencapai 5.0:1, dan putih di
+   atas --bd-danger-ink (#A8443F) mencapai 5.9:1. Keduanya di atas ambang 4.5:1
+   untuk teks tombol.
+
+   Garisnya dipertahankan, tidak dihapus seperti pada .btn-success: pada
+   permukaan berwarna, garis satu tingkat lebih gelap itulah yang memberi tepi
+   tegas - dan itu yang diminta ("fill hijau dan outline hijau"). */
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .btn-outline-success {
+    color: #FFFFFF !important;
+    border-color: var(--bd-green-700) !important;
+    background-color: var(--bd-green-600) !important;
+    background-image: linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-700) 100%) !important;
+    box-shadow:
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px,
+      rgba(31, 111, 75, .45) 0 -3px 0 inset !important;
+  }
+
+  .dl-nakes-dashboard .btn-outline-success:hover,
+  .dl-nakes-dashboard .btn-outline-success:focus-visible {
+    color: #FFFFFF !important;
+    box-shadow:
+      rgba(18, 71, 47, .30) 0 4px 8px,
+      rgba(18, 71, 47, .18) 0 7px 13px -3px,
+      var(--bd-green-500) 0 -3px 0 inset !important;
+  }
+
+  .dl-nakes-dashboard .btn-outline-success:active {
+    box-shadow: var(--bd-green-900) 0 3px 7px inset !important;
+  }
+
+  .dl-nakes-dashboard .btn-outline-danger {
+    color: #FFFFFF !important;
+    border-color: #8F3A36 !important;
+    background-color: var(--bd-danger-ink) !important;
+    background-image: none !important;
+    box-shadow:
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px,
+      rgba(143, 58, 54, .55) 0 -3px 0 inset !important;
+  }
+
+  .dl-nakes-dashboard .btn-outline-danger:hover,
+  .dl-nakes-dashboard .btn-outline-danger:focus-visible {
+    color: #FFFFFF !important;
+    background-color: #8F3A36 !important;
+    box-shadow:
+      rgba(18, 71, 47, .30) 0 4px 8px,
+      rgba(18, 71, 47, .18) 0 7px 13px -3px,
+      rgba(255, 255, 255, .22) 0 -3px 0 inset !important;
+  }
+
+  .dl-nakes-dashboard .btn-outline-danger:active {
+    box-shadow: #7A312E 0 3px 7px inset !important;
+  }
+}
+
+
+
+/* ==========================================================================
+   B21. Bentuk tombol untuk halaman warga selain Beranda
+   ==========================================================================
+   Permintaan: "terapkan sistem tombol Puskesmas ke setiap halaman warga
+   KECUALI Dashboard". Sistem itu tinggal di B17 (bentuk), B18 (aksi
+   destruktif) dan B20.2 (outline yang kini terisi), semuanya terpaut pada
+   `.dl-nakes-dashboard`. Bagian ini menuliskan sistem yang sama untuk warga,
+   bukan menyalin nilainya ke tiap halaman - jadi satu tempat mengatur seluruh
+   halaman, sama seperti sisi Puskesmas.
+
+   Cakupan. Halaman warga adalah `<div id="..." class="content">` di dalam
+   `.dl-warga-app`: #beranda, #konsultasi_kesehatan, #riwayat, #profile.
+   Beranda dikecualikan lewat `:not(#beranda)` - di sana tombolnya sudah
+   memakai bentuk bento sendiri (pil penuh 46px di dalam kartu hero, lihat
+   doclinc-warga-dashboard.css), dan bentuk 6px akan membenturkan dua bahasa
+   visual di satu layar.
+
+   Modal ikut ke dalam cakupan lewat `:is(.content:not(#beranda),
+   .nk-profile-modal)`. Modal berada di luar `.content` - ia anak langsung
+   <body>, sama seperti di akun Puskesmas - sehingga tanpa itu tombol modal
+   akan tertinggal memakai bentuk Bootstrap sementara tombol di belakangnya
+   sudah 6px/48px. Ditulis sebagai satu `:is()` dan bukan blok terpisah supaya
+   nilai B17 tetap punya satu definisi; menyalinnya ke blok kedua akan membuat
+   dua tempat bisa menyimpang. Spesifisitasnya tidak berubah: `:is()` mengambil
+   bobot argumen terberatnya, dan di sini terberatnya adalah `#beranda`
+   (1,1,0) - sama dengan `:not(#beranda)` sebelumnya.
+
+   Yang diambil dari B17 apa adanya: sudut 6px, tinggi 48px, bayangan berlapis
+   dengan bibir inset 3px di bawah, terangkat 2px saat hover, tertekan 2px saat
+   aktif, dan cincin fokus inset. Warna tetap memakai token --bd-* yang sama,
+   bukan biru snippet. */
+
+@media (max-width: 767.98px) {
+  /* Dua selektor untuk satu aturan, alasannya sama dengan B17: aturan di lembar
+     lain memakai !important pada radius dan bayangan tombol warga
+     (doclinc-warga.css:159 `.dl-warga-app .dl-btn-secondary` -> 9px,
+     doclinc-warga-dashboard.css:286 `.dl-warga-app .dl-hero .dl-btn-secondary`
+     -> 46px dan bayangannya), sehingga tanpa dinaikkan ke tingkat yang sama
+     bentuknya tidak akan seragam. `.dl-shell` ada pada #content-wrapper. */
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-primary,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-secondary,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .warga-action:not(.warga-action--tertiary) {
+    min-height: 48px !important;
+    border-radius: 6px !important;
+    padding-inline: 16px;
+    font-family: inherit;
+    box-shadow:
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px !important;
+    transition: box-shadow .15s, transform .15s;
+    overflow: hidden;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+
+  /* Tombol berisi: bibir inset di bawah, sama seperti B17. `border-width: 0`
+     hanya menghapus lebarnya; style.css memaku border-color dengan !important
+     tetapi tidak lebarnya, jadi tidak ada garis yang terender. */
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-primary,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-success,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-info,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-warning,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-light,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-primary {
+    border-width: 0;
+    box-shadow:
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px,
+      rgba(31, 111, 75, .45) 0 -3px 0 inset !important;
+  }
+
+  /* Tombol outline: bibir inset diganti bayangan jatuh saja, supaya garis tepi
+     dan bibir tidak terbaca sebagai dua tepi bertumpuk. `.dl-btn-secondary`
+     milik warga adalah bentuk putih bergaris ini, jadi ia ikut ke sini. */
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-secondary,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-warning,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-secondary,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .warga-action:not(.warga-action--tertiary) {
+    box-shadow:
+      rgba(18, 71, 47, .16) 0 2px 4px,
+      rgba(18, 71, 47, .10) 0 7px 13px -3px !important;
+  }
+}
+
+
+/* Hover: terangkat 2px, bibir inset menyala seperti B17. */
+@media (max-width: 767.98px) {
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-primary:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-secondary:hover {
+    transform: translateY(-2px);
+  }
+
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-primary:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-success:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-info:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-warning:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-light:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-primary:hover {
+    box-shadow:
+      rgba(18, 71, 47, .30) 0 4px 8px,
+      rgba(18, 71, 47, .18) 0 7px 13px -3px,
+      var(--bd-green-500) 0 -3px 0 inset !important;
+  }
+
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-secondary:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-warning:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-secondary:hover {
+    box-shadow:
+      rgba(18, 71, 47, .20) 0 4px 8px,
+      rgba(18, 71, 47, .12) 0 7px 13px -3px !important;
+  }
+
+  /* Aktif: tertekan 2px dengan bayangan masuk, seperti B17. */
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn:active,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-primary:active,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-secondary:active {
+    transform: translateY(2px);
+  }
+
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-primary:active,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-success:active,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-info:active,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-warning:active,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-light:active,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-primary:active {
+    box-shadow: var(--bd-green-700) 0 3px 7px inset !important;
+  }
+
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-secondary:active,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-warning:active,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-secondary:active {
+    box-shadow: rgba(18, 71, 47, .22) 0 3px 7px inset !important;
+  }
+
+  /* Cincin fokus inset, hanya saat fokus datang dari papan tombol. Bayangan
+     jatuhnya dipertahankan supaya kedalaman tombol tidak runtuh saat difokus. */
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn:focus-visible,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-primary:focus-visible,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-secondary:focus-visible {
+    outline: 0;
+    box-shadow:
+      var(--bd-green-500) 0 0 0 2px inset,
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px !important;
+  }
+}
+
+/* design.md mensyaratkan setiap gerak punya pasangan pengurangan gerak; angkat
+   dan tekan 2px dimatikan, bayangannya tetap supaya umpan balik tidak hilang. */
+@media (prefers-reduced-motion: reduce) {
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-primary,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .dl-btn-secondary {
+    transition: none;
+  }
+
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn:active {
+    transform: none;
+  }
+}
+
+/* --- B21.2 Aksi destruktif dan outline yang kini terisi --------------------
+   Salinan B18 dan B20.2 untuk warga. Kontras: putih di atas --bd-green-600
+   (#2D7D56) mencapai 5.0:1 dan putih di atas --bd-danger-ink (#A8443F)
+   mencapai 5.9:1 - keduanya di atas ambang 4.5:1 untuk teks tombol. */
+@media (max-width: 767.98px) {
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-danger {
+    color: #FFFFFF !important;
+    border-color: #8F3A36 !important;
+    background-color: var(--bd-danger-ink) !important;
+  }
+
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-success {
+    color: #FFFFFF !important;
+    border-color: var(--bd-green-700) !important;
+    background-color: var(--bd-green-600) !important;
+    background-image: linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-700) 100%) !important;
+    box-shadow:
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px,
+      rgba(31, 111, 75, .45) 0 -3px 0 inset !important;
+  }
+
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-success:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-success:focus-visible {
+    color: #FFFFFF !important;
+    box-shadow:
+      rgba(18, 71, 47, .30) 0 4px 8px,
+      rgba(18, 71, 47, .18) 0 7px 13px -3px,
+      var(--bd-green-500) 0 -3px 0 inset !important;
+  }
+
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-success:active {
+    box-shadow: var(--bd-green-900) 0 3px 7px inset !important;
+  }
+
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-danger {
+    color: #FFFFFF !important;
+    border-color: #8F3A36 !important;
+    background-color: var(--bd-danger-ink) !important;
+    background-image: none !important;
+    box-shadow:
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px,
+      rgba(143, 58, 54, .55) 0 -3px 0 inset !important;
+  }
+
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-danger:hover,
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-danger:focus-visible {
+    color: #FFFFFF !important;
+    background-color: #8F3A36 !important;
+    box-shadow:
+      rgba(18, 71, 47, .30) 0 4px 8px,
+      rgba(18, 71, 47, .18) 0 7px 13px -3px,
+      rgba(255, 255, 255, .22) 0 -3px 0 inset !important;
+  }
+
+  .dl-warga-app :is(.content:not(#beranda), .nk-profile-modal) .btn-outline-danger:active {
+    box-shadow: #7A312E 0 3px 7px inset !important;
+  }
+}
+
+
+/* --- B21.3 Halaman "Buat permintaan" ---------------------------------------
+   Halaman ini isinya satu kartu, sehingga sebelum ini menyisakan hamparan
+   kosong setinggi lebih dari satu layar di bawah kartunya. Sekarang halaman
+   itu kolom setinggi layar dan kartunya mengambil sisa tinggi tersebut, jadi
+   ruang kosongnya menjadi bagian dari kartu - bukan halaman yang belum selesai
+   dimuat.
+
+   Kartu "Puskesmas Terdekat" juga ditinggalkan bentuk lamanya (foto profil
+   bawaan 100px di kiri, teks di kanan). Foto itu bukan data siapa pun - ia
+   berkas `default-profile.png` yang sama untuk semua orang - sedangkan sisi
+   Puskesmas sudah memakai petak ikon, bukan foto, untuk hal yang sama. Jadi
+   di sini pun ikon yang dipakai, dan tindakannya diberi satu label berbentuk
+   tombol B17 yang jelas. */
+
+@media (max-width: 767.98px) {
+  .dl-warga-app #konsultasi_kesehatan.active {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100dvh - 200px);
+    padding-bottom: var(--bd-nav-space);
+  }
+
+  .dl-warga-app .dl-puskesmas-cta {
+    flex: 1 1 auto;
+    margin-bottom: 0 !important;
+    border: 1px solid var(--bd-line) !important;
+    border-radius: var(--bd-r-lg) !important;
+    background: var(--bd-surface);
+    box-shadow: var(--bd-shadow-1) !important;
+    overflow: hidden;
+  }
+
+  /* Delapan baris. Baris 1 dan 6 adalah pengisi yang membagi kelonggaran
+     tinggi kartu menjadi dua bagian yang sama - di atas petak ikon dan di
+     antara keterangan dan tombol. Sebelumnya hanya baris keterangan yang
+     menyerap seluruh kelonggaran, sehingga menyisakan satu rongga besar di
+     tengah kartu yang terbaca seperti kartu rusak. Dengan dua pengisi, isi
+     kartu berada di tengah dan tombolnya tetap berada di dasar kartu, dalam
+     jangkauan jempol. */
+  .dl-warga-app .dl-puskesmas-cta .card-body {
+    display: grid;
+    grid-template-rows: 1fr auto auto auto auto 1fr auto auto;
+    gap: 10px;
+    height: 100%;
+    padding: var(--bd-pad);
+    background: transparent;
+  }
+
+  .dl-warga-app .dl-puskesmas-cta .card-body::before,
+  .dl-warga-app .dl-puskesmas-cta .card-body::after {
+    content: "";
+  }
+
+  .dl-warga-app .dl-puskesmas-cta .card-body::before {
+    grid-row: 1;
+  }
+
+  .dl-warga-app .dl-puskesmas-cta .card-body::after {
+    grid-row: 6;
+  }
+
+  .dl-warga-app .dl-puskesmas-cta__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: start;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--bd-r-sm);
+    background: var(--bd-mint-soft);
+    color: var(--bd-green-600);
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .dl-warga-app .dl-puskesmas-cta__title {
+    margin: 0;
+    color: var(--bd-ink);
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    line-height: 1.25;
+  }
+
+  .dl-warga-app .dl-puskesmas-cta__badge {
+    justify-self: start;
+    padding: 5px 11px;
+    border-radius: var(--bd-r-pill);
+    background: var(--bd-mint-soft);
+    color: var(--bd-mint-ink);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+
+  .dl-warga-app .dl-puskesmas-cta__desc {
+    margin: 0;
+    color: var(--bd-muted);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+
+  /* Bentuk tombol B17, ditulis ulang di sini karena elemen ini bukan `.btn`
+     dan tidak berada di dalam `.content:not(#beranda) .btn` pada B21.1.
+     Tinggi, radius, bibir inset dan cincin fokusnya sama persis. */
+  .dl-warga-app .dl-puskesmas-cta__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: end;
+    width: 100%;
+    min-height: 48px;
+    padding-inline: 16px;
+    border: 0;
+    border-radius: 6px;
+    background-color: var(--bd-green-600);
+    background-image: linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-700) 100%);
+    color: #FFFFFF;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.3;
+    box-shadow:
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px,
+      rgba(31, 111, 75, .45) 0 -3px 0 inset;
+    transition: box-shadow .15s, transform .15s;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+
+  .dl-warga-app .dl-puskesmas-cta__action:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      rgba(18, 71, 47, .30) 0 4px 8px,
+      rgba(18, 71, 47, .18) 0 7px 13px -3px,
+      var(--bd-green-500) 0 -3px 0 inset;
+  }
+
+  .dl-warga-app .dl-puskesmas-cta__action:active {
+    transform: translateY(2px);
+    box-shadow: var(--bd-green-900) 0 3px 7px inset;
+  }
+
+  .dl-warga-app .dl-puskesmas-cta__action:focus-visible {
+    outline: 0;
+    box-shadow:
+      var(--bd-green-500) 0 0 0 2px inset,
+      rgba(18, 71, 47, .28) 0 2px 4px,
+      rgba(18, 71, 47, .16) 0 7px 13px -3px;
+  }
+
+  .dl-warga-app .dl-puskesmas-cta__note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    color: var(--bd-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-warga-app .dl-puskesmas-cta__action {
+    transition: none;
+  }
+
+  .dl-warga-app .dl-puskesmas-cta__action:hover,
+  .dl-warga-app .dl-puskesmas-cta__action:active {
+    transform: none;
+  }
+}
+
+
+/* --- B21.4 Kerangka modal "Ubah profil" ------------------------------------
+   Permintaan: di dalam modal Ubah profil, tombol Tutup menjadi merah, dan
+   bentuk tombolnya mengikuti modal Ubah profil di akun Puskesmas.
+
+   Tombolnya sudah ditangani B21.1/B21.2 begitu modal masuk ke cakupan
+   `:is()` di atas - bentuk 6px/48px, bibir inset, hover/tekan 2px, cincin
+   fokus, dan warna `btn-danger` dari `--bd-danger-ink`. Yang ditulis di sini
+   hanya kerangka modalnya, supaya tombol itu duduk di dalam bingkai yang sama
+   dengan modal Puskesmas dan bukan di dalam modal Bootstrap polos.
+
+   Nilainya diambil dari nakes-dashboard.css:652-826 (modal Puskesmas), tetapi
+   diterjemahkan ke token --bd-* supaya modal warga tidak memuat palet kedua.
+   Satu perbedaan yang disengaja: `__body` di sini BUKAN grid. Di Puskesmas
+   setiap field dibungkus `nk-profile-modal__field` tanpa margin; modal warga
+   memakai `form-floating mb-2` yang sudah punya jaraknya sendiri, jadi grid
+   akan menambahkan jarak kedua di atasnya. */
+
+@media (max-width: 767.98px) {
+  .dl-warga-app .nk-profile-modal .modal-dialog {
+    width: calc(100% - 24px);
+    max-width: 430px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* `overflow: hidden` pada kartu modal adalah yang membuat `.modal-body`
+     benar-benar menggulir sendiri: tanpa itu isi modal warga - yang memuat
+     NIK, Nomor KK dan BPJS di bawah kolom dasar - akan meluber keluar layar.
+
+     Bootstrap 5 sudah menjadikan `.modal-content` kolom flex, tetapi `<form>`
+     yang membungkus body+footer adalah flex item dengan `min-height: auto`,
+     sehingga ia menolak menyusut di bawah tinggi isinya. Karena isi modal warga
+     (10 kolom) lebih tinggi daripada `max-height` kartu, akibatnya bukan body
+     yang menggulir melainkan footer yang terpotong `overflow: hidden` - tombol
+     Simpan dan Tutup hilang sama sekali dari layar. `min-height: 0` pada form
+     dan pada body adalah yang mengembalikannya: body menyusut lalu menggulir,
+     footer tetap di dasarnya. Modal Puskesmas tidak pernah kena karena kolomnya
+     jauh lebih sedikit. */
+  .dl-warga-app .nk-profile-modal .modal-content {
+    max-height: min(90vh, 720px);
+    overflow: hidden;
+    border: 1px solid var(--bd-line);
+    border-radius: var(--bd-r-lg);
+    background: var(--bd-mint-mist);
+    box-shadow: var(--bd-shadow-2);
+  }
+
+  .dl-warga-app .nk-profile-modal .modal-content > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .dl-warga-app .nk-profile-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--bd-line);
+    background: var(--bd-surface);
+  }
+
+  .dl-warga-app .nk-profile-modal__header .modal-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--bd-ink);
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  /* Petak ikon 30px, sama dengan header modal Puskesmas. Glyph-nya Font Awesome
+     karena itu keluarga ikon beranda warga; sisi Puskesmas memakai Bootstrap
+     Icons, dan aturan "satu permukaan satu keluarga ikon" tetap dipegang. */
+  .dl-warga-app .nk-profile-modal__header .modal-title span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    border-radius: 10px;
+    background: var(--bd-mint-soft);
+    color: var(--bd-green-600);
+    font-size: 14px;
+  }
+
+  /* Bootstrap mengukur `.btn-close` dengan `box-sizing: content-box` dan
+     `padding: .25em`, sehingga `width: 34px` yang dideklarasikan terender
+     sekitar 50px. `border-box` + `padding: 0` membuat angka yang ditulis sama
+     dengan yang terlihat, dan ukurannya dipatok 44px supaya setara dengan
+     tombol silang modal Puskesmas - di sana B14 sudah menaikkannya ke 44px
+     lewat `min-width/min-height: 44px !important` - sekaligus tetap di atas
+     ambang sasaran sentuh 44px yang dipakai seluruh sistem ini. */
+  .dl-warga-app .nk-profile-modal__header .btn-close {
+    box-sizing: border-box;
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 12px;
+    background-color: var(--bd-mint-soft);
+    opacity: 1;
+  }
+
+  /* `overscroll-behavior: contain` menahan gulir modal agar tidak merembet ke
+     halaman di belakangnya saat isi modal mencapai ujungnya - aturan Touch &
+     Interaction dari Web Interface Guidelines, dan permukaan pertama di aplikasi
+     ini yang menggulir di dalam lapisan overlay. */
+  .dl-warga-app .nk-profile-modal .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: calc(90vh - 132px);
+    padding: 12px 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--bd-mint-mist);
+  }
+
+  /* Dua kolom sama lebar: Simpan di kiri, Tutup di kanan - urutan yang sama
+     dengan modal Puskesmas, sehingga tombol destruktif selalu di sisi yang
+     sama di kedua akun. `display: grid` menimpa `display: flex` bawaan
+     `.modal-footer`, dan `env()` menjaga jarak dari safe area iPhone.
+     `flex: 0 0 auto` menahannya di dasar kartu: hanya body yang boleh menyusut. */
+  .dl-warga-app .nk-profile-modal__footer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 0 0 auto;
+    gap: 8px;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--bd-line);
+    background: var(--bd-surface);
+  }
+
+  .dl-warga-app .nk-profile-modal__footer .btn {
+    width: 100%;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+}
+
+
+/* ==========================================================================
+   B22. Kartu antrian dan chip status di akun warga
+   ==========================================================================
+   Dua hal dari satu permintaan.
+
+   1. Kartu antrian di beranda. Blok "Langkah berikutnya" sampai tombol "Lihat
+      detail" dihapus dari kartu "Konsultasi saat ini" karena seluruh isinya
+      sudah tampil di halaman Konsultasi. Penggantinya hanya memuat satu hal
+      yang memang dicari orang di beranda dan tidak ada di tempat lain: nomor
+      antriannya.
+
+      Bahasa visualnya diambil dari dunia subjeknya sendiri - tiket antrian
+      Puskesmas - bukan dari kartu statistik generik. Nomornya dicetak di atas
+      lempeng hijau tua bertekstur plus (bahan yang sama dengan petak antrian di
+      sisi Puskesmas), lalu dipisahkan dari keterangannya oleh satu garis
+      perforasi. Satu gerakan berani, sisanya senyap: kicker kecil, tanggal
+      muted, dan bidang kartu yang sudah ada.
+
+   2. Chip status di kepala kartu Riwayat. Sebelumnya `badge text-bg-warning`,
+      yaitu kuning peringatan Bootstrap - untuk konsultasi yang sudah SELESAI.
+      Kuning berarti "perlu perhatian", jadi warna itu berlawanan dengan arti
+      statusnya, dan satu-satunya warna yang muncul di kartu itu adalah warna
+      yang salah. Sekarang tiap keadaan punya warna sendiri, dan bentuknya
+      kotak 6px - keluarga bentuk yang sama dengan tombol B17 - bukan pil.
+
+   Kontras semua varian chip di atas 4.5:1:
+     mint-ink   #00614F di atas #E8F7F0 -> 7.0:1
+     #7A5410    di atas #FFF6E0        -> 6.6:1
+     danger-ink #A8443F di atas #F7E7E6 -> 5.2:1
+     blue       #2E6685 di atas #EAF2F8 -> 6.0:1
+   */
+
+/* --- B22.1 Kartu antrian -------------------------------------------------- */
+
+.dl-warga-app .dl-queue-ticket {
+  display: grid;
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-lg);
+  background: var(--bd-surface);
+  box-shadow: var(--bd-shadow-1);
+}
+
+.dl-warga-app .dl-queue-ticket__kicker {
+  display: block;
+  color: var(--bd-green-600);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  line-height: 1.3;
+}
+
+/* Lempeng nomor. `tabular-nums` menjaga lebar tiap digit sama supaya angka
+   yang berganti (No. 9 -> No. 10) tidak menggeser tata letaknya.
+   `overflow-wrap: anywhere` menahan nomor yang tidak terduga panjang agar tidak
+   meluber keluar kartu di 360px. */
+.dl-warga-app .dl-queue-ticket__number {
+  margin: 8px 0 0;
+  padding: 16px 14px;
+  border-radius: var(--bd-r-md);
+  background-color: var(--bd-green-900);
+  background-image: var(--bd-texture-plus-light);
+  background-size: 22px 22px;
+  color: #FFFFFF;
+  font-size: 38px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+  line-height: 1.05;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* Perforasi. Satu-satunya perangkat struktural di kartu ini, dan ia memang
+   bekerja: memisahkan potongan nomor dari keterangannya, seperti sobekan
+   kertas tiket. */
+.dl-warga-app .dl-queue-ticket__stub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--bd-line-strong);
+}
+
+.dl-warga-app .dl-queue-ticket__date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--bd-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+@media (max-width: 374.98px) {
+  /* 38px di 360px masih lega, tetapi di bawah 375px nomor yang panjang
+     ("No. 1024") mulai mendekati tepi lempeng; ukurannya diturunkan satu
+     langkah, bukan dibiarkan terpotong. */
+  .dl-warga-app .dl-queue-ticket__number {
+    font-size: 32px;
+  }
+}
+
+/* --- B22.2 Chip status ---------------------------------------------------- */
+
+.dl-warga-app .dl-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border: 1px solid var(--bd-line-strong);
+  border-radius: 6px;
+  background: var(--bd-mint-soft);
+  color: var(--bd-mint-ink);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* Titik keadaan. Digambar sebagai pseudo-elemen, bukan <span> di dalam markup:
+   `width`/`height` tidak berlaku pada elemen inline, dan versi pertama memakai
+   `<span>` kosong sehingga titiknya terender 0px - hanya warnanya yang benar.
+   Pseudo-elemen selalu bisa diberi kotak, jadi tidak ada lagi ketergantungan
+   pada `display` yang bisa ditimpa lembar lain. `currentColor` membuat titiknya
+   otomatis mengikuti warna teks tiap varian, jadi tidak ada satu pun warna
+   titik yang perlu ditulis ulang. */
+.dl-warga-app .dl-status-chip::before {
+  content: "";
+  display: block;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.dl-warga-app .dl-status-chip--pending {
+  border-color: #F0DBA8;
+  background: #FFF6E0;
+  color: #7A5410;
+}
+
+.dl-warga-app .dl-status-chip--cancelled {
+  border-color: #EFC9C6;
+  background: var(--bd-danger-soft);
+  color: var(--bd-danger-ink);
+}
+
+.dl-warga-app .dl-status-chip--accepted,
+.dl-warga-app .dl-status-chip--en_route,
+.dl-warga-app .dl-status-chip--arrived,
+.dl-warga-app .dl-status-chip--in_service {
+  border-color: #C6DDEA;
+  background: var(--bd-blue-soft);
+  color: var(--bd-blue);
+}
+
+/* Chip di kepala kartu "Konsultasi saat ini" memakai kelas `.dl-badge` yang
+   sudah ada, dan aturan warga di doclinc-warga-dashboard.css memakunya jadi
+   pil 999px. Hanya sudutnya yang disamakan dengan chip Riwayat supaya kedua
+   halaman memakai satu keluarga bentuk.
+
+   `!important` di sini bukan berlebihan: style.css memaku latar dan warnanya
+   dengan !important juga (`--dl-surface-soft` di atas `--dl-mint`), dan hasil
+   terukurnya adalah teks mint di atas latar nyaris putih - kontrasnya jauh di
+   bawah 4.5:1. Dua deklarasi ini yang mengembalikannya ke pasangan token bento
+   yang sudah terukur aman (mint-ink di atas mint-soft = 7.0:1). */
+.dl-warga-app #beranda .dl-badge {
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  /* style.css menuliskan label ini dengan huruf kapital dan jarak antarhuruf;
+     chip Riwayat memakai huruf biasa. Karena keduanya kini satu keluarga bentuk,
+     kapitalisasinya ikut disamakan - teks kapital yang direntangkan adalah salah
+     satu penanda halaman yang belum matang. */
+  text-transform: none;
+  letter-spacing: .01em;
+  background: var(--bd-mint-soft) !important;
+  color: var(--bd-mint-ink) !important;
+}
+
+
+
+/* ==========================================================================
+   B23. Band aksi beranda: satu baris, dua petak
+   ==========================================================================
+   Menggantikan band lama (satu kartu ajakan setinggi dua baris + dua petak
+   navigasi). Aturan lama untuk `.dl-bento-cta.dl-hero` dan
+   `.dl-bento-actions > .dl-quick-links` sudah tidak punya pasangan di markup
+   lagi, jadi keduanya ditimpa di sini alih-alih dibiarkan sebagai kode mati
+   yang menuntun orang berikutnya ke struktur yang sudah tidak ada.
+
+   Tinggi: petak aksi dipatok `min-height: 108px` - cukup untuk kicker, judul
+   dan satu baris keterangan, dan tidak lagi setinggi dua kartu (sebelumnya
+   ~340px) hanya karena ia harus mengimbangi dua petak di sebelahnya. */
+.dl-warga-app #beranda .dl-bento-actions {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.dl-warga-app #beranda .dl-bento-cta.dl-hero,
+.dl-warga-app #beranda .dl-bento-actions > .dl-quick-links {
+  grid-area: auto;
+  display: none;
+}
+
+/* --- B23.1 Petak aksi ("Mulai konsultasi") -------------------------------- */
+
+.dl-warga-app #beranda .dl-action-tile {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-height: 108px;
+  margin: 0;
+  padding: 16px;
+  border: 0;
+  border-radius: var(--bd-r-md);
+  background-color: var(--bd-green-700);
+  background-image: linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-900) 100%);
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  text-decoration: none;
+  box-shadow: var(--bd-shadow-1);
+  transition: box-shadow .15s, transform .15s;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.dl-warga-app #beranda .dl-action-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--bd-shadow-2);
+}
+
+.dl-warga-app #beranda .dl-action-tile:active {
+  transform: translateY(1px);
+}
+
+.dl-warga-app #beranda .dl-action-tile:focus-visible {
+  outline: 3px solid var(--bd-green-500);
+  outline-offset: 2px;
+}
+
+/* Terkunci: masih ada konsultasi berjalan, jadi petak ini mengantar ke
+   konsultasi itu, bukan membuka yang baru. Permukaannya dibuat putih supaya
+   terbaca sebagai keadaan kedua, bukan sebagai aksi utama yang sama. */
+.dl-warga-app #beranda .dl-action-tile.is-locked {
+  border: 1px solid var(--bd-line-strong);
+  border-left: 4px solid var(--bd-green-600);
+  background-color: var(--bd-surface);
+  background-image: none;
+  color: var(--bd-ink);
+}
+
+.dl-warga-app #beranda .dl-action-tile.is-locked:hover {
+  border-left-color: var(--bd-green-700);
+}
+
+/* Terhalang: profil belum lengkap atau akun belum siap. Bukan aksi, jadi
+   permukaannya paling tenang dari ketiganya. */
+.dl-warga-app #beranda .dl-action-tile.is-blocked {
+  border: 1px dashed var(--bd-line-strong);
+  background-color: var(--bd-mint-mist);
+  background-image: none;
+  color: var(--bd-ink);
+  box-shadow: none;
+  cursor: default;
+}
+
+.dl-warga-app #beranda .dl-action-tile.is-blocked:hover,
+.dl-warga-app #beranda .dl-action-tile.is-blocked:active {
+  transform: none;
+  box-shadow: none;
+}
+
+.dl-warga-app #beranda .dl-action-tile__kicker {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  line-height: 1.3;
+  opacity: .85;
+}
+
+.dl-warga-app #beranda .dl-action-tile__title {
+  display: block;
+  margin-top: 2px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.dl-warga-app #beranda .dl-action-tile__note {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  opacity: .88;
+  text-wrap: pretty;
+}
+
+.dl-warga-app #beranda .dl-action-tile.is-locked .dl-action-tile__kicker,
+.dl-warga-app #beranda .dl-action-tile.is-blocked .dl-action-tile__kicker {
+  color: var(--bd-green-600);
+  opacity: 1;
+}
+
+.dl-warga-app #beranda .dl-action-tile.is-locked .dl-action-tile__note,
+.dl-warga-app #beranda .dl-action-tile.is-blocked .dl-action-tile__note {
+  color: var(--bd-muted);
+  opacity: 1;
+}
+
+/* --- B23.2 Petak ringkasan -------------------------------------------------
+   Angka nyata dari riwayat. Angkanya ditulis sebaris dengan labelnya, bukan
+   sebagai angka raksasa di atas label kecil - bentuk kartu statistik seperti
+   itu bisa dipakai halaman apa pun dan tidak memberi tahu apa pun tentang
+   konteksnya. */
+.dl-warga-app #beranda .dl-summary-tile {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-height: 108px;
+  padding: 16px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-md);
+  background: var(--bd-surface);
+  box-shadow: var(--bd-shadow-1);
+}
+
+.dl-warga-app #beranda .dl-summary-tile__kicker {
+  display: block;
+  color: var(--bd-green-600);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  line-height: 1.3;
+}
+
+.dl-warga-app #beranda .dl-summary-tile__line {
+  display: block;
+  margin-top: 2px;
+  color: var(--bd-ink);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
+.dl-warga-app #beranda .dl-summary-tile__line strong {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.dl-warga-app #beranda .dl-summary-tile__meta {
+  display: block;
+  margin-top: 6px;
+  color: var(--bd-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-warga-app #beranda .dl-action-tile {
+    transition: none;
+  }
+
+  .dl-warga-app #beranda .dl-action-tile:hover,
+  .dl-warga-app #beranda .dl-action-tile:active {
+    transform: none;
+  }
+}
+
+
+/* --- B23.3 Sapaan pembuka --------------------------------------------------
+   Muncul hanya kalau tidak ada konsultasi yang berjalan. Bentuknya sengaja
+   bukan banner: tidak ada ikon, tidak ada gradien, tidak ada tombol tutup.
+   Ia satu blok tenang di atas band aksi supaya mata membacanya sebagai
+   kalimat pembuka menuju tombol di bawahnya. Permukaan mint-mist dipakai
+   karena sudah menjadi latar blok-blok bersarang di akun ini, jadi sapaan
+   tidak memperkenalkan bahan baru.
+
+   Dua baris, dan hanya baris pertama yang boleh besar. "Selamat pagi," adalah
+   satu-satunya ukuran besar di blok ini - ia yang menghentikan mata di halaman
+   yang seluruhnya berisi petak. Baris kedua turun ke bobot 500 dan warna
+   `--bd-muted`, jadi ia terbaca sebagai lanjutan kalimat, bukan judul kedua.
+   Kalau keduanya besar, keduanya berhenti menjadi pembuka dan mulai bersaing
+   dengan petak aksi di bawahnya - padahal petak itulah pekerjaan utama
+   halaman ini.
+
+   Ukurannya fluid, bukan px tetap, karena blok ini hidup di tiga lebar
+   (360/390/430) dan satu px tetap akan salah di salah satunya. Batas
+   `clamp()`-nya memakai rem, bukan px: kalau pembaca memperbesar ukuran huruf
+   bawaan peramban, batas bawah dan atasnya ikut naik - dengan px keduanya
+   membeku dan justru mengecil relatif terhadap teks lain. Suku tengahnya `vw`,
+   jadi ukurannya mengikuti ruang yang tersedia.
+
+   Nama pemilik akun dicetak miring. Manrope dan Inter tidak punya miring asli,
+   jadi peramban memiringkan sendiri bentuk tegaknya; itu disengaja dan lebarnya
+   sudah diperiksa, bukan dibiarkan jatuh ke huruf lain di tumpukan fallback.
+   Warnanya naik ke `--bd-ink` sementara kalimat di sekitarnya tetap
+   `--bd-muted`: nama itu data, bukan prosa, jadi ia berhak satu tingkat lebih
+   dekat ke pembaca.
+
+   Jarak antar-blok di #beranda sudah diatur `gap` milik kolom flex-nya, jadi
+   tidak ada margin yang ditulis di sini - menambahkannya akan menggandakan
+   jarak yang sudah ada. */
+.dl-warga-app #beranda .dl-welcome {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-md);
+  background: var(--bd-mint-mist);
+}
+
+.dl-warga-app #beranda .dl-welcome__hello {
+  margin: 0;
+  color: var(--bd-ink);
+  font-size: clamp(1.3rem, 6.6vw, 1.8rem);
+  font-weight: 800;
+  letter-spacing: -.025em;
+  line-height: 1.15;
+  text-wrap: pretty;
+}
+
+.dl-warga-app #beranda .dl-welcome__note {
+  margin: 0;
+  color: var(--bd-muted);
+  font-size: clamp(.82rem, 3.7vw, .94rem);
+  font-weight: 500;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.dl-warga-app #beranda .dl-welcome__name {
+  color: var(--bd-ink);
+  font-style: italic;
+  font-weight: 700;
+  /* Nama pengguna adalah data yang panjangnya tidak kita kendalikan. Tanpa
+     baris ini, satu nama tanpa spasi sepanjang 41 karakter akan keluar dari
+     tepi petak: tepi kanannya terukur di 350px sementara batas dalam petaknya
+     328px. `overflow-wrap` bawaan hanya memutus di spasi dan tanda hubung, dan
+     garis bawah bukan tempat putus.
+
+     Nilainya `anywhere`, BUKAN `break-word`. Diukur di sini: pada elemen
+     inline, `break-word` tetap menghasilkan SATU fragmen selebar 317px dan
+     tetap meluber; `anywhere` menghasilkan dua fragmen (293px + 24px) yang
+     berhenti di 326px. Sebabnya, peluang putus dari `break-word` tidak
+     diperhitungkan saat menghitung ukuran intrinsik, sedangkan `anywhere`
+     memperhitungkannya - dan itulah yang dibutuhkan elemen inline ini. */
+  overflow-wrap: anywhere;
+}
+
+
+/* --- B23.4 Irama kiri-kanan kartu Riwayat ----------------------------------
+   Satu kartu memuat dua panel bersarang - "Keluhan" dan linimasa kunjungan -
+   dan keduanya memakai padding dalam yang berbeda: `.history-section` 0px,
+   `.doclinc-visit-summary` 12px. Akibatnya teks di panel Keluhan menempel
+   pada garis panelnya sendiri sementara teks di panel linimasa menjorok 12px,
+   jadi keduanya tidak sejajar meski panelnya sejajar.
+
+   Yang disamakan adalah padding DALAM panel, bukan jarak panel dari tepi
+   kartu: panel yang bersarang memang harus menjorok dari isi kartu - itu yang
+   membuatnya terbaca sebagai bento bersarang, bukan tumpukan kartu datar.
+   Header dan body kartu sendiri sudah sama-sama 16px, dan itu dituliskan di
+   sini supaya iramanya berdiri sendiri, tidak bergantung pada nilai bawaan
+   Bootstrap yang bisa berubah saat versinya naik. */
+.dl-warga-app #riwayat .dl-card > .card-header,
+.dl-warga-app #riwayat .dl-card > .card-body {
+  padding-left: var(--bd-pad);
+  padding-right: var(--bd-pad);
+}
+
+.dl-warga-app #riwayat .history-section {
+  padding: 12px;
+}
+
+/* Baris judul panel tidak lagi menyentuh garis panel; jaraknya sekarang sama
+   dengan isi panel itu sendiri. */
+.dl-warga-app #riwayat .history-section > .history-section-title {
+  margin-bottom: 8px;
+}
+
+
+/* ==========================================================================
+   B24. Lapisan bento untuk halaman chat
+   ==========================================================================
+   Halaman chat adalah permukaan terakhir di akun warga yang belum memakai
+   sistem ini. Ia tidak memuat doclinc-bento.css sama sekali dan membawa
+   paletnya sendiri di :root (`--chat-green`, `--chat-bubble-*`, `--chat-bg`),
+   jadi bentuk, warna dan ukuran di halaman ini tidak berasal dari mana pun
+   yang dipakai halaman lain.
+
+   Lapisan ini tidak menyentuh markup maupun perilaku: nama kelas, id, dan
+   seluruh alur kirim/panggilan tetap sama. Yang berubah hanya bahasa visualnya.
+
+   Yang diambil dari sistem yang sudah dikunci:
+     - palet --bd-* saja; tidak ada hex mentah yang baru
+     - radius: --bd-r-md untuk petak, --bd-r-sm untuk elemen terkecil,
+       6px untuk tombol (keluarga bentuk B17)
+     - tipografi: 15/800 judul, 14/600 isi pesan, 12/800 label, 11/700 waktu
+     - target sentuh 44px untuk setiap kontrol
+     - ikon: paket SVG yang sudah dipakai konsisten di dalam konten chat
+       (design.md: paket tetap untuk ikon aksi dalam konten)
+
+   Urutan muat menentukan: doclinc-bento.css dimuat SETELAH blok <style> milik
+   view ini, jadi lapisan ini menang tanpa perlu !important di setiap selektor. */
+
+/* --- B24.1 Kerangka ------------------------------------------------------- */
+
+.dl-chat-bento .chat-shell {
+  max-width: 480px;
+  border-radius: 0;
+  background: var(--bd-page);
+  box-shadow: none;
+}
+
+/* --- B24.2 Kepala percakapan ---------------------------------------------- */
+
+.dl-chat-bento .chat-header {
+  gap: 10px;
+  min-height: 68px;
+  padding: 12px var(--bd-pad);
+  border-bottom: 1px solid var(--bd-line);
+  background: var(--bd-surface);
+  box-shadow: var(--bd-shadow-1);
+}
+
+/* Tombol kembali dinaikkan dari 36px ke 44px - di bawah ambang sasaran sentuh
+   sistem ini, dan ia kontrol pertama yang dijangkau jempol. */
+.dl-chat-bento .chat-back {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: var(--bd-r-sm);
+  background: var(--bd-mint-soft);
+}
+
+.dl-chat-bento .chat-back img {
+  width: 16px;
+  height: 13px;
+}
+
+.dl-chat-bento .chat-back:focus-visible {
+  outline: 3px solid var(--bd-green-500);
+  outline-offset: 2px;
+}
+
+.dl-chat-bento .chat-avatar,
+.dl-chat-bento .chat-avatar-fallback {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: var(--bd-r-sm);
+}
+
+/* Inisial dipakai saat lawan bicara belum punya foto. Sebelumnya hanya teks
+   tanpa latar; sekarang petak hijau supaya bobotnya setara dengan foto. */
+.dl-chat-bento .chat-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bd-green-600);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+.dl-chat-bento .chat-title-text {
+  color: var(--bd-ink);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  line-height: 1.25;
+}
+
+.dl-chat-bento .chat-title-subtext {
+  margin-top: 2px;
+  color: var(--bd-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dl-chat-bento .chat-presence-status {
+  display: inline-flex;
+
+/* --- B24.3 (dihapus) -------------------------------------------------------
+   Petak identitas konsultasi - ikon, "Konsultasi sedang berlangsung", dan
+   "Puskesmas X - No. NN" - dihapus dari markup atas permintaan. Isinya
+   berulang: nama Puskesmas dan nomor antrian sudah tampil di beranda dan di
+   kartu Riwayat, dan status sesinya sudah terbaca dari komposer (aktif atau
+   hanya-baca). Aturan CSS-nya ikut dihapus, bukan ditinggal, supaya tidak ada
+   lapisan yang menata elemen yang tidak pernah dirender. */
+
+/* --- B24.4 Daftar pesan --------------------------------------------------- */
+
+.dl-chat-bento .chat-list {
+  padding: var(--bd-pad);
+  background: var(--bd-page);
+}
+
+.dl-chat-bento .chat-muted {
+  color: var(--bd-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Pemisah tanggal: label kecil di tengah dengan garis tipis di kedua sisinya.
+   Ia penanda waktu, bukan hiasan - dan ia satu-satunya elemen di halaman ini
+   yang memakai bentuk itu. */
+.dl-chat-bento .chat-date-separator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 12px;
+}
+
+.dl-chat-bento .chat-date-separator::before,
+.dl-chat-bento .chat-date-separator::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--bd-line-strong);
+}
+
+.dl-chat-bento .chat-date-separator > span {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--bd-mint-soft);
+  color: var(--bd-mint-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  line-height: 1.3;
+}
+
+.dl-chat-bento .chat-message-row {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.dl-chat-bento .chat-bubble,
+.dl-chat-bento .chat-message {
+  max-width: min(78%, 34rem);
+  padding: 10px 14px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-md);
+  border-bottom-left-radius: var(--bd-r-sm);
+  background: var(--bd-surface);
+  color: var(--bd-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  box-shadow: var(--bd-shadow-1);
+  overflow-wrap: anywhere;
+}
+
+/* Arah bicara dibaca dari bentuknya: sudut yang menghadap sisi pengirim
+   dipersempit ke --bd-r-sm. Tidak ada segitiga pseudo-elemen - yang bekerja
+   di sini adalah satu sudut yang tidak sama dengan tiga lainnya. */
+.dl-chat-bento .chat-bubble.mine,
+.dl-chat-bento .chat-message.mine,
+.dl-chat-bento .chat-message-row.is-mine .chat-bubble,
+.dl-chat-bento .chat-message-row.is-mine .chat-message {
+  margin-left: auto;
+  border-color: var(--bd-green-700);
+  border-bottom-left-radius: var(--bd-r-md);
+  border-bottom-right-radius: var(--bd-r-sm);
+  background: var(--bd-green-600);
+  color: #FFFFFF;
+}
+
+.dl-chat-bento .chat-sender,
+.dl-chat-bento .chat-message-sender {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--bd-green-600);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+
+.dl-chat-bento .chat-time {
+
+/* --- B24.5 Komposer ------------------------------------------------------- */
+
+.dl-chat-bento .chat-form {
+  padding: 10px var(--bd-pad) calc(10px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--bd-line);
+  background: var(--bd-surface);
+}
+
+/* Satu petak yang memuat lampiran, bidang teks dan tombol kirim - jadi
+   komposernya terbaca sebagai satu kontrol, bukan tiga kontrol berjajar. */
+.dl-chat-bento .chat-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--bd-line-strong);
+  border-radius: var(--bd-r-md);
+  background: var(--bd-mint-mist);
+}
+
+.dl-chat-bento .chat-icon-button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 0;
+  border-radius: var(--bd-r-sm);
+  background: transparent;
+  touch-action: manipulation;
+}
+
+.dl-chat-bento .chat-icon-button:hover {
+  background: var(--bd-surface);
+}
+
+.dl-chat-bento .chat-icon-button:focus-visible {
+  outline: 3px solid var(--bd-green-500);
+  outline-offset: -2px;
+}
+
+.dl-chat-bento .chat-icon-button .dl-semantic-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.dl-chat-bento .chat-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  max-height: 120px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: var(--bd-r-sm);
+  background: var(--bd-surface);
+  color: var(--bd-ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  resize: none;
+}
+
+.dl-chat-bento .chat-input::placeholder {
+  color: var(--bd-muted);
+  opacity: 1;
+}
+
+.dl-chat-bento .chat-input:focus-visible {
+  outline: 3px solid var(--bd-green-500);
+  outline-offset: -2px;
+}
+
+/* Tombol kirim memakai keluarga bentuk B17 (6px + bibir inset 3px), sama
+   dengan tombol aksi di halaman lain. Sebelumnya ia pil tersendiri. */
+.dl-chat-bento .chat-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background-color: var(--bd-green-600);
+  background-image: linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-700) 100%);
+  box-shadow:
+    rgba(18, 71, 47, .28) 0 2px 4px,
+    rgba(18, 71, 47, .16) 0 7px 13px -3px,
+    rgba(31, 111, 75, .45) 0 -3px 0 inset;
+  transition: box-shadow .15s, transform .15s;
+  touch-action: manipulation;
+}
+
+.dl-chat-bento .chat-send .dl-semantic-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.dl-chat-bento .chat-send:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    rgba(18, 71, 47, .30) 0 4px 8px,
+    rgba(18, 71, 47, .18) 0 7px 13px -3px,
+    var(--bd-green-500) 0 -3px 0 inset;
+}
+
+.dl-chat-bento .chat-send:active {
+  transform: translateY(1px);
+}
+
+.dl-chat-bento .chat-send:focus-visible {
+  outline: 0;
+  box-shadow:
+    var(--bd-green-500) 0 0 0 2px inset,
+    rgba(18, 71, 47, .28) 0 2px 4px;
+}
+
+/* --- B24.6 Keadaan hanya-baca ---------------------------------------------
+   Saat sesi selesai, komposer diganti satu blok penjelas. Sebelumnya hanya
+   satu baris teks di dalam <form> tanpa bentuk; sekarang petak bergaris
+   putus-putus dengan glyph kunci, supaya terbaca sebagai keadaan halaman -
+   bukan kalimat yang tertinggal setelah kontrolnya hilang. Pasien tetap bisa
+   membaca seluruh riwayat di atasnya; yang hilang hanya kemampuan menulis. */
+.dl-chat-bento .chat-readonly {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px dashed var(--bd-line-strong);
+  border-radius: var(--bd-r-md);
+  background: var(--bd-mint-mist);
+  color: var(--bd-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.dl-chat-bento .chat-readonly::before {
+  content: "\f023";
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  flex: 0 0 auto;
+  color: var(--bd-green-600);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-chat-bento .chat-send {
+    transition: none;
+  }
+
+  .dl-chat-bento .chat-send:hover,
+  .dl-chat-bento .chat-send:active {
+    transform: none;
+  }
+}
+
+  display: block;
+  margin-top: 4px;
+  color: var(--bd-muted);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.dl-chat-bento .chat-bubble.mine .chat-time,
+.dl-chat-bento .chat-message.mine .chat-time {
+  color: rgba(255, 255, 255, .82);
+}
+
+  align-items: center;
+  gap: 5px;
+}
+
+.dl-chat-bento .chat-presence-status__dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+
+/* --- B24.7 Latar halaman: tekstur + gradasi -------------------------------
+   Permukaan pesan sebelumnya satu warna rata `#F7F7F7` - bidang terbesar di
+   halaman ini, dan yang paling mudah terbaca sebagai "belum digarap".
+
+   Dua lapis ditambahkan, keduanya tipis:
+     1. gradasi - satu radial mint di sudut kanan atas (jejak cahaya, bukan
+        blok warna) dan satu gradien linier mint yang memudar habis dalam
+        200px pertama, supaya pesan terbaru duduk di bagian yang paling terang
+        dan pesan lama surut ke latar.
+     2. tekstur - motif plus yang sudah dipakai header Puskesmas dan petak
+        antrian, pada opasitas 7% dan petak 22px. Ia terbaca sebagai kertas
+        bertekstur halus, bukan pola.
+
+   Keterbacaan tidak berubah: gelembung pesan tetap permukaan penuh (putih
+   atau hijau tua) di atas latar ini, jadi rasio kontras teks di dalamnya
+   persis sama seperti sebelumnya. */
+.dl-chat-bento .chat-list {
+  background-color: var(--bd-page);
+  background-image:
+    radial-gradient(22rem 16rem at 104% -10%, rgba(137, 246, 218, .18) 0%, rgba(137, 246, 218, 0) 70%),
+    linear-gradient(180deg, rgba(232, 247, 240, .6) 0%, rgba(246, 247, 246, 0) 200px),
+    var(--bd-texture-plus-green);
+  background-size: auto, auto, 22px 22px;
+  background-repeat: no-repeat, no-repeat, repeat;
+}
+
+/* --- B24.8 Avatar: inisial selalu di bawah, foto di atas ------------------
+   Markup merender inisial SELALU dan foto sebagai lapisan di atasnya, jadi
+   satu-satunya hal yang perlu diatur di sini adalah penumpukannya.
+
+   Nilai di blok ini ditulis dengan !important, bukan karena berlebihan:
+   `.chat-shell.is-active .chat-avatar` di doclinc-livekit.css punya
+   spesifisitas yang sama (0,3,0) dan memaku avatar di 40px dengan
+   `border-radius: 50%`, sementara blok <style> di view memaku 42px dengan
+   border 2px. Keduanya menang atau kalah hanya karena urutan lembar gaya, dan
+   urutan itu sudah pernah salah sekali. Avatar adalah satu-satunya elemen di
+   kepala percakapan yang memberi tahu siapa yang sedang diajak bicara, jadi
+   ukurannya tidak boleh bergantung pada urutan <link>. */
+.dl-chat-bento .chat-avatar-wrap {
+  position: relative !important;
+  display: inline-flex !important;
+  flex: 0 0 44px !important;
+  width: 44px !important;
+  height: 44px !important;
+}
+
+.dl-chat-bento .chat-avatar-wrap .chat-avatar-fallback,
+.dl-chat-bento .chat-avatar-wrap .chat-avatar {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  border-radius: var(--bd-r-sm) !important;
+}
+
+.dl-chat-bento .chat-avatar-wrap .chat-avatar {
+  z-index: 1 !important;
+  object-fit: cover !important;
+  background: var(--bd-surface) !important;
+}
+
+/* Inisial: petak hijau, bobot setara foto. Warna teks putih di atas
+   --bd-green-600 mencapai 5.0:1. */
+.dl-chat-bento .chat-avatar-wrap .chat-avatar-fallback {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--bd-green-600) !important;
+  color: #FFFFFF !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: .02em !important;
+  line-height: 1 !important;
+}
+
+/* --- B24.9 Indikator kehadiran -------------------------------------------
+   Titik memakai `currentColor`, jadi mewarnai teksnya sekaligus mewarnai
+   titiknya. Hijau untuk online, muted untuk offline - bukan merah, karena
+   lawan bicara yang sedang tidak membuka aplikasi bukan kesalahan. */
+.dl-chat-bento .chat-presence-status[data-presence="online"] {
+  color: var(--bd-green-600) !important;
+}
+
+.dl-chat-bento .chat-presence-status[data-presence="offline"] {
+  color: var(--bd-muted) !important;
+}
+
+/* --- B24.10 Ukuran ikon Font Awesome --------------------------------------
+   Ikon pindah dari paket SVG ke Font Awesome, keluarga yang dipakai seluruh
+   halaman lain. Glyph font tidak membawa ukuran sendiri, jadi tingginya
+   ditulis di sini. */
+.dl-chat-bento .chat-back i,
+.dl-chat-bento .chat-call-button i {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Di sini dulu ada `.dl-chat-bento .chat-info-banner__icon` untuk glyph petak
+   identitas konsultasi. Petaknya sudah dihapus dari markup, jadi aturannya ikut
+   dihapus - lihat B24.3 di atasnya. */
+
+.dl-chat-bento .chat-icon-button i {
+  color: var(--bd-green-700);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.dl-chat-bento .chat-send i {
+  color: #FFFFFF;
+  font-size: 18px;
+  line-height: 1;
+}
+
+
+/* --- B24.11 Komposer: nilai yang tidak boleh kalah ------------------------
+   Blok <style> milik view memuat `.chat-input-row`, `.chat-input`,
+   `.chat-icon-button` dan `.chat-send` dengan nilai lamanya: barisnya pil
+   22px, kontrolnya 28px, textarea-nya 42px dengan latar transparan, dan
+   tombol kirim berlatar transparan.
+
+   Dua kerusakan nyata muncul dari situ:
+     1. textarea tanpa latar sendiri di dalam baris bersudut 22px pada kotak
+        yang sempit terender sebagai lingkaran, bukan kolom teks;
+     2. glyph tombol kirim berwarna putih di atas latar transparan - putih di
+        atas putih, jadi ikonnya tidak terlihat sama sekali.
+
+   Lapisan ini menang lewat urutan muat dan spesifisitas, tetapi komposer
+   adalah satu-satunya tempat di halaman ini yang kerusakannya membuat halaman
+   tidak bisa dipakai. Nilai kritisnya karena itu ditulis dengan !important
+   supaya tidak bergantung pada urutan lembar gaya. */
+.dl-chat-bento .chat-input-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100%;
+  min-height: 56px;
+  padding: 6px !important;
+  border: 1px solid var(--bd-line-strong) !important;
+  border-radius: var(--bd-r-md) !important;
+  background: var(--bd-mint-mist) !important;
+}
+
+.dl-chat-bento .chat-input {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 44px !important;
+  max-height: 120px !important;
+  padding: 11px 12px !important;
+  border: 0 !important;
+  border-radius: var(--bd-r-sm) !important;
+  background: var(--bd-surface) !important;
+  color: var(--bd-ink) !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  resize: none !important;
+}
+
+.dl-chat-bento .chat-input::placeholder {
+  color: var(--bd-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Aturan lama mematikan outline pada :focus. Fokus harus tetap terlihat. */
+.dl-chat-bento .chat-input:focus,
+.dl-chat-bento .chat-input:focus-visible {
+  outline: 3px solid var(--bd-green-500) !important;
+  outline-offset: -2px !important;
+}
+
+.dl-chat-bento .chat-icon-button,
+.dl-chat-bento .chat-send {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  padding: 0 !important;
+  flex: 0 0 44px !important;
+  border: 0 !important;
+}
+
+/* Tombol kamera dan tombol kirim sama-sama bulat: baris yang memuatnya adalah
+   pil (radius 24px dari doclinc-livekit.css), jadi satu-satunya bentuk yang
+   menyatu di dalamnya adalah lingkaran. Tombol kamera berlatar transparan
+   sehingga bentuknya hanya terlihat saat hover - justru itu alasan ia harus
+   sudah benar sebelum terlihat. */
+.dl-chat-bento .chat-icon-button {
+  border-radius: 50% !important;
+  background: transparent !important;
+}
+
+/* Latar tombol kirim harus OPAQUE, dan bentuknya lingkaran - sama dengan
+   tombol kamera di baris yang sama. Sudut 6px dari keluarga B17 dipakai untuk
+   tombol yang berdiri sendiri atau berpasangan selebar kartu; di dalam baris
+   pil ini ia terbaca sebagai tombol asing, karena semua tetangganya bulat.
+   Bibir inset 3px dari B17 juga dibuang: pada lingkaran kecil ia terbaca
+   sebagai bayangan aneh, dan tombol kamera tidak punya. */
+.dl-chat-bento .chat-send {
+  border-radius: 50% !important;
+  background-color: var(--bd-green-600) !important;
+  background-image: linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-700) 100%) !important;
+  box-shadow: 0 4px 10px rgba(63, 141, 104, .25) !important;
+}
+
+/* Glyph sekarang dari Font Awesome, bukan <img> dari paket SVG - jadi aturan
+   lama untuk `img` di dalam tombol-tombol ini sudah tidak menjangkau apa pun,
+   dan glyph font tidak membawa warna maupun ukurannya sendiri. */
+.dl-chat-bento .chat-icon-button i {
+  color: var(--bd-green-700) !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+}
+
+.dl-chat-bento .chat-send i {
+  color: #FFFFFF !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+}
+
+/* --- B24.15 Tombol kirim: glyph yang tidak boleh hilang -------------------
+   Tiga lembar gaya menyentuh tombol ini dan semuanya memakai !important:
+
+     doclinc-livekit.css:673  `.chat-icon-button, .chat-send` -> 40px, pil,
+                              `background: transparent`
+     doclinc-livekit.css:691  `.chat-send` -> `background: #3f8d68`
+     doclinc-livekit.css:700  `.chat-send img` -> 20px  (MATI: ikon kini <i>)
+     thread_v.php:406         `.chat-send img` -> 16px  (MATI juga)
+     thread_v.php:392         `.chat-send` -> 28px, `background: transparent`
+
+   Dua aturan terakhir adalah sebab ikon kirim tidak terlihat: keduanya menata
+   <img> dari paket SVG yang sudah tidak ada, sementara glyph font penggantinya
+   tidak diatur sama sekali - glyph font tidak membawa ukuran, warna, maupun
+   keluarga fontnya sendiri.
+
+   Blok ini mengunci ketiganya. `font-family` ditulis eksplisit karena satu
+   deklarasi `font:` (shorthand) di lembar mana pun akan mengosongkan keluarga
+   font dan glyph-nya berubah jadi karakter biasa atau kotak kosong - dan
+   komposer adalah satu-satunya cara pasien mengirim pesan. */
+.dl-chat-bento .chat-send {
+  border-radius: 50% !important;
+  background-color: var(--bd-green-600) !important;
+  background-image: linear-gradient(150deg, var(--bd-green-600) 0%, var(--bd-green-700) 100%) !important;
+  box-shadow: 0 4px 10px rgba(63, 141, 104, .25) !important;
+}
+
+.dl-chat-bento .chat-send i,
+.dl-chat-bento .chat-icon-button i {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  font-family: "Font Awesome 5 Free" !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  text-rendering: auto !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+.dl-chat-bento .chat-send i {
+  color: #FFFFFF !important;
+}
+
+.dl-chat-bento .chat-icon-button i {
+  color: var(--bd-green-700) !important;
+}
+   `appendMessageAvatar()` di view membuat <img class="chat-message-avatar">
+   untuk tiap pesan yang fotonya lolos pemeriksaan, dan menggantinya dengan
+   <span class="chat-message-avatar-fallback"> kalau berkasnya gagal dimuat.
+   Keduanya dirender JavaScript, jadi tidak ada satu pun yang muncul di markup
+   dan tidak ada yang menatanya sebelum ini - akibatnya avatar pesan tampil
+   dengan ukuran bawaan elemennya (atau tidak tampil sama sekali).
+
+   Bentuknya sengaja lebih kecil dan lebih tenang dari avatar kepala
+   percakapan: ia penanda siapa yang menulis, bukan identitas utama. */
+.dl-chat-bento .chat-message-avatar,
+.dl-chat-bento .chat-message-avatar-fallback {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 30px !important;
+  width: 30px !important;
+  height: 30px !important;
+  border: 0 !important;
+  border-radius: var(--bd-r-sm) !important;
+  object-fit: cover !important;
+  align-self: flex-end !important;
+  background: var(--bd-surface) !important;
+}
+
+.dl-chat-bento .chat-message-avatar-fallback {
+  background: var(--bd-mint-soft) !important;
+  color: var(--bd-mint-ink) !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: .02em !important;
+  line-height: 1 !important;
+}
+   Avatar membawa titiknya sendiri. `data-presence` yang sama dipakai di sini
+   dan di baris status, jadi keduanya tidak bisa berbeda pendapat. */
+.dl-chat-bento .chat-presence-dot[data-presence="online"] {
+  background: var(--bd-green-600) !important;
+}
+
+.dl-chat-bento .chat-presence-dot[data-presence="offline"] {
+  background: #9AA8A2 !important;
+}
+   Ditulis langsung pada titiknya, bukan lewat `currentColor` induknya, supaya
+   warna titik tidak ikut berubah kalau ada lembar lain yang mewarnai teks
+   statusnya. Hijau = lawan bicara aktif; abu = tidak aktif. Bukan merah,
+   karena tidak ada yang salah. */
+.dl-chat-bento .chat-presence-status[data-presence="online"] .chat-presence-status__dot {
+  background: var(--bd-green-600) !important;
+}
+
+.dl-chat-bento .chat-presence-status[data-presence="offline"] .chat-presence-status__dot {
+  background: #9AA8A2 !important;
+}

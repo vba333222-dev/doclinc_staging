@@ -156,7 +156,7 @@ if (!function_exists('formatComplaintText')) {
 
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="id">
 
 <head>
 	<meta charset="UTF-8">
@@ -170,6 +170,12 @@ if (!function_exists('formatComplaintText')) {
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/style.css">
+	<!-- Design system dimuat SEBELUM doclinc-nakes.css dan blok <style> di bawah
+	     supaya keduanya tetap menang saat bertabrakan, sementara token, komponen
+	     bersama, cincin fokus, dan aturan prefers-reduced-motion ikut terpakai.
+	     Sebelumnya halaman ini tidak memuat design system sehingga tombol dan
+	     bidang isian di sini tampak berbeda dari halaman konsultasi warga. -->
+	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-design-system.css'); ?>">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/doclinc-nakes.css">
 	<?php if ($clinical_suggestions_enabled) : ?>
 		<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-clinical-suggestions.css')); ?>">
@@ -855,7 +861,7 @@ if (!function_exists('formatComplaintText')) {
 			</a>
 			<div class="consult-title">
 				<h1><?= $monitor_hide_form ? 'Detail Konsultasi' : 'Pemeriksaan Pasien'; ?></h1>
-				<p class="consult-subtitle">No. Antrian: <?= html_escape($queue_code) ?></p>
+				<p class="consult-subtitle"><?= html_escape($queue_label) ?></p>
 			</div>
 			<span class="status-badge"><i class="bi bi-check-circle-fill"></i> Diterima</span>
 		</header>
@@ -877,7 +883,7 @@ if (!function_exists('formatComplaintText')) {
 					</div>
 					<div class="summary-item">
 						<span class="summary-label">No. Antrian</span>
-						<span class="summary-value"><?= html_escape($queue_code) ?></span>
+						<span class="summary-value"><?= html_escape($queue_label) ?></span>
 					</div>
 					<div class="summary-item">
 						<span class="summary-label">Jenis Layanan</span>

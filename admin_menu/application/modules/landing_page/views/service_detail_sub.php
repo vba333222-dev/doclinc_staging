@@ -63,11 +63,11 @@
     </div>
   </div>
 </div>
-<div class="modal fade" id="addNewPaket" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="addNewPaket" tabindex="-1" aria-labelledby="addNewPaketLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah paket</h5>
+        <h5 class="modal-title" id="addNewPaketLabel">Tambah paket</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -75,12 +75,12 @@
       <div class="modal-body">
         <form action="<?php echo base_url('landing_page/service_detail_sub_add_new/'.$this->uri->segment(3).'/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST">
           <div class="form-group mb-3">
-            <label for="paket" class="col-form-label">Nama Paket:</label>
-            <input type="text" class="form-control" name="paket" id="paket" value="">
+            <label for="add_paket" class="col-form-label">Nama Paket:</label>
+            <input type="text" class="form-control" name="paket" id="add_paket" value="">
           </div>
           <div class="form-group mb-3">
-            <label for="desc" class="col-form-label">Desc:</label>
-            <textarea class="form-control tinymce" name="desc" id="desc" rows="10"></textarea>
+            <label for="add_desc" class="col-form-label">Desc:</label>
+            <textarea class="form-control tinymce" name="desc" id="add_desc" rows="10"></textarea>
           </div>
           <button type="submit" class="btn btn-default-asoka float-right">Simpan</button>
         </form>
@@ -94,11 +94,11 @@
   foreach ($data_service_detail_sub->result() as $x) {
     $data_harga = $this->Landing_page_m->service_data_harga($x->id);
 ?>
-  <div class="modal fade" id="modalEdit<?= $x->id;?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal fade" id="modalEdit<?= $x->id;?>" tabindex="-1" aria-labelledby="modalEdit<?= $x->id;?>Label" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Ubah paket</h5>
+          <h5 class="modal-title" id="modalEdit<?= $x->id;?>Label">Ubah paket</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -120,11 +120,11 @@
     </div>
   </div>
 
-  <div class="modal fade" id="modalLihatHarga<?= $x->id;?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal fade" id="modalLihatHarga<?= $x->id;?>" tabindex="-1" aria-labelledby="modalLihatHarga<?= $x->id;?>Label" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel"><?= $x->paket;?></h5>
+          <h5 class="modal-title" id="modalLihatHarga<?= $x->id;?>Label"><?= $x->paket;?></h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -190,11 +190,11 @@
 <?php
     foreach ($data_harga->result() as $row){
 ?>
-    <div class="modal fade" id="modalLihatAlat<?= $row->id;?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="modalLihatAlat<?= $row->id;?>" tabindex="-1" aria-labelledby="modalLihatAlat<?= $row->id;?>Label" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel"><?= html_escape($row->nama_paket ?? '-');?></h5>
+            <h5 class="modal-title" id="modalLihatAlat<?= $row->id;?>Label"><?= html_escape($row->nama_paket ?? '-');?></h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
               <span aria-hidden="true">&times;</span>
             </button>
@@ -246,11 +246,11 @@
   $url2 = $this->uri->segment(4);
   foreach ($data_harga_all->result() as $x) {
 ?>
-  <div class="modal fade" id="modalEditHarga<?= $x->id;?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal fade" id="modalEditHarga<?= $x->id;?>" tabindex="-1" aria-labelledby="modalEditHarga<?= $x->id;?>Label" aria-hidden="true">
     <div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Ubah investasi</h5>
+          <h5 class="modal-title" id="modalEditHarga<?= $x->id;?>Label">Ubah investasi</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -258,16 +258,16 @@
         <div class="modal-body">
           <form action="<?php echo base_url('landing_page/service_harga_update/'.$x->id.'/'.$url1.'/'.$url2);?>" method="POST">
             <div class="form-group mb-3">
-              <label for="nama_paket" class="col-form-label">Jenis:</label>
-              <input type="text" class="form-control" name="nama_paket" id="nama_paket" value="<?= $x->nama_paket;?>">
+              <label for="nama_paket<?= $x->id;?>" class="col-form-label">Jenis:</label>
+              <input type="text" class="form-control" name="nama_paket" id="nama_paket<?= $x->id;?>" value="<?= $x->nama_paket;?>">
             </div>
             <div class="form-group mb-3">
-              <label for="harga" class="col-form-label">Harga:</label>
-              <input type="text" class="form-control" name="harga" id="harga" value="<?= $x->harga;?>">
+              <label for="harga<?= $x->id;?>" class="col-form-label">Harga:</label>
+              <input type="text" class="form-control" name="harga" id="harga<?= $x->id;?>" value="<?= $x->harga;?>">
             </div>
             <div class="form-group mb-3">
-              <label for="harga2" class="col-form-label">Harga Setelah Diskon:</label>
-              <input type="text" class="form-control" name="harga2" id="harga2" value="<?= $x->harga2;?>">
+              <label for="harga2<?= $x->id;?>" class="col-form-label">Harga Setelah Diskon:</label>
+              <input type="text" class="form-control" name="harga2" id="harga2<?= $x->id;?>" value="<?= $x->harga2;?>">
             </div>
             <div class="form-group mb-3">
               <label for="exp_diskon_" class="col-form-label">Expired Date Diskon:</label>
@@ -282,11 +282,11 @@
 <?php
   }
 ?>
-<div class="modal fade" id="addNewHarga" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="addNewHarga" tabindex="-1" aria-labelledby="addNewHargaLabel" aria-hidden="true">
   <div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah investasi</h5>
+        <h5 class="modal-title" id="addNewHargaLabel">Tambah investasi</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -295,16 +295,16 @@
         <form action="<?php echo base_url('landing_page/service_harga_add_new/'.$this->uri->segment(3).'/'.$this->uri->segment(4));?>" method="POST">
           <input type="hidden" name="idservicesubdetail" id="idservicesubdetail">
           <div class="form-group mb-3">
-            <label for="nama_paket" class="col-form-label">Jenis:</label>
-            <input type="text" class="form-control" name="nama_paket" id="nama_paket" value="">
+            <label for="add_nama_paket" class="col-form-label">Jenis:</label>
+            <input type="text" class="form-control" name="nama_paket" id="add_nama_paket" value="">
           </div>
           <div class="form-group mb-3">
-            <label for="harga" class="col-form-label">Harga:</label>
-            <input type="text" class="form-control tinymce" name="harga" id="harga" value="">
+            <label for="add_harga" class="col-form-label">Harga:</label>
+            <input type="text" class="form-control tinymce" name="harga" id="add_harga" value="">
           </div>
           <div class="form-group mb-3">
-            <label for="harga2" class="col-form-label">Harga Setelah Diskon (Optional, boleh tidak diisi):</label>
-            <input type="text" class="form-control tinymce" name="harga2" id="harga2" value="">
+            <label for="add_harga2" class="col-form-label">Harga Setelah Diskon (Optional, boleh tidak diisi):</label>
+            <input type="text" class="form-control tinymce" name="harga2" id="add_harga2" value="">
           </div>
           <div class="form-group mb-3">
             <label for="exp_diskon" class="col-form-label">Expired Date Diskon (Optional, boleh tidak diisi):</label>
@@ -316,11 +316,11 @@
     </div>
   </div>
 </div>
-<div class="modal fade" id="addNewAlat" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="addNewAlat" tabindex="-1" aria-labelledby="addNewAlatLabel" aria-hidden="true">
   <div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah alat tes</h5>
+        <h5 class="modal-title" id="addNewAlatLabel">Tambah alat tes</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>

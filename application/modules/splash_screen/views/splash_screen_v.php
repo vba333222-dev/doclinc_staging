@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="id">
 
 <head>
 
@@ -8,13 +8,21 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>DocLink - Masuk</title>
+    <title>DocLink - Memuat</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="<?= base_url();?>assets/css/style.css">
+
+    <link rel="stylesheet" href="<?= base_url('assets/css/doclinc-design-system.css'); ?>">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
@@ -26,23 +34,19 @@
 
         <div class="d-flex align-items-center justify-content-center vh-100">
 
-            <center>
+            <div class="text-center">
 
-                <img class="animate__animated animate__bounceIn" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" height="100px">
+                <img class="animate__animated animate__bounceIn" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" width="227" height="100" decoding="async" fetchpriority="high">
 
                 <!-- <h2 class="mb-0 text-white animate__animated animate__fadeIn">SEHAT GEH (beta)</h2> -->
 
-            </center>
+            </div>
 
         </div>
 
-        <div class="d-flex align-items-center justify-content-center position-absolute bottom-0 start-50 translate-middle-x mb-4">
+        <div class="d-flex align-items-center justify-content-center position-absolute bottom-0 start-50 translate-middle-x mb-4" role="status">
 
-            <div class="spinner-border text-light" role="status">
-
-              <span class="visually-hidden">Loading...</span>
-
-            </div>
+            <div class="spinner-border text-light" aria-hidden="true"></div>
 
             <span class="ms-2 text-white">Memuat...</span>
 

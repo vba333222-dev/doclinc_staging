@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
     <head>
         <title><?= $title_pdf;?></title>
         <meta charset="UTF-8">

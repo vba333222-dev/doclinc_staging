@@ -925,7 +925,18 @@ class ClinicalSchemaTestRunner
 		$this->test('344_all_preexisting_migration_sources_remain_byte_identical',function(){$expected=array('migrations/20260720000100_clinical_record_reference_foundation.json'=>'2c6f70c7763f35decac36c33cca7ec765f9128b4e3528aa9981a1bdd4ce5a7eb','migrations/sql/20260720000100/001_create_clinical_master_record_revisions.sql'=>'e830125e107eaab5c7d1b795b7f1c6b3d97aebac25df6b78203a0ebace7ff959','migrations/sql/20260720000100/002_create_clinical_reference_term_types.sql'=>'cb02898c2c1d5a9eadf6ef889c3eb0fdd6b5aa471dc7d92fe66453787534273e','migrations/sql/20260720000100/003_create_clinical_reference_terms.sql'=>'8422a63dea728d34177b0cf8c73e14e85cac09ad3da03a1de40246220935fae0','migrations/sql/20260720000100/004_create_clinical_reference_term_labels.sql'=>'df7dca5a9cb8a0d4993068c4c1591ab6435bfe9570c2c8fee742aeb559bce0ad','migrations/sql/20260720000100/005_create_clinical_reference_term_sources.sql'=>'65c22e05b972688f99b0977462493899d7e792edb1e20c0906a9f23291ac6582');foreach($expected as $file=>$hash){$this->assertSame($hash,hash_file('sha256',$this->root.'/'.$file));}});
 
 		$this->test('345_metadata_registration_audit_descriptor_parses',function()use($audit){$this->assertSame('20260722000100_clinical_metadata_registration_audit_foundation',$audit['migration_id']);$this->assertSame(array('clinical_master_metadata_registration_events'),$audit['expected_created_tables']);$this->assertSame(array(),$audit['expected_modified_tables']);$this->assertSame(1,count($audit['steps']));});
-		$this->test('346_metadata_registration_audit_identifier_is_catalog_maximum',function()use($loader,$audit){$ids=array_keys($loader->loadCatalog());$this->assertSame($audit['migration_id'],end($ids));foreach(array_slice($ids,0,-1) as $id){$this->assertTrue(strcmp($id,$audit['migration_id'])<0);}});
+		$this->test('346_metadata_registration_audit_identifier_is_catalog_maximum',function()use($loader,$audit){
+			$ids=array_keys($loader->loadCatalog());
+			// The metadata registration audit records the metadata schema state, so
+			// nothing may be appended after it without the audit being revisited.
+			// The clinical closure foundation is a reviewed, deliberate post-audit
+			// migration and is the only permitted exception; any other migration
+			// appearing after the audit fails here so the audit gets revisited.
+			$this->assertTrue(in_array($audit['migration_id'],$ids,true));
+			$postAudit=array();
+			foreach($ids as $id){if(strcmp($id,$audit['migration_id'])>0)$postAudit[]=$id;}
+			$this->assertSame(array('20260901000100_clinical_closure_foundation'),array_values($postAudit));
+		});
 		$this->test('347_metadata_registration_audit_checksum_is_exact_and_deterministic',function()use($loader,$audit){$this->assertSame('9af9d7fd42e2e17908ac162c89d0ea7a062b5aeb0366d9ae15ecf82c5a8e2c95',$audit['checksum']);$this->assertSame($audit['checksum'],$loader->loadById($audit['migration_id'])['checksum']);});
 		$this->test('348_metadata_registration_audit_dependencies_are_all_existing_migrations',function()use($audit){$expected=array('00000000000000_clinical_schema_ledger','20260718000100_clinical_import_audit_foundation','20260719000100_clinical_master_provenance_foundation','20260720000100_clinical_record_reference_foundation','20260721000100_clinical_package_registration_prerequisites');$this->assertSame($expected,array_column($audit['required_applied_migrations'],'migration_id'));});
 		$this->test('349_metadata_registration_audit_declared_table_matches_sql',function()use($audit){$step=$audit['steps'][0];$this->assertSame('create_table',$step['type']);$this->assertSame('clinical_master_metadata_registration_events',$step['expected_schema']['table_name']);$this->assertSame(1,preg_match_all('/\\bCREATE\\s+TABLE\\s+`clinical_master_metadata_registration_events`/i',$step['sql_bytes'],$matches));});

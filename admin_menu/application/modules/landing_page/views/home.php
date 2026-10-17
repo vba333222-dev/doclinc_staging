@@ -11,7 +11,7 @@
 <!-- Content Row -->
 <div class="row">
   <div class="col-12 mb-3">
-    <img src="<?php echo base_url();?>assets/img/hero.jpg" class="img-fluid img-thumbnail">
+    <img src="<?php echo base_url();?>assets/img/hero.jpg" class="img-fluid img-thumbnail" alt="">
   </div>
   <div class="col-12">
     <form action="<?php echo base_url();?>landing_page/update_tagline" method="POST">

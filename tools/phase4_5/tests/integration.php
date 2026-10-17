@@ -208,7 +208,7 @@ try {
 	$db->query("INSERT INTO m_puskesmas VALUES('PKM01','aktif'),('PKM02','aktif')");
 	$db->query("INSERT INTO users(userId,nama,password,role,status,remark) VALUES(10,'Pusat Layanan','hash-10-a','dokter','aktif','PKM01'),(20,'Pusat Layanan Dua','hash-20-a','dokter','aktif','PKM02'),(101,'Warga Uji','hash-101-a','warga','aktif',NULL),(201,'Ayu Pratama','hash-201-a','dokter','aktif','PKM01'),(202,'Rina Sehat','hash-202-a','dokter','aktif','PKM01'),(203,'Dina Jaga','hash-203-a','dokter','nonaktif','PKM01'),(204,'Dokter Ganda','hash-204-a','dokter','aktif','PKM01'),(205,'Budi Utama','hash-205-a','dokter','aktif','PKM01'),(206,'Sari Wangi','hash-206-a','dokter','aktif','PKM01'),(301,'Citra Lain','hash-301-a','dokter','aktif','PKM02')");
 	$db->query("INSERT INTO puskesmas_staff(staff_id,user_id,kode_pkm,nama,gelar,profesi,status) VALUES(31,201,'PKM01','Ayu Pratama','dr.','Dokter Umum','aktif'),(32,202,'PKM01','Rina Sehat',NULL,'Perawat','aktif'),(33,301,'PKM02','Citra Lain','dr.','Dokter','aktif'),(34,203,'PKM01','Dina Jaga',NULL,'Bidan','aktif'),(35,204,'PKM01','Dokter Ganda','dr.','Dokter','aktif'),(36,204,'PKM01','Dokter Ganda','dr.','Dokter','aktif'),(37,205,'PKM01','Budi Utama','dr.','Dokter Umum','aktif'),(38,206,'PKM01','Sari Wangi',NULL,'Bidan','aktif')");
-	$db->query("INSERT INTO requests(request_id,request_status,assigned_puskesmas_code,accepted_by_user_id) VALUES(100,'Accepted','PKM01',10),(101,'Accepted','PKM01',10),(102,'Accepted','PKM01',10),(103,'Accepted','PKM01',10),(104,'Accepted','PKM01',10),(105,'Accepted','PKM01',10),(106,'Accepted','PKM01',10)");
+	$db->query("INSERT INTO requests(request_id,request_status,assigned_puskesmas_code,accepted_by_user_id) VALUES(100,'Accepted','PKM01',10),(101,'Accepted','PKM01',10),(102,'Accepted','PKM01',10),(103,'Accepted','PKM01',10),(104,'Accepted','PKM01',10),(105,'Accepted','PKM01',10),(106,'Accepted','PKM01',10),(107,'Accepted','PKM01',10)");
 
 	$binding = new Session_binding_service($db);
 	phase45_db_expect($binding->schemaReady(), 'session_binding_schema_ready');
@@ -388,8 +388,9 @@ try {
 	phase45_db_expect(empty($care->assignVisitPerformer(100, 33, 201)['ok']), 'cross_facility_visit_performer_denied');
 	phase45_db_expect(empty($care->assignVisitPerformer(100, 34, 201)['ok']), 'inactive_visit_performer_denied');
 	phase45_db_expect(empty($care->assignVisitPerformer(100, 35, 201)['ok']), 'ambiguous_visit_performer_denied');
-	phase45_db_expect(empty($care->assignVisitPerformer(100, 31, 201)['ok']), 'responsible_doctor_cannot_be_visit_performer');
-	phase45_db_expect(empty($care->assignVisitPerformer(100, 37, 201)['ok']), 'same_facility_other_doctor_cannot_be_visit_performer');
+	// Doctors are valid visit performers, so the doctor cases are asserted in the
+	// dedicated block further down against request 107. Request 100 keeps a
+	// single assignment so its history and notification counts stay exact.
 	phase45_db_expect(!empty($care->assignVisitPerformer(100, 32, 201)['ok']), 'eligible_visit_performer_assigned');
 	phase45_db_expect((int) $db->where('entity_type', 'request')->where('entity_id', '100')->where('event_type', 'visit_performer_assigned')->where('recipient_user_id', 202)->count_all_results('notifications') === 1, 'visit_assignment_creates_one_notification');
 	$visit_notification = $db->where('entity_type', 'request')->where('entity_id', '100')->where('event_type', 'visit_performer_assigned')->where('recipient_user_id', 202)->get('notifications')->row();
@@ -405,7 +406,9 @@ try {
 	phase45_db_expect((int) $request->responsible_doctor_user_id === 201 && (int) $request->visit_performer_user_id === 202, 'responsible_doctor_and_performer_are_distinct');
 	phase45_db_expect(!empty($care->requestContext(100, 201)['can_assess']) && empty($care->requestContext(100, 201)['can_visit']), 'responsible_doctor_has_assessment_authority');
 	phase45_db_expect(!empty($care->requestContext(100, 202)['can_visit']) && empty($care->requestContext(100, 202)['can_assess']), 'visit_performer_has_visit_authority');
-	$db->where('staff_id', 32)->update('puskesmas_staff', array('profesi' => 'Dokter'));
+	// A doctor stays eligible as a visit performer, so the disqualifying change
+	// is the absence of a recorded profession rather than a non-doctor one.
+	$db->where('staff_id', 32)->update('puskesmas_staff', array('profesi' => ''));
 	phase45_db_expect(empty($care->requestContext(100, 202)['can_visit']), 'ineligible_existing_performer_loses_visit_authority');
 	$db->where('staff_id', 32)->update('puskesmas_staff', array('profesi' => 'Perawat'));
 	phase45_db_expect(!empty($care->assignVisitPerformer(100, 38, 201)['ok']), 'visit_performer_reassignment_allowed');
@@ -418,6 +421,23 @@ try {
 	$request = $db->where('request_id', 100)->get('requests')->row();
 	phase45_db_expect($request->visit_performer_user_id === null && (int) $db->where('request_id', 100)->where('status', 'aktif')->count_all_results('request_visit_performer_assignments') === 0, 'non_visit_requires_no_performer');
 	phase45_db_expect((int) $db->where('request_id', 100)->where('status', 'aktif')->count_all_results('request_staff_assignments') === 1, 'legacy_pic_history_is_not_visit_performer_history');
+
+	// A doctor is a valid visit performer. The disposition workflow lets the
+	// responsible doctor either perform the visit directly or delegate it to a
+	// nakes, perawat, bidan or other staff member, so the performer check must
+	// accept any personal with a recorded profession - including doctors.
+	phase45_db_expect(!empty($care->assignResponsibleDoctor(107, 31, 10)['ok'])
+		&& !empty($care->chooseMode(107, 'visit', 201)['ok']), 'doctor_performer_fixture_ready');
+	phase45_db_expect(!empty($care->assignVisitPerformer(107, 31, 201)['ok']), 'responsible_doctor_may_perform_visit_directly');
+	$request = $db->where('request_id', 107)->get('requests')->row();
+	phase45_db_expect((int) $request->responsible_doctor_user_id === 201 && (int) $request->visit_performer_user_id === 201, 'responsible_doctor_self_assignment_recorded');
+	phase45_db_expect(!empty($care->requestContext(107, 201)['can_visit']) && !empty($care->requestContext(107, 201)['can_assess']), 'performing_doctor_keeps_assessment_and_visit_authority');
+	phase45_db_expect(!empty($care->assignVisitPerformer(107, 37, 201)['ok']), 'same_facility_other_doctor_may_be_visit_performer');
+	$request = $db->where('request_id', 107)->get('requests')->row();
+	phase45_db_expect((int) $request->visit_performer_user_id === 205, 'same_facility_doctor_assignment_recorded');
+	phase45_db_expect(!empty($care->requestContext(107, 205)['can_visit']) && empty($care->requestContext(107, 205)['can_assess']), 'delegated_doctor_receives_visit_authority_only');
+	phase45_db_expect((int) $db->where('request_id', 107)->where('status', 'aktif')->count_all_results('request_visit_performer_assignments') === 1
+		&& (int) $db->where('request_id', 107)->where('status', 'diganti')->count_all_results('request_visit_performer_assignments') === 1, 'doctor_performer_reassignment_preserves_history');
 
 	$db->query("CREATE TRIGGER fail_responsible_update BEFORE UPDATE ON requests FOR EACH ROW BEGIN IF NEW.request_id=101 AND NEW.responsible_doctor_user_id IS NOT NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic_failure'; END IF; END");
 	$result = $care->assignResponsibleDoctor(101, 31, 10);

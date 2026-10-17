@@ -9,18 +9,26 @@ const chatCss = fs.readFileSync(path.join(repoRoot, 'assets/css/style.css'), 'ut
   + thread;
 
 test('active chat production template exposes screenshot-authoritative surface hooks', () => {
-  expect(thread).toContain('class="chat-info-banner"');
+  // Petak identitas konsultasi (`chat-info-banner`) dihapus atas permintaan:
+  // isinya - nama Puskesmas dan nomor antrian - sudah tampil di beranda dan di
+  // halaman Konsultasi, dan status sesi terbaca dari kompornya sendiri.
+  // Tombol "Lampirkan gambar" juga dihapus: ia dan tombol kamera membuka
+  // pemilih berkas yang sama. Ikonnya pindah dari paket SVG ke Font Awesome.
+  // Yang diuji di sini adalah kait permukaan yang MASIH ada.
   expect(thread).toContain('class="chat-date-separator"');
   expect(thread).toContain('data-chat-role');
   expect(thread).toContain('data-chat-photo-state');
-  expect(thread).toContain('placeholder="Ketik pesan..."');
-  expect(thread).toContain("doclinc_ui_asset('attachment')");
-  expect(thread).toContain("doclinc_ui_asset('camera')");
-  expect(thread).toContain("doclinc_ui_asset('send')");
+  expect(thread).toContain('placeholder="Ketik pesan . . ."');
+  expect(thread).toContain('id="imageInput"');
+  expect(thread).toContain('class="chat-icon-button chat-upload"');
+  expect(thread).toContain('aria-label="Kirim gambar"');
+  expect(thread).toContain('class="chat-send"');
+  expect(thread).toContain('aria-label="Kirim pesan"');
   expect(thread).not.toContain('doctor-placeholder.jpg');
   expect(thread).not.toContain('Rekam Medis Terenkripsi DokLinc');
+  expect(thread, 'petak identitas konsultasi sudah dihapus dari markup').not.toContain('class="chat-info-banner"');
+  expect(thread, 'tombol lampiran sudah dihapus').not.toContain("doclinc_ui_asset('attachment')");
   expect(chatCss).toMatch(/\.chat-shell\.is-active/);
-  expect(chatCss).toMatch(/\.chat-info-banner/);
   expect(chatCss).toMatch(/\.chat-date-separator/);
 });
 

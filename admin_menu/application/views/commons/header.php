@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
 	<?php
@@ -93,13 +93,15 @@
 		<!-- Sidebar -->
 		<ul class="navbar-nav sidebar sidebar-dark accordion position-fixed vh-100 doclinc-sidebar" id="accordionSidebar">
 			<!-- Sidebar - Brand -->
-			<a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
+			<!-- Dulu href="#" sehingga mengklik logo tidak melakukan apa pun. Sekarang
+			     menuju dasbor, sesuai kebiasaan umum panel admin. -->
+			<a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo site_url('home'); ?>" aria-label="DocLink, kembali ke dasbor">
 				<div class="sidebar-brand-icon">
-					<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="DocLink">
+					<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="DocLink" width="3167" height="1396">
 				</div>
 			</a>
 
-			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Dashboard</div>
+			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Dashboard</li>
 			<li class="nav-item <?= $doclinc_active_dashboard; ?>">
 				<a class="nav-link" href="<?php echo site_url('home'); ?>">
 					<i class="fas fa-tachometer-alt"></i>
@@ -107,7 +109,7 @@
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Operasional</div>
+			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Operasional</li>
 			<li class="nav-item <?= $doclinc_active_konsultasi; ?>">
 				<a class="nav-link" href="<?php echo site_url('konsultasi_kesehatan'); ?>">
 					<i class="fas fa-stethoscope"></i>
@@ -115,7 +117,7 @@
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Puskesmas</div>
+			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Puskesmas</li>
 			<li class="nav-item <?= $doclinc_active_master_puskesmas; ?>">
 				<a class="nav-link" href="<?php echo site_url('master_puskesmas'); ?>">
 					<i class="fas fa-hospital"></i>
@@ -137,7 +139,7 @@
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Data</div>
+			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Data</li>
 			<li class="nav-item <?= $doclinc_active_keluhan; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_keluhan'); ?>">
 					<i class="fas fa-comments"></i>
@@ -145,7 +147,7 @@
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Laporan</div>
+			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Laporan</li>
 			<li class="nav-item <?= $doclinc_active_rekam_medis; ?>">
 				<a class="nav-link" href="<?php echo site_url('rekam_medis'); ?>">
 					<i class="fas fa-notes-medical"></i>
@@ -160,7 +162,7 @@
 				</a>
 			</li>
 
-			<div class="doclinc-sidebar-section doclinc-sidebar-heading">Konten</div>
+			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Konten</li>
 			<li class="nav-item <?= $doclinc_active_news; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_news_feed'); ?>">
 					<i class="fas fa-newspaper"></i>
@@ -169,7 +171,9 @@
 			</li>
 
 			<div class="text-center d-none d-md-inline">
-				<button class="rounded-circle border-0" id="sidebarToggle"></button>
+				<!-- Tombol ini tadinya benar-benar kosong (tanpa teks maupun aria-label),
+				     sehingga pembaca layar mengumumkan "tombol" tanpa keterangan. -->
+				<button type="button" class="rounded-circle border-0" id="sidebarToggle" aria-label="Sembunyikan atau tampilkan menu samping" aria-controls="accordionSidebar"></button>
 			</div>
 		</ul>
 		<!-- End of Sidebar -->
@@ -179,8 +183,8 @@
 			<div id="content">
 				<!-- Topbar -->
 				<nav class="navbar navbar-expand navbar-light topbar mb-4 static-top shadow doclinc-topbar">
-					<button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
-						<i class="fa fa-bars"></i>
+					<button type="button" id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3" aria-label="Buka menu samping" aria-controls="accordionSidebar" aria-expanded="false">
+						<i class="fa fa-bars" aria-hidden="true"></i>
 					</button>
 					<!-- Hospital Branding -->
 					<div class="d-none d-md-flex align-items-center mr-auto">
@@ -196,8 +200,10 @@
 						</li>
 						<!-- Notification Bell -->
 						<li class="nav-item dropdown no-arrow mx-2">
-							<a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-								<i class="fas fa-bell fa-lg text-gray-600"></i>
+							<!-- Tautan ini hanya berisi ikon (badge-nya tersembunyi saat kosong),
+							     jadi tanpa aria-label pembaca layar tidak mengumumkan apa pun. -->
+							<a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Notifikasi">
+								<i class="fas fa-bell fa-lg text-gray-600" aria-hidden="true"></i>
 								<span class="badge badge-danger badge-counter doclinc-notification-badge" id="doclincNotificationBadge" style="display:none;"></span>
 							</a>
 							<div class="dropdown-menu dropdown-menu-right shadow animated--grow-in doclinc-notification-menu" aria-labelledby="alertsDropdown">
@@ -212,19 +218,30 @@
 						</li>
 						<!-- User Profile Dropdown -->
 						<li class="nav-item dropdown no-arrow">
-							<a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-								<img class="img-profile rounded-circle mr-2 doclinc-profile-image" src="<?= html_escape(base_url("assets/images/admin-avatar.svg")); ?>" onerror="this.src="data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"%3E%3Ccircle cx=\"50\" cy=\"35\" r=\"20\" fill=\"%23e5e9f2\"/%3E%3Cellipse cx=\"50\" cy=\"80\" rx=\"35\" ry=\"25\" fill=\"%23e5e9f2\"/%3E%3C/svg%3E"">
+							<!-- Nama pengguna disembunyikan di bawah breakpoint lg (d-none d-lg-inline),
+							     jadi tanpa aria-label tombol ini tidak punya keterangan apa pun di
+							     layar kecil. -->
+							<a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Menu akun">
+								<img class="img-profile rounded-circle mr-2 doclinc-profile-image" src="<?= html_escape(base_url("assets/images/admin-avatar.svg")); ?>" alt="">
 								<span class="d-none d-lg-inline text-gray-700 small font-weight-bold"><?= html_escape($this->session->userdata('username') ?: '') ?></span>
 							</a>
 							<div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
-								<a class="dropdown-item" href="#">
-									<i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-									Profil
-								</a>
-								<a class="dropdown-item" href="#">
-									<i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-									Pengaturan
-								</a>
+								<!-- "Profil" dan "Pengaturan" tadinya href="#" — tidak ada halaman
+								     maupun route untuk keduanya di panel ini, jadi mengkliknya tidak
+								     melakukan apa pun dan hanya menyesatkan. Diganti dengan keterangan
+								     akun yang sedang masuk, yang memang informasinya berguna. -->
+								<div class="dropdown-item-text doclinc-account-summary">
+									<span class="d-block text-muted small">Masuk sebagai</span>
+									<strong class="d-block text-truncate"><?= html_escape($this->session->userdata('username') ?: 'Pengguna admin') ?></strong>
+								</div>
+								<!-- Modal "Ubah password" (#modalPassword di commons/footer.php) sudah
+								     lengkap sejak lama dan endpoint Home::change_password() memang ada,
+								     tetapi TIDAK ADA satu pun pemicu di seluruh panel — jadi fitur ini
+								     tidak bisa diakses sama sekali. Tautan ini memulihkannya. -->
+								<button type="button" class="dropdown-item" data-toggle="modal" data-target="#modalPassword">
+									<i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400" aria-hidden="true"></i>
+									Ubah password
+								</button>
 								<div class="dropdown-divider"></div>
 								<form method="post" action="<?php echo site_url('login/logout'); ?>">
 									<input type="hidden" name="_logout_token" value="<?= html_escape((string) $this->session->userdata('admin_logout_token')); ?>">

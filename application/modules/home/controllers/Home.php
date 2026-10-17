@@ -940,7 +940,7 @@ class Home extends MX_Controller
 			'assigned_pic_profesi' => $pic_profesi,
 			'assigned_pic_no_hp' => $pic_no_hp,
 			'assigned_pic_label' => $pic_name !== ''
-				? 'Penanggung jawab layanan: ' . $pic_name . ($pic_profesi !== '' ? ' - ' . $pic_profesi : '')
+				? $pic_name
 				: '',
 		);
 	}

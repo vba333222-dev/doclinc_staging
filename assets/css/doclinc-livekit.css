@@ -25,7 +25,7 @@
 }
 
 .doclinc-call-context { gap: 14px; }
-.doclinc-call-eyebrow { display: block; color: rgba(255,255,255,.58); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.doclinc-call-eyebrow { display: block; color: rgba(255,255,255,.58); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
 .doclinc-call-status-dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #43d79b; box-shadow: 0 0 0 4px rgba(67,215,155,.14); vertical-align: 1px; }
 .doclinc-call-avatar { width: 44px; height: 44px; flex-basis: 44px; border-color: rgba(70, 220, 157, .4); }
 .doclinc-call-title { font-size: clamp(16px, 1.5vw, 22px); letter-spacing: -.02em; }
@@ -88,7 +88,7 @@
   gap: 5px;
 }
 .doclinc-call-control img { width: 24px; height: 24px; filter: brightness(0) invert(1); }
-.doclinc-call-control-label { display: block; font-size: 11px; line-height: 1; color: rgba(255,255,255,.8); }
+.doclinc-call-control-label { display: block; font-size: 12px; line-height: 1; color: rgba(255,255,255,.8); }
 .doclinc-call-control:hover, .doclinc-call-control:focus-visible { background: #2b3938; outline: 2px solid rgba(67,215,155,.72); outline-offset: 2px; }
 .doclinc-call-control.end-call {
   width: clamp(116px, 13vw, 170px);
@@ -128,18 +128,18 @@
   .doclinc-call-context { gap: 9px; }
   .doclinc-call-avatar { width: 36px; height: 36px; flex-basis: 36px; }
   .doclinc-call-title { font-size: 16px; }
-  .doclinc-call-status { font-size: 11px; }
+  .doclinc-call-status { font-size: 12px; }
   .doclinc-call-stage { border-radius: 24px; }
   .doclinc-call-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 20px 12px max(20px, env(safe-area-inset-bottom)); border-radius: 24px; }
   .doclinc-call-popover { bottom: clamp(245px, 33vh, 300px); }
   .doclinc-call-control, .doclinc-call-control.end-call { width: 100%; height: 70px; min-width: 0; }
   .doclinc-call-control.end-call { grid-column: span 2; }
-  .doclinc-call-control-label { font-size: 10px; }
+  .doclinc-call-control-label { font-size: 11px; }
 }
 
 @media (max-width: 380px) {
   .doclinc-call-control, .doclinc-call-control.end-call { height: 62px; }
-  .doclinc-call-control-label { font-size: 9px; }
+  .doclinc-call-control-label { font-size: 11px; }
 }
 
 /* Fidelity pass: horizontal premium shell, dominant stage, and dedicated mobile dock. */
@@ -150,11 +150,11 @@
 .doclinc-call-brand { display: block; width: clamp(122px, 11vw, 164px); height: auto; max-height: 46px; object-fit: contain; }
 .doclinc-call-divider { width: 1px; height: 42px; background: rgba(255,255,255,.18); flex: 0 0 auto; }
 .doclinc-call-context { display: grid; min-width: 0; gap: 3px; }
-.doclinc-call-eyebrow { color: rgba(255,255,255,.58); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.doclinc-call-eyebrow { color: rgba(255,255,255,.58); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
 .doclinc-call-title { margin: 0; color: #fff; font-size: clamp(18px, 1.65vw, 24px); font-weight: 760; letter-spacing: -.02em; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .doclinc-call-provider-meta { gap: 8px; min-width: 0; }
 .doclinc-call-provider-role { color: rgba(255,255,255,.66); font-size: 12px; }
-.doclinc-call-verified { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #2fbd82; color: #082218; font-size: 11px; font-weight: 900; }
+.doclinc-call-verified { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #2fbd82; color: #082218; font-size: 12px; font-weight: 900; }
 .doclinc-call-head-actions { gap: 10px; flex: 0 0 auto; }
 .doclinc-call-security { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border: 1px solid rgba(77,216,162,.26); border-radius: 999px; background: rgba(47,189,130,.10); color: #b4efd5; font-size: 12px; font-weight: 650; white-space: nowrap; }
 .doclinc-call-security-icon { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid currentColor; border-radius: 50%; font-size: 13px; line-height: 1; }
@@ -183,7 +183,7 @@
 .doclinc-call-control { position: relative; width: clamp(76px, 7.2vw, 102px); height: 68px; gap: 7px; border: 0; border-radius: 18px; background: transparent; box-shadow: none; }
 .doclinc-call-control:not(.end-call) + .doclinc-call-control:not(.end-call)::before { content: ''; position: absolute; left: -5px; top: 14px; width: 1px; height: 40px; background: rgba(255,255,255,.18); }
 .doclinc-call-control img { width: 25px; height: 25px; }
-.doclinc-call-control-label { color: rgba(255,255,255,.82); font-size: 11px; font-weight: 650; }
+.doclinc-call-control-label { color: rgba(255,255,255,.82); font-size: 12px; font-weight: 650; }
 .doclinc-call-control.end-call { width: clamp(160px, 14vw, 206px); height: 64px; gap: 10px; border-color: #f04d47; border-radius: 999px; background: #ef403a; box-shadow: 0 12px 24px rgba(239,64,58,.24); }
 .doclinc-call-control.end-call .doclinc-call-control-label { font-size: 14px; font-weight: 800; }
 
@@ -206,12 +206,12 @@
   .doclinc-call-brand-lockup { flex: 1 1 auto; min-width: 0; }
   .doclinc-call-brand { width: 76px; max-height: 30px; }
   .doclinc-call-divider { height: 34px; }
-  .doclinc-call-eyebrow { font-size: 9px; }
+  .doclinc-call-eyebrow { font-size: 11px; }
   .doclinc-call-title { max-width: none; font-size: 15px; }
-  .doclinc-call-provider-role { font-size: 10px; }
+  .doclinc-call-provider-role { font-size: 11px; }
   .doclinc-call-security { width: 28px; height: 28px; padding: 0; justify-content: center; gap: 0; font-size: 0; }
   .doclinc-call-security > span:last-child { display: none; }
-  .doclinc-call-security-icon { width: 14px; height: 14px; font-size: 10px; }
+  .doclinc-call-security-icon { width: 14px; height: 14px; font-size: 11px; }
   .doclinc-call-signal { height: 18px; gap: 2px; }
   .doclinc-call-signal span { width: 3px; }
   .doclinc-call-signal span:nth-child(1) { height: 5px; }
@@ -228,7 +228,7 @@
   .doclinc-call-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 6px; min-height: 194px; padding: 16px 12px max(18px, env(safe-area-inset-bottom)); border-radius: 26px; }
   .doclinc-call-control { width: 70px; min-width: 0; height: 70px; justify-self: center; border-radius: 50%; }
   .doclinc-call-control img { width: 27px; height: 27px; }
-  .doclinc-call-control-label { font-size: 10px; }
+  .doclinc-call-control-label { font-size: 11px; }
   .doclinc-call-control.end-call { grid-column: 2 / span 2; width: min(100%, 190px); height: 58px; justify-self: center; border-radius: 999px; }
   .doclinc-call-control.end-call .doclinc-call-control-label { font-size: 13px; }
   .doclinc-call-popover { right: 12px; bottom: 280px; max-width: calc(100% - 24px); }
@@ -241,7 +241,7 @@
 @media (max-width: 380px) {
   .doclinc-call-title { max-width: 128px; }
   .doclinc-call-control, .doclinc-call-control.end-call { height: 64px; }
-  .doclinc-call-control-label { font-size: 9px; }
+  .doclinc-call-control-label { font-size: 11px; }
 }
 
 /* Keep the compact dock circular on phones even after tablet grid rules apply. */
@@ -351,7 +351,7 @@
 .doclinc-call-control.end-call img { width: 32px; height: 32px; }
 .doclinc-call-control.end-call .doclinc-call-control-label { font-size: 17px; }
 .doclinc-call-popover { bottom: 126px; right: 26px; padding: 16px; border-radius: 18px; background: #202b2c; }
-.doclinc-call-popover-title { margin: 0 0 10px; color: rgba(255,255,255,.62); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.doclinc-call-popover-title { margin: 0 0 10px; color: rgba(255,255,255,.62); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
 .doclinc-call-secondary { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 8px; border: 0; border-radius: 10px; background: transparent; color: #fff; cursor: pointer; text-align: left; }
 .doclinc-call-secondary:hover { background: rgba(255,255,255,.08); }
 .doclinc-call-secondary:focus-visible { background: rgba(255,255,255,.08); outline: 2px solid #55d9a2; outline-offset: 2px; }
@@ -370,12 +370,12 @@
   .doclinc-call-brand-lockup { gap: 10px; }
   .doclinc-call-brand { width: 86px; max-height: 34px; }
   .doclinc-call-divider { height: 40px; }
-  .doclinc-call-eyebrow { font-size: 10px; }
+  .doclinc-call-eyebrow { font-size: 11px; }
   .doclinc-call-title { font-size: 17px; }
-  .doclinc-call-provider-role { font-size: 11px; }
+  .doclinc-call-provider-role { font-size: 12px; }
   .doclinc-call-head-actions { gap: 6px; }
   .doclinc-call-security { width: 30px; height: 30px; padding: 0; justify-content: center; font-size: 0; }
-  .doclinc-call-security-icon { width: 16px; height: 16px; font-size: 10px; }
+  .doclinc-call-security-icon { width: 16px; height: 16px; font-size: 11px; }
   .doclinc-call-head-more { width: 32px; height: 32px; }
   .doclinc-call-head-more img { width: 18px; height: 18px; }
   .doclinc-call-stage { min-height: 0; border-radius: 28px; }
@@ -387,7 +387,7 @@
   .doclinc-call-controls { grid-template-columns: repeat(4, minmax(0, 1fr)); min-height: 236px; gap: 10px 4px; padding: 16px 8px max(18px, env(safe-area-inset-bottom)); border-radius: 28px; }
   .doclinc-call-control { width: 80px; height: 96px; gap: 6px; border-radius: 18px; background: transparent; border: 0; padding: 0; }
   .doclinc-call-control img { width: 56px; height: 56px; padding: 13px; border-radius: 50%; background: rgba(39, 49, 50, .92); box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); }
-  .doclinc-call-control-label { font-size: 11px; }
+  .doclinc-call-control-label { font-size: 12px; }
   .doclinc-call-control.end-call { grid-column: 3 / span 2; width: min(100%, 190px); height: 62px; border-radius: 999px; }
   .doclinc-call-control.end-call .doclinc-call-control-label { font-size: 15px; }
   .doclinc-call-popover { right: 14px; bottom: 308px; }
@@ -395,9 +395,9 @@
 }
 
 @media (min-width: 381px) and (max-width: 640px) {
-  .doclinc-call-security { width: auto; min-width: 54px; height: 30px; padding: 0 8px; gap: 4px; font-size: 10px; }
+  .doclinc-call-security { width: auto; min-width: 54px; height: 30px; padding: 0 8px; gap: 4px; font-size: 11px; }
   .doclinc-call-security > span:last-child { display: inline; font-size: 0; }
-  .doclinc-call-security > span:last-child::after { content: 'Aman'; font-size: 10px; font-weight: 700; }
+  .doclinc-call-security > span:last-child::after { content: 'Aman'; font-size: 11px; font-weight: 700; }
 }
 
 /* Local preview treatment is independent from control state colors. */
@@ -885,12 +885,19 @@
    surfaces). These tokens mirror the supplied DokLinc chat/call references
    without importing their demo dependencies or remote assets. */
 .chat-shell.is-active {
-  width: min(100%, 390px);
-  max-width: 390px;
   min-height: 100dvh;
   border-radius: 0;
   background: #f7f9fb;
   box-shadow: 0 18px 42px rgba(15, 35, 28, .08);
+}
+/* The 390px reference column is the small-screen treatment. Declared at top
+   level it also capped the desktop shell, overriding the 760px width set
+   earlier in this file, so it is scoped to small viewports here. */
+@media (max-width: 640px) {
+  .chat-shell.is-active {
+    width: min(100%, 390px);
+    max-width: 390px;
+  }
 }
 .chat-shell.is-active .chat-header {
   min-height: 88px;
@@ -945,7 +952,7 @@
   color: #fff;
   box-shadow: 0 3px 7px rgba(8,113,78,.16);
 }
-.chat-shell.is-active .chat-time { width: 44px; flex-basis: 44px; font-size: 11px; color: #8ea1b8; }
+.chat-shell.is-active .chat-time { width: 44px; flex-basis: 44px; font-size: 12px; color: #8ea1b8; }
 .chat-shell.is-active .chat-form {
   min-height: 82px;
   padding: 12px 12px 16px;
@@ -1019,14 +1026,14 @@
   backdrop-filter: blur(12px);
 }
 .doclinc-call-stage .doclinc-call-provider-overlay strong { font-size: 14px; line-height: 1.1; }
-.doclinc-call-stage .doclinc-call-provider-overlay span { display: block; color: rgba(255,255,255,.72); font-size: 11px; line-height: 1.2; }
+.doclinc-call-stage .doclinc-call-provider-overlay span { display: block; color: rgba(255,255,255,.72); font-size: 12px; line-height: 1.2; }
 
 @media (max-width: 640px) {
   .chat-shell.is-active .chat-header { height: 88px; min-height: 88px; padding: 40px 16px 3px; gap: 7px; }
   .chat-shell.is-active .chat-list { padding-inline: 15px; }
   .doclinc-call-stage .doclinc-call-provider-overlay { top: 12px; left: 12px; padding: 8px 11px; }
   .doclinc-call-stage .doclinc-call-provider-overlay strong { font-size: 12px; }
-  .doclinc-call-stage .doclinc-call-provider-overlay span { font-size: 10px; }
+  .doclinc-call-stage .doclinc-call-provider-overlay span { font-size: 11px; }
 }
 
 /* Keep the reference-sized conversation on desktop; the 390px shell is a
@@ -1111,7 +1118,7 @@
   flex-basis: auto;
   margin-top: 4px;
   text-align: right;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 14px;
   color: #94a3b8;
 }
@@ -1173,11 +1180,19 @@
 /* Final active-chat reference alignment.  These rules affect only the Chat
    surface; call modal/incoming-call presentation remains unchanged. */
 .chat-shell.is-active {
-  width: min(100%, 390px) !important;
-  max-width: 390px !important;
   height: 100dvh;
   min-height: 0;
   overflow: hidden;
+}
+/* The narrow reference column is the small-screen treatment. Declared at top
+   level with !important it also defeated the desktop `max-width: 760px`
+   declared in the @media (min-width: 641px) block above, so it is scoped to
+   small viewports here. */
+@media (max-width: 640px) {
+  .chat-shell.is-active {
+    width: min(100%, 390px) !important;
+    max-width: 390px !important;
+  }
 }
 .chat-shell.is-active .chat-header {
   height: 72px !important;
@@ -1210,14 +1225,14 @@
 }
 .chat-shell.is-active .chat-message-sender { margin: 0 0 5px 4px; }
 .chat-shell.is-active .chat-message-stack.mine .chat-message-sender { margin: 0 4px 5px 0; text-align: right; }
-.chat-shell.is-active .chat-info-banner { min-height: 26px; height: 26px; padding-block: 0; }
-.chat-shell.is-active .chat-info-banner__icon { width: 10px; height: 10px; padding: 0; border-radius: 50%; }
+/* Dua aturan `.chat-info-banner` di sini (dan dua di dalam media query di
+   bawah) menata petak identitas konsultasi yang markup-nya sudah dihapus atas
+   permintaan. Ikut dihapus supaya tidak ada selektor yang menata elemen yang
+   tidak pernah dirender. */
 .chat-shell.is-active .chat-input-row { min-height: 54px !important; height: 54px !important; }
 @media (min-width: 421px) and (max-width: 520px) {
   body:has(.chat-shell.is-active) { min-height: 1600px; display: flex; align-items: center; justify-content: center; }
   .chat-shell.is-active { width: 390px !important; height: 1078px !important; min-height: 1078px !important; margin: auto; }
-  .chat-shell.is-active .chat-info-banner__label,
-  .chat-shell.is-active .chat-info-banner__meta { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 }
 
 /* Active Chat reference tokens: keep the production message flow while
@@ -1306,9 +1321,14 @@
   grid-template-columns: 36px 36px minmax(0, 1fr) 40px;
   gap: 11px;
   border: 0 !important;
-  border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
+}
+/* The flat composer is the small-screen reference treatment. Declared at top
+   level the zeroed radius also flattened the desktop pill composer, so it is
+   scoped to small viewports here. */
+@media (max-width: 640px) {
+  .chat-shell.is-active .chat-input-row { border-radius: 0 !important; }
 }
 .chat-shell.is-active .chat-input {
   min-width: 0;
@@ -1321,9 +1341,11 @@
 }
 .chat-shell.is-active .chat-icon-button,
 .chat-shell.is-active .chat-send {
-  width: 34px !important;
+  /* 34px fell below the 36px minimum touch target the composer contract
+     requires, so the compact reference sizing is raised to 36px. */
+  width: 36px !important;
   height: 44px !important;
-  min-width: 34px !important;
+  min-width: 36px !important;
   min-height: 44px !important;
   padding: 0 !important;
   border: 0 !important;
@@ -1344,7 +1366,7 @@
   border-radius: 999px;
   background: #e9ecf2;
   color: #475569;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 13px;
 }

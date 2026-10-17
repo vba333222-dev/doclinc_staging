@@ -13,7 +13,9 @@ test('primary navigation uses semantic icon registry', () => {
 });
 
 test('chat actions use canonical semantic assets and accessible names', () => {
-  const chat = read('application/modules/chat/views/chat.php');
+  // The legacy chat.php view was consolidated into thread_v.php; assert the
+  // canonical semantics against the view that actually renders the composer.
+  const chat = read('application/modules/chat/views/thread_v.php');
   for (const semantic of ['video_call', 'voice_call', 'attachment', 'camera', 'send']) {
     expect(chat, semantic).toContain(`doclinc_ui_asset('${semantic}')`);
   }
@@ -74,7 +76,10 @@ test('runtime never references the authoring-only asset directory', () => {
   function walk(dir) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const absolute = path.join(dir, entry.name);
-      if (entry.isDirectory() && !['node_modules', 'test-results'].includes(entry.name)) walk(absolute);
+      // This asserts that *runtime* never cites the authoring-only directory.
+      // Test specs legitimately cite it as a visual baseline fixture, and
+      // node_modules/test-results are build artifacts, so none are scanned.
+      if (entry.isDirectory() && !['node_modules', 'test-results', 'tests'].includes(entry.name)) walk(absolute);
       else if (/\.(php|js|css|json|md)$/i.test(entry.name) && forbidden.test(fs.readFileSync(absolute, 'utf8'))) hits.push(path.relative(repoRoot, absolute));
     }
   }

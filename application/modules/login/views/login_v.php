@@ -8,174 +8,59 @@
 	<title>DocLink - Masuk</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= base_url('assets/css/style.css'); ?>">
-	<style>
-		.auth-body {
-			background: #1F6F4B;
-			font-family: 'Manrope', system-ui, -apple-system, sans-serif;
-			min-height: 100vh;
-		}
-		.auth-logo {
-			height: 64px;
-			width: auto;
-			margin-bottom: 28px;
-		}
-		.auth-card {
-			background: #fff;
-			border: none;
-			border-radius: 18px;
-			box-shadow: 0 20px 60px rgba(0, 0, 0, .15);
-			overflow: hidden;
-		}
-		.auth-card-body {
-			padding: 32px 28px 28px;
-			background: #f8fbfa;
-		}
-		.auth-field {
-			position: relative;
-			margin-bottom: 18px;
-		}
-		.auth-field .auth-icon {
-			position: absolute;
-			top: 50%;
-			left: 14px;
-			transform: translateY(-50%);
-			color: #8fa8a0;
-			font-size: 15px;
-			pointer-events: none;
-			z-index: 2;
-		}
-		.auth-field input {
-			min-height: 48px;
-			border-radius: 12px;
-			border: 1.5px solid #dce6e1;
-			background: #fff;
-			font-family: 'Manrope', sans-serif;
-			font-size: 14px;
-			font-weight: 600;
-			color: #1f2a24;
-			padding: 10px 44px 10px 42px;
-			transition: border-color .2s, box-shadow .2s;
-		}
-		.auth-field input:focus {
-			border-color: #1F6F4B;
-			box-shadow: 0 0 0 3px rgba(31, 111, 75, .12);
-		}
-		.auth-field input::placeholder {
-			color: #a0b0a8;
-			font-weight: 500;
-		}
-		.auth-toggle-pw {
-			position: absolute;
-			top: 50%;
-			right: 12px;
-			transform: translateY(-50%);
-			background: none;
-			border: none;
-			color: #8fa8a0;
-			font-size: 16px;
-			cursor: pointer;
-			padding: 10px;
-			min-width: 44px;
-			min-height: 44px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			border-radius: 8px;
-			transition: color .2s, background .2s;
-			z-index: 2;
-		}
-		.auth-toggle-pw:hover {
-			color: #1F6F4B;
-			background: rgba(31, 111, 75, .06);
-		}
-		.auth-btn {
-			min-height: 48px;
-			border-radius: 12px;
-			background: #1F6F4B;
-			border: none;
-			color: #fff;
-			font-family: 'Manrope', sans-serif;
-			font-size: 15px;
-			font-weight: 800;
-			letter-spacing: .02em;
-			transition: background .2s, transform .1s;
-		}
-		.auth-btn:hover {
-			background: #177a42;
-		}
-		.auth-btn:active {
-			transform: scale(.98);
-		}
-		.auth-btn:disabled {
-			opacity: .7;
-		}
-		.auth-divider {
-			border: none;
-			border-top: 1px solid #e7ece9;
-			margin: 20px 0;
-		}
-		.auth-link {
-			color: #1F6F4B;
-			font-weight: 700;
-			text-decoration: none;
-			transition: color .2s;
-		}
-		.auth-link:hover {
-			color: #177a42;
-		}
-		.auth-footer-text {
-			color: #66756D;
-			font-size: 13px;
-			font-weight: 500;
-			margin-bottom: 0;
-		}
-	</style>
+	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-design-system.css'); ?>">
+	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-auth.css'); ?>">
 </head>
 
-<body class="auth-body">
+<body class="dl-auth-body">
 	<div class="container">
-		<div class="row d-flex align-items-center justify-content-center vh-100">
-			<div class="col-11 col-sm-8 col-md-5 col-lg-4">
+		<div class="row d-flex align-items-center justify-content-center min-vh-100 py-4">
+			<div class="col-11 col-sm-8 col-md-6 col-lg-5 col-xl-4">
 				<div class="text-center">
-					<img class="auth-logo" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" style="height:72px;width:auto;">
+					<img class="dl-auth-logo" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" width="3167" height="1396" decoding="async" fetchpriority="high">
 				</div>
-				<div class="auth-card">
-					<div class="auth-card-body">
+				<div class="dl-auth-card">
+					<div class="dl-auth-card-body">
+						<h1 class="dl-auth-title">Masuk</h1>
+						<p class="dl-auth-subtitle">Gunakan akun DocLinc Anda untuk melanjutkan.</p>
 						<?php if (!empty($success_message)): ?>
 							<div class="alert alert-success" role="status"><?= html_escape($success_message); ?></div>
 						<?php endif; ?>
 
 						<form id="loginForm">
-							<div class="auth-field">
-								<label for="username" class="visually-hidden">Nama pengguna</label>
-								<i class="fas fa-user auth-icon"></i>
-								<input type="text" class="form-control" id="username" placeholder="Nama pengguna" required>
+							<div class="dl-auth-field">
+								<label class="form-label" for="username">Nama pengguna</label>
+								<div class="dl-auth-control">
+									<i class="fas fa-user dl-auth-icon" aria-hidden="true"></i>
+									<input type="text" class="form-control" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+								</div>
 							</div>
 
-							<div class="auth-field">
-								<label for="password" class="visually-hidden">Password</label>
-								<i class="fas fa-lock auth-icon"></i>
-								<input type="password" class="form-control" id="password" placeholder="Password" required>
-				<button type="button" class="auth-toggle-pw" tabindex="0" data-target="password" aria-label="Tampilkan password">
-									<i class="fas fa-eye"></i>
-								</button>
+							<div class="dl-auth-field">
+								<label class="form-label" for="password">Password</label>
+								<div class="dl-auth-control">
+									<i class="fas fa-lock dl-auth-icon" aria-hidden="true"></i>
+									<input type="password" class="form-control" id="password" name="password" autocomplete="current-password" required>
+									<button type="button" class="dl-auth-toggle-pw" data-target="password" aria-label="Tampilkan password">
+										<i class="fas fa-eye" aria-hidden="true"></i>
+									</button>
+								</div>
 							</div>
 
 							<div class="d-grid mb-3">
-								<button type="submit" class="auth-btn">Masuk</button>
+								<button type="submit" class="dl-auth-btn">Masuk</button>
 							</div>
 						</form>
 
-						<hr class="auth-divider">
+						<hr class="dl-auth-divider">
 						<div class="text-center">
-							<p class="auth-footer-text">Belum punya akun? <a href="<?= site_url('sign_up'); ?>" class="auth-link">Daftar di sini</a></p>
+							<p class="dl-auth-footer-text">Belum punya akun? <a href="<?= site_url('sign_up'); ?>" class="dl-auth-link">Daftar di sini</a></p>
 							<?php if (!empty($activation_available)): ?>
-								<p class="mt-2 mb-0"><a href="<?= html_escape(site_url('login/activate')); ?>" class="auth-link">Aktivasi akun Nakes</a></p>
+								<p class="mt-2 mb-0"><a href="<?= html_escape(site_url('login/activate')); ?>" class="dl-auth-link">Aktivasi akun Nakes</a></p>
 							<?php endif; ?>
 						</div>
 					</div>
@@ -254,7 +139,7 @@
 	</script>
 
 	<script>
-		document.querySelectorAll('.auth-toggle-pw').forEach(function(btn) {
+		document.querySelectorAll('.dl-auth-toggle-pw').forEach(function(btn) {
 			btn.addEventListener('click', function() {
 				var targetId = this.getAttribute('data-target');
 				var input = document.getElementById(targetId);

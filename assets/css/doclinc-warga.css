@@ -28,7 +28,14 @@
 .dl-warga-app .dl-appbar .dl-profile-copy > p.dl-user-coordinate { color: #d8f3e7 !important; }
 .dl-warga-app .dl-hero { margin: 1rem 0 1.25rem; padding: 1.25rem 1.4rem; border: 1px solid var(--warga-line); border-radius: 1rem; background: #fff; box-shadow: 0 8px 24px rgba(24, 57, 44, .06); }
 .dl-warga-app.has-active-request .dl-hero { padding: .9rem 1.15rem; background: var(--warga-soft); box-shadow: none; }
-.dl-warga-app.has-active-request #beranda { display: flex; flex-direction: column; }
+/* `.content.active` ditambahkan di sini. Sebelumnya aturan ini memberi #beranda
+   `display: flex` tanpa syarat, dan karena selektornya (1,2,0) lebih kuat
+   daripada `.content { display: none }` (0,1,0), beranda TETAP tampil setelah
+   showContent() mencabut `.active` - sehingga setiap halaman lain (Buat
+   permintaan, Riwayat, Profil) terender di bawah dashboard yang masih utuh,
+   bukan di posisi teratas. Dengan syarat `.active`, penyembunyiannya kembali
+   seperti panel lain. */
+.dl-warga-app.has-active-request #beranda.content.active { display: flex; flex-direction: column; }
 .dl-warga-app.has-active-request #beranda > .dl-current-consultation { order: 1; }
 .dl-warga-app.has-active-request #beranda > .dl-hero { order: 2; }
 .dl-warga-app.has-active-request #beranda > .dl-quick-links { order: 3; }
@@ -78,7 +85,11 @@
 .dl-warga-app .dl-visit-fallback-content strong { color: var(--warga-brand-dark); }
 .dl-warga-app .dl-bottom-nav { padding-bottom: max(.5rem, env(safe-area-inset-bottom)); }
 .dl-warga-app .dl-bottom-nav a { min-height: 44px; }
-.dl-warga-app :is(a, button, input, select, textarea):focus-visible { outline: 3px solid color-mix(in srgb, var(--warga-focus) 75%, white); outline-offset: 2px; }
+/* Cincin fokus. Sebelumnya warna fokus dicampur 75% dengan putih, sehingga
+ * hasilnya terlalu pudar (kontras sekitar 2,6:1 pada latar putih) dan gagal
+ * syarat kontras minimum 3:1 untuk indikator fokus. Sekarang memakai warna
+ * fokus apa adanya (kontras sekitar 5,3:1). */
+.dl-warga-app :is(a, button, input, select, textarea):focus-visible { outline: 3px solid var(--warga-focus); outline-offset: 2px; }
 
 /* Chat is a focused reading surface, not a floating card. */
 .dl-warga-chat { min-height: 100vh; background: #F7F7F7; }

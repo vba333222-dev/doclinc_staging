@@ -53,7 +53,7 @@
                 <!-- <td><?= substr($x->ig, 0, 26).'...';?></td>
                 <td><?= substr($x->twitter, 0 ,23).'...';?></td>
                 <td><?= substr($x->fb, 0 , 25).'...';?></td> -->
-                <td><img src="<?= base_url('../assets/img/testimonials/' . rawurlencode($x->avatar));?>"   style="width:auto;height:70px;"></td>
+                <td><img src="<?= base_url('../assets/img/testimonials/' . rawurlencode($x->avatar));?>"   style="width:auto;height:70px;"></td alt="">
                 <td>
                   <div class="btn-group btn-group-sm">
                     <a href="#modalEdit" class="btn btn-info tooltip-title" data-toggle="modal"
@@ -89,11 +89,11 @@
   </div>
 </div>
 
-<div class="modal fade" id="modalTambah" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalTambah" tabindex="-1" aria-labelledby="modalTambahLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Tambah anggota tim</h5>
+        <h5 class="modal-title" id="modalTambahLabel">Tambah anggota tim</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -174,11 +174,11 @@
   </div>
 </div>
 
-<div class="modal fade" id="modalEdit" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalEdit" tabindex="-1" aria-labelledby="modalEditLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel"></h5>
+        <h5 class="modal-title" id="modalEditLabel"></h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Tutup">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -311,7 +311,7 @@
       modal.find('.modal-body input#avatar_').val(avatar);
       modal.find('.modal-body input#signature_').val(signature);
       if (signature!='') {
-        $('#signaturenya').html('<img src="<?php echo base_url();?>assets/img/'+signature+'" width="100px" height="auto">');
+        $('#signaturenya').html('<img src="<?php echo base_url();?>assets/img/'+signature+'" width="100" alt="">');
       }else{
         $('#signaturenya').html('');
       }
