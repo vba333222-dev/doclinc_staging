@@ -146,11 +146,28 @@ class Konsultasi extends MX_Controller
 			return;
 		}
 
-		$keluhan = $this->encryption->encrypt($keluhan);
-		$keluhan = base64_encode($keluhan);
+		// CI_Encryption::encrypt() returns FALSE when the configured key is empty
+		// or unusable, which is what happens when DOCLINC_ENCRYPTION_KEY is unset.
+		// The create path used to ignore that: base64_encode(false) is the empty
+		// string, so the request was saved with no complaint at all. The patient
+		// saw a successful submission, the puskesmas saw a blank description, and
+		// nothing appeared in the logs to connect the two. Refuse the request and
+		// say so instead of losing the complaint silently.
+		$encrypted_keluhan = $this->encryption->encrypt($keluhan);
+		if ($encrypted_keluhan === false) {
+			log_message('error', 'Konsultasi warga gagal: enkripsi keluhan mengembalikan false, periksa DOCLINC_ENCRYPTION_KEY. user_id=' . $id_user);
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Keluhan belum dapat disimpan. Hubungi petugas.']));
+			return;
+		}
+		$keluhan = base64_encode($encrypted_keluhan);
 
-		$riwayat = $this->encryption->encrypt($riwayat);
-		$riwayat = base64_encode($riwayat);
+		$encrypted_riwayat = $this->encryption->encrypt($riwayat);
+		if ($encrypted_riwayat === false) {
+			log_message('error', 'Konsultasi warga gagal: enkripsi riwayat mengembalikan false, periksa DOCLINC_ENCRYPTION_KEY. user_id=' . $id_user);
+			$this->output->set_output(json_encode(['status' => 'error', 'message' => 'Keluhan belum dapat disimpan. Hubungi petugas.']));
+			return;
+		}
+		$riwayat = base64_encode($encrypted_riwayat);
 
 		// Simpan data ke model
 		$data = $this->Konsultasi_m->save_konsultasi(
