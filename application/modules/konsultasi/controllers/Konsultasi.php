@@ -53,7 +53,15 @@ class Konsultasi extends MX_Controller
 		$id_user = $this->session->userdata('id');
 		$role = $this->session->userdata('role');
 		$riwayat = $this->input->post('data_penunjang');
+		// The dropdown offers "Tulis sendiri…" for complaints that are not in the
+		// master list; it posts a sentinel rather than free text. Resolve it here so
+		// the stored description never carries the marker itself, and so choosing it
+		// without typing anything yields no chief complaint rather than a literal
+		// "__custom__" written into the patient's record.
 		$gejala_utama = $this->sanitize_gejala_keluhan_choice($this->input->post('gejala_utama', TRUE));
+		if ($gejala_utama === '__custom__') {
+			$gejala_utama = $this->sanitize_gejala_keluhan_choice($this->input->post('gejala_utama_custom', TRUE));
+		}
 		$keluhan = trim((string) $this->input->post('keluhan', TRUE));
 		$alamat = $this->input->post('alamat');
 		$lattitude = $this->input->post('lat');

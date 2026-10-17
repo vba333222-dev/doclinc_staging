@@ -502,7 +502,13 @@ class Home extends MX_Controller
 			return;
 		}
 
+		// Same sentinel as the create form: "Tulis sendiri…" posts a marker and the
+		// typed text arrives in a companion field. Without this the edit would save
+		// the literal marker as the patient's chief complaint.
 		$gejala_utama = $this->sanitize_gejala_keluhan_choice($this->input->post('gejala_utama', TRUE));
+		if ($gejala_utama === '__custom__') {
+			$gejala_utama = $this->sanitize_gejala_keluhan_choice($this->input->post('gejala_utama_custom', TRUE));
+		}
 		$keluhan = trim((string) $this->input->post('keluhan', TRUE));
 		$alamat = trim((string) $this->input->post('alamat', TRUE));
 		$lat = trim((string) $this->input->post('lat', TRUE));

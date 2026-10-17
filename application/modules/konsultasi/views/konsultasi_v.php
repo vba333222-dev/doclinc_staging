@@ -244,6 +244,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			gap: 5px;
 		}
 
+		.consult-field-hint {
+			margin-top: 6px;
+			font-size: 12px;
+			line-height: 1.45;
+			color: #64736B;
+		}
+
 		.consult-field-label {
 			margin: 0;
 			color: var(--dk-muted);
@@ -501,12 +508,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							<?php else : ?>
 							<select id="ui_gejala_keluhan_utama" name="gejala_utama" class="consult-field form-control">
 								<option value="">Pilih keluhan</option>
+								<?php /* Sentinel, not a real complaint: resolved to the typed text
+								         by the controller. See Konsultasi::save. */ ?>
+								<option value="__custom__">Tulis sendiri…</option>
 								<?php foreach ($master_gejala_keluhan_options as $option): ?>
 									<?php $option_name = trim((string) ($option->nama_keluhan ?? '')); ?>
 									<?php if ($option_name === '') continue; ?>
 									<option value="<?= html_escape($option_name); ?>"><?= html_escape($option_name); ?></option>
 								<?php endforeach; ?>
 							</select>
+							<input type="text" id="ui_gejala_keluhan_custom" name="gejala_utama_custom"
+								class="consult-field form-control" maxlength="120" hidden
+								placeholder="Tulis keluhan utama dengan kata Anda sendiri"
+								aria-describedby="ui_gejala_keluhan_custom_hint">
+							<p class="consult-field-hint" id="ui_gejala_keluhan_custom_hint" hidden>Keluhan ini dikirim apa adanya ke puskesmas.</p>
+							<script>
+							(function () {
+								var select = document.getElementById('ui_gejala_keluhan_utama');
+								var custom = document.getElementById('ui_gejala_keluhan_custom');
+								var hint = document.getElementById('ui_gejala_keluhan_custom_hint');
+								if (!select || !custom || select.tagName !== 'SELECT') {
+									return;
+								}
+								function sync(shouldFocus) {
+									var isCustom = select.value === '__custom__';
+									custom.hidden = !isCustom;
+									custom.required = isCustom;
+									if (hint) {
+										hint.hidden = !isCustom;
+									}
+									if (isCustom && shouldFocus) {
+										custom.focus();
+									}
+								}
+								select.addEventListener('change', function () { sync(true); });
+								sync(false);
+							})();
+							</script>
 							<?php endif; ?>
 						</div>
 						<div class="consult-field-group">

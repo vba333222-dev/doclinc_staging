@@ -2138,12 +2138,36 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 							<?php else : ?>
 							<select class="form-control" name="gejala_utama" id="edit_request_gejala">
 								<option value="">Pilih keluhan</option>
+								<?php /* Sentinel resolved by Home::updateRequestById. */ ?>
+								<option value="__custom__">Tulis sendiri…</option>
 								<?php foreach ($master_gejala_keluhan_options as $option): ?>
 									<?php $option_name = trim((string) ($option->nama_keluhan ?? '')); ?>
 									<?php if ($option_name === '') continue; ?>
 									<option value="<?= html_escape($option_name); ?>"><?= html_escape($option_name); ?></option>
 								<?php endforeach; ?>
 							</select>
+							<input type="text" id="edit_request_gejala_custom" name="gejala_utama_custom"
+								class="form-control mt-2" maxlength="120" hidden
+								placeholder="Tulis keluhan utama dengan kata Anda sendiri">
+							<script>
+							(function () {
+								var select = document.getElementById('edit_request_gejala');
+								var custom = document.getElementById('edit_request_gejala_custom');
+								if (!select || !custom || select.tagName !== 'SELECT') {
+									return;
+								}
+								function sync(shouldFocus) {
+									var isCustom = select.value === '__custom__';
+									custom.hidden = !isCustom;
+									custom.required = isCustom;
+									if (isCustom && shouldFocus) {
+										custom.focus();
+									}
+								}
+								select.addEventListener('change', function () { sync(true); });
+								sync(false);
+							})();
+							</script>
 							<?php endif; ?>
 						</div>
 						<div class="mb-3">
