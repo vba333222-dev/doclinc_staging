@@ -1462,7 +1462,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 									<span class="dl-summary-tile__meta">Terakhir <?= html_escape($dl_last_completed); ?></span>
 								<?php endif; ?>
 							<?php else : ?>
-								<span class="dl-summary-tile__line">Belum ada konsultasi selesai.</span>
+								<span class="dl-summary-tile__line">Belum ada riwayat konsultasi</span>
 							<?php endif; ?>
 						</div>
 					</div>
