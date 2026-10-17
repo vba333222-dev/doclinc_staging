@@ -1376,9 +1376,27 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 					   bukan kelalaian - jangan diseragamkan dengan menyalin yang
 					   keliru. */
 					$dl_hour = (int) date('G');
+					$dl_clock_time = '';
+					$dl_clock_weekday = '';
+					$dl_clock_date = '';
 					try {
 						$dl_clock = new DateTime('now', new DateTimeZone('Asia/Jakarta'));
 						$dl_hour = (int) $dl_clock->format('G');
+						// Indonesian weekday and month names come from fixed arrays rather than
+						// setlocale(), which depends on the OS locale pack and is unreliable on
+						// Windows servers.
+						$dl_clock_names = array(
+							'Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa',
+							'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu',
+						);
+						$dl_clock_months = array(
+							1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
+							7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+						);
+						$dl_clock_day_name = $dl_clock->format('l');
+						$dl_clock_time = $dl_clock->format('H:i');
+						$dl_clock_weekday = isset($dl_clock_names[$dl_clock_day_name]) ? $dl_clock_names[$dl_clock_day_name] : $dl_clock_day_name;
+						$dl_clock_date = $dl_clock->format('j') . ' ' . $dl_clock_months[(int) $dl_clock->format('n')] . ' ' . $dl_clock->format('Y');
 					} catch (Exception $dl_tz_error) {
 						/* Data zona waktu tidak tersedia di server ini. Lebih baik
 						   memakai jam server daripada menggagalkan seluruh beranda
@@ -1429,6 +1447,13 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 								<span class="dl-action-tile__note">Ceritakan keluhan Anda kepada kami</span>
 							</button>
 						<?php endif; ?>
+						<div class="dl-clock-tile" id="dlClockTile" role="group" aria-label="Waktu Indonesia Barat">
+							<span class="dl-clock-tile__time" id="dlClockTime"><?= html_escape($dl_clock_time !== '' ? $dl_clock_time : '--:--'); ?></span>
+							<span class="dl-clock-tile__stamp">
+								<span class="dl-clock-tile__date" id="dlClockWeekday"><?= html_escape($dl_clock_weekday); ?></span>
+								<span class="dl-clock-tile__day" id="dlClockDate"><?= html_escape($dl_clock_date); ?></span>
+							</span>
+						</div>
 						<div class="dl-summary-tile">
 							<span class="dl-summary-tile__kicker">Riwayat Anda</span>
 							<?php if ($dl_completed_count > 0) : ?>
@@ -3052,6 +3077,78 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 			toggle.setAttribute('aria-expanded', 'false');
 			toggle.textContent = 'Ubah detail';
 			hint.hidden = hasSummary;
+		}
+
+		// Jam WIB ---------------------------------------------------------------
+		// The server already rendered the current WIB time, so this only takes over
+		// the ticking. Both parts are derived with Intl pinned to Asia/Jakarta
+		// rather than from the device clock, so a phone set to another timezone
+		// still shows WIB correctly.
+		var dlClock = { timer: null, nodes: null, timeFmt: null, dayFmt: null };
+
+		function dlClockFormat(now) {
+			if (!dlClock.timeFmt) {
+				dlClock.timeFmt = new Intl.DateTimeFormat('en-GB', {
+					timeZone: 'Asia/Jakarta', hour12: false, hour: '2-digit', minute: '2-digit'
+				});
+				dlClock.dayFmt = new Intl.DateTimeFormat('id-ID', {
+					timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+				});
+			}
+			var weekday = '';
+			var date = '';
+			dlClock.dayFmt.formatToParts(now).forEach(function (part) {
+				if (part.type === 'weekday') { weekday = part.value; }
+				if (part.type === 'day' || part.type === 'month' || part.type === 'year') {
+					date += (date === '' ? '' : ' ') + part.value;
+				}
+			});
+			return { time: dlClock.timeFmt.format(now), weekday: weekday, date: date };
+		}
+
+		function dlClockRender() {
+			if (!dlClock.nodes) {
+				dlClock.nodes = {
+					time: document.getElementById('dlClockTime'),
+					weekday: document.getElementById('dlClockWeekday'),
+					date: document.getElementById('dlClockDate')
+				};
+			}
+			if (!dlClock.nodes.time) { return; }
+
+			var value = dlClockFormat(new Date());
+			if (dlClock.nodes.time.textContent !== value.time) {
+				dlClock.nodes.time.textContent = value.time;
+				dlClock.nodes.time.classList.remove('is-ticking');
+				// Reading offsetWidth forces a reflow so the animation restarts.
+				void dlClock.nodes.time.offsetWidth;
+				dlClock.nodes.time.classList.add('is-ticking');
+			}
+			if (dlClock.nodes.weekday) { dlClock.nodes.weekday.textContent = value.weekday; }
+			if (dlClock.nodes.date) { dlClock.nodes.date.textContent = value.date; }
+		}
+
+		function dlClockStart() {
+			if (dlClock.timer !== null) { clearInterval(dlClock.timer); }
+			dlClockRender();
+			dlClock.timer = setInterval(dlClockRender, 1000);
+			// Browsers throttle intervals in background tabs, so the display would be
+			// stale on return. Re-render the moment the tab is visible again.
+			document.addEventListener('visibilitychange', function () {
+				if (!document.hidden) { dlClockRender(); }
+			});
+			var clockTime = document.getElementById('dlClockTime');
+			if (clockTime) {
+				clockTime.addEventListener('animationend', function () {
+					this.classList.remove('is-ticking');
+				});
+			}
+		}
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', dlClockStart);
+		} else {
+			dlClockStart();
 		}
 
 		$(document).on('click', '#edit_request_keluhan_toggle', function () {

@@ -4054,12 +4054,105 @@
    dan satu baris keterangan, dan tidak lagi setinggi dua kartu (sebelumnya
    ~340px) hanya karena ia harus mengimbangi dua petak di sebelahnya. */
 .dl-warga-app #beranda .dl-bento-actions {
-  /* Equal halves. The two texts that made the pair look lopsided are gone, so the
-     cells now stand as a balanced two-up with nothing to weigh one against the
-     other. */
+  /* Three cells: the action card spans both rows of the left column, the clock
+     takes the top right, the summary the bottom right. Two equal columns keep the
+     right-hand cells at half the action card's height, which is the proportion the
+     reference shows. */
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto;
   align-items: stretch;
   gap: var(--bd-gap-md, 12px);
+}
+
+.dl-warga-app #beranda .dl-bento-actions > .dl-action-tile {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.dl-warga-app #beranda .dl-bento-actions > .dl-clock-tile {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dl-warga-app #beranda .dl-bento-actions > .dl-summary-tile {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* --- Jam WIB ---------------------------------------------------------------
+   Digits, weekday and date are white on #12472F. Tabular numerals stop the
+   digits from shifting as they change; without them the tile visibly jitters
+   once a minute, which is exactly when the eye is on it. */
+.dl-warga-app #beranda .dl-clock-tile {
+  display: grid;
+  align-content: space-between;
+  gap: 4px;
+  min-height: 108px;
+  padding: var(--bd-pad, 16px);
+  border-radius: var(--bd-r-md);
+  background: #12472F;
+  color: #FFFFFF;
+  box-shadow: var(--bd-shadow-1);
+  overflow: hidden;
+}
+
+.dl-warga-app #beranda .dl-clock-tile__time {
+  display: block;
+  font-size: clamp(2.1rem, 9vw, 2.8rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+  color: #FFFFFF;
+  transform-origin: 50% 100%;
+}
+
+.dl-warga-app #beranda .dl-clock-tile__stamp {
+  display: grid;
+  gap: 2px;
+}
+
+.dl-warga-app #beranda .dl-clock-tile__date,
+.dl-warga-app #beranda .dl-clock-tile__day {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #FFFFFF;
+}
+
+.dl-warga-app #beranda .dl-clock-tile__time.is-ticking {
+  animation: dl-clock-flip .32s var(--bd-ease);
+}
+
+@keyframes dl-clock-flip {
+  from {
+    transform: rotateX(-42deg);
+    opacity: .55;
+  }
+  to {
+    transform: rotateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-warga-app #beranda .dl-clock-tile__time.is-ticking {
+    animation: none;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .dl-warga-app #beranda .dl-bento-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dl-warga-app #beranda .dl-bento-actions > .dl-action-tile,
+  .dl-warga-app #beranda .dl-bento-actions > .dl-clock-tile,
+  .dl-warga-app #beranda .dl-bento-actions > .dl-summary-tile {
+    grid-column: auto;
+    grid-row: auto;
+  }
 }
 
 .dl-warga-app #beranda .dl-bento-cta.dl-hero,
