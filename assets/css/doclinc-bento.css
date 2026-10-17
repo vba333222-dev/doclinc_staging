@@ -5275,3 +5275,109 @@
 .dl-chat-bento .chat-presence-status[data-presence="offline"] .chat-presence-status__dot {
   background: #9AA8A2 !important;
 }
+
+/* --------------------------------------------------------------------------
+   B24. Kartu permintaan: nomor antrian dan blok keluhan
+   --------------------------------------------------------------------------
+   Nomor antrian dipindahkan ke tepi kanan kartu. Ia satu-satunya angka di
+   dalam kartu, jadi ia yang menahan sudut kanan: status dan nama dibaca dari
+   kiri, nomor dibaca sekilas dari kanan. Karena itu ia diberi `margin-left:
+   auto`, bukan urutan baru yang menggeser blok identitas.
+
+   Blok keluhan dibaca sebagai daftar fakta, bukan paragraf: judul kecil,
+   satu baris pengantar bila ada, lalu baris label-nilai berpemisah rambut.
+   Label dan nilai disejajarkan pada kolom tetap supaya mata bisa turun satu
+   kolom tanpa tersandung, dan nilainya dinaikkan ke 12.5px karena inilah
+   yang sebenarnya dibaca tenaga kesehatan. */
+.dl-nakes-dashboard .dl-nakes-request-card .nk-complaint {
+  padding: 12px 12px 4px;
+  border: 1px solid var(--bd-line);
+  border-radius: var(--bd-r-md);
+  background: var(--bd-surface);
+}
+
+.dl-nakes-dashboard .dl-nakes-request-card .nk-complaint__title {
+  display: block;
+  color: var(--bd-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+
+.dl-nakes-dashboard .dl-nakes-request-card .nk-complaint__lead {
+  /* Pengantar, bukan isi: "Anamnesa" adalah judul bagian pada teks aslinya. Dulu
+     ia tampil paling tebal di dalam kotak, sehingga mata berhenti di situ dan
+     bukan pada lama keluhan atau gejalanya. */
+  display: block;
+  margin-top: 3px;
+  color: var(--bd-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.dl-nakes-dashboard .dl-nakes-request-card .nk-complaint .nk-fact-list {
+  margin-top: 10px;
+  border-top: 1px solid var(--bd-line);
+}
+
+.dl-nakes-dashboard .dl-nakes-request-card .nk-complaint .nk-fact-row {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--bd-line);
+}
+
+.dl-nakes-dashboard .dl-nakes-request-card .nk-complaint .nk-fact-row:last-child {
+  border-bottom: 0;
+}
+
+.dl-nakes-dashboard .dl-nakes-request-card .nk-complaint .nk-fact-label {
+  color: var(--bd-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.dl-nakes-dashboard .dl-nakes-request-card .nk-complaint .nk-fact-value {
+  color: var(--bd-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* Status berada di bawah nama: ia menjelaskan permintaan itu, bukan kartunya. */
+.dl-nakes-dashboard .dl-nakes-request-card .dl-request-identity .dl-badge {
+  display: inline-flex;
+  margin-top: 6px;
+}
+
+/* Status ditulis apa adanya, bukan kapital penuh. "SEGERA KONFIRMASI" terbaca
+   sebagai teriakan dan memperlambat pembacaan; kalimat biasa sepanjang ini lebih
+   cepat dikenali pada kartu yang dibaca berulang kali. */
+.dl-nakes-dashboard .dl-nakes-request-card .dl-badge--action {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .dl-nakes-request-card .dl-request-heading {
+    align-items: flex-start;
+    flex-wrap: nowrap;
+  }
+
+  .dl-nakes-dashboard .dl-nakes-request-card .dl-queue-badge {
+    margin-left: auto;
+  }
+
+  /* Judul seksi dibaca sebagai satu baris: satu judul yang terpotong menjadi
+     "Permintaan" / "Konsultasi" terbaca sebagai dua hal berbeda. Ukurannya
+     diturunkan sedikit supaya tetap muat di samping penghitung. */
+  .dl-nakes-dashboard .dl-nakes-page-header .dl-section-title {
+    font-size: 16.5px;
+    white-space: nowrap;
+    text-wrap: nowrap;
+  }
+}

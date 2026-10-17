@@ -3,37 +3,36 @@
 									<div class="card shadow request-card dl-nakes-request-card" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>">
 										<div class="card-header">
 											<div class="dl-request-heading">
-												<?php
-												$request_card_photo = '';
-												foreach (array('patient_photo', 'foto', 'photo', 'profile_photo', 'profile_image', 'avatar') as $request_card_photo_key) {
-													if (isset($x->{$request_card_photo_key}) && trim((string) $x->{$request_card_photo_key}) !== '') {
-														$request_card_photo = trim((string) $x->{$request_card_photo_key});
-														break;
-													}
-												}
-												$this->load->view('partials/nakes_avatar_v', array(
-													'avatar_name' => $x->nama,
-													'avatar_photo' => $request_card_photo,
-													'avatar_user_id' => (int) $x->user_id,
-													'avatar_alt' => 'Foto pasien',
-													'avatar_class' => 'nk-avatar--md nk-avatar--patient',
-												));
-												?>
-												<div class="dl-queue-badge">
-													<small>ANTRIAN</small>
-													<span><?= html_escape(doclinc_nakes_queue_badge($x)); ?></span>
-												</div>
-												<div class="dl-request-identity">
-													<div class="dl-request-title"><?= html_escape(strtoupper((string) $x->nama)); ?></div>
-													<div class="dl-request-subtitle">
-														<span><?= html_escape($area_label); ?></span>
-														<span><?= html_escape($received_label); ?></span>
-													</div>
-												</div>
-												<span class="dl-badge">Menunggu konfirmasi Puskesmas</span>
+										<?php
+										$request_card_photo = '';
+										foreach (array('patient_photo', 'foto', 'photo', 'profile_photo', 'profile_image', 'avatar') as $request_card_photo_key) {
+										if (isset($x->{$request_card_photo_key}) && trim((string) $x->{$request_card_photo_key}) !== '') {
+										$request_card_photo = trim((string) $x->{$request_card_photo_key});
+										break;
+										}
+										}
+										$this->load->view('partials/nakes_avatar_v', array(
+										'avatar_name' => $x->nama,
+										'avatar_photo' => $request_card_photo,
+										'avatar_user_id' => (int) $x->user_id,
+										'avatar_alt' => 'Foto pasien',
+										'avatar_class' => 'nk-avatar--md nk-avatar--patient',
+										));
+										?>
+										<div class="dl-request-identity">
+											<div class="dl-request-title"><?= html_escape(strtoupper((string) $x->nama)); ?></div>
+											<div class="dl-request-subtitle">
+												<span><?= html_escape($area_label); ?></span>
+												<span><?= html_escape($received_label); ?></span>
 											</div>
+											<span class="dl-badge dl-badge--action">Segera konfirmasi</span>
 										</div>
-										<div id="cekStatus"></div>
+										<div class="dl-queue-badge">
+											<small>Antrian</small>
+											<span><?= html_escape(doclinc_nakes_queue_badge($x)); ?></span>
+										</div>
+									</div>
+<div id="cekStatus"></div>
 										<div class="card-body nk-card-body nk-request-card__body">
 											<div class="dl-nakes-complaint-box nk-complaint nk-card-section">
 												<span class="nk-complaint__title">Keluhan utama</span>
