@@ -58,10 +58,10 @@ foreach (array('foto', 'photo', 'profile_photo', 'profile_image', 'patient_photo
 	));
 	?>
 	<div class="flex-grow-1 min-w-0">
-		<p class="dl-latest-name"><?= html_escape(strtoupper((string) $latest_request->nama)); ?></p>
+		<p class="dl-latest-name"><?= html_escape((string) $latest_request->nama); ?></p>
 		<div class="dl-latest-meta"><?= html_escape($latest_queue_label); ?></div>
 		<div class="dl-latest-complaint nk-complaint">
-			<span class="nk-complaint__title">Keluhan utama</span>
+			<h3 class="nk-complaint__title">Keluhan utama</h3>
 			<?php if ($latest_lead !== '') : ?>
 				<span class="nk-complaint__lead"><?= html_escape($latest_lead); ?></span>
 			<?php endif; ?>
@@ -69,14 +69,14 @@ foreach (array('foto', 'photo', 'profile_photo', 'profile_image', 'patient_photo
 				<strong class="nk-complaint__main"><?= html_escape($latest_primary); ?></strong>
 			<?php endif; ?>
 			<?php if (!$latest_weak_value($latest_duration) || !$latest_weak_value($latest_symptoms)) : ?>
-				<div class="nk-fact-list">
+				<dl class="nk-fact-list">>
 					<?php if (!$latest_weak_value($latest_duration)) : ?>
-						<div class="nk-fact-row"><span class="nk-fact-label">Lama</span><strong class="nk-fact-value"><?= html_escape($latest_duration); ?></strong></div>
+						<div class="nk-fact-row"><dt class="nk-fact-label">Lama</dt><dd class="nk-fact-value"><?= html_escape($latest_duration); ?></dd></div>
 					<?php endif; ?>
 					<?php if (!$latest_weak_value($latest_symptoms)) : ?>
-						<div class="nk-fact-row"><span class="nk-fact-label">Gejala</span><strong class="nk-fact-value"><?= html_escape($latest_symptoms); ?></strong></div>
+						<div class="nk-fact-row"><dt class="nk-fact-label">Gejala</dt><dd class="nk-fact-value"><?= html_escape($latest_symptoms); ?></dd></div>
 					<?php endif; ?>
-				</div>
+				</dl>
 			<?php endif; ?>
 		</div>
 	</div>

@@ -5290,7 +5290,7 @@
    kolom tanpa tersandung, dan nilainya dinaikkan ke 12.5px karena inilah
    yang sebenarnya dibaca tenaga kesehatan. */
 .dl-nakes-dashboard .dl-nakes-request-card .nk-complaint {
-  padding: 12px 12px 4px;
+  padding: 14px 14px 6px;
   border: 1px solid var(--bd-line);
   border-radius: var(--bd-r-md);
   background: var(--bd-surface);
@@ -5325,7 +5325,7 @@
   display: grid;
   grid-template-columns: 68px minmax(0, 1fr);
   gap: 10px;
-  padding: 7px 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--bd-line);
 }
 
@@ -5380,4 +5380,41 @@
     white-space: nowrap;
     text-wrap: nowrap;
   }
+}
+
+/* --------------------------------------------------------------------------
+   B25. Ruang dalam kartu permintaan
+   --------------------------------------------------------------------------
+   Header kartu memakai 12px atas-bawah dengan 20px di kiri dan 16px di kanan:
+   teks menempel ke tepi atas, dan kedua sisi tidak sejajar sehingga nomor
+   antrian berhenti 4px lebih ke dalam daripada kotak keluhan di bawahnya.
+   Sekarang 18px di kedua sisi dan 16px atas-bawah, satu garis tepi untuk
+   seluruh isi kartu. */
+@media (max-width: 767.98px) {
+  .dl-nakes-dashboard .dl-nakes-request-card .card-header {
+    padding: 16px 18px;
+  }
+
+  .dl-nakes-dashboard .dl-nakes-request-card .card-body {
+    /* nakes-dashboard.css memasang 16px pada .nk-request-card__body dengan
+       !important; tanpa !important di sini, isi kartu tetap 16px sementara
+       header 18px, dan nomor antrian tidak sejajar dengan kotak di bawahnya. */
+    padding: 18px !important;
+  }
+}
+
+/* Judul keluhan kini sebuah <h3>: margin bawaan peramban dibuang supaya
+   jaraknya tetap diatur oleh blok di atasnya. */
+.dl-nakes-dashboard .nk-complaint__title {
+  margin: 0;
+}
+
+/* Fakta keluhan kini <dl> berisi <dt>/<dd>. Peramban memberi <dd> margin kiri
+   40px dan <dl> margin atas-bawah; keduanya membatalkan kolom grid yang sudah
+   diatur, jadi dinolkan di sini. */
+.dl-nakes-dashboard .nk-fact-list,
+.dl-nakes-dashboard .nk-fact-row,
+.dl-nakes-dashboard .nk-fact-label,
+.dl-nakes-dashboard .nk-fact-value {
+  margin: 0;
 }

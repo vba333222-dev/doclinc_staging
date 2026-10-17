@@ -20,7 +20,7 @@
 										));
 										?>
 										<div class="dl-request-identity">
-											<div class="dl-request-title"><?= html_escape(strtoupper((string) $x->nama)); ?></div>
+											<div class="dl-request-title"><?= html_escape((string) $x->nama); ?></div>
 											<div class="dl-request-subtitle">
 												<span><?= html_escape($area_label); ?></span>
 												<span><?= html_escape($received_label); ?></span>
@@ -32,10 +32,11 @@
 											<span><?= html_escape(doclinc_nakes_queue_badge($x)); ?></span>
 										</div>
 									</div>
-<div id="cekStatus"></div>
+									</div>
+									<div id="cekStatus"></div>
 										<div class="card-body nk-card-body nk-request-card__body">
 											<div class="dl-nakes-complaint-box nk-complaint nk-card-section">
-												<span class="nk-complaint__title">Keluhan utama</span>
+												<h3 class="nk-complaint__title">Keluhan utama</h3>
 																								<?php if (!empty($complaint_lead)) : ?>
 													<span class="nk-complaint__lead"><?= html_escape($complaint_lead); ?></span>
 												<?php endif; ?>
@@ -43,17 +44,17 @@
 													<p class="nk-complaint__main"><?= html_escape($complaint_primary); ?></p>
 												<?php endif; ?>
 												<?php if ($show_complaint_duration || $show_complaint_symptoms || $show_complaint_description) : ?>
-													<div class="dl-complaint-facts nk-fact-list">
+													<dl class="dl-complaint-facts nk-fact-list">>
 														<?php if ($show_complaint_duration) : ?>
-															<div class="nk-fact-row"><span class="nk-fact-label">Lama</span><strong class="nk-fact-value"><?= html_escape($complaint_duration); ?></strong></div>
+															<div class="nk-fact-row"><dt class="nk-fact-label">Lama</dt><dd class="nk-fact-value"><?= html_escape($complaint_duration); ?></dd></div>
 														<?php endif; ?>
 														<?php if ($show_complaint_symptoms) : ?>
-															<div class="nk-fact-row"><span class="nk-fact-label">Gejala</span><strong class="nk-fact-value"><?= html_escape($complaint_symptoms); ?></strong></div>
+															<div class="nk-fact-row"><dt class="nk-fact-label">Gejala</dt><dd class="nk-fact-value"><?= html_escape($complaint_symptoms); ?></dd></div>
 														<?php endif; ?>
 														<?php if ($show_complaint_description) : ?>
-															<div class="nk-fact-row"><span class="nk-fact-label">Catatan</span><strong class="nk-fact-value"><?= html_escape($complaint_description); ?></strong></div>
+															<div class="nk-fact-row"><dt class="nk-fact-label">Catatan</dt><dd class="nk-fact-value"><?= html_escape($complaint_description); ?></dd></div>
 														<?php endif; ?>
-													</div>
+													</dl>
 												<?php endif; ?>
 											</div>
 											<?php if ($show_address || $show_mode_label || $show_distance_label) : ?>
