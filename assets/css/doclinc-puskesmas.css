@@ -22,9 +22,42 @@
 	padding-inline: 0;
 }
 
+/* Kontainer mengikuti beranda warga (doclinc-warga.css:20): 1240px dengan
+   gutter 48px, bukan 1320px. Lebar baris yang sama membuat kedua akun terbaca
+   sebagai satu aplikasi, dan 1240px sudah cukup untuk dua kolom kartu. */
 .dl-puskesmas-shell .contents > .position-relative {
-	width: min(1320px, calc(100% - 48px));
+	width: min(1240px, calc(100% - 48px));
 	margin-inline: auto;
+}
+
+@media (min-width: 768px) {
+	/* Gutter sudah dipegang lebar kontainer, jadi padding .content di dalamnya
+	   akan memakan 16px lagi dan membuat kolom kartu lebih sempit daripada warga. */
+	.dl-puskesmas-shell .content {
+		padding-inline: 0;
+	}
+}
+
+@media (max-width: 767.98px) {
+	/* Di ponsel warga memakai 16px kiri-kanan. Puskesmas menumpuk 24px dari
+	   kontainer ditambah 16px dari .content, sehingga gutter-nya 40px dan kartu
+	   terasa sempit. Kontainer dilepas, gutter dipegang .content saja. */
+	.dl-puskesmas-shell .contents > .position-relative {
+		width: 100%;
+	}
+
+}
+
+/* Padding kartu 16px di semua lebar, sama dengan kartu di beranda warga.
+   Tanpa ini, di layar lebar nakes-dashboard.css memakai 9px 10px untuk header
+   dan 8px 12px untuk body, sehingga kartu justru paling sempit di layar yang
+   paling luas. */
+.dl-puskesmas-shell .dl-nakes-request-card .card-header {
+	padding: 16px;
+}
+
+.dl-puskesmas-shell .dl-nakes-request-card .card-body {
+	padding: 16px !important;
 }
 
 /* doclinc-bento.css later shapes this bar as an inset card
