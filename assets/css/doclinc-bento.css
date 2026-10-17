@@ -4355,6 +4355,7 @@
    needs the same dialog buttons. */
 .swal2-popup .dl-swal-btn,
 .dl-swal-btn {
+  height: 44px !important;
   min-height: 44px !important;
   padding: .6rem 1.4rem !important;
   border-radius: 8px !important;
