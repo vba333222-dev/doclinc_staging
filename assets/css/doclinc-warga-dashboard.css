@@ -1014,7 +1014,9 @@
    --------------------------------------------------------------------------- */
 .dl-request-modal {
   border: 0;
-  border-radius: var(--dl-radius-lg, 20px);
+  /* Matches .modal-content in the house modal (Ubah profil), which measures 8px.
+     20px made this the only rounded container in the application. */
+  border-radius: var(--dl-radius-sm, 8px);
   box-shadow: var(--dl-shadow-2, 0 10px 30px rgba(31, 42, 36, .08));
   overflow: hidden;
 }
@@ -1028,10 +1030,12 @@
 
 .dl-request-modal__header .modal-title {
   font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
-  font-size: 1.0625rem;
-  font-weight: 700;
-  line-height: 1.35;
-  letter-spacing: -.01em;
+  /* Weight, leading and tracking copied from the house modal's title, which
+     measures 750 / 30px / -0.4px at the same 20px size. The previous values read
+     as a different heading style sitting one section above its own buttons. */
+  font-weight: 750;
+  line-height: 1.5;
+  letter-spacing: -.4px;
   color: var(--dl-text, #1F2A24);
 }
 
@@ -1048,14 +1052,16 @@
 
 .dl-request-modal .form-control {
   min-height: 46px;
-  padding: .7rem .9rem;
+  /* 12px sides and 13px text match the house modal's fields. At 15px the input
+     read a full step larger than the same input one modal over. */
+  padding: .8rem .75rem;
   border: 1px solid var(--dl-border, #E7ECE9);
   border-radius: var(--dl-radius-md, 14px);
   background: var(--dl-surface, #FFFFFF);
   color: var(--dl-text, #1F2A24);
   font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
-  font-size: var(--dl-body-size, 15px);
-  line-height: var(--dl-body-leading, 1.55);
+  font-size: 13px;
+  line-height: 1.5;
   box-shadow: none;
   transition: border-color .18s ease, box-shadow .18s ease;
 }
@@ -1134,12 +1140,17 @@
    below the 44px touch floor the accessibility rules require. Scoping the rule to
    the modal raises it to (0,2,0) and, being later in the cascade, wins. */
 .dl-request-modal .dl-request-modal__btn {
+  /* Geometry from the house modal's footer buttons: 13px at weight 800 with 16px
+     sides and a 20px radius. I had assumed the pill shape from .dl-btn-secondary,
+     but that belongs to the hero - no modal in this application uses a pill.
+     Height stays at 44px rather than the house's 38px: this is the app a patient
+     uses on a phone, and 38px sits under the minimum touch target. */
   min-height: 44px;
-  padding: .6rem 1.4rem;
-  border-radius: 999px;
+  padding: .58rem 1rem;
+  border-radius: 20px;
   font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
-  font-size: .9rem;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 800;
   transition: filter .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 

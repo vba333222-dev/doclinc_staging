@@ -2119,7 +2119,6 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 				<div class="modal-header dl-request-modal__header">
 					<div>
 						<h1 class="modal-title fs-5" id="editRequestModalLabel">Ubah permintaan</h1>
-						<p class="text-muted small mb-0">Hanya dapat diubah sebelum diterima.</p>
 					</div>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
@@ -2156,7 +2155,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 							<textarea class="form-control" name="keluhan" id="edit_request_keluhan" rows="4" required
 								aria-describedby="edit_request_keluhan_hint" spellcheck="false"></textarea>
 							<button type="button" class="dl-request-modal__edit-toggle" id="edit_request_keluhan_toggle"
-								aria-controls="edit_request_keluhan" aria-expanded="false" hidden>Ubah teks detail</button>
+								aria-controls="edit_request_keluhan" aria-expanded="false" hidden>Ubah detail</button>
 							<p class="dl-request-modal__hint" id="edit_request_keluhan_hint" hidden>Ringkasan di atas mengikuti isi kolom ini.</p>
 						</div>
 						<div class="mb-0">
@@ -3045,7 +3044,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 			field.hidden = hasSummary;
 			toggle.hidden = !hasSummary;
 			toggle.setAttribute('aria-expanded', 'false');
-			toggle.textContent = 'Ubah teks detail';
+			toggle.textContent = 'Ubah detail';
 			hint.hidden = hasSummary;
 		}
 
@@ -3058,7 +3057,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 
 			const expanded = this.getAttribute('aria-expanded') === 'true';
 			this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-			this.textContent = expanded ? 'Ubah teks detail' : 'Sembunyikan teks detail';
+			this.textContent = expanded ? 'Ubah detail' : 'Sembunyikan teks detail';
 			field.hidden = expanded;
 			if (hint) {
 				hint.hidden = expanded;
