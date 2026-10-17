@@ -1094,10 +1094,11 @@
   min-height: 44px;
   padding: .6rem 1rem;
   border-width: 1px;
-  /* Scoped by id because the theme sets a 20px radius on .btn at a specificity a
-     class-only selector cannot outrank; the measured value stayed 20px until this
-     selector was raised. */
-  border-radius: 8px;
+  /* !important is warranted here and nowhere else in this file. Measured twice:
+     a class-scoped rule and then an id-scoped rule both computed to 20px, which
+     means the theme sets this radius with !important. Overriding it the same way
+     is the only way to reach the shape the design calls for. */
+  border-radius: 8px !important;
   font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
   font-size: 13px;
   font-weight: 800;
