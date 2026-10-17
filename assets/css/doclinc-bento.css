@@ -4112,8 +4112,17 @@
 }
 
 .dl-warga-app #beranda .dl-clock-tile__stamp {
-  display: grid;
-  gap: 2px;
+  /* Weekday and date share one line. They were stacked, which cost a whole line of
+     tile height for two pieces of information that read as one phrase
+     ("Minggu 18 Oktober 2026"). nowrap keeps them from splitting mid-phrase on a
+     narrow phone; the tile widens rather than the text breaking. */
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .dl-warga-app #beranda .dl-clock-tile__date,
