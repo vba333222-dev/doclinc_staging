@@ -53,25 +53,43 @@
 								// Pending requests expose patient location only; route/ETA belong to an assigned Visit.
 								$distance_label = '';
 								$received_label = !empty($x->created_at) ? date('d M H:i', strtotime($x->created_at)) : 'Baru masuk';
-								$complaint_text = trim(str_replace(array("\r\n", "\r"), "\n", strip_tags((string) $keluhan)));
+																$complaint_text = trim(str_replace(array("\r\n", "\r"), "\n", strip_tags((string) $keluhan)));
+								/* Tidak setiap baris punya label. Baris pertama sering berupa judul bagian
+								   ("Anamnesa"), dan baris tanpa titik dua setelah sebuah label adalah lanjutan
+								   nilai label itu - "Gejala tambahan: pusing" lalu "Tidak Nafsu Makan". */
 								$complaint_lines = preg_split('/\n+/', $complaint_text);
 								$complaint_fields = array();
+								$complaint_lead = '';
+								$complaint_last_key = null;
 								foreach ($complaint_lines as $complaint_line) {
 									$complaint_line = trim(str_replace(array('**', '__'), '', $complaint_line));
-									if (preg_match('/^([^:]+):\s*(.+)$/', $complaint_line, $matches)) {
+									if ($complaint_line === '') {
+										continue;
+									}
+									if (preg_match('/^([^:]{1,40}):\s*(.+)$/s', $complaint_line, $matches)) {
 										$complaint_key = strtolower(trim($matches[1]));
 										$complaint_fields[$complaint_key] = trim($matches[2]);
+										$complaint_last_key = $complaint_key;
+									} elseif ($complaint_last_key !== null) {
+										$complaint_fields[$complaint_last_key] .= ', ' . $complaint_line;
+									} elseif ($complaint_lead === '') {
+										$complaint_lead = $complaint_line;
 									}
 								}
-								$complaint_primary = isset($complaint_fields['keluhan utama']) ? $complaint_fields['keluhan utama'] : '';
+$complaint_primary = isset($complaint_fields['keluhan utama']) ? $complaint_fields['keluhan utama'] : '';
 								$complaint_duration = isset($complaint_fields['lama keluhan']) ? $complaint_fields['lama keluhan'] : '';
 								$complaint_symptoms = isset($complaint_fields['gejala tambahan']) ? $complaint_fields['gejala tambahan'] : '';
 								$complaint_description = isset($complaint_fields['deskripsi keluhan']) ? $complaint_fields['deskripsi keluhan'] : '';
 								$complaint_preview = trim(preg_replace('/\s+/', ' ', str_replace(array('**', '__'), '', $complaint_text)));
-								if ($complaint_primary === '') {
-									$complaint_primary = $complaint_preview !== '' ? $complaint_preview : 'Keluhan belum diisi.';
+																/* Baris berlabel sudah tampil sebagai fakta di bawah judul, jadi seluruh teks
+								   tidak diulang sebagai satu kalimat di baris utama. */
+								if ($complaint_primary === '' && empty($complaint_fields)) {
+									$complaint_primary = $complaint_preview;
 								}
-								if (function_exists('mb_strlen') && mb_strlen($complaint_primary, 'UTF-8') > 120) {
+								if ($complaint_primary === '' && $complaint_lead === '') {
+									$complaint_primary = 'Keluhan belum diisi.';
+								}
+if (function_exists('mb_strlen') && mb_strlen($complaint_primary, 'UTF-8') > 120) {
 									$complaint_primary = mb_substr($complaint_primary, 0, 117, 'UTF-8') . '...';
 								} elseif (!function_exists('mb_strlen') && strlen($complaint_primary) > 120) {
 									$complaint_primary = substr($complaint_primary, 0, 117) . '...';

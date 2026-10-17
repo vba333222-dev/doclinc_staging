@@ -1759,6 +1759,29 @@
   font-weight: 800;
 }
 
+/* Judul bagian di dalam teks keluhan, mis. "Anamnesa". Warnanya lebih tenang
+   daripada nilai di bawahnya supaya terbaca sebagai pengantar, bukan sebagai isi
+   keluhan itu sendiri. */
+.dl-nakes-dashboard .nk-complaint__lead {
+  display: block;
+  margin: 2px 0;
+  color: var(--bd-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+/* Setiap bagian menempati barisnya sendiri. Tanpa ini judul, pengantar dan nilai
+   berdesakan dalam satu baris karena semuanya elemen inline. */
+.dl-nakes-dashboard .nk-complaint__title,
+.dl-nakes-dashboard .nk-complaint__main {
+  display: block;
+}
+
+.dl-nakes-dashboard .nk-complaint .nk-fact-list {
+  margin-top: 6px;
+}
+
 .dl-nakes-dashboard .dl-latest-row .btn {
   min-height: 44px;
   border-radius: var(--bd-r-pill) !important;

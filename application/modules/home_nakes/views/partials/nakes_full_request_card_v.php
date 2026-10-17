@@ -37,7 +37,12 @@
 										<div class="card-body nk-card-body nk-request-card__body">
 											<div class="dl-nakes-complaint-box nk-complaint nk-card-section">
 												<span class="nk-complaint__title">Keluhan utama</span>
-												<p class="nk-complaint__main"><?= html_escape($complaint_primary); ?></p>
+																								<?php if (!empty($complaint_lead)) : ?>
+													<span class="nk-complaint__lead"><?= html_escape($complaint_lead); ?></span>
+												<?php endif; ?>
+												<?php if ($complaint_primary !== '') : ?>
+													<p class="nk-complaint__main"><?= html_escape($complaint_primary); ?></p>
+												<?php endif; ?>
 												<?php if ($show_complaint_duration || $show_complaint_symptoms || $show_complaint_description) : ?>
 													<div class="dl-complaint-facts nk-fact-list">
 														<?php if ($show_complaint_duration) : ?>
