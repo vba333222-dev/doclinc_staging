@@ -1,0 +1,33 @@
+# Line endings
+#
+# The application is checked out on Linux in CI and on Windows for local work.
+# Keep text files LF in both places so source comparisons are machine
+# independent — several contract tests compare multi-line source literals and
+# would otherwise pass in CI and fail locally.
+* text=auto eol=lf
+
+# Vendored third-party bundles are integrity checked against pinned SHA-256
+# digests. They must never be line-ending converted, or the checksum verifies a
+# normalised copy instead of the published artefact.
+assets/vendor/** -text
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.mp3 binary
+*.mp4 binary
+*.webm binary
