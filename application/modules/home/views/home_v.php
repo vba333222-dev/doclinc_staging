@@ -2154,8 +2154,10 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 								<dl class="dl-anamnesis__list" id="edit_request_anamnesis_list"></dl>
 							</div>
 							<textarea class="form-control" name="keluhan" id="edit_request_keluhan" rows="4" required
-								aria-describedby="edit_request_keluhan_hint"></textarea>
-							<p class="dl-request-modal__hint" id="edit_request_keluhan_hint">Ringkasan di atas mengikuti isi kolom ini.</p>
+								aria-describedby="edit_request_keluhan_hint" spellcheck="false"></textarea>
+							<button type="button" class="dl-request-modal__edit-toggle" id="edit_request_keluhan_toggle"
+								aria-controls="edit_request_keluhan" aria-expanded="false" hidden>Ubah teks detail</button>
+							<p class="dl-request-modal__hint" id="edit_request_keluhan_hint" hidden>Ringkasan di atas mengikuti isi kolom ini.</p>
 						</div>
 						<div class="mb-0">
 							<label for="edit_request_alamat" class="form-label fw-semibold">Alamat atau patokan</label>
@@ -2993,13 +2995,22 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 		}
 
 		// Renders the stored complaint as label/value rows so it reads as an
-		// anamnesis instead of a run of text. The textarea remains the editable
-		// source of truth; this block is a reading aid that follows it. Built with
-		// textContent so whatever the patient typed is never interpreted as markup.
+		// anamnesis instead of a run of text.
+		//
+		// The summary and the textarea are two views of one value, so only one is
+		// shown at a time. Rendering both put the same block on screen twice and
+		// the patient had no way to tell which one the form would submit. The
+		// textarea stays in the DOM because it is the field that is posted; it is
+		// revealed, and focused, only when the patient chooses to change the
+		// wording. Built with textContent so patient input is never treated as
+		// markup.
 		function renderEditAnamnesis(rawDetail) {
 			const box = document.getElementById('edit_request_anamnesis');
 			const list = document.getElementById('edit_request_anamnesis_list');
-			if (!box || !list) {
+			const field = document.getElementById('edit_request_keluhan');
+			const toggle = document.getElementById('edit_request_keluhan_toggle');
+			const hint = document.getElementById('edit_request_keluhan_hint');
+			if (!box || !list || !field || !toggle || !hint) {
 				return;
 			}
 
@@ -3009,11 +3020,6 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 				.split(/\r?\n/)
 				.map(function (line) { return line.trim(); })
 				.filter(function (line) { return line !== ''; });
-
-			if (lines.length === 0) {
-				box.hidden = true;
-				return;
-			}
 
 			lines.forEach(function (line) {
 				const separator = line.indexOf(':');
@@ -3032,8 +3038,35 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 				list.appendChild(value);
 			});
 
-			box.hidden = false;
+			const hasSummary = lines.length > 0;
+			box.hidden = !hasSummary;
+			// With nothing to summarise the textarea is the only way to read or
+			// write the value, so it stays visible and the toggle stays out of reach.
+			field.hidden = hasSummary;
+			toggle.hidden = !hasSummary;
+			toggle.setAttribute('aria-expanded', 'false');
+			toggle.textContent = 'Ubah teks detail';
+			hint.hidden = hasSummary;
 		}
+
+		$(document).on('click', '#edit_request_keluhan_toggle', function () {
+			const field = document.getElementById('edit_request_keluhan');
+			const hint = document.getElementById('edit_request_keluhan_hint');
+			if (!field) {
+				return;
+			}
+
+			const expanded = this.getAttribute('aria-expanded') === 'true';
+			this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+			this.textContent = expanded ? 'Ubah teks detail' : 'Sembunyikan teks detail';
+			field.hidden = expanded;
+			if (hint) {
+				hint.hidden = expanded;
+			}
+			if (!expanded) {
+				field.focus();
+			}
+		});
 
 		$('#editRequestForm').on('submit', function(event) {
 			event.preventDefault();

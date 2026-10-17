@@ -1129,7 +1129,11 @@
   border-top: 1px solid var(--dl-divider, #EFF3F1);
 }
 
-.dl-request-modal__btn {
+/* Specificity note: Bootstrap ships `.modal-footer .btn` (0,2,0), which outranks a
+   bare `.dl-request-modal__btn` (0,1,0) and kept resetting the height to 38px -
+   below the 44px touch floor the accessibility rules require. Scoping the rule to
+   the modal raises it to (0,2,0) and, being later in the cascade, wins. */
+.dl-request-modal .dl-request-modal__btn {
   min-height: 44px;
   padding: .6rem 1.4rem;
   border-radius: 999px;
@@ -1180,7 +1184,38 @@
   }
 }
 
+/* One representation at a time. The summary is the reading view; the textarea is
+   revealed only when the patient wants to change the wording. Showing both at
+   once made the modal look like it had rendered the same block twice, which is
+   exactly how it read on screen. */
+.dl-request-modal__edit-toggle {
+  margin-top: var(--dl-space-2, .5rem);
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
+  font-size: var(--dl-text-sm, 13px);
+  font-weight: 600;
+  color: var(--dl-brand-ink, #2D7D56);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.dl-request-modal__edit-toggle:hover {
+  color: var(--dl-brand-strong, #1f6f4b);
+}
+
+.dl-request-modal__edit-toggle:focus-visible {
+  outline: 2px solid var(--dl-focus, #0c7c87);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 @media (max-width: 575.98px) {
+  /* Only the pair list collapses. The footer keeps its buttons side by side:
+     stacking them full width turned two small actions into the largest thing on
+     the screen, and put the primary action above the secondary one. */
   .dl-anamnesis__list {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
@@ -1188,13 +1223,5 @@
 
   .dl-anamnesis__list dt {
     margin-top: var(--dl-space-2, .5rem);
-  }
-
-  .dl-request-modal__footer {
-    flex-direction: column-reverse;
-  }
-
-  .dl-request-modal__btn {
-    width: 100%;
   }
 }
