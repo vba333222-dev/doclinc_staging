@@ -52,12 +52,18 @@
    Tanpa ini, di layar lebar nakes-dashboard.css memakai 9px 10px untuk header
    dan 8px 12px untuk body, sehingga kartu justru paling sempit di layar yang
    paling luas. */
-.dl-puskesmas-shell .dl-nakes-request-card .card-header {
+/* Dua kelas pada pembungkusnya (shell + dasbor) supaya menang atas aturan
+   bento yang memakai 18px dan dimuat setelah berkas ini. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-nakes-request-card .card-header {
 	padding: 16px;
 }
 
-.dl-puskesmas-shell .dl-nakes-request-card .card-body {
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-nakes-request-card .card-body {
 	padding: 16px !important;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-nakes-request-card .nk-complaint {
+	padding: 14px;
 }
 
 /* doclinc-bento.css later shapes this bar as an inset card
