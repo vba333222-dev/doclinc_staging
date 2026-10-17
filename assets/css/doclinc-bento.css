@@ -4217,12 +4217,14 @@
   cursor: pointer;
 }
 
-/* Healthcare mark as a single texture in the bottom-right corner, rotated so it
-   leans toward the top-left. Drawn as a pseudo-element rather than a background
-   layer because a background cannot be rotated; the file is referenced relative to
-   this stylesheet, so it resolves from whatever base path the app is served at.
-   Tinted white to read the way the previous cross did on green, and pointed at
-   nothing so it never intercepts a tap meant for the card. */
+/* Texture in the bottom-right corner, rotated so it leans toward the top-left.
+   Drawn as a pseudo-element rather than a background layer because a background
+   cannot be rotated; the files are referenced relative to this stylesheet, so
+   they resolve from whatever base path the app is served at. Pointed at nothing
+   so the texture never intercepts a tap meant for the card.
+
+   Each state carries its own mark: the green primary card takes the healthcare
+   symbol, the white locked card takes the patient symbol. */
 .dl-warga-app #beranda .dl-action-tile::after {
   content: '';
   position: absolute;
@@ -4241,9 +4243,27 @@
   z-index: 0;
 }
 
-/* Locked and blocked states are not the primary action, so they keep a quiet
-   surface and carry no texture. */
-.dl-warga-app #beranda .dl-action-tile.is-locked::after,
+/* Locked carries the patient mark instead. The card is white here, so a white
+   silhouette would vanish; the mark is painted through a mask in the theme green
+   rather than filtered, because the colour has to come from a token and a filter
+   chain cannot name one. Same corner, size and lean as the primary card, so the
+   two read as one family. */
+.dl-warga-app #beranda .dl-action-tile.is-locked::after {
+  background-image: none;
+  background-color: var(--bd-green-600);
+  -webkit-mask-image: url("../images/patient.svg");
+  mask-image: url("../images/patient.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  filter: none;
+  opacity: .14;
+}
+
+/* Blocked is not an action at all, so it carries no texture. */
 .dl-warga-app #beranda .dl-action-tile.is-blocked::after {
   content: none;
 }
