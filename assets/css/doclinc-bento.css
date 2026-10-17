@@ -4054,10 +4054,10 @@
    dan satu baris keterangan, dan tidak lagi setinggi dua kartu (sebelumnya
    ~340px) hanya karena ia harus mengimbangi dua petak di sebelahnya. */
 .dl-warga-app #beranda .dl-bento-actions {
-  /* Bento, not two equal halves: the action cell carries what the patient should
-     do next and takes the larger share, the summary cell recedes. With 1fr 1fr
-     the archive sat at the same weight as the next step. */
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  /* Equal halves. The two texts that made the pair look lopsided are gone, so the
+     cells now stand as a balanced two-up with nothing to weigh one against the
+     other. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: stretch;
   gap: var(--bd-gap-md, 12px);
 }

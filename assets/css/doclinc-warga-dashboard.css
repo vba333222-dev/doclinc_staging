@@ -1077,6 +1077,37 @@
   outline: none;
 }
 
+/* Footer actions. Two solid buttons of equal width, square-ish corners, bold
+   labels, no icons. The previous shape was a Bootstrap default pair at a 20px
+   radius with sizes driven by their own label lengths, which read as two
+   unrelated controls rather than a choice between two answers. */
+.dl-request-modal .modal-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: var(--dl-space-3, .75rem) var(--dl-space-5, 1.5rem) var(--dl-space-4, 1rem);
+}
+
+.dl-request-modal .modal-footer .btn {
+  width: 100%;
+  margin: 0;
+  min-height: 44px;
+  padding: .6rem 1rem;
+  border-width: 1px;
+  border-radius: 8px;
+  font-family: var(--dl-font, "Manrope", "Inter", "Segoe UI", Arial, sans-serif);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+
+/* No icon belongs inside a button; the label carries the meaning. */
+.dl-request-modal .modal-footer .btn i,
+.dl-request-modal .modal-footer .btn svg {
+  display: none;
+}
+
 .dl-request-modal__hint {
   margin: var(--dl-space-2, .5rem) 0 0;
   font-size: var(--dl-text-sm, 13px);

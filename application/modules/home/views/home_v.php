@@ -1421,7 +1421,6 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 							<a href="<?= html_escape(base_url('home#riwayat')); ?>" class="dl-action-tile is-locked" onclick="openActiveConsultation(<?= html_escape($doclinc_active_request_id); ?>); return false;">
 								<span class="dl-action-tile__kicker">Sedang berjalan</span>
 								<span class="dl-action-tile__title">Lihat konsultasi</span>
-								<span class="dl-action-tile__note">Selesaikan atau batalkan dulu sebelum membuat yang baru.</span>
 							</a>
 						<?php else : ?>
 							<button type="button" class="dl-action-tile" onclick="showContent('konsultasi_kesehatan')">
@@ -1439,7 +1438,6 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 								<?php endif; ?>
 							<?php else : ?>
 								<span class="dl-summary-tile__line">Belum ada konsultasi selesai.</span>
-								<span class="dl-summary-tile__meta">Riwayat akan muncul di sini.</span>
 							<?php endif; ?>
 						</div>
 					</div>
@@ -1808,10 +1806,10 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 													data-location="<?= html_escape(isset($data->location) ? $data->location : ''); ?>"
 													data-lat="<?= html_escape(isset($data->patient_latitude) && $data->patient_latitude !== null ? $data->patient_latitude : (isset($data->lattitude) ? $data->lattitude : '')); ?>"
 													data-lng="<?= html_escape(isset($data->patient_longitude) && $data->patient_longitude !== null ? $data->patient_longitude : (isset($data->longitude) ? $data->longitude : '')); ?>">
-													<i class="fas fa-edit me-1"></i> Tinjau permintaan
+													Tinjau permintaan
 												</button>
 												<button type="button" class="btn btn-outline-danger btn-sm rounded-pill cancel-warga-request" data-request-id="<?= html_escape((int) $id_request); ?>">
-													<i class="fas fa-times-circle me-1"></i> Batalkan
+													Batalkan
 												</button>
 											</div>
 										<?php endif; ?>
