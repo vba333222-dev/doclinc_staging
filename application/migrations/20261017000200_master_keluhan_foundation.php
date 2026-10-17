@@ -126,8 +126,18 @@ $host = trim((string) (getenv('DOCLINC_MASTER_KELUHAN_SCHEMA_DB_HOST') ?: '127.0
 $port = (int) (getenv('DOCLINC_MASTER_KELUHAN_SCHEMA_DB_PORT') ?: 3306);
 $user = trim((string) (getenv('DOCLINC_MASTER_KELUHAN_SCHEMA_DB_USER') ?: ''));
 $password = getenv('DOCLINC_MASTER_KELUHAN_SCHEMA_DB_PASSWORD');
-if ($user === '' || !is_string($password) || $password === '') {
+if ($user === '' || !is_string($password)) {
 	master_keluhan_fail('database_identity_missing');
+}
+// An empty password is a misconfiguration on a remote host and is still refused.
+// On loopback it is the normal shape of a local development MySQL (root with no
+// password), and requiring one there made the schema impossible to complete
+// locally - which is why the local database was missing every table these
+// migrations create. The protection that matters is untouched: --apply, the
+// schema-write flag and --confirm-database matching the configured name are all
+// still required, so this cannot run against an unintended database by accident.
+if ($password === '' && !in_array(strtolower($host), array('127.0.0.1', 'localhost', '::1'), true)) {
+	master_keluhan_fail('database_password_required_for_remote_host');
 }
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
