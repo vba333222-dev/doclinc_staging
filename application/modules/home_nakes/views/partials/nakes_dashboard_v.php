@@ -34,52 +34,131 @@
 						<?php $this->load->view('partials/nakes_stat_cards_v', get_defined_vars()); ?>
 						<?php if (!empty($nakes_is_command_center)) : ?>
 						<?php
+						/* Papan status tim menjawab satu pertanyaan: siapa sedang menangani
+						   pasien. Grup mengikuti status tugas — bukan presence — supaya daftar
+						   tidak perlu diacak ulang setiap heartbeat masuk; kehadiran tetap
+						   terbaca per baris lewat titik dan labelnya. */
 						$dashboard_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_list) ? $puskesmas_staff_list : array();
 						$dashboard_staff_count = isset($puskesmas_staff_count) ? (int) $puskesmas_staff_count : count($dashboard_staff_rows);
+						$dashboard_team_duty = isset($nakes_team_duty) && is_array($nakes_team_duty) ? $nakes_team_duty : array();
+						$dashboard_team_counts = isset($nakes_team_duty_counts) && is_array($nakes_team_duty_counts) ? $nakes_team_duty_counts : array();
+						$dashboard_duty_rows = array();
+						$dashboard_idle_rows = array();
+						foreach ($dashboard_staff_rows as $dashboard_staff) {
+							$dashboard_staff_user_id = isset($dashboard_staff->profile_user_id) ? (int) $dashboard_staff->profile_user_id : (isset($dashboard_staff->user_id) ? (int) $dashboard_staff->user_id : 0);
+							$dashboard_duty = $dashboard_staff_user_id > 0 && isset($dashboard_team_duty[$dashboard_staff_user_id]) ? $dashboard_team_duty[$dashboard_staff_user_id] : null;
+							$dashboard_row = array('staff' => $dashboard_staff, 'user_id' => $dashboard_staff_user_id, 'duty' => $dashboard_duty);
+							if ($dashboard_duty !== null) {
+								$dashboard_duty_rows[] = $dashboard_row;
+							} else {
+								$dashboard_idle_rows[] = $dashboard_row;
+							}
+						}
+						$dashboard_team_cells = array(
+							array(
+								'key' => 'duty',
+								'title' => 'Sedang bertugas',
+								'count' => isset($dashboard_team_counts['on_duty']) ? (int) $dashboard_team_counts['on_duty'] : count($dashboard_duty_rows),
+								'rows' => $dashboard_duty_rows,
+								'empty' => 'Belum ada staf yang sedang menangani pasien.',
+							),
+							array(
+								'key' => 'idle',
+								'title' => 'Tidak bertugas',
+								'count' => count($dashboard_idle_rows),
+								'rows' => $dashboard_idle_rows,
+								'empty' => 'Semua staf sedang bertugas.',
+							),
+						);
+						$dashboard_duty_labels = array('visit' => 'Visit', 'disposisi' => 'Disposisi', 'menangani' => 'Menangani');
+						$dashboard_duty_icons = array('visit' => 'fas fa-stethoscope', 'disposisi' => 'fas fa-share', 'menangani' => 'fas fa-comment-medical');
+						$dashboard_duty_hints = array(
+							'visit' => 'Kunjungan dokter sedang berjalan',
+							'disposisi' => 'Perawat atau bidan sedang menjalankan kunjungan',
+							'menangani' => 'Sedang menangani konsultasi',
+						);
+						$dashboard_ready_attention = isset($puskesmas_data_readiness['attention_count']) ? (int) $puskesmas_data_readiness['attention_count'] : 0;
+						$dashboard_ready_sip = isset($puskesmas_data_readiness['staff_missing_sip']) ? (int) $puskesmas_data_readiness['staff_missing_sip'] : 0;
+						$dashboard_without_pic = isset($puskesmas_operation_exceptions['accepted_without_pic']) ? (int) $puskesmas_operation_exceptions['accepted_without_pic'] : 0;
 						?>
-						<div class="dl-nakes-card dl-dashboard-section nk-staff-card doclinc-presence-panel" id="doclincNakesPresence" data-presence-roster="true" aria-live="polite" aria-busy="<?= !empty($nakes_presence_enabled) ? 'true' : 'false'; ?>">
-						<?php $this->load->view('partials/nakes_section_header_v', array(
-							'section_title' => 'Staf Puskesmas',
-							'section_meta' => !empty($nakes_presence_enabled) ? 'Status diperbarui otomatis' : (string) $dashboard_staff_count . ' terdaftar',
-							'section_inside' => true,
-						)); ?>
-
-							<?php if (empty($dashboard_staff_rows)) : ?>
-								<div class="nk-staff-empty">Belum ada staf.</div>
-							<?php else : ?>
-								<div class="nk-staff-list nk-staff-list--presence">
-									<?php foreach ($dashboard_staff_rows as $staff) :
-										$staff_name = trim((string) (isset($staff->nama) ? $staff->nama : ''));
-										$staff_profesi = trim((string) (isset($staff->profesi) ? $staff->profesi : ''));
-										$staff_phone = trim((string) (isset($staff->no_hp) ? $staff->no_hp : ''));
-										$staff_sip = trim((string) (isset($staff->nomor_sip) ? $staff->nomor_sip : ''));
-										$staff_user_id = isset($staff->profile_user_id) ? (int) $staff->profile_user_id : (isset($staff->user_id) ? (int) $staff->user_id : 0);
-										$staff_photo = isset($staff->profile_photo) ? trim((string) $staff->profile_photo) : '';
-									?>
-										<div class="nk-staff-item nk-staff-item--presence" data-presence-user-id="<?= html_escape((string) $staff_user_id); ?>">
-											<?php $this->load->view('partials/nakes_avatar_v', array(
-												'avatar_name' => $staff_name,
-												'avatar_photo' => $staff_photo,
-												'avatar_user_id' => $staff_user_id,
-												'avatar_alt' => 'Foto ' . ($staff_name !== '' ? $staff_name : 'Nakes'),
-												'avatar_class' => 'nk-avatar--sm nk-avatar--nakes',
-												'avatar_icon' => 'fas fa-user-md',
-											)); ?>
-											<div class="nk-staff-main">
-												<strong><?= html_escape($staff_name !== '' ? $staff_name : 'Nama belum diisi'); ?></strong>
-												<?php if ($staff_profesi !== '') : ?><span><?= html_escape($staff_profesi); ?></span><?php endif; ?>
-												<span class="nk-staff-presence-chip">
-											<span class="doclinc-presence-dot is-offline" data-presence-dot aria-hidden="true"></span>
-											<small class="nk-staff-presence is-offline" data-presence-label>Offline</small>
-										</span>
-												<small class="nk-staff-last-seen" data-presence-last-seen>Belum pernah online</small>
+						<div class="dl-team-bento doclinc-presence-panel" id="doclincNakesPresence" data-presence-roster="true" aria-busy="<?= !empty($nakes_presence_enabled) ? 'true' : 'false'; ?>">
+							<div class="dl-team-bento__head">
+								<?php $this->load->view('partials/nakes_section_header_v', array(
+									'section_title' => 'Staf Puskesmas',
+									'section_meta' => (string) $dashboard_staff_count . ' staf',
+									'section_inside' => true,
+									'section_class' => 'dl-team-bento__title',
+								)); ?>
+								<p class="dl-team-bento__summary" data-presence-summary role="status" aria-live="polite"><?php if (!empty($nakes_presence_enabled)) : ?><span class="dl-team-bento__summary-loading">Memuat status&hellip;</span><?php endif; ?></p>
+							</div>
+							<div class="dl-team-bento__grid">
+								<?php foreach ($dashboard_team_cells as $dashboard_cell) : ?>
+								<section class="dl-nakes-card dl-team-cell" data-team-cell="<?= html_escape($dashboard_cell['key']); ?>" aria-labelledby="dlTeam<?= html_escape(ucfirst($dashboard_cell['key'])); ?>Title">
+									<div class="dl-team-cell__head">
+										<h3 class="dl-team-cell__title" id="dlTeam<?= html_escape(ucfirst($dashboard_cell['key'])); ?>Title"><?= html_escape($dashboard_cell['title']); ?></h3>
+										<span class="dl-team-cell__count"><?= (int) $dashboard_cell['count']; ?></span>
+									</div>
+									<?php if (empty($dashboard_cell['rows'])) : ?>
+										<p class="dl-team-cell__empty"><?= html_escape($dashboard_cell['empty']); ?></p>
+									<?php else : ?>
+										<div class="nk-staff-list dl-team-list" role="list">
+											<?php foreach ($dashboard_cell['rows'] as $dashboard_row) :
+												$staff = $dashboard_row['staff'];
+												$staff_name = trim((string) (isset($staff->nama) ? $staff->nama : ''));
+												$staff_profesi = trim((string) (isset($staff->profesi) ? $staff->profesi : ''));
+												$staff_user_id = (int) $dashboard_row['user_id'];
+												$staff_photo = isset($staff->profile_photo) ? trim((string) $staff->profile_photo) : '';
+												$duty = $dashboard_row['duty'];
+												$duty_state = is_array($duty) && isset($duty['state']) && isset($dashboard_duty_labels[$duty['state']]) ? (string) $duty['state'] : '';
+												$duty_queue = is_array($duty) && !empty($duty['queue_label']) ? (string) $duty['queue_label'] : '';
+												$duty_extra_cases = is_array($duty) && isset($duty['cases']) ? max(0, (int) $duty['cases'] - 1) : 0;
+											?>
+											<div class="nk-staff-item nk-staff-item--presence dl-team-row" role="listitem" data-duty-state="<?= $duty_state !== '' ? html_escape($duty_state) : 'idle'; ?>"<?= $staff_user_id > 0 ? ' data-presence-user-id="' . html_escape((string) $staff_user_id) . '"' : ''; ?>>
+												<?php $this->load->view('partials/nakes_avatar_v', array(
+													'avatar_name' => $staff_name,
+													'avatar_photo' => $staff_photo,
+													'avatar_user_id' => $staff_user_id,
+													'avatar_alt' => 'Foto ' . ($staff_name !== '' ? $staff_name : 'Nakes'),
+													'avatar_class' => 'nk-avatar--sm nk-avatar--nakes',
+													'avatar_icon' => 'fas fa-user-md',
+												)); ?>
+												<div class="nk-staff-main">
+													<strong><span class="dl-team-row__name"><?= html_escape($staff_name !== '' ? $staff_name : 'Nama belum diisi'); ?></span><?php if ($staff_profesi !== '') : ?><span class="dl-team-row__role"><?= html_escape($staff_profesi); ?></span><?php endif; ?></strong>
+												</div>
+												<div class="nk-staff-meta">
+													<?php if ($staff_user_id > 0) : ?>
+														<span class="nk-staff-presence-chip">
+															<span class="doclinc-presence-dot is-offline" data-presence-dot aria-hidden="true"></span>
+															<small class="nk-staff-presence is-offline" data-presence-label>Offline</small>
+														</span>
+														<small class="nk-staff-last-seen" data-presence-last-seen>Belum pernah online</small>
+													<?php else : ?>
+														<span class="dl-team-row__no-account"><i class="fas fa-user-slash" aria-hidden="true"></i>Tanpa akun</span>
+													<?php endif; ?>
+													<?php if ($duty_state !== '') : ?>
+														<span class="dl-team-badge is-<?= html_escape($duty_state); ?>" title="<?= html_escape($dashboard_duty_hints[$duty_state]); ?>"><i class="<?= html_escape($dashboard_duty_icons[$duty_state]); ?>" aria-hidden="true"></i><?= html_escape($dashboard_duty_labels[$duty_state]); ?></span>
+													<?php endif; ?>
+													<?php if ($duty_queue !== '') : ?>
+														<span class="dl-team-row__queue"><?= html_escape($duty_queue); ?><?= $duty_extra_cases > 0 ? ' +' . (int) $duty_extra_cases : ''; ?></span>
+													<?php endif; ?>
+												</div>
 											</div>
-											<?php if ($staff_phone !== '') : ?>
-												<div class="nk-staff-meta"><span><?= html_escape($staff_phone); ?></span></div>
-											<?php endif; ?>
+											<?php endforeach; ?>
 										</div>
-									<?php endforeach; ?>
-								</div>
+									<?php endif; ?>
+								</section>
+								<?php endforeach; ?>
+							</div>
+							<?php if ($dashboard_ready_attention > 0 || $dashboard_without_pic > 0) : ?>
+								<p class="dl-team-bento__note" data-puskesmas-readiness="<?= html_escape(json_encode(array('attention_count' => $dashboard_ready_attention, 'staff_missing_sip' => $dashboard_ready_sip))); ?>">
+									<i class="fas fa-info-circle" aria-hidden="true"></i>
+									<?php if ($dashboard_ready_attention > 0) : ?>
+										<span><?= (int) $dashboard_ready_attention; ?> data staf perlu dilengkapi<?= $dashboard_ready_sip > 0 ? ' — SIP belum dilengkapi' : ''; ?>.</span>
+									<?php endif; ?>
+									<?php if ($dashboard_without_pic > 0) : ?>
+										<span data-puskesmas-exception-board>Belum ada penanggung jawab layanan untuk <?= (int) $dashboard_without_pic; ?> kunjungan.</span>
+									<?php endif; ?>
+								</p>
 							<?php endif; ?>
 						</div>
 						<?php endif; ?>

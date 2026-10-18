@@ -424,6 +424,8 @@ class Home_nakes extends MX_Controller
 		$d['request_event_map'] = array();
 		$d['puskesmas_data_readiness'] = array();
 		$d['puskesmas_operation_exceptions'] = array();
+		$d['nakes_team_duty'] = array();
+		$d['nakes_team_duty_counts'] = array('visit' => 0, 'disposisi' => 0, 'menangani' => 0, 'on_duty' => 0, 'idle' => 0);
 
 		if ($account_type === 'command_center') {
 			// Periksa permintaan yang belum direspons SEBELUM daftarnya dimuat,
@@ -488,6 +490,17 @@ class Home_nakes extends MX_Controller
 			$d['request_event_map'] = $d['request_event_ready']
 				? $this->Home_nakes_m->get_request_events_by_request_ids($event_request_ids, 5)
 				: array();
+			// Papan status tim: siapa memegang pasien mana saat ini. Dibaca dari
+			// baris yang sama dengan halaman Operasional, jadi angka "bertugas"
+			// tidak bisa berbeda dari daftar pengecualian di sana.
+			$team_duty = $this->puskesmas_team_duty(
+				$d['data_request_accept']->result(),
+				$d['request_staff_assignment_map'],
+				$d['puskesmas_staff_list'],
+				$care_team_enabled
+			);
+			$d['nakes_team_duty'] = $team_duty['duty'];
+			$d['nakes_team_duty_counts'] = $team_duty['counts'];
 		} elseif ($account_type === 'personal') {
 			$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept_personal($identity_context);
 			$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed_personal($identity_context);
@@ -518,6 +531,112 @@ class Home_nakes extends MX_Controller
 			$x->duration = $estimation['duration'];
 		}
 		$this->load->view('home_nakes_v', $d);
+	}
+
+	/**
+	 * Siapa memegang pasien saat ini, untuk papan status tim Puskesmas.
+	 *
+	 * Fungsi ini hanya MEMBACA. Sumber pelaku tetap satu: penanggung jawab
+	 * kanonik dari doclinc_request_handling_nakes_id() (mode alur yang aktif),
+	 * ditambah pelaksana kunjungan dan penanggung jawab care-team, serta baris
+	 * assignment legacy ketika alur care-team mati. Karena tidak ada status
+	 * baru yang ditulis, papan ini tidak bisa menyimpang dari halaman
+	 * Operasional atau dari Riwayat Konsultasi.
+	 *
+	 * Keadaan per orang:
+	 * - visit     : dokter yang kunjungannya sedang berjalan (en_route/arrived/in_service)
+	 * - disposisi : perawat/bidan yang kunjungannya sedang berjalan
+	 * - menangani : penanggung jawab konsultasi, atau pelaksana yang belum mulai
+	 */
+	private function puskesmas_team_duty($accepted_rows, $assignment_map, $staff_rows, $care_team_enabled)
+	{
+		$duty = array();
+		$counts = array('visit' => 0, 'disposisi' => 0, 'menangani' => 0, 'on_duty' => 0, 'idle' => 0);
+		$rank = array('menangani' => 1, 'disposisi' => 2, 'visit' => 3);
+		$active_visit_stages = array('en_route', 'arrived', 'in_service');
+
+		$profession_by_user_id = array();
+		foreach ($staff_rows as $staff_row) {
+			$staff_user_id = (int) (isset($staff_row->user_id) ? $staff_row->user_id : 0);
+			if ($staff_user_id > 0) {
+				$profession_by_user_id[$staff_user_id] = isset($staff_row->profesi) ? (string) $staff_row->profesi : '';
+			}
+		}
+
+		foreach ($accepted_rows as $row) {
+			$request_id = (int) (isset($row->request_id) ? $row->request_id : 0);
+			if ($request_id < 1) {
+				continue;
+			}
+
+			$mode = strtolower(trim((string) (isset($row->consultation_mode) ? $row->consultation_mode : '')));
+			$visit_stage = doclinc_normalize_visit_status(isset($row->visit_status) ? $row->visit_status : '');
+			$visit_running = $mode === 'visit' && in_array($visit_stage, $active_visit_stages, true);
+
+			$performer_id = $care_team_enabled
+				? (int) (isset($row->visit_performer_user_id) ? $row->visit_performer_user_id : 0)
+				: (int) (!empty($assignment_map[$request_id]) && isset($assignment_map[$request_id]->staff_user_id)
+					? $assignment_map[$request_id]->staff_user_id
+					: 0);
+			$responsible_id = $care_team_enabled
+				? (int) (isset($row->responsible_doctor_user_id) ? $row->responsible_doctor_user_id : 0)
+				: 0;
+			$handling_id = (int) doclinc_request_handling_nakes_id($row);
+
+			$actors = array();
+			if ($visit_running && $performer_id > 0) {
+				$performer_profession = isset($profession_by_user_id[$performer_id]) ? $profession_by_user_id[$performer_id] : '';
+				$actors[$performer_id] = $this->puskesmas_staff_profession_is_doctor($performer_profession) ? 'visit' : 'disposisi';
+			}
+			foreach (array($handling_id, $performer_id, $responsible_id) as $actor_id) {
+				$actor_id = (int) $actor_id;
+				if ($actor_id > 0 && !isset($actors[$actor_id])) {
+					$actors[$actor_id] = 'menangani';
+				}
+			}
+
+			$queue_label = doclinc_request_queue_number_label($row);
+			foreach ($actors as $actor_id => $state) {
+				if (!isset($duty[$actor_id])) {
+					$duty[$actor_id] = array(
+						'state' => $state,
+						'request_id' => $request_id,
+						'queue_label' => $queue_label,
+						'cases' => 1,
+						'visit_stage' => $visit_running ? $visit_stage : '',
+					);
+					continue;
+				}
+				$duty[$actor_id]['cases']++;
+				if ($rank[$state] > $rank[$duty[$actor_id]['state']]) {
+					$duty[$actor_id]['state'] = $state;
+					$duty[$actor_id]['request_id'] = $request_id;
+					$duty[$actor_id]['queue_label'] = $queue_label;
+					$duty[$actor_id]['visit_stage'] = $visit_running ? $visit_stage : '';
+				}
+			}
+		}
+
+		foreach ($duty as $user_id => $info) {
+			if (!isset($profession_by_user_id[$user_id])) {
+				continue;
+			}
+			$counts['on_duty']++;
+			$counts[$info['state']]++;
+		}
+		$counts['idle'] = max(0, count($profession_by_user_id) - $counts['on_duty']);
+
+		return array('duty' => $duty, 'counts' => $counts);
+	}
+
+	/**
+	 * Cermin dari Care_team_policy::doctorProfession(): profesi dokter dikenali
+	 * dari kata "dokter" (termasuk "Dokter Gigi"), bukan dari daftar tertutup,
+	 * supaya penulisan profesi baru tidak diam-diam kehilangan badge Visit.
+	 */
+	private function puskesmas_staff_profession_is_doctor($profesi)
+	{
+		return (bool) preg_match('/(^|\s)dokter($|\s)/iu', trim((string) $profesi));
 	}
 
 	public function assign_staff()

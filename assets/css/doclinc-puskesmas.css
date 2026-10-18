@@ -448,3 +448,330 @@
 	background: var(--bd-mint-soft, #EEF7F2) !important;
 	color: #1F5C42 !important;
 }
+
+/* --------------------------------------------------------------------------
+   B28. Papan status tim
+   --------------------------------------------------------------------------
+   Satu kartu selebar halaman menumpuk ~76px per orang: kartu di dalam kartu,
+   empat baris teks, dan nomor HP yang juga ada di Profil. Sekarang satu baris
+   per orang (minimal 52px) dan dua sel berdampingan memakai lebar yang tadinya
+   kosong, sehingga kartu tidak memanjang ke bawah berapa pun jumlah stafnya.
+
+   Grup mengikuti status TUGAS, bukan presence. Presence berubah setiap
+   heartbeat; kalau baris ikut berpindah grup, daftar akan bergerak di bawah
+   jari pengguna. Kehadiran tetap terbaca per baris (titik + kata
+   "Online"/"Offline"), dan itu satu-satunya hal yang berubah sendiri. */
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-bento {
+	display: grid;
+	gap: var(--pk-gap);
+	min-width: 0;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-bento__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px 12px;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-bento__title {
+	margin: 0;
+	padding: 0;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-bento__summary {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0;
+	color: var(--pk-muted);
+	font-size: 11px;
+	font-weight: 800;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-bento__summary-loading {
+	color: var(--pk-muted);
+	font-weight: 700;
+}
+
+/* Dua sel selalu ditumpuk: papan ini hidup di kolom bento selebar ~650px pada
+   shell puskesmas, dan dua daftar 300px lebih sulit dipindai daripada satu
+   daftar penuh. Kepadatan diambil dari daftar itu sendiri (auto-fill di
+   `.dl-team-list`), bukan dari memecah kartu. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-bento__grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--pk-gap);
+	align-items: start;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-cell {
+	display: grid;
+	gap: 8px;
+	padding: var(--pk-card-pad-tight);
+	min-width: 0;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-cell__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding-bottom: 8px;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-cell__title {
+	margin: 0;
+	color: var(--pk-ink);
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: .01em;
+	line-height: 1.3;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-cell__count {
+	flex: 0 0 auto;
+	min-width: 24px;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: var(--bd-mint-soft, #EEF7F2);
+	color: #1F5C42;
+	font-size: 11px;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.6;
+	text-align: center;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-cell__empty {
+	margin: 0;
+	padding: 10px 2px;
+	color: var(--pk-muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-list {
+	display: grid;
+	/* Dua baris per orang kalau daftarnya selebar 600px akan memanjangkan
+	   kartu; dua kolom 300px menjaga tinggi tetap separuh tanpa memindahkan
+	   nama ke baris ketiga. Di ponsel, auto-fill otomatis jadi satu kolom. */
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	column-gap: 18px;
+	row-gap: 0;
+	min-width: 0;
+}
+
+/* Kartu di dalam kartu dihapus: pemisah tipis sudah memisahkan orang dan
+   menghemat 8px per baris. Padding vertikal dijaga di 4px supaya tinggi baris
+   tetap di 52px tanpa terasa longgar. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row {
+	grid-template-columns: auto minmax(0, 1fr);
+	grid-template-areas:
+		"avatar main"
+		"avatar meta";
+	align-content: center;
+	align-items: center;
+	gap: 2px 10px;
+	min-height: 52px;
+	padding: 4px 2px;
+	border: 0;
+	border-top: 1px solid #EDF3F0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+/* Avatar menemani dua baris teks (nama+peran, lalu kehadiran+badge). Area
+   bernama dipakai supaya avatar tidak menciptakan baris ketiga: dengan
+   `grid-row: span 2`, baris penampung avatar ikut menyumbang tinggi. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row > .nk-avatar {
+	grid-area: avatar;
+	align-self: center;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row > .nk-staff-main {
+	grid-area: main;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row > .nk-staff-meta {
+	grid-area: meta;
+	grid-column: auto;
+	width: auto;
+}
+
+/* Setiap baris memakai garis atas, termasuk yang pertama: pada daftar dua
+   kolom, baris pertama kolom kanan dan kiri harus sejajar. Garis pertama itu
+   sekaligus menjadi aturan di bawah judul sel. */
+
+/* Daftar "tidak bertugas" bisa sepanjang jumlah staf. Batas tinggi hanya
+   dipasang di desktop: di mobile, gulir di dalam gulir halaman adalah
+   perangkap sentuh. */
+@media (min-width: 992px) {
+	.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-cell[data-team-cell="idle"] .dl-team-list {
+		max-height: 26rem;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row .nk-staff-main strong {
+	flex-wrap: wrap;
+	row-gap: 2px;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row__name {
+	color: var(--pk-ink);
+	font-size: 13px;
+	font-weight: 800;
+	overflow-wrap: break-word;
+	word-break: normal;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row__role {
+	color: var(--pk-muted);
+	font-size: 11.5px;
+	font-weight: 700;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row .nk-staff-meta {
+	align-items: center;
+	gap: 6px;
+}
+
+/* `.nk-staff-meta span` memberi setiap span bentuk pil. Titik dan label
+   kehadiran adalah SATU chip, jadi bentuk pilnya dikembalikan di sini. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row .nk-staff-meta .nk-staff-presence-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 0;
+	border-radius: 0;
+	background: transparent;
+}
+
+/* Waktu "terakhir online" tidak lagi memakan ruang: ia tetap ada di DOM dan
+   tetap diumumkan ke pembaca layar, tetapi indikator kehadiran yang terlihat
+   cukup titik + kata Online/Offline. Detail waktu bisa dilihat di Profil. */
+/* `.doclinc-presence-dot` global diposisikan absolut untuk daftar presence
+   lama (menempel di kiri label). Di sini ia harus ikut alur chip, kalau tidak
+   titiknya lepas dari baris dan tidak terlihat. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row .nk-staff-presence-chip .doclinc-presence-dot {
+	position: static;
+	display: block;
+	flex: 0 0 7px;
+	width: 7px;
+	height: 7px;
+	padding: 0;
+	margin: 0;
+	border: 0;
+	border-radius: 999px;
+	background: #98A2B3;
+	box-shadow: none;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row .nk-staff-presence-chip .doclinc-presence-dot.is-online {
+	background: #1E9E6A;
+	box-shadow: 0 0 0 3px rgba(30, 158, 106, .14);
+}
+
+/* Waktu "terakhir online" tidak lagi memakan ruang: ia tetap ada di DOM dan
+   tetap diumumkan ke pembaca layar, tetapi indikator kehadiran yang terlihat
+   cukup titik + kata Online/Offline. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row .nk-staff-last-seen {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+/* Badge menyatakan keadaan tugas. Warna tidak pernah berdiri sendiri: teksnya
+   selalu ada, dan judulnya menjelaskan arti keadaan itu. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	margin-left: auto;
+	padding: 2px 9px;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	font-size: 10.5px;
+	font-weight: 800;
+	line-height: 1.6;
+	white-space: nowrap;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-badge i {
+	font-size: 9px;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-badge.is-visit {
+	border-color: #B9E3CE;
+	background: #E7F6EE;
+	color: #0F5132;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-badge.is-disposisi {
+	border-color: #E8D2A2;
+	background: #FFF4DC;
+	color: #7A4A00;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-badge.is-menangani {
+	border-color: #CFE0D8;
+	background: #EDF3F0;
+	color: #24463A;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row__queue {
+	padding: 1px 7px;
+	border-radius: 999px;
+	background: #F1F5F3;
+	color: #24463A;
+	font-size: 10.5px;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row__no-account {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 0;
+	border-radius: 0;
+	background: transparent;
+	color: var(--pk-muted);
+	font-size: 10.5px;
+	font-weight: 700;
+}
+
+/* Satu baris penunjuk, bukan papan kesiapan: papan penuhnya ada di panel
+   admin dan Operasional. Di sini hanya apa yang mengubah arti daftar staf di
+   atasnya (data staf belum lengkap, kunjungan tanpa penanggung jawab). */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-bento__note {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 4px 8px;
+	margin: 0;
+	padding: 0 2px;
+	border: 0;
+	background: transparent;
+	color: #6B4E12;
+	font-size: 11.5px;
+	font-weight: 700;
+	line-height: 1.5;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-bento__note i {
+	color: #8A5A00;
+}
