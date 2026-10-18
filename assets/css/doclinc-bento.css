@@ -1184,7 +1184,10 @@
 
 @media (max-width: 767.98px) {
   .dl-nakes-dashboard .dl-dashboard-stack {
-    padding: 12px var(--bd-pad) calc(96px + env(safe-area-inset-bottom, 0px));
+    /* Padding horizontal dilepas: .content sudah memberi 12px, dan --bd-pad 16px
+       di sini membuat kartu dashboard mulai di 28px sementara kartu Permintaan di
+       16px. Padding bawah juga dobel dengan 86px milik .content. */
+    padding: 0;
   }
 
   /* doclinc-nakes.css gives `order` to the active-task heading, the task card,

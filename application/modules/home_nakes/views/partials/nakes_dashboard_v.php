@@ -36,12 +36,13 @@
 						<?php
 						$dashboard_staff_rows = isset($puskesmas_staff_list) && is_array($puskesmas_staff_list) ? $puskesmas_staff_list : array();
 						$dashboard_staff_count = isset($puskesmas_staff_count) ? (int) $puskesmas_staff_count : count($dashboard_staff_rows);
-						$this->load->view('partials/nakes_section_header_v', array(
-							'section_title' => 'Staf Puskesmas',
-							'section_meta' => !empty($nakes_presence_enabled) ? 'Status diperbarui otomatis' : (string) $dashboard_staff_count . ' terdaftar',
-						));
 						?>
 						<div class="dl-nakes-card dl-dashboard-section nk-staff-card doclinc-presence-panel" id="doclincNakesPresence" data-presence-roster="true" aria-live="polite" aria-busy="<?= !empty($nakes_presence_enabled) ? 'true' : 'false'; ?>">
+						<?php $this->load->view('partials/nakes_section_header_v', array(
+							'section_title' => 'Staf Puskesmas',
+							'section_meta' => !empty($nakes_presence_enabled) ? 'Status diperbarui otomatis' : (string) $dashboard_staff_count . ' terdaftar',
+							'section_inside' => true,
+						)); ?>
 
 							<?php if (empty($dashboard_staff_rows)) : ?>
 								<div class="nk-staff-empty">Belum ada staf.</div>
@@ -65,9 +66,12 @@
 												'avatar_icon' => 'fas fa-user-md',
 											)); ?>
 											<div class="nk-staff-main">
-												<strong><?= html_escape($staff_name !== '' ? $staff_name : 'Nama belum diisi'); ?> <span class="doclinc-presence-dot is-offline" data-presence-dot aria-hidden="true"></span></strong>
+												<strong><?= html_escape($staff_name !== '' ? $staff_name : 'Nama belum diisi'); ?></strong>
 												<?php if ($staff_profesi !== '') : ?><span><?= html_escape($staff_profesi); ?></span><?php endif; ?>
-												<small class="nk-staff-presence is-offline" data-presence-label>Offline</small>
+												<span class="nk-staff-presence-chip">
+											<span class="doclinc-presence-dot is-offline" data-presence-dot aria-hidden="true"></span>
+											<small class="nk-staff-presence is-offline" data-presence-label>Offline</small>
+										</span>
 												<small class="nk-staff-last-seen" data-presence-last-seen>Belum pernah online</small>
 											</div>
 											<?php if ($staff_phone !== '') : ?>

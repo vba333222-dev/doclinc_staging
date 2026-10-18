@@ -25,7 +25,16 @@
 												<span><?= html_escape($area_label); ?></span>
 												<span><?= html_escape($received_label); ?></span>
 											</div>
-											<span class="dl-badge dl-badge--action">Segera konfirmasi</span>
+																					<?php
+											$request_state = strtolower(trim((string) (isset($x->request_status) ? $x->request_status : '')));
+											if ($request_state === '') {
+												$request_state = 'pending';
+											}
+											/* Keadaan menentukan warna chip; teksnya tetap sumber makna untuk pembaca
+											   layar, karena warna saja tidak boleh menjadi satu-satunya pembeda. */
+											$request_chip_label = $request_state === 'accepted' ? 'Sudah diterima' : 'Segera konfirmasi';
+										?>
+										<span class="dl-badge dl-badge--action" data-request-state="<?= html_escape($request_state); ?>"><?= html_escape($request_chip_label); ?></span>
 										</div>
 										<div class="dl-queue-badge">
 											<small>Antrian</small>

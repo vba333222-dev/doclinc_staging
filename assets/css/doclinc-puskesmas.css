@@ -4,6 +4,18 @@
 	--puskesmas-muted: #64736B;
 	--puskesmas-line: #E7ECE9;
 	--puskesmas-soft: #F4F8F6;
+	/* Satu set jarak untuk seluruh shell. Sebelumnya angka 16/14/12 tersebar di
+	   empat berkas, sehingga halaman yang satu bisa lebih sempit dari yang lain
+	   tanpa ada yang menyadarinya. */
+	--pk-gutter: 16px;
+	--pk-gap: 12px;
+	--pk-card-pad: 16px;
+	--pk-card-pad-tight: 14px;
+	--pk-radius-card: 14px;
+	--pk-radius-item: 12px;
+	--pk-ink: var(--bd-ink, #1F2A24);
+	--pk-muted: var(--bd-muted, #64736B);
+	--pk-line: var(--bd-line, #E7ECE9);
 	background: #F4F8F6;
 }
 
@@ -46,6 +58,13 @@
 		width: 100%;
 	}
 
+	/* Satu gutter untuk semua seksi. #beranda memakai 12px dari
+	   nakes-dashboard.css sementara Permintaan, Riwayat dan Profil memakai 16px,
+	   sehingga kartu dashboard 21px lebih sempit tanpa alasan. */
+	.dl-puskesmas-shell.dl-nakes-dashboard .content {
+		padding-inline: var(--pk-gutter);
+	}
+
 }
 
 /* Padding kartu 16px di semua lebar, sama dengan kartu di beranda warga.
@@ -55,15 +74,15 @@
 /* Dua kelas pada pembungkusnya (shell + dasbor) supaya menang atas aturan
    bento yang memakai 18px dan dimuat setelah berkas ini. */
 .dl-puskesmas-shell.dl-nakes-dashboard .dl-nakes-request-card .card-header {
-	padding: 16px;
+	padding: var(--pk-card-pad);
 }
 
 .dl-puskesmas-shell.dl-nakes-dashboard .dl-nakes-request-card .card-body {
-	padding: 16px !important;
+	padding: var(--pk-card-pad) !important;
 }
 
 .dl-puskesmas-shell.dl-nakes-dashboard .dl-nakes-request-card .nk-complaint {
-	padding: 14px;
+	padding: var(--pk-card-pad-tight);
 }
 
 /* doclinc-bento.css later shapes this bar as an inset card
@@ -329,4 +348,103 @@
 	.dl-puskesmas-shell .dl-operations-filters input { min-height: 38px; }
 	.dl-puskesmas-shell .dl-operations-intro { padding: 15px 14px; }
 	.dl-puskesmas-shell .dl-operations-intro h2 { font-size: 18px; }
+}
+
+/* --------------------------------------------------------------------------
+   B26. Roster staf
+   --------------------------------------------------------------------------
+   Kartu staf tadinya satu kolom selebar 453px berisi satu baris identitas per
+   orang: ruang yang cukup untuk dua orang terpakai untuk satu. Dua kolom
+   dipasang pada `.nk-staff-list`, bukan pada `.nk-staff-item`, karena grid
+   item dikunci tools/role_prerequisites/tests/source_test.js.
+
+   Status kehadiran tadinya tiga tanda untuk satu keadaan (titik warna, label
+   "Offline", lalu "Belum pernah online"). Titik dan label sekarang satu chip;
+   atribut data-presence-* tetap utuh karena skrip presence menulis ke sana. */
+.dl-puskesmas-shell.dl-nakes-dashboard .nk-staff-card {
+	padding: var(--pk-card-pad);
+}
+
+/* Judul yang tinggal di dalam kartu tidak memakai jarak luar milik header
+   seksi halaman; jaraknya diatur oleh padding kartu. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-section-header--in-card {
+	margin: 0 0 var(--pk-gap);
+	padding: 0;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .nk-staff-list {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--pk-gap);
+}
+
+@media (min-width: 520px) {
+	.dl-puskesmas-shell.dl-nakes-dashboard .nk-staff-list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .nk-staff-item {
+	min-width: 0;
+	padding: 12px 14px;
+	border-radius: var(--pk-radius-item);
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .nk-staff-presence-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	width: fit-content;
+	margin-top: 2px;
+	padding: 2px 9px 2px 7px;
+	border-radius: 999px;
+	background: var(--bd-mint-soft, #EEF7F2);
+	font-size: 11px;
+	font-weight: 800;
+	line-height: 1.5;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .nk-staff-presence-chip .doclinc-presence-dot {
+	flex: 0 0 auto;
+	width: 7px;
+	height: 7px;
+	border-radius: 999px;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .nk-staff-last-seen {
+	color: var(--pk-muted);
+	font-size: 10.5px;
+	font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   B27. Chip status permintaan
+   --------------------------------------------------------------------------
+   Satu badge mint dipakai untuk semua keadaan, jadi "Segera konfirmasi" dan
+   "Sudah diterima" hanya bisa dibedakan dengan membaca teksnya. Atribut
+   `data-request-state` membawa bedanya ke warna, dan teksnya tetap menjadi
+   sumber makna untuk pembaca layar. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-badge--action {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 3px 10px;
+	border: 0;
+	border-radius: 999px;
+	font-size: 11.5px;
+	font-weight: 800;
+	letter-spacing: 0;
+	text-transform: none;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-badge--action[data-request-state="pending"] {
+	/* !important karena .dl-badge di nakes-dashboard.css menulis latar dengan
+	   !important; tanpa itu chip tetap mint dan keadaan tidak terbaca. */
+	background: #FFF6E0 !important;
+	color: #8A5A00 !important;
+}
+
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-badge--action[data-request-state="accepted"] {
+	background: var(--bd-mint-soft, #EEF7F2) !important;
+	color: #1F5C42 !important;
 }
