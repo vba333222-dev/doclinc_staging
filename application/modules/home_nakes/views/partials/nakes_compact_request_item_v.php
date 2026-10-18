@@ -69,7 +69,7 @@ foreach (array('foto', 'photo', 'profile_photo', 'profile_image', 'patient_photo
 				<strong class="nk-complaint__main"><?= html_escape($latest_primary); ?></strong>
 			<?php endif; ?>
 			<?php if (!$latest_weak_value($latest_duration) || !$latest_weak_value($latest_symptoms)) : ?>
-				<dl class="nk-fact-list">>
+				<dl class="nk-fact-list">
 					<?php if (!$latest_weak_value($latest_duration)) : ?>
 						<div class="nk-fact-row"><dt class="nk-fact-label">Lama</dt><dd class="nk-fact-value"><?= html_escape($latest_duration); ?></dd></div>
 					<?php endif; ?>
