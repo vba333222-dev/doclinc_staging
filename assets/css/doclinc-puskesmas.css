@@ -569,6 +569,7 @@
    menghemat 8px per baris. Padding vertikal dijaga di 4px supaya tinggi baris
    tetap di 52px tanpa terasa longgar. */
 .dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row {
+	position: relative;
 	grid-template-columns: auto minmax(0, 1fr);
 	grid-template-areas:
 		"avatar main"
@@ -653,9 +654,6 @@
 	background: transparent;
 }
 
-/* Waktu "terakhir online" tidak lagi memakan ruang: ia tetap ada di DOM dan
-   tetap diumumkan ke pembaca layar, tetapi indikator kehadiran yang terlihat
-   cukup titik + kata Online/Offline. Detail waktu bisa dilihat di Profil. */
 /* `.doclinc-presence-dot` global diposisikan absolut untuk daftar presence
    lama (menempel di kiri label). Di sini ia harus ikut alur chip, kalau tidak
    titiknya lepas dari baris dan tidak terlihat. */
@@ -678,10 +676,12 @@
 	box-shadow: 0 0 0 3px rgba(30, 158, 106, .14);
 }
 
-/* Waktu "terakhir online" tidak lagi memakan ruang: ia tetap ada di DOM dan
-   tetap diumumkan ke pembaca layar, tetapi indikator kehadiran yang terlihat
-   cukup titik + kata Online/Offline. */
-.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row .nk-staff-last-seen {
+/* Dua hal yang hanya untuk pembaca layar: waktu "terakhir online" dan badge
+   keadaan yang sengaja tidak ditampilkan ("Menangani", keadaan mayoritas).
+   Keduanya tetap di DOM supaya pembaca layar tidak kehilangan status ketika
+   tampilan visualnya diringkas. */
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row .nk-staff-last-seen,
+.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row .dl-team-badge.is-sr-only {
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -700,7 +700,6 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 5px;
-	margin-left: auto;
 	padding: 2px 9px;
 	border: 1px solid transparent;
 	border-radius: 999px;
@@ -726,13 +725,13 @@
 	color: #7A4A00;
 }
 
-.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-badge.is-menangani {
-	border-color: #CFE0D8;
-	background: #EDF3F0;
-	color: #24463A;
-}
-
+/* "Menangani" adalah keadaan mayoritas, jadi ia tidak memakai badge: baris di
+   dalam sel "Sedang bertugas" sudah menyatakan orang itu bertugas, dan yang
+   perlu menonjol hanya keadaan yang jarang (kunjungan berjalan / disposisi).
+   Keadaannya tetap terbaca mesin lewat `data-duty-state` dan tetap terbaca
+   pembaca layar lewat teks tersembunyi di barisnya. */
 .dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row__queue {
+	margin-left: auto;
 	padding: 1px 7px;
 	border-radius: 999px;
 	background: #F1F5F3;

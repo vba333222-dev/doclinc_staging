@@ -153,6 +153,7 @@ const idleScrollRule = cssBlock(puskesmasCss, '.dl-puskesmas-shell.dl-nakes-dash
 const teamListRule = cssBlock(puskesmasCss, '.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-list');
 const visitBadgeRule = cssBlock(puskesmasCss, '.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-badge.is-visit');
 const badgeBaseRule = cssBlock(puskesmasCss, '.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-badge');
+const queueRule = cssBlock(puskesmasCss, '.dl-puskesmas-shell.dl-nakes-dashboard .dl-team-row__queue');
 
 expect(teamRowRule.includes('min-height: 52px;')
   && teamRowRule.includes('border-top: 1px solid')
@@ -171,12 +172,56 @@ expect(visitBadgeRule.includes('background: #E7F6EE;')
   && badgeBaseRule.includes('border: 1px solid transparent;'),
   'visit_badge_carries_colour_and_text_not_colour_alone');
 
+/* "Menangani" adalah keadaan mayoritas: badge-nya disembunyikan secara visual
+   supaya yang menonjol hanya kunjungan berjalan dan disposisi, tetapi teksnya
+   tetap di DOM agar pembaca layar tidak kehilangan status. */
+expect(nakesDashboard.includes("$duty_state === 'menangani' ? ' is-sr-only' : ''")
+  && puskesmasCss.includes('.dl-team-badge.is-sr-only')
+  && !puskesmasCss.includes('.dl-team-badge.is-menangani'),
+  'menangani_state_is_kept_for_screen_readers_but_not_shown_as_a_badge');
+
+expect(queueRule.includes('margin-left: auto;')
+  && !badgeBaseRule.includes('margin-left: auto;'),
+  'queue_pins_the_right_edge_so_rows_line_up');
+
+/* Teks khusus pembaca layar diposisikan absolut, jadi baris harus menjadi
+   containing block-nya — kalau tidak, kotak 1px itu bisa mendarat di luar
+   baris dan memicu gulir horizontal. */
+expect(/nk-staff-last-seen,[\s\S]{0,140}?dl-team-badge\.is-sr-only[\s\S]{0,400}?clip-path: inset\(50%\)/.test(puskesmasCss)
+  && teamRowRule.includes('position: relative;'),
+  'screen_reader_only_badge_reuses_the_hidden_text_technique');
+
 /* Papan ini tidak menambah animasi apa pun: tidak ada transisi pada baris,
    badge, atau sel, sehingga tidak ada gerak yang perlu diredam. */
 expect(!/transition:\s*all/.test(puskesmasCss)
   && !teamRowRule.includes('transition:')
   && !badgeBaseRule.includes('transition:'),
   'team_panel_adds_no_motion_of_its_own');
+
+/* ---- Urutan baris -------------------------------------------------------- */
+
+expect(nakesDashboard.includes("$dashboard_duty_rank = array('visit' => 3, 'disposisi' => 2, 'menangani' => 1);")
+  && nakesDashboard.includes('usort($dashboard_duty_rows')
+  && nakesDashboard.includes('$rank_b <=> $rank_a')
+  && nakesDashboard.includes('strnatcasecmp($queue_a, $queue_b)'),
+  'duty_rows_lead_with_running_visits_then_queue_number');
+
+expect((nakesDashboard.match(/usort\(\$dashboard_idle_rows/g) || []).length === 1
+  && /usort\(\$dashboard_idle_rows, static function \(\$a, \$b\) \{\s*return strnatcasecmp\(/.test(nakesDashboard)
+  && !/usort\(\$dashboard_idle_rows[\s\S]{0,240}?dashboard_duty_rank/.test(nakesDashboard),
+  'idle_rows_stay_alphabetical');
+
+/* Peringkat tampilan di view harus sama dengan peringkat yang dipakai controller
+   saat menggabungkan beberapa kasus untuk satu orang; kalau salah satunya
+   berubah, urutan baris dan badge bisa bercerita berbeda. */
+const rankPairs = source => (source.match(/'(\w+)'\s*=>\s*(\d+)/g) || [])
+  .map(entry => entry.replace(/\s+/g, ''))
+  .sort()
+  .join(',');
+const viewRankMap = /\$dashboard_duty_rank = array\(([^)]*)\);/.exec(nakesDashboard);
+const controllerRankMap = /\$rank = array\(([^)]*)\);/.exec(dutyBody);
+expect(viewRankMap && controllerRankMap && rankPairs(viewRankMap[1]) === rankPairs(controllerRankMap[1]),
+  'duty_rank_map_mirrors_the_controller_precedence');
 
 process.stdout.write(`PUSKESMAS_TEAM_STATUS_SOURCE_PASSED=${passed}\n`);
 process.stdout.write(`PUSKESMAS_TEAM_STATUS_SOURCE_FAILED=${failed}\n`);

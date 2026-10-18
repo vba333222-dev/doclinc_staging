@@ -54,6 +54,47 @@
 								$dashboard_idle_rows[] = $dashboard_row;
 							}
 						}
+						/* Urutan baris di sel "Sedang bertugas" mengikuti kegentingan,
+						   bukan abjad: kunjungan yang berjalan lebih dulu, lalu
+						   disposisi, lalu konsultasi yang sedang ditangani. Di dalam
+						   keadaan yang sama, nomor antrean terkecil lebih dulu supaya
+						   sejajar dengan halaman Operasional; nama hanya memutus seri.
+						   Peringkat ini cermin `$rank` di
+						   Home_nakes::puskesmas_team_duty() dan dijaga oleh suite
+						   puskesmas_team_status. Daftar "Tidak bertugas" tetap abjad:
+						   tidak ada yang mendesak di sana. */
+						$dashboard_duty_rank = array('visit' => 3, 'disposisi' => 2, 'menangani' => 1);
+						usort($dashboard_duty_rows, static function ($a, $b) use ($dashboard_duty_rank) {
+							$state_a = isset($a['duty']['state']) ? (string) $a['duty']['state'] : '';
+							$state_b = isset($b['duty']['state']) ? (string) $b['duty']['state'] : '';
+							$rank_a = isset($dashboard_duty_rank[$state_a]) ? (int) $dashboard_duty_rank[$state_a] : 0;
+							$rank_b = isset($dashboard_duty_rank[$state_b]) ? (int) $dashboard_duty_rank[$state_b] : 0;
+							if ($rank_a !== $rank_b) {
+								return $rank_b <=> $rank_a;
+							}
+							$queue_a = isset($a['duty']['queue_label']) ? trim((string) $a['duty']['queue_label']) : '';
+							$queue_b = isset($b['duty']['queue_label']) ? trim((string) $b['duty']['queue_label']) : '';
+							if ($queue_a === '' || $queue_b === '') {
+								if ($queue_a !== $queue_b) {
+									return $queue_a === '' ? 1 : -1;
+								}
+							} else {
+								$queue_order = strnatcasecmp($queue_a, $queue_b);
+								if ($queue_order !== 0) {
+									return $queue_order;
+								}
+							}
+							return strnatcasecmp(
+								trim((string) (isset($a['staff']->nama) ? $a['staff']->nama : '')),
+								trim((string) (isset($b['staff']->nama) ? $b['staff']->nama : ''))
+							);
+						});
+						usort($dashboard_idle_rows, static function ($a, $b) {
+							return strnatcasecmp(
+								trim((string) (isset($a['staff']->nama) ? $a['staff']->nama : '')),
+								trim((string) (isset($b['staff']->nama) ? $b['staff']->nama : ''))
+							);
+						});
 						$dashboard_team_cells = array(
 							array(
 								'key' => 'duty',
@@ -136,7 +177,7 @@
 														<span class="dl-team-row__no-account"><i class="fas fa-user-slash" aria-hidden="true"></i>Tanpa akun</span>
 													<?php endif; ?>
 													<?php if ($duty_state !== '') : ?>
-														<span class="dl-team-badge is-<?= html_escape($duty_state); ?>" title="<?= html_escape($dashboard_duty_hints[$duty_state]); ?>"><i class="<?= html_escape($dashboard_duty_icons[$duty_state]); ?>" aria-hidden="true"></i><?= html_escape($dashboard_duty_labels[$duty_state]); ?></span>
+														<span class="dl-team-badge is-<?= html_escape($duty_state); ?><?= $duty_state === 'menangani' ? ' is-sr-only' : ''; ?>" title="<?= html_escape($dashboard_duty_hints[$duty_state]); ?>"><i class="<?= html_escape($dashboard_duty_icons[$duty_state]); ?>" aria-hidden="true"></i><?= html_escape($dashboard_duty_labels[$duty_state]); ?></span>
 													<?php endif; ?>
 													<?php if ($duty_queue !== '') : ?>
 														<span class="dl-team-row__queue"><?= html_escape($duty_queue); ?><?= $duty_extra_cases > 0 ? ' +' . (int) $duty_extra_cases : ''; ?></span>
