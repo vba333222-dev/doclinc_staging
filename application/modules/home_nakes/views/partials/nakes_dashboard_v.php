@@ -150,36 +150,5 @@
 							<?php endforeach; ?>
 						</div>
 						<?php endif; ?>
-						<?php if (!empty($nakes_is_command_center)) :
-						$this->load->view('partials/nakes_section_header_v', array(
-							'section_title' => 'Permintaan Konsultasi',
-							'section_meta' => (string) $nakes_pending_count . ' menunggu',
-							'section_link_label' => 'Semua',
-							'section_link_target' => '#req_konsul',
-						));
-						?>
-						<div class="dl-nakes-card dl-dashboard-section">
-							<?php if (empty($nakes_latest_pending_rows)) : ?>
-								<?php
-								$this->load->view('partials/nakes_empty_state_v', array(
-									'empty_title' => 'Belum ada permintaan baru',
-									'empty_message' => 'Antrian Puskesmas akan diperbarui saat ada pasien masuk.',
-								));
-								?>
-							<?php else :
-								$CI = &get_instance();
-								$CI->load->library('encryption');
-								$latest_total = count($nakes_latest_pending_rows);
-								$latest_index = 0;
-								foreach ($nakes_latest_pending_rows as $latest_request) :
-									$latest_keluhan = $CI->encryption->decrypt(base64_decode($latest_request->request_description));
-									$latest_queue_label = doclinc_request_queue_number_label($latest_request);
-									$is_last_latest_request = ++$latest_index >= $latest_total;
-							?>
-									<?php $this->load->view('partials/nakes_compact_request_item_v', get_defined_vars()); ?>
-							<?php endforeach;
-							endif; ?>
-						</div>
-						<?php endif; ?>
-					</div>
+											</div>
 				</div>
