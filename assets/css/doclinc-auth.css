@@ -184,7 +184,11 @@
   min-height: 48px;
   border: 1px solid var(--dl-brand-strong);
   border-radius: var(--dl-radius-sm);
-  background: linear-gradient(180deg, var(--dl-brand) 0%, var(--dl-brand-ink) 100%);
+  /* Warna solid, bukan gradien: putih 15px di atas --dl-brand (#379A69) hanya
+   * 3,5:1, di bawah ambang 4,5:1 untuk teks sebesar ini. Dengan --dl-brand-ink
+   * (#2D7D56) rasionya 5,0:1. Kedalaman tombol tetap datang dari bayangan
+   * berlapis, bukan dari perubahan warna. */
+  background: var(--dl-brand-ink);
   color: #fff;
   font-family: var(--dl-font);
   font-size: 15px;
@@ -195,7 +199,7 @@
 }
 
 .dl-auth-btn:hover {
-  background: linear-gradient(180deg, var(--dl-brand-ink) 0%, var(--dl-brand-strong) 100%);
+  background: var(--dl-brand-strong);
   box-shadow: 0 10px 24px rgba(31, 111, 75, .30), 0 1px 0 rgba(255, 255, 255, .22) inset;
   transform: translateY(-1px);
 }
@@ -225,6 +229,13 @@
 }
 
 .dl-auth-link {
+  display: inline-flex;
+  align-items: center;
+  /* Tinggi 44px: tautan ini satu-satunya jalan ke pendaftaran dan aktivasi
+   * akun nakes. Sebelumnya hanya 18–19px, terlalu kecil untuk ditekan di
+   * ponsel. Padding horizontal kecil supaya cincin fokus tidak menempel. */
+  min-height: 44px;
+  padding: 0 4px;
   color: var(--dl-brand-ink);
   font-weight: 700;
   text-decoration: none;

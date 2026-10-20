@@ -57,7 +57,7 @@ $appbar_initial_section = isset($nakes_initial_section) && (string) $nakes_initi
 						</div>
 					</div>
 					<a class="dl-nakes-icon-btn position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif" aria-label="Notifikasi">
-						<i class="bi bi-bell-fill fs-4" aria-hidden="true"></i>
+						<i class="fas fa-bell fs-4" aria-hidden="true"></i>
 						<span class="notify-number nk-notification-badge" id="badgeNotif" style="display: none;"></span>
 					</a>
 				</div>

@@ -107,13 +107,27 @@
 .dl-warga-auth .card-body { padding: clamp(1.25rem, 4vw, 2rem); }
 .dl-warga-auth .form-control { min-height: 48px; border-color: #c9d9d2; }
 .dl-warga-auth .btn { min-height: 44px; }
-.dl-warga-profile .completion-shell { width: min(100% - 2rem, 900px); }
-.dl-warga-profile .completion-card { border-color: var(--warga-line); box-shadow: 0 12px 32px rgba(24,57,44,.08); }
+/* Halaman "Lengkapi data" mengatur lebar, garis, dan bayangannya sendiri di
+   doclinc-profile-completion.css. Aturan lama di sini memaksa lebar
+   `100% - 2rem` tanpa margin otomatis, sehingga kartu menempel ke kiri. */
 
 @media (min-width: 768px) {
   .dl-warga-app .dl-appbar { padding: 1.25rem 1.5rem !important; }
   .dl-warga-app .dl-profile-photo { width: 72px !important; height: 72px !important; }
-  .dl-warga-app .dl-bottom-nav { position: static !important; width: min(1240px, calc(100% - 48px)); margin: 0 auto; border: 0; box-shadow: none; background: transparent; }
+  .dl-warga-app .dl-bottom-nav {
+    position: fixed !important;
+    inset: auto 0 0 0;
+    width: 100%;
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--dl-border);
+    background: var(--dl-surface);
+    box-shadow: 0 -8px 24px rgba(18, 71, 47, .10);
+  }
+
+  .dl-warga-app #nav-bottom-wrapper.dl-bottom-nav {
+    bottom: 0;
+  }
   .dl-warga-app .dl-bottom-nav ul { justify-content: flex-start; gap: .35rem; }
   .dl-warga-app .dl-bottom-nav a { border-radius: .65rem; }
   .dl-warga-app .dl-record-list { background: transparent; padding: 0; border: 0; border-radius: 0; }

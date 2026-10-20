@@ -25,6 +25,34 @@ foreach ($data_profile->result() as $x) {
 	$usia = $x->usia;
 }
 
+if (!function_exists('dl_tanggal_id')) {
+	/**
+	 * Tanggal Bahasa Indonesia tanpa bergantung pada setlocale().
+	 * setlocale() bergantung pada paket locale OS dan tidak andal di server
+	 * Windows, jadi nama bulan diambil dari daftar tetap.
+	 * $with_time = true menghasilkan "19 Oktober 2026 14.30".
+	 */
+	function dl_tanggal_id($timestamp, $with_time = false)
+	{
+		$timestamp = (int) $timestamp;
+		if ($timestamp < 1) {
+			return '';
+		}
+		$bulan = array(
+			1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+			5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+			9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+		);
+		$hasil = date('j', $timestamp) . ' ' . $bulan[(int) date('n', $timestamp)] . ' ' . date('Y', $timestamp);
+		if ($with_time) {
+			$hasil .= ' ' . date('H.i', $timestamp);
+		}
+		return $hasil;
+	}
+}
+
+
+
 $dokter_id = []; // siapkan array kosong
 foreach ($dataDoctor->result() as $doc) {
 	$dokter_id[] = $doc->userId; // Identitas Nakes modern memakai users.userId.
@@ -66,7 +94,7 @@ if (!function_exists('doclinc_warga_visit_timeline')) {
 			$html .= '<span class="doclinc-visit-step-dot"></span>';
 			$html .= '<div><strong>' . html_escape($label) . '</strong>';
 			if ($time !== '' && strtotime($time)) {
-				$html .= '<span class="doclinc-visit-meta">' . html_escape(date('d M Y H:i', strtotime($time))) . '</span>';
+				$html .= '<span class="doclinc-visit-meta">' . html_escape(dl_tanggal_id(strtotime($time), true)) . '</span>';
 			}
 			$html .= '</div></div>';
 		}
@@ -264,7 +292,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 	<meta charset="UTF-8">
 	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>DocLink - Beranda</title>
+	<title>DokLinc - Beranda</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -497,88 +525,6 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 			font-weight: 700;
 			line-height: 1.45;
 			overflow-wrap: anywhere;
-		}
-
-		.dl-profile-card {
-			border: 1px solid #e1eee8;
-			border-radius: 20px;
-			background: #fff;
-			box-shadow: 0 8px 24px rgba(15, 66, 42, .08);
-			overflow: hidden;
-		}
-
-		.dl-profile-card__head {
-			padding: 16px;
-			border-bottom: 1px solid #eef4f1;
-			background: #f8fbfa;
-		}
-
-		.dl-profile-card__head h4 {
-			margin: 0;
-			color: #183c2f;
-			font-size: 18px;
-			font-weight: 800;
-			line-height: 1.25;
-		}
-
-		.dl-profile-card__head span {
-			display: block;
-			margin-top: 3px;
-			color: #6c757d;
-			font-size: 12px;
-			font-weight: 700;
-		}
-
-		.dl-profile-fields {
-			display: grid;
-			gap: 9px;
-			padding: 14px;
-		}
-
-		.dl-profile-field {
-			display: grid;
-			gap: 4px;
-			padding: 10px 11px;
-			border: 1px solid #e5eee9;
-			border-radius: 13px;
-			background: #fff;
-		}
-
-		.dl-profile-field label {
-			margin: 0;
-			color: #6c757d;
-			font-size: 11px;
-			font-weight: 800;
-			line-height: 1.25;
-		}
-
-		.dl-profile-field input,
-		.dl-profile-field textarea {
-			width: 100%;
-			padding: 0;
-			border: 0;
-			background: transparent;
-			color: #183c2f;
-			font-size: 13px;
-			font-weight: 750;
-			line-height: 1.4;
-			box-shadow: none;
-			resize: none;
-		}
-
-		.dl-profile-field textarea {
-			min-height: 54px;
-		}
-
-		.dl-profile-actions {
-			padding: 0 14px 14px;
-		}
-
-		.dl-profile-actions .btn {
-			min-height: 44px;
-			border-radius: 12px;
-			font-size: var(--dl-font-size-md);
-			font-weight: 800;
 		}
 
 		.doclinc-visit-map {
@@ -1171,12 +1117,13 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 		}
 	</style>
 	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-design-system.css'); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-account.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-account.css'))); ?>">
 	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-warga.css'); ?>">
-	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-warga-dashboard.css'); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-warga-dashboard.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-warga-dashboard.css'))); ?>">
 	<!-- DocLinc Mobile Design (Bento Grid). Dimuat paling akhir supaya seluruh
 	     token --bd-* dan komposisi bento di design.md menang atas lapisan
 	     beranda sebelumnya tanpa mengubah berkas itu. -->
-	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-bento.css'); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-bento.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-bento.css'))); ?>">
 <link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-reference-ui.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-reference-ui.css'))); ?>">
 </head>
 
@@ -1186,7 +1133,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 			<!-- doklinc.png berukuran 3167x1396; atribut height lama ditulis "50px"
 			     yang bukan nilai sah untuk atribut HTML, sehingga diabaikan peramban
 			     dan logo sempat dirender pada ukuran aslinya. -->
-			<img class="mb-3" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" width="113" height="50" decoding="async">
+			<img class="mb-3" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DokLinc" width="113" height="50" decoding="async">
 			<div class="mb-0" role="status">
 				<div class="spinner-border spinner-border-sm text-light" aria-hidden="true"></div>
 				Memuat&hellip;
@@ -1198,14 +1145,14 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 		<div class="contents dl-warga-content">
 			<h1 class="visually-hidden">Beranda</h1>
 			<div class="hero bg-success p-3 overflow-hidden dl-appbar dl-bento-header">
-				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif">
-					<i class="bi bi-bell-fill fs-4"></i>
+				<a class="notify" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotif" aria-controls="offcanvasNotif" aria-label="Notifikasi">
+					<i class="fas fa-bell fs-4" aria-hidden="true"></i>
 					<!-- kalo ada notif fetch datanya dari sini ya, bukan dari dalem elemen span nya -->
 					<span class="notify-number" id="badgeNotif"></span>
 					<!-- sampe sini -->
 				</a>
 				<div class="text-white mb-2 dl-location-row">
-					<i class="fas fa-map-marker-alt me-2"></i><small><label for="" id="userLocationAddress">Menunggu lokasi...</label></small>
+					<i class="fas fa-map-marker-alt me-2" aria-hidden="true"></i><small><span id="userLocationAddress">Mencari lokasi…</span></small>
 					<a id="userLocationMapLink" class="small text-white ms-2 d-none" href="#" target="_blank" rel="noopener noreferrer">Buka peta · © OpenStreetMap</a>
 
 					<input type="hidden" id="id_user" value="<?= $this->session->userdata('id'); ?>">
@@ -1224,13 +1171,12 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 						<img class="rounded-4 shadow dl-profile-photo" id="previewFoto" src="<?= doclinc_profile_image_src((int) $this->session->userdata('id'), $foto); ?>" alt="Foto Profil" width="56" height="56" onerror="this.onerror=null;this.src='<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>';">
 					</div>
 					<div class="flex-grow-1 text-white dl-profile-copy">
-						<small>Selamat Datang</small>
 						<h3 class="mb-0"><?= html_escape($this->session->userdata('nama')); ?></h3>
 						<!-- Usia dan lokasi berbagi satu baris metadata, mengikuti
 						     referensi desain. Keduanya tetap data asli sesi. -->
 						<div class="dl-profile-meta">
 							<p class="mb-0 dl-user-age"><?= html_escape($usia); ?></p>
-							<p class="mb-0 dl-user-coordinate" id="userCoordinateLabel">Menunggu lokasi...</p>
+							<p class="mb-0 dl-user-coordinate" id="userCoordinateLabel">Mencari lokasi…</p>
 						</div>
 						<span id="kota" class="d-none">Memuat...</span>
 					</div>
@@ -1342,7 +1288,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 							$dl_last_ts = $dlCandidate_ts;
 						}
 					}
-					$dl_last_completed = $dl_last_ts ? date('d M Y', $dl_last_ts) : '';
+					$dl_last_completed = $dl_last_ts ? dl_tanggal_id($dl_last_ts) : '';
 					$dl_action_locked = $dl_open_request !== null;
 
 					$dl_username = trim((string) $this->session->userdata('username'));
@@ -1415,12 +1361,10 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 					?>
 					<?php if (!$dl_action_locked && $dl_username !== '') : ?>
 						<div class="dl-welcome">
-							<p class="dl-welcome__hello">Selamat <?= html_escape($dl_greeting); ?>,</p>
-							<?php /* `<i>`, bukan `<em>`: nama pemilik akun bukan penekanan
-							   kalimat, jadi pembaca layar tidak perlu memberi tekanan
-							   padanya. `<i>` memang elemen untuk teks yang penyajian
-							   lazimnya miring. */ ?>
-							<p class="dl-welcome__note">Selalu jaga kesehatanmu, <i class="dl-welcome__name"><?= html_escape($dl_username); ?></i></p>
+							<p class="dl-welcome__hello">
+								<span class="dl-welcome__salutation">Selamat <?= html_escape($dl_greeting); ?>,</span>
+								<span class="dl-welcome__welcome">Selamat datang di <span class="dl-welcome__brand">DokLinc</span></span>
+							</p>
 						</div>
 					<?php endif; ?>
 					<div class="dl-bento dl-bento-actions">
@@ -1443,9 +1387,8 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 							</a>
 						<?php else : ?>
 							<button type="button" class="dl-action-tile" onclick="showContent('konsultasi_kesehatan')">
-								<span class="dl-action-tile__kicker">Konsultasi baru</span>
 								<span class="dl-action-tile__title">Mulai konsultasi</span>
-								<span class="dl-action-tile__note">Ceritakan keluhan Anda kepada kami</span>
+								<span class="dl-action-tile__note">Ceritakan keluhan Anda kepada nakes.</span>
 							</button>
 						<?php endif; ?>
 						<div class="dl-clock-tile" id="dlClockTile" role="group" aria-label="Waktu Indonesia Barat">
@@ -1458,7 +1401,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 						<div class="dl-summary-tile">
 							<span class="dl-summary-tile__kicker">Riwayat Anda</span>
 							<?php if ($dl_completed_count > 0) : ?>
-								<span class="dl-summary-tile__line"><strong><?= (int) $dl_completed_count; ?></strong> konsultasi selesai</span>
+								<span class="dl-summary-tile__line"><strong><?= html_escape((string) (int) $dl_completed_count); ?></strong> konsultasi selesai</span>
 								<?php if ($dl_last_completed !== '') : ?>
 									<span class="dl-summary-tile__meta">Terakhir <?= html_escape($dl_last_completed); ?></span>
 								<?php endif; ?>
@@ -1545,16 +1488,32 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 					<div class="row dl-bento-section dl-bento-news">
 						<div class="col">
 							<div class="dl-section-header">
-								<p class="dl-section-title">Berita</p>
+								<h2 class="dl-section-title">Berita</h2>
 								<div class="flex-grow-1">
 									<hr class="m-0">
 								</div>
 							</div>
 							<div class="owl-carousel owl-theme">
-								<?php
-								foreach ($data_feeds->result() as $x) {
+							<?php
+								/* Berita adalah kanal informasi harian dan penyuluhan dari
+								   puskesmas, jadi bagian ini selalu tampil. Saat belum ada
+								   kiriman dari admin, yang muncul adalah keadaan kosong —
+								   bukan ruang kosong tanpa penjelasan. */
+								$dl_feed_rows = $data_feeds->result();
+								if (empty($dl_feed_rows)) {
+									?>
+									<div class="item dl-news-card dl-news-card--empty">
+										<div class="dl-bento-empty">
+											<span class="dl-bento-empty__icon" aria-hidden="true"><i class="far fa-newspaper"></i></span>
+											<p class="history-empty-text mb-0">Belum ada berita hari ini.</p>
+										</div>
+									</div>
+									<?php
+								}
+								foreach ($dl_feed_rows as $x) {
+									$dl_feed_title = trim((string) $x->subject);
 								?>
-									<div class="item">
+									<div class="item dl-news-card">
 										<!--<img src="<?= base_url('assets/images/feeds/' . $x->gambar); ?>">-->
 										<?php
 										// `subject` is the feed's real title, so it is the honest alt text; the
@@ -1562,7 +1521,12 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 										// broken-image icon. width/height reserve the box so the carousel
 										// does not shift while the images load.
 										?>
-										<img src="<?= base_url('admin_menu/uploads/feeds/' . $x->gambar); ?>" alt="<?= html_escape(trim((string) $x->subject)); ?>" width="400" height="260" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='<?= html_escape(base_url('assets/images/not found.svg')); ?>';this.alt='Berita tanpa gambar';">
+										<img src="<?= base_url('admin_menu/uploads/feeds/' . $x->gambar); ?>" alt="<?= html_escape($dl_feed_title); ?>" width="400" height="260" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='<?= html_escape(base_url('assets/images/not found.svg')); ?>';this.alt='Berita tanpa gambar';">
+										<?php if ($dl_feed_title !== '') : ?>
+											<div class="dl-news-card__body">
+												<p class="dl-news-card__title"><?= html_escape($dl_feed_title); ?></p>
+											</div>
+										<?php endif; ?>
 									</div>
 								<?php
 								}
@@ -1739,7 +1703,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 								$visit_status = $visit_status !== '' ? $visit_status : 'not_started';
 								$visit_label = isset($data->warga_visit_status_label) ? $data->warga_visit_status_label : doclinc_visit_status_label($visit_status);
 								$top_status_label = isset($data->warga_top_status_label) ? $data->warga_top_status_label : ($request_status === 'Pending' ? 'Menunggu konfirmasi Puskesmas' : $visit_label);
-								$visit_updated = !empty($data->warga_visit_updated_at) && strtotime($data->warga_visit_updated_at) ? date('d M Y H:i', strtotime($data->warga_visit_updated_at)) : '';
+								$visit_updated = !empty($data->warga_visit_updated_at) && strtotime($data->warga_visit_updated_at) ? dl_tanggal_id(strtotime($data->warga_visit_updated_at), true) : '';
 								$visit_timeline = isset($data->warga_visit_timeline) ? $data->warga_visit_timeline : array();
 								$consultation_mode = isset($data->consultation_mode) ? trim((string) $data->consultation_mode) : '';
 								$is_visit = isset($data->warga_is_visit) ? (bool) $data->warga_is_visit : strtolower($consultation_mode) === 'visit';
@@ -1760,7 +1724,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 								$pic_assigned = $responsible_doctor_name !== '' || !empty($data->assigned_pic_label);
 
 								// jadikan tanggal di atas formatnya jadi 11 November 2024
-								$tanggal = date('d F Y', strtotime($tanggal));
+								$tanggal = dl_tanggal_id(strtotime($tanggal));
 								/* Satu token keadaan untuk chip status di kepala kartu. `request_status`
 								   dan `visit_status` memakai kosakata berbeda (Accepted/Completed vs
 								   en_route/completed), jadi keduanya dipetakan ke satu himpunan yang
@@ -1868,7 +1832,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 								$visit_status_completed = isset($data->warga_visit_status) ? $data->warga_visit_status : (isset($data->visit_status) ? doclinc_normalize_visit_status($data->visit_status) : 'not_started');
 								$visit_status_completed = $visit_status_completed !== '' ? $visit_status_completed : 'not_started';
 								$visit_label_completed = isset($data->warga_visit_status_label) ? $data->warga_visit_status_label : doclinc_visit_status_label($visit_status_completed);
-								$visit_updated_completed = !empty($data->warga_visit_updated_at) && strtotime($data->warga_visit_updated_at) ? date('d M Y H:i', strtotime($data->warga_visit_updated_at)) : '';
+								$visit_updated_completed = !empty($data->warga_visit_updated_at) && strtotime($data->warga_visit_updated_at) ? dl_tanggal_id(strtotime($data->warga_visit_updated_at), true) : '';
 								$visit_timeline_completed = isset($data->warga_visit_timeline) ? $data->warga_visit_timeline : array();
 								$diagnosa = !empty($data->diagnoses_display) ? $data->diagnoses_display : (!empty($data->diagnosa) ? $data->diagnosa : (!empty($data->diagnosis) ? $data->diagnosis : '-'));
 								$anamnesis = isset($data->anamnesis) ? trim((string) $data->anamnesis) : '';
@@ -1877,7 +1841,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 								$treatment = !empty($data->treatment) ? $data->treatment : '';
 								$puskesmas = !empty($data->assigned_puskesmas_name) ? $data->assigned_puskesmas_name : '';
 								$terapi_list = !empty($data->terapi_list) && is_array($data->terapi_list) ? $data->terapi_list : [];
-								$tanggal_riwayat = !empty($tanggal) ? date('d F Y', strtotime($tanggal)) : '-';
+								$tanggal_riwayat = !empty($tanggal) ? dl_tanggal_id(strtotime($tanggal)) : '-';
 								$puskesmas_label = doclinc_request_puskesmas_label($data);
 								$queue_number_label = doclinc_request_queue_number_label($data);
 								$hasil_rows = doclinc_warga_parse_detail_rows($treatment . "\n" . $saran_dokter);
@@ -1998,7 +1962,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 					</div>
 				</div>
 
-				<div id="profile" class="content dl-profile-surface">
+				<div id="profile" class="content dl-account-surface">
 					<?php
 					$nama = '';
 					$email = '';
@@ -2023,69 +1987,106 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 					}
 					$mask_identity = static function ($value) {
 						$value = preg_replace('/\D+/', '', (string) $value);
-						return $value === '' ? 'Belum dilengkapi' : str_repeat('•', max(0, strlen($value) - 4)) . substr($value, -4);
+						return $value === '' ? '' : str_repeat('•', max(0, strlen($value) - 4)) . substr($value, -4);
 					};
+					$display_or_empty = static function ($value) {
+						$value = trim((string) $value);
+						return $value !== '' ? $value : 'Belum diisi';
+					};
+					$tanggal_lahir = ($tgl !== '' && strtotime($tgl) !== false) ? dl_tanggal_id(strtotime($tgl)) : '';
+					$nik_masked = $mask_identity($nik);
+					$kk_masked = $mask_identity($nomor_kk);
+					$bpjs_masked = $mask_identity($nomor_bpjs_kis);
 					?>
-					<div class="dl-profile-card dl-card">
-						<div class="dl-profile-card__head">
-							<h4>Profil pengguna</h4>
-							<span><?= html_escape($nama !== '' ? $nama : 'Pengguna DocLink'); ?></span>
+					<div class="dl-account">
+						<header class="dl-account__head">
+							<h2 class="dl-account__title">Data akun</h2>
+							<p class="dl-account__lede">Data ini dipakai saat Anda berkonsultasi atau dikunjungi nakes.</p>
+						</header>
+
+						<div class="dl-account__layout">
+							<section class="dl-account-id" aria-labelledby="accountSummaryTitle">
+								<h3 class="visually-hidden" id="accountSummaryTitle">Ringkasan akun</h3>
+								<form id="wargaProfilePhotoForm" class="dl-account-id__photo" enctype="multipart/form-data">
+									<img id="wargaProfilePhotoPreview" class="rounded-circle" src="<?= doclinc_profile_image_src((int) $this->session->userdata('id'), $foto); ?>" width="88" height="88" alt="" onerror="this.onerror=null;this.src='<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>';">
+									<input id="wargaProfilePhotoInput" name="foto" type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden" tabindex="-1" aria-describedby="wargaProfilePhotoHint">
+									<div class="dl-account-id__photo-actions">
+										<button type="button" class="dl-account-photo-trigger" id="wargaProfilePhotoTrigger">Ubah foto</button>
+										<button type="submit" class="btn btn-success" id="wargaProfilePhotoSave" disabled hidden>Simpan foto</button>
+									</div>
+									<p class="dl-account-id__hint" id="wargaProfilePhotoHint">Foto profil. JPG, PNG, atau WebP, maksimal 5 MB.</p>
+									<div id="wargaProfilePhotoFeedback" class="dl-account__feedback" role="status" aria-live="polite"></div>
+								</form>
+								<p class="dl-account-id__name"><?= html_escape($display_or_empty($nama)); ?></p>
+								<?php if (trim((string) $no_hp) !== '') : ?>
+								<p class="dl-account-id__meta dl-account-id__meta--mono"><?= html_escape($no_hp); ?></p>
+								<?php endif; ?>
+								<?php if (trim((string) $email) !== '') : ?>
+								<p class="dl-account-id__meta"><?= html_escape($email); ?></p>
+								<?php endif; ?>
+								<button type="button" class="btn btn-success dl-account-id__edit" data-bs-toggle="modal" data-bs-target="#modalProfil">Ubah profil</button>
+							</section>
+
+							<div class="dl-account-record">
+								<section class="dl-account-section" aria-labelledby="accountIdentitySection">
+									<h3 class="dl-account-section__title" id="accountIdentitySection">Identitas</h3>
+									<dl class="dl-record-grid">
+										<div class="dl-record">
+											<dt>Nama lengkap</dt>
+											<dd><?= html_escape($display_or_empty($nama)); ?></dd>
+										</div>
+										<div class="dl-record">
+											<dt>Tanggal lahir</dt>
+											<dd class="dl-record__value--mono"><?= html_escape($tanggal_lahir !== '' ? $tanggal_lahir : 'Belum diisi'); ?></dd>
+										</div>
+										<div class="dl-record">
+											<dt>Jenis kelamin</dt>
+											<dd><?= html_escape($display_or_empty($jk)); ?></dd>
+										</div>
+									</dl>
+								</section>
+
+								<section class="dl-account-section" aria-labelledby="accountContactSection">
+									<h3 class="dl-account-section__title" id="accountContactSection">Kontak</h3>
+									<dl class="dl-record-grid">
+										<div class="dl-record">
+											<dt>Nomor HP</dt>
+											<dd class="dl-record__value--mono"><?= html_escape($display_or_empty($no_hp)); ?></dd>
+										</div>
+										<div class="dl-record">
+											<dt>Email</dt>
+											<dd><?= html_escape($display_or_empty($email)); ?></dd>
+										</div>
+										<div class="dl-record dl-record--full">
+											<dt>Alamat</dt>
+											<dd><?= html_escape($display_or_empty($alamat)); ?></dd>
+										</div>
+									</dl>
+								</section>
+
+								<section class="dl-account-section" aria-labelledby="accountIdentityNumberSection">
+									<h3 class="dl-account-section__title" id="accountIdentityNumberSection">Nomor identitas</h3>
+									<dl class="dl-record-grid">
+										<div class="dl-record">
+											<dt>NIK</dt>
+											<dd class="dl-record__value--mono<?= $nik_masked === '' ? ' dl-record__empty' : ''; ?>"><?= html_escape($nik_masked !== '' ? $nik_masked : 'Belum diisi'); ?></dd>
+										</div>
+										<div class="dl-record">
+											<dt>Nomor KK</dt>
+											<dd class="dl-record__value--mono<?= $kk_masked === '' ? ' dl-record__empty' : ''; ?>"><?= html_escape($kk_masked !== '' ? $kk_masked : 'Belum diisi'); ?></dd>
+										</div>
+										<div class="dl-record">
+											<dt>Nomor BPJS/KIS</dt>
+											<dd class="dl-record__value--mono<?= $bpjs_masked === '' ? ' dl-record__empty' : ''; ?>"><?= html_escape($bpjs_masked !== '' ? $bpjs_masked : 'Belum diisi'); ?></dd>
+										</div>
+									</dl>
+								</section>
+							</div>
 						</div>
-						<form id="wargaProfilePhotoForm" class="text-center px-3 pt-3" enctype="multipart/form-data">
-							<label for="wargaProfilePhotoInput" class="d-inline-block" style="cursor:pointer">
-								<img id="wargaProfilePhotoPreview" class="rounded-circle shadow-sm" src="<?= doclinc_profile_image_src((int) $this->session->userdata('id'), $foto); ?>" width="112" height="112" style="object-fit:cover" alt="Foto profil pasien" onerror="this.onerror=null;this.src='<?= html_escape(base_url('assets/doclinc/img/default-profile.png')); ?>';">
-							</label>
-							<input id="wargaProfilePhotoInput" name="foto" type="file" accept="image/jpeg,image/png,image/webp" class="d-none">
-							<div class="small text-muted mt-2">Ketuk foto untuk memilih foto asli Anda.</div>
-							<div id="wargaProfilePhotoFeedback" class="small mt-2" role="status"></div>
-							<button type="submit" class="btn btn-outline-success btn-sm rounded-pill mt-2" disabled>Simpan foto</button>
-						</form>
-						<div class="dl-profile-fields">
-							<div class="dl-profile-field">
-								<label for="nama_lengkap"><i class="fas fa-user me-1"></i> Nama lengkap</label>
-								<input type="text" id="nama_lengkap" value="<?= html_escape($nama); ?>" placeholder="Nama Lengkap" readonly>
-							</div>
-							<div class="dl-profile-field">
-								<label for="email"><i class="fas fa-envelope me-1"></i> Email</label>
-								<input type="email" id="email" value="<?= html_escape($email); ?>" placeholder="Email" readonly>
-							</div>
-							<div class="dl-profile-field">
-								<label for="tgl"><i class="fas fa-calendar-alt me-1"></i> Tanggal lahir</label>
-								<input type="date" id="tgl" placeholder="Tanggal Lahir" value="<?= html_escape($tgl); ?>" readonly>
-							</div>
-							<div class="dl-profile-field">
-								<label for="jk"><i class="fas fa-venus-mars me-1"></i> Jenis kelamin</label>
-								<input type="text" id="jk" placeholder="Jenis Kelamin" value="<?= html_escape($jk); ?>" readonly>
-							</div>
-							<div class="dl-profile-field">
-								<label for="no_hp"><i class="fas fa-phone-alt me-1"></i> Nomor HP</label>
-								<input type="text" id="no_hp" value="<?= html_escape($no_hp); ?>" placeholder="Nomor HP" readonly>
-							</div>
-							<div class="dl-profile-field">
-								<label for="alamat"><i class="fas fa-map-marker-alt me-1"></i> Alamat</label>
-								<textarea id="alamat" readonly><?= html_escape($alamat); ?></textarea>
-							</div>
-							<div class="dl-profile-field">
-								<label for="nik_masked"><i class="fas fa-id-card me-1"></i> NIK</label>
-								<input type="text" id="nik_masked" value="<?= html_escape($mask_identity($nik)); ?>" readonly>
-							</div>
-							<div class="dl-profile-field">
-								<label for="kk_masked"><i class="fas fa-users me-1"></i> Nomor Kartu Keluarga</label>
-								<input type="text" id="kk_masked" value="<?= html_escape($mask_identity($nomor_kk)); ?>" readonly>
-							</div>
-							<div class="dl-profile-field">
-								<label for="bpjs_masked"><i class="fas fa-notes-medical me-1"></i> Nomor kartu BPJS/KIS</label>
-								<input type="text" id="bpjs_masked" value="<?= html_escape($mask_identity($nomor_bpjs_kis)); ?>" readonly>
-							</div>
-						</div>
-						<div class="dl-profile-actions">
-							<button type="button" class="btn btn-outline-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#modalProfil">
-								Ubah profil
-							</button>
-							<button type="button" class="btn btn-outline-danger w-100" id="btn-logout">
-								Keluar
-							</button>
-						</div>
+
+						<footer class="dl-account-foot">
+							<button type="button" class="dl-account-logout" id="btn-logout">Keluar dari akun</button>
+						</footer>
 					</div>
 				</div>
 
@@ -2201,64 +2202,101 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 	</div>
 
 	<div class="modal fade nk-profile-modal" id="modalProfil" tabindex="-1" aria-labelledby="modalProfilLabel" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-md-down">
 			<div class="modal-content">
 				<div class="modal-header nk-profile-modal__header">
-					<h1 class="modal-title fs-5" id="modalProfilLabel"><span><i class="fas fa-user-edit" aria-hidden="true"></i></span>Ubah profil</h1>
+					<h1 class="modal-title" id="modalProfilLabel"><span><i class="fas fa-user-edit" aria-hidden="true"></i></span>Ubah profil</h1>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
-				<form id="wargaProfileForm">
+				<form id="wargaProfileForm" novalidate>
 					<div class="modal-body">
-						<div class="form-floating mb-2">
-							<input type="text" class="form-control shadow border-success" id="nama_lengkap_edit" name="nama_lengkap" value="<?= html_escape($nama); ?>" placeholder="Nama Lengkap" maxlength="100" required>
-							<label for="nama_lengkap_edit">Nama Lengkap</label>
-						</div>
-						<div class="form-floating mb-2">
-							<input type="email" class="form-control shadow border-success" id="email_edit" name="email" value="<?= html_escape($email); ?>" placeholder="Email akun (opsional untuk kesiapan profil)" maxlength="100">
-							<label for="email_edit">Email akun (opsional untuk kesiapan profil)</label>
-						</div>
-						<div class="form-floating mb-2">
-							<input type="date" class="form-control shadow border-success" id="tgl_edit" name="tgl_lahir" value="<?= html_escape($tgl); ?>" max="<?= html_escape(date('Y-m-d')); ?>" placeholder="Tanggal Lahir" required>
-							<label for="tgl_edit">Tanggal Lahir</label>
-						</div>
-						<div class="form-floating mb-2">
-							<select class="form-select shadow border-success" id="jk_edit" name="jk" required>
-								<option value="Laki-laki" <?= $jk === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
-								<option value="Perempuan" <?= $jk === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
-							</select>
-							<label for="jk_edit">Jenis Kelamin</label>
-						</div>
-						<div class="form-floating mb-2">
-							<input type="tel" class="form-control shadow border-success" id="no_hp_edit" name="no_hp" value="<?= html_escape($no_hp); ?>" placeholder="Nomor HP" inputmode="tel" maxlength="20" required>
-							<label for="no_hp_edit">Nomor HP</label>
-						</div>
-						<div class="form-floating mb-2">
-							<textarea class="form-control shadow border-success" placeholder="Alamat (opsional)" id="alamat_edit" name="alamat" maxlength="500" style="height: 100px"><?= html_escape($alamat); ?></textarea>
-							<label for="alamat_edit">Alamat (opsional)</label>
-						</div>
-						<?php if ($this->db->field_exists('nik', 'users')) : ?>
-						<div class="form-floating mb-2">
-							<input type="text" class="form-control shadow border-success" id="nik_edit" name="nik" value="<?= html_escape($nik); ?>" placeholder="NIK" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" autocomplete="off" required>
-							<label for="nik_edit">NIK (16 angka)</label>
-						</div>
-						<?php endif; ?>
-						<?php if ($this->db->field_exists('nomor_kk', 'users')) : ?>
-						<div class="form-floating mb-2">
-							<input type="text" class="form-control shadow border-success" id="nomor_kk_edit" name="nomor_kk" value="<?= html_escape($nomor_kk); ?>" placeholder="Nomor Kartu Keluarga (opsional)" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" autocomplete="off">
-							<label for="nomor_kk_edit">Nomor Kartu Keluarga (opsional)</label>
-						</div>
-						<?php endif; ?>
-						<?php if ($this->db->field_exists('nomor_bpjs_kis', 'users')) : ?>
-						<div class="form-floating mb-2">
-							<input type="text" class="form-control shadow border-success" id="nomor_bpjs_kis_edit" name="nomor_bpjs_kis" value="<?= html_escape($nomor_bpjs_kis); ?>" placeholder="BPJS/JKN/Taspen (opsional)" inputmode="numeric" pattern="[0-9]{13}" minlength="13" maxlength="13" autocomplete="off">
-							<label for="nomor_bpjs_kis_edit">BPJS/JKN/Taspen (opsional)</label>
-						</div>
-						<?php endif; ?>
-						<div id="wargaProfileFeedback" class="small" role="status" aria-live="polite"></div>
+						<div id="wargaProfileErrorSummary" class="dl-form-summary" role="alert" hidden></div>
+
+						<fieldset class="dl-form-fieldset">
+							<legend>Identitas</legend>
+							<div class="form-floating mb-1">
+								<input type="text" class="form-control" id="nama_lengkap_edit" name="nama_lengkap" value="<?= html_escape($nama); ?>" placeholder="Nama lengkap" maxlength="100" autocomplete="name" aria-describedby="nama_lengkap_edit_error" required>
+								<label for="nama_lengkap_edit">Nama lengkap</label>
+							</div>
+							<p class="dl-field-error" id="nama_lengkap_edit_error" hidden></p>
+
+							<div class="row g-3">
+								<div class="col-sm-6">
+									<div class="form-floating mb-1">
+										<input type="date" class="form-control" id="tgl_edit" name="tgl_lahir" value="<?= html_escape($tgl); ?>" max="<?= html_escape(date('Y-m-d')); ?>" placeholder="Tanggal lahir" aria-describedby="tgl_edit_error" required>
+										<label for="tgl_edit">Tanggal lahir</label>
+									</div>
+									<p class="dl-field-error" id="tgl_edit_error" hidden></p>
+								</div>
+								<div class="col-sm-6">
+									<div class="form-floating mb-1">
+										<select class="form-select" id="jk_edit" name="jk" aria-describedby="jk_edit_error" required>
+											<option value="" <?= $jk === '' ? 'selected' : ''; ?> disabled>Pilih</option>
+											<option value="Laki-laki" <?= $jk === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
+											<option value="Perempuan" <?= $jk === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
+										</select>
+										<label for="jk_edit">Jenis kelamin</label>
+									</div>
+									<p class="dl-field-error" id="jk_edit_error" hidden></p>
+								</div>
+							</div>
+						</fieldset>
+
+						<fieldset class="dl-form-fieldset">
+							<legend>Kontak</legend>
+							<div class="form-floating mb-1">
+								<input type="tel" class="form-control" id="no_hp_edit" name="no_hp" value="<?= html_escape($no_hp); ?>" placeholder="Nomor HP" inputmode="tel" maxlength="20" autocomplete="tel" aria-describedby="no_hp_edit_help no_hp_edit_error" data-expected="Gunakan 8–20 angka." required>
+								<label for="no_hp_edit">Nomor HP</label>
+							</div>
+							<p class="dl-form-help" id="no_hp_edit_help">8–20 angka. Boleh diawali +62.</p>
+							<p class="dl-field-error" id="no_hp_edit_error" hidden></p>
+
+							<div class="form-floating mb-1">
+								<input type="email" class="form-control" id="email_edit" name="email" value="<?= html_escape($email); ?>" placeholder="Email" maxlength="100" autocomplete="email" aria-describedby="email_edit_help email_edit_error">
+								<label for="email_edit">Email (opsional)</label>
+							</div>
+							<p class="dl-form-help" id="email_edit_help">Boleh dikosongkan. Tidak boleh sama dengan akun lain.</p>
+							<p class="dl-field-error" id="email_edit_error" hidden></p>
+
+							<div class="form-floating mb-1">
+								<textarea class="form-control" placeholder="Alamat" id="alamat_edit" name="alamat" maxlength="500" minlength="5" rows="3" autocomplete="street-address" aria-describedby="alamat_edit_error"><?= html_escape($alamat); ?></textarea>
+								<label for="alamat_edit">Alamat</label>
+							</div>
+							<p class="dl-field-error" id="alamat_edit_error" hidden></p>
+						</fieldset>
+						<fieldset class="dl-form-fieldset">
+							<legend>Nomor identitas</legend>
+							<?php if ($this->db->field_exists('nik', 'users')) : ?>
+							<div class="form-floating mb-1">
+								<input type="text" class="form-control" id="nik_edit" name="nik" value="<?= html_escape($nik); ?>" placeholder="NIK" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" autocomplete="off" aria-describedby="nik_edit_help nik_edit_error" data-expected="NIK harus 16 angka." required>
+								<label for="nik_edit">NIK</label>
+							</div>
+							<p class="dl-form-help" id="nik_edit_help">16 digit.</p>
+							<p class="dl-field-error" id="nik_edit_error" hidden></p>
+							<?php endif; ?>
+							<?php if ($this->db->field_exists('nomor_kk', 'users')) : ?>
+							<div class="form-floating mb-1">
+								<input type="text" class="form-control" id="nomor_kk_edit" name="nomor_kk" value="<?= html_escape($nomor_kk); ?>" placeholder="Nomor KK" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" autocomplete="off" aria-describedby="nomor_kk_edit_help nomor_kk_edit_error" data-expected="Nomor KK harus 16 angka.">
+								<label for="nomor_kk_edit">Nomor KK</label>
+							</div>
+							<p class="dl-form-help" id="nomor_kk_edit_help">16 digit</p>
+							<p class="dl-field-error" id="nomor_kk_edit_error" hidden></p>
+							<?php endif; ?>
+							<?php if ($this->db->field_exists('nomor_bpjs_kis', 'users')) : ?>
+							<div class="form-floating mb-1">
+								<input type="text" class="form-control" id="nomor_bpjs_kis_edit" name="nomor_bpjs_kis" value="<?= html_escape($nomor_bpjs_kis); ?>" placeholder="Nomor BPJS/KIS" inputmode="numeric" pattern="[0-9]{13}" minlength="13" maxlength="13" autocomplete="off" aria-describedby="nomor_bpjs_kis_edit_help nomor_bpjs_kis_edit_error" data-expected="Nomor BPJS/KIS harus 13 angka.">
+								<label for="nomor_bpjs_kis_edit">Nomor BPJS/KIS</label>
+							</div>
+							<p class="dl-form-help" id="nomor_bpjs_kis_edit_help">13 digit</p>
+							<p class="dl-field-error" id="nomor_bpjs_kis_edit_error" hidden></p>
+							<?php endif; ?>
+						</fieldset>
+
+						<div id="wargaProfileFeedback" class="dl-account__feedback" role="status" aria-live="polite"></div>
 					</div>
 					<div class="modal-footer nk-profile-modal__footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
 						<button type="submit" class="btn btn-success">Simpan</button>
-						<button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
 					</div>
 				</form>
 			</div>
@@ -2765,22 +2803,29 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 		})(window, jQuery);
 	</script>
 
-	<!-- popup jam operasional -->
+	<!-- Jam layanan: informasi sekali per sesi, bukan pengingat berulang.
+	     Sebelumnya memakai localStorage dengan ambang satu jam, sehingga muncul
+	     lagi di tengah sesi dan merebut fokus. Sekarang ditandai di
+	     sessionStorage, dan tampilannya memakai token design system. -->
 	<script>
 		document.addEventListener('DOMContentLoaded', function() {
-			const lastPopupTime = localStorage.getItem('lastPopupTime');
-			const currentTime = new Date().getTime();
-
-			if (!lastPopupTime || (currentTime - lastPopupTime) > 3600000) { // 1 hour = 3600000 ms
-				Swal.fire({
-					title: 'Jam layanan kunjungan',
-					text: 'Jam kunjungan: 08.00–17.00.',
-					icon: 'info',
-					confirmButtonText: 'Tutup'
-				}).then(() => {
-					localStorage.setItem('lastPopupTime', currentTime.toString());
-				});
-			}
+			if (sessionStorage.getItem('dl_visit_hours_seen') === '1') return;
+			if (typeof Swal === 'undefined') return;
+			Swal.fire({
+				title: 'Jam layanan kunjungan',
+				text: 'Kunjungan rumah dilayani pukul 08.00–17.00.',
+				icon: 'info',
+				confirmButtonText: 'Mengerti',
+				buttonsStyling: false,
+				customClass: {
+					popup: 'dl-visit-hours',
+					title: 'dl-visit-hours__title',
+					htmlContainer: 'dl-visit-hours__text',
+					confirmButton: 'dl-visit-hours__confirm'
+				}
+			}).then(function() {
+				sessionStorage.setItem('dl_visit_hours_seen', '1');
+			});
 		});
 	</script>
 
@@ -2838,6 +2883,17 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 				targetMenu.classList.add('active');
 				targetMenu.setAttribute('aria-current', 'page');
 			}
+
+			/* Judul halaman mengikuti tab yang terbuka. Sebelumnya H1 tetap
+			   "Beranda" saat pengguna berada di Profil, sehingga pembaca layar
+			   mengumumkan halaman yang salah. */
+			const tabTitles = { beranda: 'Beranda', riwayat: 'Konsultasi', profile: 'Profil' };
+			const nextTitle = tabTitles[tab] || 'Beranda';
+			const pageTitle = document.querySelector('.contents > h1.visually-hidden');
+			if (pageTitle) {
+				pageTitle.textContent = nextTitle;
+			}
+			document.title = 'DokLinc - ' + nextTitle;
 		}
 
 		function openActiveConsultation(requestId) {
@@ -2873,17 +2929,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 				cancelButtonText: "Batal"
 			}).then((result) => {
 				if (result.isConfirmed) {
-					Swal.fire({
-						title: "Sampai jumpa",
-						icon: "success",
-						showConfirmButton: false,
-						timer: 1500,
-						timerProgressBar: true
-					}).then((result) => {
-						if (result.dismiss === Swal.DismissReason.timer) {
-							window.DoclincCsrf.submitPost(<?= json_encode(base_url('login/logout')); ?>);
-						}
-					});
+					window.DoclincCsrf.submitPost(<?= json_encode(base_url('login/logout')); ?>);
 				}
 			});
 		});
@@ -2898,30 +2944,34 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 		}
 
 		const $newsCarousel = $('.owl-carousel');
+		const newsFeedCount = <?= (int) (isset($dl_feed_rows) ? count($dl_feed_rows) : 0); ?>;
+		const newsPerView = Math.min(3, Math.max(1, newsFeedCount));
 
-		/* Satu berita per tampilan, selebar kartu. Sebelumnya 0/640 memuat dua
-		   kartu berdampingan sehingga setiap iklan hanya selebar separuh kolom dan
-		   teks di dalam gambarnya tidak terbaca di layar ponsel. Backend sudah
-		   menyajikan tiga berita, jadi tiga slide itu tetap ada - hanya jumlah
-		   yang tampak sekaligus yang berubah menjadi satu. `margin` ikut menjadi 0
-		   karena jarak antar-kartu tidak lagi terlihat saat hanya satu yang tampak;
-		   menyisakan 10px hanya akan memotong tepi kanan kartu. */
+		/* Backend dapat menyajikan tiga berita. Di ponsel satu kartu tampil
+		   sekaligus; tablet dua; desktop tiga. Bila berita belum ada, kartu
+		   keadaan kosong tetap menjadi satu-satunya slide. Margin hanya di
+		   breakpoint yang menampilkan lebih dari satu kartu supaya tepi kanan
+		   kartu tunggal tidak terpotong. */
 		$newsCarousel.owlCarousel({
-			loop: true,
-			autoplay: true,
-			autoplayTimeout: 2500,
+			loop: newsFeedCount > 1,
+			autoplay: newsFeedCount > 1,
+			autoplayTimeout: 5000,
 			autoplayHoverPause: true,
-			margin: 0,
+			dots: newsFeedCount > 1,
+			nav: false,
 			responsiveClass: true,
 			responsive: {
 				0: {
-					items: 1
+					items: 1,
+					margin: 0
 				},
 				640: {
-					items: 1
+					items: Math.min(2, newsPerView),
+					margin: 12
 				},
 				1024: {
-					items: 1
+					items: newsPerView,
+					margin: 12
 				}
 			}
 		});
@@ -3376,6 +3426,10 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 		let map;
 		let marker;
 		let locationAddressSequence = 0;
+		/* Alamat singkat terakhir yang sudah tampil di header. Selama nilainya
+		   ada, pembaruan GPS tidak menimpanya dengan koordinat; alamat baru
+		   menggantikannya setelah reverse geocoding selesai. */
+		let headerAddressCache = '';
 		const locationAddressResolver = window.DoclincLocationAddress ? window.DoclincLocationAddress.create({
 			provider: mapProvider,
 			mapboxToken: mapboxPublicToken,
@@ -3390,9 +3444,45 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 				return;
 			}
 			const normalized = window.DoclincLocationAddress && window.DoclincLocationAddress.normalizeLocation(location);
-			// Alamat lengkap dari reverse geocoding diisi lewat setLocationText();
-			// placeholder ini hanya tampil sementara atau saat alamat gagal diperoleh.
-			coordinateEl.textContent = normalized ? 'Lokasi terdeteksi' : 'Lokasi belum ditemukan. Coba lagi.';
+			/* Header tidak lagi menampilkan kalimat kosong seperti "Lokasi
+			   terdeteksi". Selama alamat belum selesai dicari, koordinat adalah
+			   informasi yang jujur dan spesifik (empat desimal ≈ 11 m), dan
+			   alamat singkat menggantikannya begitu reverse geocoding berhasil.
+			   Angka koordinat ditulis dengan koma desimal Indonesia. */
+			if (!normalized || (normalized.lat === 0 && normalized.lng === 0)) {
+				/* 0,0 adalah titik di Teluk Guinea — bukan lokasi pengguna. Nilai itu
+				   muncul saat peramban belum memberi posisi sama sekali. */
+				coordinateEl.textContent = 'Mencari lokasi…';
+				coordinateEl.removeAttribute('title');
+				return;
+			}
+			if (headerAddressCache) {
+				/* Alamat sudah terbaca; jangan turun kembali ke koordinat hanya
+				   karena GPS mengirim titik baru sebelum geocoding selesai. */
+				return;
+			}
+			coordinateEl.textContent = normalized.lat.toFixed(4).replace('.', ',')
+				+ ' · ' + normalized.lng.toFixed(4).replace('.', ',');
+			coordinateEl.removeAttribute('title');
+		}
+
+		/* Nama tempat dari OpenStreetMap bisa sangat panjang, misalnya
+		   "PT. NX Indonesia, Jalan Eropa I, Kawasan Industri Krakatau Cilegon,
+		   Cilegon, Banten, 42435, Indonesia". Header hanya punya satu baris,
+		   jadi kode pos dan nama negara dibuang, lalu dua segmen terakhir
+		   dipakai ("Cilegon, Banten"). Alamat lengkap tetap tampil di
+		   #userLocationAddress dan disimpan sebagai title header. */
+		function headerAddressLabel(address) {
+			const text = String(address || '').trim();
+			if (!text || text === 'Mencari alamat...' || text === 'Alamat belum dapat dikenali' || text === 'Lokasi belum ditemukan') {
+				return '';
+			}
+			const segments = text.split(',').map(function (part) {
+				return part.trim();
+			}).filter(function (part) {
+				return part && !/^\d{4,6}$/.test(part) && part.toLowerCase() !== 'indonesia';
+			});
+			return segments.slice(-2).join(', ').slice(0, 48);
 		}
 
 		function setLocationFields(location) {
@@ -3454,10 +3544,13 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 			const coordinateEl = document.getElementById('userCoordinateLabel');
 
 			if (addressEl) addressEl.textContent = address || "Alamat belum dapat dikenali";
-			// Header menampilkan alamat lengkap bila berhasil dikenali;
-			// "Lokasi terdeteksi" hanya status sementara saat alamat sedang dicari.
-			if (coordinateEl && address) {
-				coordinateEl.textContent = address === 'Mencari alamat...' ? 'Lokasi terdeteksi' : address;
+			// Header menampilkan alamat singkat; kalau alamat belum tersedia,
+			// koordinat dari setHeaderCoordinate() dibiarkan apa adanya.
+			const headerAddress = headerAddressLabel(address);
+			if (coordinateEl && headerAddress) {
+				headerAddressCache = headerAddress;
+				coordinateEl.textContent = headerAddress;
+				coordinateEl.title = address;
 			}
 			if (kotaEl) kotaEl.textContent = kota || "Lokasi belum tersedia";
 		}
@@ -4225,36 +4318,132 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 		document.addEventListener('DOMContentLoaded', function() {
 			const form = document.getElementById('wargaProfileForm');
 			const feedback = document.getElementById('wargaProfileFeedback');
+			const summary = document.getElementById('wargaProfileErrorSummary');
 			const submit = form ? form.querySelector('button[type="submit"]') : null;
-			if (!form || !feedback || !submit) return;
+			if (!form || !feedback || !summary || !submit) return;
+
+			const emailField = document.getElementById('email_edit');
+			const fields = Array.prototype.slice.call(form.querySelectorAll('input, select, textarea'));
 			let saving = false;
+
+			function setFieldError(field, message) {
+				const target = document.getElementById(field.id + '_error');
+				field.classList.toggle('is-invalid', !!message);
+				if (message) {
+					field.setAttribute('aria-invalid', 'true');
+				} else {
+					field.removeAttribute('aria-invalid');
+				}
+				if (target) {
+					target.textContent = message || '';
+					target.hidden = !message;
+				}
+			}
+
+			function messageFor(field) {
+				if (field.validity.valueMissing) return 'Wajib diisi.';
+				if (field.validity.patternMismatch) return field.dataset.expected || 'Format belum sesuai.';
+				if (field.validity.typeMismatch && field.type === 'email') return 'Format email belum benar.';
+				if (field.validity.tooShort) return 'Isian terlalu pendek.';
+				if (field.validity.rangeOverflow) return 'Tanggal tidak boleh di masa depan.';
+				return 'Periksa isian ini.';
+			}
+
+			function validate() {
+				const invalid = [];
+				fields.forEach(function(field) {
+					if (field.disabled || !field.id) return;
+					if (!field.checkValidity()) {
+						setFieldError(field, messageFor(field));
+						invalid.push(field);
+					} else {
+						setFieldError(field, '');
+					}
+				});
+				return invalid;
+			}
+
+			function showSummary(count) {
+				summary.hidden = count === 0;
+				summary.textContent = count === 1 ? 'Satu isian perlu diperbaiki.' : count + ' isian perlu diperbaiki.';
+			}
+
+			function renderServerErrors(fieldErrors) {
+				const invalid = [];
+				Object.keys(fieldErrors).forEach(function(name) {
+					const field = form.querySelector('[name="' + name + '"]');
+					if (!field) return;
+					setFieldError(field, fieldErrors[name]);
+					invalid.push(field);
+				});
+				if (invalid.length) {
+					showSummary(invalid.length);
+					invalid[0].focus();
+				}
+			}
+
+			fields.forEach(function(field) {
+				function clear() {
+					if (field.classList.contains('is-invalid')) setFieldError(field, '');
+				}
+				field.addEventListener('input', clear);
+				field.addEventListener('change', clear);
+			});
 
 			form.addEventListener('submit', function(event) {
 				event.preventDefault();
-				if (saving || !form.reportValidity()) return;
+				if (saving) return;
+
+				const invalid = validate();
+				if (invalid.length) {
+					showSummary(invalid.length);
+					feedback.className = 'dl-account__feedback';
+					feedback.textContent = '';
+					invalid[0].focus();
+					return;
+				}
+
+				summary.hidden = true;
 				saving = true;
 				submit.disabled = true;
-				feedback.className = 'small text-muted';
+				submit.textContent = 'Menyimpan...';
+				form.setAttribute('aria-busy', 'true');
+				feedback.className = 'dl-account__feedback';
 				feedback.textContent = 'Menyimpan profil...';
 
 				fetch(<?= json_encode(base_url('profile/update')); ?>, {
 					method: 'POST',
-					body: new FormData(form)
+					body: new FormData(form),
+					headers: { Accept: 'application/json' },
+					credentials: 'same-origin'
 				})
-					.then(response => response.json().then(body => ({ ok: response.ok, body })))
-					.then(result => {
-						if (!result.ok || !result.body || result.body.status !== 'success') {
-							throw new Error(result.body && result.body.message ? result.body.message : 'Profil belum dapat disimpan.');
-						}
-						feedback.className = 'small text-success';
-						feedback.textContent = result.body.message || 'Profil berhasil diperbarui.';
-						window.setTimeout(function() { window.location.reload(); }, 500);
+					.then(function(response) {
+						return response.json().catch(function() { return {}; }).then(function(body) {
+							return { ok: response.ok, body: body };
+						});
 					})
-					.catch(error => {
-						feedback.className = 'small text-danger';
-						feedback.textContent = error && error.message ? error.message : 'Profil belum dapat disimpan.';
+					.then(function(result) {
+						if (!result.ok || !result.body || result.body.status !== 'success') {
+							if (result.body && result.body.field_errors) {
+								renderServerErrors(result.body.field_errors);
+							}
+							if (result.body && result.body.message && /email/i.test(result.body.message) && emailField) {
+								setFieldError(emailField, result.body.message);
+								emailField.focus();
+							}
+							throw new Error(result.body && result.body.message ? result.body.message : 'Profil belum tersimpan. Coba lagi.');
+						}
+						feedback.className = 'dl-account__feedback is-success';
+						feedback.textContent = 'Profil tersimpan.';
+						window.setTimeout(function() { window.location.reload(); }, 600);
+					})
+					.catch(function(error) {
+						feedback.className = 'dl-account__feedback is-error';
+						feedback.textContent = error && error.message ? error.message : 'Profil belum tersimpan. Coba lagi.';
 						saving = false;
 						submit.disabled = false;
+						submit.textContent = 'Simpan';
+						form.removeAttribute('aria-busy');
 					});
 			});
 		});
@@ -4267,37 +4456,77 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 			const input = document.getElementById('wargaProfilePhotoInput');
 			const preview = document.getElementById('wargaProfilePhotoPreview');
 			const feedback = document.getElementById('wargaProfilePhotoFeedback');
-			const submit = form ? form.querySelector('button[type="submit"]') : null;
-			if (!form || !input || !preview || !feedback || !submit) return;
+			const trigger = document.getElementById('wargaProfilePhotoTrigger');
+			const submit = document.getElementById('wargaProfilePhotoSave');
+			if (!form || !input || !preview || !feedback || !trigger || !submit) return;
+
+			const MAX_BYTES = 5 * 1024 * 1024;
+			const ALLOWED = ['image/jpeg', 'image/png', 'image/webp'];
+			let previewUrl = '';
+
+			function say(message, state) {
+				feedback.textContent = message || '';
+				feedback.classList.toggle('is-error', state === 'error');
+				feedback.classList.toggle('is-success', state === 'success');
+			}
+
+			trigger.addEventListener('click', function() {
+				input.click();
+			});
 
 			input.addEventListener('change', function() {
 				const file = input.files && input.files[0];
-				feedback.textContent = '';
+				say('');
+				submit.hidden = true;
 				submit.disabled = true;
-				if (!file || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size < 1 || file.size > 5 * 1024 * 1024) {
-					feedback.textContent = file ? 'Gunakan JPG, PNG, atau WebP maksimal 5 MB.' : '';
+				if (previewUrl) {
+					URL.revokeObjectURL(previewUrl);
+					previewUrl = '';
+				}
+				if (!file) return;
+				if (ALLOWED.indexOf(file.type) === -1 || file.size < 1 || file.size > MAX_BYTES) {
+					say('Gunakan JPG, PNG, atau WebP maksimal 5 MB.', 'error');
 					input.value = '';
 					return;
 				}
-				preview.src = URL.createObjectURL(file);
+				previewUrl = URL.createObjectURL(file);
+				preview.src = previewUrl;
+				submit.hidden = false;
 				submit.disabled = false;
+				say('Foto siap disimpan.', 'success');
 			});
 
 			form.addEventListener('submit', function(event) {
 				event.preventDefault();
 				if (submit.disabled) return;
 				submit.disabled = true;
-				feedback.textContent = 'Menyimpan foto...';
-				fetch(<?= json_encode(base_url('profile/photo/update')); ?>, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' }, credentials: 'same-origin' })
-					.then(response => response.json().then(body => ({ ok: response.ok, body })))
-					.then(result => {
-						if (!result.ok || !result.body || result.body.status !== 'success') throw new Error(result.body && result.body.message ? result.body.message : 'Foto belum dapat disimpan.');
-						feedback.textContent = 'Foto profil berhasil diperbarui.';
-						window.setTimeout(function() { window.location.reload(); }, 500);
+				trigger.disabled = true;
+				say('Menyimpan foto...');
+				fetch(<?= json_encode(base_url('profile/photo/update')); ?>, {
+					method: 'POST',
+					body: new FormData(form),
+					headers: { Accept: 'application/json' },
+					credentials: 'same-origin'
+				})
+					.then(function(response) {
+						return response.json().catch(function() { return {}; }).then(function(body) {
+							return { ok: response.ok, body: body };
+						});
 					})
-					.catch(error => {
-						feedback.textContent = error && error.message ? error.message : 'Foto belum dapat disimpan.';
+					.then(function(result) {
+						if (!result.ok || !result.body || result.body.status !== 'success') {
+							throw new Error(result.body && result.body.message ? result.body.message : 'Foto belum tersimpan. Coba lagi.');
+						}
+						submit.hidden = true;
+						input.value = '';
+						say('Foto profil diperbarui.', 'success');
+					})
+					.catch(function(error) {
+						say(error && error.message ? error.message : 'Foto belum tersimpan. Coba lagi.', 'error');
 						submit.disabled = false;
+					})
+					.finally(function() {
+						trigger.disabled = false;
 					});
 			});
 		});

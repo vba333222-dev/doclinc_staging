@@ -130,7 +130,7 @@ class Home extends MX_Controller
 			return;
 		}
 		$data = $validated['data'];
-		if (isset($data['email']) && !$this->Home_m->email_available_for_user($user_id, $data['email'])) {
+		if (isset($data['email']) && $data['email'] !== '' && !$this->Home_m->email_available_for_user($user_id, $data['email'])) {
 			$this->output->set_status_header(409)->set_output(json_encode(array(
 				'status' => 'error',
 				'safe_error_code' => 'profile_email_conflict',
@@ -998,10 +998,11 @@ class Home extends MX_Controller
 			'tgl' => $birthdate,
 			'gender' => $gender,
 			'alamat' => $address,
+			// Email tetap dikirim walau kosong. Sebelumnya key ini dihilangkan
+			// saat kosong, sehingga Home_m::update_profile menolak seluruh
+			// penyimpanan karena jumlah field tidak cocok.
+			'email' => $email,
 		);
-		if ($email !== '') {
-			$data['email'] = $email;
-		}
 		$identity_fields = array('nik', 'nomor_kk', 'nomor_bpjs_kis');
 		if ($this->db->field_exists('nik', 'users')) {
 			require_once APPPATH . 'libraries/Role_identity_policy.php';

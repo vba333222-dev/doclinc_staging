@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<meta charset="UTF-8">
 	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>DocLink - Konsultasi</title>
+	<title>DokLinc - Konsultasi</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -171,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		.consult-main {
-			padding: 16px 20px 24px;
+			padding: 16px 20px calc(88px + env(safe-area-inset-bottom, 0px));
 		}
 
 		.consult-card {
@@ -199,19 +199,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			color: var(--dk-text);
 		}
 
-		.consult-card-icon {
-			width: 24px;
-			height: 24px;
-			object-fit: contain;
-			flex: 0 0 auto;
-			border-radius: 999px;
-			padding: 4px;
-			background: var(--dk-soft);
-		}
-
 		.consult-field {
 			width: 100%;
-			min-height: 42px;
+			min-height: 44px;
 			border: 1px solid var(--dk-line);
 			border-radius: var(--dl-radius-md, 12px);
 			padding: 10px 12px;
@@ -234,6 +224,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			box-shadow: 0 0 0 3px rgba(80, 191, 165, 0.14) !important;
 		}
 
+		/* Error tetap terbaca saat bidang difokuskan; cincin fokus hijau tidak
+		   dihapus, hanya garis bidangnya yang tetap merah. */
+		.consult-field[aria-invalid="true"],
+		.consult-field[aria-invalid="true"]:focus {
+			border-color: var(--dl-danger);
+		}
+
 		.consult-input-stack {
 			display: grid;
 			gap: 11px;
@@ -246,17 +243,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-field-hint {
 			margin-top: 6px;
-			font-size: 12px;
+			font-size: 13px;
 			line-height: 1.45;
-			color: #64736B;
+			color: var(--dk-muted);
 		}
 
 		.consult-field-label {
 			margin: 0;
 			color: var(--dk-muted);
-			font-size: var(--dl-font-size-sm, 12px);
+			font-size: 13px;
 			font-weight: 700;
 			line-height: 1.3;
+		}
+
+		.consult-required {
+			display: inline-block;
+			margin-left: 6px;
+			padding: 1px 7px;
+			border-radius: 999px;
+			background: var(--dk-soft);
+			color: var(--dk-muted);
+			font-size: 13px;
+			font-weight: 700;
+			line-height: 1.5;
+			vertical-align: 1px;
+		}
+
+		.consult-field-error {
+			margin: -4px 0 0;
+			color: var(--dl-danger-ink);
+			font-size: 13px;
+			font-weight: 600;
+			line-height: 1.4;
+		}
+
+		.consult-error-summary {
+			margin-bottom: 12px;
+			padding: 12px 14px;
+			border: 1px solid color-mix(in srgb, var(--dl-danger) 34%, transparent);
+			border-radius: var(--dl-radius-md, 12px);
+			background: color-mix(in srgb, var(--dl-danger) 7%, var(--dk-surface));
+			color: var(--dl-danger-ink);
+			font-size: 13px;
+			font-weight: 600;
+			line-height: 1.45;
+		}
+
+		.consult-error-summary:focus-visible {
+			outline: 3px solid var(--dl-danger);
+			outline-offset: 2px;
 		}
 
 		.consult-grid-two {
@@ -297,7 +332,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			display: block;
 			margin: 0;
 			color: var(--dk-muted);
-			font-size: var(--dl-font-size-sm, 12px);
+			font-size: 13px;
 			font-weight: 500;
 			line-height: 1.45;
 		}
@@ -306,11 +341,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			display: flex;
 			align-items: center;
 			gap: 15px;
-			margin: 4px 0 12px;
+			min-height: 44px;
+			margin: 4px 0 2px;
 			color: var(--dk-text);
 			font-size: 13px;
 			font-weight: 600;
 			line-height: 1.35;
+			cursor: pointer;
+		}
+
+		.consult-consent-hint {
+			display: block;
+			margin: 0 0 14px 37px;
+			color: var(--dk-muted);
+			font-size: 13px;
+			line-height: 1.45;
 		}
 
 		.consult-consent .form-check-input {
@@ -332,12 +377,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		.consult-submit {
 			width: 100%;
-			min-height: 42px;
+			min-height: 48px;
 			border: 0;
 			border-radius: var(--dl-radius-lg, 14px);
 			background: var(--dk-green);
 			color: #ffffff;
-			font-size: var(--dl-font-size-md, 13px);
+			font-size: 14px;
 			font-weight: 800;
 			line-height: 1.2;
 			box-shadow: none;
@@ -451,37 +496,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				<input type="hidden" name="dokter_id" id="dokter_id" value="<?= html_escape($dokter_id); ?>" placeholder="Dokter ID" readonly>
 				<input type="hidden" name="namadokter" id="namadokter" value="<?= html_escape($nama); ?>" placeholder="Dokter ID" readonly>
 
+				<div class="consult-error-summary" id="consultErrorSummary" role="alert" tabindex="-1" hidden></div>
+
 				<section class="consult-card">
 					<div class="consult-card-header">
 						<h2 class="consult-card-title">Riwayat kesehatan</h2>
-						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
 					</div>
 					<div class="consult-input-stack">
-						<small class="consult-helper">Pastikan lokasi Anda aktif.</small>
+						<small class="consult-helper">Opsional. Isi yang Anda ketahui.</small>
 						<div class="consult-field-group">
 							<label class="consult-field-label" for="ui_penyakit_pernah">Riwayat penyakit</label>
-							<input type="text" id="ui_penyakit_pernah" class="consult-field form-control" placeholder="Contoh: asma, hipertensi, atau kosongkan jika tidak ada">
+							<input type="text" id="ui_penyakit_pernah" class="consult-field form-control" placeholder="Contoh: asma, hipertensi">
 						</div>
 						<div class="consult-field-group">
 							<label class="consult-field-label" for="ui_riwayat_keluarga">Riwayat penyakit keluarga</label>
-							<input type="text" id="ui_riwayat_keluarga" class="consult-field form-control" placeholder="Contoh: diabetes, jantung, atau kosongkan">
+							<input type="text" id="ui_riwayat_keluarga" class="consult-field form-control" placeholder="Contoh: diabetes, jantung">
 						</div>
 						<div class="consult-field-group">
 							<label class="consult-field-label" for="ui_alergi">Alergi</label>
-							<input type="text" id="ui_alergi" class="consult-field form-control" placeholder="Contoh: obat, makanan, atau kosongkan">
+							<input type="text" id="ui_alergi" class="consult-field form-control" placeholder="Contoh: obat, makanan">
 						</div>
 						<div class="consult-field-group">
 							<label class="consult-field-label" for="ui_obat_dikonsumsi">Obat saat ini</label>
-							<input type="text" id="ui_obat_dikonsumsi" class="consult-field form-control" placeholder="Nama obat jika ada">
+							<input type="text" id="ui_obat_dikonsumsi" class="consult-field form-control" placeholder="Nama obat, bila ada">
 						</div>
 						<div class="consult-grid-two">
 							<div class="consult-field-group">
 								<label class="consult-field-label" for="ui_tinggi_badan">Tinggi badan</label>
-								<input type="text" id="ui_tinggi_badan" class="consult-field form-control" inputmode="decimal" placeholder="Cm">
+								<input type="text" id="ui_tinggi_badan" class="consult-field form-control" inputmode="decimal" placeholder="cm">
 							</div>
 							<div class="consult-field-group">
 								<label class="consult-field-label" for="ui_berat_badan">Berat badan</label>
-								<input type="text" id="ui_berat_badan" class="consult-field form-control" inputmode="decimal" placeholder="Kg">
+								<input type="text" id="ui_berat_badan" class="consult-field form-control" inputmode="decimal" placeholder="kg">
 							</div>
 						</div>
 						<textarea
@@ -496,18 +542,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				<section class="consult-card">
 					<div class="consult-card-header">
 						<h2 class="consult-card-title">Keluhan</h2>
-						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-minus.svg'); ?>" alt="">
 					</div>
 					<div class="consult-input-stack">
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_gejala_keluhan_utama">Keluhan utama</label>
+							<label class="consult-field-label" for="ui_gejala_keluhan_utama">Keluhan utama <span class="consult-required">Wajib</span></label>
 							<?php if ($clinical_suggestions_enabled) : ?>
 							<input type="text" id="ui_gejala_keluhan_utama" name="gejala_utama" class="consult-field form-control"
-								placeholder="Ketik keluhan, minimal 2 karakter" data-clinical-suggestion
+								placeholder="Contoh: demam" data-clinical-suggestion
 								data-clinical-suggestion-type="complaint"
-								data-clinical-suggestion-endpoint="<?= html_escape($clinical_suggestions_endpoint); ?>">
+								data-clinical-suggestion-endpoint="<?= html_escape($clinical_suggestions_endpoint); ?>"
+								aria-describedby="err-ui_gejala_keluhan_utama">
 							<?php else : ?>
-							<select id="ui_gejala_keluhan_utama" name="gejala_utama" class="consult-field form-control">
+							<select id="ui_gejala_keluhan_utama" name="gejala_utama" class="consult-field form-control" aria-describedby="err-ui_gejala_keluhan_utama">
 								<option value="">Pilih keluhan</option>
 								<?php /* Sentinel, not a real complaint: resolved to the typed text
 								         by the controller. See Konsultasi::save. */ ?>
@@ -548,22 +594,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							</script>
 							<?php endif; ?>
 						</div>
+						<p class="consult-field-error" id="err-ui_gejala_keluhan_utama" hidden></p>
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_keluhan_utama">Detail keluhan singkat</label>
-							<input type="text" id="ui_keluhan_utama" class="consult-field form-control" placeholder="Contoh: demam, batuk, nyeri perut">
+							<label class="consult-field-label" for="ui_keluhan_utama">Ringkasan tambahan (opsional)</label>
+							<input type="text" id="ui_keluhan_utama" class="consult-field form-control" placeholder="Contoh: demam dan batuk">
 						</div>
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_lama_keluhan">Lama keluhan</label>
-							<input type="text" id="ui_lama_keluhan" class="consult-field form-control" placeholder="Contoh: 2 hari, 1 minggu" required>
+							<label class="consult-field-label" for="ui_lama_keluhan">Lama keluhan <span class="consult-required">Wajib</span></label>
+							<input type="text" id="ui_lama_keluhan" class="consult-field form-control" placeholder="Contoh: 2 hari, 1 minggu" required aria-describedby="err-ui_lama_keluhan">
+						</div>
+						<p class="consult-field-error" id="err-ui_lama_keluhan" hidden></p>
+						<div class="consult-field-group">
+							<label class="consult-field-label" for="ui_gejala_tambahan">Gejala lain (opsional)</label>
+							<input type="text" id="ui_gejala_tambahan" class="consult-field form-control" placeholder="Contoh: mual, pusing">
 						</div>
 						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_gejala_tambahan">Gejala tambahan</label>
-							<input type="text" id="ui_gejala_tambahan" class="consult-field form-control" placeholder="Contoh: mual, pusing, sesak, atau kosongkan">
+							<label class="consult-field-label" for="ui_deskripsi_keluhan">Ceritakan keluhan <span class="consult-required">Wajib</span></label>
+							<textarea id="ui_deskripsi_keluhan" class="consult-field consult-field-keluhan form-control" placeholder="Jelaskan keluhan Anda" required aria-describedby="err-ui_deskripsi_keluhan"></textarea>
+							<p class="consult-field-hint">Sertakan sejak kapan, seberapa berat, dan apa yang sudah Anda coba.</p>
 						</div>
-						<div class="consult-field-group">
-							<label class="consult-field-label" for="ui_deskripsi_keluhan">Detail keluhan</label>
-							<textarea id="ui_deskripsi_keluhan" class="consult-field consult-field-keluhan form-control" placeholder="Ceritakan keluhan Anda" required></textarea>
-						</div>
+						<p class="consult-field-error" id="err-ui_deskripsi_keluhan" hidden></p>
 					</div>
 					<textarea
 						id="keluhan"
@@ -585,10 +635,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				<section class="consult-card">
 					<div class="consult-card-header">
 						<h2 class="consult-card-title">Data diri</h2>
-						<img class="consult-card-icon" src="<?= html_escape($ui_asset_base . 'icon-plus.svg'); ?>" alt="">
 					</div>
-					<textarea id="address" name="alamat" class="consult-field consult-field-address form-control" placeholder="Alamat"></textarea>
-					<small class="text-muted">Alamat otomatis menggunakan © OpenStreetMap contributors.</small>
+					<div class="consult-field-group">
+						<label class="consult-field-label" for="address">Alamat</label>
+						<textarea id="address" name="alamat" class="consult-field consult-field-address form-control" placeholder="Tulis alamat lengkap bila belum terisi" aria-describedby="addressHelp"></textarea>
+					</div>
+					<small class="consult-helper" id="addressHelp">Alamat terisi otomatis dari lokasi. Periksa dan lengkapi bila perlu. Sumber peta: © OpenStreetMap contributors.</small>
 					<input type="text" class="d-none" name="lat" id="latitude" placeholder="Latitude">
 					<input type="text" class="d-none" name="lng" id="longitude" placeholder="Longitude">
 					<div id="map"></div>
@@ -599,10 +651,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 				<label class="consult-consent" for="kunjung">
 					<input class="form-check-input" type="checkbox" role="switch" id="kunjung" name="kunjung">
-					<span>Bersedia dikunjungi Nakes</span>
+					<span>Bersedia dikunjungi nakes di rumah</span>
 				</label>
+				<small class="consult-consent-hint">Aktifkan bila nakes boleh datang ke alamat di atas.</small>
 
-				<button type="button" class="consult-submit" id="save_konsul">Kirim</button>
+				<button type="button" class="consult-submit" id="save_konsul">Kirim permintaan</button>
 			</form>
 		</main>
 
@@ -830,11 +883,70 @@ Lama keluhan:
 				return;
 			}
 
+			const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 			element.scrollIntoView({
-				behavior: 'smooth',
+				behavior: reduceMotion ? 'auto' : 'smooth',
 				block: 'center'
 			});
 			element.focus();
+		}
+
+		function clearConsultFieldError(id) {
+			const field = document.getElementById(id);
+			const error = document.getElementById('err-' + id);
+			if (field) {
+				field.removeAttribute('aria-invalid');
+			}
+			if (error) {
+				error.hidden = true;
+				error.textContent = '';
+			}
+		}
+
+		function maybeHideConsultSummary() {
+			const summary = document.getElementById('consultErrorSummary');
+			if (!summary || document.querySelector('.consult-field[aria-invalid="true"]')) {
+				return;
+			}
+			summary.hidden = true;
+			summary.textContent = '';
+		}
+
+		function clearConsultErrors() {
+			['ui_gejala_keluhan_utama', 'ui_lama_keluhan', 'ui_deskripsi_keluhan'].forEach(clearConsultFieldError);
+			const summary = document.getElementById('consultErrorSummary');
+			if (summary) {
+				summary.hidden = true;
+				summary.textContent = '';
+			}
+		}
+
+		function showConsultErrors(errors) {
+			clearConsultErrors();
+			errors.forEach(function(error) {
+				const field = document.getElementById(error.id);
+				const target = document.getElementById('err-' + error.id);
+				if (field) {
+					field.setAttribute('aria-invalid', 'true');
+				}
+				if (target) {
+					target.textContent = error.message;
+					target.hidden = false;
+				}
+			});
+
+			const summary = document.getElementById('consultErrorSummary');
+			if (summary) {
+				summary.textContent = errors.length === 1
+					? errors[0].message
+					: 'Lengkapi isian wajib berikut: ' + errors.map(function(error) { return error.message; }).join(' ');
+				summary.hidden = false;
+			}
+
+			if (errors[0]) {
+				focusStructuredField(errors[0].id);
+			}
+			return false;
 		}
 
 		function syncStructuredConsultationFields() {
@@ -842,24 +954,22 @@ Lama keluhan:
 			const keluhanUtama = getStructuredValue('ui_keluhan_utama');
 			const lamaKeluhan = getStructuredValue('ui_lama_keluhan');
 			const deskripsiKeluhan = getStructuredValue('ui_deskripsi_keluhan');
+			const errors = [];
 
 			if (gejalaKeluhanUtama === '' && keluhanUtama === '') {
-				alert('Pilih atau tulis keluhan utama.');
-				focusStructuredField('ui_gejala_keluhan_utama');
-				return false;
+				errors.push({ id: 'ui_gejala_keluhan_utama', message: 'Pilih atau tulis keluhan utama.' });
 			}
-
 			if (lamaKeluhan === '') {
-				alert('Masukkan lama keluhan.');
-				focusStructuredField('ui_lama_keluhan');
-				return false;
+				errors.push({ id: 'ui_lama_keluhan', message: 'Isi lama keluhan.' });
+			}
+			if (deskripsiKeluhan === '') {
+				errors.push({ id: 'ui_deskripsi_keluhan', message: 'Ceritakan keluhan Anda.' });
+			}
+			if (errors.length) {
+				return showConsultErrors(errors);
 			}
 
-			if (deskripsiKeluhan === '') {
-				alert('Masukkan detail keluhan.');
-				focusStructuredField('ui_deskripsi_keluhan');
-				return false;
-			}
+			clearConsultErrors();
 
 			const keluhanPayload = [
 				'Anamnesa',
@@ -876,8 +986,8 @@ Lama keluhan:
 				'Riwayat penyakit keluarga: ' + optionalStructuredValue('ui_riwayat_keluarga'),
 				'Alergi: ' + optionalStructuredValue('ui_alergi'),
 				'Obat yang sedang dikonsumsi: ' + optionalStructuredValue('ui_obat_dikonsumsi'),
-				'Tinggi badan: ' + optionalStructuredValue('ui_tinggi_badan') + ' Cm',
-				'Berat badan: ' + optionalStructuredValue('ui_berat_badan') + ' Kg'
+				'Tinggi badan: ' + optionalStructuredValue('ui_tinggi_badan') + ' cm',
+				'Berat badan: ' + optionalStructuredValue('ui_berat_badan') + ' kg'
 			].join("\n");
 
 			document.getElementById('keluhan').value = keluhanPayload;
@@ -885,6 +995,19 @@ Lama keluhan:
 
 			return true;
 		}
+
+		['ui_gejala_keluhan_utama', 'ui_lama_keluhan', 'ui_deskripsi_keluhan'].forEach(function(id) {
+			const field = document.getElementById(id);
+			if (!field) {
+				return;
+			}
+			const clear = function() {
+				clearConsultFieldError(id);
+				maybeHideConsultSummary();
+			};
+			field.addEventListener('input', clear);
+			field.addEventListener('change', clear);
+		});
 
 		$('#save_konsul').click(function() {
 			if (!syncStructuredConsultationFields()) {
@@ -910,13 +1033,13 @@ Lama keluhan:
 					$('#save_konsul')
 						.data('skipGeolocationRetry', true)
 						.prop('disabled', false)
-						.text('Kirim')
+						.text('Kirim permintaan')
 						.trigger('click');
 				}, function() {
 					$('#save_konsul')
 						.data('skipGeolocationRetry', true)
 						.prop('disabled', false)
-						.text('Kirim')
+						.text('Kirim permintaan')
 						.trigger('click');
 				}, {
 					enableHighAccuracy: true,
@@ -928,21 +1051,23 @@ Lama keluhan:
 
 			$('#save_konsul').data('skipGeolocationRetry', false);
 
-			if (data_penunjang === '') {
-				alert('Isi data penunjang.');
-				return;
-			} else if (keluhan === '') {
-				alert('Masukkan keluhan.');
+			if (data_penunjang === '' || keluhan === '') {
+				const summary = document.getElementById('consultErrorSummary');
+				if (summary) {
+					summary.textContent = 'Data konsultasi belum lengkap. Muat ulang halaman lalu coba lagi.';
+					summary.hidden = false;
+					summary.focus();
+				}
 				return;
 			} else if (lat === '' || lng === '') {
-				Swal.fire("Lokasi diperlukan", "Pilih lokasi terlebih dahulu.", "error");
+				Swal.fire("Lokasi belum ditemukan", "Aktifkan izin lokasi di peramban, lalu kirim ulang.", "error");
 				return;
 			}
 
 			var formData = new FormData(document.getElementById('form_konsul'));
 
 			// Hilangkan tombol kirim selama proses berlangsung
-			$('#save_konsul').prop('disabled', true).text('Mengirim...');
+			$('#save_konsul').prop('disabled', true).text('Mengirim permintaan...');
 
 			$.ajax({
 				url: "<?php echo base_url(); ?>konsultasi/save_konsultasi",
@@ -960,7 +1085,7 @@ Lama keluhan:
 					}
 					if (!(response == 1 || (response && response.status === 'success'))) {
 						const message = response && response.message ? response.message : 'Terjadi kesalahan. Coba lagi.';
-						$('#save_konsul').prop('disabled', false).text('Kirim');
+						$('#save_konsul').prop('disabled', false).text('Kirim permintaan');
 						Swal.fire("Permintaan belum terkirim", message, "error");
 						return;
 					}
@@ -1020,7 +1145,7 @@ Lama keluhan:
 				},
 				error: function() {
 					// Jika terjadi error, munculkan kembali tombol kirim
-					$('#save_konsul').prop('disabled', false).text('Kirim');
+					$('#save_konsul').prop('disabled', false).text('Kirim permintaan');
 					alert('Permintaan belum terkirim. Terjadi kesalahan. Coba lagi.');
 				}
 			});

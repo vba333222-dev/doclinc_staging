@@ -1521,6 +1521,7 @@ class Home_nakes extends MX_Controller
 					'status' => 'error',
 					'safe_error_code' => 'profile_validation_failed',
 					'message' => $validated['message'],
+					'field_errors' => isset($validated['field_errors']) ? $validated['field_errors'] : array(),
 				]));
 			return;
 		}
@@ -1609,10 +1610,10 @@ class Home_nakes extends MX_Controller
 		$address = preg_replace('/[\t ]+/u', ' ', $address);
 
 		if (filter_var($email, FILTER_VALIDATE_EMAIL) === false || strlen($email) > 100) {
-			return ['success' => false, 'message' => 'Email belum valid.'];
+			return ['success' => false, 'message' => 'Email belum valid.', 'field_errors' => ['email' => 'Email belum valid.']];
 		}
 		if (!preg_match('/^\+?[0-9]{8,20}$/', $phone)) {
-			return ['success' => false, 'message' => 'Nomor HP belum valid. Gunakan 8 sampai 20 angka.'];
+			return ['success' => false, 'message' => 'Nomor HP belum valid. Gunakan 8 sampai 20 angka.', 'field_errors' => ['no_hp' => 'Nomor HP belum valid. Gunakan 8 sampai 20 angka.']];
 		}
 		if ($account_type === 'command_center') {
 			return [
@@ -1627,17 +1628,17 @@ class Home_nakes extends MX_Controller
 			return ['success' => false, 'message' => 'Identitas akun belum valid.'];
 		}
 		if ($name === '' || $this->profile_text_length($name) < 2 || $this->profile_text_length($name) > 100) {
-			return ['success' => false, 'message' => 'Nama lengkap harus terdiri dari 2 sampai 100 karakter.'];
+			return ['success' => false, 'message' => 'Nama lengkap harus terdiri dari 2 sampai 100 karakter.', 'field_errors' => ['nama_lengkap' => 'Nama lengkap harus terdiri dari 2 sampai 100 karakter.']];
 		}
 		$birthdate_value = DateTime::createFromFormat('!Y-m-d', $birthdate);
 		if (!$birthdate_value || $birthdate_value->format('Y-m-d') !== $birthdate || $birthdate_value > new DateTime('today')) {
-			return ['success' => false, 'message' => 'Tanggal lahir belum valid.'];
+			return ['success' => false, 'message' => 'Tanggal lahir belum valid.', 'field_errors' => ['tgl_lahir' => 'Tanggal lahir belum valid.']];
 		}
 		if (!in_array($gender, ['Laki-laki', 'Perempuan'], true)) {
-			return ['success' => false, 'message' => 'Jenis kelamin belum valid.'];
+			return ['success' => false, 'message' => 'Jenis kelamin belum valid.', 'field_errors' => ['jk' => 'Jenis kelamin belum valid.']];
 		}
 		if ($address !== '' && ($this->profile_text_length($address) < 5 || $this->profile_text_length($address) > 500)) {
-			return ['success' => false, 'message' => 'Alamat harus terdiri dari 5 sampai 500 karakter.'];
+			return ['success' => false, 'message' => 'Alamat harus terdiri dari 5 sampai 500 karakter.', 'field_errors' => ['alamat' => 'Alamat harus terdiri dari 5 sampai 500 karakter.']];
 		}
 
 		return [

@@ -5,7 +5,7 @@
 	<meta charset="UTF-8">
 	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>DocLink - Masuk</title>
+	<title>DokLinc - Masuk</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,12 +21,12 @@
 		<div class="row d-flex align-items-center justify-content-center min-vh-100 py-4">
 			<div class="col-11 col-sm-8 col-md-6 col-lg-5 col-xl-4">
 				<div class="text-center">
-					<img class="dl-auth-logo" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" width="3167" height="1396" decoding="async" fetchpriority="high">
+					<img class="dl-auth-logo" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DokLinc" width="3167" height="1396" decoding="async" fetchpriority="high">
 				</div>
 				<div class="dl-auth-card">
 					<div class="dl-auth-card-body">
-						<h1 class="dl-auth-title">Login</h1>
-						<p class="dl-auth-subtitle">Masukan akun DokLinc Anda</p>
+						<h1 class="dl-auth-title">Masuk</h1>
+						<p class="dl-auth-subtitle">Masukkan akun DokLinc Anda</p>
 						<?php if (!empty($success_message)): ?>
 							<div class="alert alert-success" role="status"><?= html_escape($success_message); ?></div>
 						<?php endif; ?>
@@ -52,7 +52,7 @@
 							</div>
 
 							<div class="d-grid mb-3">
-								<button type="submit" class="dl-auth-btn">Login</button>
+								<button type="submit" class="dl-auth-btn">Masuk</button>
 							</div>
 						</form>
 
@@ -95,7 +95,7 @@
 					if (result == '1') {
 						if (loginButton) {
 							loginButton.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>' +
-								'<span role="status"> Loading...</span>';
+								'<span role="status"> Memuat…</span>';
 						}
 						setTimeout(function() {
 							window.location.reload(result);
@@ -106,9 +106,10 @@
 							loginButton.innerHTML = originalButtonContent;
 						}
 						Swal.fire({
-							title: "Gagal!",
+							title: "Masuk gagal",
 							text: "Nama pengguna atau password salah.",
-							icon: "error"
+							icon: "error",
+							confirmButtonText: "Mengerti"
 						});
 					} else {
 						if (loginButton) {
@@ -118,7 +119,8 @@
 						Swal.fire({
 							title: "Masuk belum berhasil",
 							text: "Terjadi kesalahan. Coba lagi.",
-							icon: "error"
+							icon: "error",
+							confirmButtonText: "Mengerti"
 						});
 					}
 				},
@@ -130,7 +132,8 @@
 					Swal.fire({
 						title: "Masuk belum berhasil",
 						text: "Terjadi kesalahan. Coba lagi.",
-						icon: "error"
+						icon: "error",
+						confirmButtonText: "Mengerti"
 					});
 				}
 			});

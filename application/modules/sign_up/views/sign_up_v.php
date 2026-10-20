@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>DocLink - Daftar</title>
+	<title>DokLinc - Daftar</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,7 +19,7 @@
 		<div class="row d-flex align-items-center justify-content-center min-vh-100 py-4">
 			<div class="col-11 col-sm-9 col-md-7 col-lg-6 col-xl-5">
 				<div class="text-center">
-					<img class="dl-auth-logo" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" width="3167" height="1396" decoding="async" fetchpriority="high">
+					<img class="dl-auth-logo" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DokLinc" width="3167" height="1396" decoding="async" fetchpriority="high">
 				</div>
 				<div class="dl-auth-card">
 					<div class="dl-auth-card-body">

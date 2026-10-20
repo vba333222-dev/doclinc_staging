@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>DocLink - Memuat</title>
+    <title>DokLinc - Memuat</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
@@ -36,7 +36,7 @@
 
             <div class="text-center">
 
-                <img class="animate__animated animate__bounceIn" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" width="227" height="100" decoding="async" fetchpriority="high">
+                <img class="animate__animated animate__bounceIn" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DokLinc" width="227" height="100" decoding="async" fetchpriority="high">
 
                 <!-- <h2 class="mb-0 text-white animate__animated animate__fadeIn">SEHAT GEH (beta)</h2> -->
 

@@ -61,7 +61,7 @@ if (!function_exists('doclinc_history_format_complaint')) {
 	}
 }
 
-$nakes_name = strtoupper((string) $this->session->userdata('nama'));
+$nakes_name = trim((string) $this->session->userdata('nama'));
 $nakes_birthdate = !empty($profile['tgl']) ? $profile['tgl'] : null;
 $nakes_age = '-';
 if (!empty($nakes_birthdate)) {
@@ -119,7 +119,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<meta charset="UTF-8">
 	<?= doclinc_csrf_bootstrap_markup(); ?>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>DocLink - Nakes</title>
+	<title>DokLinc - <?= !empty($nakes_is_command_center) ? 'Puskesmas' : 'Nakes'; ?></title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -135,9 +135,10 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	     Nakes (mis. .dl-nakes-workspace, .dl-command-center, .dl-nakes-dashboard)
 	     tidak pernah aktif dan halaman ini memakai bahasa visual yang berbeda. -->
 	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-design-system.css'); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-account.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-account.css'))); ?>">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/css/bootstrap-select.min.css" integrity="sha512-g2SduJKxa4Lbn3GW+Q7rNz+pKP9AWMR++Ta8fgwsZRCUsawjPvF/BxSMkGS61VsR9yinGoEgrHPGPn2mrj8+4w==" crossorigin="anonymous" referrerpolicy="no-referrer">
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/nakes-dashboard.css">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/nakes-dashboard.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/nakes-dashboard.css'))); ?>">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/doclinc-nakes.css">
 	<?php if (!empty($nakes_is_command_center)) : ?><link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-puskesmas.css')); ?>"><?php endif; ?>
 	<?php if (!empty($nakes_presence_enabled)) : ?><link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-nakes-presence.css')); ?>"><?php endif; ?>
@@ -145,7 +146,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	     --bd-* dan komposisi bento di design.md menang atas lapisan Nakes
 	     sebelumnya tanpa mengubah berkas-berkas itu. Semua aturannya dibatasi
 	     pada .dl-nakes-dashboard dan hanya menyentuh tampilan. -->
-	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-bento.css')); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-bento.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-bento.css'))); ?>">
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-clinical-workspace.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-clinical-workspace.css'))); ?>">
 	<?php if (!empty($nakes_is_command_center)) : ?>
 		<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-command-center.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-command-center.css'))); ?>">
@@ -160,7 +161,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			<!-- doklinc.png berukuran 3167x1396; atribut height lama ditulis "50px"
 			     yang bukan nilai sah untuk atribut HTML, sehingga diabaikan peramban
 			     dan logo sempat dirender pada ukuran aslinya. -->
-			<img class="mb-3" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DocLink" width="113" height="50" decoding="async">
+			<img class="mb-3" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DokLinc" width="113" height="50" decoding="async">
 			<div class="mb-0" role="status">
 				<div class="spinner-border spinner-border-sm text-light" aria-hidden="true"></div>
 				Memuat&hellip;
@@ -190,60 +191,96 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	</div>
 	<?php $this->load->view('partials/nakes_bottom_nav_v', get_defined_vars()); ?>
 	<div class="modal fade nk-profile-modal" id="modalProfil" tabindex="-1" aria-labelledby="modalProfilLabel" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable<?= !empty($nakes_is_personal) ? ' modal-fullscreen-md-down' : ''; ?>">
 			<div class="modal-content">
 				<div class="modal-header nk-profile-modal__header">
-					<h5 class="modal-title" id="modalProfilLabel"><span><i class="bi bi-pencil-fill"></i></span>Ubah profil</h5>
+					<h5 class="modal-title" id="modalProfilLabel"><span><i class="fas fa-pen" aria-hidden="true"></i></span><?= !empty($nakes_is_command_center) ? 'Ubah kontak unit' : 'Ubah profil'; ?></h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
 				</div>
-				<form id="formEditProfile" enctype="multipart/form-data">
+				<form id="formEditProfile" enctype="multipart/form-data" novalidate>
 					<div class="modal-body nk-profile-modal__body">
-						<?php if (!empty($nakes_is_personal)) : ?>
-						<div class="nk-profile-modal__photo">
-							<label for="uploadFoto" class="nk-profile-modal__photo-picker">
-								<img id="previewFoto" src="<?= doclinc_profile_image_src((int) $this->session->userdata('id'), $profile['foto'] ?? ''); ?>" alt="Foto Profil">
-							<input type="file" id="uploadFoto" name="foto" accept="image/jpeg,image/png,image/webp" class="d-none" onchange="previewImage(event)">
-							</label>
-							<small>Klik untuk mengubah foto</small>
-							<div id="profileImageFeedback" class="small text-danger mt-2 d-none" role="alert"></div>
-						</div>
+						<div id="nakesProfileErrorSummary" class="dl-form-summary" role="alert" hidden></div>
 
-						<?php endif; ?>
 						<?php if (!empty($nakes_is_personal)) : ?>
-						<div class="form-floating nk-profile-modal__field">
-							<input type="text" class="form-control" id="nama_lengkap_edit" name="nama_lengkap" value="<?= html_escape((string) $this->session->userdata('nama')); ?>" placeholder="Nama Lengkap" maxlength="100" required>
-							<label for="nama_lengkap_edit"><i class="bi bi-person-fill me-2"></i>Nama lengkap</label>
-						</div>
+						<fieldset class="dl-form-fieldset">
+							<legend>Foto profil</legend>
+							<div class="nk-profile-modal__photo">
+								<img id="previewFoto" src="<?= doclinc_profile_image_src((int) $this->session->userdata('id'), $profile['foto'] ?? ''); ?>" alt="">
+								<input type="file" id="uploadFoto" name="foto" accept="image/jpeg,image/png,image/webp" class="visually-hidden" tabindex="-1" aria-describedby="nakesPhotoHint">
+								<button type="button" class="dl-account-photo-trigger" id="nakesPhotoTrigger">Ubah foto</button>
+								<p class="dl-form-help" id="nakesPhotoHint">JPG, PNG, atau WebP, maksimal 5 MB.</p>
+								<div id="profileImageFeedback" class="dl-account__feedback" role="status" aria-live="polite"></div>
+							</div>
+						</fieldset>
 						<?php endif; ?>
-						<div class="form-floating nk-profile-modal__field">
-							<input type="email" class="form-control" id="email_edit" name="email" value="<?= html_escape((string) ($profile['email'] ?? $this->session->userdata('email'))); ?>" placeholder="Email" maxlength="100" required>
-							<label for="email_edit"><i class="bi bi-envelope-fill me-2"></i><?= !empty($nakes_is_command_center) ? 'Email operasional' : 'Email'; ?></label>
-						</div>
-						<div class="form-floating nk-profile-modal__field">
-							<input type="tel" class="form-control" id="no_hp_edit" name="no_hp" value="<?= html_escape((string) ($profile['no_hp'] ?? '')); ?>" placeholder="Nomor HP" inputmode="tel" maxlength="20" required>
-							<label for="no_hp_edit"><i class="bi bi-telephone-fill me-2"></i><?= !empty($nakes_is_command_center) ? 'Nomor kontak Puskesmas' : 'Nomor HP'; ?></label>
-						</div>
+
+
 						<?php if (!empty($nakes_is_personal)) : ?>
-						<div class="form-floating nk-profile-modal__field">
-							<input type="date" class="form-control" id="tgl_edit" name="tgl_lahir" value="<?= html_escape((string) ($profile['tgl'] ?? '')); ?>" placeholder="Tanggal Lahir" max="<?= html_escape(date('Y-m-d')); ?>" required>
-							<label for="tgl_edit"><i class="bi bi-calendar-event-fill me-2"></i>Tanggal lahir</label>
-						</div>
-						<div class="form-floating nk-profile-modal__field">
-							<select class="form-select" name="jk" id="jk_edit">
-								<option value="Laki-laki" <?= (string) ($profile['gender'] ?? '') === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
-								<option value="Perempuan" <?= (string) ($profile['gender'] ?? '') === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
-							</select>
-							<label for="jk_edit"><i class="bi bi-gender-ambiguous me-2"></i>Jenis kelamin</label>
-						</div>
-						<div class="form-floating nk-profile-modal__field">
-							<textarea class="form-control" placeholder="Alamat (opsional)" name="alamat" id="alamat_edit" maxlength="500"><?= html_escape((string) ($profile['alamat'] ?? '')); ?></textarea>
-							<label for="alamat_edit"><i class="bi bi-geo-alt-fill me-2"></i>Alamat (opsional)</label>
-						</div>
+						<fieldset class="dl-form-fieldset">
+							<legend>Identitas</legend>
+							<div class="form-floating nk-profile-modal__field">
+								<input type="text" class="form-control" id="nama_lengkap_edit" name="nama_lengkap" value="<?= html_escape((string) $this->session->userdata('nama')); ?>" placeholder="Nama lengkap" maxlength="100" autocomplete="name" aria-describedby="nama_lengkap_edit_error" required>
+								<label for="nama_lengkap_edit">Nama lengkap</label>
+							</div>
+							<p class="dl-field-error" id="nama_lengkap_edit_error" hidden></p>
+
+							<div class="row g-3">
+								<div class="col-sm-6">
+									<div class="form-floating nk-profile-modal__field">
+										<input type="date" class="form-control" id="tgl_edit" name="tgl_lahir" value="<?= html_escape((string) ($profile['tgl'] ?? '')); ?>" max="<?= html_escape(date('Y-m-d')); ?>" placeholder="Tanggal lahir" aria-describedby="tgl_edit_error" required>
+										<label for="tgl_edit">Tanggal lahir</label>
+									</div>
+									<p class="dl-field-error" id="tgl_edit_error" hidden></p>
+								</div>
+								<div class="col-sm-6">
+									<div class="form-floating nk-profile-modal__field">
+										<select class="form-select" name="jk" id="jk_edit" aria-describedby="jk_edit_error" required>
+											<option value="" <?= (string) ($profile['gender'] ?? '') === '' ? 'selected' : ''; ?> disabled>Pilih</option>
+											<option value="Laki-laki" <?= in_array((string) ($profile['gender'] ?? ''), array('Laki-laki', 'L'), true) ? 'selected' : ''; ?>>Laki-laki</option>
+											<option value="Perempuan" <?= in_array((string) ($profile['gender'] ?? ''), array('Perempuan', 'P'), true) ? 'selected' : ''; ?>>Perempuan</option>
+										</select>
+										<label for="jk_edit">Jenis kelamin</label>
+									</div>
+									<p class="dl-field-error" id="jk_edit_error" hidden></p>
+								</div>
+							</div>
+						</fieldset>
 						<?php endif; ?>
+
+						<fieldset class="dl-form-fieldset">
+							<legend>Kontak</legend>
+							<div class="form-floating nk-profile-modal__field">
+								<input type="email" class="form-control" id="email_edit" name="email" value="<?= html_escape((string) ($profile['email'] ?? $this->session->userdata('email'))); ?>" placeholder="Email" maxlength="100" autocomplete="email" aria-describedby="email_edit_help email_edit_error" required>
+								<label for="email_edit"><?= !empty($nakes_is_command_center) ? 'Email operasional' : 'Email'; ?></label>
+							</div>
+							<p class="dl-form-help" id="email_edit_help">Tidak boleh sama dengan akun lain.</p>
+							<p class="dl-field-error" id="email_edit_error" hidden></p>
+
+							<div class="form-floating nk-profile-modal__field">
+								<input type="tel" class="form-control" id="no_hp_edit" name="no_hp" value="<?= html_escape((string) ($profile['no_hp'] ?? '')); ?>" placeholder="Nomor HP" inputmode="tel" maxlength="20" autocomplete="tel" pattern="\+?[0-9]{8,20}" aria-describedby="no_hp_edit_help no_hp_edit_error" data-expected="Gunakan 8–20 angka." required>
+								<label for="no_hp_edit"><?= !empty($nakes_is_command_center) ? 'Nomor kontak Puskesmas' : 'Nomor HP'; ?></label>
+							</div>
+							<p class="dl-form-help" id="no_hp_edit_help">8–20 angka. Boleh diawali +62.</p>
+							<p class="dl-field-error" id="no_hp_edit_error" hidden></p>
+
+							<?php if (!empty($nakes_is_personal)) : ?>
+							<div class="form-floating nk-profile-modal__field">
+								<textarea class="form-control" placeholder="Alamat" name="alamat" id="alamat_edit" maxlength="500" minlength="5" rows="3" autocomplete="street-address" aria-describedby="alamat_edit_error"><?= html_escape((string) ($profile['alamat'] ?? '')); ?></textarea>
+								<label for="alamat_edit">Alamat (opsional)</label>
+							</div>
+							<p class="dl-field-error" id="alamat_edit_error" hidden></p>
+							<?php endif; ?>
+						</fieldset>
+
+						<?php if (empty($nakes_is_personal)) : ?>
+						<p class="dl-form-help">Identitas unit dikelola Admin Dinas Kesehatan.</p>
+						<?php endif; ?>
+
+						<div id="nakesProfileFeedback" class="dl-account__feedback" role="status" aria-live="polite"></div>
 					</div>
 					<div class="modal-footer nk-profile-modal__footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
 						<button type="submit" class="btn btn-success">Simpan</button>
-						<button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
 					</div>
 				</form>
 			</div>
@@ -253,7 +290,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<div class="offcanvas offcanvas-top nk-notification-panel" tabindex="-1" id="offcanvasNotif" aria-labelledby="offcanvasNotifLabel">
 		<div class="offcanvas-header nk-notification-header">
 			<div class="nk-notification-title">
-				<span class="nk-notification-title-icon"><i class="bi bi-bell-fill"></i></span>
+				<span class="nk-notification-title-icon"><i class="fas fa-bell" aria-hidden="true"></i></span>
 				<span class="offcanvas-title" id="offcanvasNotifLabel">Pusat notifikasi</span>
 				<span class="badge text-bg-danger nk-notification-badge" id="badgeNotifs" style="display: none;"></span>
 			</div>
@@ -1979,7 +2016,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			notificationItem.className = 'notification-item nk-notification-item';
 
 			const icon = document.createElement('i');
-			icon.className = 'bi bi-bell-fill nk-notification-icon';
+			icon.className = 'fas fa-bell nk-notification-icon';
 			notificationItem.appendChild(icon);
 
 			const textContainer = document.createElement('div');
@@ -2016,7 +2053,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			}
 			notificationList.innerHTML = '';
 			if (!items || !items.length) {
-				notificationList.innerHTML = '<div class="nk-notification-empty"><i class="bi bi-bell"></i><span>Tidak ada notifikasi</span></div>';
+				notificationList.innerHTML = '<div class="nk-notification-empty"><i class="fas fa-bell" aria-hidden="true"></i><span>Tidak ada notifikasi</span></div>';
 				setNotificationCount(0);
 				return;
 			}
@@ -2171,7 +2208,10 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 	<!-- upload dan preview foto atau gambar -->
 	<script>
-		function setProfileImageFeedback(message) {
+		const NAKES_PHOTO_MAX = 5 * 1024 * 1024;
+		const NAKES_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+		function setProfileImageFeedback(message, state) {
 			const feedback = document.getElementById('profileImageFeedback');
 			if (!feedback) {
 				return;
@@ -2179,6 +2219,8 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 			feedback.textContent = message || '';
 			feedback.classList.toggle('d-none', !message);
+			feedback.classList.toggle('is-error', state === 'error');
+			feedback.classList.toggle('is-success', state === 'success');
 		}
 
 		function previewImage(event) {
@@ -2187,6 +2229,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 
 			if (!file) {
 				setProfileImageFeedback('');
+				return;
+			}
+			if (NAKES_PHOTO_TYPES.indexOf(file.type) === -1 || file.size < 1 || file.size > NAKES_PHOTO_MAX) {
+				setProfileImageFeedback('Gunakan JPG, PNG, atau WebP maksimal 5 MB.', 'error');
+				input.value = '';
 				return;
 			}
 
@@ -2198,124 +2245,194 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				}
 
 				const preview = document.getElementById('previewFoto');
-				preview.src = reader.result;
-				setProfileImageFeedback('');
+				if (preview) {
+					preview.src = reader.result;
+				}
+				setProfileImageFeedback('Foto siap disimpan.', 'success');
 			};
 			reader.onerror = function() {
 				if (!input.files || input.files[0] !== file) {
 					return;
 				}
 
-				setProfileImageFeedback('Gambar belum dapat dimuat. Coba lagi.');
+				setProfileImageFeedback('Gambar belum dapat dimuat. Coba lagi.', 'error');
 			};
 			reader.onabort = reader.onerror;
 			reader.readAsDataURL(file);
 		}
+
+		document.addEventListener('DOMContentLoaded', function() {
+			const trigger = document.getElementById('nakesPhotoTrigger');
+			const input = document.getElementById('uploadFoto');
+			if (trigger && input) {
+				trigger.addEventListener('click', function() {
+					input.click();
+				});
+			}
+		});
 	</script>
 
 	<!-- edit profile -->
 	<script>
-		let profileUpdateInFlight = false;
-
-		document.getElementById('formEditProfile').addEventListener('submit', function(e) {
-			e.preventDefault(); // Cegah form submit biasa
-
-			if (profileUpdateInFlight) {
-				return;
-			}
-
+		document.addEventListener('DOMContentLoaded', function() {
 			const form = document.getElementById('formEditProfile');
-			if (!form.checkValidity()) {
-				form.reportValidity();
-				return;
-			}
+			const feedback = document.getElementById('nakesProfileFeedback');
+			const summary = document.getElementById('nakesProfileErrorSummary');
+			const submit = form ? form.querySelector('button[type="submit"]') : null;
+			if (!form || !feedback || !summary || !submit) return;
 
-			const submitButton = form.querySelector('button[type="submit"]');
-			const originalButtonDisabled = submitButton ? submitButton.disabled : false;
-			const originalButtonContent = submitButton ? submitButton.innerHTML : '';
-			const formData = new FormData(form);
-			const profilePhoto = formData.get('foto');
-			formData.delete('foto');
-			let profileUpdateSucceeded = false;
-			const restoreProfileSubmit = function() {
-				profileUpdateInFlight = false;
-				if (submitButton) {
-					submitButton.innerHTML = originalButtonContent;
-					submitButton.disabled = originalButtonDisabled;
-				}
+			const fieldErrorMap = {
+				nama_lengkap: 'nama_lengkap_edit',
+				email: 'email_edit',
+				no_hp: 'no_hp_edit',
+				tgl_lahir: 'tgl_edit',
+				jk: 'jk_edit',
+				alamat: 'alamat_edit'
 			};
+			let busy = false;
 
-			profileUpdateInFlight = true;
-			if (submitButton) {
-				submitButton.disabled = true;
+			function setError(field, message) {
+				const target = document.getElementById(field.id + '_error');
+				field.classList.toggle('is-invalid', !!message);
+				if (message) {
+					field.setAttribute('aria-invalid', 'true');
+				} else {
+					field.removeAttribute('aria-invalid');
+				}
+				if (target) {
+					target.textContent = message || '';
+					target.hidden = !message;
+				}
 			}
 
-			fetch("<?= base_url('home_nakes/updateprofile') ?>", {
-					method: "POST",
-					body: formData
-				})
-				.then(response => {
-					return response.json().then(result => {
-						const isResultObject = result !== null &&
-							typeof result === 'object' &&
-							!Array.isArray(result);
-						if (!isResultObject) {
-							return Promise.reject({});
-						}
+			function messageFor(field) {
+				if (field.validity.valueMissing) return 'Wajib diisi.';
+				if (field.validity.patternMismatch) return field.dataset.expected || 'Format belum sesuai.';
+				if (field.validity.typeMismatch && field.type === 'email') return 'Format email belum benar.';
+				if (field.validity.tooShort) return 'Isian terlalu pendek.';
+				if (field.validity.rangeOverflow) return 'Tanggal tidak boleh di masa depan.';
+				return 'Periksa isian ini.';
+			}
 
-						if (!response.ok) {
-							return Promise.reject({
-								safeMessage: result && typeof result.message === 'string' ? result.message.trim() : ''
-							});
-						}
-
-						return result;
-					});
-				})
-				.then(result => {
-					if (result.status !== 'success') {
-						const safeMessage = typeof result.message === 'string' && result.message.trim() ?
-							result.message.trim() :
-							"Terjadi kesalahan. Coba lagi.";
-						return Promise.reject({ safeMessage: safeMessage });
+			function validate() {
+				const invalid = [];
+				form.querySelectorAll('input, select, textarea').forEach(function(field) {
+					if (field.disabled || field.type === 'file') return;
+					if (!field.checkValidity()) {
+						setError(field, messageFor(field));
+						invalid.push(field);
+					} else {
+						setError(field, '');
 					}
-					if (!profilePhoto || !profilePhoto.size) {
-						return result;
-					}
-					const photoData = new FormData();
-					photoData.append('foto', profilePhoto);
-					return fetch(<?= json_encode(base_url('profile/photo/update')); ?>, {
-						method: 'POST',
-						body: photoData,
-						headers: { Accept: 'application/json' },
-						credentials: 'same-origin'
-					}).then(response => response.json().then(photoResult => {
-						if (!response.ok || !photoResult || photoResult.status !== 'success') {
-							return Promise.reject({
-								safeMessage: photoResult && typeof photoResult.message === 'string' ? photoResult.message.trim() : ''
-							});
-						}
-						return photoResult;
-					}));
-				})
-				.then(() => {
-					profileUpdateSucceeded = true;
-					alert("Profil berhasil diperbarui!");
-					location.reload();
-				})
-				.catch(failure => {
-					const safeMessage = failure && typeof failure.safeMessage === 'string' && failure.safeMessage ?
-						failure.safeMessage :
-						"Terjadi kesalahan. Coba lagi.";
-					alert("Profil belum diperbarui. " + safeMessage);
-				})
-				.finally(() => {
-					if (profileUpdateSucceeded) {
-						return;
-					}
-
-					restoreProfileSubmit();
 				});
+				return invalid;
+			}
+
+			function showSummary(count) {
+				summary.hidden = count === 0;
+				summary.textContent = count === 1 ? 'Satu isian perlu diperbaiki.' : count + ' isian perlu diperbaiki.';
+			}
+
+			function renderServerErrors(errors) {
+				let first = null;
+				Object.keys(errors).forEach(function(name) {
+					const field = document.getElementById(fieldErrorMap[name] || name);
+					if (!field) return;
+					setError(field, errors[name]);
+					if (!first) first = field;
+				});
+				if (first) {
+					summary.hidden = false;
+					summary.textContent = 'Periksa isian yang ditandai.';
+					first.focus();
+				}
+			}
+
+			form.querySelectorAll('input, select, textarea').forEach(function(field) {
+				field.addEventListener('input', function() {
+					if (field.classList.contains('is-invalid')) setError(field, '');
+				});
+				field.addEventListener('change', function() {
+					if (field.classList.contains('is-invalid')) setError(field, '');
+				});
+			});
+
+			form.addEventListener('submit', function(event) {
+				event.preventDefault();
+				if (busy) return;
+
+				const invalid = validate();
+				if (invalid.length) {
+					showSummary(invalid.length);
+					feedback.className = 'dl-account__feedback';
+					feedback.textContent = '';
+					invalid[0].focus();
+					return;
+				}
+
+				summary.hidden = true;
+				busy = true;
+				submit.disabled = true;
+				submit.textContent = 'Menyimpan...';
+				form.setAttribute('aria-busy', 'true');
+				feedback.className = 'dl-account__feedback';
+				feedback.textContent = 'Menyimpan profil...';
+
+				const formData = new FormData(form);
+				const profilePhoto = formData.get('foto');
+				formData.delete('foto');
+
+				fetch("<?= base_url('home_nakes/updateprofile') ?>", {
+					method: 'POST',
+					body: formData,
+					headers: { Accept: 'application/json' },
+					credentials: 'same-origin'
+				})
+					.then(function(response) {
+						return response.json().catch(function() { return {}; }).then(function(body) {
+							return { ok: response.ok, body: body };
+						});
+					})
+					.then(function(result) {
+						if (!result.ok || !result.body || result.body.status !== 'success') {
+							if (result.body && result.body.field_errors) {
+								renderServerErrors(result.body.field_errors);
+							}
+							throw new Error(result.body && result.body.message ? result.body.message : 'Profil belum tersimpan. Coba lagi.');
+						}
+						if (!profilePhoto || !profilePhoto.size) {
+							return null;
+						}
+						const photoData = new FormData();
+						photoData.append('foto', profilePhoto);
+						return fetch(<?= json_encode(base_url('profile/photo/update')); ?>, {
+							method: 'POST',
+							body: photoData,
+							headers: { Accept: 'application/json' },
+							credentials: 'same-origin'
+						}).then(function(photoResponse) {
+							return photoResponse.json().catch(function() { return {}; }).then(function(photoBody) {
+								if (!photoResponse.ok || !photoBody || photoBody.status !== 'success') {
+									throw new Error(photoBody && photoBody.message ? photoBody.message : 'Foto belum tersimpan. Coba lagi.');
+								}
+								return photoBody;
+							});
+						});
+					})
+					.then(function() {
+						feedback.className = 'dl-account__feedback is-success';
+						feedback.textContent = 'Profil tersimpan.';
+						window.setTimeout(function() { window.location.reload(); }, 600);
+					})
+					.catch(function(error) {
+						feedback.className = 'dl-account__feedback is-error';
+						feedback.textContent = error && error.message ? error.message : 'Profil belum tersimpan. Coba lagi.';
+						busy = false;
+						submit.disabled = false;
+						submit.textContent = 'Simpan';
+						form.removeAttribute('aria-busy');
+					});
+			});
 		});
 	</script>
 

@@ -459,21 +459,9 @@
   z-index: 1;
 }
 
-.dl-warga-app .dl-action-tile::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  right: 14px;
-  top: 12px;
-  width: 76px;
-  height: 76px;
-  pointer-events: none;
-  background-image: var(--dl-ref-texture-plus-light);
-  background-size: 22px 22px;
-  opacity: .55;
-  transform: rotate(-8deg);
-}
-
+/* Pola plus pada petak aksi warga dihapus atas permintaan. Tekstur yang
+   tersisa di petak "Mulai konsultasi" adalah first aid kit di
+   doclinc-bento.css. */
 .dl-warga-app .dl-action-tile > * {
   position: relative;
   z-index: 1;
@@ -502,13 +490,10 @@
   border-radius: var(--dl-ref-radius-control) !important;
 }
 
-.dl-warga-profile .completion-card {
-  border-radius: var(--dl-ref-radius-section);
-}
-
-.dl-warga-profile .completion-head {
-  background: var(--dl-ref-gradient);
-}
+/* Halaman "Lengkapi data" memakai radius dan warna dari design system.
+   Sebelumnya lapisan ini menimpanya dengan radius 22px dan gradien di kepala
+   kartu form; keduanya tidak ada di skala token dan gradien dilarang untuk
+   kartu data. */
 
 .doclinc-nakes-consult .btn,
 .doclinc-nakes-consult .btn-success {

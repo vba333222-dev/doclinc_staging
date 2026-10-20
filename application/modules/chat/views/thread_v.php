@@ -45,7 +45,7 @@ if ($request_status === 'Accepted') {
 		: !empty($request->chat_clinician_online);
 }
 $readonly_message = in_array($request_status, array('Completed', 'Cancelled'), true)
-	? 'Konsultasi sudah selesai. Riwayat chat hanya dapat dibaca.'
+	? 'Sesi konsultasi sudah selesai.'
 	: 'Chat ini hanya dapat dibaca.';
 $asset_base = base_url('assets/doclinc_ui/chat/');
 $partner_user_id = $current_role === 'dokter'
@@ -247,9 +247,9 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		.chat-title-subtext {
 			margin: 2px 0 0;
 			color: var(--chat-muted);
-			font-size: 11px;
+			font-size: 13px;
 			font-weight: 600;
-			line-height: 15px;
+			line-height: 16px;
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -328,14 +328,14 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		}
 
 		.chat-time {
-			width: 52px;
-			flex: 0 0 52px;
-			font-size: 11px;
-			color: var(--chat-time);
+			width: 56px;
+			flex: 0 0 56px;
+			font-size: 13px;
+			color: var(--chat-muted);
 			margin-top: 4px;
 			text-align: left;
 			white-space: normal;
-			line-height: 14px;
+			line-height: 16px;
 			font-weight: 500;
 		}
 
@@ -483,22 +483,26 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			border: 0;
 			background: transparent;
 			color: var(--chat-green);
-			width: 40px;
-			height: 40px;
+			width: 44px;
+			height: 44px;
 			border-radius: 12px;
-			padding: 8px;
+			padding: 10px;
 			cursor: pointer;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			flex: 0 0 40px;
+			flex: 0 0 44px;
 			transition: background 0.15s ease, transform 0.1s ease;
 		}
 
-		.chat-call-button:hover,
+		.chat-call-button:hover {
+			background: rgba(31, 111, 75, 0.1);
+		}
+
 		.chat-call-button:focus-visible {
 			background: rgba(31, 111, 75, 0.1);
-			outline: 0;
+			outline: 3px solid var(--bd-green-500);
+			outline-offset: 2px;
 		}
 
 		.chat-call-button:active {
@@ -598,6 +602,83 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			line-height: 1;
 			cursor: pointer;
 			flex: 0 0 40px;
+		}
+
+		/* Tombol tutup di kepala panggilan. Sebelumnya satu-satunya jalan keluar
+		   adalah menu "Lainnya" > "Tutup tampilan"; di layar ponsel menu itu tidak
+		   terlihat seperti jalan keluar. */
+		.doclinc-call-modal .doclinc-call-header-close {
+			display: inline-grid;
+			place-items: center;
+			width: 44px;
+			height: 44px;
+			padding: 0;
+			border: 1px solid rgba(255, 255, 255, 0.18);
+			border-radius: 999px;
+			background: rgba(255, 255, 255, 0.08);
+			cursor: pointer;
+			flex: 0 0 44px;
+		}
+
+		/* Pembungkus ini sengaja bukan `.doclinc-call-head-actions`: aturan Task 11
+		   menyembunyikan wrapper itu beserta indikator teknis lain. Tombol tutup
+		   adalah kontrol, bukan indikator, jadi ia tidak ikut disembunyikan. */
+		.doclinc-call-head-close {
+			display: flex;
+			align-items: center;
+			justify-content: flex-end;
+			flex: 0 0 auto;
+			margin-left: auto;
+		}
+
+		@media (min-width: 641px) {
+			.doclinc-call-head-close {
+				grid-column: 3;
+				justify-self: end;
+			}
+		}
+
+		.doclinc-call-modal .doclinc-call-header-close img {
+			display: block;
+			width: 20px;
+			height: 20px;
+			filter: brightness(0) invert(1);
+		}
+
+		.doclinc-call-modal .doclinc-call-header-close:hover {
+			background: rgba(255, 255, 255, 0.16);
+		}
+
+		.doclinc-call-modal .doclinc-call-header-close:focus-visible {
+			outline: 3px solid var(--bd-mint);
+			outline-offset: 2px;
+		}
+
+		/* Status tidak boleh terpotong di tengah kalimat. */
+		.doclinc-call-modal .doclinc-call-connection-text {
+			white-space: normal;
+			overflow: visible;
+			text-overflow: clip;
+			line-height: 1.35;
+		}
+
+		.doclinc-call-dismiss {
+			display: block;
+			margin: 10px auto 0;
+			min-height: 44px;
+			padding: 10px 18px;
+			border: 0;
+			background: transparent;
+			color: rgba(255, 255, 255, 0.78);
+			font: inherit;
+			font-size: 13px;
+			font-weight: 700;
+			cursor: pointer;
+		}
+
+		.doclinc-call-dismiss:focus-visible {
+			outline: 3px solid var(--bd-mint);
+			outline-offset: 2px;
 		}
 
 		.doclinc-call-stage {
@@ -1026,7 +1107,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			border: 2px solid #fff; border-radius: 50%; background: #24b47e;
 		}
 		.chat-title-text { color: #12201c; font-size: 16px; line-height: 21px; }
-		.chat-title-subtext { color: #1b9b67; font-size: 12px; line-height: 17px; font-weight: 650; }
+		.chat-title-subtext { color: var(--chat-muted); font-size: 13px; line-height: 17px; font-weight: 650; }
 		.chat-call-actions { gap: 2px; }
 		.chat-call-button { width: 42px; height: 42px; flex-basis: 42px; color: #477066; padding: 10px; }
 		.chat-call-button:hover, .chat-call-button:focus-visible { background: #eaf6f0; color: #188c5e; }
@@ -1039,18 +1120,19 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		   tersedia di beranda warga (petak B22.1) dan di halaman Konsultasi. */
 		.chat-list { padding: 20px 18px 22px; background: #f6f7f8; }
 		.chat-date-separator { display: flex; justify-content: center; margin: 0 0 22px; }
-		.chat-date-separator span { padding: 7px 14px; border-radius: 999px; background: #e9eef2; color: #53656b; font-size: 12px; font-weight: 650; }
+		.chat-date-separator[hidden] { display: none; }
+		.chat-date-separator span { padding: 7px 14px; border-radius: 999px; background: #e9eef2; color: #53656b; font-size: 13px; font-weight: 650; }
 		.chat-message-row { justify-content: flex-start; gap: 9px; margin-bottom: 20px; align-items: flex-end; }
 		.chat-message-row.mine { justify-content: flex-end; }
 		.chat-message-avatar { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; object-fit: cover; border: 1px solid #dce7e4; background: #e5f1ec; }
 		.chat-message-avatar-fallback { width: 30px; height: 30px; flex: 0 0 30px; align-self: flex-end; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #dfefe8; color: #2d7458; font-size: 10px; font-weight: 800; }
 		.chat-message-stack { max-width: calc(100% - 39px); min-width: 0; }
 		.chat-message-stack.mine { max-width: calc(100% - 24px); margin-left: auto; }
-		.chat-message-sender { margin: 0 0 5px 4px; color: #5a7067; font-size: 11px; font-weight: 500; }
+		.chat-message-sender { margin: 0 0 5px 4px; color: var(--chat-muted); font-size: 13px; font-weight: 500; }
 		.chat-delivery { display: inline-block; margin-left: 3px; color: currentColor; font-size: 11px; line-height: 1; letter-spacing: -2px; vertical-align: 0; }
 		.chat-bubble { max-width: none; padding: 13px 15px 10px; border-radius: 19px 19px 19px 5px; background: #fff; border: 1px solid #e0e7e8; box-shadow: 0 3px 12px rgba(34, 65, 59, .07); color: #17241f; font-size: 13.5px; line-height: 22px; }
 		.chat-bubble.mine { border-radius: 19px 19px 5px 19px; background: #d7f5e5; border-color: #9ee5c0; }
-		.chat-time { width: auto; margin-top: 7px; color: #8b9b9e; font-size: 10px; line-height: 13px; text-align: right; }
+		.chat-time { width: auto; margin-top: 7px; color: var(--chat-muted); font-size: 13px; line-height: 16px; text-align: right; }
 		.chat-message-stack.mine .chat-message-sender { text-align: right; margin: 0 4px 5px 0; }
 		.chat-form { min-height: 78px; padding: 11px 14px max(14px, env(safe-area-inset-bottom)); border-top: 1px solid #e2e9e8; box-shadow: 0 -3px 14px rgba(40, 68, 61, .05); }
 		.chat-input-row { min-height: 54px; gap: 4px; padding: 4px 6px 4px 8px; border: 1px solid #e1e9eb; border-radius: 28px; background: #fff; box-shadow: 0 5px 18px rgba(45, 74, 67, .08); }
@@ -1129,8 +1211,8 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 	     dirender menurut aturan lama (40px, radius 50%, tanpa tumpukan
 	     fallback). livekit tidak punya aturan untuk permukaan lain di halaman
 	     ini, jadi memindahkannya ke atas tidak mengubah apa pun selain ini. -->
-	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-livekit.css')); ?>">
-	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-bento.css')); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-livekit.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-livekit.css'))); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-bento.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-bento.css'))); ?>">
 	<?php /* Layer call-only terakhir: memuat ulang ruang panggilan tanpa
 	         menimpa aturan chat. Cache-buster mengikuti mtime berkas. */ ?>
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-livekit-studio.css')); ?>?v=<?= (int) @filemtime(FCPATH . 'assets/css/doclinc-livekit-studio.css'); ?>">
@@ -1243,6 +1325,11 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 							</div>
 						</div>
 					</div>
+					<div class="doclinc-call-head-close">
+						<button type="button" class="doclinc-call-header-close" id="doclincCallHeaderClose" aria-label="Tutup tampilan panggilan" title="Tutup">
+							<img src="<?= html_escape(doclinc_ui_asset('livekit.close')); ?>" alt="" aria-hidden="true" width="20" height="20">
+						</button>
+					</div>
 				</div>
 				<div class="doclinc-call-stage" data-call-mode="video">
 					<div class="doclinc-call-remote" id="doclincCallRemote">
@@ -1271,6 +1358,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					<p class="doclinc-call-prejoin-title">Panggilan untuk konsultasi aktif</p>
 					<p class="doclinc-call-prejoin-text">Pastikan kamera dan mikrofon perangkat dapat digunakan.</p>
 					<button type="button" class="doclinc-call-join" id="doclincCallJoin">Gabung sekarang</button>
+					<button type="button" class="doclinc-call-dismiss" id="doclincCallDismiss">Tutup</button>
 				</div>
 				<div class="doclinc-call-controls is-hidden" id="doclincCallControls">
 					<button type="button" class="doclinc-call-control" id="doclincCallMore" title="Lainnya" aria-label="Buka opsi lainnya" aria-expanded="false">
@@ -1445,6 +1533,8 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					elements.switchCamera = byId('doclincCallSwitch');
 					elements.end = byId('doclincCallEnd');
 					elements.close = byId('doclincCallClose');
+					elements.headerClose = byId('doclincCallHeaderClose');
+					elements.dismiss = byId('doclincCallDismiss');
 					elements.minimize = byId('doclincCallMinimize');
 					elements.more = byId('doclincCallMore');
 					elements.morePanel = byId('doclincCallMorePanel');
@@ -2547,7 +2637,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 						}
 						return connectWithPayload(response, canStartCall ? 'Memanggil pasien...' : 'Menunggu lawan bicara bergabung');
 					}).catch(function(error) {
-						cleanupCall('Panggilan belum dapat tersambung. Coba lagi.');
+						cleanupCall('Panggilan belum dapat tersambung. Tutup lalu mulai lagi.');
 					});
 				}
 
@@ -2716,7 +2806,7 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					state.callId = call.call_id;
 					state.mode = call.call_type === 'audio' ? 'audio' : 'video';
 					if (elements.incomingCaller) {
-						elements.incomingCaller.textContent = call.caller_name || 'Nakes DocLink';
+						elements.incomingCaller.textContent = call.caller_name || 'Nakes DokLinc';
 					}
 					if (elements.incomingType) {
 						elements.incomingType.setAttribute('data-call-mode', call.call_type === 'audio' ? 'audio' : 'video');
@@ -2993,6 +3083,12 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					if (elements.close) {
 						elements.close.addEventListener('click', minimizeCallScreen);
 					}
+					if (elements.headerClose) {
+						elements.headerClose.addEventListener('click', minimizeCallScreen);
+					}
+					if (elements.dismiss) {
+						elements.dismiss.addEventListener('click', minimizeCallScreen);
+					}
 					if (elements.minimize) {
 						elements.minimize.addEventListener('click', minimizeCallScreen);
 					}
@@ -3086,10 +3182,17 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 							empty.className = 'chat-muted';
 							empty.textContent = 'Belum ada pesan pada konsultasi ini.';
 							list.appendChild(empty);
+							list.classList.add('is-empty');
 						}
 						hasLoaded = true;
 					}
 					(data.messages || []).forEach(appendMessage);
+					if (data.messages && data.messages.length) {
+						const list = document.getElementById('chatMessages');
+						if (list) {
+							list.classList.remove('is-empty');
+						}
+					}
 				},
 					onError: function() {
 					if (!hasLoaded) {
@@ -3107,28 +3210,48 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			})
 			: null;
 
-		function formatDate(value) {
+		function parseChatDate(value) {
 			if (!value) {
+				return null;
+			}
+			let raw = String(value).trim().replace(' ', 'T');
+			if (!/(Z|[+-]\d{2}:?\d{2})$/.test(raw)) {
+				raw += 'Z';
+			}
+			const date = new Date(raw);
+			return isNaN(date.getTime()) ? null : date;
+		}
+
+		function formatDate(value) {
+			const date = parseChatDate(value);
+			if (!date) {
 				return '';
 			}
-			const date = new Date(value.replace(' ', 'T'));
-			if (isNaN(date.getTime())) {
-				return '';
-			}
-			const hours = String(date.getHours()).padStart(2, '0');
-			const minutes = String(date.getMinutes()).padStart(2, '0');
-			return hours + ':' + minutes;
+			const parts = new Intl.DateTimeFormat('en-GB', {
+				hour: '2-digit',
+				minute: '2-digit',
+				hour12: false,
+				timeZone: 'Asia/Jakarta'
+			}).formatToParts(date);
+			const hour = parts.find(function(part) { return part.type === 'hour'; });
+			const minute = parts.find(function(part) { return part.type === 'minute'; });
+			return (hour ? hour.value : '00') + ':' + (minute ? minute.value : '00');
 		}
 
 		function updateChatDateSeparator(value) {
 			const separator = document.getElementById('chatDateSeparator');
 			if (!separator || !value) return;
-			const date = new Date(String(value).replace(' ', 'T'));
-			if (isNaN(date.getTime())) return;
-			const today = new Date();
-			const isToday = date.getFullYear() === today.getFullYear() &&
-				date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
-			const formattedDate = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+			const date = parseChatDate(value);
+			if (!date) return;
+			const dayKey = function(input) {
+				return new Intl.DateTimeFormat('en-CA', {
+					year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Jakarta'
+				}).format(input);
+			};
+			const isToday = dayKey(date) === dayKey(new Date());
+			const formattedDate = new Intl.DateTimeFormat('id-ID', {
+				day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta'
+			}).format(date);
 			const label = isToday ? 'Hari ini, ' + formattedDate : formattedDate;
 			const text = separator.querySelector('span');
 			if (text) text.textContent = label;
@@ -3339,6 +3462,30 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 		});
 
 		const chatForm = document.getElementById('chatForm');
+		const chatInput = document.getElementById('messageText');
+
+		function resizeChatInput() {
+			if (!chatInput) {
+				return;
+			}
+			chatInput.style.height = 'auto';
+			chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+		}
+
+		if (chatInput) {
+			chatInput.addEventListener('input', resizeChatInput);
+			chatInput.addEventListener('keydown', function(event) {
+				if (event.key !== 'Enter' || event.shiftKey || event.isComposing) {
+					return;
+				}
+				event.preventDefault();
+				if (chatInput.value.trim() && chatForm && typeof chatForm.requestSubmit === 'function') {
+					chatForm.requestSubmit();
+				}
+			});
+			resizeChatInput();
+		}
+
 		if (chatForm && canSend) {
 			function showChatSendError(message) {
 				const list = document.getElementById('chatMessages');
@@ -3398,7 +3545,13 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 								previousError.remove();
 							}
 							input.value = '';
+							const list = document.getElementById('chatMessages');
+							if (list) {
+								list.querySelectorAll('.chat-muted, .chat-error').forEach(function(node) { node.remove(); });
+								list.classList.remove('is-empty');
+							}
 							appendMessage(data.message);
+							resizeChatInput();
 							return;
 						}
 						const backendMessage = data && data.status === 'error' && typeof data.message === 'string' ? data.message.trim() : '';

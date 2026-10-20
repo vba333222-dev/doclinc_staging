@@ -47,6 +47,10 @@
   --dl-placeholder: #64736B;
   /* Typography follows the DocLinc visual refresh: Manrope first, system fallbacks. */
   --dl-font: "Manrope", "Inter", "Segoe UI", Arial, sans-serif;
+  /* Huruf monospace untuk data presisi: NIK, KK, BPJS/KIS, nomor HP, dan waktu.
+   * DESIGN.md mewajibkan angka/ID memakai monospace, tetapi belum ada tokennya
+   * sehingga tiap halaman menulis tumpukan font sendiri. */
+  --dl-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 html { background: var(--dl-bg); }
@@ -66,7 +70,7 @@ a { color: var(--dl-brand-ink); }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent); outline-offset: 2px; }
 
 .dl-surface, .dl-panel, .dl-summary, .dl-context, .dl-workspace, .dl-list, .dl-action-group,
-.dl-card, .history-result-card, .dl-profile-card, .dl-nakes-card, .doclinc-dashboard-panel {
+.dl-card, .history-result-card, .dl-nakes-card, .doclinc-dashboard-panel {
   border: 1px solid var(--dl-border);
   border-radius: var(--dl-radius-md);
   background: var(--dl-surface);
@@ -143,7 +147,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--dl-brand-ink);
 
 .dl-dashboard-body { background: var(--dl-bg) !important; }
 .dl-dashboard-body .container, .dl-dashboard-body .container-fluid { max-width: 1240px; }
-.dl-dashboard-body .hero-card, .dl-dashboard-body .dl-profile-card__head { background: linear-gradient(135deg, var(--dl-brand-strong), var(--dl-brand)) !important; color: #fff; }
+.dl-dashboard-body .hero-card { background: linear-gradient(135deg, var(--dl-brand-strong), var(--dl-brand)) !important; color: #fff; }
 .dl-dashboard-body .hero-card h1, .dl-dashboard-body .hero-card h2, .dl-dashboard-body .hero-card h3, .dl-dashboard-body .hero-card p { color: #fff; }
 .dl-dashboard-body .feature-menu { color: var(--dl-text); }
 .dl-dashboard-body .feature-menu .icon-wrapper { width: 42px; height: 42px; border-radius: var(--dl-radius-sm); background: var(--dl-brand-subtle); color: var(--dl-brand-ink); }

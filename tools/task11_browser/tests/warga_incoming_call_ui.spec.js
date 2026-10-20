@@ -17,7 +17,7 @@ test('Warga incoming-call surface exposes truthful caller identity and accept/de
   expect(view).toContain('id="doclincIncomingAnswer"');
   expect(view).toContain('aria-label="Terima panggilan"');
   expect(view).toContain("callType === 'audio' ? 'Panggilan suara' : 'Panggilan video'");
-  expect(view).toContain('call.caller_name || \'Nakes DocLink\'');
+  expect(view).toContain('call.caller_name || \'Nakes DokLinc\'');
 });
 
 test('Warga incoming-call UI is backed by request-bound server contracts', () => {

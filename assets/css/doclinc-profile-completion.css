@@ -1,8 +1,362 @@
-:root{font-family:"Manrope","Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#173c2f;background:#f1f7f4}*{box-sizing:border-box}body{margin:0}.completion-shell{min-height:100vh;padding:24px 14px;display:grid;place-items:start center}.completion-card{width:min(760px,100%);background:#fff;border:1px solid #d7e8e0;border-radius:20px;box-shadow:0 16px 48px rgba(23,60,47,.1);overflow:hidden}.completion-head{padding:28px;background:linear-gradient(135deg,#087b55,#1F6F4B);color:#fff}.completion-brand{font-weight:900;letter-spacing:.04em}.completion-head h1{font-size:clamp(24px,5vw,36px);line-height:1.15;margin:14px 0 8px}.completion-head p{margin:0;line-height:1.6;opacity:.94}.completion-gaps,.completion-form,.completion-notice,.completion-footer{margin:18px}.completion-gaps h2,.completion-form h2{font-size:17px;margin:0 0 12px}.completion-gaps ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}.completion-gaps li{padding:11px 12px;border-radius:12px;background:#f5faf8;display:flex;justify-content:space-between;gap:10px}.completion-gaps li span{font-size:13px;color:#667b72;text-align:right}.completion-notice{padding:14px;border-radius:12px;background:#fff4d6;color:#754d00;display:grid;gap:4px}.completion-notice span{font-size:13px;line-height:1.5}.completion-form{padding-top:18px;border-top:1px solid #e6efeb}.completion-photo{display:flex;align-items:center;gap:14px;margin-bottom:16px}.completion-photo img{width:76px;height:76px;object-fit:cover;border-radius:50%;border:3px solid #e1f2ea}.completion-photo label{font-weight:800}.completion-photo input{display:block;margin-top:6px;max-width:100%}.completion-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.completion-grid label{display:grid;gap:6px;font-size:13px;font-weight:800}.completion-grid .full{grid-column:1/-1}.completion-grid input,.completion-grid select,.completion-grid textarea{width:100%;padding:11px 12px;border:1px solid #bfd4ca;border-radius:10px;background:#fff;color:#173c2f;font-family:inherit;font-size:16px;font-weight:600;line-height:1.4}.completion-grid textarea{min-height:88px;resize:vertical}.completion-grid input:focus,.completion-grid select:focus,.completion-grid textarea:focus{outline:3px solid rgba(12,124,135,.55);outline-offset:1px;border-color:#0c7c87}.completion-feedback{min-height:22px;margin:12px 0;color:#a12626;font-size:13px;font-weight:700}.completion-feedback.is-success{color:#087b55}.completion-primary{width:100%;border:0;border-radius:12px;padding:13px 16px;background:#087b55;color:#fff;font-weight:900;cursor:pointer}.completion-primary:disabled{opacity:.6;cursor:wait}.completion-footer{padding-top:16px;border-top:1px solid #e6efeb;display:flex;justify-content:space-between;align-items:center;gap:14px}.completion-footer p{margin:0;color:#667b72;font-size:13px;line-height:1.5}.completion-footer button{border:1px solid #b9cbc3;border-radius:10px;background:#fff;padding:9px 12px;color:#4c6259;font-weight:800;white-space:nowrap;cursor:pointer}@media(max-width:620px){.completion-grid{grid-template-columns:1fr}.completion-grid .full{grid-column:auto}.completion-gaps li,.completion-footer{align-items:flex-start;flex-direction:column}.completion-gaps li span{text-align:left}.completion-footer button{width:100%}}
-/* ---- Cincin fokus papan-ketik ----
- * Sebelumnya halaman ini hanya mengandalkan outline bawaan peramban untuk
- * tombol, sedangkan cincin fokus bidang isian memakai hijau 16% yang terlalu
- * pudar untuk terlihat. Warna #0c7c87 dipakai karena sama dengan --dl-focus di
- * doclinc-design-system.css, jadi seluruh aplikasi memakai satu warna cincin
- * fokus dan pengguna papan ketik selalu tahu di mana posisinya. */
-.completion-photo input:focus-visible,.completion-primary:focus-visible,.completion-footer button:focus-visible{outline:3px solid rgba(12,124,135,.62);outline-offset:2px}
+/* DokLinc — halaman "Lengkapi data" (warga & nakes).
+
+   Sebelumnya berkas ini satu baris ±8 KB dengan hex sendiri (#173c2f,
+   #087b55, #d7e8e0) dan gradien di kepala kartu form, sehingga halaman ini
+   memuat palet kedua di dalam aplikasi. Sekarang seluruh warna, radius,
+   bayangan, dan jarak memakai token --dl-* dari doclinc-design-system.css. */
+
+body.dl-warga-profile {
+  margin: 0;
+  background: var(--dl-bg);
+}
+
+/* Halaman ini tidak memuat Bootstrap, jadi reset kotak harus ditulis sendiri.
+   Tanpa ini padding bidang isian menambah tinggi 44px menjadi 68px. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.completion-shell {
+  min-height: 100vh;
+  padding: 1.5rem .875rem calc(2rem + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: start center;
+}
+
+.completion-card {
+  width: min(720px, 100%);
+  overflow: hidden;
+  background: var(--dl-surface);
+  border: 1px solid var(--dl-border);
+  border-radius: var(--dl-radius-lg);
+  box-shadow: var(--dl-shadow-2);
+}
+
+.completion-head {
+  padding: 1.5rem;
+  background: var(--dl-brand-strong);
+  color: var(--dl-surface);
+}
+
+.completion-brand {
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--dl-brand-subtle);
+}
+
+.completion-head h1 {
+  margin: .5rem 0 .375rem;
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  line-height: 1.2;
+  color: var(--dl-surface);
+}
+
+.completion-head p {
+  margin: 0;
+  color: var(--dl-brand-subtle);
+  font-size: var(--dl-text-sm);
+  line-height: 1.55;
+}
+
+.completion-gaps,
+.completion-form,
+.completion-notice,
+.completion-footer {
+  margin: 1.25rem;
+}
+
+.completion-gaps h2,
+.completion-form h2 {
+  margin: 0 0 .75rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--dl-text);
+}
+
+.completion-gaps ul {
+  display: grid;
+  gap: .5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.completion-gaps li {
+  display: flex;
+  justify-content: space-between;
+  gap: .625rem;
+  padding: .75rem;
+  border: 1px solid var(--dl-border);
+  border-radius: var(--dl-radius-sm);
+  background: var(--dl-surface-subtle);
+}
+
+.completion-gaps li strong {
+  font-size: var(--dl-text-sm);
+  color: var(--dl-text);
+}
+
+.completion-gaps li span {
+  color: var(--dl-text-muted);
+  font-size: var(--dl-text-sm);
+  text-align: right;
+}
+
+.completion-notice {
+  display: grid;
+  gap: .25rem;
+  padding: .875rem;
+  border: 1px solid color-mix(in srgb, var(--dl-warning) 45%, var(--dl-border));
+  border-left: 4px solid var(--dl-warning);
+  border-radius: var(--dl-radius-sm);
+  background: color-mix(in srgb, var(--dl-warning) 9%, var(--dl-surface));
+  color: var(--dl-warning-ink);
+}
+
+.completion-notice span {
+  font-size: var(--dl-text-sm);
+  line-height: 1.5;
+}
+
+.completion-form {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--dl-border);
+}
+
+.completion-form fieldset {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  border: 0;
+}
+
+.completion-form legend {
+  margin-bottom: .75rem;
+  font-size: .9375rem;
+  font-weight: 800;
+  color: var(--dl-text);
+}
+
+.completion-photo {
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  margin-bottom: 1rem;
+}
+
+.completion-photo img {
+  width: 72px;
+  height: 72px;
+  border: 3px solid var(--dl-brand-subtle);
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--dl-surface-subtle);
+}
+
+.completion-photo__field {
+  min-width: 0;
+}
+
+.completion-photo__label {
+  display: block;
+  font-size: var(--dl-text-sm);
+  font-weight: 800;
+  color: var(--dl-text);
+}
+
+/* Input asli tetap ada untuk peramban dan pembaca layar, tetapi tombol
+   "Pilih foto" yang menjadi jalur papan ketik. */
+.completion-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.completion-photo__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem .75rem;
+  margin-top: .375rem;
+}
+
+.completion-photo-trigger {
+  min-height: 44px;
+  padding: .5rem .9rem;
+  border: 1px solid var(--dl-border-strong);
+  border-radius: var(--dl-radius-sm);
+  background: var(--dl-surface);
+  color: var(--dl-brand-ink);
+  font-size: var(--dl-text-sm);
+  font-weight: 700;
+}
+
+.completion-photo-trigger:hover {
+  background: var(--dl-brand-subtle);
+}
+
+.completion-file-name {
+  color: var(--dl-text-muted);
+  font-size: var(--dl-text-sm);
+  overflow-wrap: anywhere;
+}
+
+.completion-help {
+  margin: 0;
+  color: var(--dl-text-muted);
+  font-size: var(--dl-text-sm);
+  line-height: 1.45;
+}
+
+.completion-photo__field .completion-help {
+  margin-top: .25rem;
+}
+
+.completion-field-error {
+  margin: 0;
+  color: var(--dl-danger-ink);
+  font-size: var(--dl-text-sm);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.completion-summary {
+  margin: 0 0 1rem;
+  padding: .75rem .875rem;
+  border: 1px solid var(--dl-danger);
+  border-radius: var(--dl-radius-sm);
+  background: var(--dl-surface-subtle);
+  color: var(--dl-danger-ink);
+  font-size: var(--dl-text-sm);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.completion-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .875rem;
+}
+
+.completion-field {
+  display: grid;
+  gap: .375rem;
+  min-width: 0;
+}
+
+.completion-field > label {
+  font-size: var(--dl-text-sm);
+  font-weight: 800;
+  color: var(--dl-text-secondary);
+}
+
+.completion-field.full {
+  grid-column: 1 / -1;
+}
+
+.completion-grid input,
+.completion-grid select,
+.completion-grid textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: .7rem .75rem;
+  border: 1px solid var(--dl-border-strong);
+  border-radius: var(--dl-radius-sm);
+  background: var(--dl-surface);
+  color: var(--dl-text);
+  font-family: var(--dl-font);
+  font-size: var(--dl-body-size);
+  font-weight: 600;
+}
+
+.completion-grid textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.completion-grid input:focus-visible,
+.completion-grid select:focus-visible,
+.completion-grid textarea:focus-visible,
+.completion-photo-trigger:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent);
+  outline-offset: 2px;
+}
+
+.completion-grid input.is-invalid,
+.completion-grid select.is-invalid,
+.completion-grid textarea.is-invalid {
+  border-color: var(--dl-danger);
+}
+
+.completion-feedback {
+  min-height: 1.25rem;
+  margin: .5rem 0;
+  color: var(--dl-text-muted);
+  font-size: var(--dl-text-sm);
+  line-height: 1.45;
+}
+
+.completion-feedback.is-error {
+  color: var(--dl-danger-ink);
+}
+
+.completion-feedback.is-success {
+  color: var(--dl-success-ink);
+}
+
+.completion-primary {
+  width: 100%;
+  min-height: 46px;
+  padding: .7rem 1rem;
+  border: 1px solid var(--dl-brand-ink);
+  border-radius: var(--dl-radius-sm);
+  background: var(--dl-brand-ink);
+  color: var(--dl-surface);
+  font-size: .9375rem;
+  font-weight: 800;
+}
+
+.completion-primary:disabled {
+  opacity: .6;
+}
+
+.completion-footer {
+  display: grid;
+  gap: .625rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--dl-border);
+}
+
+.completion-footer p {
+  margin: 0;
+  color: var(--dl-text-muted);
+  font-size: var(--dl-text-sm);
+  line-height: 1.5;
+}
+
+.completion-footer button {
+  justify-self: start;
+  min-height: 44px;
+  padding: .5rem .25rem;
+  border: 0;
+  background: transparent;
+  color: var(--dl-danger-ink);
+  font-size: var(--dl-text-sm);
+  font-weight: 700;
+}
+
+@media (min-width: 640px) {
+  .completion-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

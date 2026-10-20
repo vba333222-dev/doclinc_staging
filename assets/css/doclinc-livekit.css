@@ -1229,7 +1229,7 @@
    bawah) menata petak identitas konsultasi yang markup-nya sudah dihapus atas
    permintaan. Ikut dihapus supaya tidak ada selektor yang menata elemen yang
    tidak pernah dirender. */
-.chat-shell.is-active .chat-input-row { min-height: 54px !important; height: 54px !important; }
+.chat-shell.is-active .chat-input-row { min-height: 54px !important; height: auto !important; }
 @media (min-width: 421px) and (max-width: 520px) {
   body:has(.chat-shell.is-active) { min-height: 1600px; display: flex; align-items: center; justify-content: center; }
   .chat-shell.is-active { width: 390px !important; height: 1078px !important; min-height: 1078px !important; margin: auto; }
@@ -1316,8 +1316,8 @@
 }
 .chat-shell.is-active .chat-input-row {
   min-height: 54px !important;
-  height: 54px !important;
-  padding: 0 !important;
+  height: auto !important;
+  padding: 6px !important;
   grid-template-columns: 36px 36px minmax(0, 1fr) 40px;
   gap: 11px;
   border: 0 !important;

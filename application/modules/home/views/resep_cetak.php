@@ -91,7 +91,7 @@
 	     tanda kurung siku pada keluhan bisa merusak tata letak cetak — dan bila
 	     berisi tag skrip, ikut dieksekusi di jendela cetak. -->
 	<h1>Resep dokter</h1>
-	<p class="doclinc-resep-note">Dokumen ini dicetak dari DocLink dan hanya untuk keperluan pengobatan pasien.</p>
+	<p class="doclinc-resep-note">Dokumen ini dicetak dari DokLinc dan hanya untuk keperluan pengobatan pasien.</p>
 
 	<p class="doclinc-resep-field"><strong>Tanggal:</strong> <?= html_escape((string) $resep->tanggal) ?></p>
 	<p class="doclinc-resep-field"><strong>Dokter:</strong> <?= html_escape((string) $resep->nama_dokter) ?></p>
@@ -127,7 +127,7 @@
 		</tbody>
 	</table>
 
-	<p class="doclinc-resep-footer">Dicetak dari DocLink pada <?= html_escape(date('d/m/Y H:i')) ?>.</p>
+	<p class="doclinc-resep-footer">Dicetak dari DokLinc pada <?= html_escape(date('d/m/Y H:i')) ?>.</p>
 
 	<script>
 		window.onload = function() {

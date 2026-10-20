@@ -891,58 +891,11 @@
 }
 
 /* --------------------------------------------------------------------------
-   12. Tab profil
+   Profil akun (warga, nakes, puskesmas)
+
+   Aturan tampilan akun dipindahkan ke doclinc-account.css agar tiga role
+   memakai satu permukaan. Berkas ini tetap memuat aturan khusus beranda warga.
    -------------------------------------------------------------------------- */
-
-.dl-warga-app .dl-profile-card {
-  border: 1px solid var(--wd-line);
-  border-radius: var(--wd-radius-xl);
-  background: var(--dl-surface, #FFFFFF);
-  box-shadow: var(--wd-shadow-soft);
-}
-
-.dl-warga-app .dl-profile-card__head {
-  border-bottom: 1px solid var(--wd-line);
-  background: linear-gradient(135deg, var(--wd-brand-strong) 0%, var(--wd-brand) 100%);
-}
-
-.dl-warga-app .dl-profile-card__head h4 {
-  color: #FFFFFF;
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: -.01em;
-}
-
-.dl-warga-app .dl-profile-card__head span {
-  color: #E8FAF2;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.dl-warga-app .dl-profile-field {
-  border: 1px solid var(--wd-line);
-  border-radius: var(--wd-radius-md);
-  background: var(--wd-brand-mist);
-}
-
-.dl-warga-app .dl-profile-field label {
-  color: var(--wd-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.dl-warga-app .dl-profile-field input,
-.dl-warga-app .dl-profile-field textarea {
-  color: var(--wd-ink);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.dl-warga-app .dl-profile-actions .btn {
-  min-height: 44px;
-  border-radius: 999px;
-  font-weight: 700;
-}
 
 /* --------------------------------------------------------------------------
    13. Panel notifikasi
@@ -1299,4 +1252,75 @@
   .dl-anamnesis__list dt {
     margin-top: var(--dl-space-2, .5rem);
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Jam layanan kunjungan (dialog SweetAlert di beranda warga)
+
+   Dialog ini sebelumnya memakai tampilan bawaan SweetAlert: tombol biru dan
+   ikon biru, dua warna yang tidak ada di token. Sekarang seluruh permukaan
+   memakai --dl-*.
+
+   Catatan cara kerja: tidak ada !important di sini. SweetAlert menyuntikkan
+   CSS-nya setelah stylesheet halaman, jadi selektor dibuat lebih spesifik
+   (dua sampai tiga kelas) supaya menang tanpa memaksa. Bentuk tombol
+   (tinggi 44px, radius 8px, huruf 13px) tetap diambil dari normalisasi
+   .swal2-styled di design system — di sini hanya warna yang ditambahkan.
+   --------------------------------------------------------------------------- */
+
+.swal2-popup.dl-visit-hours {
+  border-radius: var(--dl-radius-lg);
+  box-shadow: var(--dl-shadow-2);
+  padding: var(--dl-space-5) var(--dl-space-4) var(--dl-space-4);
+  font-family: var(--dl-font);
+}
+
+.dl-visit-hours .swal2-title {
+  color: var(--dl-text);
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -.01em;
+}
+
+.dl-visit-hours .swal2-html-container {
+  color: var(--dl-text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+  margin-top: var(--dl-space-2);
+}
+
+.dl-visit-hours .swal2-icon.swal2-info {
+  border-color: var(--dl-brand);
+  color: var(--dl-brand-ink);
+}
+
+.dl-visit-hours .swal2-actions .swal2-confirm {
+  /* Bentuk disamakan dengan tombol dialog lain (44px, radius 8, 13px/800).
+     Dengan buttonsStyling:false SweetAlert tidak lagi menempelkan kelas
+     .swal2-styled, jadi normalisasi design system tidak berlaku otomatis. */
+  min-height: 44px;
+  height: 44px;
+  padding: .6rem 1.4rem;
+  border: 1px solid var(--dl-brand-strong);
+  border-radius: var(--dl-radius-sm);
+  background: var(--dl-brand-ink);
+  /* Putih diambil dari token permukaan, bukan hex baru. */
+  color: var(--dl-surface);
+  font-family: var(--dl-font);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dl-visit-hours .swal2-actions .swal2-confirm:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent);
+  outline-offset: 2px;
+}
+
+/* Nama bulan Indonesia lebih panjang daripada singkatan Inggris, sehingga
+   "Terakhir 19 Oktober 2026" sempat menyisakan "2026" sendirian di baris
+   kedua. `pretty` menahan satu kata menggantung tanpa mengubah ukuran teks
+   atau menambah tinggi kartu. */
+.dl-warga-app .dl-summary-tile__meta {
+  text-wrap: pretty;
 }

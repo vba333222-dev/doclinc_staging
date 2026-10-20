@@ -110,6 +110,15 @@
   padding-bottom: calc(var(--bd-nav-space) + env(safe-area-inset-bottom, 0px));
 }
 
+/* The floating navigation is 74px tall and sits 10px above the safe area. The
+   88px reservation on `.contents` leaves the last block (Berita) under the bar
+   when the active-consultation card makes the page only slightly taller than the
+   viewport. This extra gutter lets the page scroll the last block clear of the
+   bar instead of hiding it. */
+.dl-warga-app #beranda {
+  padding-bottom: 16px;
+}
+
 /* The header card is in normal flow now, so the 74px reservation for a fixed
    bar is no longer needed. */
 .dl-warga-app .dl-shell > .contents {
@@ -180,6 +189,70 @@
 .dl-warga-app .dl-bento-header {
   margin: 0 calc(-1 * var(--bd-pad)) 0 !important;
   border-radius: 0 !important;
+}
+
+/* Header menempel saat halaman digulir.
+   Sebelumnya bar ini sengaja dibuat `position: static` karena dianggap kartu
+   pertama di dalam alur. Permintaan pemilik produk: navigasi tidak boleh hilang
+   saat digulir. `sticky` dipakai, bukan `fixed`, supaya ruang vertikalnya tetap
+   dihitung sehingga tidak perlu padding pengganti yang harus dijaga sinkron.
+   z-index di bawah bilah navigasi bawah (1030) dan di atas kartu konten. */
+@media (max-width: 991.98px) {
+  .dl-warga-app .dl-bento-header {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+  }
+
+  /* `style.css` memberi `.contents` `overflow-x: hidden`, dan itu menjadikan
+     elemen tersebut kotak gulir sendiri sehingga `position: sticky` pada header
+     di dalamnya tidak pernah menempel. `visible` dipakai, bukan `clip`, karena
+     header menarik keluar gutter 16px dengan margin negatif: `clip` memotong
+     tepat di tepi gutter sehingga sisi kiri/kanan header terlihat terpotong.
+     `.dl-shell` yang selebar viewport tetap memotong luapan horizontal. */
+  .dl-warga-app .dl-shell > .contents {
+    overflow: visible;
+  }
+
+  /* Penyebab sebenarnya: `.content-wrapper.dl-shell` memakai `overflow:
+     hidden auto`. Dengan `overflow-y: auto` ia menjadi scrollport, sehingga
+     header menempel pada kotak yang tidak pernah menggulir, bukan pada layar.
+     Sumbu horizontal tetap dipotong (`clip`) agar hiasan tidak meluap. */
+  .dl-warga-app .dl-shell {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+}
+
+@media (min-width: 992px) {
+  .dl-warga-app .dl-bento-header {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+  }
+
+  .dl-warga-app .dl-shell > .contents {
+    overflow: visible;
+  }
+
+  /* Sama dengan perbaikan di mobile: `.dl-shell` dari style.css memakai
+     overflow auto dan menjadi scrollport, sehingga header sticky tidak pernah
+     menempel. Sumbu horizontal tetap dipotong. */
+  .dl-warga-app .dl-shell {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+}
+
+/* Label lokasi tidak boleh mendorong ikon notifikasi keluar layar. Alamat yang
+   dipakai sudah dipendekkan di JS; batas ini menjaga kasus nama tempat panjang
+   yang tidak terduga. */
+.dl-warga-app .dl-bento-header .dl-profile-meta > .dl-user-coordinate {
+  min-width: 0;
+  max-width: 52vw;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* The bar is pinned by lower layers with `!important` (Bootstrap's
@@ -793,19 +866,49 @@
   display: none;
 }
 
+/* --- Berita sebagai bagian biasa, bukan kapsul ----------------------------
+   Berita adalah kanal informasi harian dan penyuluhan, bukan kartu angka.
+   Sebelumnya bagian ini memakai kartu putih (border + bayangan) dengan batang
+   aksen bergradien di depan judulnya, sehingga judulnya terbaca seperti badge
+   atau kapsul. Di sini kapsul itu dilepas: tanpa kartu, tanpa batang aksen.
+   Judulnya tetap memakai ukuran dan bobot yang sama dengan judul bagian lain
+   supaya hierarki halaman tidak berubah. */
+.dl-warga-app #beranda .dl-bento-news {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.dl-warga-app #beranda .dl-bento-news .dl-section-title {
+  padding-left: 0;
+}
+
+.dl-warga-app #beranda .dl-bento-news .dl-section-title::before {
+  content: none;
+}
+
 /* --- Keadaan kosong ------------------------------------------------------ */
 
 .dl-warga-app #beranda .dl-bento-empty {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 118px;
-  padding: 20px 16px;
-  border: 1.5px dashed #B9DCCB;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--bd-line);
   border-radius: var(--bd-r-sm);
-  background: var(--bd-mint-mist);
+  background: var(--bd-surface);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.dl-warga-app #beranda .dl-bento-empty::after {
+  content: none;
 }
 
 /* The concentric rings from doclinc-warga-dashboard.css made the box read as a
@@ -818,19 +921,22 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--bd-r-sm);
-  background: #E4F6EE;
+  background: var(--bd-mint-soft);
   color: var(--bd-green-600);
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1;
+  flex: 0 0 32px;
 }
 
 .dl-warga-app #beranda .dl-bento-empty .history-empty-text {
+  margin: 0;
   color: var(--bd-muted);
   font-size: 13px;
   font-weight: 600;
+  text-align: left;
 }
 
 /* --- Konsultasi aktif di dalam kartu bagian ------------------------------
@@ -884,6 +990,30 @@
   aspect-ratio: 400 / 260;
   object-fit: cover;
   border-radius: 0;
+}
+
+/* Kartu berita: gambar 16:10 dengan judul di bawahnya. Tiga kartu tampil
+   berdampingan di layar lebar, satu per satu di ponsel. */
+.dl-warga-app #beranda .dl-bento-news .dl-news-card__body {
+  padding: 12px 14px 14px;
+}
+
+.dl-warga-app #beranda .dl-bento-news .dl-news-card__title {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--bd-ink);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  text-wrap: pretty;
+}
+
+.dl-warga-app #beranda .dl-bento-news .owl-carousel .item.dl-news-card--empty {
+  border: 0;
+  background: transparent;
 }
 
 .dl-warga-app #beranda .dl-bento-news .owl-theme .owl-dots {
@@ -3799,8 +3929,9 @@
     align-items: center;
     gap: 8px;
     color: var(--bd-ink);
-    font-size: 15px;
+    font-size: 1.375rem;
     font-weight: 800;
+    letter-spacing: -.02em;
     line-height: 1.2;
   }
 
@@ -3870,8 +4001,9 @@
 
   .dl-warga-app .nk-profile-modal__footer .btn {
     width: 100%;
+    min-height: 48px;
     margin: 0;
-    font-size: 13px;
+    font-size: .875rem;
     font-weight: 800;
     line-height: 1.2;
   }
@@ -4106,21 +4238,20 @@
 }
 
 /* --- Jam WIB ---------------------------------------------------------------
-   Digits, weekday and date are white on #12472F. Tabular numerals stop the
-   digits from shifting as they change; without them the tile visibly jitters
-   once a minute, which is exactly when the eye is on it. */
+   Permintaan pemilik produk: jam kembali menjadi blok hijau dengan gradasi
+   yang sama dengan header. Tabular numerals stop the digits from shifting as
+   they change; without them the tile visibly jitters once a minute. */
 .dl-warga-app #beranda .dl-clock-tile {
   display: grid;
   align-content: space-between;
   gap: 4px;
   min-height: 108px;
   padding: var(--bd-pad, 16px);
+  border: 0;
   border-radius: var(--bd-r-md);
-  /* Same gradient construction as .dl-action-tile: a solid background-color with a
-     150deg gradient layered over it, so the tile degrades to flat #12472F if the
-     gradient cannot paint. #12472F stays the dominant mid stop. */
-  background-color: #12472F;
-  background-image: linear-gradient(150deg, #1A6442 0%, #12472F 55%, #0C3221 100%);
+  background:
+    radial-gradient(130% 150% at 100% -30%, rgba(255, 255, 255, .13) 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(135deg, var(--bd-green-600) 0%, var(--bd-green-700) 48%, var(--bd-green-900) 100%);
   color: #FFFFFF;
   box-shadow: var(--bd-shadow-1);
   overflow: hidden;
@@ -4128,7 +4259,7 @@
 
 .dl-warga-app #beranda .dl-clock-tile__time {
   display: block;
-  font-size: clamp(2.4rem, 10vw, 3.2rem);
+  font-size: clamp(1.7rem, 7vw, 2.1rem);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -.02em;
@@ -4138,26 +4269,26 @@
 }
 
 .dl-warga-app #beranda .dl-clock-tile__stamp {
-  /* Weekday and date share one line. They were stacked, which cost a whole line of
-     tile height for two pieces of information that read as one phrase
-     ("Minggu 18 Oktober 2026"). nowrap keeps them from splitting mid-phrase on a
-     narrow phone; the tile widens rather than the text breaking. */
+  /* Hari dan tanggal boleh membungkus ke baris kedua; jangan pernah memotong
+     nama bulan atau tahun dengan ellipsis. */
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 6px;
+  gap: 2px 6px;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
+  white-space: normal;
+  overflow: visible;
 }
 
 .dl-warga-app #beranda .dl-clock-tile__date,
 .dl-warga-app #beranda .dl-clock-tile__day {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.3;
-  color: #FFFFFF;
+  color: rgba(255, 255, 255, .88);
+  white-space: normal;
+  overflow-wrap: normal;
 }
 
 .dl-warga-app #beranda .dl-clock-tile__time.is-ticking {
@@ -4197,16 +4328,15 @@
   }
 
   .dl-warga-app #beranda .dl-clock-tile__time {
-    font-size: clamp(1.95rem, 9vw, 2.4rem);
+    font-size: clamp(1.6rem, 7vw, 1.9rem);
   }
 
   .dl-warga-app #beranda .dl-clock-tile__date,
   .dl-warga-app #beranda .dl-clock-tile__day {
-    font-size: 11px;
+    font-size: 13px;
   }
 
-  .dl-warga-app #beranda .dl-bento-actions > .dl-action-tile,
-  .dl-warga-app #beranda .dl-summary-tile {
+  .dl-warga-app #beranda .dl-bento-actions > .dl-action-tile {
     padding: 12px;
   }
 }
@@ -4243,28 +4373,33 @@
   cursor: pointer;
 }
 
-/* Texture in the bottom-right corner, rotated so it leans toward the top-left.
-   Drawn as a pseudo-element rather than a background layer because a background
-   cannot be rotated; the files are referenced relative to this stylesheet, so
-   they resolve from whatever base path the app is served at. Pointed at nothing
-   so the texture never intercepts a tap meant for the card.
+/* Tekstur di sudut kanan bawah, dimiringkan. Digambar sebagai pseudo-element
+   karena background tidak bisa diputar. Berkas diambil dari `assets/texture/`
+   dan dipakai lewat mask, bukan `filter`, supaya warnanya tetap berasal dari
+   token: `currentColor` pada kartu hijau berarti putih, dan bentuknya hanya
+   siluet garis — bukan ikon yang bisa disalahartikan sebagai tombol.
 
-   Each state carries its own mark: the green primary card takes the healthcare
-   symbol, the white locked card takes the patient symbol. */
+   Nama berkas di folder itu mengandung spasi dan koma, jadi ditulis
+   URL-encoded. Diposisikan `pointer-events: none` agar tidak pernah menangkap
+   ketukan yang ditujukan ke kartu. */
 .dl-warga-app #beranda .dl-action-tile::after {
   content: '';
   position: absolute;
-  right: -20px;
-  bottom: -22px;
-  width: 104px;
-  height: 104px;
-  background-image: url("../images/healthcare.svg");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  filter: brightness(0) invert(1);
-  opacity: .16;
-  transform: rotate(-18deg);
+  right: -18px;
+  bottom: -14px;
+  width: clamp(120px, 24vw, 156px);
+  height: clamp(120px, 24vw, 156px);
+  background-color: currentColor;
+  -webkit-mask-image: url("../texture/first%20aid%20kit%2C%20emergency%2C%20healthcare%2C%20medical%20supplies%2C%20rescue.svg");
+  mask-image: url("../texture/first%20aid%20kit%2C%20emergency%2C%20healthcare%2C%20medical%20supplies%2C%20rescue.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  opacity: .18;
+  transform: rotate(-14deg);
   pointer-events: none;
   z-index: 0;
 }
@@ -4277,8 +4412,8 @@
 .dl-warga-app #beranda .dl-action-tile.is-locked::after {
   background-image: none;
   background-color: var(--bd-green-600);
-  -webkit-mask-image: url("../images/patient.svg");
-  mask-image: url("../images/patient.svg");
+  -webkit-mask-image: url("../texture/patient%2C%20healthcare%2C%20medical%20care%2C%20hospital%2C%20treatment.svg");
+  mask-image: url("../texture/patient%2C%20healthcare%2C%20medical%20care%2C%20hospital%2C%20treatment.svg");
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
@@ -4368,7 +4503,7 @@
 .dl-warga-app #beranda .dl-action-tile__note {
   display: block;
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.4;
   opacity: .88;
@@ -4440,6 +4575,16 @@
   font-size: 12px;
   font-weight: 600;
   line-height: 1.35;
+  white-space: nowrap;
+  letter-spacing: -.02em;
+}
+
+/* Padding kanan dikurangi hanya di ponsel supaya "Terakhir 21 September 2026"
+   tetap satu baris; teks kiri tetap sejajar dengan kartu jam. */
+@media (max-width: 575.98px) {
+  .dl-warga-app #beranda .dl-summary-tile {
+    padding: 12px 8px 12px 12px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4490,20 +4635,60 @@
 .dl-warga-app #beranda .dl-welcome {
   display: grid;
   gap: 4px;
-  padding: 14px 16px;
-  border: 1px solid var(--bd-line);
-  border-radius: var(--bd-r-md);
-  background: var(--bd-mint-mist);
+  position: relative;
+  padding: 2px 0 2px 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Aksen tipis di kiri mengubah sapaan dari satu baris teks bold menjadi
+   lockup editorial: sapaan kecil, baris pembuka besar, dan nama produk
+   sebagai satu-satunya aksen warna. */
+.dl-warga-app #beranda .dl-welcome::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--bd-green-600);
 }
 
 .dl-warga-app #beranda .dl-welcome__hello {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   margin: 0;
   color: var(--bd-ink);
-  font-size: clamp(1.3rem, 6.6vw, 1.8rem);
-  font-weight: 800;
-  letter-spacing: -.025em;
-  line-height: 1.15;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.2;
   text-wrap: pretty;
+}
+
+.dl-warga-app #beranda .dl-welcome__salutation {
+  color: var(--bd-muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.3;
+}
+
+.dl-warga-app #beranda .dl-welcome__welcome {
+  color: var(--bd-ink);
+  font-size: clamp(1.15rem, 5vw, 1.45rem);
+  font-weight: 800;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.dl-warga-app #beranda .dl-welcome__brand {
+  color: var(--bd-green-700);
+  white-space: nowrap;
 }
 
 .dl-warga-app #beranda .dl-welcome__note {
@@ -4598,6 +4783,19 @@
   box-shadow: none;
 }
 
+/* Empty threads read as a centered note, not as the first chat bubble. The
+   class is added/removed by the message poller in thread_v.php. */
+.dl-chat-bento .chat-list.is-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dl-chat-bento .chat-list.is-empty .chat-muted {
+  margin: 0;
+  max-width: 280px;
+}
+
 /* --- B24.2 Kepala percakapan ---------------------------------------------- */
 
 .dl-chat-bento .chat-header {
@@ -4667,6 +4865,9 @@
 
 .dl-chat-bento .chat-presence-status {
   display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
 
 /* --- B24.3 (dihapus) -------------------------------------------------------
    Petak identitas konsultasi - ikon, "Konsultasi sedang berlangsung", dan
@@ -4700,6 +4901,11 @@
   margin: 4px 0 12px;
 }
 
+/* `hidden` harus menang atas display:flex di atas, termasuk di layar lebar. */
+.dl-chat-bento .chat-date-separator[hidden] {
+  display: none;
+}
+
 .dl-chat-bento .chat-date-separator::before,
 .dl-chat-bento .chat-date-separator::after {
   content: "";
@@ -4714,7 +4920,7 @@
   border-radius: 6px;
   background: var(--bd-mint-soft);
   color: var(--bd-mint-ink);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: .01em;
   line-height: 1.3;
@@ -4761,12 +4967,37 @@
   display: block;
   margin-bottom: 2px;
   color: var(--bd-green-600);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: -.01em;
 }
 
 .dl-chat-bento .chat-time {
+  display: block;
+  margin-top: 4px;
+  color: var(--bd-muted);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* LiveKit's active-room sheet also styles `.chat-time` at 11px and the sender
+   at 11px. Its selector is (0,3,0), so the B24 selector above loses on source
+   order. This pair pins the readability floor without adding !important. */
+.dl-warga-chat.dl-chat-bento .chat-time {
+  color: var(--bd-muted);
+  font-size: 13px;
+  line-height: 16px;
+}
+
+.dl-warga-chat.dl-chat-bento .chat-message-sender {
+  color: var(--bd-green-600);
+  font-size: 13px;
+}
+
+.dl-warga-chat.dl-chat-bento .chat-date-separator > span {
+  font-size: 13px;
+}
 
 /* --- B24.5 Komposer ------------------------------------------------------- */
 
@@ -4927,21 +5158,9 @@
   }
 }
 
-  display: block;
-  margin-top: 4px;
-  color: var(--bd-muted);
-  font-size: 11px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
 .dl-chat-bento .chat-bubble.mine .chat-time,
 .dl-chat-bento .chat-message.mine .chat-time {
-  color: rgba(255, 255, 255, .82);
-}
-
-  align-items: center;
-  gap: 5px;
+  color: var(--bd-green-800);
 }
 
 .dl-chat-bento .chat-presence-status__dot {
@@ -5052,6 +5271,16 @@
   line-height: 1;
 }
 
+/* Target sentuh 44px untuk kedua tombol panggilan. Blok <style> view memasang
+   42px di layar ponsel, jadi ukuran ini ditulis ulang di lapisan bento. */
+.dl-chat-bento .chat-call-button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 10px;
+  border-radius: var(--bd-r-sm);
+}
+
 /* Di sini dulu ada `.dl-chat-bento .chat-info-banner__icon` untuk glyph petak
    identitas konsultasi. Petaknya sudah dihapus dari markup, jadi aturannya ikut
    dihapus - lihat B24.3 di atasnya. */
@@ -5101,7 +5330,7 @@
   flex: 1 1 auto !important;
   width: auto !important;
   min-width: 0 !important;
-  height: auto !important;
+  height: auto;
   min-height: 44px !important;
   max-height: 120px !important;
   padding: 11px 12px !important;
@@ -5113,6 +5342,9 @@
   font-size: 14px !important;
   font-weight: 600 !important;
   line-height: 1.4 !important;
+  white-space: pre-wrap;
+  overflow-y: auto;
+  text-overflow: clip;
   resize: none !important;
 }
 
