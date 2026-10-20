@@ -1,0 +1,580 @@
+/* DokLinc Clinical Workspace
+ * Lapisan visual untuk alur disposisi -> hasil -> review -> rekam medis ->
+ * finalisasi -> penutupan. Semua token dan komponen diberi awalan cw- dan
+ * hanya aktif di dalam .dl-clinical-workspace supaya halaman lain tidak ikut
+ * berubah. Warna diturunkan dari token --dl-* agar identitas hijau DocLinc
+ * tetap satu; token cw-* hanya menambah peran semantik untuk alur klinis. */
+.dl-clinical-workspace {
+  --cw-surface: var(--dl-surface);
+  --cw-surface-soft: var(--dl-surface-subtle);
+  --cw-surface-alt: #FBFDFC;
+  --cw-line: var(--dl-border);
+  --cw-line-strong: var(--dl-border-strong);
+  --cw-ink: var(--dl-text);
+  --cw-muted: var(--dl-text-muted);
+  --cw-brand: var(--dl-brand-ink);
+  --cw-brand-strong: var(--dl-brand-strong);
+  --cw-brand-soft: var(--dl-brand-subtle);
+  --cw-accent: var(--dl-info);
+  --cw-info: var(--dl-info);
+  --cw-info-soft: #EDF4F8;
+  --cw-warning: var(--dl-warning);
+  --cw-warning-soft: #FCF5E6;
+  --cw-danger: #A8443F;
+  --cw-danger-soft: #F7E7E6;
+  --cw-success: var(--dl-success-ink);
+  --cw-focus: var(--dl-focus);
+  --cw-radius: var(--dl-radius-md);
+  --cw-radius-sm: var(--dl-radius-sm);
+  --cw-shadow: var(--dl-shadow-1);
+  --cw-gap: clamp(12px, 2vw, 20px);
+  --cw-tap: 44px;
+  color: var(--cw-ink);
+  font-size: var(--dl-body-size);
+  line-height: var(--dl-body-leading);
+}
+
+body.dl-clinical-workspace { overflow-x: hidden; overflow-x: clip; }
+.dl-clinical-workspace,
+.dl-clinical-workspace .consult-shell,
+.dl-clinical-workspace .content,
+.dl-clinical-workspace .nakes-clinical-layout,
+.dl-clinical-workspace .nakes-work-pane,
+.dl-clinical-workspace .nakes-context-rail { min-width: 0; max-width: 100%; }
+.dl-clinical-workspace img { max-width: 100%; height: auto; }
+.dl-clinical-workspace .cw-skip-link {
+  position: absolute;
+  top: -60px;
+  left: 12px;
+  z-index: 100;
+  padding: 10px 14px;
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-brand);
+  color: #fff;
+  font-weight: 750;
+  text-decoration: none;
+}
+.dl-clinical-workspace .cw-skip-link:focus { top: 12px; color: #fff; }
+.dl-clinical-workspace .cw-workspace-header { flex-wrap: wrap; }
+.dl-clinical-workspace .dl-nakes-desktop-nav a,
+.dl-clinical-workspace .dl-puskesmas-desktop-nav a,
+.dl-clinical-workspace .dl-bottom-nav-menu a {
+  min-height: var(--cw-tap);
+  display: inline-flex;
+  align-items: center;
+}
+.dl-clinical-workspace .cw-workspace-thread { margin-top: var(--cw-gap); }
+
+.dl-clinical-workspace .cw-context-details > .cw-context-summary {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--cw-tap);
+  padding: 10px 12px;
+  border: 1px solid var(--cw-line);
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-surface);
+  color: var(--cw-ink);
+  font-size: 14px;
+  font-weight: 750;
+  cursor: pointer;
+  list-style: none;
+}
+.dl-clinical-workspace .cw-context-details > .cw-context-summary::-webkit-details-marker { display: none; }
+.dl-clinical-workspace .cw-context-details > .cw-context-summary::after {
+  content: "+";
+  margin-left: auto;
+  color: var(--cw-brand);
+  font-size: 18px;
+  line-height: 1;
+}
+.dl-clinical-workspace .cw-context-details[open] > .cw-context-summary::after { content: "−"; }
+
+/* Shell: konten klinis di kiri, konteks pasien di kanan. Di layar sempit,
+ * konteks menjadi bagian setelah alur, bukan sidebar yang mendorong konten. */
+.dl-clinical-workspace .cw-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  align-items: start;
+  gap: var(--cw-gap);
+  width: 100%;
+}
+.dl-clinical-workspace .cw-main,
+.dl-clinical-workspace .cw-context {
+  display: grid;
+  gap: var(--cw-gap);
+  min-width: 0;
+}
+.dl-clinical-workspace .cw-context {
+  position: sticky;
+  top: 16px;
+}
+.dl-clinical-workspace .cw-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: clamp(14px, 2vw, 22px);
+  border: 1px solid var(--cw-line);
+  border-radius: var(--cw-radius);
+  background: var(--cw-surface);
+  box-shadow: var(--cw-shadow);
+}
+.dl-clinical-workspace .cw-header-main { display: grid; gap: 4px; min-width: 0; }
+.dl-clinical-workspace .cw-eyebrow,
+.dl-clinical-workspace .cw-kicker {
+  margin: 0;
+  color: var(--cw-muted);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .06em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.dl-clinical-workspace .cw-title {
+  margin: 0;
+  color: var(--cw-ink);
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-weight: 800;
+  letter-spacing: -.02em;
+  line-height: 1.25;
+}
+.dl-clinical-workspace .cw-subtitle { margin: 0; color: var(--cw-muted); font-size: 13px; }
+.dl-clinical-workspace .cw-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Kartu dan bagian. Tidak memakai bayangan ganda: satu garis, satu latar. */
+.dl-clinical-workspace .cw-card {
+  border: 1px solid var(--cw-line);
+  border-radius: var(--cw-radius);
+  background: var(--cw-surface);
+  box-shadow: var(--cw-shadow);
+  overflow: clip;
+}
+.dl-clinical-workspace .cw-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 0;
+}
+.dl-clinical-workspace .cw-card-body { padding: 16px 18px; }
+.dl-clinical-workspace .cw-card-body > :last-child { margin-bottom: 0; }
+.dl-clinical-workspace .cw-card-head + .cw-card-body { padding-top: 12px; }
+.dl-clinical-workspace .cw-section-title {
+  margin: 0;
+  color: var(--cw-ink);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+.dl-clinical-workspace .cw-meta { color: var(--cw-muted); font-size: 13px; }
+.dl-clinical-workspace .cw-divider { height: 1px; margin: 0; border: 0; background: var(--dl-divider); }
+
+/* Status: satu bentuk, empat nada. Teks tetap menjadi pembawa makna utama;
+ * warna hanya penguat, sehingga tetap terbaca pada buta warna. */
+.dl-clinical-workspace .cw-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.dl-clinical-workspace .cw-state::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+}
+.dl-clinical-workspace .cw-state.is-info { color: var(--cw-info); background: var(--cw-info-soft); }
+.dl-clinical-workspace .cw-state.is-warning { color: var(--cw-warning); background: var(--cw-warning-soft); }
+.dl-clinical-workspace .cw-state.is-danger { color: var(--cw-danger); background: var(--cw-danger-soft); }
+.dl-clinical-workspace .cw-state.is-success { color: var(--cw-success); background: var(--cw-brand-soft); }
+.dl-clinical-workspace .cw-state.is-neutral { color: var(--cw-muted); background: var(--cw-surface-soft); }
+
+/* Clinical Thread: tujuh langkah yang sama dengan state machine. Garis penghubung
+ * berada di belakang penanda, bukan elemen tambahan, supaya urutan tetap
+ * terbaca oleh pembaca layar sebagai daftar <ol>. */
+.dl-clinical-workspace .cw-thread {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(104px, 1fr);
+  gap: 0;
+  margin: 0;
+  padding: 4px 0 2px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  list-style: none;
+}
+.dl-clinical-workspace .cw-step {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-width: 0;
+  padding: 30px 10px 0 0;
+}
+.dl-clinical-workspace .cw-step::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--cw-line);
+}
+.dl-clinical-workspace .cw-step:last-child::before { right: calc(100% - 20px); }
+.dl-clinical-workspace .cw-step::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--cw-line-strong);
+  border-radius: 50%;
+  background: var(--cw-surface);
+  box-sizing: border-box;
+}
+.dl-clinical-workspace .cw-step.is-done::before { background: var(--cw-brand); }
+.dl-clinical-workspace .cw-step.is-done::after { border-color: var(--cw-brand); background: var(--cw-brand); }
+.dl-clinical-workspace .cw-step.is-current::after {
+  border-color: var(--cw-brand);
+  background: var(--cw-surface);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--cw-brand) 16%, transparent);
+}
+.dl-clinical-workspace .cw-step.is-current::before { background: var(--cw-brand); }
+.dl-clinical-workspace .cw-step.is-blocked::after { border-color: var(--cw-warning); background: var(--cw-warning-soft); }
+.dl-clinical-workspace .cw-step.is-skipped { opacity: .72; }
+.dl-clinical-workspace .cw-step.is-skipped::after { border-style: dashed; }
+.dl-clinical-workspace .cw-step-label {
+  overflow: hidden;
+  color: var(--cw-ink);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dl-clinical-workspace .cw-step.is-current .cw-step-label { color: var(--cw-brand); }
+.dl-clinical-workspace .cw-step-meta {
+  overflow: hidden;
+  color: var(--cw-muted);
+  font-size: 12px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dl-clinical-workspace .cw-thread--mini { grid-auto-columns: minmax(72px, 1fr); padding-top: 0; }
+.dl-clinical-workspace .cw-thread--mini .cw-step { padding-top: 22px; }
+.dl-clinical-workspace .cw-thread--mini .cw-step::before { top: 7px; }
+.dl-clinical-workspace .cw-thread--mini .cw-step::after { top: 1px; width: 12px; height: 12px; }
+.dl-clinical-workspace .cw-thread--mini .cw-step-label { font-size: 12px; }
+.dl-clinical-workspace .cw-thread--mini .cw-step-meta { display: none; }
+
+/* Aksi. Dock menempel di bawah pada layar pendek supaya aksi berikutnya tidak
+ * hilang setelah pengguna menggulir catatan panjang. */
+.dl-clinical-workspace .cw-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  padding: 12px clamp(12px, 2vw, 18px);
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  border: 1px solid var(--cw-line);
+  border-radius: var(--cw-radius);
+  background: color-mix(in srgb, var(--cw-surface) 94%, transparent);
+  box-shadow: 0 -8px 24px rgba(31, 42, 36, .08);
+  backdrop-filter: blur(10px);
+}
+.dl-clinical-workspace .cw-dock-note { color: var(--cw-muted); font-size: 12px; }
+.dl-clinical-workspace .cw-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dl-clinical-workspace .cw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: var(--cw-tap);
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--cw-radius-sm);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+}
+.dl-clinical-workspace .cw-btn:active { transform: translateY(1px); }
+.dl-clinical-workspace .cw-btn-primary { color: #fff; background: var(--cw-brand); border-color: var(--cw-brand); }
+.dl-clinical-workspace .cw-btn-primary:hover { color: #fff; background: var(--cw-brand-strong); border-color: var(--cw-brand-strong); }
+.dl-clinical-workspace .cw-btn-secondary { color: var(--cw-brand); background: var(--cw-surface); border-color: var(--cw-brand); }
+.dl-clinical-workspace .cw-btn-secondary:hover { color: #fff; background: var(--cw-brand); }
+.dl-clinical-workspace .cw-btn-ghost { color: var(--cw-muted); background: transparent; border-color: transparent; }
+.dl-clinical-workspace .cw-btn-ghost:hover { color: var(--cw-ink); background: var(--cw-surface-soft); }
+.dl-clinical-workspace .cw-btn-danger { color: #fff; background: var(--cw-danger); border-color: var(--cw-danger); }
+
+/* Tombol penugasan dokter: bento memakai 48px/radius 6px di mobile dan
+ * .btn-sm 38px di desktop. Samakan menjadi satu target sentuh 44px dengan
+ * bentuk pil agar label "Pilih Dokter" tidak berubah ukuran antar breakpoint. */
+.dl-clinical-workspace .nk-pic-actions .btn,
+.dl-clinical-workspace .nk-pic-clear-form .btn {
+  min-height: 44px !important;
+  height: auto;
+  padding: 8px 14px !important;
+  border-radius: 999px !important;
+  font-size: 13px;
+  line-height: 1.25;
+  white-space: nowrap;
+  box-shadow: none !important;
+}
+/* Bidang dan pilihan keputusan. Kartu pilihan menggantikan <select> untuk
+ * keputusan review karena setiap opsi perlu penjelasan konsekuensi. */
+.dl-clinical-workspace .cw-field { display: grid; gap: 6px; margin-bottom: 16px; }
+.dl-clinical-workspace .cw-label { color: var(--cw-ink); font-size: 14px; font-weight: 750; }
+.dl-clinical-workspace .cw-help { color: var(--cw-muted); font-size: 13px; }
+.dl-clinical-workspace .cw-error { color: var(--cw-danger); font-size: 13px; font-weight: 650; }
+.dl-clinical-workspace [aria-invalid="true"] { border-color: var(--cw-danger) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--cw-danger) 14%, transparent); }
+.dl-clinical-workspace .cw-choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.dl-clinical-workspace .cw-choice {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  min-height: 72px;
+  padding: 14px;
+  border: 1px solid var(--cw-line-strong);
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-surface);
+  cursor: pointer;
+}
+.dl-clinical-workspace .cw-choice:hover { border-color: var(--cw-brand); background: var(--cw-surface-soft); }
+.dl-clinical-workspace .cw-choice:has(input:checked),
+.dl-clinical-workspace .cw-choice.is-selected { border-color: var(--cw-brand); background: var(--cw-brand-soft); box-shadow: inset 0 0 0 1px var(--cw-brand); }
+.dl-clinical-workspace .cw-choice:has(input:focus-visible) { outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent); outline-offset: 2px; }
+.dl-clinical-workspace .cw-choice input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--cw-brand); }
+.dl-clinical-workspace .cw-choice-title { display: block; color: var(--cw-ink); font-size: 14px; font-weight: 750; }
+.dl-clinical-workspace .cw-choice-text { display: block; margin-top: 2px; color: var(--cw-muted); font-size: 13px; }
+
+/* Catatan sumber Nakes vs catatan dokter. Garis kiri memberi provenance tanpa
+ * memakai warna yang berbeda dari identitas utama. */
+.dl-clinical-workspace .cw-source-note {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--cw-line);
+  border-left: 3px solid var(--cw-info);
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-info-soft);
+}
+.dl-clinical-workspace .cw-source-note .cw-source-label { color: var(--cw-info); font-size: 12px; font-weight: 750; }
+.dl-clinical-workspace .cw-source-note p { margin: 0; color: var(--cw-ink); white-space: pre-wrap; }
+.dl-clinical-workspace .cw-readonly-value {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--cw-line);
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-surface-soft);
+  color: var(--cw-ink);
+  white-space: pre-wrap;
+}
+.dl-clinical-workspace .cw-repeater { display: grid; gap: 10px; }
+.dl-clinical-workspace .cw-repeater-row {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--cw-line);
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-surface-soft);
+}
+.dl-clinical-workspace .cw-context-list { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; margin: 0; }
+.dl-clinical-workspace .cw-context-list dt { color: var(--cw-muted); font-size: 12px; font-weight: 650; }
+.dl-clinical-workspace .cw-context-list dd { margin: 0; color: var(--cw-ink); font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+/* Ringkasan tindakan dan daftar tugas di dashboard/history. Komponen ini
+ * memakai token cw-* yang sama dengan workspace, tetapi tidak mengambil alih
+ * grid bento yang sudah ada. */
+.dl-clinical-workspace .cw-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+.dl-clinical-workspace .cw-stat {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--cw-line);
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-surface);
+}
+.dl-clinical-workspace .cw-stat-label {
+  color: var(--cw-muted);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.3;
+}
+.dl-clinical-workspace .cw-stat-value {
+  color: var(--cw-ink);
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -.03em;
+  line-height: 1.1;
+}
+.dl-clinical-workspace .cw-stat.is-warning .cw-stat-value { color: var(--cw-warning); }
+.dl-clinical-workspace .cw-stat.is-info .cw-stat-value { color: var(--cw-info); }
+.dl-clinical-workspace .cw-stat.is-success .cw-stat-value { color: var(--cw-success); }
+.dl-clinical-workspace .cw-action-items { display: grid; gap: 0; }
+.dl-clinical-workspace .cw-action-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--dl-divider);
+  color: inherit;
+  text-decoration: none;
+}
+.dl-clinical-workspace .cw-action-item:last-child { border-bottom: 0; }
+.dl-clinical-workspace .cw-action-item:hover { background: var(--cw-surface-soft); }
+.dl-clinical-workspace .cw-action-item-main,
+.dl-clinical-workspace .cw-action-item-side { display: grid; gap: 3px; min-width: 0; }
+.dl-clinical-workspace .cw-action-item-main strong { color: var(--cw-ink); font-size: 14px; font-weight: 750; }
+.dl-clinical-workspace .cw-action-item-side { justify-items: end; text-align: right; }
+.dl-clinical-workspace .cw-action-item-next { color: var(--cw-brand); font-size: 12px; font-weight: 700; }
+
+.dl-clinical-workspace .cw-result-editor {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+.dl-clinical-workspace .cw-result-editor > legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+.dl-clinical-workspace .cw-result-fallback { margin-top: 2px; }
+.dl-clinical-workspace .cw-result-fallback > summary {
+  min-height: var(--cw-tap);
+  padding: 9px 0;
+  color: var(--cw-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dl-clinical-workspace .cw-result-fallback textarea { margin-bottom: 4px; }
+.dl-clinical-workspace .cw-result-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  padding: 10px 0;
+  background: color-mix(in srgb, var(--cw-surface) 95%, transparent);
+  backdrop-filter: blur(8px);
+}
+.dl-clinical-workspace .cw-repeater-row .cw-field { margin-bottom: 0; }
+.dl-clinical-workspace .cw-repeater-row .cw-btn { justify-self: start; }
+.dl-clinical-workspace .cw-checklist {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dl-clinical-workspace .cw-checklist > li {
+  position: relative;
+  padding-left: 22px;
+  color: var(--cw-muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+.dl-clinical-workspace .cw-checklist > li::before {
+  content: "○";
+  position: absolute;
+  left: 0;
+  color: var(--cw-warning);
+  font-weight: 800;
+}
+.dl-clinical-workspace .cw-checklist > li.is-done { color: var(--cw-ink); }
+.dl-clinical-workspace .cw-checklist > li.is-done::before { content: "✓"; color: var(--cw-success); }
+.dl-clinical-workspace .cw-empty {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 20px 14px;
+  border: 1px dashed var(--cw-line-strong);
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-surface-soft);
+  color: var(--cw-muted);
+  font-size: 13px;
+  text-align: center;
+}
+.dl-clinical-workspace .cw-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.dl-clinical-workspace :focus-visible { outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent); outline-offset: 2px; }
+
+@media (max-width: 1100px) {
+  .dl-clinical-workspace .cw-workspace { grid-template-columns: minmax(0, 1fr); }
+  .dl-clinical-workspace .cw-context { position: static; order: -1; }
+  .dl-clinical-workspace .cw-context-details { display: grid; gap: 10px; }
+  .dl-clinical-workspace .cw-context-details > .cw-context-summary { display: flex; }
+}
+@media (max-width: 640px) {
+  .dl-clinical-workspace .cw-header { padding: 14px; }
+  .dl-clinical-workspace .cw-header-actions { width: 100%; }
+  .dl-clinical-workspace .cw-card-head,
+  .dl-clinical-workspace .cw-card-body { padding-left: 14px; padding-right: 14px; }
+  .dl-clinical-workspace .cw-dock { align-items: stretch; }
+  .dl-clinical-workspace .cw-actions { width: 100%; }
+  .dl-clinical-workspace .cw-actions .cw-btn { flex: 1 1 100%; }
+  .dl-clinical-workspace .cw-choice-grid { grid-template-columns: minmax(0, 1fr); }
+  .dl-clinical-workspace .cw-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dl-clinical-workspace .cw-action-item { align-items: flex-start; flex-direction: column; }
+  .dl-clinical-workspace .cw-action-item-side { justify-items: start; text-align: left; }
+}
+@media (max-width: 360px) {
+  .dl-clinical-workspace { --cw-gap: 10px; }
+  .dl-clinical-workspace .cw-header { padding: 12px; }
+  .dl-clinical-workspace .cw-thread { grid-auto-columns: minmax(96px, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dl-clinical-workspace .cw-btn { transition: none; }
+  .dl-clinical-workspace *,
+  .dl-clinical-workspace *::before,
+  .dl-clinical-workspace *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+

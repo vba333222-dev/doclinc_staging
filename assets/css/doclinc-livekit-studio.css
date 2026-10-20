@@ -1,0 +1,1748 @@
+/* ==========================================================================
+   DocLinc Teleconsultation Studio
+   Scoped layer for the LiveKit call surface only. It is loaded after
+   doclinc-livekit.css and doclinc-bento.css so the call can move to a new
+   visual direction without disturbing the chat composer or the application
+   shell. No IDs, control order, or WebRTC hooks are changed here.
+   ========================================================================== */
+
+.doclinc-call-modal {
+  --call-void: #04110c;
+  --call-forest: #0a2017;
+  --call-forest-soft: #102f22;
+  --call-forest-line: rgba(190, 235, 213, .16);
+  --call-mint: #79e2b2;
+  --call-mint-soft: #b9f4d9;
+  --call-paper: #f2fbf6;
+  --call-muted: #9bb6a8;
+  --call-danger: #df5d5d;
+  --call-danger-deep: #b93838;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(10px, 2.4vw, 30px);
+  overflow: hidden;
+  color: var(--call-paper);
+  background:
+    radial-gradient(ellipse at 50% -14%, rgba(55, 154, 112, .34), transparent 52%),
+    radial-gradient(ellipse at 102% 106%, rgba(31, 95, 66, .28), transparent 46%),
+    var(--call-void);
+  font-family: "Manrope", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.doclinc-call-modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .22;
+  background-image: radial-gradient(rgba(192, 239, 217, .38) .65px, transparent .65px);
+  background-size: 26px 26px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 72%);
+  mask-image: linear-gradient(180deg, #000 0%, transparent 72%);
+}
+
+.doclinc-call-modal.is-open {
+  display: flex;
+}
+
+.doclinc-call-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.6vw, 18px);
+  width: min(100%, 1320px);
+  height: min(calc(100dvh - clamp(20px, 4.8vw, 60px)), 920px);
+  max-height: calc(100dvh - clamp(20px, 4.8vw, 60px));
+  padding: clamp(14px, 2.2vw, 28px);
+  overflow: hidden;
+  border: 1px solid var(--call-forest-line);
+  border-radius: clamp(22px, 2.6vw, 32px);
+  background:
+    linear-gradient(155deg, rgba(18, 49, 35, .98) 0%, rgba(8, 28, 19, .99) 56%, rgba(5, 19, 13, 1) 100%);
+  box-shadow:
+    0 36px 120px rgba(0, 0, 0, .56),
+    inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+
+.doclinc-call-head {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex: 0 0 auto;
+  min-height: 60px;
+  padding: 0 2px;
+}
+
+.doclinc-call-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.2vw, 16px);
+  min-width: 0;
+}
+
+.doclinc-call-brand {
+  display: block;
+  width: clamp(102px, 9vw, 132px);
+  height: auto;
+  max-height: 48px;
+  padding: 8px 10px;
+  object-fit: contain;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 12px;
+  background: rgba(248, 253, 250, .96);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, .18);
+}
+
+.doclinc-call-divider {
+  display: block;
+  width: 1px;
+  height: 36px;
+  flex: 0 0 1px;
+  background: linear-gradient(180deg, transparent, rgba(195, 235, 216, .28) 20% 80%, transparent);
+}
+
+.doclinc-call-context {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.doclinc-call-eyebrow {
+  display: block;
+  color: var(--call-mint);
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.doclinc-call-title {
+  max-width: min(52vw, 620px);
+  margin: 0;
+  overflow: hidden;
+  color: var(--call-paper);
+  font-size: clamp(17px, 1.8vw, 25px);
+  line-height: 1.18;
+  font-weight: 800;
+  letter-spacing: -.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doclinc-call-provider-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 15px;
+}
+
+.doclinc-call-provider-role {
+  color: var(--call-muted);
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.doclinc-call-connection {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(50vw, 420px);
+  color: #a8dfc5;
+  font-size: 11.5px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.doclinc-call-connection::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: var(--call-mint);
+  box-shadow: 0 0 0 4px rgba(121, 226, 178, .12);
+}
+
+.doclinc-call-connection-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doclinc-call-connection-text.is-error {
+  color: #ffb8aa;
+}
+
+.doclinc-call-connection:has(#doclincCallStatus.is-error)::before {
+  background: #f19b8d;
+  box-shadow: 0 0 0 4px rgba(241, 155, 141, .12);
+}
+
+.doclinc-call-stage {
+  position: relative;
+  isolation: isolate;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(196, 238, 218, .1);
+  border-radius: clamp(18px, 2vw, 26px);
+  background:
+    radial-gradient(ellipse at 50% 22%, rgba(54, 135, 98, .3), transparent 48%),
+    linear-gradient(155deg, #102c20 0%, #091d14 55%, #06150e 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .025),
+    inset 0 -90px 120px rgba(0, 0, 0, .2);
+}
+
+.doclinc-call-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(1, 10, 6, .16) 0%, transparent 22% 68%, rgba(1, 10, 6, .42) 100%);
+}
+
+.doclinc-call-remote {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--call-paper);
+  background:
+    radial-gradient(circle at 50% 34%, rgba(102, 194, 153, .18), transparent 42%),
+    transparent;
+}
+
+.doclinc-call-remote video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.doclinc-call-empty {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: min(100%, 460px);
+  padding: 26px;
+  color: var(--call-paper);
+  text-align: center;
+}
+
+.doclinc-call-empty-avatar {
+  display: grid;
+  place-items: center;
+  width: clamp(92px, 11vw, 128px);
+  height: clamp(92px, 11vw, 128px);
+  margin-bottom: 9px;
+  overflow: hidden;
+  border: 1px solid rgba(184, 243, 216, .44);
+  border-radius: 50%;
+  background: linear-gradient(150deg, #1c5b40, #0e3324);
+  box-shadow:
+    0 0 0 8px rgba(129, 225, 183, .07),
+    0 18px 42px rgba(0, 0, 0, .3);
+}
+
+.doclinc-call-empty-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.doclinc-call-empty-initials {
+  display: grid;
+  place-items: center;
+  width: clamp(92px, 11vw, 128px);
+  height: clamp(92px, 11vw, 128px);
+  margin-bottom: 9px;
+  border: 1px solid rgba(184, 243, 216, .44);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 22%, rgba(186, 250, 222, .2), transparent 34%),
+    linear-gradient(150deg, #246c4c, #0d3525);
+  box-shadow:
+    0 0 0 8px rgba(129, 225, 183, .07),
+    0 18px 42px rgba(0, 0, 0, .3);
+  color: #dcfaeb;
+  font-size: clamp(27px, 4vw, 42px);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.doclinc-call-empty-name {
+  display: block;
+  margin: 0;
+  color: var(--call-paper);
+  font-size: clamp(21px, 2.2vw, 31px);
+  line-height: 1.16;
+  font-weight: 800;
+  letter-spacing: -.03em;
+  overflow-wrap: anywhere;
+}
+
+.doclinc-call-empty-role {
+  display: block;
+  color: #abd0be;
+  font-size: clamp(12px, 1.2vw, 14px);
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.doclinc-call-empty-waiting {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 5px;
+  padding: 7px 12px;
+  border: 1px solid rgba(121, 226, 178, .26);
+  border-radius: 999px;
+  background: rgba(74, 169, 123, .12);
+  color: #b5f2d6;
+  font-size: 11.5px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.doclinc-call-empty-waiting::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--call-mint);
+  box-shadow: 0 0 0 3px rgba(121, 226, 178, .11);
+}
+
+.doclinc-call-empty-support {
+  color: rgba(203, 232, 218, .62);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.doclinc-call-waveform {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  height: 28px;
+  margin-top: 4px;
+  color: var(--call-mint);
+}
+
+.doclinc-call-waveform svg {
+  width: 82px;
+  height: 28px;
+}
+
+.doclinc-call-provider-overlay {
+  position: absolute;
+  left: clamp(12px, 1.8vw, 22px);
+  bottom: clamp(12px, 1.8vw, 22px);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: calc(100% - 190px);
+  padding: 9px 13px 9px 11px;
+  opacity: 0;
+  pointer-events: none;
+  border: 1px solid rgba(196, 238, 218, .16);
+  border-radius: 14px;
+  background: rgba(4, 18, 12, .68);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .18);
+  backdrop-filter: blur(16px);
+  transition: opacity .2s ease;
+}
+
+.doclinc-call-stage.is-remote-main .doclinc-call-provider-overlay {
+  opacity: 1;
+}
+
+.doclinc-call-status-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: var(--call-mint);
+  box-shadow: 0 0 0 4px rgba(121, 226, 178, .12);
+}
+
+.doclinc-call-provider-overlay > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.doclinc-call-provider-overlay strong {
+  overflow: hidden;
+  color: var(--call-paper);
+  font-size: 12px;
+  line-height: 1.3;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doclinc-call-provider-overlay span:not(.doclinc-call-status-dot) {
+  overflow: hidden;
+  color: var(--call-muted);
+  font-size: 10.5px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doclinc-call-local {
+  position: absolute;
+  top: auto;
+  right: clamp(12px, 1.8vw, 22px);
+  bottom: clamp(12px, 1.8vw, 22px);
+  z-index: 5;
+  width: clamp(116px, 13vw, 172px);
+  height: auto;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .8);
+  border-radius: 14px;
+  background: #173429;
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, .34),
+    0 0 0 1px rgba(0, 0, 0, .12);
+}
+
+.doclinc-call-local video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.doclinc-call-local.is-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  color: #d7f5e4;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(121, 226, 178, .16), transparent 55%),
+    #173429;
+}
+
+.doclinc-call-local-status {
+  display: block;
+  font-size: 10px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.doclinc-call-local.is-camera-off::before {
+  content: "";
+  width: 34px;
+  height: 34px;
+  margin-right: 7px;
+  border: 1px solid rgba(191, 241, 218, .22);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 36%, #9fcbb5 0 18%, transparent 19%),
+    radial-gradient(ellipse at 50% 90%, #9fcbb5 0 31%, transparent 32%);
+}
+
+.doclinc-call-stage.is-local-main {
+  background: #06150e;
+}
+
+.doclinc-call-stage.is-local-main .doclinc-call-remote,
+.doclinc-call-stage.is-local-main .doclinc-call-provider-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.doclinc-call-stage.is-local-main .doclinc-call-local,
+.doclinc-call-local.is-main {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: inherit;
+  box-shadow: none;
+}
+
+.doclinc-call-stage.is-local-main .doclinc-call-local video,
+.doclinc-call-local.is-main video {
+  object-fit: cover;
+}
+
+.doclinc-call-stage.is-remote-main .doclinc-call-local {
+  top: auto;
+  right: clamp(12px, 1.8vw, 22px);
+  bottom: clamp(12px, 1.8vw, 22px);
+  width: clamp(116px, 13vw, 172px);
+  height: auto;
+  aspect-ratio: 16 / 10;
+  border-radius: 14px;
+  z-index: 5;
+}
+
+.doclinc-call-stage.is-remote-main .doclinc-call-local video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.doclinc-call-prejoin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(420px, calc(100% - 34px));
+  padding: clamp(22px, 2.6vw, 30px);
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(196, 238, 218, .2);
+  border-radius: 22px;
+  background:
+    linear-gradient(150deg, rgba(22, 55, 39, .92), rgba(6, 24, 16, .96));
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, .38),
+    inset 0 1px 0 rgba(255, 255, 255, .08);
+  text-align: center;
+  backdrop-filter: blur(24px);
+}
+
+.doclinc-call-panel:has(.doclinc-call-prejoin:not(.is-hidden)) .doclinc-call-empty,
+.doclinc-call-panel:has(.doclinc-call-prejoin:not(.is-hidden)) .doclinc-call-provider-overlay {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.doclinc-call-prejoin-title {
+  margin: 0 0 7px;
+  color: var(--call-paper);
+  font-size: clamp(18px, 1.8vw, 22px);
+  line-height: 1.24;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.doclinc-call-prejoin-text {
+  max-width: 300px;
+  margin: 0 0 18px;
+  color: #aacbbc;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.doclinc-call-join {
+  min-width: 190px;
+  min-height: 48px;
+  padding: 0 24px;
+  border: 1px solid rgba(186, 247, 219, .3);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #83e8ba, #58c996);
+  color: #07301f;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow:
+    0 12px 28px rgba(48, 177, 123, .28),
+    inset 0 1px 0 rgba(255, 255, 255, .38);
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+
+.doclinc-call-join:hover,
+.doclinc-call-join:focus-visible {
+  filter: brightness(1.05);
+  box-shadow:
+    0 15px 34px rgba(48, 177, 123, .34),
+    inset 0 1px 0 rgba(255, 255, 255, .44);
+  transform: translateY(-1px);
+}
+
+.doclinc-call-join:active {
+  transform: translateY(0) scale(.985);
+}
+
+.doclinc-call-join:focus-visible,
+.doclinc-call-control:focus-visible,
+.doclinc-call-secondary:focus-visible,
+.doclinc-active-call:focus-visible,
+.doclinc-incoming-answer:focus-visible,
+.doclinc-incoming-action:focus-visible {
+  outline: 2px solid var(--call-mint);
+  outline-offset: 3px;
+}
+
+.doclinc-call-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: clamp(6px, .8vw, 10px);
+  width: fit-content;
+  max-width: 100%;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+  border: 1px solid rgba(196, 238, 218, .14);
+  border-radius: 999px;
+  background: rgba(7, 27, 18, .78);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, .26),
+    inset 0 1px 0 rgba(255, 255, 255, .06);
+  backdrop-filter: blur(20px);
+}
+
+.doclinc-call-control,
+.doclinc-call-control.end-call {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: rgba(232, 250, 241, .08);
+  box-shadow: none;
+  color: var(--call-paper);
+  cursor: pointer;
+  transition:
+    background .16s ease,
+    border-color .16s ease,
+    transform .12s ease;
+}
+
+.doclinc-call-control img {
+  display: block;
+  width: 21px;
+  height: 21px;
+  border-radius: 0;
+  background: transparent;
+  filter: brightness(0) invert(1);
+  opacity: .88;
+}
+
+.doclinc-call-control:hover {
+  background: rgba(232, 250, 241, .15);
+}
+
+.doclinc-call-control:active {
+  transform: scale(.95);
+}
+
+.doclinc-call-control.is-active {
+  border-color: transparent;
+  background: rgba(232, 250, 241, .1);
+}
+
+.doclinc-call-control.is-active img {
+  filter: brightness(0) invert(1);
+  opacity: 1;
+}
+
+.doclinc-call-control.is-off {
+  border-color: rgba(255, 167, 151, .24);
+  background: rgba(196, 74, 62, .17);
+}
+
+.doclinc-call-control.is-off img {
+  filter: brightness(0) saturate(100%) invert(72%) sepia(34%) saturate(682%) hue-rotate(314deg) brightness(103%) contrast(94%);
+  opacity: 1;
+}
+
+.doclinc-call-control.end-call,
+.doclinc-call-control.end-call:hover {
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  min-height: 54px;
+  border: 1px solid rgba(255, 201, 195, .22);
+  background: linear-gradient(180deg, #e46b62, #c8403f);
+  box-shadow:
+    0 10px 24px rgba(177, 47, 44, .34),
+    inset 0 1px 0 rgba(255, 255, 255, .24);
+}
+
+.doclinc-call-control.end-call img {
+  width: 23px;
+  height: 23px;
+  filter: brightness(0) invert(1);
+  opacity: 1;
+}
+
+#doclincCallCamera img { transform: translateY(.6px); }
+#doclincCallSpeaker img { transform: translateX(-1px); }
+#doclincCallEnd img { transform: translateY(.6px); }
+
+.doclinc-call-popover {
+  position: absolute;
+  right: clamp(14px, 2.2vw, 28px);
+  bottom: clamp(82px, 11vh, 104px);
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: min(224px, calc(100% - 28px));
+  margin: 0;
+  padding: 7px;
+  border: 1px solid rgba(196, 238, 218, .16);
+  border-radius: 17px;
+  background: rgba(8, 28, 19, .96);
+  box-shadow:
+    0 20px 46px rgba(0, 0, 0, .36),
+    inset 0 1px 0 rgba(255, 255, 255, .06);
+  backdrop-filter: blur(22px);
+}
+
+.doclinc-call-secondary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: #d7eee2;
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.2;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background .14s ease, color .14s ease;
+}
+
+.doclinc-call-secondary:hover {
+  background: rgba(121, 226, 178, .11);
+  color: #f4fff9;
+}
+
+.doclinc-call-secondary img {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  opacity: .72;
+  filter: brightness(0) invert(1);
+}
+
+.doclinc-call-popover-title {
+  display: none;
+}
+
+.doclinc-active-call {
+  position: fixed;
+  left: clamp(12px, 2vw, 24px);
+  bottom: clamp(12px, 2vw, 24px);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 176px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 10px 8px 8px;
+  border: 1px solid rgba(196, 238, 218, .18);
+  border-radius: 16px;
+  background: rgba(8, 29, 19, .96);
+  color: var(--call-paper);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, .34);
+  cursor: pointer;
+  backdrop-filter: blur(18px);
+}
+
+.doclinc-active-call-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  background: rgba(121, 226, 178, .13);
+}
+
+.doclinc-active-call-icon img {
+  width: 17px;
+  height: 17px;
+  filter: brightness(0) invert(1);
+}
+
+.doclinc-active-call-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  text-align: left;
+}
+
+.doclinc-active-call-title {
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.doclinc-active-call-meta {
+  color: #9ec8b4;
+  font-size: 11px;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.doclinc-active-call-restore {
+  margin-left: auto;
+  padding: 6px 10px;
+  border: 1px solid rgba(121, 226, 178, .24);
+  border-radius: 999px;
+  color: #bdf4da;
+  font-size: 10.5px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+/* Incoming invitation: a calm light sheet over the same forest room. */
+.doclinc-incoming-call {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0px, 2vw, 24px);
+  overflow: auto;
+  background:
+    radial-gradient(ellipse at 50% 18%, rgba(91, 188, 143, .34), transparent 50%),
+    rgba(2, 13, 8, .82);
+  color: #12241b;
+  backdrop-filter: blur(16px);
+}
+
+.doclinc-incoming-call.is-hidden {
+  display: none !important;
+}
+
+.doclinc-incoming-surface {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: min(100%, 418px);
+  min-height: min(720px, calc(100dvh - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: clamp(22px, 4vw, 30px);
+  overflow: hidden;
+  border: 1px solid rgba(215, 241, 228, .86);
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 50% 27%, rgba(113, 216, 171, .2), transparent 37%),
+    linear-gradient(165deg, #fbfffc 0%, #edf8f1 58%, #e2f2e8 100%);
+  box-shadow:
+    0 34px 100px rgba(0, 0, 0, .34),
+    inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+
+.doclinc-incoming-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border: 1px solid #b7e8d0;
+  border-radius: 999px;
+  background: rgba(239, 255, 246, .9);
+  color: #127250;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.doclinc-incoming-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #24b57f;
+  box-shadow: 0 0 0 4px rgba(36, 181, 127, .12);
+}
+
+.doclinc-incoming-identity {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 0;
+  text-align: center;
+}
+
+.doclinc-incoming-avatar-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 144px;
+  height: 144px;
+  margin: 4px 0 22px;
+}
+
+.doclinc-incoming-avatar-wrap::before,
+.doclinc-incoming-avatar-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(47, 173, 125, .24);
+  border-radius: 50%;
+  animation: doclincIncomingHalo 2.9s ease-out infinite;
+}
+
+.doclinc-incoming-avatar-wrap::after {
+  inset: 12px;
+  animation-delay: .85s;
+}
+
+@keyframes doclincIncomingHalo {
+  from { opacity: .66; transform: scale(.8); }
+  to { opacity: 0; transform: scale(1.12); }
+}
+
+.doclinc-incoming-avatar {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 118px;
+  height: 118px;
+  border: 3px solid #83e0ba;
+  border-radius: 50%;
+  background: #dff3e9;
+  box-shadow:
+    0 0 0 8px rgba(255, 255, 255, .84),
+    0 16px 38px rgba(31, 113, 78, .18);
+  object-fit: cover;
+}
+
+.doclinc-incoming-initials {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 118px;
+  height: 118px;
+  border: 3px solid #83e0ba;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 22%, rgba(255, 255, 255, .6), transparent 36%),
+    linear-gradient(150deg, #d8f4e4, #a9dfc5);
+  box-shadow:
+    0 0 0 8px rgba(255, 255, 255, .84),
+    0 16px 38px rgba(31, 113, 78, .18);
+  color: #185d3e;
+  font-size: 38px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.doclinc-incoming-name {
+  max-width: 100%;
+  margin: 0;
+  color: #12251b;
+  font-size: clamp(24px, 6vw, 30px);
+  line-height: 1.16;
+  font-weight: 800;
+  letter-spacing: -.035em;
+  overflow-wrap: anywhere;
+}
+
+.doclinc-incoming-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 11px;
+  padding: 8px 13px;
+  border: 1px solid #c2e8d6;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .66);
+  color: #1b7d59;
+  font-size: 12.5px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.doclinc-incoming-mode img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.doclinc-incoming-waveform {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 82px;
+  height: 26px;
+  min-height: 24px;
+  margin-top: 9px;
+  color: #1caa77;
+}
+
+.doclinc-incoming-waveform svg {
+  width: 72px;
+  height: 26px;
+}
+
+.doclinc-incoming-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.doclinc-incoming-slider {
+  position: relative;
+  width: 100%;
+  height: 64px;
+  padding: 5px;
+  overflow: hidden;
+  border: 1px solid #cfe3d8;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .7);
+  box-shadow:
+    inset 0 1px 4px rgba(27, 75, 51, .06),
+    0 8px 22px rgba(37, 105, 73, .06);
+}
+
+.doclinc-incoming-slider-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 10px 0 68px;
+  color: #557066;
+  font-size: 12.5px;
+  line-height: 1.2;
+  font-weight: 700;
+  pointer-events: none;
+  text-align: center;
+}
+
+.doclinc-incoming-answer {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #67d6a6, #39b883);
+  box-shadow:
+    0 8px 20px rgba(38, 166, 117, .28),
+    inset 0 1px 0 rgba(255, 255, 255, .32);
+  color: #fff;
+  cursor: pointer;
+}
+
+.doclinc-incoming-answer img {
+  width: 22px;
+  height: 22px;
+  filter: brightness(0) invert(1);
+  transform: rotate(-12deg);
+}
+
+.doclinc-incoming-action.reject {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid #f0c9c9;
+  border-radius: 999px;
+  background: rgba(255, 246, 246, .7);
+  color: #b34b4b;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.doclinc-incoming-action.reject:hover {
+  background: #fff0f0;
+}
+
+.doclinc-incoming-security {
+  margin: 14px 0 0;
+  color: #6e877b;
+  font-size: 10.5px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doclinc-call-modal *,
+  .doclinc-incoming-call * {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .doclinc-call-modal {
+    padding: 0;
+  }
+
+  .doclinc-call-panel {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    gap: 9px;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 0;
+  }
+
+  .doclinc-call-head {
+    min-height: 54px;
+    gap: 10px;
+  }
+
+  .doclinc-call-brand-lockup {
+    gap: 9px;
+  }
+
+  .doclinc-call-brand {
+    width: 78px;
+    max-height: 34px;
+    padding: 6px 7px;
+    border-radius: 9px;
+  }
+
+  .doclinc-call-divider {
+    height: 30px;
+  }
+
+  .doclinc-call-eyebrow {
+    font-size: 9.5px;
+    letter-spacing: .1em;
+  }
+
+  .doclinc-call-title {
+    max-width: min(48vw, 290px);
+    font-size: 15px;
+  }
+
+  .doclinc-call-provider-role {
+    font-size: 10.5px;
+  }
+
+  .doclinc-call-connection {
+    max-width: min(52vw, 280px);
+    gap: 5px;
+    font-size: 10px;
+  }
+
+  .doclinc-call-connection::before {
+    width: 5px;
+    height: 5px;
+    flex-basis: 5px;
+    box-shadow: 0 0 0 3px rgba(121, 226, 178, .11);
+  }
+
+  .doclinc-call-stage {
+    border-radius: 18px;
+  }
+
+  .doclinc-call-empty {
+    gap: 5px;
+    padding: 18px;
+  }
+
+  .doclinc-call-empty-avatar,
+  .doclinc-call-empty-initials {
+    width: 88px;
+    height: 88px;
+    margin-bottom: 7px;
+  }
+
+  .doclinc-call-empty-initials {
+    font-size: 27px;
+  }
+
+  .doclinc-call-empty-name {
+    font-size: 21px;
+  }
+
+  .doclinc-call-empty-role {
+    font-size: 12px;
+  }
+
+  .doclinc-call-empty-waiting {
+    padding: 6px 10px;
+    font-size: 10.5px;
+  }
+
+  .doclinc-call-empty-support {
+    font-size: 10.5px;
+  }
+
+  .doclinc-call-provider-overlay {
+    left: 10px;
+    bottom: 10px;
+    max-width: calc(100% - 122px);
+    padding: 7px 9px;
+    border-radius: 11px;
+  }
+
+  .doclinc-call-provider-overlay strong {
+    font-size: 10.5px;
+  }
+
+  .doclinc-call-provider-overlay span:not(.doclinc-call-status-dot) {
+    font-size: 9.5px;
+  }
+
+  .doclinc-call-local,
+  .doclinc-call-stage.is-remote-main .doclinc-call-local {
+    top: auto;
+    right: 10px;
+    bottom: 10px;
+    width: 102px;
+    border-radius: 11px;
+  }
+
+  .doclinc-call-local.is-camera-off::before {
+    width: 25px;
+    height: 25px;
+    margin-right: 4px;
+  }
+
+  .doclinc-call-local-status {
+    font-size: 9px;
+  }
+
+  .doclinc-call-prejoin {
+    width: calc(100% - 24px);
+    padding: 20px 18px;
+    border-radius: 19px;
+  }
+
+  .doclinc-call-prejoin-title {
+    font-size: 17px;
+  }
+
+  .doclinc-call-prejoin-text {
+    margin-bottom: 15px;
+    font-size: 11.5px;
+  }
+
+  .doclinc-call-join {
+    width: 100%;
+    min-height: 46px;
+    font-size: 13px;
+  }
+
+  .doclinc-call-controls {
+    width: 100%;
+    max-width: 360px;
+    gap: 4px;
+    padding: 7px 8px max(7px, env(safe-area-inset-bottom));
+  }
+
+  .doclinc-call-control,
+  .doclinc-call-control.end-call {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    min-height: 46px;
+  }
+
+  .doclinc-call-control.end-call {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+  }
+
+  .doclinc-call-control img {
+    width: 20px;
+    height: 20px;
+  }
+
+  .doclinc-call-popover {
+    right: 10px;
+    bottom: max(74px, calc(env(safe-area-inset-bottom) + 70px));
+    border-radius: 15px;
+  }
+
+  .doclinc-incoming-call {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .doclinc-incoming-surface {
+    width: 100%;
+    min-height: 100dvh;
+    max-height: none;
+    padding: max(22px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 0;
+  }
+
+  .doclinc-incoming-avatar-wrap {
+    width: 132px;
+    height: 132px;
+    margin-bottom: 18px;
+  }
+
+  .doclinc-incoming-avatar,
+  .doclinc-incoming-initials {
+    width: 108px;
+    height: 108px;
+  }
+
+  .doclinc-incoming-initials {
+    font-size: 34px;
+  }
+}
+
+@media (max-width: 380px) {
+  .doclinc-call-brand {
+    width: 68px;
+    max-height: 31px;
+  }
+
+  .doclinc-call-divider {
+    display: none;
+  }
+
+  .doclinc-call-title {
+    max-width: 45vw;
+    font-size: 14px;
+  }
+
+  .doclinc-call-control,
+  .doclinc-call-control.end-call {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .doclinc-call-control.end-call {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .doclinc-call-controls {
+    gap: 3px;
+    padding-inline: 6px;
+  }
+
+  .doclinc-call-empty-support {
+    display: none;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 900px) and (max-height: 500px) {
+  .doclinc-call-modal {
+    padding: 6px;
+  }
+
+  .doclinc-call-panel {
+    height: calc(100dvh - 12px);
+    max-height: calc(100dvh - 12px);
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 18px;
+  }
+
+  .doclinc-call-head {
+    min-height: 40px;
+  }
+
+  .doclinc-call-brand {
+    width: 66px;
+    max-height: 28px;
+    padding: 4px 6px;
+  }
+
+  .doclinc-call-divider {
+    height: 26px;
+  }
+
+  .doclinc-call-eyebrow,
+  .doclinc-call-connection {
+    display: none;
+  }
+
+  .doclinc-call-title {
+    font-size: 14px;
+  }
+
+  .doclinc-call-stage {
+    min-height: 92px;
+    border-radius: 14px;
+  }
+
+  .doclinc-call-empty {
+    flex-direction: row;
+    gap: 10px;
+    padding: 10px;
+    text-align: left;
+  }
+
+  .doclinc-call-empty-avatar,
+  .doclinc-call-empty-initials {
+    width: 54px;
+    height: 54px;
+    margin: 0;
+  }
+
+  .doclinc-call-empty-initials {
+    font-size: 20px;
+  }
+
+  .doclinc-call-empty-name {
+    font-size: 15px;
+  }
+
+  .doclinc-call-empty-role,
+  .doclinc-call-empty-support,
+  .doclinc-call-empty-waiting {
+    display: none;
+  }
+
+  .doclinc-call-local,
+  .doclinc-call-stage.is-remote-main .doclinc-call-local {
+    width: 84px;
+    right: 8px;
+    bottom: 8px;
+  }
+
+  .doclinc-call-provider-overlay {
+    left: 8px;
+    bottom: 8px;
+    padding: 5px 8px;
+  }
+
+  .doclinc-call-prejoin {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: min(520px, calc(100% - 20px));
+    padding: 12px 14px;
+  }
+
+  .doclinc-call-prejoin-title {
+    width: 100%;
+    margin-bottom: 3px;
+    font-size: 14px;
+  }
+
+  .doclinc-call-prejoin-text {
+    margin: 0 12px 0 0;
+    font-size: 10.5px;
+  }
+
+  .doclinc-call-join {
+    width: auto;
+    min-height: 38px;
+    min-width: 128px;
+    font-size: 11.5px;
+  }
+
+  .doclinc-call-controls {
+    max-width: 330px;
+    padding-block: 5px;
+  }
+
+  .doclinc-call-control,
+  .doclinc-call-control.end-call {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .doclinc-call-control.end-call {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .doclinc-call-control img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .doclinc-call-popover {
+    bottom: 58px;
+  }
+}
+
+/* Modal and stage mode overrides. The previous stylesheet finishes with
+   higher-specificity .is-video / .is-audio rules, so the new room declares
+   both modes explicitly and keeps the same forest canvas in voice calls. */
+.doclinc-call-modal.is-video .doclinc-call-panel,
+.doclinc-call-modal.is-audio .doclinc-call-panel {
+  background:
+    linear-gradient(155deg, rgba(18, 49, 35, .98) 0%, rgba(8, 28, 19, .99) 56%, rgba(5, 19, 13, 1) 100%);
+}
+
+.doclinc-call-modal.is-video .doclinc-call-stage,
+.doclinc-call-stage.is-video,
+.doclinc-call-modal.is-audio .doclinc-call-stage,
+.doclinc-call-stage.is-audio {
+  background:
+    radial-gradient(ellipse at 50% 22%, rgba(54, 135, 98, .3), transparent 48%),
+    linear-gradient(155deg, #102c20 0%, #091d14 55%, #06150e 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .025),
+    inset 0 -90px 120px rgba(0, 0, 0, .2);
+}
+
+.doclinc-call-modal.is-video .doclinc-call-remote,
+.doclinc-call-modal.is-audio .doclinc-call-remote {
+  background:
+    radial-gradient(circle at 50% 34%, rgba(102, 194, 153, .18), transparent 42%),
+    transparent;
+  color: var(--call-paper);
+}
+
+.doclinc-call-modal.is-audio .doclinc-call-empty,
+.doclinc-call-empty {
+  gap: 7px;
+  color: var(--call-paper);
+  transform: none;
+}
+
+.doclinc-call-modal.is-audio .doclinc-call-empty-avatar,
+.doclinc-call-empty-avatar {
+  width: clamp(92px, 11vw, 128px);
+  height: clamp(92px, 11vw, 128px);
+  border: 1px solid rgba(184, 243, 216, .44);
+  box-shadow:
+    0 0 0 8px rgba(129, 225, 183, .07),
+    0 18px 42px rgba(0, 0, 0, .3);
+}
+
+.doclinc-call-modal.is-audio .doclinc-call-empty-name,
+.doclinc-call-modal.is-video .doclinc-call-empty-name,
+.doclinc-call-empty-name {
+  color: var(--call-paper);
+}
+
+.doclinc-call-modal.is-audio .doclinc-call-empty-role,
+.doclinc-call-modal.is-video .doclinc-call-empty-role,
+.doclinc-call-empty-role {
+  color: #abd0be;
+}
+
+.doclinc-call-modal.is-audio .doclinc-call-empty-waiting {
+  padding: 7px 12px;
+  border: 1px solid rgba(121, 226, 178, .26);
+  border-radius: 999px;
+  background: rgba(74, 169, 123, .12);
+  color: #b5f2d6;
+  font-size: 11.5px;
+}
+
+/* The legacy layer used !important to pin a desktop card dock. These
+   declarations restore the new circular, always-one-row control language. */
+.doclinc-call-modal .doclinc-call-controls.is-hidden {
+  display: none !important;
+}
+
+.doclinc-call-modal .doclinc-call-controls {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: clamp(6px, .8vw, 10px) !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  margin: 0 auto !important;
+  padding: 8px 10px max(8px, env(safe-area-inset-bottom)) !important;
+  border: 1px solid rgba(196, 238, 218, .14) !important;
+  border-radius: 999px !important;
+  background: rgba(7, 27, 18, .78) !important;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, .26),
+    inset 0 1px 0 rgba(255, 255, 255, .06) !important;
+  overflow: visible !important;
+}
+
+.doclinc-call-modal .doclinc-call-control,
+.doclinc-call-modal .doclinc-call-control.end-call {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 50% !important;
+  background: rgba(232, 250, 241, .08) !important;
+  box-shadow: none !important;
+  gap: 0 !important;
+}
+
+.doclinc-call-modal .doclinc-call-control.is-active {
+  border-color: transparent !important;
+  background: rgba(232, 250, 241, .1) !important;
+}
+
+.doclinc-call-modal .doclinc-call-control.is-off {
+  border-color: rgba(255, 167, 151, .24) !important;
+  background: rgba(196, 74, 62, .17) !important;
+}
+
+.doclinc-call-modal .doclinc-call-control:not(.end-call):hover,
+.doclinc-call-modal .doclinc-call-control:not(.end-call):focus-visible {
+  background: rgba(232, 250, 241, .16) !important;
+}
+
+.doclinc-call-modal .doclinc-call-control.end-call,
+.doclinc-call-modal .doclinc-call-control.end-call:hover,
+.doclinc-call-modal .doclinc-call-control.end-call:focus-visible {
+  width: 54px !important;
+  height: 54px !important;
+  min-width: 54px !important;
+  min-height: 54px !important;
+  border: 1px solid rgba(255, 201, 195, .22) !important;
+  background: linear-gradient(180deg, #e46b62, #c8403f) !important;
+  box-shadow:
+    0 10px 24px rgba(177, 47, 44, .34),
+    inset 0 1px 0 rgba(255, 255, 255, .24) !important;
+}
+
+.doclinc-call-modal .doclinc-call-control img {
+  display: block !important;
+  width: 21px !important;
+  height: 21px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: brightness(0) invert(1) !important;
+  opacity: .88;
+}
+
+.doclinc-call-modal .doclinc-call-control.is-active img {
+  filter: brightness(0) invert(1) !important;
+  opacity: 1;
+}
+
+.doclinc-call-modal .doclinc-call-control.is-off img {
+  filter: brightness(0) saturate(100%) invert(72%) sepia(34%) saturate(682%) hue-rotate(314deg) brightness(103%) contrast(94%) !important;
+  opacity: 1;
+}
+
+.doclinc-call-modal .doclinc-call-control.end-call img {
+  width: 23px !important;
+  height: 23px !important;
+  filter: brightness(0) invert(1) !important;
+  opacity: 1;
+}
+
+.doclinc-call-modal #doclincCallCamera img { transform: translateY(.6px) !important; }
+.doclinc-call-modal #doclincCallSpeaker img { transform: translateX(-1px) !important; }
+.doclinc-call-modal #doclincCallEnd img { transform: translateY(.6px) !important; }
+
+@media (max-width: 760px) {
+  .doclinc-call-modal .doclinc-call-control,
+  .doclinc-call-modal .doclinc-call-control.end-call {
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    min-height: 46px !important;
+  }
+
+  .doclinc-call-modal .doclinc-call-control.end-call {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
+  }
+
+  .doclinc-call-modal .doclinc-call-controls {
+    width: 100% !important;
+    max-width: 360px !important;
+    gap: 4px !important;
+    padding: 7px 8px max(7px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .doclinc-call-modal .doclinc-call-control img {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .doclinc-call-modal .doclinc-call-empty-avatar,
+  .doclinc-call-modal .doclinc-call-empty-initials {
+    width: 88px !important;
+    height: 88px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .doclinc-call-modal .doclinc-call-control,
+  .doclinc-call-modal .doclinc-call-control.end-call {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  .doclinc-call-modal .doclinc-call-control.end-call {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+  }
+
+  .doclinc-call-modal .doclinc-call-controls {
+    gap: 3px !important;
+    padding-inline: 6px !important;
+  }
+}

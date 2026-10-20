@@ -7,6 +7,7 @@ $files = array(
 	'controller' => file_get_contents(__DIR__ . '/../../../admin_menu/application/modules/kelola_staff_puskesmas/controllers/Kelola_staff_puskesmas.php'),
 	'config' => file_get_contents(__DIR__ . '/../../../application/config/config.php'),
 	'admin_config' => file_get_contents(__DIR__ . '/../../../admin_menu/application/config/config.php'),
+	'placement_modal' => file_get_contents(__DIR__ . '/../../../admin_menu/application/modules/kelola_staff_puskesmas/views/partials/staff_placement_modal_v.php'),
 );
 $checks = array(
 	'shared_governance_database_namespace' => strpos($files['migration'], 'doclinc_governance_test') !== false,
@@ -24,6 +25,11 @@ $checks = array(
 	'endpoint_schedule' => strpos($files['controller'], 'function schedule_transfer') !== false,
 	'endpoint_cancel' => strpos($files['controller'], 'function cancel_transfer') !== false,
 	'endpoint_activate' => strpos($files['controller'], 'function activate_transfer') !== false,
+	'endpoint_create_placement' => strpos($files['controller'], 'function create_placement') !== false,
+	'initial_placement_policy' => strpos($files['policy'], 'canCreatePlacement') !== false,
+	'initial_placement_audit' => strpos($files['service'], 'nakes_placement_created') !== false,
+	'admin_placement_modal' => strpos($files['placement_modal'], 'create_placement') !== false && strpos($files['placement_modal'], 'schedule_transfer') !== false,
+	'admin_placement_modal_csrf' => strpos($files['placement_modal'], '_provisioning_csrf_token') !== false,
 	'endpoint_post_and_feature_guard' => strpos($files['controller'], 'require_placement_post') !== false && strpos($files['controller'], "nakes_placement_enabled') !== true") !== false,
 	'endpoint_server_actor' => strpos($files['controller'], "session->userdata('id')") !== false && strpos($files['controller'], 'actor_user_id') === false,
 	'service_ignores_client_identity_and_facility' => strpos($files['service'], "input['identity']") === false && strpos($files['service'], "input['current_facility']") === false,

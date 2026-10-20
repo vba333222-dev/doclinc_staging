@@ -19,6 +19,44 @@ class Nakes_placement_service
 		}
 	}
 
+	public function place($staffId, $facilityCode, $effectiveFrom)
+	{
+		if (!$this->enabled || !Nakes_placement_policy::canManageTransfer($this->actor)) return false;
+		$staffId = (int) $staffId;
+		$facilityCode = strtoupper(trim((string) $facilityCode));
+		$effectiveFrom = trim((string) $effectiveFrom);
+		$effectiveTime = strtotime($effectiveFrom);
+		if ($staffId < 1 || $facilityCode === '' || !preg_match('/\A[A-Z0-9._-]{1,64}\z/', $facilityCode)
+			|| !preg_match('/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\z/', $effectiveFrom)
+			|| $effectiveTime === false || $effectiveTime > time()) {
+			return false;
+		}
+		$actorId = (int) ($this->actor['user_id'] ?? 0);
+		return $this->store->transaction(function () use ($staffId, $facilityCode, $effectiveFrom, $actorId) {
+			if (!method_exists($this->store, 'staffForPlacement')) return false;
+			$staff = $this->store->staffForPlacement($staffId);
+			$destination = $this->store->destination($facilityCode);
+			$active = $this->store->activePlacement($staffId);
+			if (!Nakes_placement_policy::canCreatePlacement($staff, $destination, $active)) return false;
+			$row = $this->store->insertPlacement(array(
+				'staff_id' => $staffId,
+				'facility_code' => $facilityCode,
+				'effective_from' => $effectiveFrom,
+				'effective_until' => null,
+				'status' => 'active',
+				'created_by_user_id' => $actorId,
+				'created_at' => date('Y-m-d H:i:s'),
+			));
+			if (!$row || !$this->store->updateProjection($staffId, $facilityCode)) return false;
+			return $this->store->audit('nakes_placement_created', array(
+				'actor_user_id' => $actorId,
+				'staff_id' => $staffId,
+				'facility_code' => $facilityCode,
+				'placement_id' => (int) ($row['placement_id'] ?? 0),
+			)) ? $row : false;
+		});
+	}
+
 	public function schedule($input)
 	{
 		if (!$this->enabled || !Nakes_placement_policy::canManageTransfer($this->actor)) return false;

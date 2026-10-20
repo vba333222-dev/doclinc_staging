@@ -44,6 +44,18 @@ class Nakes_placement_store
 		return $this->db->select('kode_pkm,status')->where('kode_pkm', strtoupper(trim((string)$code)))->limit(1)->get('m_puskesmas')->row_array() ?: null;
 	}
 
+	public function staffForPlacement($staffId)
+	{
+		$row = $this->db->select('staff_id,user_id,kode_pkm,nama,profesi,status')->where('staff_id', (int) $staffId)->limit(1)->get('puskesmas_staff')->row_array();
+		if (!$row || (int) ($row['user_id'] ?? 0) < 1) {
+			return null;
+		}
+		$user = $this->db->select('role,status')->where('userId', (int) $row['user_id'])->limit(1)->get('users')->row_array();
+		$row['user_status'] = $user ? (string) ($user['status'] ?? '') : '';
+		$row['user_role'] = $user ? (string) ($user['role'] ?? '') : '';
+		return $row;
+	}
+
 	public function identityForStaff($staffId)
 	{
 		$identityHelper = dirname(APPPATH, 2) . '/application/helpers/request_authz_helper.php';

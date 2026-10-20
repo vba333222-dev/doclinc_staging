@@ -1131,6 +1131,10 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 	     ini, jadi memindahkannya ke atas tidak mengubah apa pun selain ini. -->
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-livekit.css')); ?>">
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-bento.css')); ?>">
+	<?php /* Layer call-only terakhir: memuat ulang ruang panggilan tanpa
+	         menimpa aturan chat. Cache-buster mengikuti mtime berkas. */ ?>
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-livekit-studio.css')); ?>?v=<?= (int) @filemtime(FCPATH . 'assets/css/doclinc-livekit-studio.css'); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-reference-ui.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-reference-ui.css'))); ?>">
 	<!-- Font Awesome belum dimuat halaman ini sebelum lapisan bento. Sistem ikon
 	     aplikasi memakainya untuk glyph di luar konten (design.md), dan keadaan
 	     hanya-baca memakai satu glyph kunci dari keluarga itu. Tanpa baris ini
@@ -1234,6 +1238,9 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 							<span class="doclinc-call-eyebrow">Konsultasi dengan</span>
 							<h2 class="doclinc-call-title" id="doclincCallTitle"><?= html_escape($partner_name); ?></h2>
 							<div class="doclinc-call-provider-meta"><span class="doclinc-call-provider-role"><?= html_escape($partner_subtitle); ?></span></div>
+							<div class="doclinc-call-connection">
+								<span class="doclinc-call-connection-text" id="doclincCallStatus" role="status" aria-live="polite">Siap bergabung</span>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -1241,7 +1248,11 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 					<div class="doclinc-call-remote" id="doclincCallRemote">
 						<div class="doclinc-call-empty" id="doclincCallEmpty">
 							<?php if ($voice_has_photo) : ?>
-								<img class="doclinc-call-empty-avatar" data-voice-profile-photo src="<?= html_escape($voice_photo_src); ?>" alt="">
+								<div class="doclinc-call-empty-avatar">
+									<img data-voice-profile-photo src="<?= html_escape($voice_photo_src); ?>" alt="">
+								</div>
+							<?php else : ?>
+								<div class="doclinc-call-empty-initials" aria-hidden="true"><?= html_escape($partner_initials); ?></div>
 							<?php endif; ?>
 							<span class="doclinc-call-empty-name"><?= html_escape($partner_name); ?></span>
 							<?php if ($voice_partner_role !== '') : ?><span class="doclinc-call-empty-role"><?= html_escape($voice_partner_role); ?></span><?php endif; ?>
@@ -1321,7 +1332,13 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			<section class="doclinc-incoming-surface" aria-labelledby="doclincIncomingCaller">
 				<div class="doclinc-incoming-badge">PANGGILAN MASUK</div>
 				<div class="doclinc-incoming-identity">
-					<?php if ($voice_has_photo) : ?><div class="doclinc-incoming-avatar-wrap"><img class="doclinc-incoming-avatar" id="doclincIncomingAvatar" src="<?= html_escape($voice_photo_src); ?>" alt=""></div><?php endif; ?>
+					<div class="doclinc-incoming-avatar-wrap">
+						<?php if ($voice_has_photo) : ?>
+							<img class="doclinc-incoming-avatar" id="doclincIncomingAvatar" src="<?= html_escape($voice_photo_src); ?>" alt="">
+						<?php else : ?>
+							<span class="doclinc-incoming-initials" aria-hidden="true"><?= html_escape($partner_initials); ?></span>
+						<?php endif; ?>
+					</div>
 					<p class="doclinc-incoming-name" id="doclincIncomingCaller"><?= html_escape($partner_name); ?></p>
 					<p class="doclinc-incoming-mode" id="doclincIncomingType"><img id="doclincIncomingModeIcon" src="<?= html_escape(doclinc_ui_asset('voice_call') . '?v=1'); ?>" alt="" aria-hidden="true">Panggilan suara</p>
 					<span class="doclinc-incoming-waveform" id="doclincIncomingWaveform" data-incoming-waveform data-lottie-src="<?= html_escape(base_url('assets/doclinc_ui/lottie/soundwave.json')); ?>" aria-hidden="true"></span>

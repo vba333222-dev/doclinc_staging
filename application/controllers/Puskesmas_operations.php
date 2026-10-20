@@ -8,7 +8,7 @@ class Puskesmas_operations extends CI_Controller
 		parent::__construct();
 		$this->load->database();
 		$this->load->library('session');
-		$this->load->helper(array('request_authz', 'role_prerequisite'));
+		$this->load->helper(array('request_authz', 'role_prerequisite', 'clinical_error'));
 	}
 
 	public function snapshot()
@@ -78,7 +78,14 @@ class Puskesmas_operations extends CI_Controller
 		$this->load->library('Clinical_workflow_surface');
 		$result = $this->clinical_workflow_surface->forRequest((int) $request_id, (int) $this->session->userdata('id'));
 		$ok = ($result['status'] ?? '') === 'success';
-		$this->respond($ok ? 200 : 403, $ok, $ok ? 'ok' : (string) ($result['safe_error_code'] ?? 'ACCESS_DENIED'), $ok ? $result['data'] : array());
+		if ($ok) {
+			$this->respond(200, true, 'ok', $result['data']);
+			return;
+		}
+		$code = (string) ($result['safe_error_code'] ?? 'ACCESS_DENIED');
+		$this->output
+			->set_status_header(doclinc_clinical_http_status($code))
+			->set_output(json_encode(doclinc_clinical_error_payload($code)));
 	}
 
 	public function medical_record($request_id = 0)

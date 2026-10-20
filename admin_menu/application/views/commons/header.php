@@ -40,6 +40,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<!-- Custom CSS -->
 	<link href="<?php echo base_url(); ?>assets/css/custom.css" rel="stylesheet">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-reference-ui.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-reference-ui.css'))); ?>">
 	<!-- gijgo -->
 	<script src="https://unpkg.com/gijgo@1.9.13/js/gijgo.min.js" type="text/javascript"></script>
 	<link href="https://unpkg.com/gijgo@1.9.13/css/gijgo.min.css" rel="stylesheet" type="text/css" />
@@ -50,7 +51,7 @@
 
 </head>
 
-<body id="page-top">
+<body id="page-top" class="doclinc-admin-shell">
 	<meta name="csrf-token-name" content="<?= html_escape($this->security->get_csrf_token_name()); ?>">
 	<meta name="csrf-token-hash" content="<?= html_escape($this->security->get_csrf_hash()); ?>">
 	<script>

@@ -146,9 +146,15 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	     sebelumnya tanpa mengubah berkas-berkas itu. Semua aturannya dibatasi
 	     pada .dl-nakes-dashboard dan hanya menyentuh tampilan. -->
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-bento.css')); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-clinical-workspace.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-clinical-workspace.css'))); ?>">
+	<?php if (!empty($nakes_is_command_center)) : ?>
+		<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-command-center.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-command-center.css'))); ?>">
+		<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-consultation-desk.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-consultation-desk.css'))); ?>">
+	<?php endif; ?>
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-reference-ui.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-reference-ui.css'))); ?>">
 </head>
 
-<body class="bg-light dl-dashboard-body dl-nakes-dashboard <?= !empty($nakes_is_command_center) ? 'dl-puskesmas-shell' : ''; ?>">
+<body class="bg-light dl-dashboard-body dl-nakes-dashboard<?= !empty($visit_clinical_workflow_enabled) ? ' dl-clinical-workspace' : ''; ?> <?= !empty($nakes_is_command_center) ? 'dl-puskesmas-shell' : ''; ?>">
 	<div id="preloader">
 		<div class="text-center">
 			<!-- doklinc.png berukuran 3167x1396; atribut height lama ditulis "50px"
@@ -560,7 +566,18 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			let targetMenu = document.getElementById(tab + '-tab');
 			if (targetMenu) {
 				targetMenu.classList.add('active');
-				targetMenu.setAttribute('aria-current', 'true');
+				targetMenu.setAttribute('aria-current', 'page');
+			}
+
+			let desktopLinks = document.querySelectorAll('[data-nakes-nav]');
+			for (let desktopIndex = 0; desktopIndex < desktopLinks.length; desktopIndex++) {
+				desktopLinks[desktopIndex].classList.remove('is-active');
+				desktopLinks[desktopIndex].removeAttribute('aria-current');
+			}
+			let desktopTarget = document.querySelector('[data-nakes-nav="' + tab + '"]');
+			if (desktopTarget) {
+				desktopTarget.classList.add('is-active');
+				desktopTarget.setAttribute('aria-current', 'page');
 			}
 		}
 
@@ -755,8 +772,24 @@ if (!function_exists('doclinc_nakes_short_text')) {
 									window.location.href = redirectUrl;
 								});
 							},
-							error: function() {
-								Swal.fire("Konsultasi belum diterima", "Terjadi kesalahan. Coba lagi.", "error");
+							error: function(xhr, status, error) {
+								/* Pesan dari server dipakai apa adanya: 403/422 di jalur ini
+								   membawa sebab yang bisa ditindaklanjuti (mis. akses akun,
+								   profil belum lengkap, atau permintaan sudah berubah status).
+								   Menampilkan "Terjadi kesalahan" saja menyembunyikan sebab itu
+								   dan membuat pengguna mencoba ulang tanpa arah. */
+								var serverMessage = xhr && xhr.responseJSON && typeof xhr.responseJSON.message === 'string'
+									? xhr.responseJSON.message.trim()
+									: '';
+								if (!serverMessage && xhr && xhr.responseText) {
+									try {
+										var parsedError = JSON.parse(xhr.responseText);
+										if (parsedError && typeof parsedError.message === 'string') {
+											serverMessage = parsedError.message.trim();
+										}
+									} catch (e) {}
+								}
+								Swal.fire("Konsultasi belum diterima", serverMessage || "Terjadi kesalahan. Coba lagi.", "error");
 								$(acceptButton).prop('disabled', false).removeClass('disabled');
 							}
 						});

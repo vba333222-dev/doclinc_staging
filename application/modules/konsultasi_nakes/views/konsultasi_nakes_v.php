@@ -41,7 +41,7 @@ if (!empty($is_visit_performer)) {
 	$consultation_next_action = isset($visit_action_labels[$visit_status]) ? $visit_action_labels[$visit_status] : 'Lihat tugas kunjungan';
 } elseif ($can_handle_request) {
 	if ($consultation_mode === '') {
-		$consultation_next_action = 'Pilih jenis layanan dari halaman tugas';
+		$consultation_next_action = 'Tetapkan disposisi (opsional) atau lanjutkan tanpa kunjungan';
 	} elseif ($consultation_mode === 'visit' && $visit_status !== 'completed') {
 		$consultation_next_action = 'Tinjau hasil kunjungan sebelum menyelesaikan konsultasi';
 	} else {
@@ -177,6 +177,7 @@ if (!function_exists('formatComplaintText')) {
 	     bidang isian di sini tampak berbeda dari halaman konsultasi warga. -->
 	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-design-system.css'); ?>">
 	<link rel="stylesheet" href="<?= base_url(); ?>assets/css/doclinc-nakes.css">
+	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-clinical-workspace.css'); ?>?v=<?= rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-clinical-workspace.css')); ?>">
 	<?php if ($clinical_suggestions_enabled) : ?>
 		<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-clinical-suggestions.css')); ?>">
 	<?php endif; ?>
@@ -190,16 +191,16 @@ if (!function_exists('formatComplaintText')) {
 
 	<style>
 		:root {
-			--doclinc-green: #1F6F4B;
+			--doclinc-green: var(--dl-brand-strong);
 			--doclinc-green-dark: #177a42;
 			--doclinc-mint: #50BFA5;
-			--doclinc-bg: #F7F7F7;
-			--doclinc-surface: #FFFFFF;
+			--doclinc-bg: var(--dl-bg);
+			--doclinc-surface: var(--dl-surface);
 			--doclinc-surface-soft: #FBFDFC;
 			--doclinc-border: #DCE6E1;
-			--doclinc-border-light: #E7ECE9;
-			--doclinc-text: #1F2A24;
-			--doclinc-muted: #66756D;
+			--doclinc-border-light: var(--dl-border);
+			--doclinc-text: var(--dl-text);
+			--doclinc-muted: var(--dl-text-muted);
 			--doclinc-radius-sm: 10px;
 			--doclinc-radius-md: 14px;
 			--doclinc-radius-lg: 18px;
@@ -214,7 +215,7 @@ if (!function_exists('formatComplaintText')) {
 		}
 
 		.consult-shell {
-			max-width: 414px;
+			width: 100%;
 			min-height: 100vh;
 			margin: 0 auto;
 			background: var(--doclinc-bg);
@@ -270,7 +271,7 @@ if (!function_exists('formatComplaintText')) {
 			border-radius: 999px;
 			background: #E8F7F0;
 			color: var(--doclinc-green);
-			font-size: 11px;
+			font-size: 12px;
 			font-weight: 800;
 			letter-spacing: .02em;
 			white-space: nowrap;
@@ -315,7 +316,7 @@ if (!function_exists('formatComplaintText')) {
 			display: block;
 			margin-bottom: 3px;
 			color: var(--doclinc-muted);
-			font-size: 11px;
+			font-size: 12px;
 			font-weight: 800;
 			text-transform: uppercase;
 			letter-spacing: .03em;
@@ -377,7 +378,7 @@ if (!function_exists('formatComplaintText')) {
 
 		.complaint-label {
 			color: var(--doclinc-muted);
-			font-size: 11px;
+			font-size: 12px;
 			font-weight: 800;
 		}
 
@@ -616,7 +617,7 @@ if (!function_exists('formatComplaintText')) {
 			display: block;
 			margin-bottom: 6px;
 			color: var(--doclinc-muted);
-			font-size: 11px;
+			font-size: 12px;
 			font-weight: 800;
 			text-transform: uppercase;
 			letter-spacing: .03em;
@@ -799,7 +800,7 @@ if (!function_exists('formatComplaintText')) {
 				display: block;
 				margin-bottom: 5px;
 				color: var(--doclinc-muted);
-				font-size: 11px;
+				font-size: 12px;
 				font-weight: 800;
 				text-transform: uppercase;
 			}
@@ -851,76 +852,24 @@ if (!function_exists('formatComplaintText')) {
 			}
 		}
 	</style>
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-reference-ui.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-reference-ui.css'))); ?>">
 </head>
 
-<body>
-	<div class="consult-shell">
-		<header class="consult-header">
-			<a href="<?= html_escape(isset($return_url) ? $return_url : base_url('home_nakes#riwayat_konsul')); ?>" class="consult-back" aria-label="Kembali ke daftar konsultasi">
-				<i class="fas fa-arrow-left"></i>
-			</a>
-			<div class="consult-title">
-				<h1><?= $monitor_hide_form ? 'Detail Konsultasi' : 'Pemeriksaan Pasien'; ?></h1>
-				<p class="consult-subtitle"><?= html_escape($queue_label) ?></p>
-			</div>
-			<span class="status-badge"><i class="bi bi-check-circle-fill"></i> Diterima</span>
-		</header>
+<body class="doclinc-nakes-consult">
+	<div class="consult-shell dl-clinical-workspace" data-cw-root>
+		<?php $this->load->view('partials/clinical_workspace_header_v', get_defined_vars()); ?>
 
-		<main class="content animate__animated animate__fadeInUp animate__faster">
+		<main id="main" tabindex="-1" class="content animate__animated animate__fadeInUp animate__faster">
 			<div class="nakes-clinical-layout">
-			<aside class="nakes-context-rail" aria-label="Konteks pasien dan konsultasi">
-
-			<section class="consult-card">
-				<h2 class="section-heading"><i class="bi bi-person-vcard"></i> Ringkasan Pasien</h2>
-				<div class="summary-grid">
-					<div class="summary-item">
-						<span class="summary-label">Nama Pasien</span>
-						<span class="summary-value"><?= html_escape(strtoupper($nama_pasien)); ?></span>
-					</div>
-					<div class="summary-item">
-						<span class="summary-label">Umur</span>
-						<span class="summary-value"><?= html_escape($umur) ?> Tahun</span>
-					</div>
-					<div class="summary-item">
-						<span class="summary-label">No. Antrian</span>
-						<span class="summary-value"><?= html_escape($queue_label) ?></span>
-					</div>
-					<div class="summary-item">
-						<span class="summary-label">Jenis Layanan</span>
-						<span class="summary-value"><?= html_escape($kriteria !== '' ? $kriteria : 'Belum ditentukan') ?></span>
-					</div>
-				</div>
-			</section>
-
-			<section class="consult-card">
-				<h2 class="section-heading"><i class="bi bi-clipboard2-pulse"></i> Keluhan Pasien</h2>
-				<?= formatComplaintText($keluhan_pasien); ?>
-			</section>
-			<?php if ($care_team_workflow_enabled && $consultation_next_action !== '') : ?>
-				<section class="consult-card" data-clinical-next-action="<?= !empty($is_visit_performer) ? 'visit_performer' : 'responsible_doctor'; ?>">
-					<span class="summary-label">Peran Anda · <?= html_escape($consultation_role_label); ?></span>
-					<strong class="d-block mt-1" data-clinical-next-action-label><?= html_escape($consultation_next_action); ?></strong>
-				</section>
-			<?php endif; ?>
-
-			<?php if (!empty($can_open_patient_chat)) : ?>
-				<section class="consult-card chat-card">
-				<h2 class="section-heading text-white"><img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('chat')); ?>" alt="" aria-hidden="true"> Chat Konsultasi</h2>
-					<p class="chat-copy">Hubungi warga untuk melanjutkan konsultasi.</p>
-					<a href="<?= html_escape(base_url('chat?request_id=' . (int) $request_id)); ?>" class="chat-button">
-						<img class="dl-semantic-icon dl-semantic-icon--sm" src="<?= html_escape(doclinc_ui_asset('chat')); ?>" alt="" aria-hidden="true"> Buka chat
-					</a>
-				</section>
-			<?php endif; ?>
-			<?php if ($auto_visit_location) : ?>
-				<div class="small text-muted mb-3" id="consultationVisitLocationStatus" role="status" aria-live="polite"></div>
-			</aside>
+			<?php $this->load->view('partials/clinical_context_v', get_defined_vars()); ?>
 			<div class="nakes-work-pane">
+			<span id="kunjungan" class="visually-hidden"></span>
 
-			<?php endif; ?>
+
+			<?php $this->load->view('partials/clinical_disposition_v', get_defined_vars()); ?>
 
 			<?php if (!empty($care_team_workflow_enabled) && (!empty($latest_vital_signs) || !empty($can_record_vital_signs))) : ?>
-				<section class="consult-card">
+				<section class="consult-card" id="vital-signs">
 				<h2 class="section-heading"><img class="dl-semantic-icon" src="<?= html_escape(doclinc_ui_asset('examination')); ?>" alt="" aria-hidden="true"> Tanda Vital</h2>
 					<?php if (!empty($latest_vital_signs)) : ?>
 						<div class="summary-grid mb-3">
@@ -962,6 +911,7 @@ if (!function_exists('formatComplaintText')) {
 			<div class="alert alert-info" role="status"><?= $monitor_hide_form ? 'Puskesmas dapat melihat laporan status dan rekam medis konsultasi ini.' : (!empty($is_visit_performer) ? 'Anda bertugas mencatat hasil kunjungan.' : 'Permintaan ini hanya dapat dipantau.'); ?></div>
 		<?php endif; ?>
 		<?php if (!$monitor_hide_form) : ?>
+		<?php if (empty($visit_workflow_enrolled)) : ?>
 		<form id="form_konsul_nakes" enctype="multipart/form-data" data-can-handle="<?= $can_handle_request ? '1' : '0'; ?>">
 			<input type="hidden" name="request_id" id="idReq" value="<?= html_escape($request_id) ?>">
 			<fieldset <?= $can_handle_request ? '' : 'disabled'; ?>>
@@ -1134,14 +1084,24 @@ if (!function_exists('formatComplaintText')) {
 						: 'Opsional sesuai kebutuhan dokumentasi kunjungan.'; ?></p>
 				</div>
 			</fieldset>
-			<?php if ($can_handle_request) : ?>
+			<?php
+			$legacy_completion_allowed = !isset($legacy_completion_available) || !empty($legacy_completion_available);
+			?>
+			<?php if ($can_handle_request && $legacy_completion_allowed) : ?>
 				<button type="button" class="primary-action shadow-sm" id="save_konsul_nakes">
 					<i class="bi bi-check2-circle"></i> Selesaikan konsultasi
 				</button>
 				<div id="clinicalUnsavedStatus" class="small text-warning mt-2" role="status" aria-live="polite" hidden>Perubahan belum disimpan.</div>
+			<?php elseif ($can_handle_request) : ?>
+				<div class="alert alert-info" role="status">Konsultasi ini memakai alur klinis. Selesaikan lewat hasil kunjungan, review dokter, finalisasi, lalu penutupan.</div>
 			<?php endif; ?>
 			</section>
 		</form>
+			<?php else : ?>
+				<?php $this->load->view('partials/clinical_result_v', get_defined_vars()); ?>
+				<?php $this->load->view('partials/clinical_review_v', get_defined_vars()); ?>
+				<?php $this->load->view('partials/clinical_closure_v', get_defined_vars()); ?>
+			<?php endif; ?>
 		<?php else : ?>
 			<section class="consult-card">
 				<h2 class="section-heading"><i class="bi bi-clipboard-data"></i> Laporan Status</h2>
@@ -1191,6 +1151,8 @@ if (!function_exists('formatComplaintText')) {
 		<?php endif; ?>
 			</div>
 			</div>
+			<?php $this->load->view('partials/clinical_action_dock_v', get_defined_vars()); ?>
+
 
 		</main>
 	</div>
@@ -1220,6 +1182,8 @@ if (!function_exists('formatComplaintText')) {
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/js/bootstrap-select.min.js" integrity="sha512-yrOmjPdp8qH8hgLfWpSFhC/+R9Cj9USL8uJxYIveJZGAiedxyIxwNw4RsLDlcjNlIRR4kkHaDHSmNHAkxFTmgg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-form-guard.js') . '?v=' . rawurlencode($clinical_form_guard_version)); ?>"></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-workflow.js') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/js/doclinc-clinical-workflow.js'))); ?>"></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-workspace.js') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/js/doclinc-clinical-workspace.js'))); ?>"></script>
 	<?php if ($auto_visit_location) : ?><script src="<?= html_escape(base_url('assets/js/doclinc-active-visit-location.js') . '?v=' . rawurlencode($active_visit_location_version)); ?>"></script><?php endif; ?>
 	<?php if ($map_provider === 'google' && !empty($google_maps_api_key)) : ?>
 		<script src="https://maps.googleapis.com/maps/api/js?key=<?= rawurlencode($google_maps_api_key); ?>"></script>

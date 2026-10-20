@@ -66,6 +66,13 @@ class Care_team_service
 			if (!$request || (string) $request->request_status !== 'Accepted') {
 				return $this->failure('Konsultasi tidak dapat diperbarui.');
 			}
+			$handover_failure = $this->policy->handoverFailure(
+				array('visit_status' => isset($request->visit_status) ? $request->visit_status : ''),
+				$this->dispositionForRequest($request_id)
+			);
+			if ($handover_failure !== null) {
+				return $this->failure($this->policyMessage($handover_failure), $handover_failure);
+			}
 			$puskesmas_code = trim((string) $request->assigned_puskesmas_code);
 			$actor = $this->lockedIdentity($actor_user_id);
 			if (!$this->policy->commandCenterEligible($actor, $puskesmas_code)
@@ -113,6 +120,7 @@ class Care_team_service
 			))) {
 				return $this->failure('Dokter belum dapat diperbarui.');
 			}
+			$responsible_assignment_id = (int) $this->db->insert_id();
 			$this->db->where('request_id', $request_id)->where('request_status', 'Accepted')
 				->update('requests', array('responsible_doctor_user_id' => (int) $doctor['user_id']));
 			if ($this->db->affected_rows() !== 1) {
@@ -127,6 +135,14 @@ class Care_team_service
 				'Buka konsultasi untuk melihat detail.',
 				$now
 			)) {
+				return $this->failure('Dokter belum dapat diperbarui.');
+			}
+			if (!$this->appendWorkflowEvent($request_id, 'responsible_doctor.assigned', array(
+				'actor_user_id' => $actor_user_id,
+				'actor_staff_id' => (int) ($actor['staff_id'] ?? 0),
+				'domain_event_key' => 'responsible-doctor:' . $responsible_assignment_id . ':assigned',
+				'metadata' => array('staff_id' => (int) $doctor['staff_id'], 'user_id' => (int) $doctor['user_id']),
+			))) {
 				return $this->failure('Dokter belum dapat diperbarui.');
 			}
 			return $this->success('Dokter penanggung jawab diperbarui.');
@@ -153,10 +169,27 @@ class Care_team_service
 				|| !$this->activeSession($actor_user_id, $session_token, $session_required)) {
 				return $this->failure('Anda tidak memiliki akses.');
 			}
+			$active_visit_assignments = $this->lockedVisitAssignments($request_id);
+			if ($active_visit_assignments === false) {
+				return $this->failure('Data Nakes perlu diperiksa.');
+			}
+			$mode_failure = $this->policy->modeChangeFailure(
+				array(
+					'consultation_mode' => isset($request->consultation_mode) ? $request->consultation_mode : '',
+					'visit_status' => isset($request->visit_status) ? $request->visit_status : '',
+				),
+				$this->dispositionForRequest($request_id),
+				count($active_visit_assignments),
+				$this->workflowEnabled(),
+				$mode
+			);
+			if ($mode_failure !== null) {
+				return $this->failure($this->policyMessage($mode_failure), $mode_failure);
+			}
 			$now = date('Y-m-d H:i:s');
 			$changed = (string) ($request->consultation_mode ?? '') !== $mode;
 			if ($mode === Care_team_policy::NON_VISIT) {
-				$active = $this->lockedVisitAssignments($request_id);
+				$active = $active_visit_assignments;
 				if ($active === false || count($active) > 1) {
 					return $this->failure('Data Nakes perlu diperiksa.');
 				}
@@ -174,6 +207,13 @@ class Care_team_service
 			}
 			$this->db->where('request_id', $request_id)->where('request_status', 'Accepted')->update('requests', $data);
 			if ($this->db->trans_status() === false) {
+				return $this->failure('Jenis layanan belum dapat diperbarui.');
+			}
+			if ($changed && !$this->appendWorkflowEvent($request_id, 'service_mode.selected', array(
+				'actor_user_id' => $actor_user_id,
+				'actor_staff_id' => (int) ($actor['staff_id'] ?? 0),
+				'metadata' => array('consultation_mode' => $mode),
+			))) {
 				return $this->failure('Jenis layanan belum dapat diperbarui.');
 			}
 			return $this->success(
@@ -196,6 +236,12 @@ class Care_team_service
 			if (!$request || (string) $request->request_status !== 'Accepted'
 				|| (string) $request->consultation_mode !== Care_team_policy::VISIT) {
 				return $this->failure('Pilih layanan kunjungan terlebih dahulu.');
+			}
+			$performer_failure = $this->policy->performerChangeFailure(array(
+				'visit_status' => isset($request->visit_status) ? $request->visit_status : '',
+			));
+			if ($performer_failure !== null) {
+				return $this->failure($this->policyMessage($performer_failure), $performer_failure);
 			}
 			$puskesmas_code = trim((string) $request->assigned_puskesmas_code);
 			$actor = $this->lockedIdentity($actor_user_id);
@@ -242,6 +288,7 @@ class Care_team_service
 			))) {
 				return $this->failure('Nakes belum dapat diperbarui.');
 			}
+			$visit_assignment_id = (int) $this->db->insert_id();
 			$data = array('visit_performer_user_id' => (int) $performer['user_id']);
 			$this->db->where('request_id', $request_id)->where('responsible_doctor_user_id', $actor_user_id)
 				->where('request_status', 'Accepted')->update('requests', $data);
@@ -258,6 +305,14 @@ class Care_team_service
 				'Ditugaskan oleh ' . $doctor_name . '.',
 				$now
 			)) {
+				return $this->failure('Nakes belum dapat diperbarui.');
+			}
+			if (!$this->appendWorkflowEvent($request_id, 'visit_performer.assigned', array(
+				'actor_user_id' => $actor_user_id,
+				'actor_staff_id' => (int) ($actor['staff_id'] ?? 0),
+				'domain_event_key' => 'visit-performer:' . $visit_assignment_id . ':assigned',
+				'metadata' => array('staff_id' => $staff_id, 'user_id' => (int) $performer['user_id']),
+			))) {
 				return $this->failure('Nakes belum dapat diperbarui.');
 			}
 			return $this->success('Nakes kunjungan diperbarui.');
@@ -577,8 +632,62 @@ class Care_team_service
 		return array_merge(array('ok' => true, 'status' => 'success', 'message' => $message), $data);
 	}
 
-	private function failure($message)
+	private function failure($message, $code = null)
 	{
-		return array('ok' => false, 'status' => 'error', 'message' => $message);
+		$result = array('ok' => false, 'status' => 'error', 'message' => (string) $message);
+		if ($code !== null) {
+			$result['safe_error_code'] = (string) $code;
+		}
+		return $result;
+	}
+
+	private function dispositionForRequest($request_id)
+	{
+		if (!$this->db->table_exists('visit_dispositions')) {
+			return null;
+		}
+		return $this->db->select('disposition_id, request_id, version_no, decision, urgency, required_profession')
+			->where('request_id', (int) $request_id)
+			->where('superseded_at', null)
+			->order_by('version_no', 'DESC')
+			->limit(1)
+			->get('visit_dispositions')
+			->row();
+	}
+
+	private function workflowEnabled()
+	{
+		$CI = function_exists('get_instance') ? get_instance() : null;
+		return $CI && isset($CI->config) && $CI->config->item('visit_clinical_workflow_enabled') === true;
+	}
+
+	private function policyMessage($code)
+	{
+		$messages = array(
+			'VISIT_ALREADY_STARTED' => 'Kunjungan sudah berjalan. Nakes tidak dapat diganti.',
+			'MODE_LOCKED_BY_DISPOSITION' => 'Jenis layanan mengikuti disposisi dokter dan tidak dapat diubah di sini.',
+			'PERFORMER_LOCKED' => 'Batalkan atau selesaikan penugasan Nakes sebelum mengubah jenis layanan.',
+			'HANDOVER_LOCKED' => 'Dokter penanggung jawab tidak dapat diganti setelah disposisi atau kunjungan dimulai.',
+		);
+		return isset($messages[$code]) ? $messages[$code] : 'Perubahan tidak dapat dilakukan.';
+	}
+
+	private function appendWorkflowEvent($request_id, $event_type, array $payload = array())
+	{
+		if (!function_exists('doclinc_request_event_table_ready')) {
+			require_once APPPATH . 'helpers/request_event_helper.php';
+		}
+		$CI = function_exists('get_instance') ? get_instance() : null;
+		if (!$CI || !doclinc_request_event_table_ready($CI)) {
+			// Audit opsional: jangan menggagalkan penugasan hanya karena tabel
+			// event belum dimigrasikan.
+			return true;
+		}
+		return doclinc_append_request_event((int) $request_id, (string) $event_type, array(
+			'actor_user_id' => (int) ($payload['actor_user_id'] ?? 0),
+			'actor_staff_id' => (int) ($payload['actor_staff_id'] ?? 0),
+			'domain_event_key' => (string) ($payload['domain_event_key'] ?? ''),
+			'metadata' => isset($payload['metadata']) && is_array($payload['metadata']) ? $payload['metadata'] : array(),
+		), $CI);
 	}
 }

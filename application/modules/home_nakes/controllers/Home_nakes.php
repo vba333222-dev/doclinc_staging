@@ -15,10 +15,11 @@ class Home_nakes extends MX_Controller
 		$this->load->helper('notification');
 		$this->load->helper('request_realtime');
 		$this->load->helper('role_prerequisite');
+		$this->load->helper('clinical_error');
 		$this->load->helper('nakes_presence_client');
 		$this->load->library('Visit_monitoring_policy');
 		if ($this->session->userdata('logged_in') != TRUE) {
-			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment', 'assign_responsible_doctor', 'choose_service_mode', 'assign_visit_performer', 'clinical_workflow', 'clinical_review', 'clinical_disposition', 'clinical_finalize', 'clinical_amend', 'clinical_close'), true)) {
+			if (in_array($this->router->fetch_method(), array('visit_location', 'update_visit_location', 'update_visit_status', 'presence_heartbeat', 'presence_snapshot', 'livekit_token', 'start_livekit_call', 'end_livekit_call', 'livekit_call_status', 'assign_staff', 'clear_staff_assignment', 'assign_responsible_doctor', 'choose_service_mode', 'assign_visit_performer', 'clinical_workflow', 'clinical_review', 'clinical_disposition', 'clinical_disposition_revise', 'clinical_record', 'clinical_finalize', 'clinical_amend', 'clinical_close'), true)) {
 				$this->output
 					->set_content_type('application/json')
 					->set_status_header(401)
@@ -404,6 +405,7 @@ class Home_nakes extends MX_Controller
 		);
 		$d['profile'] = $this->Home_nakes_m->get_profile_by_id($uid);
 		$d['care_team_workflow_enabled'] = $this->config->item('care_team_workflow_enabled') === true;
+		$d['visit_clinical_workflow_enabled'] = $this->config->item('visit_clinical_workflow_enabled') === true;
 		if (!is_array($d['profile'])) {
 			$d['profile'] = array();
 		}
@@ -424,6 +426,10 @@ class Home_nakes extends MX_Controller
 		$d['request_event_map'] = array();
 		$d['puskesmas_data_readiness'] = array();
 		$d['puskesmas_operation_exceptions'] = array();
+		$d['clinical_ui'] = array();
+		$d['clinical_workflow_map'] = array();
+		$d['clinical_action_counts'] = array('needs_action' => 0, 'waiting_review' => 0, 'ready_to_close' => 0, 'completed' => 0, 'completed_today' => 0);
+		$clinical_stalled = 0;
 		$d['nakes_team_duty'] = array();
 		$d['nakes_team_duty_counts'] = array('visit' => 0, 'disposisi' => 0, 'menangani' => 0, 'on_duty' => 0, 'idle' => 0);
 
@@ -435,6 +441,12 @@ class Home_nakes extends MX_Controller
 			// karena puskesmas tujuan ditentukan oleh area layanan lokasi warga.
 			$this->load->library('Pending_request_watchdog');
 			$this->pending_request_watchdog->sweep($puskesmas_code);
+
+			// Permintaan Accepted yang berhenti di tengah alur klinis juga
+			// harus terlihat di papan, bukan hanya yang belum diterima.
+			$this->load->library('Active_request_watchdog');
+			$this->active_request_watchdog->sweep($puskesmas_code);
+			$clinical_stalled = count($this->active_request_watchdog->exceptionsFor($puskesmas_code));
 
 			$d['data_request_new'] = $this->Home_nakes_m->request_keluhan_command_center($identity_context);
 			$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept_command_center($identity_context);
@@ -481,6 +493,7 @@ class Home_nakes extends MX_Controller
 				'accepted_requests' => count($assignment_request_ids),
 				'accepted_without_pic' => $accepted_without_pic,
 				'staff_data_attention' => isset($d['puskesmas_data_readiness']['attention_count']) ? (int) $d['puskesmas_data_readiness']['attention_count'] : 0,
+				'clinical_stalled' => (int) $clinical_stalled,
 			);
 			$d['request_staff_latest_assignment_map'] = $d['staff_assignment_ready']
 				? $this->Home_nakes_m->get_latest_staff_assignments_by_request_ids($completed_assignment_request_ids)
@@ -507,6 +520,44 @@ class Home_nakes extends MX_Controller
 			if ($d['care_team_workflow_enabled']) {
 				$d['puskesmas_staff_options'] = $this->Home_nakes_m->get_active_staff_options_by_code($puskesmas_code);
 			}
+		}
+
+		$disposition_request_ids = array();
+		foreach ($d['data_request_accept']->result() as $request_row) {
+			$disposition_request_ids[] = (int) $request_row->request_id;
+		}
+		foreach ($d['data_request_completed']->result() as $request_row) {
+			$disposition_request_ids[] = (int) $request_row->request_id;
+		}
+		$d['nakes_disposition_map'] = $this->Home_nakes_m->get_active_dispositions_by_request_ids($disposition_request_ids);
+
+		if ($d['visit_clinical_workflow_enabled'] && !empty($disposition_request_ids)) {
+			$this->load->library('clinical_workflow_summary');
+			$d['clinical_ui'] = $this->clinical_workflow_summary->map(
+				$this->Home_nakes_m->workflow_summaries_by_request_ids($disposition_request_ids)
+			);
+			$this->load->library('visit_workflow_presenter');
+			$current_user_id = (int) $this->session->userdata('id');
+			foreach ($d['clinical_ui'] as $request_id => &$clinical_entry) {
+				$clinical_request = isset($clinical_entry['summary']['request']) && is_array($clinical_entry['summary']['request'])
+					? $clinical_entry['summary']['request']
+					: array();
+				$clinical_actor = 'command_center';
+				if ((int) ($clinical_request['responsible_doctor_user_id'] ?? 0) === $current_user_id) {
+					$clinical_actor = 'responsible_doctor';
+				} elseif ((int) ($clinical_request['visit_performer_user_id'] ?? 0) === $current_user_id) {
+					$clinical_actor = 'performer';
+				}
+				$clinical_presentation = $this->visit_workflow_presenter->present(
+					array('request_id' => (int) $request_id, 'state' => $clinical_entry['state']),
+					$clinical_actor,
+					array('correction_reason' => $clinical_entry['summary']['review']['correction_reason'] ?? null)
+				);
+				$clinical_entry = array_merge($clinical_entry, $clinical_presentation);
+			}
+			unset($clinical_entry);
+			$d['clinical_workflow_map'] = $d['clinical_ui'];
+			$d['clinical_action_counts'] = $this->clinical_workflow_summary->actionCounts($d['clinical_ui']);
 		}
 
 		$d['data_user'] = $d['nakes_identity_valid']
@@ -760,6 +811,52 @@ class Home_nakes extends MX_Controller
 		if ($patient_id > 0) {
 			doclinc_notify_user($patient_id, $event_type, 'request', (int) $request_id, $title, $message, (int) $actor_user_id);
 		}
+		if ($puskesmas_code !== '') {
+			doclinc_notify_puskesmas($puskesmas_code, $event_type, 'request', (int) $request_id, $title, $message, (int) $actor_user_id);
+		}
+	}
+
+	private function notify_clinical_user($request_id, $recipient_user_id, $event_type, $title, $message, $actor_user_id)
+	{
+		if ((int) $recipient_user_id < 1) {
+			return;
+		}
+		doclinc_notify_user((int) $recipient_user_id, (string) $event_type, 'request', (int) $request_id, (string) $title, (string) $message, (int) $actor_user_id);
+	}
+
+	private function notify_clinical_puskesmas($request_id, $event_type, $title, $message, $actor_user_id)
+	{
+		$request = doclinc_request_row((int) $request_id);
+		if (!$request) {
+			return;
+		}
+		$puskesmas_code = trim((string) ($request->assigned_puskesmas_code ?? ''));
+		if ($puskesmas_code === '') {
+			return;
+		}
+		doclinc_notify_puskesmas($puskesmas_code, (string) $event_type, 'request', (int) $request_id, (string) $title, (string) $message, (int) $actor_user_id);
+	}
+
+	/**
+	 * Memberi tahu warga dan puskesmas saat dokter menetapkan/merevisi disposisi.
+	 * Pesan sengaja tidak memuat urgensi atau instruksi internal; detail klinis
+	 * tetap di halaman konsultasi.
+	 */
+	private function notify_disposition($request_id, $actor_user_id, $decision, $revised = false)
+	{
+		$request = doclinc_request_row((int) $request_id);
+		if (!$request) {
+			return;
+		}
+		$is_visit = strtolower(trim((string) $decision)) === 'visit';
+		$event_type = $is_visit ? 'consultation_visit_selected' : 'consultation_non_visit_selected';
+		$title = $revised ? 'Disposisi dokter diperbarui' : 'Disposisi dokter ditetapkan';
+		$message = $is_visit ? 'Dokter meminta kunjungan Nakes.' : 'Dokter melanjutkan tanpa kunjungan.';
+		$patient_id = (int) ($request->user_id ?? 0);
+		if ($patient_id > 0) {
+			doclinc_notify_user($patient_id, $event_type, 'request', (int) $request_id, $title, $message, (int) $actor_user_id);
+		}
+		$puskesmas_code = trim((string) ($request->assigned_puskesmas_code ?? ''));
 		if ($puskesmas_code !== '') {
 			doclinc_notify_puskesmas($puskesmas_code, $event_type, 'request', (int) $request_id, $title, $message, (int) $actor_user_id);
 		}
@@ -1795,7 +1892,16 @@ class Home_nakes extends MX_Controller
 		}
 		$this->load->library('Clinical_workflow_surface');
 		$result = $this->clinical_workflow_surface->forRequest((int) $request_id, (int) $this->session->userdata('id'));
-		$this->output->set_content_type('application/json')->set_status_header($result['status'] === 'success' ? 200 : 403)->set_output(json_encode(array('success' => $result['status'] === 'success', 'safe_error_code' => $result['status'] === 'success' ? null : $result['safe_error_code'], 'message' => $result['status'] === 'success' ? 'OK' : 'Tidak memiliki akses.', 'data' => $result['status'] === 'success' ? $result['data'] : null)));
+		$ok = isset($result['status']) && $result['status'] === 'success';
+		if ($ok) {
+			$this->output->set_content_type('application/json')->set_status_header(200)
+				->set_output(json_encode(array('success' => true, 'safe_error_code' => null, 'message' => 'OK', 'data' => $result['data'])));
+			return;
+		}
+		$code = (string) ($result['safe_error_code'] ?? 'ACCESS_DENIED');
+		$this->output->set_content_type('application/json')
+			->set_status_header(doclinc_clinical_http_status($code))
+			->set_output(json_encode(doclinc_clinical_error_payload($code)));
 	}
 
 	private function clinical_method_not_allowed()
@@ -1810,17 +1916,101 @@ class Home_nakes extends MX_Controller
 	private function clinical_json_result($result)
 	{
 		$ok = isset($result['status']) && $result['status'] === 'success';
-		$body = array('success' => $ok, 'safe_error_code' => $ok ? null : (string) ($result['safe_error_code'] ?? 'WRITE_FAILED'), 'message' => $ok ? 'OK' : 'Operasi tidak dapat diproses.');
-		if ($ok) $body['data'] = $result;
-		$this->output->set_content_type('application/json')->set_status_header($ok ? 200 : 422)->set_output(json_encode($body));
+		if ($ok) {
+			$this->output->set_content_type('application/json')->set_status_header(200)
+				->set_output(json_encode(array('success' => true, 'safe_error_code' => null, 'message' => 'OK', 'data' => $result)));
+			return;
+		}
+
+		$code = (string) ($result['safe_error_code'] ?? 'WRITE_FAILED');
+		$payload = doclinc_clinical_error_payload($code);
+		if (!empty($result['safe_reason'])) {
+			$payload['safe_reason'] = (string) $result['safe_reason'];
+		}
+		$this->output->set_content_type('application/json')
+			->set_status_header(doclinc_clinical_http_status($code))
+			->set_output(json_encode($payload));
 	}
 
 	public function clinical_review()
 	{
 		if (!$this->require_dokter_session()) return;
 		if (strtoupper($this->input->method()) !== 'POST') { $this->clinical_method_not_allowed(); return; }
+		$request_id = (int) $this->input->post('request_id');
+		$decision = strtolower(trim((string) $this->input->post('decision')));
 		$this->load->library('Clinical_review_service');
-		$this->clinical_json_result($this->clinical_review_service->review((int)$this->input->post('request_id'),(int)$this->input->post('visit_result_id'),(int)$this->session->userdata('id'),(string)$this->input->post('decision'),(string)$this->input->post('correction_reason'),(string)$this->input->post('review_notes'),(string)$this->input->post('idempotency_key')));
+		$result = $this->clinical_review_service->review(
+			$request_id,
+			(int) $this->input->post('visit_result_id'),
+			(int) $this->session->userdata('id'),
+			$decision,
+			(string) $this->input->post('correction_reason'),
+			(string) $this->input->post('review_notes'),
+			(string) $this->input->post('idempotency_key')
+		);
+		if (($result['status'] ?? '') === 'success') {
+			$request = doclinc_request_row($request_id);
+			$performer_id = $request ? (int) ($request->visit_performer_user_id ?? 0) : 0;
+			$approved = $decision === 'approved';
+			$this->notify_clinical_user(
+				$request_id,
+				$performer_id,
+				$approved ? 'visit_result_approved' : 'visit_result_correction_required',
+				$approved ? 'Hasil kunjungan disetujui' : 'Hasil kunjungan perlu diperbaiki',
+				$approved ? 'Dokter menyetujui hasil kunjungan Anda.' : 'Dokter meminta perbaikan hasil kunjungan.',
+				(int) $this->session->userdata('id')
+			);
+		}
+		$this->clinical_json_result($result);
+	}
+
+	/**
+	 * Nakes yang dipilih dokter pada form disposisi. Hanya staf aktif di
+	 * Puskesmas yang sama dan layak menjadi pelaksana kunjungan yang diterima.
+	 * Mengembalikan null bila tidak ada pilihan; pemanggil lama yang belum
+	 * mengirim staff_id tetap dapat memakai required_profession.
+	 */
+	private function disposition_selected_staff($request_id, $staff_id)
+	{
+		$staff_id = (int) $staff_id;
+		if ($staff_id < 1) {
+			return null;
+		}
+		$request = doclinc_request_row((int) $request_id);
+		$facility = $request ? trim((string) ($request->assigned_puskesmas_code ?? '')) : '';
+		if ($facility === '') {
+			return null;
+		}
+		foreach ($this->Home_nakes_m->get_active_staff_options_by_code($facility) as $staff_option) {
+			if ((int) ($staff_option->staff_id ?? 0) === $staff_id && !empty($staff_option->visit_performer_eligible)) {
+				return $staff_option;
+			}
+		}
+		return null;
+	}
+
+	private function assign_disposition_staff($request_id, $staff_id, $user_id)
+	{
+		$staff_id = (int) $staff_id;
+		if ($staff_id < 1) {
+			return null;
+		}
+		$this->load->library('Care_team_service');
+		return $this->care_team_service->assignVisitPerformer(
+			(int) $request_id,
+			$staff_id,
+			(int) $user_id,
+			$this->session->userdata('normal_session_token'),
+			$this->config->item('single_active_session_enabled') === true
+		);
+	}
+
+	private function clinical_error_response($code)
+	{
+		$code = (string) $code;
+		$this->output->set_content_type('application/json')
+			->set_status_header(doclinc_clinical_http_status($code))
+			->set_output(json_encode(doclinc_clinical_error_payload($code)));
 	}
 
 	public function clinical_disposition()
@@ -1828,35 +2018,146 @@ class Home_nakes extends MX_Controller
 		if (!$this->require_dokter_session()) return;
 		if (strtoupper($this->input->method()) !== 'POST') { $this->clinical_method_not_allowed(); return; }
 		$this->load->library('Visit_disposition_service');
+		$request_id = (int) $this->input->post('request_id');
+		$user_id = (int) $this->session->userdata('id');
+		$decision = strtolower(trim((string) $this->input->post('decision')));
+		$staff_id = (int) $this->input->post('staff_id');
+		$staff = $decision === 'visit' && $staff_id > 0
+			? $this->disposition_selected_staff($request_id, $staff_id)
+			: null;
+		if ($decision === 'visit' && $staff_id > 0 && !$staff) {
+			$this->clinical_error_response('PLACEMENT_MISSING');
+			return;
+		}
 		$input = array(
-			'decision' => (string) $this->input->post('decision'),
+			'decision' => $decision,
 			'urgency' => (string) $this->input->post('urgency'),
 			'instructions' => (string) $this->input->post('instructions'),
 			'rationale' => (string) $this->input->post('rationale'),
-			'required_profession' => (string) $this->input->post('required_profession'),
+			'required_profession' => $staff ? (string) $staff->profesi : (string) $this->input->post('required_profession'),
 			'required_competency_note' => (string) $this->input->post('required_competency_note'),
 		);
 		$result = $this->visit_disposition_service->create(
-			(int) $this->input->post('request_id'),
-			(int) $this->session->userdata('id'),
+			$request_id,
+			$user_id,
 			$input,
 			(string) $this->input->post('idempotency_key')
 		);
+		if (!empty($result['ok'])) {
+			$assignment = $staff ? $this->assign_disposition_staff($request_id, (int) $staff->staff_id, $user_id) : null;
+			if ($assignment !== null) {
+				$result['staff_assignment'] = $assignment;
+				if (empty($assignment['ok'])) {
+					$result['staff_assignment_message'] = (string) ($assignment['message'] ?? 'Nakes belum dapat ditugaskan otomatis. Pilih Nakes dari halaman tugas.');
+				}
+			}
+			$this->notify_disposition($request_id, $user_id, $decision, false);
+		}
 		$ok = !empty($result['ok']);
-		$body = array(
-			'success' => $ok,
-			'safe_error_code' => $ok ? null : (string) ($result['code'] ?? 'DISPOSITION_CONFLICT'),
-			'message' => $ok ? 'OK' : 'Operasi disposisi tidak dapat diproses.',
+		if ($ok) {
+			$this->output->set_content_type('application/json')->set_status_header(200)
+				->set_output(json_encode(array('success' => true, 'safe_error_code' => null, 'message' => 'OK', 'data' => $result)));
+			return;
+		}
+		$code = (string) ($result['code'] ?? 'DISPOSITION_CONFLICT');
+		$this->output->set_content_type('application/json')
+			->set_status_header(doclinc_clinical_http_status($code))
+			->set_output(json_encode(doclinc_clinical_error_payload($code)));
+	}
+
+	public function clinical_disposition_revise()
+	{
+		if (!$this->require_dokter_session()) return;
+		if (strtoupper($this->input->method()) !== 'POST') { $this->clinical_method_not_allowed(); return; }
+		$this->load->library('Visit_disposition_service');
+		$request_id = (int) $this->input->post('request_id');
+		$user_id = (int) $this->session->userdata('id');
+		$decision = strtolower(trim((string) $this->input->post('decision')));
+		$staff_id = (int) $this->input->post('staff_id');
+		$staff = $decision === 'visit' && $staff_id > 0
+			? $this->disposition_selected_staff($request_id, $staff_id)
+			: null;
+		if ($decision === 'visit' && $staff_id > 0 && !$staff) {
+			$this->clinical_error_response('PLACEMENT_MISSING');
+			return;
+		}
+		$input = array(
+			'decision' => $decision,
+			'urgency' => (string) $this->input->post('urgency'),
+			'instructions' => (string) $this->input->post('instructions'),
+			'rationale' => (string) $this->input->post('rationale'),
+			'required_profession' => $staff ? (string) $staff->profesi : (string) $this->input->post('required_profession'),
+			'required_competency_note' => (string) $this->input->post('required_competency_note'),
 		);
-		if ($ok) $body['data'] = $result;
-		$this->output->set_content_type('application/json')->set_status_header($ok ? 200 : 422)->set_output(json_encode($body));
+		$result = $this->visit_disposition_service->revise(
+			$request_id,
+			$user_id,
+			(int) $this->input->post('expected_version'),
+			$input,
+			(string) $this->input->post('idempotency_key')
+		);
+		if (!empty($result['ok'])) {
+			$assignment = $staff ? $this->assign_disposition_staff($request_id, (int) $staff->staff_id, $user_id) : null;
+			if ($assignment !== null) {
+				$result['staff_assignment'] = $assignment;
+				if (empty($assignment['ok'])) {
+					$result['staff_assignment_message'] = (string) ($assignment['message'] ?? 'Nakes belum dapat ditugaskan otomatis. Pilih Nakes dari halaman tugas.');
+				}
+			}
+			$this->notify_disposition($request_id, $user_id, $decision, true);
+		}
+		$ok = !empty($result['ok']);
+		if ($ok) {
+			$this->output->set_content_type('application/json')->set_status_header(200)
+				->set_output(json_encode(array('success' => true, 'safe_error_code' => null, 'message' => 'OK', 'data' => $result)));
+			return;
+		}
+		$code = (string) ($result['code'] ?? 'DISPOSITION_CONFLICT');
+		$this->output->set_content_type('application/json')
+			->set_status_header(doclinc_clinical_http_status($code))
+			->set_output(json_encode(doclinc_clinical_error_payload($code)));
+	}
+
+	public function clinical_record()
+	{
+		if (!$this->require_dokter_session()) return;
+		if (strtoupper($this->input->method()) !== 'POST') { $this->clinical_method_not_allowed(); return; }
+		$this->load->library('Clinical_record_service');
+		$result = $this->clinical_record_service->saveDraft(
+			(int) $this->input->post('request_id'),
+			(int) $this->session->userdata('id'),
+			array(
+				'diagnosis' => (string) $this->input->post('diagnosis'),
+				'treatment' => (string) $this->input->post('treatment'),
+				'recommendations' => (string) $this->input->post('recommendations'),
+				'anamnesis' => (string) $this->input->post('anamnesis'),
+			),
+			(string) $this->input->post('idempotency_key')
+		);
+		$this->clinical_json_result($result);
 	}
 
 	public function clinical_finalize()
 	{
 		if (!$this->require_dokter_session()) return;
 		if (strtoupper($this->input->method()) !== 'POST') { $this->clinical_method_not_allowed(); return; }
-		$this->load->library('Clinical_finalization_service'); $this->clinical_json_result($this->clinical_finalization_service->finalize((int)$this->input->post('request_id'),(int)$this->session->userdata('id'),(string)$this->input->post('idempotency_key')));
+		$request_id = (int) $this->input->post('request_id');
+		$this->load->library('Clinical_finalization_service');
+		$result = $this->clinical_finalization_service->finalize(
+			$request_id,
+			(int) $this->session->userdata('id'),
+			(string) $this->input->post('idempotency_key')
+		);
+		if (($result['status'] ?? '') === 'success') {
+			$this->notify_clinical_puskesmas(
+				$request_id,
+				'clinical_record_finalized',
+				'Rekam medis difinalisasi',
+				'Rekam medis konsultasi sudah difinalisasi dokter.',
+				(int) $this->session->userdata('id')
+			);
+		}
+		$this->clinical_json_result($result);
 	}
 
 	public function clinical_amend()
@@ -1880,6 +2181,9 @@ class Home_nakes extends MX_Controller
 		$result = $mode === 'visit'
 			? $this->clinical_closure_service->closeClinicalVisit($request_id, $actor, $key)
 			: ($mode === 'non_visit' ? $this->clinical_closure_service->closeClinicalConsultation($request_id, $actor, $key) : array('status' => 'error', 'safe_error_code' => 'CLINICAL_CLOSURE_MODE_MISMATCH'));
+		if (($result['status'] ?? '') === 'success') {
+			$this->notify_clinical_puskesmas($request_id, 'consultation_closed', 'Konsultasi ditutup', 'Konsultasi sudah ditutup oleh dokter.', $actor);
+		}
 		$this->clinical_json_result($result);
 	}
 }

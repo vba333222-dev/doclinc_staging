@@ -7,12 +7,14 @@ class Konsultasi_nakes extends MX_Controller
 		parent::__construct();
 		$this->load->model('Konsultasi_nakes_m');
 		$this->load->model('home_nakes/Home_nakes_m');
+		$this->load->model('Clinical_review_m');
 		$this->load->helper('request_authz');
 		$this->load->helper('notification');
 		$this->load->helper('request_realtime');
 		$this->load->helper(array('visit_routing', 'visit_proof', 'request_navigation'));
 		$this->load->helper('role_prerequisite');
 		$this->load->helper('nakes_presence_client');
+		$this->load->helper('clinical_error');
 		$this->load->library('Clinical_anamnesis');
 		$this->load->library('Visit_proof_service');
 		$this->load->library('Medicalrecord_diagnosis_service');
@@ -42,9 +44,11 @@ class Konsultasi_nakes extends MX_Controller
 		}
 		$payload = array(
 			'observation_summary' => $this->input->post('observation_summary', true),
-			'findings' => $this->input->post('findings', true),
-			'actions' => $this->input->post('actions', true),
+			'findings' => $this->input->post('findings', true) ?: array(),
+			'actions' => $this->input->post('actions', true) ?: array(),
 			'performer_notes' => $this->input->post('performer_notes', true),
+			'anamnesis' => $this->input->post('anamnesis', true),
+			'therapy' => $this->input->post('therapy', true),
 		);
 		$result = $this->visit_result_service->saveDraft(
 			(int) $this->input->post('visit_result_id'),
@@ -71,6 +75,21 @@ class Konsultasi_nakes extends MX_Controller
 			$measurement_ids,
 			(string) $this->input->post('submission_key', true)
 		);
+		if (($result['status'] ?? '') === 'success') {
+			$request = doclinc_request_row((int) $result['request_id']);
+			$responsible_id = $request ? (int) ($request->responsible_doctor_user_id ?? 0) : 0;
+			if ($responsible_id > 0) {
+				doclinc_notify_user(
+					$responsible_id,
+					'visit_result_submitted',
+					'request',
+					(int) $result['request_id'],
+					'Hasil kunjungan masuk',
+					'Tinjau hasil kunjungan Nakes.',
+					(int) $this->session->userdata('id')
+				);
+			}
+		}
 		$this->visit_result_json($result);
 	}
 
@@ -94,9 +113,14 @@ class Konsultasi_nakes extends MX_Controller
 	private function visit_result_json($result)
 	{
 		$ok = isset($result['status']) && $result['status'] === 'success';
-		$body = array('success' => $ok, 'safe_error_code' => $ok ? null : (string) ($result['safe_error_code'] ?? 'RESULT_WRITE_FAILED'), 'message' => $ok ? 'OK' : 'Operasi hasil kunjungan tidak dapat diproses.');
-		if ($ok) { $body['data'] = $result; }
-		$this->output->set_status_header($ok ? 200 : 422)->set_output(json_encode($body));
+		if ($ok) {
+			$this->output->set_status_header(200)
+				->set_output(json_encode(array('success' => true, 'safe_error_code' => null, 'message' => 'OK', 'data' => $result)));
+			return;
+		}
+		$code = (string) ($result['safe_error_code'] ?? 'RESULT_WRITE_FAILED');
+		$this->output->set_status_header(doclinc_clinical_http_status($code))
+			->set_output(json_encode(doclinc_clinical_error_payload($code)));
 	}
 
 	private function require_visit_result_actor()
@@ -161,10 +185,109 @@ class Konsultasi_nakes extends MX_Controller
 		$x['consultation_mode'] = isset($request->consultation_mode) ? (string) $request->consultation_mode : '';
 		$x['visit_status'] = isset($request->visit_status) ? doclinc_normalize_visit_status($request->visit_status) : '';
 		$x['is_visit_performer'] = $x['care_team_workflow_enabled'] && !empty($access_context['is_visit_performer']);
+		$x['is_responsible_doctor'] = $x['care_team_workflow_enabled'] && !empty($access_context['is_responsible_doctor']);
+		$x['visit_clinical_workflow_enabled'] = $this->config->item('visit_clinical_workflow_enabled') === true;
+		$x['visit_disposition'] = $this->Home_nakes_m->get_visit_disposition((int) $x['request_id']);
+		$x['visit_workflow_enrolled'] = !empty($x['visit_disposition']);
+		$x['legacy_completion_available'] = empty($x['visit_disposition']);
+		$x['visit_disposition_locked'] = $x['visit_status'] !== '' && $x['visit_status'] !== 'not_started';
+		$profession_options = array();
+		$staff_options = array();
+		$current_performer_staff_id = 0;
+		$current_performer_name = '';
+		if ($x['visit_clinical_workflow_enabled'] && $x['is_responsible_doctor']) {
+			foreach ($this->Home_nakes_m->get_active_staff_options_by_code((string) ($identity_context['puskesmas_code'] ?? '')) as $staff_option) {
+				$profession = trim((string) ($staff_option->profesi ?? ''));
+				if ($profession !== '') {
+					$profession_options[$profession] = $profession;
+				}
+				if (empty($staff_option->visit_performer_eligible)) {
+					continue;
+				}
+				$staff_options[] = array(
+					'staff_id' => (int) ($staff_option->staff_id ?? 0),
+					'nama' => trim((string) ($staff_option->nama ?? '')),
+					'profesi' => $profession,
+					'gelar' => trim((string) ($staff_option->gelar ?? '')),
+					'is_online' => isset($staff_option->is_online) ? (int) $staff_option->is_online : null,
+				);
+			}
+		}
+		$x['staff_options'] = $staff_options;
+		$x['visit_performer_staff_id'] = 0;
+		$x['visit_performer_name'] = '';
+		$x['staff_professions'] = array_values($profession_options);
+
+		$x['workflow_actions'] = array();
+		$x['clinical_ui'] = array();
+		$x['clinical_action_counts'] = array('needs_action' => 0, 'waiting_review' => 0, 'ready_to_close' => 0, 'completed' => 0, 'completed_today' => 0);
+		$x['visit_workflow'] = array();
+		$x['visit_result_draft'] = null;
+		$x['visit_result_submitted'] = null;
+		$x['clinical_record'] = null;
+		$x['review_history'] = array();
+		$x['amendment_history'] = array();
+		$x['record_effective_values'] = array();
+		$x['clinical_record_finalized_by_name'] = '';
 		$x['vital_signs_schema_ready'] = $this->visit_vital_signs_service->schemaReady();
 		$x['latest_vital_signs'] = $x['vital_signs_schema_ready']
 			? $this->visit_vital_signs_service->latest((int) $x['request_id'])
 			: null;
+		$x['latest_measurement_id'] = !empty($x['latest_vital_signs']) && isset($x['latest_vital_signs']->measurement_id)
+			? (int) $x['latest_vital_signs']->measurement_id
+			: 0;
+		if ($x['care_team_workflow_enabled'] && $x['visit_clinical_workflow_enabled']) {
+			$this->load->library('Clinical_workflow_surface');
+			$surface = $this->clinical_workflow_surface->forRequest((int) $x['request_id'], $doctor_id);
+			if (($surface['status'] ?? '') === 'success') {
+				$x['visit_workflow'] = is_array($surface['data']) ? $surface['data'] : array();
+				$x['workflow_actions'] = isset($surface['data']['available_actions']) && is_array($surface['data']['available_actions'])
+					? $surface['data']['available_actions']
+					: array();
+				$x['clinical_ui'] = isset($surface['data']['workflow_ui']) && is_array($surface['data']['workflow_ui'])
+					? $surface['data']['workflow_ui']
+					: array();
+				if (!empty($x['clinical_ui'])) {
+					$this->load->library('clinical_workflow_summary');
+					$x['clinical_action_counts'] = $this->clinical_workflow_summary->actionCounts(array(
+						(int) $x['request_id'] => $x['clinical_ui'],
+					));
+				}
+				$current_performer_staff_id = isset($x['visit_workflow']['performer']['staff_id'])
+					? (int) $x['visit_workflow']['performer']['staff_id']
+					: 0;
+				foreach ($x['staff_options'] as $staff_option) {
+					if ((int) $staff_option['staff_id'] === $current_performer_staff_id) {
+						$current_performer_name = (string) $staff_option['nama'];
+						break;
+					}
+				}
+				$x['visit_performer_staff_id'] = $current_performer_staff_id;
+				$x['visit_performer_name'] = $current_performer_name;
+			}
+			if ($x['is_visit_performer'] && $x['visit_workflow_enrolled']) {
+				$draft = $this->visit_result_service->getOrCreateDraft((int) $x['request_id'], $doctor_id);
+				if (($draft['status'] ?? '') === 'success') {
+					$x['visit_result_draft'] = $this->visit_result_service->findById((int) $draft['visit_result_id']);
+				}
+				$x['visit_result_submitted'] = $this->visit_result_service->latestSubmittedForRequest((int) $x['request_id']);
+			}
+			if ($x['is_responsible_doctor']) {
+				$x['visit_result_submitted'] = $this->visit_result_service->latestSubmittedForRequest((int) $x['request_id']);
+				$this->load->library('Clinical_record_service');
+				$x['clinical_record'] = $this->clinical_record_service->currentRecord((int) $x['request_id']);
+				$x['review_history'] = $this->Clinical_review_m->historyByRequest((int) $x['request_id']);
+				if ($x['clinical_record']) {
+					$this->load->library('Clinical_amendment_service');
+					$x['amendment_history'] = $this->clinical_amendment_service->history((int) $x['clinical_record']->record_id);
+					$x['record_effective_values'] = $this->clinical_amendment_service->effectiveValues((int) $x['clinical_record']->record_id);
+					if (!empty($x['clinical_record']->clinical_finalized_by_user_id)) {
+						$finalized_by = $this->db->select('nama')->where('userId', (int) $x['clinical_record']->clinical_finalized_by_user_id)->limit(1)->get('users')->row();
+						$x['clinical_record_finalized_by_name'] = $finalized_by && isset($finalized_by->nama) ? trim((string) $finalized_by->nama) : '';
+					}
+				}
+			}
+		}
 		$x['can_open_patient_chat'] = !empty($identity_context['valid'])
 			&& (string) ($identity_context['account_type'] ?? '') === 'personal'
 			&& doclinc_can_view_chat((int) $x['request_id'], $doctor_id, 'dokter');
@@ -624,6 +747,9 @@ class Konsultasi_nakes extends MX_Controller
 			? $this->Konsultasi_nakes_m->last_failure_code()
 			: '';
 		$messages = array(
+			'clinical_closure_required' => 'Konsultasi ini dikelola alur klinis. Selesaikan lewat hasil kunjungan, review dokter, finalisasi, lalu tutup konsultasi.',
+			'visit_performer_required' => 'Tunjuk Nakes pelaksana kunjungan terlebih dahulu.',
+			'service_mode_mismatch' => 'Jenis layanan sudah berubah. Muat ulang halaman.',
 			'visit_mode_invalid' => 'Jenis layanan tidak valid. Pilih konsultasi jarak jauh atau Kunjungan Nakes.',
 			'visit_mode_mismatch' => 'Kunjungan yang sudah dimulai tidak dapat ditutup sebagai konsultasi non-visit.',
 			'visit_status_invalid' => 'Status kunjungan harus sudah tiba atau dalam penanganan.',

@@ -1,0 +1,707 @@
+@charset "UTF-8";
+
+/* ==========================================================================
+   DocLinc Reference UI
+   Lapisan visual bersama untuk akun warga, nakes, Puskesmas, dan admin.
+   Layout per halaman TIDAK diubah di sini. Yang diseragamkan hanya tipografi,
+   kontrol, warna, gradasi, dan tekstur yang aman untuk ruang kosong.
+   ========================================================================== */
+
+:root {
+  --dl-ref-font: "Manrope", "Inter", "Segoe UI", Arial, sans-serif;
+  --dl-ref-ink: #1F2A24;
+  --dl-ref-muted: #55665E;
+  --dl-ref-line: #DCE9E2;
+  --dl-ref-surface: #FFFFFF;
+  --dl-ref-green-500: #379A69;
+  --dl-ref-green-600: #2D7D56;
+  --dl-ref-green-700: #1F6F4B;
+  --dl-ref-green-900: #12472F;
+  --dl-ref-mint: #89F6DA;
+  --dl-ref-mint-soft: #E8F7F0;
+  --dl-ref-danger: #A8443F;
+  --dl-ref-danger-soft: #F7E7E6;
+  --dl-ref-body: 14px;
+  --dl-ref-body-compact: 13px;
+  --dl-ref-label: 12px;
+  --dl-ref-caption: 12px;
+  --dl-ref-title: 16px;
+  --dl-ref-section: 18px;
+  --dl-ref-page-title: 24px;
+  --dl-ref-control: 44px;
+  --dl-ref-control-primary: 48px;
+  --dl-ref-radius-control: 12px;
+  --dl-ref-radius-tile: 16px;
+  --dl-ref-radius-section: 22px;
+  --dl-ref-ease: cubic-bezier(.22, .61, .36, 1);
+  --dl-ref-gradient: linear-gradient(150deg, #2D7D56 0%, #1F6F4B 52%, #12472F 100%);
+  --dl-ref-gradient-hover: linear-gradient(150deg, #389363 0%, #257E55 52%, #164F35 100%);
+  --dl-ref-shadow-primary:
+    0 2px 4px rgba(18, 71, 47, .24),
+    0 8px 18px -4px rgba(18, 71, 47, .28),
+    inset 0 1px 0 rgba(255, 255, 255, .2);
+  --dl-ref-texture-plus:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'%3E%3Cpath d='M9 3h4v6h6v4h-6v6H9v-6H3V9h6z' fill='%232D7D56' fill-opacity='0.07'/%3E%3C/svg%3E");
+  --dl-ref-texture-plus-light:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'%3E%3Cpath d='M9 3h4v6h6v4h-6v6H9v-6H3V9h6z' fill='%23FFFFFF' fill-opacity='0.08'/%3E%3C/svg%3E");
+}
+
+.dl-warga-app,
+.dl-warga-chat,
+.dl-warga-profile,
+.consultation-form-page,
+.doclinc-nakes-consult,
+.dl-nakes-dashboard,
+.dl-puskesmas-shell,
+.doclinc-admin-shell {
+  font-family: var(--dl-ref-font);
+  color: var(--dl-ref-ink);
+}
+
+.dl-warga-app,
+.dl-warga-chat,
+.dl-warga-profile,
+.consultation-form-page {
+  font-size: var(--dl-ref-body);
+}
+
+.doclinc-nakes-consult,
+.dl-nakes-dashboard,
+.dl-puskesmas-shell,
+.doclinc-admin-shell {
+  font-size: var(--dl-ref-body-compact);
+}
+
+/* --- Typography roles ---------------------------------------------------- */
+.dl-warga-app .dl-profile-row h3,
+.dl-warga-app .dl-profile-copy > h3,
+.dl-warga-chat .dl-profile-row h3 {
+  text-transform: none !important;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.dl-warga-app .dl-profile-copy > small,
+.dl-warga-app .dl-profile-meta,
+.dl-warga-app .dl-profile-meta > p {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.dl-warga-app .dl-welcome__hello {
+  font-size: clamp(1.25rem, 5.2vw, 1.55rem);
+  line-height: 1.15;
+}
+
+.dl-warga-app .dl-welcome__note {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.dl-warga-app .dl-section-title,
+.dl-warga-app .dl-bento-section .dl-section-title {
+  font-size: var(--dl-ref-section);
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+.dl-warga-app .dl-action-tile__title {
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.dl-warga-app .dl-bento-tile__title {
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.dl-warga-app .dl-bento-tile__desc,
+.dl-warga-app .dl-action-tile__note,
+.dl-warga-app .dl-bento-notice__body > span,
+.dl-warga-app .dl-clock-tile__date,
+.dl-warga-app .dl-clock-tile__day,
+.dl-warga-app .dl-summary-tile__meta,
+.dl-warga-app .dl-bento-link {
+  font-size: var(--dl-ref-caption);
+  line-height: 1.4;
+}
+
+.dl-warga-app .dl-clock-tile__time {
+  font-size: clamp(1.8rem, 7vw, 2.2rem);
+  line-height: 1;
+}
+
+.dl-warga-app .dl-summary-tile__line {
+  font-size: 14px;
+}
+
+.dl-warga-app .dl-summary-tile__line strong {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.dl-warga-app .dl-queue-ticket__number {
+  font-size: 34px;
+  line-height: 1.05;
+}
+
+.dl-warga-app .history-meta,
+.dl-warga-app .history-result-label,
+.dl-warga-app .history-complaint-label,
+.dl-warga-app .history-empty-text,
+.dl-warga-app .dl-complaint-row span {
+  font-size: var(--dl-ref-caption);
+  line-height: 1.4;
+}
+
+.dl-warga-app .history-result-value,
+.dl-warga-app .history-complaint-value,
+.dl-warga-app .history-free-text,
+.dl-warga-app .dl-complaint-row strong,
+.dl-warga-app .dl-complaint-preview {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.consultation-form-page .consult-title {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.consultation-form-page .consult-eyebrow,
+.consultation-form-page .consult-helper,
+.consultation-form-page .consult-label {
+  font-size: var(--dl-ref-caption);
+  line-height: 1.4;
+}
+
+.consultation-form-page .consult-card-title {
+  font-size: 17px;
+}
+
+.consultation-form-page .consult-nav-link {
+  font-size: 12px;
+}
+
+.doclinc-admin-shell .doclinc-sidebar-heading {
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.doclinc-admin-shell .doclinc-page-title {
+  font-size: var(--dl-ref-page-title);
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.doclinc-admin-shell .doclinc-page-subtitle {
+  font-size: var(--dl-ref-body-compact);
+  line-height: 1.5;
+}
+
+.doclinc-admin-shell .table thead th {
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.doclinc-admin-shell .table tbody td,
+.doclinc-admin-shell .table tbody th {
+  font-size: var(--dl-ref-body-compact);
+  line-height: 1.45;
+}
+
+.dl-puskesmas-shell .cc-subtitle,
+.dl-puskesmas-shell .cc-tally-label,
+.dl-puskesmas-shell .cc-tally-note,
+.dl-puskesmas-shell .cc-attention-count,
+.dl-puskesmas-shell .cq-page-sub,
+.dl-puskesmas-shell .cq-page-count span {
+  font-size: var(--dl-ref-caption);
+  line-height: 1.4;
+}
+
+.dl-nakes-dashboard .dl-dashboard-stat span,
+.dl-nakes-dashboard .nk-stat-label {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* --- Controls: one shape, one size language ------------------------------ */
+.dl-warga-app .btn,
+.dl-warga-chat .btn,
+.dl-warga-profile .btn,
+.consultation-form-page .btn,
+.doclinc-nakes-consult .btn,
+.dl-nakes-dashboard .btn,
+.dl-puskesmas-shell .btn,
+.doclinc-admin-shell .btn,
+.dl-warga-app .warga-action,
+.dl-warga-app .dl-btn-primary,
+.dl-warga-app .dl-btn-secondary,
+.consultation-form-page .consult-submit,
+.dl-warga-profile .completion-primary,
+.dl-puskesmas-shell .cc-action,
+.dl-puskesmas-shell .cq-action,
+.dl-puskesmas-shell .dl-puskesmas-cta__action {
+  border-radius: var(--dl-ref-radius-control) !important;
+  font-family: var(--dl-ref-font);
+  font-size: 14px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  min-height: var(--dl-ref-control) !important;
+  padding: .6rem 1rem;
+}
+
+.dl-warga-app .warga-action--primary,
+.dl-warga-app .dl-btn-primary,
+.dl-warga-app .dl-puskesmas-cta__action,
+.consultation-form-page .consult-submit,
+.dl-warga-profile .completion-primary,
+.dl-nakes-dashboard .btn-success,
+.dl-nakes-dashboard .dl-history-primary-action,
+.dl-puskesmas-shell .btn-success,
+.dl-puskesmas-shell .btn-primary,
+.dl-puskesmas-shell .cc-action,
+.dl-puskesmas-shell .cq-action,
+.doclinc-admin-shell .btn-success,
+.doclinc-admin-shell .btn-primary {
+  min-height: var(--dl-ref-control-primary) !important;
+  border: 1px solid transparent !important;
+  background-color: var(--dl-ref-green-600) !important;
+  background-image: var(--dl-ref-gradient) !important;
+  color: #FFFFFF !important;
+  box-shadow: var(--dl-ref-shadow-primary) !important;
+  transition: background-image .16s var(--dl-ref-ease), filter .16s var(--dl-ref-ease), box-shadow .16s var(--dl-ref-ease), transform .12s var(--dl-ref-ease);
+}
+
+.dl-warga-app .warga-action--primary:hover,
+.dl-warga-app .dl-btn-primary:hover,
+.dl-warga-app .dl-puskesmas-cta__action:hover,
+.consultation-form-page .consult-submit:hover,
+.dl-warga-profile .completion-primary:hover,
+.dl-nakes-dashboard .btn-success:hover,
+.dl-nakes-dashboard .dl-history-primary-action:hover,
+.dl-puskesmas-shell .btn-success:hover,
+.dl-puskesmas-shell .btn-primary:hover,
+.dl-puskesmas-shell .cc-action:hover,
+.dl-puskesmas-shell .cq-action:hover,
+.doclinc-admin-shell .btn-success:hover,
+.doclinc-admin-shell .btn-primary:hover {
+  background-image: var(--dl-ref-gradient-hover) !important;
+  filter: brightness(1.04);
+}
+
+.dl-warga-app .warga-action--secondary,
+.dl-warga-app .dl-btn-secondary,
+.dl-nakes-dashboard .dl-history-secondary-action,
+.dl-nakes-dashboard .btn-outline-success,
+.dl-puskesmas-shell .btn-outline-success,
+.dl-puskesmas-shell .btn-outline-primary,
+.dl-puskesmas-shell .btn-outline-secondary,
+.doclinc-admin-shell .btn-outline-success,
+.doclinc-admin-shell .btn-outline-primary,
+.doclinc-admin-shell .btn-outline-secondary {
+  border: 1px solid #A9CABC !important;
+  background: #FFFFFF !important;
+  color: var(--dl-ref-green-700) !important;
+  box-shadow: none !important;
+}
+
+.dl-warga-app .warga-action--secondary:hover,
+.dl-warga-app .dl-btn-secondary:hover,
+.dl-nakes-dashboard .dl-history-secondary-action:hover,
+.dl-puskesmas-shell .btn-outline-success:hover,
+.dl-puskesmas-shell .btn-outline-primary:hover,
+.doclinc-admin-shell .btn-outline-success:hover,
+.doclinc-admin-shell .btn-outline-primary:hover {
+  border-color: var(--dl-ref-green-600) !important;
+  background: var(--dl-ref-mint-soft) !important;
+}
+
+.dl-warga-app .warga-action--tertiary,
+.dl-warga-app .btn-link,
+.doclinc-admin-shell .btn-link {
+  min-height: var(--dl-ref-control) !important;
+  border-radius: var(--dl-ref-radius-control) !important;
+  color: var(--dl-ref-green-700) !important;
+  font-weight: 700;
+}
+
+.dl-warga-app .btn-danger,
+.dl-warga-app .btn-outline-danger,
+.dl-nakes-dashboard .btn-danger,
+.dl-nakes-dashboard .btn-outline-danger,
+.dl-puskesmas-shell .btn-danger,
+.dl-puskesmas-shell .btn-outline-danger,
+.doclinc-admin-shell .btn-danger,
+.doclinc-admin-shell .btn-outline-danger {
+  min-height: var(--dl-ref-control-primary) !important;
+  border: 1px solid #C98B86 !important;
+  background: #FFFFFF !important;
+  color: var(--dl-ref-danger) !important;
+  box-shadow: none !important;
+}
+
+.dl-warga-app .btn-danger:hover,
+.dl-warga-app .btn-outline-danger:hover,
+.doclinc-admin-shell .btn-danger:hover,
+.doclinc-admin-shell .btn-outline-danger:hover {
+  background: var(--dl-ref-danger-soft) !important;
+  color: #6F2925 !important;
+}
+
+.dl-warga-app .warga-action--primary:focus-visible,
+.dl-warga-app .dl-btn-primary:focus-visible,
+.consultation-form-page .consult-submit:focus-visible,
+.dl-warga-profile .completion-primary:focus-visible,
+.dl-nakes-dashboard .btn-success:focus-visible,
+.dl-puskesmas-shell .cc-action:focus-visible,
+.dl-puskesmas-shell .cq-action:focus-visible,
+.doclinc-admin-shell .btn-primary:focus-visible,
+.doclinc-admin-shell .btn-success:focus-visible {
+  outline: 3px solid var(--dl-ref-green-500) !important;
+  outline-offset: 3px !important;
+}
+/* --- Fields and chips ---------------------------------------------------- */
+.dl-warga-app .form-control,
+.dl-warga-app .form-select,
+.dl-warga-app textarea,
+.consultation-form-page .consult-field,
+.consultation-form-page .form-control,
+.consultation-form-page .form-select,
+.dl-warga-profile .completion-grid input,
+.dl-warga-profile .completion-grid select,
+.dl-warga-profile .completion-grid textarea,
+.doclinc-admin-shell .form-control,
+.doclinc-admin-shell .form-select,
+.doclinc-admin-shell textarea {
+  border-radius: var(--dl-ref-radius-control) !important;
+  font-family: var(--dl-ref-font);
+  font-size: 14px;
+  line-height: 1.4;
+  min-height: var(--dl-ref-control) !important;
+}
+
+.doclinc-admin-shell .form-control.rounded-pill,
+.doclinc-admin-shell .form-select.rounded-pill,
+.doclinc-admin-shell .btn.rounded-pill {
+  border-radius: var(--dl-ref-radius-control) !important;
+}
+
+.dl-warga-app .badge,
+.dl-warga-app .dl-badge,
+.dl-warga-app .history-status-badge,
+.doclinc-admin-shell .badge,
+.doclinc-admin-shell .doclinc-status-badge,
+.dl-puskesmas-shell .badge {
+  border-radius: 999px !important;
+  font-size: 12px;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.dl-warga-app .dl-action-tile,
+.dl-warga-app .dl-bento-cta.dl-hero {
+  border-radius: var(--dl-ref-radius-tile) !important;
+  background-color: var(--dl-ref-green-600) !important;
+  background-image: var(--dl-ref-gradient) !important;
+}
+
+.dl-warga-app .dl-action-tile__title,
+.dl-nakes-dashboard .dl-task-title,
+.dl-puskesmas-shell .cc-title {
+  letter-spacing: -.02em;
+  text-wrap: balance;
+}
+
+/* --- Texture in deliberately chosen empty space -------------------------- */
+.dl-puskesmas-shell .cc-head,
+.dl-puskesmas-shell .cq-page-head,
+.doclinc-admin-shell .you-are-here,
+.dl-warga-app .dl-bento-empty,
+.doclinc-admin-shell .doclinc-empty-state {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.dl-puskesmas-shell .cc-head::after,
+.dl-puskesmas-shell .cq-page-head::after,
+.doclinc-admin-shell .you-are-here::after,
+.dl-warga-app .dl-bento-empty::after,
+.doclinc-admin-shell .doclinc-empty-state::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  right: -16px;
+  top: -24px;
+  width: 220px;
+  height: 170px;
+  pointer-events: none;
+  background-image: var(--dl-ref-texture-plus);
+  background-repeat: repeat;
+  background-size: 22px 22px;
+  opacity: .7;
+  transform: rotate(-8deg);
+}
+
+.dl-puskesmas-shell .cc-head > *,
+.dl-puskesmas-shell .cq-page-head > *,
+.doclinc-admin-shell .you-are-here > *,
+.dl-warga-app .dl-bento-empty > *,
+.doclinc-admin-shell .doclinc-empty-state > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dl-warga-app .dl-action-tile::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  right: 14px;
+  top: 12px;
+  width: 76px;
+  height: 76px;
+  pointer-events: none;
+  background-image: var(--dl-ref-texture-plus-light);
+  background-size: 22px 22px;
+  opacity: .55;
+  transform: rotate(-8deg);
+}
+
+.dl-warga-app .dl-action-tile > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Chat and consultation controls ------------------------------------- */
+.dl-warga-chat .chat-send {
+  min-width: var(--dl-ref-control);
+  min-height: var(--dl-ref-control);
+  border-radius: 50% !important;
+  background-color: var(--dl-ref-green-600) !important;
+  background-image: var(--dl-ref-gradient) !important;
+  box-shadow: var(--dl-ref-shadow-primary) !important;
+}
+
+.dl-warga-chat .chat-send:hover,
+.dl-warga-chat .chat-send:focus-visible {
+  background-image: var(--dl-ref-gradient-hover) !important;
+}
+
+.dl-warga-chat .chat-icon-button {
+  border-radius: 50% !important;
+}
+
+.consultation-form-page .consult-submit {
+  border-radius: var(--dl-ref-radius-control) !important;
+}
+
+.dl-warga-profile .completion-card {
+  border-radius: var(--dl-ref-radius-section);
+}
+
+.dl-warga-profile .completion-head {
+  background: var(--dl-ref-gradient);
+}
+
+.doclinc-nakes-consult .btn,
+.doclinc-nakes-consult .btn-success {
+  border-radius: var(--dl-ref-radius-control) !important;
+  min-height: var(--dl-ref-control) !important;
+}
+
+/* --- Focus and motion ---------------------------------------------------- */
+.dl-warga-app :focus-visible,
+.dl-warga-chat :focus-visible,
+.dl-warga-profile :focus-visible,
+.consultation-form-page :focus-visible,
+.doclinc-nakes-consult :focus-visible,
+.dl-nakes-dashboard :focus-visible,
+.dl-puskesmas-shell :focus-visible,
+.doclinc-admin-shell :focus-visible {
+  outline: 3px solid var(--dl-ref-green-500);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-warga-app *,
+  .dl-warga-chat *,
+  .dl-warga-profile *,
+  .consultation-form-page *,
+  .doclinc-nakes-consult *,
+  .dl-nakes-dashboard *,
+  .dl-puskesmas-shell *,
+  .doclinc-admin-shell * {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .dl-warga-app .dl-profile-row h3,
+  .dl-warga-app .dl-profile-copy > h3 {
+    font-size: 18px;
+  }
+
+  .dl-warga-app .dl-section-title,
+  .dl-warga-app .dl-bento-section .dl-section-title {
+    font-size: 17px;
+  }
+
+  .dl-warga-app .dl-action-tile__title {
+    font-size: 16px;
+  }
+
+  .consultation-form-page .consult-title {
+    font-size: 18px;
+  }
+}
+/* --- Puskesmas legacy specificity guard -------------------------------- */
+.dl-puskesmas-shell #beranda .btn,
+.dl-puskesmas-shell #beranda .cc-action,
+.dl-puskesmas-shell #req_konsul .btn,
+.dl-puskesmas-shell #riwayat_konsul .btn,
+.dl-puskesmas-shell #riwayat_konsul .dl-history-primary-action,
+.dl-puskesmas-shell #riwayat_konsul .dl-history-secondary-action {
+  border-radius: var(--dl-ref-radius-control) !important;
+  min-height: var(--dl-ref-control) !important;
+  padding: .6rem 1rem !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+}
+
+.dl-puskesmas-shell #beranda .btn-success,
+.dl-puskesmas-shell #beranda .btn-primary,
+.dl-puskesmas-shell #req_konsul .btn-success,
+.dl-puskesmas-shell #req_konsul .btn-primary,
+.dl-puskesmas-shell #riwayat_konsul .btn-success,
+.dl-puskesmas-shell #riwayat_konsul .btn-primary,
+.dl-puskesmas-shell #riwayat_konsul .dl-history-primary-action,
+.dl-puskesmas-shell #beranda .cc-action {
+  min-height: var(--dl-ref-control-primary) !important;
+  border-color: transparent !important;
+  background-color: var(--dl-ref-green-600) !important;
+  background-image: var(--dl-ref-gradient) !important;
+  color: #FFFFFF !important;
+  box-shadow: var(--dl-ref-shadow-primary) !important;
+}
+
+.dl-puskesmas-shell #beranda .btn-success:hover,
+.dl-puskesmas-shell #beranda .btn-primary:hover,
+.dl-puskesmas-shell #req_konsul .btn-success:hover,
+.dl-puskesmas-shell #req_konsul .btn-primary:hover,
+.dl-puskesmas-shell #riwayat_konsul .btn-success:hover,
+.dl-puskesmas-shell #riwayat_konsul .btn-primary:hover,
+.dl-puskesmas-shell #riwayat_konsul .dl-history-primary-action:hover,
+.dl-puskesmas-shell #beranda .cc-action:hover {
+  background-image: var(--dl-ref-gradient-hover) !important;
+}
+
+.dl-puskesmas-shell #beranda .btn-outline-success,
+.dl-puskesmas-shell #beranda .btn-outline-primary,
+.dl-puskesmas-shell #beranda .btn-outline-secondary,
+.dl-puskesmas-shell #req_konsul .btn-outline-success,
+.dl-puskesmas-shell #req_konsul .btn-outline-primary,
+.dl-puskesmas-shell #req_konsul .btn-outline-secondary,
+.dl-puskesmas-shell #riwayat_konsul .btn-outline-success,
+.dl-puskesmas-shell #riwayat_konsul .btn-outline-primary,
+.dl-puskesmas-shell #riwayat_konsul .btn-outline-secondary {
+  border-color: #A9CABC !important;
+  background: #FFFFFF !important;
+  color: var(--dl-ref-green-700) !important;
+  box-shadow: none !important;
+}
+
+/* --- Nakes legacy specificity guard ------------------------------------- */
+.dl-nakes-dashboard .nakes-current-task-surface .btn,
+.dl-nakes-dashboard .dl-history-primary-action,
+.dl-nakes-dashboard .dl-history-secondary-action {
+  border-radius: var(--dl-ref-radius-control) !important;
+  min-height: var(--dl-ref-control) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+.dl-nakes-dashboard .nakes-current-task-surface .btn-success,
+.dl-nakes-dashboard .dl-history-primary-action {
+  min-height: var(--dl-ref-control-primary) !important;
+  border-color: transparent !important;
+  background-color: var(--dl-ref-green-600) !important;
+  background-image: var(--dl-ref-gradient) !important;
+  color: #FFFFFF !important;
+  box-shadow: var(--dl-ref-shadow-primary) !important;
+}
+
+/* --- Admin compact controls --------------------------------------------- */
+.doclinc-admin-shell .doclinc-filter-card .form-control,
+.doclinc-admin-shell .doclinc-filter-card .form-select,
+.doclinc-admin-shell .doclinc-filter-card .btn {
+  min-height: var(--dl-ref-control) !important;
+  border-radius: var(--dl-ref-radius-control) !important;
+}
+
+.doclinc-admin-shell .doclinc-table-card .table td .btn,
+.doclinc-admin-shell .doclinc-table-card .table td .btn-sm {
+  min-height: var(--dl-ref-control) !important;
+  padding: .45rem .7rem !important;
+}
+
+/* --- Warga tile gradient and radius guards ------------------------------- */
+.dl-warga-app #beranda .dl-action-tile {
+  border-radius: var(--dl-ref-radius-tile) !important;
+  background-color: var(--dl-ref-green-600) !important;
+  background-image: var(--dl-ref-gradient) !important;
+}
+
+.dl-warga-app #beranda .dl-action-tile.is-locked,
+.dl-warga-app #beranda .dl-action-tile.is-blocked {
+  background-color: var(--dl-ref-surface) !important;
+  background-image: none !important;
+  color: var(--dl-ref-ink) !important;
+}
+
+.dl-warga-app #beranda .dl-action-tile.is-blocked {
+  border-color: var(--dl-ref-line) !important;
+  background-color: #F3FBF7 !important;
+}
+
+.dl-warga-app #beranda .dl-bento-notice__cta {
+  border-radius: var(--dl-ref-radius-control) !important;
+  min-height: var(--dl-ref-control) !important;
+  background-color: var(--dl-ref-green-600) !important;
+  background-image: var(--dl-ref-gradient) !important;
+  color: #FFFFFF !important;
+}
+
+.dl-warga-app #beranda .dl-bento-notice__cta:hover {
+  background-image: var(--dl-ref-gradient-hover) !important;
+  filter: brightness(1.04);
+}
+
+
+/* --- Readability floor for auxiliary communication copy ------------------ */
+.dl-warga-chat .chat-time,
+.dl-warga-chat .chat-delivery {
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.doclinc-call-provider-overlay span:not(.doclinc-call-status-dot),
+.doclinc-incoming-security {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.dl-warga-app #beranda .dl-action-tile.is-locked::before,
+.dl-warga-app #beranda .dl-action-tile.is-blocked::before {
+  content: none;
+}

@@ -234,7 +234,7 @@ $form_values = array(
 					</div>
 				</form>
 
-				<?php $account_modals = ''; ?>
+				<?php $account_modals = ''; $placement_modals = ''; ?>
 				<?php if (!empty($staff_rows)): ?>
 					<div class="doclinc-account-list">
 						<?php foreach ($staff_rows as $row): ?>
@@ -380,7 +380,12 @@ $form_values = array(
 
 										<div class="doclinc-account-card__footer">
 											<div class="doclinc-account-card__actions">
-												<a href="<?= site_url('kelola_staff_puskesmas/edit/' . (int) $row->staff_id); ?>" class="btn doclinc-action-btn doclinc-action-btn--primary">
+												<?php if (!empty($placement_enabled)): ?>
+<button type="button" class="btn doclinc-action-btn doclinc-action-btn--secondary" data-toggle="modal" data-target="#modalPlacement<?= (int) $staff_id; ?>">
+<i class="fas fa-map-marker-alt"></i> Penempatan
+</button>
+<?php endif; ?>
+<a href="<?= site_url('kelola_staff_puskesmas/edit/' . (int) $row->staff_id); ?>" class="btn doclinc-action-btn doclinc-action-btn--primary">
 													<i class="fas fa-edit"></i> Ubah
 												</a>
 												<?php if (($row->status ?? '') === 'aktif'): ?>
@@ -619,8 +624,21 @@ $form_values = array(
 											<?php $account_modals .= ob_get_clean(); ?>
 										<?php endif; ?>
 									<?php endif; ?>
+					<?php if (!empty($placement_enabled)): ?>
+						<?php ob_start(); ?>
+						<?php $this->load->view('partials/staff_placement_modal_v', array(
+							'row' => $row,
+							'staff_id' => $staff_id,
+							'puskesmas_options' => $puskesmas_options,
+							'active_placement' => isset($placement_by_staff[$staff_id]) ? $placement_by_staff[$staff_id] : null,
+							'scheduled_transfer' => isset($scheduled_transfer_by_staff[$staff_id]) ? $scheduled_transfer_by_staff[$staff_id] : null,
+							'provisioning_csrf_token' => $provisioning_csrf_token,
+						)); ?>
+						<?php $placement_modals .= ob_get_clean(); ?>
+					<?php endif; ?>
 						<?php endforeach; ?>
 					</div>
+					<?= $placement_modals; ?>
 					<?= $account_modals; ?>
 				<?php else: ?>
 					<div class="doclinc-account-empty">Belum ada staf untuk filter ini.</div>

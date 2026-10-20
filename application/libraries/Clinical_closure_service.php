@@ -7,6 +7,7 @@ require_once APPPATH . 'libraries/Visit_workflow_policy.php';
 require_once APPPATH . 'helpers/request_authz_helper.php';
 require_once APPPATH . 'helpers/request_event_helper.php';
 require_once APPPATH . 'helpers/request_realtime_helper.php';
+require_once __DIR__ . '/Clinical_workflow_requirements.php';
 
 class Clinical_closure_service
 {
@@ -40,6 +41,7 @@ class Clinical_closure_service
         if ($requestId < 1 || $userId < 1 || $key === '' || strlen($key) > 191) {
             return $this->fail('CLINICAL_CLOSURE_FORBIDDEN', 'INVALID_INPUT');
         }
+        if (!$this->schemaReady()) { return $this->fail('schema_unavailable'); }
         if (!$this->db->trans_begin()) { return $this->fail('WRITE_FAILED'); }
         try {
             $request = $this->db->query('SELECT * FROM requests WHERE request_id=? FOR UPDATE', array($requestId))->row();
@@ -142,6 +144,7 @@ class Clinical_closure_service
 
     private function enrolled($requestId)
     {
+        if (!$this->tableExists('visit_dispositions')) { return false; }
         $row = $this->db->query('SELECT COUNT(*) AS c FROM visit_dispositions WHERE request_id=?', array($requestId))->row();
         return $row && (int) $row->c > 0;
     }
@@ -157,6 +160,7 @@ class Clinical_closure_service
         $row = $this->db->query('SELECT COUNT(*) AS c FROM information_schema.tables WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?', array($table))->row();
         return $row && (int) $row->c === 1;
     }
+    private function schemaReady() { return (new Clinical_workflow_requirements($this->db))->ready(); }
     private function success($receipt, $idempotent)
     {
         return array('status' => 'success', 'request_id' => (int) $receipt->request_id, 'closure_operation_id' => (int) $receipt->closure_operation_id, 'closed_at' => (string) $receipt->closed_at, 'authority_source' => (string) $receipt->authority_source, 'idempotent' => (bool) $idempotent);

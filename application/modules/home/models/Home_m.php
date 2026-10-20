@@ -437,7 +437,7 @@ class Home_m extends MX_Controller
 		}
 
 		if ($request_status === 'Pending') {
-			return 'Menunggu Puskesmas';
+			return 'Menunggu';
 		}
 		if ($request_status === 'Accepted') {
 			return strtolower(trim((string) $consultation_mode)) === 'non_visit' ? 'Konsultasi tanpa kunjungan' : 'Sedang ditangani';

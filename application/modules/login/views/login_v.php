@@ -25,15 +25,15 @@
 				</div>
 				<div class="dl-auth-card">
 					<div class="dl-auth-card-body">
-						<h1 class="dl-auth-title">Masuk</h1>
-						<p class="dl-auth-subtitle">Gunakan akun DocLinc Anda untuk melanjutkan.</p>
+						<h1 class="dl-auth-title">Login</h1>
+						<p class="dl-auth-subtitle">Masukan akun DokLinc Anda</p>
 						<?php if (!empty($success_message)): ?>
 							<div class="alert alert-success" role="status"><?= html_escape($success_message); ?></div>
 						<?php endif; ?>
 
 						<form id="loginForm">
 							<div class="dl-auth-field">
-								<label class="form-label" for="username">Nama pengguna</label>
+								<label class="form-label" for="username">Username</label>
 								<div class="dl-auth-control">
 									<i class="fas fa-user dl-auth-icon" aria-hidden="true"></i>
 									<input type="text" class="form-control" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
@@ -52,7 +52,7 @@
 							</div>
 
 							<div class="d-grid mb-3">
-								<button type="submit" class="dl-auth-btn">Masuk</button>
+								<button type="submit" class="dl-auth-btn">Login</button>
 							</div>
 						</form>
 

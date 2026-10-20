@@ -25,6 +25,7 @@ const history = read('application/modules/home_nakes/views/partials/nakes_histor
 const activeTask = read('application/modules/home_nakes/views/partials/nakes_active_task_card_v.php');
 const consultationController = read('application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php');
 const consultation = read('application/modules/konsultasi_nakes/views/konsultasi_nakes_v.php');
+const clinicalContext = read('application/modules/konsultasi_nakes/views/partials/clinical_context_v.php');
 const wargaHomeModel = read('application/modules/home/models/Home_m.php');
 const wargaHomeView = read('application/modules/home/views/home_v.php');
 const wargaVisitProgress = read('application/modules/home/views/partials/warga_visit_progress_v.php');
@@ -71,7 +72,7 @@ expect(wargaHomeView.includes("'is_visit' => $is_visit")
 
 expect(activeTask.includes('data-primary-next-action')
   && history.includes('data-next-action-role')
-  && consultation.includes('data-clinical-next-action'), 'nakes_next_action_hierarchy_is_present');
+  && clinicalContext.includes('data-clinical-next-action'), 'nakes_next_action_hierarchy_is_present');
 expect(history.includes("$history_is_responsible ? 'responsible_doctor' : 'visit_performer'")
   && history.includes("if (!$visit_monitor_only)"), 'next_actions_follow_server_authorization');
 expect(!history.includes('data-visit-status="en_route" <?= $visit_next_status[$visit_status]')

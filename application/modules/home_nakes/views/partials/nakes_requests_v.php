@@ -1,39 +1,56 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 				<div id="req_konsul" class="content">
-					<?php
-					$this->load->view('partials/nakes_section_header_v', array(
-						'section_kicker' => 'Antrian Puskesmas',
-						'section_title' => 'Permintaan Konsultasi',
-						'section_meta' => (string) $nakes_pending_count . ' menunggu',
-						'section_class' => 'dl-nakes-page-header',
-					));
-					?>
-					<div class="dl-nakes-request-list">
+					<div class="cq-page cq-page--requests">
+						<header class="cq-page-head">
+							<div class="cq-page-heading">
+								<h2 class="cq-page-title">Permintaan konsultasi</h2>
+								<p class="cq-page-sub">Antrean yang belum diterima Puskesmas.</p>
+							</div>
+							<div class="cq-page-count" aria-label="<?= (int) $nakes_pending_count; ?> permintaan menunggu">
+								<strong><?= html_escape(str_pad((string) (int) $nakes_pending_count, 2, '0', STR_PAD_LEFT)); ?></strong>
+								<span>menunggu</span>
+							</div>
+						</header>
+						<div class="dl-nakes-request-list cq-request-list">
 						<?php
+						$cq_wait_label = static function ($created_at) {
+							$created_at = trim((string) $created_at);
+							if ($created_at === '') {
+								return 'Baru masuk';
+							}
+							try {
+								$cq_zone = new DateTimeZone('Asia/Jakarta');
+								$cq_now = new DateTime('now', $cq_zone);
+								$cq_created = new DateTime($created_at, $cq_zone);
+								$minutes = max(0, (int) floor(($cq_now->getTimestamp() - $cq_created->getTimestamp()) / 60));
+							} catch (Exception $cq_wait_error) {
+								return 'Baru masuk';
+							}
+							if ($minutes < 60) {
+								return 'Baru masuk';
+							}
+							if ($minutes < 1440) {
+								$hours = (int) floor($minutes / 60);
+								$rest = $minutes % 60;
+								return $hours . ' j' . ($rest > 0 ? ' ' . $rest . ' m' : '');
+							}
+							$days = (int) floor($minutes / 1440);
+							$hours = (int) floor(($minutes % 1440) / 60);
+							return $days . ' hari' . ($hours > 0 ? ' ' . $hours . ' j' : '');
+						};
 						$i = 1;
 						if ($data_request_new->num_rows() < 1) {
 						?>
-							<?php
-							$this->load->view('partials/nakes_empty_state_v', array(
-								/* CI3 menumpuk data view ke $_ci_cached_vars, sehingga nilai yang
-								   dikirim Beranda (nakes_dashboard_v) ikut terbaca di sini.
-								   Sebelumnya `empty_title` tidak dikirim sama sekali, jadi judul
-								   milik Beranda ("Belum ada permintaan baru") bocor ke bagian
-								   ini. Sekarang setiap kunci dikirim eksplisit, termasuk
-								   `empty_image` kosong supaya ilustrasi "not found" milik
-								   Beranda tidak ikut terbawa. */
-								'empty_title' => 'Belum ada permintaan baru',
-								/* Pesan ini mengulang judul di atasnya tanpa menambah
-								   arahan, jadi dikosongkan. Partikel empty_state_v
-								   sudah melewatkan barisnya saat nilainya kosong. */
-								'empty_message' => '',
-								'empty_icon' => 'fas fa-clipboard-list',
-								'empty_image' => '',
-								'empty_class' => 'dl-soft-empty text-center',
-							));
-							?>
-							<?php
+							<div class="dl-soft-empty dl-history-empty cq-empty">
+								<i class="bi bi-inbox" aria-hidden="true"></i>
+								<div>
+									<strong>Tidak ada permintaan menunggu</strong>
+									<p>Antrean baru muncul di sini setelah warga mengirim permintaan.</p>
+								</div>
+							</div>
+						<?php
 						} else {
+
 							$CI = &get_instance();
 							$CI->load->library('encryption');
 							$is_weak_request_value = static function ($value) {
@@ -52,7 +69,9 @@
 								$area_label = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : 'Puskesmas Penugasan';
 								// Pending requests expose patient location only; route/ETA belong to an assigned Visit.
 								$distance_label = '';
-								$received_label = !empty($x->created_at) ? date('d M H:i', strtotime($x->created_at)) : 'Baru masuk';
+								$queue_label = doclinc_request_queue_number_label($x);
+								$wait_label = $cq_wait_label(isset($x->created_at) ? $x->created_at : '');
+								$received_label = !empty($x->created_at) ? date('d M H.i', strtotime($x->created_at)) : 'Baru masuk';
 																$complaint_text = trim(str_replace(array("\r\n", "\r"), "\n", strip_tags((string) $keluhan)));
 								/* Tidak setiap baris punya label. Baris pertama sering berupa judul bagian
 								   ("Anamnesa"), dan baris tanpa titik dua setelah sebuah label adalah lanjutan
@@ -68,7 +87,8 @@
 									}
 									if (preg_match('/^([^:]{1,40}):\s*(.+)$/s', $complaint_line, $matches)) {
 										$complaint_key = strtolower(trim($matches[1]));
-										$complaint_fields[$complaint_key] = trim($matches[2]);
+										if (strpos($complaint_key, '/') !== false) { $complaint_key = trim(substr($complaint_key, strrpos($complaint_key, '/') + 1)); }
+$complaint_fields[$complaint_key] = trim($matches[2]);
 										$complaint_last_key = $complaint_key;
 									} elseif ($complaint_last_key !== null) {
 										$complaint_fields[$complaint_last_key] .= ', ' . $complaint_line;
@@ -90,18 +110,19 @@ $complaint_primary = isset($complaint_fields['keluhan utama']) ? $complaint_fiel
 									$complaint_primary = 'Keluhan belum diisi.';
 								}
 if (function_exists('mb_strlen') && mb_strlen($complaint_primary, 'UTF-8') > 120) {
-									$complaint_primary = mb_substr($complaint_primary, 0, 117, 'UTF-8') . '...';
+									$complaint_primary = mb_substr($complaint_primary, 0, 117, 'UTF-8') . '…';
 								} elseif (!function_exists('mb_strlen') && strlen($complaint_primary) > 120) {
-									$complaint_primary = substr($complaint_primary, 0, 117) . '...';
+									$complaint_primary = substr($complaint_primary, 0, 117) . '…';
 								}
-								$show_complaint_duration = !$is_weak_request_value($complaint_duration);
+								if (preg_match('/^anamnesa\s*:?$/i', trim($complaint_lead))) { $complaint_lead = ''; }
+$show_complaint_duration = !$is_weak_request_value($complaint_duration);
 								$show_complaint_symptoms = !$is_weak_request_value($complaint_symptoms);
 								$show_complaint_description = !$is_weak_request_value($complaint_description) && ((function_exists('mb_strlen') && mb_strlen($complaint_description, 'UTF-8') <= 80) || (!function_exists('mb_strlen') && strlen($complaint_description) <= 80));
 								$show_mode_label = !$is_weak_request_value($mode_label);
 								$show_distance_label = false;
 								$show_address = !$is_weak_request_value($x->location);
 							?>
-								<?php $this->load->view('partials/nakes_full_request_card_v', get_defined_vars()); ?>
+								<?php $this->load->view('partials/puskesmas_request_row_v', get_defined_vars()); ?>
 
 						<?php
 								$i++;
@@ -109,5 +130,6 @@ if (function_exists('mb_strlen') && mb_strlen($complaint_primary, 'UTF-8') > 120
 						}
 						?>
 						<input type="hidden" value="<?php echo $i - 1; ?>" id="jumlah_request">
+						</div>
 					</div>
 				</div>

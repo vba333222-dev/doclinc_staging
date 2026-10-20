@@ -90,6 +90,8 @@ class Visit_result_m
         $this->db->set('findings_json', $payload['findings_json']);
         $this->db->set('actions_json', $payload['actions_json']);
         $this->db->set('performer_notes', $payload['performer_notes']);
+        $this->db->set('anamnesis', $payload['anamnesis']);
+        $this->db->set('therapy', $payload['therapy']);
         $this->db->set('draft_revision', 'draft_revision + 1', false);
         $this->db->set('updated_at', (string) $updatedAt);
         $this->db->where('visit_result_id', (int) $visitResultId);

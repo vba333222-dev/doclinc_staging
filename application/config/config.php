@@ -762,6 +762,11 @@ $nakes_placement_feature = Doclinc_feature_flags::resolve(
 	$realtime_client_runtime_environment_env
 );
 $config['nakes_placement_enabled'] = $nakes_placement_feature['enabled'];
+
+// Ambang pengawasan tahap klinis (menit). Nilai 0/kosong jatuh ke default
+// agar salah ketik tidak mematikan watchdog secara diam-diam.
+$config['clinical_stall_reminder_minutes'] = (int) (getenv('DOCLINC_CLINICAL_STALL_REMINDER_MINUTES') ?: 30);
+$config['clinical_stall_overdue_minutes'] = (int) (getenv('DOCLINC_CLINICAL_STALL_OVERDUE_MINUTES') ?: 60);
 $config['nakes_placement_environment'] = $nakes_placement_feature['environment'];
 $config['nakes_placement_feature_reason'] = $nakes_placement_feature['reason'];
 $realtime_public_websocket_url_env = getenv('DOCLINC_REALTIME_PUBLIC_WEBSOCKET_URL');

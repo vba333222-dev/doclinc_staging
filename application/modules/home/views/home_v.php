@@ -1177,6 +1177,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 	     token --bd-* dan komposisi bento di design.md menang atas lapisan
 	     beranda sebelumnya tanpa mengubah berkas itu. -->
 	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-bento.css'); ?>">
+<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-reference-ui.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-reference-ui.css'))); ?>">
 </head>
 
 <body class="bg-light dl-dashboard-body dl-warga-app<?= !empty($doclinc_has_active_request) ? ' has-active-request' : ''; ?><?= $doclinc_active_is_visit ? ' has-active-visit' : ''; ?>">

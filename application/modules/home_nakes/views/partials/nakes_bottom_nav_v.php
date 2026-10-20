@@ -19,7 +19,7 @@
 ?>
 	<div class="nav-bottom-wrapper dl-bottom-nav dl-puskesmas-mobile-nav" id="nav-bottom-wrapper">
 		<nav class="dl-bottom-nav-menu menu" aria-label="Navigasi nakes">
-			<a href="#beranda" id="beranda-tab" class="menu-item <?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? '' : 'active'; ?>" onclick="showContent('beranda')" aria-label="Beranda" aria-current="<?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? 'false' : 'true'; ?>">
+			<a href="#beranda" id="beranda-tab" class="menu-item <?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? '' : 'active'; ?>" onclick="showContent('beranda')" aria-label="Beranda"<?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? '' : ' aria-current="page"'; ?>>
 				<i class="fas fa-home" aria-hidden="true"></i>
 				<span>Beranda</span>
 			</a>
@@ -29,7 +29,7 @@
 				<span>Permintaan</span>
 			</a>
 			<?php if (!empty($puskesmas_operations_enabled)) : ?>
-			<a href="<?= html_escape(site_url('puskesmas/operations')); ?>" id="operasional-tab" class="menu-item <?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? 'active' : ''; ?>" onclick="event.preventDefault(); navigateNakesSection('operasional', this.href)" aria-label="Operasional Puskesmas" aria-current="<?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? 'true' : 'false'; ?>">
+			<a href="<?= html_escape(site_url('puskesmas/operations')); ?>" id="operasional-tab" class="menu-item <?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? 'active' : ''; ?>" onclick="event.preventDefault(); navigateNakesSection('operasional', this.href)" aria-label="Operasional Puskesmas"<?= (isset($nakes_initial_section) && $nakes_initial_section === 'operasional') ? ' aria-current="page"' : ''; ?>>
 				<i class="fas fa-briefcase-medical" aria-hidden="true"></i>
 				<span>Operasional</span>
 			</a>

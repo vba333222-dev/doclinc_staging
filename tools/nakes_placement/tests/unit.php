@@ -72,5 +72,35 @@ $failStore = new class extends stdClass {
 $failService=new Nakes_placement_service($failStore,true,array('user_id'=>2,'role'=>'admin','status'=>'aktif'));
 expect_true($failService->activate(1,'2026-08-25 00:00:00')===false && $failStore->placements[0]['status']==='active' && $failStore->projection==='PKM01', 'audit_failure_rolls_transfer_back');
 
+expect_true(Nakes_placement_policy::canCreatePlacement(array('staff_id'=>8,'user_id'=>80,'status'=>'aktif','user_status'=>'aktif','profesi'=>'Perawat'), array('kode_pkm'=>'PKM02','status'=>'aktif'), null), 'initial_placement_eligible_for_nakes');
+expect_true(!Nakes_placement_policy::canCreatePlacement(array('staff_id'=>8,'user_id'=>80,'status'=>'nonaktif','user_status'=>'aktif','profesi'=>'Perawat'), array('kode_pkm'=>'PKM02','status'=>'aktif'), null), 'initial_placement_rejects_inactive_staff');
+expect_true(!Nakes_placement_policy::canCreatePlacement(array('staff_id'=>8,'user_id'=>80,'status'=>'aktif','user_status'=>'aktif','profesi'=>'Perawat'), array('kode_pkm'=>'PKM02','status'=>'nonaktif'), null), 'initial_placement_rejects_inactive_facility');
+expect_true(!Nakes_placement_policy::canCreatePlacement(array('staff_id'=>8,'user_id'=>80,'status'=>'aktif','user_status'=>'aktif','profesi'=>'Perawat'), array('kode_pkm'=>'PKM02','status'=>'aktif'), array('placement_id'=>1)), 'initial_placement_rejects_existing_active');
+
+$placeStore = new class {
+	public $staff = array('staff_id'=>8,'user_id'=>80,'status'=>'aktif','user_status'=>'aktif','profesi'=>'Perawat');
+	public $destination = array('kode_pkm'=>'PKM02','status'=>'aktif');
+	public $active = null; public $placement = null; public $projection = ''; public $audit = array();
+	public function transaction($callback) { return $callback(); }
+	public function staffForPlacement($id) { return $this->staff; }
+	public function destination($code) { return $this->destination; }
+	public function activePlacement($id) { return $this->active; }
+	public function insertPlacement($row) { $row['placement_id'] = 55; $this->placement = $row; return $row; }
+	public function updateProjection($id, $code) { $this->projection = $code; return true; }
+	public function audit($event, $data) { $this->audit[] = array($event, $data); return true; }
+};
+$placeService = new Nakes_placement_service($placeStore, true, array('user_id'=>2,'role'=>'admin','status'=>'aktif'));
+$placed = $placeService->place(8, 'pkm02', date('Y-m-d H:i:s'));
+expect_true(is_array($placed) && (int) $placed['placement_id'] === 55 && $placeStore->projection === 'PKM02', 'place_creates_initial_placement');
+expect_true(count($placeStore->audit) === 1 && $placeStore->audit[0][0] === 'nakes_placement_created', 'place_writes_audit');
+$placeStore->active = array('placement_id'=>1,'staff_id'=>8,'status'=>'active');
+expect_true($placeService->place(8, 'PKM02', date('Y-m-d H:i:s')) === false, 'place_rejects_duplicate_active');
+$placeStore->active = null;
+expect_true($placeService->place(8, 'PKM02', date('Y-m-d H:i:s', time() + 3600)) === false, 'place_rejects_future_effective');
+$placeStore->staff['status'] = 'nonaktif';
+expect_true($placeService->place(8, 'PKM02', date('Y-m-d H:i:s')) === false, 'place_rejects_inactive_staff');
+$nonAdminPlace = new Nakes_placement_service($placeStore, true, array('user_id'=>80,'role'=>'dokter','status'=>'aktif'));
+expect_true($nonAdminPlace->place(8, 'PKM02', date('Y-m-d H:i:s')) === false, 'place_requires_admin');
+
 echo "PLACEMENT_TESTS_PASSED={$passed}\nPLACEMENT_TESTS_FAILED={$failed}\n";
 exit($failed ? 1 : 0);

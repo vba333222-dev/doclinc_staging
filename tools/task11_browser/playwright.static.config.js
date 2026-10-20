@@ -24,6 +24,7 @@ module.exports = {
     '**/strict_harness_validation.spec.js',
     '**/reference_specs.spec.js',
     '**/workflow_ui.spec.js',
+    '**/clinical_workflow_ui.spec.js',
     '**/warga_incoming_call_ui.spec.js',
     '**/chat_incoming_authoritative.spec.js',
   ],

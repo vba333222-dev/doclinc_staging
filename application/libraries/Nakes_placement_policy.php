@@ -49,6 +49,20 @@ class Nakes_placement_policy
 			&& self::transferBlockers($blockers);
 	}
 
+	public static function canCreatePlacement($staff, $destination, $activePlacement)
+	{
+		return is_array($staff)
+			&& (int) ($staff['staff_id'] ?? 0) > 0
+			&& (int) ($staff['user_id'] ?? 0) > 0
+			&& (string) ($staff['status'] ?? '') === 'aktif'
+			&& (string) ($staff['user_status'] ?? '') === 'aktif'
+			&& trim((string) ($staff['profesi'] ?? '')) !== ''
+			&& is_array($destination)
+			&& (string) ($destination['status'] ?? '') === 'aktif'
+			&& trim((string) ($destination['kode_pkm'] ?? '')) !== ''
+			&& empty($activePlacement);
+	}
+
 	public static function normalizeStatus($status)
 	{
 		$status = strtolower(trim((string) $status));

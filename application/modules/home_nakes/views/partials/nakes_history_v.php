@@ -32,7 +32,9 @@ $history_complaint_summary = static function ($keluhan) use ($history_short_text
 	foreach ($complaint_lines as $line) {
 		$line = trim(str_replace(array('**', '__'), '', $line));
 		if (preg_match('/^([^:]+):\s*(.+)$/', $line, $matches)) {
-			$fields[strtolower(trim($matches[1]))] = trim($matches[2]);
+			$history_key = strtolower(trim($matches[1]));
+			if (strpos($history_key, '/') !== false) { $history_key = trim(substr($history_key, strrpos($history_key, '/') + 1)); }
+			$fields[$history_key] = trim($matches[2]);
 		}
 	}
 
@@ -125,27 +127,28 @@ $history_event_time = static function ($event) {
 };
 ?>
 				<div id="riwayat_konsul" class="content">
-					<div class="dl-history-page-head">
-						<div>
-							<span>Konsultasi</span>
-							<h2 class="dl-section-title">Riwayat konsultasi</h2>
-						</div>
-						<div class="dl-history-counts">
-							<strong><?= html_escape((string) $nakes_active_count); ?></strong>
-							<span>aktif</span>
-						</div>
-					</div>
+					<div class="cq-page cq-page--cases">
+						<header class="dl-history-page-head cq-page-head">
+							<div class="cq-page-heading">
+								<h2 class="dl-section-title cq-page-title">Konsultasi</h2>
+								<p class="cq-page-sub">Kasus yang sudah diterima dan riwayat yang selesai.</p>
+							</div>
+							<div class="dl-history-counts cq-page-count" aria-label="<?= html_escape((string) $nakes_active_count); ?> kasus aktif">
+								<strong><?= html_escape((string) $nakes_active_count); ?></strong>
+								<span>aktif</span>
+							</div>
+						</header>
 					<?php if ($can_coordinate_staff && $staff_assignment_success) : ?>
 						<div class="alert alert-success nk-pic-alert" role="alert"><?= html_escape($staff_assignment_success); ?></div>
 					<?php elseif ($can_coordinate_staff && $staff_assignment_error) : ?>
 						<div class="alert alert-warning nk-pic-alert" role="alert"><?= html_escape($staff_assignment_error); ?></div>
 					<?php endif; ?>
-					<ul class="nav nav-tabs nav-justified mb-3 dl-tabs dl-history-tabs" id="myTab" role="tablist">
+					<ul class="nav nav-tabs mb-3 dl-tabs dl-history-tabs cq-tabs" id="myTab" role="tablist">
 						<li class="nav-item" role="presentation">
-							<button class="nav-link active" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="true">Saat ini</button>
+							<button class="nav-link active" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="true">Aktif</button>
 						</li>
 						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="selesai-tab" data-bs-toggle="tab" data-bs-target="#selesai-tab-pane" type="button" role="tab" aria-controls="selesai-tab-pane" aria-selected="false">Riwayat</button>
+							<button class="nav-link" id="selesai-tab" data-bs-toggle="tab" data-bs-target="#selesai-tab-pane" type="button" role="tab" aria-controls="selesai-tab-pane" aria-selected="false">Selesai</button>
 						</li>
 					</ul>
 					<div class="tab-content" id="myTabContent">
@@ -185,6 +188,17 @@ $history_event_time = static function ($event) {
 										&& (string) ($x->consultation_mode ?? '') === 'visit'
 										&& isset($x->visit_performer_user_id)
 										&& (int) $x->visit_performer_user_id === (int) $this->session->userdata('id');
+									$history_workflow_enabled = !empty($visit_clinical_workflow_enabled);
+									$history_clinical = isset($clinical_ui[(int) $x->request_id]) && is_array($clinical_ui[(int) $x->request_id])
+										? $clinical_ui[(int) $x->request_id]
+										: null;
+									$history_clinical_anchor = $history_clinical && !empty($history_clinical['next_action_url'])
+										? (string) $history_clinical['next_action_url']
+										: '';
+									$history_disposition = isset($nakes_disposition_map[(int) $x->request_id]) ? $nakes_disposition_map[(int) $x->request_id] : null;
+									$history_required_profession = $history_disposition && (string) $history_disposition->decision === 'visit'
+										? trim((string) ($history_disposition->required_profession ?? ''))
+										: '';
 									$visit_monitor_only = $care_team_enabled
 										? !$history_is_performer
 										: ($nakes_is_command_center && $pic_assignment && !empty($pic_assignment->staff_user_id));
@@ -210,8 +224,19 @@ $history_event_time = static function ($event) {
 										&& in_array($visit_status, array('en_route', 'arrived', 'in_service'), true);
 									$role_label = $history_is_responsible ? 'Dokter penanggung jawab' : ($history_is_performer ? 'Nakes kunjungan' : 'Pemantau layanan');
 									$next_action_label = '';
+									$history_mode = strtolower(trim((string) ($x->consultation_mode ?? '')));
 									if ($history_is_responsible) {
-										if ((string) ($x->consultation_mode ?? '') === '') {
+										if ($history_workflow_enabled) {
+											if (!$history_disposition) {
+												$next_action_label = $history_mode === 'non_visit' ? 'Lanjutkan konsultasi' : 'Pilih jenis layanan atau Tetapkan disposisi (opsional)';
+											} elseif ((string) $history_disposition->decision === 'visit' && (int) ($x->visit_performer_user_id ?? 0) < 1) {
+												$next_action_label = 'Pilih Nakes kunjungan';
+											} elseif ((string) $history_disposition->decision === 'visit' && $visit_status !== 'completed') {
+												$next_action_label = 'Pantau hasil kunjungan';
+											} else {
+												$next_action_label = 'Lengkapi dan selesaikan konsultasi';
+											}
+										} elseif ((string) ($x->consultation_mode ?? '') === '') {
 											$next_action_label = 'Pilih jenis layanan';
 										} elseif ((string) ($x->consultation_mode ?? '') === 'visit' && (int) ($x->visit_performer_user_id ?? 0) < 1) {
 											$next_action_label = 'Pilih Nakes kunjungan';
@@ -225,9 +250,12 @@ $history_event_time = static function ($event) {
 											? 'Catat Hasil'
 											: ($next_visit_status !== '' && isset($visit_next_label[$next_visit_status]) ? $visit_next_label[$next_visit_status] : 'Kunjungan selesai');
 									}
+									if ($history_clinical && !empty($history_clinical['next_action'])) {
+										$next_action_label = (string) $history_clinical['next_action'];
+									}
 								?>
-									<div class="card shadow dl-history-card dl-history-card-active" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
-										<div class="dl-history-card-head">
+									<div class="card shadow dl-history-card dl-history-card-active cq-case" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-visit-id="<?= html_escape((int) $x->request_id); ?>" data-visit-request-id="<?= html_escape((int) $x->request_id); ?>" data-patient-lat="<?= html_escape($x->lattitude); ?>" data-patient-lng="<?= html_escape($x->longitude); ?>">
+										<div class="dl-history-card-head cq-case-head">
 											<?php
 											$this->load->view('partials/nakes_avatar_v', array(
 												'avatar_name' => $x->nama,
@@ -238,18 +266,30 @@ $history_event_time = static function ($event) {
 											));
 											?>
 											<div class="dl-history-title-wrap">
-												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
-												<span><?= html_escape($queue_label); ?><?= $area_label !== '' ? ' · ' . html_escape($area_label) : ''; ?></span>
+												<strong><?= html_escape((string) $x->nama); ?></strong>
+												<span><?= html_escape($queue_label); ?><?= $area_label !== '' ? ' · ' . html_escape($area_label) : ''; ?><?= !empty($x->created_at) ? ' · masuk ' . html_escape(date('d M H.i', strtotime($x->created_at))) : ''; ?></span>
 											</div>
+											<?php if ($history_clinical) : ?>
+											<?php $this->load->view('partials/clinical_state_chip_v', array('clinical_ui' => $history_clinical)); ?>
+										<?php else : ?>
 											<span class="dl-status-pill dl-status-pill-active">Diterima</span>
+										<?php endif; ?>
 										</div>
-										<div class="card-body nk-card-body nk-history-card__body">
+										<div class="card-body nk-card-body nk-history-card__body cq-case-body">
 											<?php if ($care_team_enabled && ($history_is_responsible || $history_is_performer)) : ?>
-												<div class="alert alert-light border mb-3 py-2 px-3" data-next-action-role="<?= $history_is_responsible ? 'responsible_doctor' : 'visit_performer'; ?>">
-													<span class="small text-muted d-block">Peran Anda · <?= html_escape($role_label); ?></span>
+												<div class="alert alert-light border cq-next-action" data-next-action-role="<?= $history_is_responsible ? 'responsible_doctor' : 'visit_performer'; ?>">
+													<span class="small text-muted d-block">Langkah berikutnya · <?= html_escape($role_label); ?></span>
 													<strong data-next-action-label><?= html_escape($next_action_label); ?></strong>
 												</div>
 											<?php endif; ?>
+										<?php if ($history_clinical) : ?>
+											<div class="cw-card mb-3">
+												<div class="cw-card-body py-2">
+													<?php $this->load->view('partials/clinical_thread_mini_v', array('clinical_ui' => $history_clinical)); ?>
+												</div>
+											</div>
+										<?php endif; ?>
+
 											<div class="dl-history-summary nk-complaint nk-card-section">
 												<span class="nk-complaint__title">Keluhan utama</span>
 												<p class="nk-complaint__main"><?= html_escape($complaint['primary']); ?></p>
@@ -275,7 +315,7 @@ $history_event_time = static function ($event) {
 													<?php if ($address_label !== '') : ?>
 														<div class="nk-detail-row"><span class="nk-detail-label">Alamat</span><strong class="nk-detail-value"><?= doclinc_history_safe_text($address_label); ?></strong></div>
 													<?php endif; ?>
-													<div class="nk-detail-row"><span class="nk-detail-label">Rute</span><strong class="nk-detail-value"><span class="visit-route-distance dl-route-soft" data-route-distance="<?= html_escape((int) $x->request_id); ?>">Menghitung…</span><span class="visit-route-eta dl-route-soft dl-route-duration" data-route-eta="<?= html_escape((int) $x->request_id); ?>">Menghitung…</span></strong></div>
+													<div class="nk-detail-row"><span class="nk-detail-label">Rute</span><strong class="nk-detail-value"><span class="visit-route-distance dl-route-soft" data-route-distance="<?= html_escape((int) $x->request_id); ?>">—</span><span class="visit-route-eta dl-route-soft dl-route-duration" data-route-eta="<?= html_escape((int) $x->request_id); ?>"></span></strong></div>
 												</div>
 											</div>
 											<?php if ($can_coordinate_staff) : ?>
@@ -302,7 +342,7 @@ $history_event_time = static function ($event) {
 													<?php else : ?>
 												<form method="post" action="<?= html_escape(base_url(!empty($care_team_workflow_enabled) ? 'home_nakes/assign_responsible_doctor' : 'home_nakes/assign_staff')); ?>" class="<?= !empty($care_team_workflow_enabled) ? 'nk-care-team-form' : 'nk-pic-form'; ?>">
 															<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
-															<select name="staff_id" class="form-select form-select-sm" required>
+															<select name="staff_id" class="form-select form-select-sm" aria-label="<?= !empty($care_team_workflow_enabled) ? 'Pilih dokter penanggung jawab' : 'Pilih staf penanggung jawab'; ?>" required>
 														<option value=""><?= !empty($care_team_workflow_enabled) ? 'Pilih Dokter' : 'Pilih staf'; ?></option>
 														<?php foreach ($puskesmas_staff_options as $staff_option) : ?>
 															<?php if (!empty($care_team_workflow_enabled) && empty($staff_option->responsible_doctor_available)) { continue; } ?>
@@ -344,7 +384,45 @@ $history_event_time = static function ($event) {
 												</div>
 											<?php endif; ?>
 											<?php endif; ?>
-											<?php if (!empty($care_team_workflow_enabled)
+											<?php if ($history_workflow_enabled && $history_disposition) : ?>
+												<div class="nk-action-panel nk-card-section" data-disposition-panel>
+													<div class="nk-action-panel__title">Disposisi dokter</div>
+													<div class="nk-action-panel__body">
+														<?php $this->load->view('partials/nakes_disposition_summary_v', array('disposition' => $history_disposition)); ?>
+														<?php if ($history_is_responsible) : ?>
+															<?php if ((string) $history_disposition->decision === 'visit' && (int) ($x->visit_performer_user_id ?? 0) < 1 && $visit_status === 'not_started') : ?>
+																<form method="post" action="<?= html_escape(base_url('home_nakes/assign_visit_performer')); ?>" class="nk-care-team-form mt-2">
+																	<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
+																	<label class="form-label">Nakes kunjungan<?= $history_required_profession !== '' ? ' (' . html_escape($history_required_profession) . ')' : ''; ?></label>
+																	<select name="staff_id" class="form-select form-select-sm" aria-label="<?= !empty($care_team_workflow_enabled) ? 'Pilih dokter penanggung jawab' : 'Pilih staf penanggung jawab'; ?>" required>
+																		<option value="">Pilih Nakes</option>
+																		<?php foreach ($puskesmas_staff_options as $staff_option) : ?>
+																			<?php if (empty($staff_option->visit_performer_eligible)) { continue; } ?>
+																			<?php if ($history_required_profession !== '' && strcasecmp(trim((string) ($staff_option->profesi ?? '')), $history_required_profession) !== 0) { continue; } ?>
+																			<option value="<?= html_escape((int) $staff_option->staff_id); ?>" <?= (int) ($x->visit_performer_user_id ?? 0) === (int) $staff_option->user_id ? 'selected' : ''; ?>><?= html_escape($staff_option->nama); ?><?= isset($staff_option->is_online) ? ' · ' . ((int) $staff_option->is_online === 1 ? 'Online' : 'Offline') : ''; ?></option>
+																		<?php endforeach; ?>
+																	</select>
+																	<button type="submit" class="btn btn-outline-success btn-sm rounded-pill mt-2">Pilih Nakes</button>
+																</form>
+															<?php elseif ((string) $history_disposition->decision === 'visit' && $visit_status === 'not_started') : ?>
+																<p class="small text-muted mb-0">Nakes sudah ditunjuk. Kunjungan belum dimulai.</p>
+															<?php elseif ((string) $history_disposition->decision === 'visit') : ?>
+																<p class="small text-muted mb-0">Nakes sedang menjalankan kunjungan.</p>
+															<?php else : ?>
+																<p class="small text-muted mb-0">Tanpa kunjungan. Lanjutkan lewat halaman konsultasi.</p>
+															<?php endif; ?>
+														<?php endif; ?>
+													</div>
+												</div>
+											<?php elseif ($history_workflow_enabled && $history_is_responsible) : ?>
+												<div class="nk-action-panel nk-card-section" data-disposition-panel>
+													<div class="nk-action-panel__title">Disposisi dokter</div>
+													<div class="nk-action-panel__body">
+														<p class="small text-muted">Tetapkan disposisi sebelum menunjuk Nakes.</p>
+														<a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id) . '#disposisi'); ?>" class="btn btn-success btn-sm rounded-pill">Tetapkan disposisi</a>
+													</div>
+												</div>
+											<?php elseif (!empty($care_team_workflow_enabled)
 												&& isset($x->responsible_doctor_user_id)
 												&& (int) $x->responsible_doctor_user_id === (int) $this->session->userdata('id')) : ?>
 												<div class="nk-action-panel nk-card-section">
@@ -359,7 +437,7 @@ $history_event_time = static function ($event) {
 															<form method="post" action="<?= html_escape(base_url('home_nakes/assign_visit_performer')); ?>" class="nk-care-team-form mt-2">
 																<input type="hidden" name="request_id" value="<?= html_escape((int) $x->request_id); ?>">
 																<label class="form-label">Nakes kunjungan</label>
-																<select name="staff_id" class="form-select form-select-sm" required>
+																<select name="staff_id" class="form-select form-select-sm" aria-label="<?= !empty($care_team_workflow_enabled) ? 'Pilih dokter penanggung jawab' : 'Pilih staf penanggung jawab'; ?>" required>
 																	<option value="">Pilih Nakes</option>
 																	<?php foreach ($puskesmas_staff_options as $staff_option) : ?>
 																<?php if (empty($staff_option->visit_performer_eligible)) { continue; } ?>
@@ -396,8 +474,8 @@ $history_event_time = static function ($event) {
 											</div>
 											<?php endif; ?>
 										</div>
-										<div class="card-footer dl-history-actions">
-											<?php if ($can_open_consultation) : ?><a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id)); ?>" class="btn <?= $history_is_responsible || ($history_is_performer && $visit_status === 'in_service') ? 'btn-success' : 'btn-outline-success'; ?> shadow-sm rounded-pill dl-history-primary-action py-2 px-3">
+										<div class="card-footer dl-history-actions cq-case-actions">
+											<?php if ($can_open_consultation) : ?><a href="<?= html_escape(base_url('konsultasi_nakes/konsultasi/' . (int) $x->request_id) . $history_clinical_anchor); ?>" class="btn <?= $history_is_responsible || ($history_is_performer && $visit_status === 'in_service') ? 'btn-success' : 'btn-outline-success'; ?> shadow-sm rounded-pill dl-history-primary-action py-2 px-3">
 												<?= $history_is_responsible ? (((string) ($x->consultation_mode ?? '') === 'visit' && $visit_status !== 'completed') ? 'Lihat Hasil' : 'Lanjutkan') : ($history_is_performer && $visit_status === 'in_service' ? 'Catat Hasil' : 'Lihat'); ?>
 											</a><?php endif; ?>
 											<div class="dl-history-secondary-actions">
@@ -463,6 +541,9 @@ $history_event_time = static function ($event) {
 									$complaint = $history_complaint_summary($keluhan);
 									$pic_assignment = isset($request_staff_assignment_map[(int) $x->request_id]) ? $request_staff_assignment_map[(int) $x->request_id] : (isset($request_staff_latest_assignment_map[(int) $x->request_id]) ? $request_staff_latest_assignment_map[(int) $x->request_id] : null);
 									$request_events = isset($request_event_map[(int) $x->request_id]) ? array_slice($request_event_map[(int) $x->request_id], 0, 5) : array();
+									$history_completed_clinical = isset($clinical_ui[(int) $x->request_id]) && is_array($clinical_ui[(int) $x->request_id])
+										? $clinical_ui[(int) $x->request_id]
+										: null;
 								?>
 									<div class="card shadow dl-history-card dl-history-card-completed" data-request-id="<?= (int) $x->request_id; ?>" data-visit-id="<?= (int) $x->request_id; ?>">
 										<div class="dl-history-card-head">
@@ -476,10 +557,14 @@ $history_event_time = static function ($event) {
 											));
 											?>
 											<div class="dl-history-title-wrap">
-												<strong><?= html_escape(strtoupper((string) $x->nama)); ?></strong>
+												<strong><?= html_escape((string) $x->nama); ?></strong>
 												<span><?= html_escape($queue_label); ?><?= $tanggal_selesai !== '' ? ' · ' . html_escape($tanggal_selesai) : ''; ?></span>
 											</div>
+											<?php if ($history_completed_clinical) : ?>
+											<?php $this->load->view('partials/clinical_state_chip_v', array('clinical_ui' => $history_completed_clinical)); ?>
+										<?php else : ?>
 											<span class="dl-status-pill dl-status-pill-done">Selesai</span>
+										<?php endif; ?>
 										</div>
 										<div class="card-body">
 											<div class="dl-history-summary dl-history-summary-muted nk-complaint">
@@ -532,5 +617,7 @@ $history_event_time = static function ($event) {
 								<?php } ?>
 							</div>
 						</div>
+					</div>
+
 					</div>
 				</div>

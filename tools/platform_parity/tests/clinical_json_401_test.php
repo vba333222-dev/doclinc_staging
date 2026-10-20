@@ -54,7 +54,7 @@ if ($list !== '') {
 
 echo "\n== every clinical endpoint must be in the allow-list ==\n";
 
-$clinical = array('clinical_workflow', 'clinical_review', 'clinical_disposition', 'clinical_finalize', 'clinical_amend', 'clinical_close');
+$clinical = array('clinical_workflow', 'clinical_review', 'clinical_disposition', 'clinical_disposition_revise', 'clinical_record', 'clinical_finalize', 'clinical_amend', 'clinical_close');
 foreach ($clinical as $method) {
 	clinical_json_check(in_array($method, $declared, true), 'allow-listed: ' . $method);
 }
@@ -63,7 +63,7 @@ echo "\n== each allow-listed clinical endpoint really returns JSON ==\n";
 
 foreach ($clinical as $method) {
 	// Each of these either calls clinical_json_result() or writes a JSON body itself.
-	$pattern = '/public function ' . preg_quote($method, '/') . '\s*\([^)]*\)\s*\{(.{0,1600}?)\n\t\}/s';
+	$pattern = '/public function ' . preg_quote($method, '/') . '\s*\([^)]*\)\s*\{(.{0,4000}?)\n\t\}/s';
 	$body = preg_match($pattern, $source, $bm) === 1 ? $bm[1] : '';
 	$isJson = $body !== '' && (
 		strpos($body, 'clinical_json_result(') !== false ||

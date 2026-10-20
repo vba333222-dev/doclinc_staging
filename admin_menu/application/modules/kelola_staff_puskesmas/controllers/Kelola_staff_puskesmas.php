@@ -252,6 +252,30 @@ class Kelola_staff_puskesmas extends MX_Controller
 	}
 
 	/**
+	 * Penempatan awal sebelum Nakes pernah bertugas di fasilitas mana pun.
+	 */
+	public function create_placement()
+	{
+		if (!$this->require_placement_post()) return;
+		$staffId = (int) $this->input->post('staff_id', TRUE);
+		$facilityCode = strtoupper(trim((string) $this->input->post('facility_code', TRUE)));
+		$effectiveFrom = trim((string) $this->input->post('effective_from', TRUE));
+		if (strpos($effectiveFrom, 'T') !== false) {
+			$effectiveFrom = str_replace('T', ' ', $effectiveFrom);
+			if (preg_match('/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}\z/', $effectiveFrom)) {
+				$effectiveFrom .= ':00';
+			}
+		}
+		if ($staffId < 1 || $facilityCode === ''
+			|| !preg_match('/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\z/', $effectiveFrom)) {
+			$this->placement_flash('error', 'Data penempatan belum valid.');
+			return;
+		}
+		$result = $this->placement_service()->place($staffId, $facilityCode, $effectiveFrom);
+		$this->placement_flash($result ? 'success' : 'error', $result ? 'Penempatan Nakes tersimpan.' : 'Penempatan belum dapat disimpan. Periksa fasilitas, akun, dan penempatan aktif.');
+	}
+
+	/**
 	 * Schedule a facility transfer through the placement service. The actor and
 	 * current placement are always resolved server-side.
 	 */
@@ -259,6 +283,12 @@ class Kelola_staff_puskesmas extends MX_Controller
 	{
 		if (!$this->require_placement_post()) return;
 		$effectiveAt = trim((string) $this->input->post('effective_at', TRUE));
+		if (strpos($effectiveAt, 'T') !== false) {
+			$effectiveAt = str_replace('T', ' ', $effectiveAt);
+			if (preg_match('/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}\z/', $effectiveAt)) {
+				$effectiveAt .= ':00';
+			}
+		}
 		$reason = trim((string) $this->input->post('reason', TRUE));
 		if (!preg_match('/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\z/', $effectiveAt)
 			|| (int) $this->input->post('staff_id', TRUE) < 1
@@ -372,6 +402,9 @@ class Kelola_staff_puskesmas extends MX_Controller
 			'account_candidates_by_staff' => array(),
 			'command_center_user_ids' => array(),
 			'personal_account_eligibility_by_staff' => array(),
+			'placement_by_staff' => array(),
+			'scheduled_transfer_by_staff' => array(),
+			'placement_enabled' => $this->config->item('nakes_placement_enabled') === true,
 			'staff_readiness_summary' => array('total' => 0, 'ready' => 0, 'warning' => 0, 'attention' => 0, 'issue_counts' => array()),
 			'form_mode' => $form_mode,
 			'form_staff' => null,
@@ -395,6 +428,16 @@ class Kelola_staff_puskesmas extends MX_Controller
 				$staff_row->readiness_issues = $this->Kelola_staff_puskesmas_m->readiness_issues($staff_row);
 			}
 			$data['staff_readiness_summary'] = $this->Kelola_staff_puskesmas_m->readiness_summary($data['staff_rows']);
+			if ($this->db->table_exists('nakes_facility_placements')) {
+				foreach ($this->db->select('placement_id,staff_id,facility_code,effective_from')->where('status', 'active')->get('nakes_facility_placements')->result() as $placement) {
+					$data['placement_by_staff'][(int) $placement->staff_id] = $placement;
+				}
+			}
+			if ($this->db->table_exists('nakes_facility_transfers')) {
+				foreach ($this->db->select('transfer_id,staff_id,from_placement_id,destination_facility_code,effective_at,status,reason')->where('status', 'scheduled')->get('nakes_facility_transfers')->result() as $transfer) {
+					$data['scheduled_transfer_by_staff'][(int) $transfer->staff_id] = $transfer;
+				}
+			}
 			if ($filters['readiness'] !== '') {
 				$data['staff_rows'] = array_values(array_filter($data['staff_rows'], function ($staff_row) use ($filters) {
 					return $this->staff_matches_readiness_filter($staff_row, $filters['readiness']);

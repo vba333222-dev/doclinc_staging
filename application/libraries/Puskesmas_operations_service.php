@@ -223,6 +223,13 @@ class Puskesmas_operations_service
 		);
 		$data['requests'] = $operational['rows'];
 		$data['filters'] = $operational['filters'];
+		if ($this->care_team_enabled) {
+			$clinical_exceptions = $this->clinicalExceptions($puskesmas_code);
+			$data['summary']['clinical_exceptions'] = count($clinical_exceptions);
+			if (!empty($clinical_exceptions)) {
+				$data['exceptions'] = array_slice(array_merge($clinical_exceptions, $data['exceptions']), 0, 50);
+			}
+		}
 		return array(
 			'ok' => true,
 			'code' => 'ok',
@@ -334,6 +341,28 @@ class Puskesmas_operations_service
 			);
 		}
 		return array('ok' => true, 'rows' => $result, 'filters' => array('q' => $search, 'date_from' => $date_from, 'date_to' => $date_to));
+	}
+
+	private function clinicalExceptions($puskesmas_code)
+	{
+		require_once __DIR__ . '/Active_request_watchdog.php';
+		$watchdog = new Active_request_watchdog($this->db, $this->care_team_enabled);
+		$result = array();
+		foreach ($watchdog->exceptionsFor($puskesmas_code) as $row) {
+			$exception = $this->exceptionRow(array(
+				'request_id' => $row['request_id'],
+				'visit_status' => $row['visit_status'],
+				'patient_name' => $row['patient_name'],
+				'queue_number' => $row['queue_number'],
+				'service_date' => $row['service_date'],
+				'consultation_mode' => $row['consultation_mode'],
+			), $row['type'], $puskesmas_code);
+			$exception['severity'] = $row['severity'];
+			$exception['stage_label'] = $row['stage_label'];
+			$exception['waiting_minutes'] = $row['waiting_minutes'];
+			$result[] = $exception;
+		}
+		return $result;
 	}
 
 	public function composeSnapshot($puskesmas_code, array $staff_rows, array $request_rows, $pending_count, $generated_at_epoch, $accepted_count = null, $care_team_enabled = null)

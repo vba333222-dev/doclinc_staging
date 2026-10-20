@@ -23,8 +23,8 @@
 				</div>
 				<div class="dl-auth-card">
 					<div class="dl-auth-card-body">
-						<h1 class="dl-auth-title">Buat akun DocLinc</h1>
-						<p class="dl-auth-subtitle">Lengkapi data berikut untuk membuat akun baru.</p>
+						<h1 class="dl-auth-title">Daftar akun DokLinc</h1>
+						<p class="dl-auth-subtitle">Lengkapi data berikut</p>
 						<form id="signupForm">
 							<div class="dl-auth-field">
 								<label class="form-label" for="nama_lengkap">Nama lengkap</label>
@@ -48,7 +48,7 @@
 								</div>
 							</div>
 							<div class="dl-auth-field">
-								<label class="form-label" for="username">Nama pengguna</label>
+								<label class="form-label" for="username">Username</label>
 								<div class="dl-auth-control">
 									<i class="fas fa-id-badge dl-auth-icon" aria-hidden="true"></i>
 									<input type="text" class="form-control" id="username" name="username" autocomplete="off" autocapitalize="none" spellcheck="false" required>

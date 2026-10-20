@@ -10,7 +10,7 @@ require_once BASEPATH . 'core/Common.php'; require_once BASEPATH . 'database/DB.
 $db = DB(array('dsn'=>'','hostname'=>$host,'username'=>getenv('VCW_DB_USER') ?: 'doclinc_test','password'=>getenv('VCW_DB_PASSWORD') ?: 'doclinc_test_only','database'=>$name,'dbdriver'=>'mysqli','dbprefix'=>'','pconnect'=>false,'db_debug'=>false,'cache_on'=>false,'cachedir'=>'','char_set'=>'utf8','dbcollat'=>'utf8_general_ci','port'=>(int)(getenv('VCW_DB_PORT') ?: 33317),'stricton'=>false), true);
 if (!$db) throw new RuntimeException('db_connection_failed');
 class VcwConfig { private $items; public function __construct(array $items){$this->items=$items;} public function item($key){return $this->items[$key]??null;} public function set($key,$value){$this->items[$key]=$value;} }
-class VcwLoader { private $db; public function __construct($db){$this->db=$db;} public function database($group='default',$return=false){return $this->db;} }
+class VcwLoader { private $db; public function __construct($db){$this->db=$db;} public function database($group='default',$return=false){return $this->db;} public function helper($name){foreach((array)$name as $helper){$file=APPPATH.'helpers/'.$helper.'_helper.php';if(is_file($file))require_once $file;}return $this;} }
 class VcwSession { public function userdata($key){return null;} }
 class VcwApplication { public $db; public $load; public $config; public $session; public function __construct($db){$this->db=$db;$this->load=new VcwLoader($db);$this->config=new VcwConfig(array('visit_clinical_workflow_enabled'=>getenv('VCW_FEATURE_ENABLED')==='1'));$this->session=new VcwSession();} }
 $GLOBALS['vcw_app'] = new VcwApplication($db);

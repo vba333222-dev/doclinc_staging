@@ -31,7 +31,16 @@
 						<?php if (!empty($nakes_is_personal)) : ?>
 							<div class="alert alert-info mb-0" role="status">Hanya tugas Anda yang tampil di sini.</div>
 						<?php endif; ?>
-						<?php $this->load->view('partials/nakes_stat_cards_v', get_defined_vars()); ?>
+						<?php if (!empty($nakes_is_command_center)) : ?>
+							<div class="cc-sheet">
+								<?php $this->load->view('partials/puskesmas_command_deck_v', get_defined_vars()); ?>
+						<?php else : ?>
+							<?php $this->load->view('partials/nakes_stat_cards_v', get_defined_vars()); ?>
+							<?php if (!empty($visit_clinical_workflow_enabled)) : ?>
+								<?php $this->load->view('partials/clinical_stats_v', get_defined_vars()); ?>
+								<?php $this->load->view('partials/clinical_action_list_v', get_defined_vars()); ?>
+							<?php endif; ?>
+						<?php endif; ?>
 						<?php if (!empty($nakes_is_command_center)) : ?>
 						<?php
 						/* Papan status tim menjawab satu pertanyaan: siapa sedang menangani
@@ -121,15 +130,14 @@
 						$dashboard_ready_attention = isset($puskesmas_data_readiness['attention_count']) ? (int) $puskesmas_data_readiness['attention_count'] : 0;
 						$dashboard_ready_sip = isset($puskesmas_data_readiness['staff_missing_sip']) ? (int) $puskesmas_data_readiness['staff_missing_sip'] : 0;
 						$dashboard_without_pic = isset($puskesmas_operation_exceptions['accepted_without_pic']) ? (int) $puskesmas_operation_exceptions['accepted_without_pic'] : 0;
+						$dashboard_stalled = isset($puskesmas_operation_exceptions['clinical_stalled']) ? (int) $puskesmas_operation_exceptions['clinical_stalled'] : 0;
 						?>
-						<div class="dl-team-bento doclinc-presence-panel" id="doclincNakesPresence" data-presence-roster="true" aria-busy="<?= !empty($nakes_presence_enabled) ? 'true' : 'false'; ?>">
+						<div class="dl-team-bento cc-team-board doclinc-presence-panel" id="doclincNakesPresence" data-presence-roster="true" aria-busy="<?= !empty($nakes_presence_enabled) ? 'true' : 'false'; ?>">
 							<div class="dl-team-bento__head">
-								<?php $this->load->view('partials/nakes_section_header_v', array(
-									'section_title' => 'Staf Puskesmas',
-									'section_meta' => (string) $dashboard_staff_count . ' staf',
-									'section_inside' => true,
-									'section_class' => 'dl-team-bento__title',
-								)); ?>
+								<div class="cc-team-heading">
+									<div class="cc-team-title" role="heading" aria-level="2">Staf Puskesmas</div>
+									<span class="cc-team-total"><?= (int) $dashboard_staff_count; ?> staf</span>
+								</div>
 								<p class="dl-team-bento__summary" data-presence-summary role="status" aria-live="polite"><?php if (!empty($nakes_presence_enabled)) : ?><span class="dl-team-bento__summary-loading">Memuat status&hellip;</span><?php endif; ?></p>
 							</div>
 							<div class="dl-team-bento__grid">
@@ -190,7 +198,7 @@
 								</section>
 								<?php endforeach; ?>
 							</div>
-							<?php if ($dashboard_ready_attention > 0 || $dashboard_without_pic > 0) : ?>
+							<?php if ($dashboard_ready_attention > 0 || $dashboard_without_pic > 0 || $dashboard_stalled > 0) : ?>
 								<p class="dl-team-bento__note" data-puskesmas-readiness="<?= html_escape(json_encode(array('attention_count' => $dashboard_ready_attention, 'staff_missing_sip' => $dashboard_ready_sip))); ?>">
 									<i class="fas fa-info-circle" aria-hidden="true"></i>
 									<?php if ($dashboard_ready_attention > 0) : ?>
@@ -199,9 +207,13 @@
 									<?php if ($dashboard_without_pic > 0) : ?>
 										<span data-puskesmas-exception-board>Belum ada penanggung jawab layanan untuk <?= (int) $dashboard_without_pic; ?> kunjungan.</span>
 									<?php endif; ?>
+									<?php if ($dashboard_stalled > 0) : ?>
+										<span data-puskesmas-clinical-stall><?= (int) $dashboard_stalled; ?> konsultasi berhenti di tahap klinis dan perlu ditindaklanjuti.</span>
+									<?php endif; ?>
 								</p>
 							<?php endif; ?>
 						</div>
+						</div><!-- /.cc-sheet -->
 						<?php endif; ?>
 						
 											</div>

@@ -48,7 +48,7 @@ expect(nakesShell.includes('Identitas unit dikelola Admin Dinas Kesehatan')
   && nakesShell.includes("if (!empty($nakes_is_personal))")
   && completionView.includes('Akun Puskesmas tidak memerlukan foto pribadi'), 'puskesmas_editor_excludes_personal_demographics_and_photo');
 expect(!nakesDashboard.includes("'section_title' => 'Status Nakes'")
-  && (nakesDashboard.match(/'section_title' => 'Staf Puskesmas'/g) || []).length === 1
+  && (nakesDashboard.match(/<div class="cc-team-title" role="heading" aria-level="2">Staf Puskesmas<\/div>/g) || []).length === 1
   && nakesDashboard.includes('data-presence-roster="true"'), 'staff_and_presence_are_one_dashboard_roster');
 expect(nakesModel.includes('users.foto AS profile_photo')
   && nakesDashboard.includes('data-presence-user-id')

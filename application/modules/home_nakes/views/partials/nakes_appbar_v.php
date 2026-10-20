@@ -32,6 +32,9 @@ if ($appbar_subtitle === '') {
    mengulang nama unit persis di bawahnya. Akun nakes tetap menampilkannya
    karena di sana subjudul memuat profesi dan unit ("Dokter · Puskesmas X"). */
 $appbar_show_subtitle = $appbar_subtitle !== '' && $appbar_subtitle !== $nakes_header_name;
+$appbar_initial_section = isset($nakes_initial_section) && (string) $nakes_initial_section !== ''
+	? (string) $nakes_initial_section
+	: 'beranda';
 ?>
 			<div class="hero bg-success p-3 overflow-hidden dl-appbar dl-nakes-appbar">
 				<div class="dl-nakes-appbar-top">
@@ -60,20 +63,20 @@ $appbar_show_subtitle = $appbar_subtitle !== '' && $appbar_subtitle !== $nakes_h
 				</div>
 				<?php if (!empty($nakes_is_command_center)) : ?>
 				<nav class="dl-puskesmas-desktop-nav" aria-label="Navigasi Puskesmas">
-					<a href="#beranda" onclick="showContent('beranda'); return false;">Beranda</a>
-					<a href="#req_konsul" onclick="showContent('req_konsul'); return false;">Permintaan</a>
-					<a href="<?= html_escape(site_url('puskesmas/operations')); ?>" class="is-active" aria-current="page">Operasional</a>
-					<a href="#riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">Konsultasi</a>
-					<a href="#profile" onclick="showContent('profile'); return false;">Profil</a>
+					<a href="#beranda" data-nakes-nav="beranda" class="<?= $appbar_initial_section !== 'operasional' ? 'is-active' : ''; ?>"<?= $appbar_initial_section !== 'operasional' ? ' aria-current="page"' : ''; ?> onclick="showContent('beranda'); return false;">Beranda</a>
+					<a href="#req_konsul" data-nakes-nav="req_konsul" onclick="showContent('req_konsul'); return false;">Permintaan</a>
+					<a href="<?= html_escape(site_url('puskesmas/operations')); ?>" data-nakes-nav="operasional" class="<?= $appbar_initial_section === 'operasional' ? 'is-active' : ''; ?>"<?= $appbar_initial_section === 'operasional' ? ' aria-current="page"' : ''; ?>>Operasional</a>
+					<a href="#riwayat_konsul" data-nakes-nav="riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">Konsultasi</a>
+					<a href="#profile" data-nakes-nav="profile" onclick="showContent('profile'); return false;">Profil</a>
 				</nav>
 				<?php else : ?>
 				<nav class="dl-nakes-desktop-nav" aria-label="Navigasi utama nakes">
 					<!-- aria-current disamakan dengan pola navigasi Puskesmas di atas.
 					     Tautan ini memang bertanda is-active tetap (tidak ada skrip yang
 					     memindahkannya), jadi aria-current juga tetap dan tidak menyesatkan. -->
-					<a href="#beranda" class="is-active" data-nakes-nav="beranda" onclick="showContent('beranda'); return false;" aria-current="page">Beranda</a>
-					<a href="#riwayat_konsul" data-nakes-nav="riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">Konsultasi</a>
-					<a href="#profil" data-nakes-nav="profil" data-bs-toggle="modal" data-bs-target="#modalProfil">Profil</a>
+					<a href="#beranda" class="<?= $appbar_initial_section !== 'operasional' && $appbar_initial_section !== 'riwayat_konsul' ? 'is-active' : ''; ?>" data-nakes-nav="beranda" onclick="showContent('beranda'); return false;"<?= $appbar_initial_section !== 'operasional' && $appbar_initial_section !== 'riwayat_konsul' ? ' aria-current="page"' : ''; ?>>Beranda</a>
+					<a href="#riwayat_konsul" data-nakes-nav="riwayat_konsul" class="<?= $appbar_initial_section === 'riwayat_konsul' ? 'is-active' : ''; ?>" onclick="showContent('riwayat_konsul'); return false;"<?= $appbar_initial_section === 'riwayat_konsul' ? ' aria-current="page"' : ''; ?>>Konsultasi</a>
+					<a href="#profil" data-nakes-nav="profile" data-bs-toggle="modal" data-bs-target="#modalProfil">Profil</a>
 				</nav>
 				<?php endif; ?>
 				<span id="address_label" class="d-none"></span>

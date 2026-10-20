@@ -4,10 +4,11 @@ require_once APPPATH.'models/Clinical_finalization_m.php';
 require_once APPPATH.'libraries/Care_team_policy.php';
 require_once APPPATH.'helpers/request_authz_helper.php';
 require_once APPPATH.'helpers/request_event_helper.php';
+require_once __DIR__ . '/Clinical_workflow_requirements.php';
 class Clinical_finalization_service {
     private $db; private $model; private $policy;
     public function __construct($db=null,$model=null,$policy=null){$ci=get_instance();$this->db=$db?:$ci->db;$this->model=$model?:new Clinical_finalization_m($this->db);$this->policy=$policy?:new Care_team_policy();}
-    public function finalize($requestId,$userId,$key){$requestId=(int)$requestId;$userId=(int)$userId;$key=trim((string)$key);if($requestId<1||$userId<1||$key===''||strlen($key)>191)return $this->fail('INVALID_FINALIZATION_INPUT');
+    public function finalize($requestId,$userId,$key){$requestId=(int)$requestId;$userId=(int)$userId;$key=trim((string)$key);if($requestId<1||$userId<1||$key===''||strlen($key)>191)return $this->fail('INVALID_FINALIZATION_INPUT');if(!$this->schemaReady())return $this->fail('schema_unavailable');
         if(!$this->db->trans_begin())return $this->fail('WRITE_FAILED');
         try {
             $eventKey='clinical-finalization:'.$key;
@@ -36,6 +37,7 @@ class Clinical_finalization_service {
             $saved=$this->db->where('record_id',(int)$record->record_id)->get('medicalrecords')->row();if(!$this->db->trans_commit())return $this->fail('WRITE_FAILED');return ['status'=>'success','record_id'=>(int)$record->record_id,'medicalrecord'=>$saved,'idempotent'=>false];
         } catch(Throwable $e){$this->db->trans_rollback();$eventKey='clinical-finalization:'.$key;$existing=$this->model->eventByKey($eventKey);if($existing){$meta=json_decode((string)$existing->metadata_json,true)?:[];if((int)$existing->request_id!==$requestId||(int)($meta['finalized_by_user_id']??0)!==$userId)return $this->fail('FINALIZATION_KEY_CONFLICT');return ['status'=>'success','record_id'=>(int)($meta['record_id']??0),'idempotent'=>true];}return $this->fail('WRITE_FAILED');}
     }
+    private function schemaReady(){return(new Clinical_workflow_requirements($this->db))->ready();}
     private function placement($staff,$facility){return(bool)$this->db->query("SELECT placement_id FROM nakes_facility_placements WHERE staff_id=? AND facility_code=? AND status='active' LIMIT 1",[$staff,$facility])->row();}
     private function rollback($c){$this->db->trans_rollback();return $this->fail($c);} private function fail($c){return ['status'=>'error','safe_error_code'=>$c];}
 }

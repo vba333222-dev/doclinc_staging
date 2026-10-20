@@ -113,6 +113,7 @@ const clinicalTargets = {
   'clinical/finalize': 'home_nakes/clinical_finalize',
   'clinical/amend': 'home_nakes/clinical_amend',
   'clinical/close': 'home_nakes/clinical_close',
+  'clinical/record': 'home_nakes/clinical_record',
 };
 for (const [pattern, target] of Object.entries(clinicalTargets)) {
   expect(routes.includes(`$route['${pattern}'] = '${target}';`), `clinical_route_${pattern.replace(/\//g, '_')}_declared`);

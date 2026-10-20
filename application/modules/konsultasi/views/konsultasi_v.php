@@ -420,6 +420,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	</style>
     <link rel="stylesheet" href="<?= base_url('assets/css/doclinc-design-system.css'); ?>">
 	<link rel="stylesheet" href="<?= base_url('assets/css/doclinc-warga.css'); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-reference-ui.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-reference-ui.css'))); ?>">
 </head>
 
 <body class="consultation-form-page dl-dashboard-body">

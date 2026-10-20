@@ -1289,6 +1289,48 @@ class Home_nakes_m extends MX_Controller
 		return true;
 	}
 
+	public function get_visit_disposition($request_id)
+	{
+		$request_id = (int) $request_id;
+		if ($request_id < 1 || !$this->db->table_exists('visit_dispositions')) {
+			return null;
+		}
+		return $this->db
+			->select('disposition_id, request_id, version_no, decision, urgency, instructions, rationale, required_profession, required_competency_note, created_by_user_id, created_at')
+			->where('request_id', $request_id)
+			->where('superseded_at', null)
+			->order_by('version_no', 'DESC')
+			->limit(1)
+			->get('visit_dispositions')
+			->row();
+	}
+
+	public function get_active_dispositions_by_request_ids($request_ids)
+	{
+		$ids = array();
+		foreach ((array) $request_ids as $request_id) {
+			$request_id = (int) $request_id;
+			if ($request_id > 0) {
+				$ids[$request_id] = $request_id;
+			}
+		}
+		if (empty($ids) || !$this->db->table_exists('visit_dispositions')) {
+			return array();
+		}
+		$rows = $this->db
+			->select('disposition_id, request_id, version_no, decision, urgency, instructions, rationale, required_profession, required_competency_note, created_by_user_id, created_at')
+			->where_in('request_id', array_values($ids))
+			->where('superseded_at', null)
+			->order_by('version_no', 'DESC')
+			->get('visit_dispositions')
+			->result();
+		$map = array();
+		foreach ($rows as $row) {
+			$map[(int) $row->request_id] = $row;
+		}
+		return $map;
+	}
+
 	public function get_active_staff_options_by_code($kode_pkm)
 	{
 		$kode_pkm = $this->normalize_staff_puskesmas_code($kode_pkm);
@@ -2168,5 +2210,120 @@ class Home_nakes_m extends MX_Controller
 			->get('users');
 		$this->db->db_debug = $db_debug;
 		return $query !== false && !$query->row();
+	}
+
+	public function workflow_summaries_by_request_ids(array $requestIds)
+	{
+		$ids = array_values(array_unique(array_filter(array_map('intval', $requestIds), function ($id) {
+			return $id > 0;
+		})));
+		if (empty($ids)) {
+			return array();
+		}
+		$ids = array_slice($ids, 0, 200);
+		foreach (array('visit_dispositions', 'request_visit_performer_assignments', 'visit_results', 'clinical_reviews', 'clinical_closure_operations') as $table) {
+			if (!$this->db->table_exists($table)) {
+				return array();
+			}
+		}
+		$placeholders = implode(',', array_fill(0, count($ids), '?'));
+		$prefix = (string) $this->db->dbprefix;
+
+		$requests = $this->db->query(
+			'SELECT request_id, request_status, consultation_mode, visit_status, created_at, responsible_doctor_user_id, visit_performer_user_id FROM ' . $prefix . 'requests WHERE request_id IN (' . $placeholders . ')',
+			$ids
+		)->result_array();
+		$summaries = array();
+		foreach ($requests as $request) {
+			$summaries[(int) $request['request_id']] = array(
+				'request' => $request,
+				'disposition' => null,
+				'performer' => null,
+				'result' => null,
+				'review' => null,
+				'record' => null,
+				'closure' => null,
+			);
+		}
+		if (empty($summaries)) {
+			return array();
+		}
+
+		$dispositions = $this->db->query(
+			'SELECT request_id, decision, version_no, created_at FROM ' . $prefix . 'visit_dispositions WHERE request_id IN (' . $placeholders . ') AND superseded_at IS NULL ORDER BY version_no DESC',
+			$ids
+		)->result_array();
+		foreach ($dispositions as $row) {
+			$id = (int) $row['request_id'];
+			if (isset($summaries[$id]) && $summaries[$id]['disposition'] === null) {
+				$summaries[$id]['disposition'] = $row;
+			}
+		}
+
+		$performers = $this->db->query(
+			'SELECT a.request_id, a.user_id, a.staff_id, a.status, a.assigned_at, a.ended_at, COALESCE(s.nama, u.nama, \'\') AS display_name '
+			. 'FROM ' . $prefix . 'request_visit_performer_assignments a '
+			. 'LEFT JOIN ' . $prefix . 'puskesmas_staff s ON s.staff_id = a.staff_id '
+			. 'LEFT JOIN ' . $prefix . 'users u ON u.userId = a.user_id '
+			. 'WHERE a.request_id IN (' . $placeholders . ') ORDER BY a.visit_assignment_id DESC',
+			$ids
+		)->result_array();
+		foreach ($performers as $row) {
+			$id = (int) $row['request_id'];
+			if (isset($summaries[$id]) && $summaries[$id]['performer'] === null) {
+				$summaries[$id]['performer'] = $row;
+			}
+		}
+
+		$results = $this->db->query(
+			'SELECT request_id, visit_result_id, version_no, status, submitted_at, performer_user_id FROM ' . $prefix . 'visit_results '
+			. 'WHERE request_id IN (' . $placeholders . ") AND status = 'submitted' ORDER BY version_no DESC, visit_result_id DESC",
+			$ids
+		)->result_array();
+		foreach ($results as $row) {
+			$id = (int) $row['request_id'];
+			if (isset($summaries[$id]) && $summaries[$id]['result'] === null) {
+				$summaries[$id]['result'] = $row;
+			}
+		}
+
+		$reviews = $this->db->query(
+			'SELECT cr.clinical_review_id, vr.request_id, cr.visit_result_id, cr.decision, cr.correction_reason, cr.reviewed_at '
+			. 'FROM ' . $prefix . 'clinical_reviews cr INNER JOIN ' . $prefix . 'visit_results vr ON vr.visit_result_id = cr.visit_result_id '
+			. 'WHERE vr.request_id IN (' . $placeholders . ') ORDER BY vr.version_no DESC, cr.clinical_review_id DESC',
+			$ids
+		)->result_array();
+		foreach ($reviews as $row) {
+			$id = (int) $row['request_id'];
+			if (isset($summaries[$id]) && $summaries[$id]['review'] === null) {
+				$summaries[$id]['review'] = $row;
+			}
+		}
+
+		$records = $this->db->query(
+			'SELECT request_id, record_id, clinical_finalized_at, clinical_finalized_by_user_id FROM ' . $prefix . 'medicalrecords '
+			. 'WHERE request_id IN (' . $placeholders . ') ORDER BY record_id DESC',
+			$ids
+		)->result_array();
+		foreach ($records as $row) {
+			$id = (int) $row['request_id'];
+			if (isset($summaries[$id]) && $summaries[$id]['record'] === null) {
+				$summaries[$id]['record'] = $row;
+			}
+		}
+
+		$closures = $this->db->query(
+			'SELECT request_id, closure_operation_id, closed_at, authority_source FROM ' . $prefix . 'clinical_closure_operations '
+			. 'WHERE request_id IN (' . $placeholders . ') ORDER BY closure_operation_id DESC',
+			$ids
+		)->result_array();
+		foreach ($closures as $row) {
+			$id = (int) $row['request_id'];
+			if (isset($summaries[$id]) && $summaries[$id]['closure'] === null) {
+				$summaries[$id]['closure'] = $row;
+			}
+		}
+
+		return $summaries;
 	}
 }

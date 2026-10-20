@@ -89,8 +89,8 @@ expect(indexBody.includes("$d['nakes_team_duty'] = $team_duty['duty']")
 
 /* ---- Kontrak roster + presence ------------------------------------------- */
 
-expect(nakesDashboard.includes("'section_title' => 'Staf Puskesmas'")
-  && (nakesDashboard.match(/'section_title' => 'Staf Puskesmas'/g) || []).length === 1,
+expect(nakesDashboard.includes('<div class="cc-team-title" role="heading" aria-level="2">Staf Puskesmas</div>')
+  && (nakesDashboard.match(/<div class="cc-team-title" role="heading" aria-level="2">Staf Puskesmas<\/div>/g) || []).length === 1,
   'team_panel_keeps_exactly_one_staff_section_title');
 
 expect(nakesDashboard.includes('id="doclincNakesPresence"')

@@ -4,6 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 require_once APPPATH . 'models/Clinical_review_m.php';
 require_once APPPATH . 'libraries/Care_team_policy.php';
 require_once APPPATH . 'helpers/request_event_helper.php';
+require_once __DIR__ . '/Clinical_workflow_requirements.php';
 
 class Clinical_review_service
 {
@@ -15,6 +16,7 @@ class Clinical_review_service
         $requestId=(int)$requestId; $visitResultId=(int)$visitResultId; $reviewerUserId=(int)$reviewerUserId;
         $decision=strtolower(trim((string)$decision)); $reason=$this->text($correctionReason); $notes=$this->text($reviewNotes); $key=trim((string)$idempotencyKey);
         if ($requestId<1||$visitResultId<1||$reviewerUserId<1||$key===''||strlen($key)>191||!in_array($decision,array('approved','correction_required'),true)) return $this->fail('INVALID_REVIEW_INPUT');
+        if (!$this->schemaReady()) return $this->fail('schema_unavailable');
         if ($decision==='correction_required' && trim($reason)==='') return $this->fail('CORRECTION_REASON_REQUIRED');
         if (!$this->db->trans_begin()) return $this->fail('WRITE_FAILED');
         try {
@@ -63,6 +65,7 @@ class Clinical_review_service
     }
     private function replayOrConflict($r,$req,$result,$user,$decision,$reason,$notes,$rdOk,$performerOk){$prov=$r->responsible_assignment_id!==null?(int)$r->responsible_assignment_id:null; $expected=$rdOk?$prov:($performerOk?(int)$r->reviewer_visit_assignment_id:null); if((int)$r->request_id!==$req||(int)$r->visit_result_id!==$result||(int)$r->reviewer_user_id!==$user||(string)$r->decision!==$decision||(trim((string)$r->correction_reason)!==trim($reason))||(trim((string)$r->review_notes)!==trim($notes))) return $this->rollback('REVIEW_KEY_CONFLICT'); if(!$this->db->trans_commit()) return $this->fail('WRITE_FAILED'); return array('status'=>'success','clinical_review_id'=>(int)$r->clinical_review_id,'review'=>$r,'idempotent'=>true);}
     private function placement($staff,$facility){$r=$this->db->query("SELECT placement_id FROM nakes_facility_placements WHERE staff_id=? AND facility_code=? AND status='active' LIMIT 1",array($staff,$facility))->row();return(bool)$r;}
+    private function schemaReady() { return (new Clinical_workflow_requirements($this->db))->ready(); }
     private function text($v){return is_scalar($v)?trim((string)$v):'';}
     private function fail($c){return array('status'=>'error','safe_error_code'=>$c);}
     private function rollback($c){$this->db->trans_rollback();return $this->fail($c);}

@@ -55,6 +55,26 @@ class Pending_request_watchdog
 	}
 
 	/**
+	 * Membaca ambang waktu dari konfigurasi aplikasi.
+	 *
+	 * Ambang yang bisa diatur penting: puskesmas dengan jam kerja berbeda tidak
+	 * bisa memakai satu angka yang dipatok di kode. Nilai yang tidak masuk akal
+	 * (kosong, bukan angka, nol atau negatif) jatuh ke nilai bawaan supaya salah
+	 * ketik konfigurasi tidak mematikan pengawas secara diam-diam.
+	 */
+	private function configuredMinutes($config_key, $default)
+	{
+		$CI = get_instance();
+		$value = ($CI && isset($CI->config)) ? $CI->config->item((string) $config_key) : null;
+		if (!is_numeric($value)) {
+			return (int) $default;
+		}
+		$minutes = (int) $value;
+
+		return $minutes > 0 ? $minutes : (int) $default;
+	}
+
+	/**
 	 * Berapa menit permintaan ini sudah menunggu, atau null bila tidak dapat
 	 * dihitung. Memakai jam database agar konsisten dengan pencatatan.
 	 */
@@ -232,7 +252,7 @@ class Pending_request_watchdog
 			return false;
 		}
 		$row = $this->db
-			->select('request_event_id')
+			->select('event_id')
 			->where('request_id', (int) $request_id)
 			->where('domain_event_key', 'request:' . (int) $request_id . ':' . (string) $suffix)
 			->limit(1)

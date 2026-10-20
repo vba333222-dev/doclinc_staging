@@ -70,6 +70,10 @@ const guardedConsumers = [
   ['application/libraries/Visit_assignment_service.php', 'nakes_facility_placements', 'information_schema'],
   ['application/libraries/Care_team_service.php', 'nakes_facility_placements', 'table_exists'],
   ['application/libraries/Care_team_service.php', 'visit_dispositions', 'table_exists'],
+  // The workflow policy is read on the accept path. An unguarded read of a
+  // table that some installations never migrated turned "Terima" into a 500
+  // with a generic message, so the guard is locked here too.
+  ['application/libraries/Visit_workflow_policy.php', 'visit_dispositions', 'table_exists'],
 ];
 for (const [file, table, style] of guardedConsumers) {
   const source = read(file);

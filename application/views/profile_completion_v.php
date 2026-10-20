@@ -29,6 +29,7 @@ $redirect_url = $is_warga ? base_url('home') : base_url('home_nakes');
 	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-profile-completion.css')); ?>">
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-warga.css')); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-reference-ui.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-reference-ui.css'))); ?>">
 </head>
 <body class="dl-warga-profile">
 	<main class="completion-shell">

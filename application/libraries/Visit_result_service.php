@@ -4,6 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 require_once APPPATH . 'models/Visit_result_m.php';
 require_once APPPATH . 'helpers/request_event_helper.php';
 require_once __DIR__ . '/Care_team_policy.php';
+require_once __DIR__ . '/Clinical_workflow_requirements.php';
 
 class Visit_result_service
 {
@@ -58,6 +59,8 @@ class Visit_result_service
                 'findings_json' => '[]',
                 'actions_json' => '[]',
                 'performer_notes' => null,
+                'anamnesis' => null,
+                'therapy' => null,
                 'created_at' => $now,
                 'updated_at' => $now,
                 'submitted_at' => null,
@@ -317,6 +320,8 @@ class Visit_result_service
                 'findings_json' => $predecessor->findings_json,
                 'actions_json' => $predecessor->actions_json,
                 'performer_notes' => $predecessor->performer_notes,
+                'anamnesis' => $predecessor->anamnesis ?? null,
+                'therapy' => $predecessor->therapy ?? null,
                 'created_at' => $now,
                 'updated_at' => $now,
                 'submitted_at' => null,
@@ -404,15 +409,22 @@ class Visit_result_service
 
     private function normalizePayload(array $payload)
     {
-        $expected = array('actions', 'findings', 'observation_summary', 'performer_notes');
+        $required = array('actions', 'findings', 'observation_summary', 'performer_notes');
+        $optional = array('anamnesis', 'therapy');
+        $allowed = array_merge($required, $optional);
+        sort($required, SORT_STRING);
+        sort($allowed, SORT_STRING);
         $keys = array_keys($payload);
         sort($keys, SORT_STRING);
-        if ($keys !== $expected) { return array('valid' => false); }
+        if (array_diff($keys, $allowed) || array_diff($required, $keys)) { return array('valid' => false); }
         $summary = $this->normalizeText($payload['observation_summary'], 65535, true);
         $notes = $this->normalizeText($payload['performer_notes'], 65535, true);
+        $anamnesis = $this->normalizeText(array_key_exists('anamnesis', $payload) ? $payload['anamnesis'] : null, 65535, true);
+        $therapy = $this->normalizeText(array_key_exists('therapy', $payload) ? $payload['therapy'] : null, 65535, true);
         $findings = $this->normalizeItems($payload['findings']);
         $actions = $this->normalizeItems($payload['actions']);
-        if (!$summary['valid'] || !$notes['valid'] || !$findings['valid'] || !$actions['valid']) {
+        if (!$summary['valid'] || !$notes['valid'] || !$anamnesis['valid'] || !$therapy['valid']
+            || !$findings['valid'] || !$actions['valid']) {
             return array('valid' => false);
         }
         $findingsJson = json_encode($findings['values'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -423,6 +435,8 @@ class Visit_result_service
             'findings_json' => $findingsJson,
             'actions_json' => $actionsJson,
             'performer_notes' => $notes['value'],
+            'anamnesis' => $anamnesis['value'],
+            'therapy' => $therapy['value'],
         ));
     }
 
@@ -438,6 +452,8 @@ class Visit_result_service
             'findings' => $findings,
             'actions' => $actions,
             'performer_notes' => $result->performer_notes,
+            'anamnesis' => $result->anamnesis ?? null,
+            'therapy' => $result->therapy ?? null,
         ));
         return !empty($normalized['valid']);
     }
@@ -569,13 +585,47 @@ class Visit_result_service
         return function_exists('array_is_list') ? array_is_list($value) : array_keys($value) === range(0, count($value) - 1);
     }
 
+    public function findById($visitResultId)
+    {
+        if (!$this->schemaReady()) { return null; }
+        $row = $this->model->findById((int) $visitResultId);
+        return $row ? $this->decorateResult($row) : null;
+    }
+
+    public function currentDraft($requestId, $performerUserId)
+    {
+        if (!$this->schemaReady()) { return null; }
+        $row = $this->db->query(
+            'SELECT * FROM ' . $this->db->dbprefix('visit_results')
+            . " WHERE request_id = ? AND performer_user_id = ? AND status = 'draft' ORDER BY visit_result_id DESC LIMIT 1",
+            array((int) $requestId, (int) $performerUserId)
+        )->row();
+        return $row ? $this->decorateResult($row) : null;
+    }
+
+    public function latestSubmittedForRequest($requestId)
+    {
+        if (!$this->schemaReady()) { return null; }
+        $row = $this->db->query(
+            'SELECT * FROM ' . $this->db->dbprefix('visit_results')
+            . " WHERE request_id = ? AND status = 'submitted' ORDER BY version_no DESC, visit_result_id DESC LIMIT 1",
+            array((int) $requestId)
+        )->row();
+        return $row ? $this->decorateResult($row) : null;
+    }
+
+    private function decorateResult($row)
+    {
+        $findings = json_decode((string) ($row->findings_json ?? ''), true);
+        $actions = json_decode((string) ($row->actions_json ?? ''), true);
+        $row->findings = is_array($findings) ? $findings : array();
+        $row->actions = is_array($actions) ? $actions : array();
+        return $row;
+    }
+
     private function schemaReady()
     {
-        return $this->db && $this->db->table_exists('visit_results') && $this->db->table_exists('visit_dispositions')
-            && $this->db->table_exists('request_visit_performer_assignments') && $this->db->table_exists('nakes_facility_placements')
-            && $this->db->table_exists('request_vital_sign_measurements') && $this->db->table_exists('visit_result_vital_sign_measurements')
-            && $this->db->table_exists('clinical_reviews')
-            && $this->db->table_exists('request_events');
+        return $this->db && (new Clinical_workflow_requirements($this->db))->ready();
     }
 
     private function replayCanonicalDraft($requestId, $assignmentId, $performerUserId)

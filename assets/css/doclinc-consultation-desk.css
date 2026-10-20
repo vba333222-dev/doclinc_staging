@@ -1,0 +1,1116 @@
+/* Hallmark · macrostructure: Workbench (triage ledger / case ledger)
+ * surface: Puskesmas Permintaan Konsultasi + Konsultasi
+ * theme: DocLinc Ledger · accent: forest ~8%
+ * structure: sheet masthead / ruled queue rows / case files / next-action rail
+ * Impeccable: no kicker, no hero metric, no nested cards, no decorative stripes.
+ * Scoped to .dl-puskesmas-shell so personal Nakes screens keep their own system. */
+.dl-puskesmas-shell {
+  --cq-forest: var(--cc-forest, #103a29);
+  --cq-forest-2: var(--cc-forest-2, #1a5a3f);
+  --cq-ink: var(--cc-ink, #17241c);
+  --cq-body: var(--cc-body, #3d4f45);
+  --cq-muted: var(--cc-muted, #5a6b61);
+  --cq-bone: var(--cc-bone, #fcfcf8);
+  --cq-line: var(--cc-line, #d7e0d8);
+  --cq-amber: var(--cc-amber-ink, #7a4a00);
+  --cq-danger: #8a3a35;
+  --cq-focus: var(--cc-focus, #8a5a00);
+  /* Warga control palette: the same green/white pair used by .warga-action. */
+  --cq-action: #2d7d56;
+  --cq-action-strong: #1f6f4b;
+  --cq-action-edge: #a9cabc;
+  --cq-action-soft: #f4f8f6;
+  --cq-radius: 16px;
+  --cq-radius-sm: 10px;
+  --cq-tap: 44px;
+}
+
+.dl-puskesmas-shell #req_konsul.content,
+.dl-puskesmas-shell #riwayat_konsul.content {
+  padding: 22px 24px 44px;
+}
+
+.dl-puskesmas-shell .cq-page {
+  width: 100%;
+  max-width: 1132px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--cq-line);
+  border-radius: var(--cq-radius);
+  background: var(--cq-bone);
+}
+
+.dl-puskesmas-shell .cq-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin: 0;
+  padding: 26px 26px 20px;
+  border-bottom: 1px solid var(--cq-line);
+  background: transparent;
+}
+.dl-puskesmas-shell .cq-page-heading { min-width: 0; }
+.dl-puskesmas-shell .cq-page-title {
+  margin: 0;
+  color: var(--cq-ink);
+  font-size: clamp(1.6rem, 2.6vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.dl-puskesmas-shell .cq-page-sub {
+  margin: 8px 0 0;
+  color: var(--cq-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.dl-puskesmas-shell .cq-page-count {
+  display: flex;
+  align-items: baseline;
+  flex: 0 0 auto;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  box-shadow: none;
+}
+.dl-puskesmas-shell .cq-page-count strong {
+  color: var(--cq-forest);
+  font-size: 2.1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.04em;
+  line-height: 1;
+}
+.dl-puskesmas-shell .cq-page-count span {
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.dl-puskesmas-shell .cq-page .cq-tabs {
+  display: flex;
+  gap: 26px;
+  margin: 0;
+  padding: 0 26px;
+  border: 0;
+  border-bottom: 1px solid var(--cq-line);
+  background: transparent;
+}
+.dl-puskesmas-shell .cq-page .cq-tabs .nav-item { margin: 0; }
+.dl-puskesmas-shell .cq-page .cq-tabs .nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cq-tap);
+  margin: 0;
+  padding: 13px 0 11px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--cq-muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.dl-puskesmas-shell .cq-page .cq-tabs .nav-link:hover { color: var(--cq-ink); }
+.dl-puskesmas-shell .cq-page .cq-tabs .nav-link.active {
+  border-bottom-color: var(--cq-forest);
+  background: transparent;
+  color: var(--cq-ink);
+}
+.dl-puskesmas-shell .cq-page .cq-tabs .nav-link:focus-visible {
+  outline: 3px solid var(--cq-focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.dl-puskesmas-shell .cq-page .tab-content { padding: 0; }
+.dl-puskesmas-shell .cq-page .tab-pane:focus-visible {
+  outline: 3px solid var(--cq-focus);
+  outline-offset: -3px;
+}
+
+.dl-puskesmas-shell .cq-empty {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+  margin: 0;
+  padding: 36px 26px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--cq-body);
+  text-align: left;
+}
+.dl-puskesmas-shell .cq-empty > i {
+  color: var(--cq-forest-2);
+  font-size: 20px;
+  line-height: 1.35;
+  text-align: center;
+}
+.dl-puskesmas-shell .cq-empty strong {
+  display: block;
+  color: var(--cq-ink);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+.dl-puskesmas-shell .cq-empty p {
+  margin: 4px 0 0;
+  color: var(--cq-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+/* --- Permintaan: triage ledger ------------------------------------------- */
+.dl-puskesmas-shell .cq-request-list {
+  display: block;
+  min-width: 0;
+}
+.dl-puskesmas-shell .cq-request {
+  display: grid;
+  grid-template-columns: 100px minmax(210px, .8fr) minmax(280px, 1.35fr) 220px;
+  align-items: stretch;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0 !important;
+  border-top: 1px solid var(--cq-line);
+  border-left: 0 !important;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.dl-puskesmas-shell .cq-request::before,
+.dl-puskesmas-shell .cq-request::after { content: none !important; display: none !important; }
+.dl-puskesmas-shell .cq-request:first-child { border-top: 0; }
+.dl-puskesmas-shell .cq-request > * {
+  min-width: 0;
+  padding: 20px;
+  border-right: 1px solid var(--cq-line);
+}
+.dl-puskesmas-shell .cq-request > :last-child { border-right: 0; }
+.dl-puskesmas-shell .cq-request:hover { background: #f7f8f3; }
+.dl-puskesmas-shell .cq-request:focus-within { background: #f7f8f3; }
+
+.dl-puskesmas-shell .cq-request-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.dl-puskesmas-shell .cq-request-queue {
+  color: var(--cq-ink);
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.dl-puskesmas-shell .cq-request-received,
+.dl-puskesmas-shell .cq-request-wait {
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+.dl-puskesmas-shell .cq-request-wait { color: var(--cq-amber); }
+
+.dl-puskesmas-shell .cq-request-person {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.dl-puskesmas-shell .cq-request-identity { min-width: 0; }
+.dl-puskesmas-shell .cq-request-identity h3 {
+  margin: 0;
+  color: var(--cq-ink);
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -.01em;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.dl-puskesmas-shell .cq-request-identity p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 5px 0 0;
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.dl-puskesmas-shell .cq-request-identity p span + span::before {
+  content: "·";
+  margin-right: 8px;
+  color: var(--cc-line-strong, #b9c7bc);
+}
+
+.dl-puskesmas-shell .cq-request-clinical { min-width: 0; }
+.dl-puskesmas-shell .cq-request-label {
+  display: block;
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  line-height: 1.4;
+}
+.dl-puskesmas-shell .cq-request-lead {
+  margin: 6px 0 0;
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.dl-puskesmas-shell .cq-request-complaint {
+  margin: 5px 0 0;
+  color: var(--cq-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.dl-puskesmas-shell .cq-request-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 9px 0 0;
+  padding: 0;
+}
+.dl-puskesmas-shell .cq-request-facts > div {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+.dl-puskesmas-shell .cq-request-facts dt {
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+.dl-puskesmas-shell .cq-request-facts dd {
+  margin: 0;
+  color: var(--cq-body);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.dl-puskesmas-shell .cq-request-location {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 9px 0 0;
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.dl-puskesmas-shell .cq-request-location i { color: var(--cq-forest-2); font-size: 13px; line-height: 1.4; }
+.dl-puskesmas-shell .cq-request-media {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.dl-puskesmas-shell .cq-request-media .btn {
+  min-height: var(--cq-tap);
+  padding: 8px 12px;
+  border: 1px solid var(--cq-line);
+  border-radius: var(--cq-radius-sm);
+  background: transparent;
+  color: var(--cq-forest-2);
+  font-size: 12px;
+  font-weight: 700;
+}
+.dl-puskesmas-shell .cq-route-probe { display: none; }
+
+.dl-puskesmas-shell .cq-request-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.dl-puskesmas-shell .cq-request-state {
+  color: var(--cq-amber);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+.dl-puskesmas-shell .cq-request-state[data-request-state="accepted"] { color: var(--cq-forest-2); }
+.dl-puskesmas-shell .cq-request-actions .btn {
+  width: 100%;
+  min-height: var(--cq-tap);
+  padding: 9px 12px;
+  border-radius: var(--cq-radius-sm);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.3;
+}
+.dl-puskesmas-shell .cq-request-actions .cq-primary {
+  border: 1px solid var(--cq-forest);
+  background: var(--cq-forest);
+  color: #fff;
+}
+.dl-puskesmas-shell .cq-request-actions .cq-primary:hover { background: var(--cq-forest-2); border-color: var(--cq-forest-2); }
+.dl-puskesmas-shell .cq-request-actions .cq-secondary {
+  border: 1px solid var(--cq-line) !important;
+  background: transparent !important;
+  color: var(--cq-body) !important;
+  box-shadow: none !important;
+}
+.dl-puskesmas-shell .cq-request-actions .cq-secondary:hover { border-color: var(--cq-forest-2); color: var(--cq-forest-2); }
+.dl-puskesmas-shell .cq-request-actions .cq-danger {
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--cq-danger) !important;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  box-shadow: none !important;
+}
+.dl-puskesmas-shell .cq-request-actions .cq-danger:hover { color: #6f2925; }
+
+/* --- Konsultasi: case ledger --------------------------------------------- */
+.dl-puskesmas-shell .cq-page--cases .dl-history-stack {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case {
+  display: block;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0 !important;
+  border-top: 1px solid var(--cq-line);
+  border-left: 0 !important;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case::before,
+.dl-puskesmas-shell .cq-page--cases .cq-case::after { content: none !important; display: none !important; }
+.dl-puskesmas-shell .cq-page--cases .cq-case:first-child { border-top: 0; }
+.dl-puskesmas-shell .cq-page--cases .cq-case-head {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 26px;
+  border: 0;
+  background: transparent;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case-head .dl-history-title-wrap { min-width: 0; }
+.dl-puskesmas-shell .cq-page--cases .cq-case-head .dl-history-title-wrap strong {
+  display: block;
+  color: var(--cq-ink);
+  font-size: 16px;
+  font-weight: 750;
+  letter-spacing: -.015em;
+  line-height: 1.35;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case-head .dl-history-title-wrap span {
+  display: block;
+  margin-top: 3px;
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case-head .cw-state {
+  align-self: start;
+  min-height: 0;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr);
+  align-items: start;
+  gap: 0 28px;
+  margin: 0;
+  padding: 0 26px 18px;
+  border: 0;
+  background: transparent;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case-body > * { min-width: 0; }
+.dl-puskesmas-shell .cq-page--cases .cq-case-body > .cq-next-action,
+.dl-puskesmas-shell .cq-page--cases .cq-case-body > .cw-card,
+.dl-puskesmas-shell .cq-page--cases .cq-case-body > .alert:not(.cq-next-action),
+.dl-puskesmas-shell .cq-page--cases .cq-case-body > .visit-route-provider-note {
+  grid-column: 1 / -1;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case-body > .nk-complaint,
+.dl-puskesmas-shell .cq-page--cases .cq-case-body > .nk-detail-panel { grid-column: 1; }
+.dl-puskesmas-shell .cq-page--cases .cq-case-body > .nk-action-panel,
+.dl-puskesmas-shell .cq-page--cases .cq-case-body > .nk-action-panel--timeline,
+.dl-puskesmas-shell .cq-page--cases .cq-case-body > .nk-action-panel--visit-status { grid-column: 2; }
+.dl-puskesmas-shell .cq-page--cases .cq-next-action {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0 0 4px;
+  padding: 10px 0;
+  border: 0;
+  border-top: 1px solid var(--cq-line);
+  border-bottom: 1px solid var(--cq-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--cq-body);
+  box-shadow: none;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-next-action .text-muted {
+  color: var(--cq-muted) !important;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-next-action strong {
+  color: var(--cq-ink);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+.dl-puskesmas-shell .cq-page--cases .cw-card {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.dl-puskesmas-shell .cq-page--cases .cw-card-body {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid var(--cq-line);
+}
+.dl-puskesmas-shell .cq-page--cases .cw-card-head { display: none; }
+.dl-puskesmas-shell .cq-page--cases .cw-thread--mini {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.dl-puskesmas-shell .cq-page--cases .nk-complaint,
+.dl-puskesmas-shell .cq-page--cases .nk-detail-panel,
+.dl-puskesmas-shell .cq-page--cases .nk-action-panel {
+  margin: 0;
+  padding: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--cq-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-complaint { border-top: 0; padding-top: 6px; }
+.dl-puskesmas-shell .cq-page--cases .nk-action-panel:first-of-type { border-top: 0; padding-top: 6px; }
+.dl-puskesmas-shell .cq-page--cases .nk-complaint__title,
+.dl-puskesmas-shell .cq-page--cases .nk-detail-panel__title,
+.dl-puskesmas-shell .cq-page--cases .nk-action-panel__title {
+  margin: 0;
+  padding: 0;
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  line-height: 1.4;
+  text-transform: none;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-complaint__main {
+  margin: 5px 0 0;
+  color: var(--cq-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-complaint__lead {
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.dl-puskesmas-shell .cq-page--cases .dl-complaint-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-top: 8px;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-fact-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-fact-label {
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-fact-value {
+  color: var(--cq-body);
+  font-size: 12px;
+  font-weight: 700;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-detail-panel__body,
+.dl-puskesmas-shell .cq-page--cases .nk-action-panel__body { padding: 0; }
+.dl-puskesmas-shell .cq-page--cases .nk-detail-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 10px;
+  padding: 6px 0;
+  border: 0;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-detail-label {
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-detail-value {
+  color: var(--cq-body);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-pic-current {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-pic-current span,
+.dl-puskesmas-shell .cq-page--cases .nk-pic-muted {
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-pic-current strong {
+  color: var(--cq-ink);
+  font-size: 13px;
+  font-weight: 750;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-pic-current small {
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-pic-form,
+.dl-puskesmas-shell .cq-page--cases .nk-care-team-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-pic-form .form-select,
+.dl-puskesmas-shell .cq-page--cases .nk-care-team-form .form-select,
+.dl-puskesmas-shell .cq-page--cases .nk-pic-form .form-control,
+.dl-puskesmas-shell .cq-page--cases .nk-care-team-form .form-control {
+  min-height: var(--cq-tap);
+  border: 1px solid var(--cq-line);
+  border-radius: 8px;
+  background-color: transparent;
+  font-size: 13px;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-pic-actions,
+.dl-puskesmas-shell .cq-page--cases .dl-visit-workflow-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.dl-puskesmas-shell .cq-page--cases .btn {
+  min-height: var(--cq-tap);
+  border-radius: var(--cq-radius-sm);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.3;
+}
+.dl-puskesmas-shell .cq-page--cases .btn-sm { min-height: var(--cq-tap); }
+.dl-puskesmas-shell .cq-page--cases .btn-success {
+  border-color: var(--cq-forest);
+  background: var(--cq-forest);
+  color: #fff;
+}
+.dl-puskesmas-shell .cq-page--cases .btn-outline-success {
+  border: 1px solid var(--cq-line);
+  color: var(--cq-forest-2);
+  background: transparent;
+}
+.dl-puskesmas-shell .cq-page--cases .dl-visit-workflow {
+  margin: 0;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid var(--cq-line);
+  border-radius: 0;
+  background: transparent;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-timeline-list { display: grid; gap: 8px; }
+.dl-puskesmas-shell .cq-page--cases .nk-timeline-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--cq-line);
+}
+.dl-puskesmas-shell .cq-page--cases .nk-timeline-item strong {
+  color: var(--cq-body);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+.dl-puskesmas-shell .cq-page--cases .nk-timeline-item span {
+  color: var(--cq-muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 26px 18px;
+  border: 0;
+  border-top: 1px solid var(--cq-line);
+  background: transparent;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case-head .cw-state.is-warning {
+  color: var(--cq-amber) !important;
+  background: #f5e8d1 !important;
+  border-color: #e8d2a2 !important;
+}
+.dl-puskesmas-shell .cq-page--cases .dl-history-primary-action {
+  width: auto !important;
+  border: 1px solid var(--cq-forest) !important;
+  background: var(--cq-forest) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.dl-puskesmas-shell .cq-page--cases .dl-history-primary-action:hover {
+  border-color: var(--cq-forest-2) !important;
+  background: var(--cq-forest-2) !important;
+}
+.dl-puskesmas-shell .cq-page--cases .dl-history-primary-action { order: 1; }
+.dl-puskesmas-shell .cq-page--cases .dl-history-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  order: 2;
+}
+.dl-puskesmas-shell .cq-page--cases .dl-history-secondary-actions:last-of-type {
+  order: 3;
+  margin-left: auto;
+}
+.dl-puskesmas-shell .cq-page--cases .dl-history-secondary-actions .btn { width: auto; }
+.dl-puskesmas-shell .cq-page--cases .cancel-nakes-request {
+  min-height: 36px;
+  padding: 4px 6px;
+  border: 0;
+  background: transparent;
+  color: var(--cq-danger);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dl-puskesmas-shell .cq-page--cases .visit-tracking-status {
+  flex-basis: 100%;
+  color: var(--cq-muted);
+  font-size: 12px;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case-actions .form-control,
+.dl-puskesmas-shell .cq-page--cases .cq-case-actions .form-select {
+  min-height: var(--cq-tap);
+  border: 1px solid var(--cq-line);
+  border-radius: 8px;
+}
+
+/* Completed tab keeps the same page sheet; old result cards become rows. */
+.dl-puskesmas-shell .cq-page--cases #selesai-tab-pane .history-result-card {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--cq-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.dl-puskesmas-shell .cq-page--cases #selesai-tab-pane .history-result-card:first-child { border-top: 0; }
+
+@media (max-width: 1024px) {
+  .dl-puskesmas-shell .cq-request {
+    grid-template-columns: 90px minmax(190px, .8fr) minmax(240px, 1.35fr) 200px;
+  }
+  .dl-puskesmas-shell .cq-request > * { padding: 18px 16px; }
+}
+
+@media (max-width: 900px) {
+  .dl-puskesmas-shell #req_konsul.content,
+  .dl-puskesmas-shell #riwayat_konsul.content { padding: 16px 18px 40px; }
+  .dl-puskesmas-shell .cq-request { grid-template-columns: 72px minmax(0, 1fr); }
+  .dl-puskesmas-shell .cq-request-rail {
+    grid-row: 1 / span 2;
+    border-right: 1px solid var(--cq-line);
+  }
+  .dl-puskesmas-shell .cq-request-person {
+    grid-column: 2;
+    border-right: 0;
+    padding-bottom: 4px;
+  }
+  .dl-puskesmas-shell .cq-request-clinical {
+    grid-column: 2;
+    border-top: 1px solid var(--cq-line);
+    border-right: 0;
+    padding-top: 14px;
+  }
+  .dl-puskesmas-shell .cq-request-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    border-top: 1px solid var(--cq-line);
+    border-right: 0;
+  }
+  .dl-puskesmas-shell .cq-request-state { grid-column: 1 / -1; }
+  .dl-puskesmas-shell .cq-request-actions .cq-danger { grid-column: 1 / -1; justify-self: start; width: auto; }
+  .dl-puskesmas-shell .cq-page--cases .cq-case-body { grid-template-columns: minmax(0, 1fr); }
+  .dl-puskesmas-shell .cq-page--cases .cq-case-body > .nk-complaint,
+  .dl-puskesmas-shell .cq-page--cases .cq-case-body > .nk-detail-panel,
+  .dl-puskesmas-shell .cq-page--cases .cq-case-body > .nk-action-panel,
+  .dl-puskesmas-shell .cq-page--cases .cq-case-body > .cq-next-action,
+  .dl-puskesmas-shell .cq-page--cases .cq-case-body > .cw-card { grid-column: 1; }
+}
+
+@media (max-width: 767.98px) {
+  .dl-puskesmas-shell .cq-page-head { padding: 20px 18px 18px; gap: 12px; }
+  .dl-puskesmas-shell .cq-page-title { font-size: 1.6rem; }
+  .dl-puskesmas-shell .cq-page-count strong { font-size: 1.9rem; }
+  .dl-puskesmas-shell .cq-page .cq-tabs { padding: 0 18px; gap: 22px; }
+  .dl-puskesmas-shell .cq-empty { padding: 28px 18px; }
+  .dl-puskesmas-shell .cq-request { display: block; }
+  .dl-puskesmas-shell .cq-request-rail {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px 12px;
+    padding: 14px 18px;
+    border-right: 0;
+    border-bottom: 1px solid var(--cq-line);
+  }
+  .dl-puskesmas-shell .cq-request-rail .cq-request-wait { margin-left: auto; }
+  .dl-puskesmas-shell .cq-request-person,
+  .dl-puskesmas-shell .cq-request-clinical,
+  .dl-puskesmas-shell .cq-request-actions {
+    padding: 16px 18px;
+    border-right: 0;
+    border-top: 1px solid var(--cq-line);
+  }
+  .dl-puskesmas-shell .cq-request-person { border-top: 0; }
+  .dl-puskesmas-shell .cq-request-actions { display: flex; flex-direction: column; align-items: stretch; }
+  .dl-puskesmas-shell .cq-request-actions .cq-danger { width: auto; align-self: flex-start; }
+  .dl-puskesmas-shell .cq-page--cases .cq-case-body > .cw-card { display: none; }
+  .dl-puskesmas-shell .cq-page--cases .cq-case-head {
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding: 16px 18px;
+  }
+  .dl-puskesmas-shell .cq-page--cases .cq-case-head .cw-state { grid-column: 2; justify-self: start; }
+  .dl-puskesmas-shell .cq-page--cases .cq-case-body { padding: 0 18px 14px; }
+  .dl-puskesmas-shell .cq-page--cases .cq-case-actions { padding: 12px 18px 16px; }
+  .dl-puskesmas-shell .cq-page--cases .cq-case-actions .dl-history-primary-action { width: 100%; }
+  .dl-puskesmas-shell .cq-page--cases .dl-history-secondary-actions,
+  .dl-puskesmas-shell .cq-page--cases .dl-history-secondary-actions:last-of-type {
+    margin-left: 0;
+    width: 100%;
+  }
+  .dl-puskesmas-shell .cq-page--cases .dl-history-secondary-actions .btn { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-puskesmas-shell .cq-request,
+  .dl-puskesmas-shell .cq-page .cq-tabs .nav-link,
+  .dl-puskesmas-shell .cq-request-actions .btn { transition: none; }
+}
+
+/* ==========================================================================
+   Puskesmas buttons: the warga control system, shared by Beranda, Permintaan,
+   and Konsultasi. 9px corners, 46px primary, 44px compact. Primary = brand
+   green; secondary = white with a mint edge; destructive = white with red edge.
+   The hero-only pill in warga is intentionally not copied to this work surface.
+   ========================================================================== */
+.dl-puskesmas-shell #beranda .btn,
+.dl-puskesmas-shell #beranda .cc-action,
+.dl-puskesmas-shell #req_konsul .btn,
+.dl-puskesmas-shell #riwayat_konsul .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px !important;
+  padding: 10px 18px !important;
+  border-radius: 9px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  text-decoration: none;
+  box-shadow: none;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.dl-puskesmas-shell #beranda .btn-sm,
+.dl-puskesmas-shell #req_konsul .btn-sm,
+.dl-puskesmas-shell #riwayat_konsul .btn-sm {
+  min-height: 44px !important;
+  padding: 8px 14px !important;
+  font-size: 13px !important;
+}
+.dl-puskesmas-shell #beranda .btn:focus-visible,
+.dl-puskesmas-shell #beranda .cc-action:focus-visible,
+.dl-puskesmas-shell #req_konsul .btn:focus-visible,
+.dl-puskesmas-shell #riwayat_konsul .btn:focus-visible {
+  outline: 3px solid var(--cq-focus);
+  outline-offset: 3px;
+}
+.dl-puskesmas-shell #beranda .btn:disabled,
+.dl-puskesmas-shell #beranda .btn.disabled,
+.dl-puskesmas-shell #beranda .btn[aria-disabled="true"],
+.dl-puskesmas-shell #req_konsul .btn:disabled,
+.dl-puskesmas-shell #riwayat_konsul .btn:disabled {
+  opacity: .55;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.dl-puskesmas-shell #beranda .btn-success,
+.dl-puskesmas-shell #beranda .btn-primary,
+.dl-puskesmas-shell #beranda .cc-action,
+.dl-puskesmas-shell #req_konsul .btn-success,
+.dl-puskesmas-shell #req_konsul .btn-primary,
+.dl-puskesmas-shell #riwayat_konsul .btn-success,
+.dl-puskesmas-shell #riwayat_konsul .btn-primary,
+.dl-puskesmas-shell #riwayat_konsul .dl-history-primary-action {
+  border: 1px solid var(--cq-action) !important;
+  background: var(--cq-action) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.dl-puskesmas-shell #beranda .btn-success:hover,
+.dl-puskesmas-shell #beranda .btn-primary:hover,
+.dl-puskesmas-shell #beranda .cc-action:hover,
+.dl-puskesmas-shell #req_konsul .btn-success:hover,
+.dl-puskesmas-shell #req_konsul .btn-primary:hover,
+.dl-puskesmas-shell #riwayat_konsul .btn-success:hover,
+.dl-puskesmas-shell #riwayat_konsul .btn-primary:hover,
+.dl-puskesmas-shell #riwayat_konsul .dl-history-primary-action:hover {
+  border-color: var(--cq-action-strong) !important;
+  background: var(--cq-action-strong) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.dl-puskesmas-shell #beranda .btn-success:active,
+.dl-puskesmas-shell #beranda .btn-primary:active,
+.dl-puskesmas-shell #beranda .cc-action:active,
+.dl-puskesmas-shell #req_konsul .btn-success:active,
+.dl-puskesmas-shell #riwayat_konsul .btn-success:active,
+.dl-puskesmas-shell #riwayat_konsul .btn-primary:active {
+  transform: scale(.99);
+  box-shadow: none !important;
+}
+
+
+/* Border reset above also clears the rule between records; restore the ledger
+   line, but keep the first row flush with the page head. */
+.dl-puskesmas-shell .cq-request,
+.dl-puskesmas-shell .cq-page--cases .cq-case {
+  border-top: 1px solid var(--cq-line) !important;
+}
+.dl-puskesmas-shell .cq-request:first-child,
+.dl-puskesmas-shell .cq-page--cases .cq-case:first-child {
+  border-top: 0 !important;
+}
+
+/* Keep the shared tab skin from turning the active tab into a mint pill. */
+.dl-puskesmas-shell .cq-page .cq-tabs { margin-bottom: 0 !important; }
+.dl-puskesmas-shell .cq-page .cq-tabs .nav-item { flex: 0 0 auto; }
+.dl-puskesmas-shell .cq-page .cq-tabs .nav-link,
+.dl-puskesmas-shell .cq-page .cq-tabs .nav-link.active {
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.dl-puskesmas-shell .cq-page .cq-tabs .nav-link.active {
+  border-bottom-color: var(--cq-forest) !important;
+  color: var(--cq-ink) !important;
+}
+
+/* Put the operational history under the clinical summary so the right rail
+   does not leave a dead column beside short cases. */
+.dl-puskesmas-shell .cq-page--cases .cq-case-body > .nk-action-panel--timeline {
+  grid-column: 1;
+}
+
+
+
+
+
+
+
+.dl-puskesmas-shell #beranda .btn-outline-success,
+.dl-puskesmas-shell #beranda .btn-outline-primary,
+.dl-puskesmas-shell #beranda .btn-outline-secondary,
+.dl-puskesmas-shell #req_konsul .btn-outline-success,
+.dl-puskesmas-shell #req_konsul .btn-outline-primary,
+.dl-puskesmas-shell #req_konsul .btn-outline-secondary,
+.dl-puskesmas-shell #riwayat_konsul .btn-outline-success,
+.dl-puskesmas-shell #riwayat_konsul .btn-outline-primary,
+.dl-puskesmas-shell #riwayat_konsul .btn-outline-secondary {
+  border: 1px solid var(--cq-action-edge) !important;
+  background: #fff !important;
+  color: var(--cq-action-strong) !important;
+}
+.dl-puskesmas-shell #beranda .btn-outline-success:hover,
+.dl-puskesmas-shell #beranda .btn-outline-primary:hover,
+.dl-puskesmas-shell #beranda .btn-outline-secondary:hover,
+.dl-puskesmas-shell #req_konsul .btn-outline-success:hover,
+.dl-puskesmas-shell #req_konsul .btn-outline-primary:hover,
+.dl-puskesmas-shell #req_konsul .btn-outline-secondary:hover,
+.dl-puskesmas-shell #riwayat_konsul .btn-outline-success:hover,
+.dl-puskesmas-shell #riwayat_konsul .btn-outline-primary:hover,
+.dl-puskesmas-shell #riwayat_konsul .btn-outline-secondary:hover {
+  border-color: var(--cq-action) !important;
+  background: var(--cq-action-soft) !important;
+  color: var(--cq-action-strong) !important;
+}
+
+.dl-puskesmas-shell #beranda .btn-outline-danger,
+.dl-puskesmas-shell #beranda .btn-danger,
+.dl-puskesmas-shell #req_konsul .btn-outline-danger,
+.dl-puskesmas-shell #req_konsul .btn-danger,
+.dl-puskesmas-shell #riwayat_konsul .btn-outline-danger,
+.dl-puskesmas-shell #riwayat_konsul .btn-danger {
+  border: 1px solid #b35a52 !important;
+  background: #fff !important;
+  color: var(--cq-danger) !important;
+  box-shadow: none !important;
+}
+.dl-puskesmas-shell #beranda .btn-outline-danger:hover,
+.dl-puskesmas-shell #beranda .btn-danger:hover,
+.dl-puskesmas-shell #req_konsul .btn-outline-danger:hover,
+.dl-puskesmas-shell #req_konsul .btn-danger:hover,
+.dl-puskesmas-shell #riwayat_konsul .btn-outline-danger:hover,
+.dl-puskesmas-shell #riwayat_konsul .btn-danger:hover {
+  background: #fbf1f0 !important;
+  color: #6f2925 !important;
+}
+
+.dl-puskesmas-shell #beranda .btn-warning,
+.dl-puskesmas-shell #req_konsul .btn-warning,
+.dl-puskesmas-shell #riwayat_konsul .btn-warning {
+  border: 1px solid #d9b678 !important;
+  background: #f5e8d1 !important;
+  color: #7a4a00 !important;
+  box-shadow: none !important;
+}
+
+/* Warga's CTA carries its arrow in a small circular cap. The same gesture is
+   used for the command deck's primary action, not repeated on every button. */
+.dl-puskesmas-shell #beranda .cc-action {
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 6px 6px 18px !important;
+}
+.dl-puskesmas-shell #beranda .cc-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--cq-action-strong);
+}
+.dl-puskesmas-shell #beranda .cc-action-icon i { font-size: 13px; line-height: 1; }
+
+/* Cancellation is still a real button now, but it is the quiet edge variant. */
+.dl-puskesmas-shell .cq-page--cases .cq-case-actions .dl-history-secondary-actions:last-of-type .btn {
+  width: auto !important;
+  min-height: 46px !important;
+  padding: 10px 18px !important;
+  border: 1px solid #b35a52 !important;
+  background: #fff !important;
+  color: var(--cq-danger) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+}
+.dl-puskesmas-shell .cq-page--cases .cq-case-actions .dl-history-secondary-actions:last-of-type .btn:hover {
+  background: #fbf1f0 !important;
+  color: #6f2925 !important;
+}
+
+@media (max-width: 767.98px) {
+  .dl-puskesmas-shell #beranda .cc-action { width: 100%; }
+  .dl-puskesmas-shell #req_konsul .btn.cq-danger {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    align-self: flex-start !important;
+  }
+  .dl-puskesmas-shell #riwayat_konsul .dl-history-secondary-actions:last-of-type .btn {
+    width: fit-content !important;
+    max-width: 100% !important;
+    flex: 0 0 auto !important;
+    justify-self: end !important;
+  }
+  .dl-puskesmas-shell #riwayat_konsul .dl-history-secondary-actions:last-of-type {
+    justify-content: flex-end;
+    justify-items: end;
+    align-items: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-puskesmas-shell #beranda .btn,
+  .dl-puskesmas-shell #beranda .cc-action,
+  .dl-puskesmas-shell #req_konsul .btn,
+  .dl-puskesmas-shell #riwayat_konsul .btn { transition: none; }
+}
+
+/* A case's primary action can start from btn-outline-success (monitor mode).
+   The shared outline rule must not win over that primary role. */
+.dl-puskesmas-shell #riwayat_konsul .dl-history-primary-action,
+.dl-puskesmas-shell #riwayat_konsul .dl-history-primary-action:hover,
+.dl-puskesmas-shell #riwayat_konsul .dl-history-primary-action:active {
+  border-color: var(--cq-action) !important;
+  background: var(--cq-action) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.dl-puskesmas-shell #riwayat_konsul .dl-history-primary-action:hover {
+  border-color: var(--cq-action-strong) !important;
+  background: var(--cq-action-strong) !important;
+}
+
+

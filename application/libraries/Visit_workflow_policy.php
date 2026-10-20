@@ -25,6 +25,13 @@ class Visit_workflow_policy
         if ($this->request($requestId) === null) { return false; }
         if (is_callable($this->assignmentResolver)) { return (bool) call_user_func($this->assignmentResolver, 'enrolled', (int) $requestId); }
         if (!$this->db) { return false; }
+        /* Instalasi yang belum menjalankan migrasi alur klinis tidak memiliki
+           tabel ini. Tanpa penjagaan, setiap pembacaan status workflow melempar
+           exception dan permintaan yang masih Pending tidak bisa diterima -
+           tombol "Terima" gagal dengan pesan umum tanpa sebab. Permintaan tanpa
+           disposisi memang belum terdaftar di alur kelola, jadi false adalah
+           jawaban yang benar, bukan galat. */
+        if (!$this->db->table_exists('visit_dispositions')) { return false; }
         $row = $this->db->select('COUNT(*) AS count', false)->where('request_id', (int) $requestId)->get('visit_dispositions')->row();
         return $row && (int) $row->count > 0;
     }
@@ -82,6 +89,9 @@ class Visit_workflow_policy
         if (is_callable($this->assignmentResolver)) { return (bool) call_user_func($this->assignmentResolver, $kind, (int) $requestId, (int) $actorUserId); }
         if (!$this->db) { return false; }
         $table = $kind === 'responsible' ? 'request_responsible_doctor_assignments' : 'request_visit_performer_assignments';
+        // Tabel penugasan bisa belum ada pada instalasi tanpa migrasi alur
+        // klinis; dianggap "bukan pemilik" alih-alih melempar galat.
+        if (!$this->db->table_exists($table)) { return false; }
         $row = $this->db->select('COUNT(*) AS count', false)->where('request_id', (int) $requestId)->where('user_id', (int) $actorUserId)->where('status', 'aktif')->get($table)->row();
         return $row && (int) $row->count === 1;
     }
