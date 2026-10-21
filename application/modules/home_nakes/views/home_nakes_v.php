@@ -2198,7 +2198,10 @@ if (!function_exists('doclinc_nakes_short_text')) {
 				}
 
 				setTimeout(() => {
-					let tabID = (hash === "#riwayat_konsul_selesai") ? "#selesai-tab" : "#proses-tab";
+					const activeHistoryTab = document.querySelector('#myTab .nav-link.active');
+					let tabID = (hash === "#riwayat_konsul_selesai")
+						? "#selesai-tab"
+						: (activeHistoryTab ? "#" + activeHistoryTab.id : "#proses-tab");
 					const tabTrigger = document.querySelector(tabID);
 					if (tabTrigger) {
 						const tab = new bootstrap.Tab(tabTrigger);

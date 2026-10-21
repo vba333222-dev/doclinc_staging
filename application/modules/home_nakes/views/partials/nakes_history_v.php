@@ -125,17 +125,17 @@ $history_event_time = static function ($event) {
 	$timestamp = strtotime($event->created_at);
 	return $timestamp ? date('d M H:i', $timestamp) : '';
 };
+
+$history_has_active = $data_request_accept->num_rows() > 0;
+$history_has_completed = $data_request_completed->num_rows() > 0;
+$history_default_completed = !$history_has_active && $history_has_completed;
 ?>
 				<div id="riwayat_konsul" class="content">
 					<div class="cq-page cq-page--cases">
 						<header class="dl-history-page-head cq-page-head">
 							<div class="cq-page-heading">
-								<h2 class="dl-section-title cq-page-title">Konsultasi</h2>
-								<p class="cq-page-sub">Kasus yang sudah diterima dan riwayat yang selesai.</p>
-							</div>
-							<div class="dl-history-counts cq-page-count" aria-label="<?= html_escape((string) $nakes_active_count); ?> kasus aktif">
-								<strong><?= html_escape((string) $nakes_active_count); ?></strong>
-								<span>aktif</span>
+								<h2 class="dl-section-title cq-page-title"><?= !empty($nakes_is_personal) ? 'Riwayat konsultasi' : 'Konsultasi'; ?></h2>
+								<p class="cq-page-sub"><?= !empty($nakes_is_personal) ? 'Konsultasi aktif dan catatan yang sudah selesai.' : 'Kasus yang sudah diterima dan riwayat yang selesai.'; ?></p>
 							</div>
 						</header>
 					<?php if ($can_coordinate_staff && $staff_assignment_success) : ?>
@@ -143,16 +143,16 @@ $history_event_time = static function ($event) {
 					<?php elseif ($can_coordinate_staff && $staff_assignment_error) : ?>
 						<div class="alert alert-warning nk-pic-alert" role="alert"><?= html_escape($staff_assignment_error); ?></div>
 					<?php endif; ?>
-					<ul class="nav nav-tabs mb-3 dl-tabs dl-history-tabs cq-tabs" id="myTab" role="tablist">
+					<ul class="nav nav-tabs<?= empty($nakes_is_personal) ? ' mb-3' : ''; ?> dl-tabs dl-history-tabs cq-tabs" id="myTab" role="tablist">
 						<li class="nav-item" role="presentation">
-							<button class="nav-link active" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="true">Aktif</button>
+							<button class="nav-link<?= $history_default_completed ? '' : ' active'; ?>" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="<?= $history_default_completed ? 'false' : 'true'; ?>">Aktif <span class="dl-history-tab-count"><?= (int) $nakes_active_count; ?></span></button>
 						</li>
 						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="selesai-tab" data-bs-toggle="tab" data-bs-target="#selesai-tab-pane" type="button" role="tab" aria-controls="selesai-tab-pane" aria-selected="false">Selesai</button>
+							<button class="nav-link<?= $history_default_completed ? ' active' : ''; ?>" id="selesai-tab" data-bs-toggle="tab" data-bs-target="#selesai-tab-pane" type="button" role="tab" aria-controls="selesai-tab-pane" aria-selected="<?= $history_default_completed ? 'true' : 'false'; ?>">Selesai <span class="dl-history-tab-count"><?= (int) $nakes_completed_count; ?></span></button>
 						</li>
 					</ul>
 					<div class="tab-content" id="myTabContent">
-						<div class="tab-pane fade show active" id="proses-tab-pane" role="tabpanel" aria-labelledby="proses-tab" tabindex="0">
+						<div class="tab-pane fade<?= $history_default_completed ? '' : ' show active'; ?>" id="proses-tab-pane" role="tabpanel" aria-labelledby="proses-tab" tabindex="0">
 							<div class="dl-history-stack">
 								<?php if ($data_request_accept->num_rows() < 1) : ?>
 									<?php
@@ -480,7 +480,7 @@ $history_event_time = static function ($event) {
 											</a><?php endif; ?>
 											<div class="dl-history-secondary-actions">
 												<?php if (!$nakes_is_command_center) : ?><a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-success shadow-sm rounded-pill">
-													Chat
+													Buka chat
 												</a><?php endif; ?>
 												<?php if ($show_visit_tools) : ?><button type="button" class="btn btn-outline-success shadow-sm rounded-pill lihat-map" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMapTujuan" aria-controls="offcanvasMapTujuan" data-request-id="<?= html_escape((int) $x->request_id); ?>" data-lat="<?= html_escape($x->lattitude); ?>" data-lng="<?= html_escape($x->longitude); ?>" data-monitor-only="<?= $visit_monitor_only ? '1' : '0'; ?>">
 													<?= $visit_monitor_only ? 'Posisi' : 'Lokasi'; ?>
@@ -501,7 +501,7 @@ $history_event_time = static function ($event) {
 								<input type="hidden" id="jumlah_accepted" value="<?php echo $i - 1; ?>">
 							</div>
 						</div>
-						<div class="tab-pane fade" id="selesai-tab-pane" role="tabpanel" aria-labelledby="selesai-tab" tabindex="0">
+						<div class="tab-pane fade<?= $history_default_completed ? ' show active' : ''; ?>" id="selesai-tab-pane" role="tabpanel" aria-labelledby="selesai-tab" tabindex="0">
 							<div class="dl-history-stack">
 								<?php if ($data_request_completed->num_rows() < 1) : ?>
 									<?php
@@ -544,6 +544,10 @@ $history_event_time = static function ($event) {
 									$history_completed_clinical = isset($clinical_ui[(int) $x->request_id]) && is_array($clinical_ui[(int) $x->request_id])
 										? $clinical_ui[(int) $x->request_id]
 										: null;
+									$history_completed_info_label = !empty($nakes_is_personal) ? 'Mode' : 'Info';
+									$history_completed_info_value = !empty($nakes_is_personal)
+										? (!$history_is_weak_value($mode_label) ? $mode_label : '')
+										: trim((!$history_is_weak_value($mode_label) ? $mode_label : '') . (!$history_is_weak_value($mode_label) && $handling_nakes_name !== '' ? ' · ' : '') . ($handling_nakes_name !== '' ? $handling_nakes_name : ''));
 								?>
 									<div class="card shadow dl-history-card dl-history-card-completed" data-request-id="<?= (int) $x->request_id; ?>" data-visit-id="<?= (int) $x->request_id; ?>">
 										<div class="dl-history-card-head">
@@ -572,20 +576,20 @@ $history_event_time = static function ($event) {
 												<p class="nk-complaint__main"><?= html_escape($complaint['primary']); ?></p>
 											</div>
 											<div class="dl-history-meta-rows nk-info-list">
-												<?php if (!$history_is_weak_value($mode_label) || $handling_nakes_name !== '') : ?>
-													<div class="nk-info-row"><span class="nk-info-label">Info</span><strong class="nk-info-value"><?= html_escape(trim((!$history_is_weak_value($mode_label) ? $mode_label : '') . (!$history_is_weak_value($mode_label) && $handling_nakes_name !== '' ? ' · ' : '') . ($handling_nakes_name !== '' ? $handling_nakes_name : ''))); ?></strong></div>
+												<?php if ($history_completed_info_value !== '') : ?>
+													<div class="nk-info-row"><span class="nk-info-label"><?= html_escape($history_completed_info_label); ?></span><strong class="nk-info-value"><?= html_escape($history_completed_info_value); ?></strong></div>
 												<?php endif; ?>
-												<?php if ($puskesmas !== '') : ?>
+												<?php if ($puskesmas !== '' && empty($nakes_is_personal)) : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Puskesmas</span><strong class="nk-info-value"><?= doclinc_history_safe_text($puskesmas); ?></strong></div>
 											<?php endif; ?>
 											<?php if ($can_coordinate_staff && empty($care_team_workflow_enabled) && $pic_assignment) : ?>
 													<div class="nk-info-row"><span class="nk-info-label">Penanggung jawab layanan</span><strong class="nk-info-value"><?= html_escape($pic_assignment->staff_nama); ?><?= !empty($pic_assignment->staff_no_hp) ? ' · ' . html_escape($pic_assignment->staff_no_hp) : ''; ?></strong></div>
 												<?php endif; ?>
 												<?php if ($completed_preview !== '') : ?>
-													<div class="nk-info-row"><span class="nk-info-label">Hasil</span><strong class="nk-info-value"><?= html_escape($completed_preview); ?></strong></div>
+													<div class="nk-info-row nk-info-row--result"><span class="nk-info-label">Hasil</span><strong class="nk-info-value"><?= html_escape($completed_preview); ?></strong></div>
 												<?php endif; ?>
 												<?php if ($anamnesis !== '') : ?>
-													<div class="nk-info-row"><span class="nk-info-label">Anamnesis</span><strong class="nk-info-value"><?= nl2br(html_escape($anamnesis), false); ?></strong></div>
+													<div class="nk-info-row nk-info-row--anamnesis"><span class="nk-info-label">Anamnesis</span><strong class="nk-info-value"><?= nl2br(html_escape($anamnesis), false); ?></strong></div>
 												<?php endif; ?>
 											</div>
 											<?php if ($can_coordinate_staff && !empty($request_events)) : ?>
@@ -610,7 +614,7 @@ $history_event_time = static function ($event) {
 										</div>
 										<div class="card-footer dl-history-actions dl-history-actions-inline">
 											<?php if (!$nakes_is_command_center) : ?><a href="<?= html_escape(base_url('chat?request_id=' . (int) $x->request_id)); ?>" class="btn btn-outline-secondary btn-sm rounded-pill">
-												Chat
+												Buka chat
 											</a><?php endif; ?>
 										</div>
 									</div>
