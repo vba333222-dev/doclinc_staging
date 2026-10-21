@@ -2269,6 +2269,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 					input.click();
 				});
 			}
+			if (input) {
+				input.addEventListener('change', previewImage);
+			}
 		});
 	</script>
 
