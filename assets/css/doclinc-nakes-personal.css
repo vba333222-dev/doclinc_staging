@@ -1,5 +1,46 @@
+/* Header personal nakes memakai bahasa visual beranda warga: hijau tua,
+   teks putih, avatar dan lonceng berkontras terang. Command center tidak
+   memakai kelas body ini, jadi header Puskesmas tetap seperti semula. */
+body.dl-nakes-personal {
+	--dl-nakes-appbar-top: 0;
+	--dl-nakes-appbar-bg:
+		radial-gradient(130% 150% at 100% -30%, color-mix(in srgb, var(--dl-surface) 14%, transparent) 0%, transparent 58%),
+		linear-gradient(135deg, var(--dl-brand) 0%, var(--dl-brand-ink) 48%, var(--dl-brand-strong) 100%);
+	--dl-nakes-appbar-image: linear-gradient(135deg, var(--dl-brand) 0%, var(--dl-brand-ink) 48%, var(--dl-brand-strong) 100%);
+	--dl-nakes-appbar-color: var(--dl-surface);
+	--dl-nakes-appbar-border: transparent;
+	--dl-nakes-appbar-shadow: var(--dl-shadow-2);
+}
+
+body.dl-nakes-personal .dl-nakes-appbar {
+	width: 100%;
+	margin: 0;
+	border: 0;
+	border-radius: 0;
+}
+
+body.dl-nakes-personal .dl-nakes-header-profile strong {
+	color: var(--dl-surface);
+}
+
+body.dl-nakes-personal .dl-nakes-header-profile small {
+	color: color-mix(in srgb, var(--dl-surface) 82%, transparent);
+}
+
+body.dl-nakes-personal .dl-nakes-header-profile .nk-avatar--nakes {
+	border-color: color-mix(in srgb, var(--dl-surface) 72%, transparent);
+	border-radius: 999px;
+	background: var(--dl-surface);
+}
+
+body.dl-nakes-personal .dl-nakes-icon-btn {
+	border-color: transparent;
+	box-shadow: var(--dl-shadow-1);
+}
+
 /* Beranda personal nakes: satu tugas berikutnya, tanpa rel samping.
-   Semua warna memakai token --dl-*; tidak ada gradien atau hex baru. */
+   Gradien hanya dipakai pada header hero; kartu data tetap memakai warna datar.
+   Semua warna lain memakai token --dl-* dan tidak ada hex baru. */
 .dl-nakes-dashboard .dl-personal-home {
 	grid-column: 1 / -1;
 	width: 100%;
@@ -15,19 +56,32 @@
 	gap: 6px;
 }
 
-.dl-nakes-dashboard .dl-personal-eyebrow {
+.dl-nakes-dashboard .dl-personal-greeting {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 6px 14px;
 	margin: 0;
-	color: var(--dl-brand-ink);
-	font-size: .6875rem;
+	color: var(--dl-text-secondary);
+	font-size: .95rem;
+	font-weight: 600;
+	line-height: 1.45;
+}
+
+.dl-nakes-dashboard .dl-personal-greeting strong {
+	color: var(--dl-text);
 	font-weight: 800;
-	letter-spacing: .12em;
-	line-height: 1.3;
-	text-transform: uppercase;
+}
+
+.dl-nakes-dashboard .dl-personal-date {
+	color: var(--dl-text-muted);
+	font-size: .75rem;
+	font-weight: 600;
 }
 
 .dl-nakes-dashboard .dl-personal-heading {
 	display: flex;
-	align-items: flex-end;
+	align-items: center;
 	justify-content: space-between;
 	gap: 20px;
 }
@@ -41,31 +95,69 @@
 	line-height: 1.15;
 }
 
-.dl-nakes-dashboard .dl-personal-status {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: baseline;
-	gap: 14px;
-	margin: 0;
+.dl-nakes-dashboard .dl-personal-stats {
+	display: grid;
+	grid-template-columns: minmax(120px, 1.1fr) minmax(110px, .9fr);
+	gap: 8px;
+	width: min(100%, 300px);
+}
+
+.dl-nakes-dashboard .dl-personal-stat {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	grid-template-areas:
+		"label count"
+		"hint count";
+	align-items: center;
+	gap: 0 10px;
+	min-height: 82px;
+	padding: 12px 14px;
+	border: 1px solid var(--dl-border);
+	border-radius: var(--dl-radius-md);
+	background: var(--dl-surface);
+	box-shadow: var(--dl-shadow-1);
+}
+
+.dl-nakes-dashboard .dl-personal-stat span {
+	grid-area: label;
 	color: var(--dl-text-muted);
-	font-size: .8125rem;
-	font-weight: 600;
-	line-height: 1.4;
-	white-space: nowrap;
+	font-size: .75rem;
+	font-weight: 700;
+	line-height: 1.2;
 }
 
-.dl-nakes-dashboard .dl-personal-status span {
-	display: inline-flex;
-	align-items: baseline;
-	gap: .35rem;
-}
-
-.dl-nakes-dashboard .dl-personal-status strong {
+.dl-nakes-dashboard .dl-personal-stat strong {
+	grid-area: count;
 	color: var(--dl-text);
 	font-family: var(--dl-font-mono);
-	font-size: .95rem;
+	font-size: 1.75rem;
 	font-weight: 800;
 	line-height: 1;
+	letter-spacing: -.03em;
+	font-variant-numeric: tabular-nums;
+}
+
+.dl-nakes-dashboard .dl-personal-stat small {
+	grid-area: hint;
+	color: var(--dl-text-muted);
+	font-size: .6875rem;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.dl-nakes-dashboard .dl-personal-stat--focus {
+	border-color: var(--dl-brand-ink);
+	background: var(--dl-brand-ink);
+	color: var(--dl-surface);
+}
+
+.dl-nakes-dashboard .dl-personal-stat--focus span,
+.dl-nakes-dashboard .dl-personal-stat--focus small {
+	color: var(--dl-surface);
+}
+
+.dl-nakes-dashboard .dl-personal-stat--focus strong {
+	color: var(--dl-surface);
 }
 
 .dl-nakes-dashboard .dl-personal-task {
@@ -318,9 +410,10 @@
 		gap: 8px;
 	}
 
-	.dl-nakes-dashboard .dl-personal-status {
-		gap: 12px;
-		white-space: normal;
+	.dl-nakes-dashboard .dl-personal-stats {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		width: 100%;
+		max-width: none;
 	}
 
 	.dl-nakes-dashboard .dl-personal-task {

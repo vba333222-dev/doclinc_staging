@@ -491,10 +491,12 @@
 			min-height: 0;
 			padding: 9px 12px !important;
 			border-radius: 0;
-			background: rgba(247, 255, 251, .98) !important;
-			color: var(--dl-color-text) !important;
-			border-bottom: 1px solid var(--dl-color-border);
-			box-shadow: var(--dl-shadow-card);
+			/* Header personal memakai tema hijau tua seperti beranda warga.
+			   Nilai fallback menjaga command center dan akun lama tetap terang. */
+			background: var(--dl-nakes-appbar-bg, rgba(247, 255, 251, .98)) !important;
+			color: var(--dl-nakes-appbar-color, var(--dl-color-text)) !important;
+			border-bottom: 1px solid var(--dl-nakes-appbar-border, var(--dl-color-border));
+			box-shadow: var(--dl-nakes-appbar-shadow, var(--dl-shadow-card));
 			overflow: visible !important;
 			z-index: 1010;
 		}

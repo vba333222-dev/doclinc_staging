@@ -1342,7 +1342,7 @@
    so it reads as the first card of the bento rather than a full-bleed slab. */
 
 .dl-nakes-dashboard .dl-nakes-appbar {
-  top: 12px !important;
+  top: var(--dl-nakes-appbar-top, 12px) !important;
   width: calc(100% - (var(--bd-pad) * 2));
   max-width: none;
   margin-inline: auto;
@@ -3272,12 +3272,12 @@
    diperlukan karena nakes-dashboard.css memakai shorthand `background` dengan
    !important, dan shorthand itu sekaligus mengosongkan background-image. */
 .dl-nakes-dashboard .dl-nakes-appbar {
-  background-image:
+  background-image: var(--dl-nakes-appbar-image,
     linear-gradient(to left,
       rgba(247, 255, 251, 0) 0%,
       rgba(247, 255, 251, .82) 40%,
       rgba(247, 255, 251, 1) 62%),
-    var(--bd-texture-plus-green) !important;
+    var(--bd-texture-plus-green)) !important;
   background-size: 100% 100%, 62px 62px !important;
   background-position: left center, right center !important;
   background-repeat: no-repeat, repeat !important;

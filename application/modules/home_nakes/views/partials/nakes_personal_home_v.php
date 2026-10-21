@@ -102,13 +102,24 @@ $personal_today_label = $personal_day_names[(int) $personal_today->format('w')] 
 ?>
 <div class="dl-personal-home">
 	<header class="dl-personal-intro">
-		<p class="dl-personal-eyebrow">Ruang kerja · <?= html_escape($personal_today_label); ?></p>
+		<p class="dl-personal-greeting">
+			<span>Selamat bertugas, <strong><?= html_escape(trim((string) (isset($nakes_name) ? $nakes_name : '')) !== '' ? $nakes_name : 'Nakes'); ?></strong>.</span>
+			<span class="dl-personal-date"><?= html_escape($personal_today_label); ?></span>
+		</p>
 		<div class="dl-personal-heading">
 			<h2 class="dl-personal-title">Konsultasi yang Anda tangani</h2>
-			<p class="dl-personal-status">
-				<span>Diterima <strong><?= $personal_active_count; ?></strong></span>
-				<span>Selesai <strong><?= $personal_completed_count; ?></strong></span>
-			</p>
+			<div class="dl-personal-stats" aria-label="Ringkasan konsultasi Anda">
+				<div class="dl-personal-stat dl-personal-stat--focus">
+					<span>Diterima</span>
+					<strong><?= $personal_active_count; ?></strong>
+					<small>aktif</small>
+				</div>
+				<div class="dl-personal-stat">
+					<span>Selesai</span>
+					<strong><?= $personal_completed_count; ?></strong>
+					<small>total</small>
+				</div>
+			</div>
 		</div>
 	</header>
 

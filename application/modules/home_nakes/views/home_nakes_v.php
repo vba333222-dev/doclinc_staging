@@ -158,7 +158,7 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<?php endif; ?>
 </head>
 
-<body class="bg-light dl-dashboard-body dl-nakes-dashboard<?= !empty($visit_clinical_workflow_enabled) ? ' dl-clinical-workspace' : ''; ?> <?= !empty($nakes_is_command_center) ? 'dl-puskesmas-shell' : ''; ?>">
+<body class="bg-light dl-dashboard-body dl-nakes-dashboard<?= !empty($visit_clinical_workflow_enabled) ? ' dl-clinical-workspace' : ''; ?> <?= !empty($nakes_is_command_center) ? 'dl-puskesmas-shell' : ''; ?><?= !empty($nakes_is_personal) ? ' dl-nakes-personal' : ''; ?>">
 	<div id="preloader">
 		<div class="text-center">
 			<!-- doklinc.png berukuran 3167x1396; atribut height lama ditulis "50px"

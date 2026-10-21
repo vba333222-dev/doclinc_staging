@@ -508,7 +508,6 @@ $history_default_completed = !$history_has_active && $history_has_completed;
 									$this->load->view('partials/nakes_empty_state_v', array(
 										'empty_title' => 'Belum ada riwayat selesai',
 										'empty_message' => 'Konsultasi yang selesai akan tersimpan di sini.',
-										'empty_icon' => 'fas fa-file-medical',
 										'empty_image' => '',
 										'empty_class' => 'dl-soft-empty dl-history-empty text-center',
 									));
