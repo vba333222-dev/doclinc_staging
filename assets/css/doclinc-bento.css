@@ -1980,10 +1980,10 @@
 
   .dl-nakes-dashboard .dl-bottom-nav {
     bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-    width: min(calc(100% - (var(--bd-pad) * 2)), 398px);
+    width: var(--dl-nakes-bottom-nav-width, min(calc(100% - (var(--bd-pad) * 2)), 398px));
     padding-bottom: 0;
     border: 1px solid var(--bd-line);
-    border-radius: var(--bd-r-lg) !important;
+    border-radius: var(--dl-nakes-bottom-nav-radius, var(--bd-r-lg)) !important;
     background: rgba(255, 255, 255, .97) !important;
     box-shadow: 0 12px 30px rgba(18, 71, 47, .16) !important;
     -webkit-backdrop-filter: blur(12px);

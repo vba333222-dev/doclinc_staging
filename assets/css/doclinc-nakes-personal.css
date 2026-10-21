@@ -2,6 +2,8 @@
    teks putih, avatar dan lonceng berkontras terang. Command center tidak
    memakai kelas body ini, jadi header Puskesmas tetap seperti semula. */
 body.dl-nakes-personal {
+	--dl-nakes-bottom-nav-width: 100%;
+	--dl-nakes-bottom-nav-radius: 0;
 	--dl-nakes-appbar-top: 0;
 	--dl-nakes-appbar-bg:
 		radial-gradient(130% 150% at 100% -30%, color-mix(in srgb, var(--dl-surface) 14%, transparent) 0%, transparent 58%),
@@ -12,11 +14,43 @@ body.dl-nakes-personal {
 	--dl-nakes-appbar-shadow: var(--dl-shadow-2);
 }
 
+body.dl-nakes-personal .dl-shell {
+	width: 100%;
+	max-width: none;
+}
+
+body.dl-nakes-personal .dl-shell > .contents {
+	width: 100%;
+	overflow: visible;
+}
+
 body.dl-nakes-personal .dl-nakes-appbar {
 	width: 100%;
 	margin: 0;
 	border: 0;
 	border-radius: 0;
+}
+
+body.dl-nakes-personal .dl-nakes-desktop-nav {
+	width: calc(100% + 24px);
+	max-width: none;
+	margin: 14px -12px 0;
+	border-right: 0;
+	border-left: 0;
+	border-radius: 0;
+}
+
+body.dl-nakes-personal .dl-bottom-nav {
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	max-width: none;
+	transform: none;
+	border-right: 0;
+	border-bottom: 0;
+	border-left: 0;
+	padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 body.dl-nakes-personal .dl-nakes-header-profile strong {
@@ -44,26 +78,26 @@ body.dl-nakes-personal .dl-nakes-icon-btn {
 .dl-nakes-dashboard .dl-personal-home {
 	grid-column: 1 / -1;
 	width: 100%;
-	max-width: 980px;
-	margin: 0 auto;
+	max-width: none;
+	margin: 0;
 	display: grid;
-	gap: 18px;
+	gap: 22px;
 	min-width: 0;
 }
 
 .dl-nakes-dashboard .dl-personal-intro {
 	display: grid;
-	gap: 6px;
+	gap: 8px;
 }
 
 .dl-nakes-dashboard .dl-personal-greeting {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
-	gap: 6px 14px;
+	gap: 6px 16px;
 	margin: 0;
 	color: var(--dl-text-secondary);
-	font-size: .95rem;
+	font-size: 1rem;
 	font-weight: 600;
 	line-height: 1.45;
 }
@@ -79,68 +113,98 @@ body.dl-nakes-personal .dl-nakes-icon-btn {
 	font-weight: 600;
 }
 
-.dl-nakes-dashboard .dl-personal-heading {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 20px;
-}
-
 .dl-nakes-dashboard .dl-personal-title {
 	margin: 0;
 	color: var(--dl-text);
-	font-size: clamp(1.35rem, 2vw, 1.7rem);
+	font-size: clamp(1.5rem, 2.3vw, 1.95rem);
 	font-weight: 800;
-	letter-spacing: -.025em;
-	line-height: 1.15;
+	letter-spacing: -.03em;
+	line-height: 1.12;
 }
 
 .dl-nakes-dashboard .dl-personal-stats {
 	display: grid;
-	grid-template-columns: minmax(120px, 1.1fr) minmax(110px, .9fr);
-	gap: 8px;
-	width: min(100%, 300px);
+	grid-template-columns: minmax(0, 1.3fr) minmax(0, .7fr);
+	gap: 12px;
+	width: 100%;
+	margin-top: 4px;
 }
 
 .dl-nakes-dashboard .dl-personal-stat {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto;
-	grid-template-areas:
-		"label count"
-		"hint count";
-	align-items: center;
-	gap: 0 10px;
-	min-height: 82px;
-	padding: 12px 14px;
+	position: relative;
+	isolation: isolate;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
+	gap: 4px;
+	min-height: 112px;
+	padding: 18px 20px;
 	border: 1px solid var(--dl-border);
 	border-radius: var(--dl-radius-md);
 	background: var(--dl-surface);
 	box-shadow: var(--dl-shadow-1);
 }
 
+.dl-nakes-dashboard .dl-personal-stat::after {
+	content: "";
+	position: absolute;
+	right: -8px;
+	bottom: -18px;
+	width: 150px;
+	height: 150px;
+	background-color: var(--dl-brand-ink);
+	-webkit-mask-repeat: no-repeat;
+	mask-repeat: no-repeat;
+	-webkit-mask-position: center;
+	mask-position: center;
+	-webkit-mask-size: contain;
+	mask-size: contain;
+	opacity: .07;
+	transform: rotate(-10deg);
+	pointer-events: none;
+	z-index: 0;
+}
+
+.dl-nakes-dashboard .dl-personal-stat--focus::after {
+	background-color: var(--dl-surface);
+	opacity: .12;
+	-webkit-mask-image: url("../texture/stethoscope%2C%20medical%20instrument%2C%20healthcare%20tool%2C%20doctor%20tool%2C%20diagnosis.svg");
+	mask-image: url("../texture/stethoscope%2C%20medical%20instrument%2C%20healthcare%20tool%2C%20doctor%20tool%2C%20diagnosis.svg");
+}
+
+.dl-nakes-dashboard .dl-personal-stat:not(.dl-personal-stat--focus)::after {
+	-webkit-mask-image: url("../texture/medical%20cross%2C%20healthcare%2C%20first%20aid%2C%20emergency%2C%20health.svg");
+	mask-image: url("../texture/medical%20cross%2C%20healthcare%2C%20first%20aid%2C%20emergency%2C%20health.svg");
+}
+
+.dl-nakes-dashboard .dl-personal-stat > * {
+	position: relative;
+	z-index: 1;
+}
+
 .dl-nakes-dashboard .dl-personal-stat span {
-	grid-area: label;
 	color: var(--dl-text-muted);
-	font-size: .75rem;
+	font-size: .8125rem;
 	font-weight: 700;
 	line-height: 1.2;
 }
 
 .dl-nakes-dashboard .dl-personal-stat strong {
-	grid-area: count;
+	margin-top: 2px;
 	color: var(--dl-text);
 	font-family: var(--dl-font-mono);
-	font-size: 1.75rem;
+	font-size: 2.5rem;
 	font-weight: 800;
 	line-height: 1;
-	letter-spacing: -.03em;
+	letter-spacing: -.04em;
 	font-variant-numeric: tabular-nums;
 }
 
 .dl-nakes-dashboard .dl-personal-stat small {
-	grid-area: hint;
 	color: var(--dl-text-muted);
-	font-size: .6875rem;
+	font-size: .75rem;
 	font-weight: 600;
 	line-height: 1.2;
 }
@@ -164,7 +228,7 @@ body.dl-nakes-personal .dl-nakes-icon-btn {
 	display: grid;
 	gap: 16px;
 	min-width: 0;
-	padding: 20px;
+	padding: 22px;
 	border: 1px solid var(--dl-border);
 	border-top: 3px solid var(--dl-brand-ink);
 	border-radius: var(--dl-radius-md);
@@ -280,14 +344,14 @@ body.dl-nakes-personal .dl-nakes-icon-btn {
 
 .dl-nakes-dashboard .dl-personal-grid {
 	display: grid;
-	grid-template-columns: minmax(0, 1.45fr) minmax(280px, .85fr);
+	grid-template-columns: minmax(0, 1.5fr) minmax(300px, .8fr);
 	align-items: start;
-	gap: 18px;
+	gap: 22px;
 }
 
 .dl-nakes-dashboard .dl-personal-log {
 	min-width: 0;
-	padding: 18px;
+	padding: 22px;
 	border: 1px solid var(--dl-border);
 	border-radius: var(--dl-radius-md);
 	background: var(--dl-surface);
@@ -404,16 +468,27 @@ body.dl-nakes-personal .dl-nakes-icon-btn {
 
 
 @media (max-width: 767.98px) {
-	.dl-nakes-dashboard .dl-personal-heading {
-		display: grid;
-		align-items: start;
+	.dl-nakes-dashboard .dl-personal-stats {
+		grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+		width: 100%;
+		max-width: none;
 		gap: 8px;
 	}
 
-	.dl-nakes-dashboard .dl-personal-stats {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		width: 100%;
-		max-width: none;
+	.dl-nakes-dashboard .dl-personal-stat {
+		min-height: 96px;
+		padding: 14px;
+	}
+
+	.dl-nakes-dashboard .dl-personal-stat strong {
+		font-size: 2rem;
+	}
+
+	.dl-nakes-dashboard .dl-personal-stat::after {
+		width: 112px;
+		height: 112px;
+		right: -10px;
+		bottom: -20px;
 	}
 
 	.dl-nakes-dashboard .dl-personal-task {
