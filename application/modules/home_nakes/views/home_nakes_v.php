@@ -153,6 +153,9 @@ if (!function_exists('doclinc_nakes_short_text')) {
 		<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-consultation-desk.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-consultation-desk.css'))); ?>">
 	<?php endif; ?>
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-reference-ui.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-reference-ui.css'))); ?>">
+	<?php if (!empty($nakes_is_personal)) : ?>
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-nakes-personal.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-nakes-personal.css'))); ?>">
+	<?php endif; ?>
 </head>
 
 <body class="bg-light dl-dashboard-body dl-nakes-dashboard<?= !empty($visit_clinical_workflow_enabled) ? ' dl-clinical-workspace' : ''; ?> <?= !empty($nakes_is_command_center) ? 'dl-puskesmas-shell' : ''; ?>">

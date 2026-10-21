@@ -14,7 +14,7 @@
 						$role_prerequisite_cta_url = !empty($role_prerequisite_state['cta_url']) ? (string) $role_prerequisite_state['cta_url'] : '';
 						$role_prerequisite_cta_label = !empty($role_prerequisite_state['cta_label']) ? (string) $role_prerequisite_state['cta_label'] : '';
 						?>
-						<?php if ($role_prerequisite_incomplete) : ?>
+						<?php if ($role_prerequisite_incomplete && empty($nakes_is_personal)) : ?>
 							<div class="alert <?= $role_prerequisite_blocked ? 'alert-warning' : 'alert-info'; ?> d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 mb-0" role="<?= $role_prerequisite_blocked ? 'alert' : 'status'; ?>" data-role-prerequisite-alert data-enforced="<?= $role_prerequisite_blocked ? 'true' : 'false'; ?>">
 								<div>
 									<strong><?= $role_prerequisite_blocked ? 'Data profil wajib dilengkapi.' : (!empty($nakes_is_command_center) ? 'Data Puskesmas belum lengkap.' : 'Data profesi Anda belum lengkap.'); ?></strong>
@@ -28,12 +28,17 @@
 								<?php endif; ?>
 							</div>
 						<?php endif; ?>
-						<?php if (!empty($nakes_is_personal)) : ?>
-							<div class="alert alert-info mb-0" role="status">Hanya tugas Anda yang tampil di sini.</div>
-						<?php endif; ?>
 						<?php if (!empty($nakes_is_command_center)) : ?>
 							<div class="cc-sheet">
 								<?php $this->load->view('partials/puskesmas_command_deck_v', get_defined_vars()); ?>
+						<?php elseif (!empty($nakes_is_personal)) : ?>
+							<?php $this->load->view('partials/nakes_personal_home_v', get_defined_vars()); ?>
+							<?php if (!empty($visit_clinical_workflow_enabled)) : ?>
+								<div class="dl-personal-clinical">
+									<?php $this->load->view('partials/clinical_stats_v', get_defined_vars()); ?>
+									<?php $this->load->view('partials/clinical_action_list_v', get_defined_vars()); ?>
+								</div>
+							<?php endif; ?>
 						<?php else : ?>
 							<?php $this->load->view('partials/nakes_stat_cards_v', get_defined_vars()); ?>
 							<?php if (!empty($visit_clinical_workflow_enabled)) : ?>
