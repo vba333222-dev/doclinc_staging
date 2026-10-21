@@ -124,7 +124,8 @@ body.dl-nakes-personal .dl-nakes-icon-btn {
 
 .dl-nakes-dashboard .dl-personal-stats {
 	display: grid;
-	grid-template-columns: minmax(0, 1.3fr) minmax(0, .7fr);
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: stretch;
 	gap: 12px;
 	width: 100%;
 	margin-top: 4px;
@@ -426,22 +427,9 @@ body.dl-nakes-personal .dl-nakes-icon-btn {
 }
 .dl-nakes-dashboard .dl-personal-task--empty {
 	display: flex;
-	align-items: flex-start;
-	gap: 14px;
-	border-top-color: var(--dl-border);
-}
-
-.dl-nakes-dashboard .dl-personal-empty__icon {
-	display: inline-flex;
 	align-items: center;
-	justify-content: center;
-	width: 46px;
-	height: 46px;
-	flex: 0 0 46px;
-	border-radius: var(--dl-radius-sm);
-	background: var(--dl-surface-subtle);
-	color: var(--dl-brand-ink);
-	font-size: 1.1rem;
+	gap: 0;
+	border-top-color: var(--dl-border);
 }
 
 .dl-nakes-dashboard .dl-personal-empty__title {
@@ -469,7 +457,7 @@ body.dl-nakes-personal .dl-nakes-icon-btn {
 
 @media (max-width: 767.98px) {
 	.dl-nakes-dashboard .dl-personal-stats {
-		grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		width: 100%;
 		max-width: none;
 		gap: 8px;

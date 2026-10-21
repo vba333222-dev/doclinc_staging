@@ -168,7 +168,6 @@ $personal_today_label = $personal_day_names[(int) $personal_today->format('w')] 
 	</section>
 	<?php else : ?>
 	<section class="dl-personal-task dl-personal-task--empty" aria-label="Konsultasi aktif">
-		<span class="dl-personal-empty__icon" aria-hidden="true"><i class="fas fa-comment-medical"></i></span>
 		<div>
 			<h3 class="dl-personal-empty__title">Belum ada konsultasi aktif</h3>
 			<p class="dl-personal-empty__copy">Konsultasi baru akan muncul di sini setelah ditugaskan kepada Anda.</p>
