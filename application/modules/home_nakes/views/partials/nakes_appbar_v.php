@@ -65,7 +65,13 @@ $appbar_initial_section = isset($nakes_initial_section) && (string) $nakes_initi
 				<nav class="dl-puskesmas-desktop-nav" aria-label="Navigasi Puskesmas">
 					<a href="#beranda" data-nakes-nav="beranda" class="<?= $appbar_initial_section !== 'operasional' ? 'is-active' : ''; ?>"<?= $appbar_initial_section !== 'operasional' ? ' aria-current="page"' : ''; ?> onclick="showContent('beranda'); return false;">Beranda</a>
 					<a href="#req_konsul" data-nakes-nav="req_konsul" onclick="showContent('req_konsul'); return false;">Permintaan</a>
+					<?php /* Item ini hanya dirender bila fiturnya benar-benar aktif. Tanpa
+					   penjaga ini, akun Puskesmas di lingkungan dengan flag mati melihat
+					   tautan yang berakhir di 404 — sementara navigasi bawah sudah
+					   menjaganya sejak awal. */ ?>
+					<?php if (!empty($puskesmas_operations_enabled)) : ?>
 					<a href="<?= html_escape(site_url('puskesmas/operations')); ?>" data-nakes-nav="operasional" class="<?= $appbar_initial_section === 'operasional' ? 'is-active' : ''; ?>"<?= $appbar_initial_section === 'operasional' ? ' aria-current="page"' : ''; ?>>Operasional</a>
+					<?php endif; ?>
 					<a href="#riwayat_konsul" data-nakes-nav="riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">Konsultasi</a>
 					<a href="#profile" data-nakes-nav="profile" onclick="showContent('profile'); return false;">Profil</a>
 				</nav>

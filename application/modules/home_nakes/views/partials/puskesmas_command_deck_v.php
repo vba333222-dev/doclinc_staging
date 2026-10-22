@@ -15,16 +15,16 @@ $cc_exceptions = isset($puskesmas_operation_exceptions) && is_array($puskesmas_o
 
 $cc_attention = array();
 if (!empty($cc_exceptions['pending_requests'])) {
-	$cc_attention[] = array('label' => 'Permintaan menunggu diterima', 'count' => (int) $cc_exceptions['pending_requests'], 'icon' => 'bi-inbox', 'href' => '#req_konsul');
+	$cc_attention[] = array('label' => 'Permintaan menunggu diterima', 'count' => (int) $cc_exceptions['pending_requests'], 'icon' => 'fa-inbox', 'href' => '#req_konsul');
 }
 if (!empty($cc_exceptions['accepted_without_pic'])) {
-	$cc_attention[] = array('label' => 'Kunjungan tanpa penanggung jawab', 'count' => (int) $cc_exceptions['accepted_without_pic'], 'icon' => 'bi-person-exclamation', 'href' => '#req_konsul');
+	$cc_attention[] = array('label' => 'Kunjungan tanpa penanggung jawab', 'count' => (int) $cc_exceptions['accepted_without_pic'], 'icon' => 'fa-user-clock', 'href' => '#req_konsul');
 }
 if (!empty($cc_exceptions['clinical_stalled'])) {
-	$cc_attention[] = array('label' => 'Konsultasi berhenti di tahap klinis', 'count' => (int) $cc_exceptions['clinical_stalled'], 'icon' => 'bi-hourglass-split', 'href' => '#riwayat_konsul');
+	$cc_attention[] = array('label' => 'Konsultasi berhenti di tahap klinis', 'count' => (int) $cc_exceptions['clinical_stalled'], 'icon' => 'fa-hourglass-half', 'href' => '#riwayat_konsul');
 }
 if (!empty($cc_exceptions['staff_data_attention'])) {
-	$cc_attention[] = array('label' => 'Data staf belum lengkap', 'count' => (int) $cc_exceptions['staff_data_attention'], 'icon' => 'bi-clipboard2-check', 'href' => '#profile');
+	$cc_attention[] = array('label' => 'Data staf belum lengkap', 'count' => (int) $cc_exceptions['staff_data_attention'], 'icon' => 'fa-clipboard-check', 'href' => '#profile');
 }
 $cc_attention_count = count($cc_attention);
 
@@ -49,7 +49,7 @@ $cc_pending_note = $cc_pending > 0 ? 'belum diterima' : 'tidak ada';
 $cc_active_note = $cc_active > 0 ? 'sedang berjalan' : 'tidak ada';
 $cc_needs_note = $cc_needs > 0 ? 'perlu ditinjau' : 'tidak ada';
 $cc_completed_note = $cc_completed > 0 ? 'hari ini' : 'belum ada';
-$cc_review_note = $cc_waiting_review > 0 ? $cc_waiting_review . ' menunggu review' : 'Tidak ada review tertunda';
+$cc_review_note = $cc_waiting_review > 0 ? $cc_waiting_review . ' menunggu tinjauan' : 'Tidak ada tinjauan tertunda';
 $cc_close_note = $cc_ready_close > 0 ? $cc_ready_close . ' siap ditutup' : 'Belum ada yang siap ditutup';
 ?>
 <section class="cc-deck" aria-labelledby="ccDeckTitle">
@@ -59,33 +59,33 @@ $cc_close_note = $cc_ready_close > 0 ? $cc_ready_close . ' siap ditutup' : 'Belu
 			<p class="cc-subtitle">
 				<time datetime="<?= html_escape($cc_iso_date); ?>"><?= html_escape($cc_date_label); ?></time>
 				<span class="cc-dot" aria-hidden="true">·</span>
-				<span>Diperbarui <?= html_escape($cc_updated_at); ?> WIB</span>
+				<span>Diperbarui <span class="cc-clock"><?= html_escape($cc_updated_at); ?></span> WIB</span>
 				<span class="cc-dot" aria-hidden="true">·</span>
 				<span><?= (int) $cc_on_duty; ?> dari <?= (int) $cc_staff_total; ?> staf bertugas</span>
 			</p>
 		</div>
-		<a class="cc-action" href="<?= html_escape($cc_primary_href); ?>"<?= $cc_primary_href === '#req_konsul' ? ' onclick="showContent(\'req_konsul\'); return false;"' : ''; ?>><span><?= html_escape($cc_primary_label); ?></span> <span class="cc-action-icon"><i class="bi bi-arrow-up-right" aria-hidden="true"></i></span></a>
+		<a class="cc-action" href="<?= html_escape($cc_primary_href); ?>"<?= $cc_primary_href === '#req_konsul' ? ' onclick="showContent(\'req_konsul\'); return false;"' : ''; ?>><span><?= html_escape($cc_primary_label); ?></span> <span class="cc-action-icon"><i class="fas fa-external-link-alt" aria-hidden="true"></i></span></a>
 	</header>
 
 	<div class="cc-tally" role="group" aria-label="Ringkasan permintaan hari ini">
-		<a class="cc-tally-cell<?= $cc_pending > 0 ? ' is-waiting' : ''; ?>" href="#req_konsul" onclick="showContent('req_konsul'); return false;">
+		<a class="cc-tally-cell<?= $cc_pending > 0 ? ' is-waiting' : ' is-zero'; ?>" href="#req_konsul" onclick="showContent('req_konsul'); return false;">
 			<span class="cc-tally-label">Menunggu</span>
-			<strong class="cc-tally-count"><?= html_escape(str_pad((string) $cc_pending, 2, '0', STR_PAD_LEFT)); ?></strong>
+			<strong class="cc-tally-count"><?= (int) $cc_pending; ?></strong>
 			<span class="cc-tally-note"><?= html_escape($cc_pending_note); ?></span>
 		</a>
-		<a class="cc-tally-cell" href="#req_konsul" onclick="showContent('req_konsul'); return false;">
+		<a class="cc-tally-cell<?= $cc_active > 0 ? '' : ' is-zero'; ?>" href="#req_konsul" onclick="showContent('req_konsul'); return false;">
 			<span class="cc-tally-label">Ditangani</span>
-			<strong class="cc-tally-count"><?= html_escape(str_pad((string) $cc_active, 2, '0', STR_PAD_LEFT)); ?></strong>
+			<strong class="cc-tally-count"><?= (int) $cc_active; ?></strong>
 			<span class="cc-tally-note"><?= html_escape($cc_active_note); ?></span>
 		</a>
-		<a class="cc-tally-cell<?= $cc_needs > 0 ? ' is-attention' : ''; ?>" href="#riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">
+		<a class="cc-tally-cell<?= $cc_needs > 0 ? ' is-attention' : ' is-zero'; ?>" href="#riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">
 			<span class="cc-tally-label">Perlu tindakan</span>
-			<strong class="cc-tally-count"><?= html_escape(str_pad((string) $cc_needs, 2, '0', STR_PAD_LEFT)); ?></strong>
+			<strong class="cc-tally-count"><?= (int) $cc_needs; ?></strong>
 			<span class="cc-tally-note"><?= html_escape($cc_needs_note); ?></span>
 		</a>
-		<a class="cc-tally-cell" href="#riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">
+		<a class="cc-tally-cell<?= $cc_completed > 0 ? '' : ' is-zero'; ?>" href="#riwayat_konsul" onclick="showContent('riwayat_konsul'); return false;">
 			<span class="cc-tally-label">Selesai</span>
-			<strong class="cc-tally-count"><?= html_escape(str_pad((string) $cc_completed, 2, '0', STR_PAD_LEFT)); ?></strong>
+			<strong class="cc-tally-count"><?= (int) $cc_completed; ?></strong>
 			<span class="cc-tally-note"><?= html_escape($cc_completed_note); ?></span>
 		</a>
 	</div>
@@ -93,14 +93,16 @@ $cc_close_note = $cc_ready_close > 0 ? $cc_ready_close . ' siap ditutup' : 'Belu
 	<aside class="cc-attention" aria-labelledby="ccAttentionTitle">
 		<div class="cc-attention-head">
 			<h2 class="cc-attention-title" id="ccAttentionTitle">Perlu perhatian</h2>
-			<span class="cc-attention-count"><?= (int) $cc_attention_count; ?> jenis</span>
+			<?php if ($cc_attention_count > 0) : ?>
+				<span class="cc-attention-count"><?= (int) $cc_attention_count; ?> jenis</span>
+			<?php endif; ?>
 		</div>
 		<?php if ($cc_attention_count > 0) : ?>
 			<ul class="cc-attention-list">
 				<?php foreach ($cc_attention as $cc_item) : ?>
 					<li>
 						<a href="<?= html_escape($cc_item['href']); ?>"<?= $cc_item['href'][0] === '#' ? ' onclick="showContent(\'' . html_escape(substr($cc_item['href'], 1)) . '\'); return false;"' : ''; ?>>
-							<span class="cc-attention-icon"><i class="bi <?= html_escape($cc_item['icon']); ?>" aria-hidden="true"></i></span>
+							<span class="cc-attention-icon"><i class="fas <?= html_escape($cc_item['icon']); ?>" aria-hidden="true"></i></span>
 							<span class="cc-attention-label"><?= html_escape($cc_item['label']); ?></span>
 							<strong><?= (int) $cc_item['count']; ?></strong>
 						</a>
@@ -109,16 +111,21 @@ $cc_close_note = $cc_ready_close > 0 ? $cc_ready_close . ' siap ditutup' : 'Belu
 			</ul>
 		<?php else : ?>
 			<div class="cc-clear">
-				<i class="bi bi-check2-circle" aria-hidden="true"></i>
+				<i class="fas fa-check-circle" aria-hidden="true"></i>
 				<div>
 					<strong>Tidak ada yang tertahan</strong>
 					<span>Semua permintaan sudah punya penanggung jawab, dan tidak ada tahap klinis yang macet.</span>
 				</div>
 			</div>
 		<?php endif; ?>
-		<p class="cc-attention-foot">
-			<span><?= html_escape($cc_review_note); ?></span>
-			<span><?= html_escape($cc_close_note); ?></span>
-		</p>
+		<?php /* Baris kaki hanya melaporkan tinjauan dan penutupan. Bila keduanya
+		   nol, baris itu hanya mengulang "tidak ada" untuk ketiga kalinya di
+		   blok yang sama. */ ?>
+		<?php if ($cc_waiting_review > 0 || $cc_ready_close > 0) : ?>
+			<p class="cc-attention-foot">
+				<span><?= html_escape($cc_review_note); ?></span>
+				<span><?= html_escape($cc_close_note); ?></span>
+			</p>
+		<?php endif; ?>
 	</aside>
 </section>

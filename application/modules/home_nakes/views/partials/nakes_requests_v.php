@@ -7,7 +7,7 @@
 								<p class="cq-page-sub">Antrean yang belum diterima Puskesmas.</p>
 							</div>
 							<div class="cq-page-count" aria-label="<?= (int) $nakes_pending_count; ?> permintaan menunggu">
-								<strong><?= html_escape(str_pad((string) (int) $nakes_pending_count, 2, '0', STR_PAD_LEFT)); ?></strong>
+								<strong><?= (int) $nakes_pending_count; ?></strong>
 								<span>menunggu</span>
 							</div>
 						</header>
@@ -42,7 +42,7 @@
 						if ($data_request_new->num_rows() < 1) {
 						?>
 							<div class="dl-soft-empty dl-history-empty cq-empty">
-								<i class="bi bi-inbox" aria-hidden="true"></i>
+								<i class="fas fa-inbox" aria-hidden="true"></i>
 								<div>
 									<strong>Tidak ada permintaan menunggu</strong>
 									<p>Antrean baru muncul di sini setelah warga mengirim permintaan.</p>

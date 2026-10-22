@@ -91,11 +91,11 @@ if ($profile_readiness_state === 'COMPLETE') {
 }
 $profile_lede = $profile_is_command_center
 	? 'Kontak operasional dan ringkasan tim Puskesmas.'
-	: ($profile_is_personal ? 'Data ini dipakai saat menangani permintaan warga.' : 'Hubungi Admin Dinas Kesehatan untuk melengkapi penugasan akun.');
+	: ($profile_is_personal ? 'Lengkapi data diri Anda.' : 'Hubungi Admin Dinas Kesehatan untuk melengkapi penugasan akun.');
 $profile_foot_note = $profile_is_command_center
 	? 'Profil ini hanya mengubah kontak unit.'
 	: ($profile_is_personal
-		? 'Perubahan di sini memperbarui data profil dan foto Anda. Data kepegawaian, SIP, dan fasilitas tetap dikelola Admin.'
+		? ''
 		: 'Hubungi Admin Dinas Kesehatan untuk penugasan.');
 ?>
 <div id="profile" class="content dl-account-surface">
@@ -165,7 +165,7 @@ $profile_foot_note = $profile_is_command_center
 						<div class="dl-record"><dt>Kelengkapan profil</dt><dd><?= html_escape($profile_readiness_label); ?></dd></div>
 						<?php endif; ?>
 					</dl>
-					<p class="dl-account-section__note">Data kepegawaian, SIP, dan fasilitas dikelola Admin Dinas Kesehatan.</p>
+					<p class="dl-account-section__note">Data kepegawaian, SIP, dan fasilitas dikelola Dinas Kesehatan.</p>
 				</section>
 				<?php elseif ($profile_is_command_center) : ?>
 				<section class="dl-account-section dl-account-section--unit" aria-labelledby="nakesUnitTitle">

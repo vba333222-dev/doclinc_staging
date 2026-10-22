@@ -46,6 +46,27 @@
 
 .dl-puskesmas-shell .cc-deck { display: block; min-width: 0; }
 
+/* Workbench landscape. Pada 844×390 lembar ini setinggi 865px, sehingga roster
+ * berada dua layar di bawah angka yang menjadi konteksnya. Mulai 720px lebar
+ * dalam orientasi landscape (740×360 adalah ponsel landscape tersempit yang
+ * harus dilayani) dan mulai 1024px pada orientasi apa pun, roster pindah ke
+ * rail di samping angka. Urutan DOM tetap deck → roster: urutan baca dan
+ * tata letak portrait tidak berubah, hanya penempatan grid-nya.
+ * DESIGN.md mencatat alasan breakpoint ini. */
+@media (min-width: 1024px), (orientation: landscape) and (min-width: 720px) {
+  .dl-puskesmas-shell .cc-sheet {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(288px, 340px);
+    align-items: stretch;
+  }
+  .dl-puskesmas-shell .cc-deck { grid-column: 1; }
+  .dl-puskesmas-shell .cc-sheet > .cc-team-board {
+    grid-column: 2;
+    border-top: 0;
+    border-left: 1px solid var(--cc-line);
+  }
+}
+
 .dl-puskesmas-shell .cc-head {
   display: flex;
   align-items: flex-start;
@@ -75,7 +96,13 @@
   font-weight: 600;
   line-height: 1.5;
 }
+/* Tanggal ditulis sebagai kalimat ("Rabu, 21 Oktober 2026"), jadi tetap huruf
+ * badan; hanya jamnya yang data presisi dan memakai monospace. */
 .dl-puskesmas-shell .cc-subtitle time { font-variant-numeric: tabular-nums; }
+.dl-puskesmas-shell .cc-clock {
+  font-family: var(--dl-font-mono);
+  font-variant-numeric: tabular-nums;
+}
 .dl-puskesmas-shell .cc-dot { color: var(--cc-line-strong); }
 
 .dl-puskesmas-shell .cc-action {
@@ -93,9 +120,12 @@
   font-weight: 750;
   line-height: 1.3;
   text-decoration: none;
-  transition: background-color 140ms ease, border-color 140ms ease;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 120ms ease-out;
 }
 .dl-puskesmas-shell .cc-action:hover { background: var(--cc-forest-2); border-color: var(--cc-forest-2); }
+/* Umpan balik tekan: satu piksel, bukan animasi. Sentuhan terasa dijawab
+ * sebelum navigasi selesai. */
+.dl-puskesmas-shell .cc-action:active { transform: translateY(1px); }
 .dl-puskesmas-shell .cc-action:focus-visible {
   outline: 3px solid var(--cc-focus);
   outline-offset: 3px;
@@ -136,12 +166,17 @@
 .dl-puskesmas-shell .cc-tally-count {
   margin-top: auto;
   color: var(--cc-ink);
+  font-family: var(--dl-font-mono);
   font-size: clamp(2rem, 3.4vw, 2.65rem);
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: -.04em;
   line-height: 1;
 }
+/* Angka nol tetap ditampilkan karena jumlahnya fakta, tetapi tidak boleh
+ * bersaing dengan angka yang bergerak. Warnanya tetap lolos kontras 4.5:1
+ * (--cc-muted ≈ 5.5:1 di atas --cc-bone); hanya bobot visualnya turun. */
+.dl-puskesmas-shell .cc-tally-cell.is-zero .cc-tally-count { color: var(--cc-muted); }
 .dl-puskesmas-shell .cc-tally-cell.is-attention .cc-tally-count { color: var(--cc-amber-ink); }
 .dl-puskesmas-shell .cc-tally-cell.is-waiting .cc-tally-count { color: var(--cc-forest-2); }
 .dl-puskesmas-shell .cc-tally-note {
@@ -221,8 +256,9 @@
 }
 .dl-puskesmas-shell .cc-attention-list strong {
   color: var(--cc-ink);
+  font-family: var(--dl-font-mono);
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -528,6 +564,15 @@
 .dl-puskesmas-shell .cc-team-board .dl-team-bento__note { display: none; font-size: 12px; }
 .dl-puskesmas-shell .cc-sheet ::selection { background: #d7ead9; color: var(--cc-ink); }
 
+/* Rail roster selalu satu kolom. Aturan dasar di atas menetapkan dua kolom
+ * dengan specificity yang sama, jadi pengulangan di sini (setelah aturan itu,
+ * bukan sebelumnya) yang menentukan hasil akhir. Dua sel 170px memotong nama
+ * staf menjadi "dr. UI Tes…"; satu kolom selebar rail menjaga nama utuh. */
+@media (min-width: 1024px), (orientation: landscape) and (min-width: 720px) {
+  .dl-puskesmas-shell .cc-team-board .dl-team-bento__grid { grid-template-columns: minmax(0, 1fr); }
+  .dl-puskesmas-shell .cc-team-board .dl-team-cell { border-right: 0; }
+}
+
 @media (max-width: 900px) {
   .dl-puskesmas-shell .cc-team-board .dl-team-bento__grid { grid-template-columns: minmax(0, 1fr); }
   .dl-puskesmas-shell .cc-team-board .dl-team-cell { border-right: 0; border-bottom: 1px solid var(--cc-line); }
@@ -562,6 +607,85 @@
   .dl-puskesmas-shell .cc-tally-cell,
   .dl-puskesmas-shell .cc-attention-list a,
   .dl-puskesmas-shell .cc-team-board .dl-team-row { transition: none; }
+  .dl-puskesmas-shell .cc-action:active { transform: none; }
+}
+
+/* Ponsel landscape (tinggi 390–500px). Di sini yang paling langka adalah
+ * tinggi, bukan lebar: appbar dua baris memakan 131px dari 390px (34%) dan
+ * tally 2×2 memakan 196px lagi. Blok ini menurunkan keduanya tanpa menyentuh
+ * markup dan hanya hidup di orientasi landscape; portrait tidak melihatnya.
+ * Diletakkan setelah blok 767.98px karena 740×360 juga cocok dengan blok itu. */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Satu baris: [identitas] [nav] ......... [lonceng]. Appbar tidak bisa
+     dijadikan flex karena nakes-dashboard.css memaku `display: block` dengan
+     prioritas tinggi; menimpanya berarti menambah prioritas yang sama di sini.
+     Sebagai gantinya kedua anak .dl-nakes-appbar-top diangkat dengan
+     `display: contents` lalu dijadikan kotak inline, sehingga mereka mengalir
+     pada satu baris tanpa menyentuh display appbar. Lonceng mengapung ke kanan. */
+  .dl-puskesmas-shell .dl-nakes-appbar {
+    min-height: 0;
+    white-space: nowrap;
+  }
+  .dl-puskesmas-shell .dl-nakes-appbar-top { display: contents; }
+  /* Di bawah 768px bento menampilkan kembali nav bawah. Karena konteks ini sudah
+     memakai nav atas satu baris, nav bawah harus pergi — kalau tidak, 740×360
+     memuat dua navigasi sekaligus dan bilah bawah menutup tally. Selector ber-ID
+     dipakai agar seri dengan `.dl-nakes-dashboard #nav-bottom-wrapper` milik
+     bento dan menang karena berkas ini dimuat setelahnya. */
+  .dl-puskesmas-shell #nav-bottom-wrapper { display: none; }
+  .dl-puskesmas-shell .dl-nakes-header-profile {
+    display: inline-flex;
+    align-items: center;
+    max-width: 32%;
+    height: 44px;
+    vertical-align: middle;
+  }
+  .dl-puskesmas-shell .dl-nakes-header-profile > div { min-width: 0; }
+  .dl-puskesmas-shell .dl-nakes-header-profile strong {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dl-puskesmas-shell .dl-nakes-header-profile small { display: none; }
+  .dl-puskesmas-shell .dl-nakes-icon-btn {
+    float: right;
+    margin-left: 8px;
+  }
+  .dl-puskesmas-shell .dl-puskesmas-desktop-nav {
+    display: inline-flex;
+    width: auto;
+    max-width: none;
+    margin: 0 0 0 12px;
+    padding: 3px;
+    vertical-align: middle;
+  }
+  .dl-puskesmas-shell .dl-puskesmas-desktop-nav a {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
+  /* Lembar dipadatkan: judul, angka, dan perhatian turun satu tingkat. */
+  .dl-puskesmas-shell .cc-head { padding: 14px 18px 12px; gap: 10px 16px; }
+  .dl-puskesmas-shell .cc-title { font-size: 1.45rem; }
+  .dl-puskesmas-shell .cc-action { width: auto; }
+  .dl-puskesmas-shell .cc-tally { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .dl-puskesmas-shell .cc-tally-cell { min-height: 84px; padding: 10px 16px 9px; }
+  /* Empat sel di 844px menyisakan ~69px untuk label, sehingga "Perlu tindakan"
+     turun ke baris kedua dan angka ketiga sel lain turun sendirian. Slot label
+     disamakan dua baris supaya keempat angka duduk pada garis yang sama. */
+  .dl-puskesmas-shell .cc-tally-label { min-height: 2.8em; margin-bottom: 4px; }
+  .dl-puskesmas-shell .cc-tally-cell:nth-child(2) { border-right: 1px solid var(--cc-line); }
+  .dl-puskesmas-shell .cc-tally-cell:nth-child(-n+2) { border-bottom: 0; }
+  .dl-puskesmas-shell .cc-tally-count { font-size: clamp(1.55rem, 4.2vw, 2rem); }
+  .dl-puskesmas-shell .cc-attention { padding: 12px 18px 10px; }
+  .dl-puskesmas-shell .cc-clear { margin-top: 8px; padding: 10px 0 8px; }
+  .dl-puskesmas-shell .cc-attention-list a { min-height: 52px; padding-block: 8px; }
+  .dl-puskesmas-shell .cc-team-board .dl-team-bento__head { padding: 12px 18px 10px; }
+  .dl-puskesmas-shell .cc-team-board .dl-team-cell { padding: 10px 18px 12px; }
+  .dl-puskesmas-shell .cc-team-board .dl-team-row { min-height: 52px; padding: 6px 0; }
 }
 
 

@@ -54,7 +54,7 @@ foreach (array('patient_photo', 'foto', 'photo', 'profile_photo', 'profile_image
 			</dl>
 		<?php endif; ?>
 		<?php if ($show_address) : ?>
-			<p class="cq-request-location"><i class="bi bi-geo-alt" aria-hidden="true"></i><?= doclinc_history_safe_text($x->location); ?></p>
+			<p class="cq-request-location"><i class="fas fa-map-marker-alt" aria-hidden="true"></i><?= doclinc_history_safe_text($x->location); ?></p>
 		<?php endif; ?>
 		<?php if (!empty($x->photos) || !empty($x->video)) : ?>
 			<div class="cq-request-media">

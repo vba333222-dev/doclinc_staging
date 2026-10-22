@@ -420,8 +420,10 @@
 }
 
 /* --- Texture in deliberately chosen empty space -------------------------- */
-.dl-puskesmas-shell .cc-head,
-.dl-puskesmas-shell .cq-page-head,
+/* Permukaan data Puskesmas (masthead command deck dan kepala halaman
+   Permintaan) sengaja dikeluarkan dari daftar ini: DESIGN.md §4.1 melarang
+   tekstur di kartu data, dan pola plus di belakang angka ringkasan mengurangi
+   keterbacaan angka yang justru harus dipindai lebih dulu. */
 .doclinc-admin-shell .you-are-here,
 .dl-warga-app .dl-bento-empty,
 .doclinc-admin-shell .doclinc-empty-state {
@@ -430,8 +432,6 @@
   overflow: hidden;
 }
 
-.dl-puskesmas-shell .cc-head::after,
-.dl-puskesmas-shell .cq-page-head::after,
 .doclinc-admin-shell .you-are-here::after,
 .dl-warga-app .dl-bento-empty::after,
 .doclinc-admin-shell .doclinc-empty-state::after {
@@ -450,8 +450,6 @@
   transform: rotate(-8deg);
 }
 
-.dl-puskesmas-shell .cc-head > *,
-.dl-puskesmas-shell .cq-page-head > *,
 .doclinc-admin-shell .you-are-here > *,
 .dl-warga-app .dl-bento-empty > *,
 .doclinc-admin-shell .doclinc-empty-state > * {

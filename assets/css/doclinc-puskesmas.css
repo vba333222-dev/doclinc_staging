@@ -1,9 +1,12 @@
 /* Facility command-center layer. Intentionally scoped away from Personal Nakes. */
 .dl-puskesmas-shell {
-	--puskesmas-ink: #1F2A24;
-	--puskesmas-muted: #64736B;
-	--puskesmas-line: #E7ECE9;
-	--puskesmas-soft: #F4F8F6;
+	/* Nilai di bawah identik dengan token di doclinc-design-system.css. Alias
+	   lokal tetap ada karena dipakai puluhan kali di berkas ini, tetapi
+	   sumbernya sekarang token, bukan angka yang ditulis ulang. */
+	--puskesmas-ink: var(--dl-text);
+	--puskesmas-muted: var(--dl-text-muted);
+	--puskesmas-line: var(--dl-border);
+	--puskesmas-soft: var(--dl-surface-subtle);
 	/* Satu set jarak untuk seluruh shell. Sebelumnya angka 16/14/12 tersebar di
 	   empat berkas, sehingga halaman yang satu bisa lebih sempit dari yang lain
 	   tanpa ada yang menyadarinya. */
@@ -13,10 +16,10 @@
 	--pk-card-pad-tight: 14px;
 	--pk-radius-card: 14px;
 	--pk-radius-item: 12px;
-	--pk-ink: var(--bd-ink, #1F2A24);
-	--pk-muted: var(--bd-muted, #64736B);
-	--pk-line: var(--bd-line, #E7ECE9);
-	background: #F4F8F6;
+	--pk-ink: var(--dl-text);
+	--pk-muted: var(--dl-text-muted);
+	--pk-line: var(--dl-border);
+	background: var(--dl-surface-subtle);
 }
 
 /* Header and navigation run edge to edge. The shell used to cap the whole page at
@@ -124,7 +127,7 @@
 }
 
 .dl-puskesmas-shell .dl-nakes-appbar {
-	background: #E8F7F0 !important;
+	background: var(--dl-brand-subtle) !important;
 	color: var(--puskesmas-ink);
 	padding: 14px 22px 10px !important;
 }
@@ -143,7 +146,7 @@
 }
 
 .dl-puskesmas-desktop-nav a {
-	min-height: 38px;
+	min-height: 44px;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -157,11 +160,18 @@
 }
 
 .dl-puskesmas-desktop-nav a:hover,
-.dl-puskesmas-desktop-nav a:focus-visible,
 .dl-puskesmas-desktop-nav a.is-active {
-	background: #2D7D56;
+	background: var(--dl-brand-ink);
 	color: #fff;
-	outline: none;
+}
+
+/* Fokus keyboard tidak boleh dihapus. Sebelumnya ketiga keadaan berbagi satu
+   aturan dan `outline: none` ikut menghapus ring fokus pada tautan aktif —
+   tautan pertama yang dicapai saat tab masuk ke navigasi. Ring memakai
+   --dl-focus agar sama dengan fokus di seluruh aplikasi. */
+.dl-puskesmas-desktop-nav a:focus-visible {
+	outline: 3px solid var(--dl-focus);
+	outline-offset: 2px;
 }
 
 .dl-puskesmas-shell .dl-puskesmas-operations {
@@ -182,13 +192,13 @@
 }
 
 .dl-puskesmas-shell .dl-operations-filters input {
-	min-height: 40px;
+	min-height: 44px;
 	border-radius: 9px;
-	background: #fff;
+	background: var(--dl-surface);
 }
 
 .dl-puskesmas-shell .dl-operations-filters .btn {
-	min-height: 40px;
+	min-height: 44px;
 	border-radius: 9px;
 }
 
@@ -274,7 +284,7 @@
 .dl-puskesmas-shell .dl-operations-request-identity small,
 .dl-puskesmas-shell .dl-operations-request-team span { color: var(--puskesmas-muted); font-size: 12px; line-height: 1.35; }
 .dl-puskesmas-shell .dl-operations-request-team { gap: 3px; }
-.dl-puskesmas-shell .dl-operations-request-item .btn { min-height: 38px; border-radius: 8px !important; white-space: nowrap; }
+.dl-puskesmas-shell .dl-operations-request-item .btn { min-height: 44px; border-radius: 8px !important; white-space: nowrap; }
 
 .dl-puskesmas-shell .dl-operations-staff-item,
 .dl-puskesmas-shell .dl-operations-exception-item {
@@ -312,8 +322,16 @@
 	.dl-puskesmas-shell .content-wrapper { padding-bottom: 24px; }
 }
 
-@media (max-width: 767.98px) {
+/* Nav bawah hanya untuk telepon portrait. Di landscape, nav atas satu baris
+   dipakai (lihat doclinc-command-center.css); memaksa nav bawah tetap tampil
+   di sana membuat 740×360 memuat dua navigasi dan bilah bawah menutup tally.
+   Jendela landscape yang lebih tinggi tetap mendapat nav bawah dari aturan
+   bento, tanpa perlu prioritas paksa di sini. */
+@media (max-width: 767.98px) and (orientation: portrait) {
 	.dl-puskesmas-shell .dl-bottom-nav { display: block !important; }
+}
+
+@media (max-width: 767.98px) {
 	.dl-puskesmas-shell .dl-puskesmas-desktop-nav { display: none; }
 	.dl-puskesmas-shell .dl-puskesmas-mobile-nav { height: auto; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); }
 	.dl-puskesmas-shell .dl-puskesmas-mobile-nav .dl-bottom-nav-menu { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 0 !important; }

@@ -130,6 +130,7 @@ $closure_clinical_label = $closure_clinical
 				<?php if (!$closure_finalize_ready) : ?>
 					<p class="cw-help mb-0">Finalisasi aktif setelah review disetujui dan diagnosis terisi.</p>
 				<?php endif; ?>
+				<p class="cw-help mb-0">Finalisasi hanya menerima diagnosis yang terkode ICD-10. Pilih salah satu saran dari daftar ICD-10 pada kolom Diagnosis, jangan mengetik teks bebas.</p>
 			</div>
 		</section>
 	<?php endif; ?>

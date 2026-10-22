@@ -169,15 +169,15 @@ $personal_today_label = $personal_day_names[(int) $personal_today->format('w')] 
 	<?php else : ?>
 	<section class="dl-personal-task dl-personal-task--empty" aria-label="Konsultasi aktif">
 		<div>
-			<h3 class="dl-personal-empty__title">Belum ada konsultasi aktif</h3>
-			<p class="dl-personal-empty__copy">Konsultasi baru akan muncul di sini setelah ditugaskan kepada Anda.</p>
+			<h3 class="dl-personal-empty__title">Konsultasi aktif</h3>
+			<p class="dl-personal-empty__copy">Belum ada konsultasi aktif</p>
 		</div>
 	</section>
 	<?php endif; ?>
 
 	<section class="dl-personal-log" aria-labelledby="personalLogTitle">
 		<div class="dl-personal-log__head">
-			<h3 class="dl-personal-log__title" id="personalLogTitle">Selesai terakhir</h3>
+			<h3 class="dl-personal-log__title" id="personalLogTitle">Konsultasi Selesai</h3>
 		</div>
 		<?php if (!empty($personal_completed_rows)) : ?>
 		<ol class="dl-personal-log__list">
@@ -207,7 +207,7 @@ $personal_today_label = $personal_day_names[(int) $personal_today->format('w')] 
 			<?php endforeach; ?>
 		</ol>
 		<?php else : ?>
-		<p class="dl-personal-log__empty">Belum ada konsultasi selesai.</p>
+		<p class="dl-personal-log__empty">Belum ada konsultasi selesai</p>
 		<?php endif; ?>
 	</section>
 	</div>
