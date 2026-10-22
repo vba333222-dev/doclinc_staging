@@ -100,7 +100,10 @@ application/third_party/firebase/*firebase-adminsdk*.json
 # runtime reads them.
 .claude/
 .codebuddy/
+.codex/
 .commandcode/
+.cursor/
+.gemini/
 .junie/
 agent/
 skills-lock.json
