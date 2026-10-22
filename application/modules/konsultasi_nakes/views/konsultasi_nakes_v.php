@@ -2079,6 +2079,14 @@ if (!function_exists('formatComplaintText')) {
 	<?php if ($clinical_suggestions_enabled) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-clinical-suggestions.js')); ?>"></script>
 	<?php endif; ?>
+	<?php
+	/* Penangan sesi berakhir juga dimuat di permukaan klinis: halaman ini hidup
+	   dari AJAX, dan sesi yang dicabut harus terlihat sebagai pesan - bukan
+	   sebagai halaman yang tampak normal padahal tidak ada yang tersimpan. */
+	$session_guard_version = is_file(FCPATH . 'assets/js/doclinc-session-guard.js') ? (string) filemtime(FCPATH . 'assets/js/doclinc-session-guard.js') : '1';
+	?>
+	<script id="doclincSessionGuardConfig" type="application/json"><?= json_encode(array('login_url' => site_url('login')), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-session-guard.js') . '?v=' . rawurlencode($session_guard_version)); ?>"></script>
 	<?php $this->load->view('nakes_presence_runtime_v', array('nakes_presence_bootstrap' => $nakes_presence_bootstrap)); ?>
 </body>
 

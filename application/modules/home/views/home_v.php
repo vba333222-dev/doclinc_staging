@@ -1388,7 +1388,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 						<?php else : ?>
 							<button type="button" class="dl-action-tile" onclick="showContent('konsultasi_kesehatan')">
 								<span class="dl-action-tile__title">Mulai konsultasi</span>
-								<span class="dl-action-tile__note">Ceritakan keluhan Anda kepada nakes.</span>
+								<span class="dl-action-tile__note">Ceritakan keluhan Anda kepada kami</span>
 							</button>
 						<?php endif; ?>
 						<div class="dl-clock-tile" id="dlClockTile" role="group" aria-label="Waktu Indonesia Barat">
@@ -1399,7 +1399,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 							</span>
 						</div>
 						<div class="dl-summary-tile">
-							<span class="dl-summary-tile__kicker">Riwayat Anda</span>
+							<span class="dl-summary-tile__kicker">Riwayat</span>
 							<?php if ($dl_completed_count > 0) : ?>
 								<span class="dl-summary-tile__line"><strong><?= html_escape((string) (int) $dl_completed_count); ?></strong> konsultasi selesai</span>
 								<?php if ($dl_last_completed !== '') : ?>
@@ -2001,7 +2001,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 					<div class="dl-account">
 						<header class="dl-account__head">
 							<h2 class="dl-account__title">Data akun</h2>
-							<p class="dl-account__lede">Data ini dipakai saat Anda berkonsultasi atau dikunjungi nakes.</p>
+							<p class="dl-account__lede">Lengkapi data diri anda</p>
 						</header>
 
 						<div class="dl-account__layout">
@@ -2014,7 +2014,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 										<button type="button" class="dl-account-photo-trigger" id="wargaProfilePhotoTrigger">Ubah foto</button>
 										<button type="submit" class="btn btn-success" id="wargaProfilePhotoSave" disabled hidden>Simpan foto</button>
 									</div>
-									<p class="dl-account-id__hint" id="wargaProfilePhotoHint">Foto profil. JPG, PNG, atau WebP, maksimal 5 MB.</p>
+									<p class="dl-account-id__hint" id="wargaProfilePhotoHint">Ukuran maksimal 2 MB.</p>
 									<div id="wargaProfilePhotoFeedback" class="dl-account__feedback" role="status" aria-live="polite"></div>
 								</form>
 								<p class="dl-account-id__name"><?= html_escape($display_or_empty($nama)); ?></p>
@@ -2271,7 +2271,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 								<input type="text" class="form-control" id="nik_edit" name="nik" value="<?= html_escape($nik); ?>" placeholder="NIK" inputmode="numeric" pattern="[0-9]{16}" minlength="16" maxlength="16" autocomplete="off" aria-describedby="nik_edit_help nik_edit_error" data-expected="NIK harus 16 angka." required>
 								<label for="nik_edit">NIK</label>
 							</div>
-							<p class="dl-form-help" id="nik_edit_help">16 digit.</p>
+							<p class="dl-form-help" id="nik_edit_help">16 digit</p>
 							<p class="dl-field-error" id="nik_edit_error" hidden></p>
 							<?php endif; ?>
 							<?php if ($this->db->field_exists('nomor_kk', 'users')) : ?>
@@ -4485,7 +4485,7 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 				}
 				if (!file) return;
 				if (ALLOWED.indexOf(file.type) === -1 || file.size < 1 || file.size > MAX_BYTES) {
-					say('Gunakan JPG, PNG, atau WebP maksimal 5 MB.', 'error');
+					say('Ukuran Foto maksimal 2 MB.', 'error');
 					input.value = '';
 					return;
 				}
@@ -4722,6 +4722,11 @@ $doclinc_active_is_visit = $doclinc_has_active_request && (isset($doclinc_active
 	<?php endif; ?>
 	<?php if (is_array($notification_realtime_bootstrap) || is_array($request_realtime_bootstrap)) : ?>
 		<script src="<?= html_escape(base_url('assets/vendor/centrifuge/5.7.0/centrifuge.js')); ?>"></script>
+	<?php endif; ?>
+	<?php $session_guard_version = is_file(FCPATH . 'assets/js/doclinc-session-guard.js') ? (string) filemtime(FCPATH . 'assets/js/doclinc-session-guard.js') : '1'; ?>
+	<script id="doclincSessionGuardConfig" type="application/json"><?= json_encode(array('login_url' => site_url('login')), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-session-guard.js') . '?v=' . rawurlencode($session_guard_version)); ?>"></script>
+	<?php if (is_array($notification_realtime_bootstrap) || is_array($request_realtime_bootstrap)) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-realtime-client.js')); ?>"></script>
 	<?php endif; ?>
 	<?php if (is_array($notification_realtime_bootstrap)) : ?>

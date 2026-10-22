@@ -4014,6 +4014,16 @@ $chat_participant_version = is_file($chat_participant_asset) ? (string) filemtim
 			}
 		}
 	</script>
+	<?php
+	/* Halaman ini memanggil server terus-menerus (pesan 7 detik, tanda baca
+	   15 detik, panggilan masuk 3 detik). Kalau sesinya dicabut, 401 pertama
+	   harus menjadi pesan yang jelas lalu pengalihan - bukan halaman chat yang
+	   tampak hidup padahal tidak ada pesan yang terkirim, apalagi panggilan
+	   yang masih berjalan. */
+	$session_guard_version = is_file(FCPATH . 'assets/js/doclinc-session-guard.js') ? (string) filemtime(FCPATH . 'assets/js/doclinc-session-guard.js') : '1';
+	?>
+	<script id="doclincSessionGuardConfig" type="application/json"><?= json_encode(array('login_url' => site_url('login')), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-session-guard.js') . '?v=' . rawurlencode($session_guard_version)); ?>"></script>
 	<?php if ($auto_visit_location) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-active-visit-location.js') . '?v=' . rawurlencode($active_visit_location_version)); ?>"></script>
 		<script>

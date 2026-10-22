@@ -34,14 +34,46 @@ class Login extends MX_Controller
 				echo 'Akun tidak dapat diproses.';
 			}
 		} else {
-			$session_message = (string) $this->input->get('session', true) === 'expired'
-				? 'Sesi berakhir. Masuk lagi.'
-				: '';
+			$session_notice = $this->session_notice_message();
 			$this->load->view('login_v', array(
 				'activation_available' => $this->config->item('first_login_password_change_enabled') === true,
-				'success_message' => $session_message !== '' ? $session_message : (string) $this->session->flashdata('login_success'),
+				'success_message' => $session_notice['message'] !== '' ? $session_notice['message'] : (string) $this->session->flashdata('login_success'),
+				'session_notice_level' => $session_notice['message'] !== '' ? $session_notice['level'] : 'success',
 			));
 		}
+	}
+
+	/**
+	 * Pesan di halaman login setelah sesi berakhir.
+	 *
+	 * Sebabnya dibedakan karena akibatnya berbeda bagi pengguna: sesi yang
+	 * diakhiri oleh login di perangkat lain adalah sinyal keamanan, bukan
+	 * sekadar kedaluwarsa. Isian formulir yang hilang disebut apa adanya
+	 * alih-alih dibiarkan tanpa penjelasan.
+	 */
+	private function session_notice_message()
+	{
+		if ((string) $this->input->get('session', true) !== 'expired') {
+			return array('message' => '', 'level' => 'success');
+		}
+		$reason = strtolower(trim((string) $this->input->get('reason', true)));
+		if ($reason === 'other_device') {
+			$message = 'Sesi ini diakhiri karena akun Anda masuk di perangkat lain. Jika bukan Anda, segera ganti kata sandi.';
+			$level = 'warning';
+		} elseif ($reason === 'signed_out') {
+			$message = 'Sesi Anda sudah diakhiri. Masuk lagi untuk melanjutkan.';
+			$level = 'info';
+		} elseif ($reason === 'account_inactive') {
+			$message = 'Akun ini tidak aktif sehingga sesinya diakhiri. Hubungi admin puskesmas.';
+			$level = 'warning';
+		} else {
+			$message = 'Sesi berakhir. Masuk lagi.';
+			$level = 'success';
+		}
+		if ((string) $this->input->get('unsaved', true) === '1') {
+			$message .= ' Perubahan yang belum tersimpan dibatalkan.';
+		}
+		return array('message' => $message, 'level' => $level);
 	}
 
 	public function activate()

@@ -32,6 +32,8 @@ const wargaHomeModel = source('application/modules/home/models/Home_m.php');
 const migration = source('application/migrations/20260811000100_session_care_team_foundation.php');
 const activationModel = source('application/modules/login/models/Login_m.php');
 const publicGate = source('application/hooks/Session_binding_gate.php');
+/* Kode galat dan bentuk jawaban kini di policy tersendiri supaya bisa diuji. */
+const sessionResponsePolicy = source('application/libraries/Session_binding_response_policy.php');
 const ciSession = source('system/libraries/Session/Session.php');
 const ciFileSession = source('system/libraries/Session/drivers/Session_files_driver.php');
 const passwordMask = source('assets/js/doclinc-password-mask.js');
@@ -50,6 +52,9 @@ const facilityJoinModels = [
 const consultationController = source('application/modules/konsultasi_nakes/controllers/Konsultasi_nakes.php');
 const consultationModel = source('application/modules/konsultasi_nakes/models/Konsultasi_nakes_m.php');
 const consultationView = source('application/modules/konsultasi_nakes/views/konsultasi_nakes_v.php');
+/* CTA chat pindah ke partial ini saat view konsultasi dipecah; pemeriksaan
+   server-nya tetap wajib ada, hanya berpindah berkas. */
+const consultationContext = source('application/modules/konsultasi_nakes/views/partials/clinical_context_v.php');
 const activeTask = source('application/modules/home_nakes/views/partials/nakes_active_task_card_v.php');
 const history = source('application/modules/home_nakes/views/partials/nakes_history_v.php');
 const staffAdminView = source('admin_menu/application/modules/kelola_staff_puskesmas/views/kelola_staff_puskesmas_v.php');
@@ -95,7 +100,7 @@ expect(service.includes('rotatePassword') && service.includes("->where('password
   && service.includes("->where('token_hash', $current_hash)"), 'password_and_binding_rotation_use_locked_cas');
 expect(service.includes('validateLocked') && care.includes('activeSession') && care.includes('validateLocked'), 'care_team_revalidates_binding_inside_transaction');
 expect(presence.includes("'session_binding_valid'") && source('application/libraries/Nakes_presence_policy.php').includes('session_binding_valid'), 'presence_requires_effective_binding');
-expect(publicGate.includes('set_status_header(401)') && publicGate.includes('sess_destroy()') && publicGate.includes('session_expired'), 'stale_json_session_is_destroyed_with_401');
+expect(publicGate.includes('set_status_header(401)') && publicGate.includes('sess_destroy()') && sessionResponsePolicy.includes("'session_expired'"), 'stale_json_session_is_destroyed_with_401');
 expect(publicGate.indexOf("single_active_session_enabled') !== true") < publicGate.indexOf('new Session_binding_service'), 'feature_off_skips_session_schema');
 expect(homeNakesModel.includes("care_team_workflow_enabled') === true\n\t\t\t&& $this->db->field_exists('responsible_doctor_user_id'")
   && consultationModel.includes("care_team_workflow_enabled') === true\n\t\t\t&& $this->db->field_exists('responsible_doctor_user_id'"), 'care_team_feature_off_preserves_legacy_ownership_queries');
@@ -167,7 +172,7 @@ expect(consultationController.indexOf("? !empty($access_context['can_assess'])")
 expect(consultationController.includes("['can_open_patient_chat']")
   && consultationController.includes("account_type'] ?? '') === 'personal'")
   && consultationController.includes('doclinc_can_view_chat')
-  && consultationView.includes('if (!empty($can_open_patient_chat))'), 'consultation_chat_cta_uses_server_personal_access');
+  && consultationContext.includes('if (!empty($can_open_patient_chat))'), 'consultation_chat_cta_uses_server_personal_access');
 expect(consultationController.includes('request->consultation_mode') && consultationView.includes('if (!$care_team_workflow_enabled)')
   && consultationModel.includes('service_mode_mismatch'), 'clinical_completion_uses_server_service_decision');
 expect(migration.includes('DATABASE_CONNECTION_OPENED=false') && migration.includes("array_key_exists('apply'"), 'migration_plan_opens_no_database');
@@ -185,6 +190,31 @@ expect(staffAdminView.includes('type="password"') && commandCenterAdminView.incl
   && passwordViews[5].includes('doclinc-password-mask.js'), 'admin_create_and_reset_password_surfaces_are_masked');
 expect(passwordMask.includes("input.type !== 'password'") && !passwordMask.includes("input.type = 'text'"), 'password_mask_never_reveals_whole_field');
 expect(passwordMask.includes("event.inputType === 'insertText'") && passwordMask.includes("input.addEventListener('paste', mask)"), 'password_mask_only_reveals_single_typed_character');
+
+/* Permukaan panjang-umur wajib memuat penangan sesi berakhir: halaman yang
+   hidup dari AJAX tidak boleh tetap tampak normal saat sesinya sudah dicabut. */
+const sessionGuardSurfaces = [
+  'application/modules/home/views/home_v.php',
+  'application/modules/home_nakes/views/home_nakes_v.php',
+  'application/modules/chat/views/thread_v.php',
+  'application/modules/konsultasi_nakes/views/konsultasi_nakes_v.php'
+].map(source);
+expect(sessionGuardSurfaces.every(view => view.includes('doclinc-session-guard.js'))
+  && sessionGuardSurfaces.every(view => view.includes('doclincSessionGuardConfig')), 'long_lived_surfaces_load_session_guard');
+
+/* Audit pencabutan wajib jalan di semua jalur. Deteksi pertama biasanya datang
+   dari polling AJAX, jadi audit yang hanya jalan pada navigasi = nol jejak. */
+expect(publicGate.includes('auditMetadata(') && !publicGate.includes('logRevocation'), 'revocation_audit_covers_ajax_path');
+expect(sessionResponsePolicy.includes("'channel' => $is_json === true ? 'json' : 'html'"), 'revocation_audit_records_channel');
+
+/* Jangan memutus kanal Centrifugo per-user di jalur pencabutan. Uji langsung
+   2026-10-23 (Centrifugo v6.9.1, dua koneksi websocket user yang sama):
+   {"user":...} menutup SEMUA koneksi akun itu (kode 3503) dan SDK vendored
+   5.7.0 tidak menyambung ulang pada kode 3500-3999 — perangkat yang sedang
+   dipakai kehilangan realtime sampai muat ulang, sementara perangkat lama
+   sudah lebih cepat mati lewat 401 + teardown() di klien. Pemutusan bedah harus
+   lewat {"connection":...}, dan itu butuh penanda sesi di token. Lihat DESIGN.md. */
+expect(!publicGate.includes('/api/disconnect'), 'revocation_must_not_force_disconnect_all_user_connections');
 
 process.stdout.write('PHASE45_SOURCE_PASSED=' + passed + '\nPHASE45_SOURCE_FAILED=' + failed + '\n');
 process.exit(failed === 0 ? 0 : 1);

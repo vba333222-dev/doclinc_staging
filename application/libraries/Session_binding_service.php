@@ -184,6 +184,49 @@ class Session_binding_service
 			&& $this->policy->matches($token, $row->token_hash);
 	}
 
+	/**
+	 * Sebab kegagalan validasi, untuk pesan yang jujur kepada pengguna.
+	 *
+	 * Dipanggil gate setelah validate() gagal. Nilai balikannya aman
+	 * ditampilkan: tidak memuat token, tidak memuat hash, dan tidak membedakan
+	 * "belum ada baris" dari "baris tanpa hash" — keduanya berarti sesi lama
+	 * yang dibuat sebelum fitur ini menyala.
+	 *
+	 * 'binding_superseded' berarti ada binding aktif dengan token berbeda:
+	 * akun ini baru saja masuk di perangkat lain.
+	 */
+	public function diagnose($user_id, $token)
+	{
+		$user_id = (int) $user_id;
+		if ($user_id < 1 || !$this->schemaReady()) {
+			return 'binding_unavailable';
+		}
+		$row = $this->db
+			->select('user_login_bindings.token_hash, user_login_bindings.revoked_at, users.status')
+			->from('user_login_bindings')
+			->join('users', 'users.userId = user_login_bindings.user_id', 'inner')
+			->where('user_id', $user_id)
+			->limit(1)
+			->get()
+			->row();
+		if (!$row) {
+			return 'binding_missing';
+		}
+		if ((string) $row->status !== 'aktif') {
+			return 'account_inactive';
+		}
+		if ($row->revoked_at !== null) {
+			return 'binding_revoked';
+		}
+		if (!$this->policy->tokenValid($token)) {
+			return 'token_missing';
+		}
+		if (!$this->policy->matches($token, $row->token_hash)) {
+			return 'binding_superseded';
+		}
+		return 'binding_valid';
+	}
+
 	public function validateLocked($user_id, $token)
 	{
 		$user_id = (int) $user_id;

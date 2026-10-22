@@ -716,6 +716,17 @@ $config['single_active_session_enabled'] = $single_active_session_feature['enabl
 $config['single_active_session_environment'] = $single_active_session_feature['environment'];
 $config['single_active_session_feature_reason'] = $single_active_session_feature['reason'];
 
+/* Saklar migrasi, bukan fitur: dipakai HANYA selama jendela rollout sesi
+   tunggal lalu dimatikan. Ia tidak dapat menyalakan apa pun sendiri - gate
+   tetap menuntut single_active_session_enabled. Tanpa ini, semua sesi lama
+   ditendang serentak pada permintaan pertama setelah fitur dinyalakan. */
+$single_active_session_adopt_legacy_env = strtolower(trim((string) (getenv('DOCLINC_SINGLE_ACTIVE_SESSION_ADOPT_LEGACY') ?: '')));
+if ($single_active_session_adopt_legacy_env === '') {
+	$single_active_session_adopt_legacy_env = strtolower(trim((string) ($_SERVER['DOCLINC_SINGLE_ACTIVE_SESSION_ADOPT_LEGACY'] ?? '')));
+}
+$config['single_active_session_adopt_legacy'] = in_array($single_active_session_adopt_legacy_env, array('1', 'true', 'yes', 'on'), true)
+	&& in_array(strtolower(trim((string) $single_active_session_environment_env)), array('staging', 'uat', 'production'), true);
+
 $care_team_workflow_enabled_env = getenv('DOCLINC_CARE_TEAM_WORKFLOW_ENABLED');
 if ($care_team_workflow_enabled_env === false || $care_team_workflow_enabled_env === '') {
 	$care_team_workflow_enabled_env = $_SERVER['DOCLINC_CARE_TEAM_WORKFLOW_ENABLED'] ?? null;

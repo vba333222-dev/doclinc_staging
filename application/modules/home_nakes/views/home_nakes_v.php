@@ -553,7 +553,13 @@ if (!function_exists('doclinc_nakes_short_text')) {
 			setTimeout(function() {
 				$('#preloader').hide();
 				document.getElementById('content-wrapper').style.display = 'block';
-				document.getElementById('nav-bottom-wrapper').style.display = 'block';
+				/* Navigasi bawah tidak lagi dipaksa `display: block` di sini.
+				   Gaya inline itu mengalahkan semua aturan CSS: di 740×360 ia
+				   memunculkan nav bawah meski nav atas sedang dipakai, dan karena
+				   itu doclinc-puskesmas.css harus memakai !important untuk
+				   menyembunyikannya. Visibilitas nav kini sepenuhnya diatur CSS
+				   (bento menampilkannya ≤767.98px, nakes-dashboard
+				   menyembunyikannya di atas itu). */
 			}, 1500);
 		});
 		const initialNakesSection = <?= json_encode(isset($nakes_initial_section) ? (string) $nakes_initial_section : 'beranda'); ?>;
@@ -2455,6 +2461,11 @@ if (!function_exists('doclinc_nakes_short_text')) {
 	<?php endif; ?>
 	<?php if (is_array($notification_realtime_bootstrap) || is_array($request_realtime_bootstrap)) : ?>
 		<script src="<?= html_escape(base_url('assets/vendor/centrifuge/5.7.0/centrifuge.js')); ?>"></script>
+	<?php endif; ?>
+	<?php $session_guard_version = is_file(FCPATH . 'assets/js/doclinc-session-guard.js') ? (string) filemtime(FCPATH . 'assets/js/doclinc-session-guard.js') : '1'; ?>
+	<script id="doclincSessionGuardConfig" type="application/json"><?= json_encode(array('login_url' => site_url('login')), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+	<script src="<?= html_escape(base_url('assets/js/doclinc-session-guard.js') . '?v=' . rawurlencode($session_guard_version)); ?>"></script>
+	<?php if (is_array($notification_realtime_bootstrap) || is_array($request_realtime_bootstrap)) : ?>
 		<script src="<?= html_escape(base_url('assets/js/doclinc-realtime-client.js')); ?>"></script>
 	<?php endif; ?>
 	<?php if (is_array($notification_realtime_bootstrap)) : ?>

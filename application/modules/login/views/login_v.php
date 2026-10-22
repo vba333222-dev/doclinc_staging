@@ -28,7 +28,15 @@
 						<h1 class="dl-auth-title">Masuk</h1>
 						<p class="dl-auth-subtitle">Masukkan akun DokLinc Anda</p>
 						<?php if (!empty($success_message)): ?>
-							<div class="alert alert-success" role="status"><?= html_escape($success_message); ?></div>
+							<?php
+							/* Tingkat pesan dibatasi daftar putih: nilainya datang dari
+							   query string lewat controller, jangan pernah dipakai
+							   mentah sebagai kelas CSS. */
+							$session_notice_level = isset($session_notice_level) && in_array($session_notice_level, array('success', 'info', 'warning', 'danger'), true)
+								? $session_notice_level
+								: 'success';
+							?>
+							<div class="alert alert-<?= html_escape($session_notice_level); ?>" role="status"><?= html_escape($success_message); ?></div>
 						<?php endif; ?>
 
 						<form id="loginForm">

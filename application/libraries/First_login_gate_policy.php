@@ -26,11 +26,20 @@ class First_login_gate_policy
 			&& in_array(strtolower((string) $method), array('change_password', 'update_password', 'logout'), true);
 	}
 
-	public function jsonResponse($class, $method, $ajax, $accept, $content_type)
+	public function jsonResponse($class, $method, $ajax, $accept, $content_type, $fetch_mode = '')
 	{
 		$class = strtolower((string) $class);
 		$method = strtolower((string) $method);
 		if ($ajax || stripos((string) $accept, 'application/json') !== false || stripos((string) $content_type, 'application/json') !== false) {
+			return true;
+		}
+		/* Peramban modern mengirim Sec-Fetch-Mode. 'navigate' berarti pengguna
+		 * membuka halaman; nilai lain berarti permintaan dari skrip, jadi
+		 * jawabannya harus JSON. Tanpa ini, fetch() tanpa header khusus
+		 * menerima halaman login HTML berstatus 200 dan pemanggilnya gagal di
+		 * JSON.parse - pesan "sesi berakhir" tidak pernah sampai. */
+		$fetch_mode = strtolower(trim((string) $fetch_mode));
+		if ($fetch_mode !== '' && $fetch_mode !== 'navigate') {
 			return true;
 		}
 		if (!isset($this->json_routes[$class])) {
