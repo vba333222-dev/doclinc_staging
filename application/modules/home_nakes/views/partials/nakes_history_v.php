@@ -143,12 +143,12 @@ $history_default_completed = !$history_has_active && $history_has_completed;
 					<?php elseif ($can_coordinate_staff && $staff_assignment_error) : ?>
 						<div class="alert alert-warning nk-pic-alert" role="alert"><?= html_escape($staff_assignment_error); ?></div>
 					<?php endif; ?>
-					<ul class="nav nav-tabs<?= empty($nakes_is_personal) ? ' mb-3' : ''; ?> dl-tabs dl-history-tabs cq-tabs" id="myTab" role="tablist">
+					<ul class="nav nav-tabs dl-tabs dl-history-tabs cq-tabs" id="myTab" role="tablist">
 						<li class="nav-item" role="presentation">
-							<button class="nav-link<?= $history_default_completed ? '' : ' active'; ?>" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="<?= $history_default_completed ? 'false' : 'true'; ?>">Aktif <span class="dl-history-tab-count"><?= (int) $nakes_active_count; ?></span></button>
+							<button class="nav-link<?= $history_default_completed ? '' : ' active'; ?>" id="proses-tab" data-bs-toggle="tab" data-bs-target="#proses-tab-pane" type="button" role="tab" aria-controls="proses-tab-pane" aria-selected="<?= $history_default_completed ? 'false' : 'true'; ?>">Aktif<?php /* Jumlah per tab hanya dipakai permukaan nakes personal; di Puskesmas angkanya sudah dibaca dari isi tab. */ ?><?php if (!empty($nakes_is_personal)) : ?> <span class="dl-history-tab-count"><?= (int) $nakes_active_count; ?></span><?php endif; ?></button>
 						</li>
 						<li class="nav-item" role="presentation">
-							<button class="nav-link<?= $history_default_completed ? ' active' : ''; ?>" id="selesai-tab" data-bs-toggle="tab" data-bs-target="#selesai-tab-pane" type="button" role="tab" aria-controls="selesai-tab-pane" aria-selected="<?= $history_default_completed ? 'true' : 'false'; ?>">Selesai <span class="dl-history-tab-count"><?= (int) $nakes_completed_count; ?></span></button>
+							<button class="nav-link<?= $history_default_completed ? ' active' : ''; ?>" id="selesai-tab" data-bs-toggle="tab" data-bs-target="#selesai-tab-pane" type="button" role="tab" aria-controls="selesai-tab-pane" aria-selected="<?= $history_default_completed ? 'true' : 'false'; ?>">Selesai<?php if (!empty($nakes_is_personal)) : ?> <span class="dl-history-tab-count"><?= (int) $nakes_completed_count; ?></span><?php endif; ?></button>
 						</li>
 					</ul>
 					<div class="tab-content" id="myTabContent">
@@ -502,6 +502,78 @@ $history_default_completed = !$history_has_active && $history_has_completed;
 							</div>
 						</div>
 						<div class="tab-pane fade<?= $history_default_completed ? ' show active' : ''; ?>" id="selesai-tab-pane" role="tabpanel" aria-labelledby="selesai-tab" tabindex="0">
+						<?php
+						/* Arsip: tahun → bulan → tanggal, plus pencarian NIK/nama.
+						   Dikirim sebagai GET agar hasilnya bisa ditautkan dan
+						   disegarkan; fragmen di action mempertahankan tab aktif. */
+						$arsip_filters = isset($arsip_filters) && is_array($arsip_filters) ? $arsip_filters : array('tahun' => 0, 'bulan' => 0, 'tanggal' => '', 'q' => '');
+						$arsip_periods = isset($arsip_periods) && is_array($arsip_periods) ? $arsip_periods : array('years' => array(), 'months' => array());
+						$arsip_years = isset($arsip_periods['years']) && is_array($arsip_periods['years']) ? $arsip_periods['years'] : array();
+						$arsip_months = isset($arsip_periods['months']) && is_array($arsip_periods['months']) ? $arsip_periods['months'] : array();
+						$arsip_month_names = array(1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember');
+						$arsip_selected_year = (int) $arsip_filters['tahun'];
+						?>
+						<form class="dl-archive-scope" method="get" action="<?= html_escape(site_url('home_nakes') . '#riwayat_konsul'); ?>" aria-label="Saring arsip konsultasi">
+							<label>
+								<span>Tahun</span>
+								<select name="arsip_tahun">
+									<option value="0">Semua tahun</option>
+									<?php
+									/* Tahun yang sedang disaring selalu muncul sebagai pilihan.
+									   Tanpa ini, tahun tanpa baris bertanggal membuat kontrol
+									   jatuh ke "Semua tahun" padahal filternya masih aktif —
+									   kontrol yang tidak jujur tentang filter yang berjalan. */
+									$arsip_year_options = $arsip_years;
+									if ($arsip_selected_year > 0 && !isset($arsip_year_options[$arsip_selected_year])) {
+										$arsip_year_options[$arsip_selected_year] = 0;
+										krsort($arsip_year_options);
+									}
+									?>
+									<?php foreach ($arsip_year_options as $year => $count) : ?>
+										<option value="<?= (int) $year; ?>"<?= $arsip_selected_year === (int) $year ? ' selected' : ''; ?>><?= (int) $year; ?> · <?= (int) $count; ?></option>
+									<?php endforeach; ?>
+								</select>
+							</label>
+							<label>
+								<span>Bulan</span>
+								<select name="arsip_bulan">
+									<option value="0">Semua bulan</option>
+									<?php foreach ($arsip_month_names as $month_number => $month_name) : ?>
+										<?php
+										$month_key = ($arsip_selected_year > 0 ? $arsip_selected_year : (int) date('Y')) . '-' . str_pad((string) $month_number, 2, '0', STR_PAD_LEFT);
+										$month_count = isset($arsip_months[$month_key]) ? (int) $arsip_months[$month_key] : 0;
+										?>
+										<option value="<?= (int) $month_number; ?>"<?= (int) $arsip_filters['bulan'] === (int) $month_number ? ' selected' : ''; ?>><?= html_escape($month_name); ?><?= $month_count > 0 ? ' · ' . $month_count : ''; ?></option>
+									<?php endforeach; ?>
+								</select>
+							</label>
+							<label>
+								<span>Tanggal</span>
+								<input type="date" name="arsip_tanggal" value="<?= html_escape((string) $arsip_filters['tanggal']); ?>">
+							</label>
+							<label>
+								<span>Cari</span>
+								<input type="search" name="arsip_q" maxlength="100" autocomplete="off" placeholder="NIK atau nama" value="<?= html_escape((string) $arsip_filters['q']); ?>">
+							</label>
+							<div class="dl-archive-scope__actions">
+								<button type="submit" class="btn btn-success">Tampilkan</button>
+								<a class="btn btn-outline-success" href="<?= html_escape(site_url('home_nakes') . '#riwayat_konsul'); ?>">Reset</a>
+							</div>
+						</form>
+
+						<?php
+						/* Baris selesai tanpa `completed_at` tidak bisa ditemukan lewat
+						   filter tanggal. Katakan jumlahnya, jangan biarkan hilang. */
+						$arsip_undated_count = isset($arsip_undated_count) ? (int) $arsip_undated_count : 0;
+						$arsip_date_filter_active = ((int) $arsip_filters['tahun'] > 0 || (int) $arsip_filters['bulan'] > 0 || (string) $arsip_filters['tanggal'] !== '');
+						?>
+						<?php if ($arsip_date_filter_active && $arsip_undated_count > 0) : ?>
+							<p class="dl-archive-note" role="status">
+								<span class="dl-archive-note__count"><?= $arsip_undated_count; ?></span>
+								<span>permintaan selesai belum punya waktu selesai, jadi tidak muncul pada filter tahun/bulan/tanggal. Kosongkan filter tanggal untuk melihatnya.</span>
+							</p>
+						<?php endif; ?>
+
 							<div class="dl-history-stack">
 								<?php if ($data_request_completed->num_rows() < 1) : ?>
 									<?php
@@ -532,7 +604,8 @@ $history_default_completed = !$history_has_active && $history_has_completed;
 									$completed_source = !$history_is_weak_value($diagnosa) ? $diagnosa : (!$history_is_weak_value($treatment) ? $treatment : (!$history_is_weak_value($saran) ? $saran : ''));
 									$completed_preview = $history_short_text($completed_source, 130);
 									$puskesmas = !empty($x->assigned_puskesmas_name) ? $x->assigned_puskesmas_name : '';
-									$tanggal_selesai = !empty($x->created_at) ? date('d M Y H:i', strtotime($x->created_at)) : '';
+									$tanggal_selesai = !empty($x->completed_at) ? date('d M Y H:i', strtotime($x->completed_at)) : '';
+									$tanggal_selesai_tidak_tercatat = ($tanggal_selesai === '');
 									$queue_label = doclinc_request_queue_number_label($x);
 									$mode_label = doclinc_consultation_mode_label(isset($x->consultation_mode) ? $x->consultation_mode : '');
 									$handling_nakes_name = doclinc_request_handling_nakes_name($x);
@@ -561,7 +634,7 @@ $history_default_completed = !$history_has_active && $history_has_completed;
 											?>
 											<div class="dl-history-title-wrap">
 												<strong><?= html_escape((string) $x->nama); ?></strong>
-												<span><?= html_escape($queue_label); ?><?= $tanggal_selesai !== '' ? ' · ' . html_escape($tanggal_selesai) : ''; ?></span>
+												<span><?= html_escape($queue_label); ?><?php if ($tanggal_selesai !== '') : ?> · <?= html_escape($tanggal_selesai); ?><?php elseif ($tanggal_selesai_tidak_tercatat) : ?> · <span class="dl-archive-unknown-time">Waktu selesai belum tercatat</span><?php endif; ?></span>
 											</div>
 											<?php if ($history_completed_clinical) : ?>
 											<?php $this->load->view('partials/clinical_state_chip_v', array('clinical_ui' => $history_completed_clinical)); ?>
@@ -591,7 +664,12 @@ $history_default_completed = !$history_has_active && $history_has_completed;
 													<div class="nk-info-row nk-info-row--anamnesis"><span class="nk-info-label">Anamnesis</span><strong class="nk-info-value"><?= nl2br(html_escape($anamnesis), false); ?></strong></div>
 												<?php endif; ?>
 											</div>
-											<?php if ($can_coordinate_staff && !empty($request_events)) : ?>
+											<?php if (!empty($x->record_id)) : ?>
+										<div class="dl-history-record-link">
+											<a class="btn btn-outline-success" href="<?= html_escape(site_url('home_nakes/rekam_medis/' . (int) $x->request_id)); ?>">Lihat rekam medis</a>
+										</div>
+									<?php endif; ?>
+									<?php if ($can_coordinate_staff && !empty($request_events)) : ?>
 												<div class="nk-action-panel nk-action-panel--timeline nk-card-section">
 													<div class="nk-action-panel__title">Riwayat</div>
 													<div class="nk-timeline-list">

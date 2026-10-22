@@ -2326,4 +2326,214 @@ class Home_nakes_m extends MX_Controller
 
 		return $summaries;
 	}
+
+	/**
+	 * Cakupan arsip: memakai helper otorisasi yang sama dengan daftar riwayat
+	 * (tenant Puskesmas atau visibilitas nakes personal). Tidak ada aturan akses
+	 * baru di sini; kalau sebuah permintaan tidak terlihat di daftar, ia juga
+	 * tidak terlihat di arsip.
+	 */
+	private function archive_scope($identity_context)
+	{
+		$this->db->where('requests.request_status', 'Completed');
+		$account_type = isset($identity_context['account_type']) ? (string) $identity_context['account_type'] : '';
+		if ($account_type === 'command_center') {
+			$this->where_command_center_puskesmas($identity_context['user_id'], $identity_context['puskesmas_code']);
+		} else {
+			$this->where_personal_request_visibility($identity_context);
+		}
+	}
+
+	/**
+	 * Tahun dan bulan yang berisi data, dihitung dari tanggal selesai.
+	 * Dihitung di PHP dari satu query ringan supaya cakupan otorisasi tetap satu
+	 * sumber (tidak menulis ulang WHERE tenant di query agregat).
+	 */
+	public function archive_periods($identity_context)
+	{
+		$this->db->select('requests.completed_at', false);
+		$this->db->from('requests');
+		$this->db->where('requests.completed_at IS NOT NULL', null, false);
+		$this->archive_scope($identity_context);
+		$rows = $this->db->get()->result_array();
+
+		$years = array();
+		$months = array();
+		foreach ($rows as $row) {
+			$time = strtotime((string) $row['completed_at']);
+			if ($time === false) {
+				continue;
+			}
+			$year = (int) date('Y', $time);
+			$month = (int) date('n', $time);
+			$years[$year] = isset($years[$year]) ? $years[$year] + 1 : 1;
+			$key = $year . '-' . str_pad((string) $month, 2, '0', STR_PAD_LEFT);
+			$months[$key] = isset($months[$key]) ? $months[$key] + 1 : 1;
+		}
+		krsort($years);
+		ksort($months);
+		return array('years' => $years, 'months' => $months, 'total' => count($rows));
+	}
+
+	/**
+	 * Jumlah permintaan selesai yang belum punya waktu selesai (`completed_at`
+	 * NULL). Dipakai untuk memberi tahu bahwa filter tanggal tidak bisa
+	 * menampilkan baris itu — bukan untuk menyembunyikannya. Cakupan otorisasi
+	 * memakai helper yang sama dengan arsip, jadi angka ini tidak pernah
+	 * menyebut permintaan yang tidak boleh dilihat aktor.
+	 */
+	public function archive_undated_count($identity_context)
+	{
+		$this->db->from('requests');
+		$this->db->where('requests.completed_at IS NULL', null, false);
+		$this->archive_scope($identity_context);
+		return (int) $this->db->count_all_results();
+	}
+
+	private function archive_range(array $filters)
+	{
+		$year = isset($filters['tahun']) ? (int) $filters['tahun'] : 0;
+		$month = isset($filters['bulan']) ? (int) $filters['bulan'] : 0;
+		$day = isset($filters['tanggal']) ? trim((string) $filters['tanggal']) : '';
+		if ($year < 1970 || $year > 2999) {
+			return null;
+		}
+		if ($day !== '') {
+			$parsed = DateTime::createFromFormat('!Y-m-d', $day);
+			if (!$parsed || $parsed->format('Y-m-d') !== $day) {
+				return null;
+			}
+			$start = $parsed;
+			$end = (clone $parsed)->modify('+1 day');
+			return array($start->format('Y-m-d H:i:s'), $end->format('Y-m-d H:i:s'));
+		}
+		if ($month >= 1 && $month <= 12) {
+			$start = new DateTime(sprintf('%04d-%02d-01 00:00:00', $year, $month));
+			return array($start->format('Y-m-d H:i:s'), $start->modify('+1 month')->format('Y-m-d H:i:s'));
+		}
+		$start = new DateTime(sprintf('%04d-01-01 00:00:00', $year));
+		return array($start->format('Y-m-d H:i:s'), $start->modify('+1 year')->format('Y-m-d H:i:s'));
+	}
+
+	public function request_keluhan_completed_archive($identity_context, array $filters)
+	{
+		$limit = isset($filters['limit']) ? max(1, min(100, (int) $filters['limit'])) : 50;
+		$this->db->select('requests.*, users.nama, users.foto AS patient_photo', false);
+		$this->db->select('patients.patient_id, patients.nik AS patient_nik, patients.nama AS patient_nama', false);
+		$this->db->select('medicalrecords.record_id, medicalrecords.anamnesis, medicalrecords.diagnosis, medicalrecords.treatment, medicalrecords.recommendations, medicalrecords.clinical_finalized_at', false);
+		$this->db->select('COALESCE((SELECT GROUP_CONCAT(mrd.display_text ORDER BY mrd.position SEPARATOR "\\n") FROM ' . $this->db->dbprefix('medicalrecord_diagnoses') . ' mrd WHERE mrd.medicalrecord_id = medicalrecords.record_id), medicalrecords.diagnosis) AS diagnoses_display', false);
+		$this->db->from('requests');
+		$this->db->join('users', 'users.userId = requests.user_id', 'left');
+		$this->join_riwayat_or_default();
+		$this->db->join('(SELECT request_id, MAX(record_id) AS record_id FROM ' . $this->db->dbprefix('medicalrecords') . ' GROUP BY request_id) latest_record', 'latest_record.request_id = requests.request_id', 'left', false);
+		$this->db->join('medicalrecords', 'medicalrecords.record_id = latest_record.record_id', 'left');
+		$this->db->join('patients', 'patients.patient_id = medicalrecords.patient_id', 'left');
+		$this->archive_scope($identity_context);
+
+		$range = $this->archive_range($filters);
+		if ($range !== null) {
+			$this->db->where('requests.completed_at >=', $range[0]);
+			$this->db->where('requests.completed_at <', $range[1]);
+		}
+
+		$search = isset($filters['q']) ? trim((string) $filters['q']) : '';
+		if ($search !== '') {
+			$this->db->group_start();
+			$digits = preg_replace('/\s+/', '', $search);
+			if (preg_match('/^[0-9]{4,16}$/', $digits) === 1) {
+				$this->db->like('patients.nik', $digits, 'after');
+				$this->db->or_like('users.nama', $search, 'both');
+			} else {
+				$this->db->like('users.nama', $search, 'both');
+			}
+			$this->db->group_end();
+		}
+
+		return $this->db
+			->order_by('requests.completed_at', 'DESC')
+			->order_by('requests.request_id', 'DESC')
+			->limit($limit)
+			->get();
+	}
+
+	/**
+	 * Payload satu rekam medis. Null bila permintaan tidak terlihat oleh aktor —
+	 * pemanggil memperlakukan null sebagai 404, sehingga tidak ada informasi
+	 * keberadaan rekam medis yang bocor lewat perbedaan pesan.
+	 */
+	public function clinical_record_for_context($identity_context, $request_id)
+	{
+		$request_id = (int) $request_id;
+		if ($request_id < 1) {
+			return null;
+		}
+
+		$this->db->select('requests.request_id, requests.user_id, requests.request_status, requests.consultation_mode, requests.visit_status, requests.completed_at, requests.created_at, requests.queue_date, requests.queue_number, requests.queue_code, requests.assigned_puskesmas_name, requests.location', false);
+		$this->db->select('users.nama AS patient_name, users.foto AS patient_photo, users.tgl AS patient_birthdate, users.gender AS patient_gender, users.alamat AS patient_address, users.no_hp AS patient_phone, users.nomor_kk, users.nomor_bpjs_kis', false);
+		$this->db->from('requests');
+		$this->db->join('users', 'users.userId = requests.user_id', 'left');
+		$this->archive_scope($identity_context);
+		$this->db->where('requests.request_id', $request_id);
+		$request = $this->db->limit(1)->get()->row_array();
+		if (!$request) {
+			return null;
+		}
+
+		$record = $this->db->where('request_id', $request_id)->order_by('record_id', 'DESC')->limit(1)->get('medicalrecords')->row_array();
+		$patient = null;
+		$diagnoses = array();
+		$amendments = array();
+		$effective = array();
+
+		if (!empty($record)) {
+			if (!empty($record['patient_id']) && $this->db->table_exists('patients')) {
+				$patient = $this->db->where('patient_id', (int) $record['patient_id'])->limit(1)->get('patients')->row_array();
+			}
+			if ($this->db->table_exists('medicalrecord_diagnoses')) {
+				$diagnoses = $this->db->where('medicalrecord_id', (int) $record['record_id'])
+					->order_by('position', 'ASC')
+					->get('medicalrecord_diagnoses')
+					->result_array();
+			}
+			if ($this->db->table_exists('clinical_amendments')) {
+				$amendments = $this->db->where('record_id', (int) $record['record_id'])
+					->order_by('sequence_no', 'ASC')
+					->get('clinical_amendments')
+					->result_array();
+			}
+			$service_path = APPPATH . 'libraries/Clinical_amendment_service.php';
+			if (is_file($service_path) && $this->db->table_exists('clinical_amendment_items')) {
+				require_once $service_path;
+				$amendment_service = new Clinical_amendment_service($this->db);
+				$merged = $amendment_service->effectiveValues((int) $record['record_id']);
+				if (is_array($merged)) {
+					$effective = $merged;
+				}
+			}
+		}
+
+		$vitals = $this->db->table_exists('request_vital_sign_measurements')
+			? $this->db->where('request_id', $request_id)->order_by('measured_at', 'DESC')->limit(1)->get('request_vital_sign_measurements')->row_array()
+			: null;
+		$visit = ($this->db->table_exists('visit_results'))
+			? $this->db->where('request_id', $request_id)->where('status', 'submitted')->order_by('version_no', 'DESC')->limit(1)->get('visit_results')->row_array()
+			: null;
+		$disposition = ($this->db->table_exists('visit_dispositions'))
+			? $this->db->where('request_id', $request_id)->where('superseded_at IS NULL', null, false)->order_by('version_no', 'DESC')->limit(1)->get('visit_dispositions')->row_array()
+			: null;
+
+		return array(
+			'request' => $request,
+			'patient' => $patient,
+			'record' => $record,
+			'effective' => $effective,
+			'diagnoses' => $diagnoses,
+			'vitals' => $vitals,
+			'visit_result' => $visit,
+			'disposition' => $disposition,
+			'amendments' => $amendments,
+		);
+	}
+
+
 }
