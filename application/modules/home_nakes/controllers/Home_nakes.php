@@ -363,6 +363,79 @@ class Home_nakes extends MX_Controller
 		$this->index();
 	}
 
+	/**
+	 * Halaman rekam medis: satu rekam, bisa dicetak, dan setiap pembukaan
+	 * dicatat ke clinical_access_audit.
+	 *
+	 * Otorisasi memakai cakupan yang sama dengan daftar riwayat
+	 * (clinical_record_for_context memanggil archive_scope). Bila rekam tidak
+	 * terlihat, jawabannya 404 — bukan pesan berbeda yang membocorkan
+	 * keberadaan rekam medis.
+	 *
+	 * Sengaja tidak bergantung pada `puskesmas_operations_enabled`: papan
+	 * operasional boleh dimatikan, rekam medis harus tetap terbaca.
+	 */
+	public function rekam_medis($request_id = 0)
+	{
+		if (!$this->require_dokter_session()) {
+			return;
+		}
+
+		$user_id = (int) $this->session->userdata('id');
+		$identity_context = doclinc_dokter_identity_context($user_id, true);
+		$payload = $this->Home_nakes_m->clinical_record_for_context($identity_context, (int) $request_id);
+		if (empty($payload)) {
+			show_404();
+			return;
+		}
+
+		if (!$this->catat_akses_rekam_medis($identity_context, $payload)) {
+			// Gagal mencatat akses berarti rekam medis tidak boleh tampil.
+			show_error('Akses rekam medis tidak dapat dicatat. Coba lagi atau hubungi admin.', 500);
+			return;
+		}
+
+		$this->output->set_header('Cache-Control: no-store, private');
+		$this->load->view('rekam_medis_v', array(
+			'rekam' => $payload,
+			'nakes_is_command_center' => !empty($payload['request']) && $this->session->userdata('role') === 'dokter',
+			'rekam_actor_name' => (string) $this->session->userdata('nama'),
+		));
+	}
+
+	private function catat_akses_rekam_medis($identity_context, array $payload)
+	{
+		if (!$this->db->table_exists('clinical_access_audit')) {
+			return true;
+		}
+		if (empty($payload['record']['record_id'])) {
+			// Belum ada rekam medis; tidak ada isi klinis yang dibuka.
+			return true;
+		}
+		require_once APPPATH . 'libraries/Clinical_access_audit_ledger.php';
+		$ledger = new Clinical_access_audit_ledger($this->db);
+		$actor = (int) $identity_context['user_id'];
+		$session_hash = hash('sha256', (string) $this->session->userdata('session_id') . '|' . $actor);
+		$first = !$ledger->hasRecordForSession((int) $payload['record']['record_id'], $session_hash, $actor);
+
+		return $ledger->append(array(
+			'actor_user_id' => $actor,
+			'record_id' => (int) $payload['record']['record_id'],
+			'request_id' => (int) $payload['request']['request_id'],
+			'patient_user_id' => (int) $payload['request']['user_id'],
+			'puskesmas_code' => (string) $identity_context['puskesmas_code'],
+			'access_kind' => 'view',
+			'audit_session_hash' => $session_hash,
+			'first_access_in_session' => $first ? 1 : 0,
+			'reason_code' => 'treatment_history',
+			'reason_text' => 'Membuka rekam medis dari arsip konsultasi',
+			'reason_root_access_id' => null,
+			'ip_address' => (string) $this->input->ip_address(),
+			'user_agent' => substr((string) $this->input->user_agent(), 0, 255),
+			'created_at' => date('Y-m-d H:i:s'),
+		));
+	}
+
 	public function index()
 	{
 		if (!$this->require_dokter_session()) {
@@ -433,6 +506,26 @@ class Home_nakes extends MX_Controller
 		$d['nakes_team_duty'] = array();
 		$d['nakes_team_duty_counts'] = array('visit' => 0, 'disposisi' => 0, 'menangani' => 0, 'on_duty' => 0, 'idle' => 0);
 
+		/* Arsip konsultasi: tahun → bulan → tanggal, plus pencarian NIK/nama.
+		   Filter dibaca dari query string supaya tampilan bisa ditautkan dan
+		   disegarkan tanpa JavaScript tambahan. Tahun 0 berarti tanpa batas. */
+		$arsip_filters = array(
+			'tahun' => (int) $this->input->get('arsip_tahun'),
+			'bulan' => (int) $this->input->get('arsip_bulan'),
+			'tanggal' => trim((string) $this->input->get('arsip_tanggal')),
+			'q' => trim((string) $this->input->get('arsip_q')),
+			'limit' => 100,
+		);
+		if ($arsip_filters['tahun'] < 1970 || $arsip_filters['tahun'] > 2999) {
+			$arsip_filters['tahun'] = 0;
+		}
+		if ($arsip_filters['bulan'] < 1 || $arsip_filters['bulan'] > 12) {
+			$arsip_filters['bulan'] = 0;
+		}
+		if ($arsip_filters['tanggal'] !== '' && preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/', $arsip_filters['tanggal']) !== 1) {
+			$arsip_filters['tanggal'] = '';
+		}
+
 		if ($account_type === 'command_center') {
 			// Periksa permintaan yang belum direspons SEBELUM daftarnya dimuat,
 			// supaya warga yang menunggu terlalu lama terlihat - bukan hilang.
@@ -450,7 +543,7 @@ class Home_nakes extends MX_Controller
 
 			$d['data_request_new'] = $this->Home_nakes_m->request_keluhan_command_center($identity_context);
 			$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept_command_center($identity_context);
-			$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed_command_center($identity_context);
+			$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed_archive($identity_context, $arsip_filters);
 			$d['puskesmas_staff_list'] = $this->Home_nakes_m->get_puskesmas_staff_by_code($puskesmas_code);
 			$d['puskesmas_staff_count'] = $this->Home_nakes_m->count_puskesmas_staff_by_code($puskesmas_code);
 			$d['staff_assignment_ready'] = $this->Home_nakes_m->staff_assignment_table_ready();
@@ -516,11 +609,17 @@ class Home_nakes extends MX_Controller
 			$d['nakes_team_duty_counts'] = $team_duty['counts'];
 		} elseif ($account_type === 'personal') {
 			$d['data_request_accept'] = $this->Home_nakes_m->request_keluhan_accept_personal($identity_context);
-			$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed_personal($identity_context);
+			$d['data_request_completed'] = $this->Home_nakes_m->request_keluhan_completed_archive($identity_context, $arsip_filters);
 			if ($d['care_team_workflow_enabled']) {
 				$d['puskesmas_staff_options'] = $this->Home_nakes_m->get_active_staff_options_by_code($puskesmas_code);
 			}
 		}
+
+		$d['arsip_filters'] = $arsip_filters;
+		$d['arsip_periods'] = $this->Home_nakes_m->archive_periods($identity_context);
+		/* Permintaan selesai tanpa waktu selesai tidak bisa dicari lewat filter
+		   tanggal. Angkanya ditampilkan supaya baris itu tidak hilang diam-diam. */
+		$d['arsip_undated_count'] = $this->Home_nakes_m->archive_undated_count($identity_context);
 
 		$disposition_request_ids = array();
 		foreach ($d['data_request_accept']->result() as $request_row) {

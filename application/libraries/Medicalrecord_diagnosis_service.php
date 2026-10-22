@@ -93,17 +93,22 @@ class Medicalrecord_diagnosis_service
 			if (!is_string($diagnosis) || trim($diagnosis) === '') {
 				return false;
 			}
+			// Diagnosis dari picker datang sebagai "KODE — label". Kode divalidasi
+			// terhadap master ICD-10; bila tidak dikenal, teks disimpan apa adanya
+			// dengan coding_state 'uncoded' supaya finalisasi menolaknya.
+			$coded = self::resolveCode($db, $diagnosis);
 			$row = array(
 				'medicalrecord_id' => $medicalrecord_id,
 				'request_id' => $request_id,
 				'position' => $index + 1,
 				'diagnosis_role' => $index === 0 ? 'primary' : 'secondary',
-				'diagnosis_code' => null,
-				'diagnosis_label' => $diagnosis,
-				'display_text' => $diagnosis,
-				'suggestion_term_id' => null,
-				'reference_source' => null,
-				'reference_version' => null,
+				'diagnosis_code' => $coded['code'],
+				'diagnosis_label' => $coded['label'],
+				'display_text' => $coded['label'],
+				'suggestion_term_id' => $coded['term_id'],
+				'coding_state' => $coded['code'] !== null ? 'coded' : 'uncoded',
+				'reference_source' => $coded['source'],
+				'reference_version' => $coded['version'],
 				'created_by_user_id' => $created_by_user_id,
 			);
 			if (!$db->insert('medicalrecord_diagnoses', $row)) {
@@ -111,6 +116,55 @@ class Medicalrecord_diagnosis_service
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * Memisahkan kode ICD-10 dari teks diagnosis dan memverifikasinya ke master.
+	 * Hanya kode yang benar-benar ada di master yang dianggap terkode; selain itu
+	 * diagnosis disimpan sebagai teks bebas (uncoded) dan tidak bisa difinalisasi.
+	 */
+	private static function resolveCode($db, $text)
+	{
+		$text = trim((string) $text);
+		$plain = array('code' => null, 'label' => $text, 'term_id' => null, 'source' => null, 'version' => null);
+		$code = null;
+		$label = null;
+		if (preg_match('/^([A-Z][0-9]{2}(?:\.[0-9A-Z]{1,4})?)(?:\s*[\x{2014}\x{2013}\-]\s*|\s+)(.+)$/u', $text, $match) === 1) {
+			$code = $match[1];
+			$label = trim($match[2]);
+		} elseif (preg_match('/^([A-Z][0-9]{2}(?:\.[0-9A-Z]{1,4})?)$/u', $text, $match) === 1) {
+			$code = $match[1];
+		}
+		if ($code === null) {
+			return $plain;
+		}
+		if (!is_object($db) || !method_exists($db, 'query') || !method_exists($db, 'table_exists')
+			|| !$db->table_exists('clinical_suggestion_terms')) {
+			return $plain;
+		}
+		$term = $db->query(
+			"SELECT suggestion_term_id, preferred_label, source_dataset, source_version
+			 FROM clinical_suggestion_terms
+			 WHERE term_type='diagnosis' AND term_code=?
+			 ORDER BY suggestion_term_id ASC LIMIT 1",
+			array($code)
+		)->row();
+		if (!$term) {
+			return $plain;
+		}
+		if ($label === null || $label === '') {
+			$label = trim(preg_replace('/[\x00-\x1F\x7F]/u', '', (string) $term->preferred_label));
+		}
+		if ($label === '') {
+			return $plain;
+		}
+		return array(
+			'code' => $code,
+			'label' => $label,
+			'term_id' => (int) $term->suggestion_term_id,
+			'source' => (string) $term->source_dataset,
+			'version' => (string) $term->source_version,
+		);
 	}
 
 	private static function invalid($error)

@@ -31,13 +31,62 @@ class Clinical_finalization_service {
                 if(!$rdOk&&!$performerOk)return $this->rollback('ACCESS_DENIED');
             } else { if(!$rdOk)return $this->rollback('ACCESS_DENIED'); }
             $record=$this->model->latestRecordForUpdate($requestId);if(!$record)return $this->rollback('CLINICAL_RECORD_NOT_FOUND');if($record->clinical_finalized_at!==null)return $this->rollback('CLINICAL_RECORD_ALREADY_FINALIZED');
+            /* Rekam medis yang difinalisasi wajib punya identitas pasien (NIK)
+             * dan minimal satu diagnosis terkode ICD-10. Tanpa itu, arsip per
+             * NIK tidak bisa dipertanggungjawabkan dan kode diagnosis hanya
+             * teks bebas. Keduanya diperiksa di dalam transaksi yang sama. */
+            if(!$this->db->table_exists('patients'))return $this->rollback('schema_unavailable');
+            $patientId=$this->resolvePatient($request);if($patientId<1)return $this->rollback('PATIENT_IDENTITY_MISSING');
+            $codedDiagnoses=(int)$this->db->query("SELECT COUNT(*) AS n FROM medicalrecord_diagnoses WHERE medicalrecord_id=? AND coding_state='coded'",[(int)$record->record_id])->row()->n;
+            if($codedDiagnoses<1)return $this->rollback('DIAGNOSIS_CODING_REQUIRED');
             $clock=$this->db->query('SELECT CURRENT_TIMESTAMP(6) AS now')->row();$now=$clock?(string)$clock->now:'';if($now===''||!$this->model->finalizeRecord((int)$record->record_id,$userId,$now))return $this->rollback('WRITE_FAILED');
+            /* Identitas dan waktu selesai ditulis di transaksi yang sama dengan
+             * finalisasi: arsip per NIK dan arsip per tanggal tidak boleh
+             * bergantung pada job lain yang mungkin tidak pernah berjalan. */
+            if((int)($record->patient_id??0)!==$patientId){$this->db->where('record_id',(int)$record->record_id)->update('medicalrecords',['patient_id'=>$patientId]);}
+            if($this->db->field_exists('completed_at','requests')&&empty($request->completed_at)){$this->db->where('request_id',$requestId)->update('requests',['completed_at'=>$now]);}
             $event=['puskesmas_code'=>$facility,'actor_user_id'=>$userId,'actor_staff_id'=>(int)($identity['staff_id']??0),'domain_event_key'=>$eventKey,'metadata'=>['record_id'=>(int)$record->record_id,'request_id'=>$requestId,'finalized_by_user_id'=>$userId]];
             if(!doclinc_append_request_event($requestId,'clinical_record.finalized',$event,get_instance())){$this->db->trans_rollback();$conflict=$this->model->eventByKey($eventKey);if($conflict){$meta=json_decode((string)$conflict->metadata_json,true)?:[];if((int)$conflict->request_id!==$requestId||(int)($meta['finalized_by_user_id']??0)!==$userId)return $this->fail('FINALIZATION_KEY_CONFLICT');$rid=(int)($meta['record_id']??0);$saved=$rid?$this->db->where('record_id',$rid)->get('medicalrecords')->row():null;if($saved)return ['status'=>'success','record_id'=>$rid,'idempotent'=>true,'medicalrecord'=>$saved];}return $this->fail('WRITE_FAILED');}
             $saved=$this->db->where('record_id',(int)$record->record_id)->get('medicalrecords')->row();if(!$this->db->trans_commit())return $this->fail('WRITE_FAILED');return ['status'=>'success','record_id'=>(int)$record->record_id,'medicalrecord'=>$saved,'idempotent'=>false];
         } catch(Throwable $e){$this->db->trans_rollback();$eventKey='clinical-finalization:'.$key;$existing=$this->model->eventByKey($eventKey);if($existing){$meta=json_decode((string)$existing->metadata_json,true)?:[];if((int)$existing->request_id!==$requestId||(int)($meta['finalized_by_user_id']??0)!==$userId)return $this->fail('FINALIZATION_KEY_CONFLICT');return ['status'=>'success','record_id'=>(int)($meta['record_id']??0),'idempotent'=>true];}return $this->fail('WRITE_FAILED');}
     }
     private function schemaReady(){return(new Clinical_workflow_requirements($this->db))->ready();}
+    /**
+     * Identitas pasien untuk rekam medis ini, dari NIK di profil warga.
+     * Mengembalikan 0 bila NIK tidak ada/tidak sah — pemanggil menolak
+     * finalisasi, bukan membuat NIK karangan.
+     */
+    private function resolvePatient($request){
+        if(!is_object($request))return 0;
+        $userId=(int)($request->user_id??0);if($userId<1)return 0;
+        $user=$this->db->query('SELECT userId,nik,nama,tgl,gender,no_hp,alamat,nomor_kk,nomor_bpjs_kis FROM users WHERE userId=? LIMIT 1',[$userId])->row();
+        if(!$user)return 0;
+        $nik=trim((string)($user->nik??''));
+        if(preg_match('/^[0-9]{16}$/',$nik)!==1)return 0;
+        $existing=$this->db->query('SELECT patient_id FROM patients WHERE nik=? LIMIT 1',[$nik])->row();
+        if($existing)return (int)$existing->patient_id;
+        /* Nilai identitas disalin hanya bila bentuknya sah untuk kolom tujuan.
+         * Data profil yang kotor tidak boleh menggagalkan finalisasi. */
+        $kk=preg_replace('/\D/','',(string)($user->nomor_kk??''));
+        $bpjs=preg_replace('/\D/','',(string)($user->nomor_bpjs_kis??''));
+        $nama=trim((string)($user->nama??''));if(function_exists('mb_substr')){$nama=mb_substr($nama,0,150,'UTF-8');}else{$nama=substr($nama,0,150);}
+        /* users.gender bebas teks; patients.gender hanya menerima 'L'/'P'. */
+        $genderRaw=strtolower(trim((string)($user->gender??'')));
+        $gender=in_array($genderRaw,['l','laki-laki','laki laki','pria','male'],true)?'L':(in_array($genderRaw,['p','perempuan','wanita','female'],true)?'P':null);
+        $alamat=trim((string)($user->alamat??''));if(function_exists('mb_substr')){$alamat=mb_substr($alamat,0,255,'UTF-8');}else{$alamat=substr($alamat,0,255);}
+        $this->db->insert('patients',[
+            'nik'=>$nik,
+            'nama'=>$nama,
+            'tgl_lahir'=>(!empty($user->tgl)?$user->tgl:null),
+            'gender'=>$gender,
+            'no_hp'=>(!empty($user->no_hp)?substr((string)$user->no_hp,0,50):null),
+            'alamat'=>($alamat!==''?$alamat:null),
+            'nomor_kk'=>(strlen($kk)===16?$kk:null),
+            'nomor_bpjs_kis'=>(strlen($bpjs)===13?$bpjs:null),
+            'primary_user_id'=>$userId,
+        ]);
+        return (int)$this->db->insert_id();
+    }
     private function placement($staff,$facility){return(bool)$this->db->query("SELECT placement_id FROM nakes_facility_placements WHERE staff_id=? AND facility_code=? AND status='active' LIMIT 1",[$staff,$facility])->row();}
     private function rollback($c){$this->db->trans_rollback();return $this->fail($c);} private function fail($c){return ['status'=>'error','safe_error_code'=>$c];}
 }

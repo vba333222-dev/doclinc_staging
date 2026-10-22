@@ -1,0 +1,194 @@
+/* Rekam medis — satu lembar yang bisa dibaca dan dicetak.
+ * Token dari doclinc-design-system.css; berkas ini hanya mengatur permukaan
+ * rekam medis, tidak menyentuh halaman lain.
+ * Halaman ini tidak memuat Bootstrap (hanya design system), jadi box-sizing
+ * disetel sendiri supaya lebar lembar tidak bertambah oleh padding. */
+.dl-record-body,
+.dl-record-body *,
+.dl-record-body *::before,
+.dl-record-body *::after {
+  box-sizing: border-box;
+}
+
+.dl-record-body {
+  margin: 0;
+  padding: 0;
+  background: var(--dl-bg);
+  color: var(--dl-text);
+  font-family: var(--dl-font);
+  font-size: var(--dl-body-size);
+  line-height: var(--dl-body-leading);
+}
+
+.dl-record-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: min(880px, calc(100% - 32px));
+  margin: 24px auto 0;
+}
+
+.dl-record-sheet {
+  width: min(880px, calc(100% - 32px));
+  margin: 16px auto 64px;
+  padding: 32px;
+  border: 1px solid var(--dl-border);
+  border-radius: var(--dl-radius-md);
+  background: var(--dl-surface);
+}
+
+.dl-record-eyebrow {
+  margin: 0 0 4px;
+  color: var(--dl-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.dl-record-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.dl-record-sub {
+  margin: 6px 0 0;
+  color: var(--dl-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dl-record-flag {
+  display: block;
+  margin-top: 14px;
+  padding: 8px 12px;
+  border: 1px solid var(--dl-border);
+  border-radius: var(--dl-radius-sm);
+  color: var(--dl-text-secondary);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.dl-record-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--dl-divider);
+}
+
+.dl-record-section h2 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+
+.dl-record-grid {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 8px 18px;
+  margin: 0;
+}
+
+.dl-record-grid dt {
+  color: var(--dl-text-muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.dl-record-grid dd {
+  margin: 0;
+  min-width: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.dl-record-mono {
+  font-family: var(--dl-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.dl-record-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.dl-record-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.dl-record-table th {
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid var(--dl-border);
+  color: var(--dl-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.dl-record-table td {
+  padding: 7px 8px 7px 0;
+  border-bottom: 1px solid var(--dl-divider);
+  vertical-align: top;
+}
+
+.dl-record-state {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid var(--dl-border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dl-record-state--coded {
+  border-color: color-mix(in srgb, var(--dl-success) 38%, var(--dl-surface));
+  color: var(--dl-brand-strong);
+}
+
+.dl-record-state--uncoded {
+  border-color: color-mix(in srgb, var(--dl-warning) 40%, var(--dl-surface));
+  color: var(--dl-warning-ink);
+}
+
+.dl-record-empty {
+  margin: 0;
+  color: var(--dl-text-muted);
+  font-size: 13px;
+}
+
+.dl-record-foot {
+  margin-top: 26px;
+  padding-top: 14px;
+  border-top: 1px solid var(--dl-divider);
+  color: var(--dl-text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .dl-record-sheet { padding: 18px; }
+  .dl-record-grid { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .dl-record-grid dd { margin-bottom: 8px; }
+}
+
+@media print {
+  .dl-record-body { background: #fff; }
+  .dl-record-bar { display: none; }
+  .dl-record-sheet {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+  .dl-record-section { break-inside: avoid; }
+  a[href]::after { content: none; }
+}
