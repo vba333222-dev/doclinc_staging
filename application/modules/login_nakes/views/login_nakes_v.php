@@ -106,6 +106,19 @@
 						}, 1000);
 						return;
 					}
+					if (result == '3') {
+						/* Kredensial benar, tetapi password yang dipakai masih
+						   password sementara dari Admin: antar ke langkah ganti
+						   password, bukan ke beranda. */
+						if (loginButton) {
+							loginButton.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>' +
+								'<span role="status"> Menyiapkan…</span>';
+						}
+						setTimeout(function() {
+							window.location.href = '<?= site_url('login-nakes/change-password'); ?>';
+						}, 600);
+						return;
+					}
 					if (loginButton) {
 						loginButton.disabled = false;
 						loginButton.innerHTML = originalButtonContent;

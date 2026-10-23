@@ -58,10 +58,15 @@ class Login_nakes extends MX_Controller
 
 		$session_notice = $this->session_notice_message();
 		$this->output->set_header('Cache-Control: no-store, private');
+		/* Tingkat pesan dibatasi daftar putih; nilainya datang dari controller,
+		   jangan pernah dipakai mentah sebagai kelas CSS. */
+		$flash_level = (string) $this->session->flashdata('login_notice_level');
 		$this->load->view('login_nakes_v', array(
 			'activation_available' => $this->config->item('first_login_password_change_enabled') === true,
 			'success_message' => $session_notice['message'] !== '' ? $session_notice['message'] : (string) $this->session->flashdata('login_success'),
-			'session_notice_level' => $session_notice['message'] !== '' ? $session_notice['level'] : 'success',
+			'session_notice_level' => $session_notice['message'] !== ''
+				? $session_notice['level']
+				: (in_array($flash_level, array('success', 'info', 'warning', 'danger'), true) ? $flash_level : 'success'),
 		));
 	}
 
@@ -98,6 +103,12 @@ class Login_nakes extends MX_Controller
 			property_exists($user, 'must_change_password') ? (int) $user->must_change_password : 0,
 			property_exists($user, 'password_changed_at') ? $user->password_changed_at : null
 		);
+		if (doclinc_nakes_first_login_gate_required(
+			(string) $user->role,
+			property_exists($user, 'must_change_password') ? (int) $user->must_change_password : 0
+		)) {
+			$must_change_password = 1;
+		}
 		if ($must_change_password === 1 && $this->config->item('first_login_password_change_enabled') !== true) {
 			$this->Login_m->log_login_event('login_restricted', $user->userId, array('reason' => 'password_change_unavailable'));
 			echo "0";
@@ -139,7 +150,9 @@ class Login_nakes extends MX_Controller
 		}
 		$this->session->set_userdata($session_data);
 		$this->Login_m->log_login_event('login_success', $user->userId, array('role' => $user->role, 'area' => 'nakes'));
-		echo "1";
+		/* Kode "3": kredensial benar, tetapi halaman harus mengantar ke langkah
+		   ganti password alih-alih beranda. */
+		echo $must_change_password === 1 ? "3" : "1";
 	}
 
 	public function activate()
@@ -222,6 +235,12 @@ class Login_nakes extends MX_Controller
 			return;
 		}
 		if (!$this->Login_m->get_personal_activation_identity((int) $context['user_id'])) {
+			/* Akun nakes yang belum lengkap (mis. belum tertaut data staf
+			   Puskesmas) tidak boleh diputar dalam lingkaran: sebabnya disebut apa
+			   adanya di halaman masuk, baru sesinya ditutup (flashdata ditulis
+			   lebih dulu karena sesi yang sudah dihancurkan tidak menyimpannya). */
+			$this->session->set_flashdata('login_success', 'Akun ini belum dapat mengganti password karena data staf Puskesmas-nya belum lengkap. Hubungi Admin Dinas Kesehatan.');
+			$this->session->set_flashdata('login_notice_level', 'warning');
 			$this->session->sess_destroy();
 			redirect('login-nakes');
 			return;
@@ -376,10 +395,13 @@ class Login_nakes extends MX_Controller
 		if ($activation_user_id > 0 && $this->session->userdata('logged_in') != TRUE) {
 			return array('user_id' => $activation_user_id, 'mode' => 'activation');
 		}
-		if ($this->config->item('nakes_credential_enforcement_enabled') === true
-			&& $this->session->userdata('logged_in') == TRUE
+		if ($this->session->userdata('logged_in') == TRUE
 			&& $this->session->userdata('role') === 'dokter'
 			&& (int) $this->session->userdata('must_change_password') === 1) {
+			/* Tidak lagi bergantung pada `nakes_credential_enforcement_enabled`:
+			   selama password yang dipakai masih password sementara dari Admin,
+			   langkah ganti password tetap ditahan. Mode `enforcement` dipertahankan
+			   karena `update_password()` memakainya untuk memutar pengikatan sesi. */
 			return array('user_id' => (int) $this->session->userdata('id'), 'mode' => 'enforcement');
 		}
 		return null;

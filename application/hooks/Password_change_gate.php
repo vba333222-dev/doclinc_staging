@@ -47,6 +47,15 @@ class Password_change_gate
 			$has_password_gate ? (int) $user->must_change_password : 0,
 			$has_password_gate ? $user->password_changed_at : null
 		);
+		/* Login pertama akun nakes ditahan tanpa syarat: password sementara dari
+		   Admin Dinas Kesehatan tidak boleh menjadi password tetap hanya karena
+		   saklar `nakes_credential_enforcement_enabled` dimatikan. */
+		if (doclinc_nakes_first_login_gate_required(
+			(string) $user->role,
+			$has_password_gate ? (int) $user->must_change_password : 0
+		)) {
+			$must_change_password = 1;
+		}
 		if ((int) $CI->session->userdata('must_change_password') !== $must_change_password) {
 			$CI->session->set_userdata('must_change_password', $must_change_password);
 		}
