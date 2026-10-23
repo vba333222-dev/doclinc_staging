@@ -39,9 +39,9 @@ class Audit_m extends CI_Model
 	/** Aktor yang pernah tercatat, lengkap dengan nama bila bisa ditemukan. */
 	public function getActorOptions()
 	{
-		$has_users = $this->db->table_exists('users') && $this->db->field_exists('name', 'users');
+		$has_users = $this->db->table_exists('users') && $this->db->field_exists('nama', 'users');
 		$name_expression = $has_users
-			? '(SELECT u.name FROM users u WHERE u.userId = a.actor_user_id LIMIT 1)'
+			? '(SELECT u.nama FROM users u WHERE u.userId = a.actor_user_id LIMIT 1)'
 			: 'NULL';
 		$rows = $this->db
 			->select('a.actor_user_id, COUNT(*) AS total, MAX(' . $name_expression . ') AS nama', FALSE)
@@ -121,9 +121,9 @@ class Audit_m extends CI_Model
 		if ($limit < 1 || $limit > 500) {
 			$limit = 200;
 		}
-		$has_users = $this->db->table_exists('users') && $this->db->field_exists('name', 'users');
+		$has_users = $this->db->table_exists('users') && $this->db->field_exists('nama', 'users');
 		$name_expression = $has_users
-			? '(SELECT u.name FROM users u WHERE u.userId = a.actor_user_id LIMIT 1)'
+			? '(SELECT u.nama FROM users u WHERE u.userId = a.actor_user_id LIMIT 1)'
 			: 'NULL';
 		$this->applyFilters($filters);
 		return $this->db
@@ -164,9 +164,9 @@ class Audit_m extends CI_Model
 		if ($limit < 1) {
 			$limit = 8;
 		}
-		$has_users = $this->db->table_exists('users') && $this->db->field_exists('name', 'users');
+		$has_users = $this->db->table_exists('users') && $this->db->field_exists('nama', 'users');
 		$name_expression = $has_users
-			? '(SELECT u.name FROM users u WHERE u.userId = a.actor_user_id LIMIT 1)'
+			? '(SELECT u.nama FROM users u WHERE u.userId = a.actor_user_id LIMIT 1)'
 			: 'NULL';
 		$this->applyFilters($filters);
 		return $this->db

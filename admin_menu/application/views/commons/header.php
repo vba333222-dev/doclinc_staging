@@ -111,6 +111,7 @@
 		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed') ? 'active' : '';
 		$doclinc_active_landing = ($doclinc_admin_segment === 'landing_page') ? 'active' : '';
 		$doclinc_active_audit = ($doclinc_admin_segment === 'audit') ? 'active' : '';
+		$doclinc_active_kapabilitas = ($doclinc_admin_segment === 'kapabilitas') ? 'active' : '';
 		?>
 		<!-- Sidebar -->
 		<ul class="navbar-nav sidebar sidebar-dark accordion position-fixed vh-100 doclinc-sidebar" id="accordionSidebar">
@@ -224,6 +225,13 @@
 				<a class="nav-link" href="<?php echo site_url('audit'); ?>">
 					<i class="fas fa-clipboard-list"></i>
 					<span>Penampil audit</span>
+				</a>
+			</li>
+
+			<li class="nav-item <?= $doclinc_active_kapabilitas; ?>">
+				<a class="nav-link" href="<?php echo site_url('kapabilitas'); ?>">
+					<i class="fas fa-user-shield"></i>
+					<span>Kapabilitas admin</span>
 				</a>
 			</li>
 
