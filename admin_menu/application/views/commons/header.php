@@ -103,6 +103,7 @@
 		$doclinc_active_laporan = ($doclinc_admin_segment === 'laporan' || $this->session->flashdata('active_tab_laporan')) ? 'active' : '';
 		$doclinc_active_diagnosis = ($doclinc_admin_segment === 'diagnosis') ? 'active' : '';
 		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed' || $this->session->flashdata('active_tab_news_feed')) ? 'active' : '';
+		$doclinc_active_landing = ($doclinc_admin_segment === 'landing_page') ? 'active' : '';
 		?>
 		<!-- Sidebar -->
 		<ul class="navbar-nav sidebar sidebar-dark accordion position-fixed vh-100 doclinc-sidebar" id="accordionSidebar">
@@ -216,6 +217,13 @@
 				<a class="nav-link" href="<?php echo site_url('kelola_news_feed'); ?>">
 					<i class="fas fa-newspaper"></i>
 					<span>Berita</span>
+				</a>
+			</li>
+
+			<li class="nav-item <?= $doclinc_active_landing; ?>">
+				<a class="nav-link" href="<?php echo site_url('landing_page'); ?>">
+					<i class="fas fa-globe"></i>
+					<span>Landing page</span>
 				</a>
 			</li>
 

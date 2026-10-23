@@ -12,10 +12,57 @@
 				redirect('home', 'refresh');
 			}
 			$this->guard_mutation_methods();
+			$this->guard_legacy_tables();
+		}
+
+		/** Rute tanpa metode (`landing_page`) tidak lagi 404. */
+		public function index()
+		{
+			redirect('landing_page/home', 'refresh');
+		}
+
+		/**
+		 * Tabel yang dibutuhkan modul ini. Daftarnya dibaca dari pemakaian nyata di
+		 * controller, model, dan view - bukan tebakan skema.
+		 */
+		private function legacy_tables()
+		{
+			return array(
+				'tbl_home', 'tbl_about', 'tbl_news', 'tbl_news_events', 'tbl_services',
+				'tbl_services_detail', 'tbl_services_sub_detail', 'tbl_contact', 'tbl_partner',
+				'tbl_team', 'tbl_faq', 'tbl_portofolio', 'tbl_harga', 'tbl_harga_detail',
+				'tbl_alat_tes', 'tbl_user',
+			);
+		}
+
+		/**
+		 * Modul ini membaca tabel `tbl_*` yang tidak ada di database DocLinc. Tanpa
+		 * pagar ini setiap halamannya berhenti dengan error 500 tanpa penjelasan.
+		 * Pagar hanya aktif bila tabelnya memang tidak ada, jadi modul tetap utuh
+		 * bila kelak tabel itu dibuat.
+		 */
+		private function guard_legacy_tables()
+		{
+			$missing = array();
+			foreach ($this->legacy_tables() as $table) {
+				if (!$this->db->table_exists($table)) {
+					$missing[] = $table;
+				}
+			}
+			if (empty($missing)) {
+				return;
+			}
+			/* View dikembalikan sebagai string lalu dicetak: `exit` melewati
+			 * pengiriman buffer CI, jadi tanpa ini responsnya berbadan kosong. */
+			echo $this->load->view('commons/header', array(), TRUE);
+			echo $this->load->view('legacy_unavailable_v', array('missing_tables' => $missing), TRUE);
+			echo $this->load->view('commons/footer', array(), TRUE);
+			exit;
 		}
 		private function guard_mutation_methods()
 		{
 			$read_methods = array(
+				'index',
 				'home',
 				'about',
 				'news_events',
