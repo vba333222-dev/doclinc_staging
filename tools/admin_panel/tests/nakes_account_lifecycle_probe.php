@@ -129,6 +129,22 @@ foreach ($nakes as $row) {
 check('A1 setiap akun role=dokter menunjuk Puskesmas aktif',
 	count($nakes) > 0 && empty($bad_placement),
 	'akun=' . count($nakes) . ' menyimpang=' . (empty($bad_placement) ? 'none' : implode(',', $bad_placement)));
+
+/* Penempatan juga disimpan di `puskesmas_staff.kode_pkm`. Migrasi
+   20261023000500 hanya memperbaiki `users.remark`, sehingga dua sumber ini bisa
+   berbeda; keduanya diperiksa supaya tidak ada staf yang tertahan karena
+   menunjuk Puskesmas yang sudah nonaktif. */
+$staff_rows = $db->query('SELECT staff_id, kode_pkm, status FROM puskesmas_staff ORDER BY staff_id')->result();
+$bad_staff = array();
+foreach ($staff_rows as $row) {
+	$kode = trim((string) $row->kode_pkm);
+	if ($kode === '' || !in_array($kode, $active_codes, true)) {
+		$bad_staff[] = $row->staff_id . ':' . ($kode === '' ? '(kosong)' : $kode);
+	}
+}
+check('A1b setiap staf Puskesmas menunjuk Puskesmas aktif',
+	empty($bad_staff),
+	'staf=' . count($staff_rows) . ' menyimpang=' . (empty($bad_staff) ? 'none' : implode(',', $bad_staff)));
 check('A2 kode Puskesmas nonaktif ditolak model', $model->puskesmas_exists('PKM01') === false);
 check('A3 kode Puskesmas aktif diterima model', $model->puskesmas_exists('10280101') === true);
 check('A4 tidak ada akun must_change_password=1 dengan password_changed_at terisi',
