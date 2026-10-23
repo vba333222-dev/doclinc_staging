@@ -110,6 +110,7 @@
 		$doclinc_active_diagnosis = ($doclinc_admin_segment === 'diagnosis') ? 'active' : '';
 		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed') ? 'active' : '';
 		$doclinc_active_landing = ($doclinc_admin_segment === 'landing_page') ? 'active' : '';
+		$doclinc_active_audit = ($doclinc_admin_segment === 'audit') ? 'active' : '';
 		?>
 		<!-- Sidebar -->
 		<ul class="navbar-nav sidebar sidebar-dark accordion position-fixed vh-100 doclinc-sidebar" id="accordionSidebar">
@@ -215,6 +216,14 @@
 				<a class="nav-link" href="<?php echo site_url('diagnosis'); ?>">
 					<i class="fas fa-chart-bar"></i>
 					<span>Penyakit terbanyak</span>
+				</a>
+			</li>
+
+			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Keamanan</li>
+			<li class="nav-item <?= $doclinc_active_audit; ?>">
+				<a class="nav-link" href="<?php echo site_url('audit'); ?>">
+					<i class="fas fa-clipboard-list"></i>
+					<span>Penampil audit</span>
 				</a>
 			</li>
 
