@@ -89,20 +89,26 @@
 	<div id="wrapper">
 		<?php
 		$doclinc_admin_segment = $this->uri->segment(1) ?: 'home';
-		$doclinc_active_dashboard = ($doclinc_admin_segment === 'home' || $this->session->flashdata('active_tab_dashboard')) ? 'active' : '';
-		$doclinc_active_konsultasi = ($doclinc_admin_segment === 'konsultasi_kesehatan' || $this->session->flashdata('active_tab_konsultasi_kesehatan')) ? 'active' : '';
-		$doclinc_active_master_puskesmas = ($doclinc_admin_segment === 'master_puskesmas' || $this->session->flashdata('active_tab_master_puskesmas')) ? 'active' : '';
+		/* Penanda menu aktif hanya dari segmen URL. Sebelumnya setiap modul juga
+		   menitipkan flashdata 'active_tab_*' yang dibaca di sini; karena flashdata
+		   masih terbaca pada permintaan berikutnya, beberapa menu tampak aktif
+		   sekaligus (terukur: 6 menu aktif bersamaan) dan penandanya bergantung pada
+		   halaman yang terakhir dibuka, bukan halaman yang sedang dilihat. Segmen
+		   URL selalu tepat dan tidak perlu dirawat dari sisi modul. */
+		$doclinc_active_dashboard = ($doclinc_admin_segment === 'home') ? 'active' : '';
+		$doclinc_active_konsultasi = ($doclinc_admin_segment === 'konsultasi_kesehatan') ? 'active' : '';
+		$doclinc_active_master_puskesmas = ($doclinc_admin_segment === 'master_puskesmas') ? 'active' : '';
 		$doclinc_active_wilayah = ($doclinc_admin_segment === 'wilayah') ? 'active' : '';
-		$doclinc_active_akun_puskesmas = ($doclinc_admin_segment === 'kelola_dokter_nakes' || $this->session->flashdata('active_tab_kelola_dokter_nakes')) ? 'active' : '';
-		$doclinc_active_staff_puskesmas = ($doclinc_admin_segment === 'kelola_staff_puskesmas' || $this->session->flashdata('active_tab_kelola_staff_puskesmas')) ? 'active' : '';
+		$doclinc_active_akun_puskesmas = ($doclinc_admin_segment === 'kelola_dokter_nakes') ? 'active' : '';
+		$doclinc_active_staff_puskesmas = ($doclinc_admin_segment === 'kelola_staff_puskesmas') ? 'active' : '';
 		$doclinc_active_layanan_kesehatan = ($doclinc_admin_segment === 'kelola_layanan_kesehatan') ? 'active' : '';
 		$doclinc_active_tindakan = ($doclinc_admin_segment === 'kelola_tindakan') ? 'active' : '';
 		$doclinc_active_warga = ($doclinc_admin_segment === 'kelola_warga') ? 'active' : '';
-		$doclinc_active_keluhan = ($doclinc_admin_segment === 'kelola_keluhan' || $this->session->flashdata('active_tab_keluhan')) ? 'active' : '';
-		$doclinc_active_rekam_medis = ($doclinc_admin_segment === 'rekam_medis' || $this->session->flashdata('active_tab_rekam_medis')) ? 'active' : '';
-		$doclinc_active_laporan = ($doclinc_admin_segment === 'laporan' || $this->session->flashdata('active_tab_laporan')) ? 'active' : '';
+		$doclinc_active_keluhan = ($doclinc_admin_segment === 'kelola_keluhan') ? 'active' : '';
+		$doclinc_active_rekam_medis = ($doclinc_admin_segment === 'rekam_medis') ? 'active' : '';
+		$doclinc_active_laporan = ($doclinc_admin_segment === 'laporan') ? 'active' : '';
 		$doclinc_active_diagnosis = ($doclinc_admin_segment === 'diagnosis') ? 'active' : '';
-		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed' || $this->session->flashdata('active_tab_news_feed')) ? 'active' : '';
+		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed') ? 'active' : '';
 		$doclinc_active_landing = ($doclinc_admin_segment === 'landing_page') ? 'active' : '';
 		?>
 		<!-- Sidebar -->
