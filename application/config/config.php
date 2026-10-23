@@ -958,6 +958,19 @@ $config['nakes_presence_environment'] = $nakes_presence_feature['environment'];
 $config['nakes_presence_feature_reason'] = $nakes_presence_feature['reason'];
 $config['nakes_presence_heartbeat_seconds'] = 30;
 $config['nakes_presence_write_throttle_seconds'] = 45;
+
+/*
+| Pembatasan percobaan masuk (permukaan warga dan nakes).
+|
+| Dihitung dari baris `login_failed` di `audit_logs` (lihat
+| Nakes_login_throttle), bukan tabel baru. Batas per akun lebih ketat daripada
+| batas per IP karena satu Puskesmas sering berbagi satu koneksi internet.
+| Bila tabel audit tidak ada, pembatasan dilewati dan tetap dicatat.
+*/
+$config['login_throttle_enabled'] = true;
+$config['login_throttle_max_failures'] = 8;
+$config['login_throttle_ip_max_failures'] = 20;
+$config['login_throttle_window_seconds'] = 900;
 $config['nakes_presence_online_timeout_seconds'] = 90;
 
 $puskesmas_operations_enabled_env = getenv('DOCLINC_PUSKESMAS_OPERATIONS_ENABLED');

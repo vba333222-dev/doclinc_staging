@@ -134,6 +134,18 @@
 						});
 						return;
 					}
+					if (result == '4') {
+						/* Terlalu banyak percobaan gagal. Sisa waktunya tidak
+						   dikirim ke halaman supaya tidak ada informasi tambahan
+						   yang bisa dipakai menebak. */
+						Swal.fire({
+							title: "Terlalu banyak percobaan",
+							text: "Tunggu beberapa menit sebelum mencoba lagi. Bila Anda lupa password sementara, hubungi Admin Dinas Kesehatan.",
+							icon: "warning",
+							confirmButtonText: "Mengerti"
+						});
+						return;
+					}
 					Swal.fire({
 						title: "Masuk gagal",
 						text: result == '0'

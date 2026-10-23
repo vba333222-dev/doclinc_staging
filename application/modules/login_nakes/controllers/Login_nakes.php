@@ -87,6 +87,17 @@ class Login_nakes extends MX_Controller
 		$password = (string) $this->input->post('password');
 		$auth = $this->Login_m->auth($username);
 		$user = $auth->num_rows() > 0 ? $auth->row() : null;
+		$throttle = $this->login_throttle_state($user ? (int) $user->userId : 0);
+		if (!$throttle['allowed']) {
+			$this->Login_m->log_login_event('login_throttled', $user ? (int) $user->userId : null, array(
+				'area' => 'nakes',
+				'scope' => $throttle['scope'],
+				'failures' => $throttle['failures'],
+				'retry_after_seconds' => $throttle['retry_after_seconds'],
+			));
+			echo "4";
+			return;
+		}
 		$actor_is_allowed = $user && (string) ($user->status ?? '') === 'aktif';
 		if (!$actor_is_allowed || !doclinc_password_verify($password, (string) $user->password)) {
 			$this->Login_m->log_login_event('login_failed', $user ? (int) $user->userId : null, array('area' => 'nakes'));
@@ -199,6 +210,17 @@ class Login_nakes extends MX_Controller
 		}
 		$auth = $this->Login_m->auth($username);
 		$user = $auth->num_rows() > 0 ? $auth->row() : null;
+		$throttle = $this->login_throttle_state($user ? (int) $user->userId : 0);
+		if (!$throttle['allowed']) {
+			$this->Login_m->log_login_event('login_throttled', $user ? (int) $user->userId : null, array(
+				'area' => 'activation',
+				'scope' => $throttle['scope'],
+				'failures' => $throttle['failures'],
+				'retry_after_seconds' => $throttle['retry_after_seconds'],
+			));
+			$this->activation_failure('Terlalu banyak percobaan. Coba lagi beberapa menit lagi, atau hubungi Admin Dinas Kesehatan.');
+			return;
+		}
 		$identity = $user && (string) ($user->status ?? '') === 'aktif'
 			&& doclinc_password_verify($password, (string) ($user->password ?? ''))
 			? $this->Login_m->get_personal_activation_identity((int) $user->userId)
@@ -433,6 +455,25 @@ class Login_nakes extends MX_Controller
 	{
 		$labels = array('warga' => 'warga', 'dokter' => 'Nakes', 'admin' => 'admin');
 		return isset($labels[$role]) ? $labels[$role] : 'peran lain';
+	}
+
+	/**
+	 * Keadaan pembatasan percobaan masuk untuk pemanggil ini.
+	 *
+	 * Library dimuat langsung lewat `require_once` (bukan `load->library()`),
+	 * karena CodeIgniter 3 melewatkan parameter `load->library()` sebagai satu
+	 * argumen array sehingga konstruktor dua-argumen tidak pernah cocok.
+	 */
+	private function login_throttle_state($user_id)
+	{
+		require_once APPPATH . 'libraries/Nakes_login_throttle.php';
+		$throttle = new Nakes_login_throttle($this->db, array(
+			'enabled' => $this->config->item('login_throttle_enabled') === true,
+			'max_failures' => (int) $this->config->item('login_throttle_max_failures'),
+			'ip_max_failures' => (int) $this->config->item('login_throttle_ip_max_failures'),
+			'window_seconds' => (int) $this->config->item('login_throttle_window_seconds'),
+		));
+		return $throttle->state($this->input->ip_address(), (int) $user_id);
 	}
 
 	/**

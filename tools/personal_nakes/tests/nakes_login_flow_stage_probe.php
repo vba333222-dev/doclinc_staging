@@ -140,5 +140,82 @@ check('N15 tidak ada akun yang tertahan saat probe dijalankan (perubahan ini tid
 	empty($blocked), 'tertahan=' . (empty($blocked) ? 'none' : implode(',', $blocked)));
 echo 'INFO  akun nakes tanpa catatan staf aktif: ' . (empty($legacy) ? 'none' : implode(',', $legacy)) . "\n";
 
+/* ============ 6. Pembatasan percobaan masuk (Nakes_login_throttle) ======= */
+require_once APPPATH . 'libraries/Nakes_login_throttle.php';
+$throttle_config = array(
+	'enabled' => true,
+	'max_failures' => 3,
+	'ip_max_failures' => 5,
+	'window_seconds' => 900,
+);
+$throttle = new Nakes_login_throttle($db, $throttle_config);
+check('T1 sumber hitungan tersedia', $throttle->failSafe() === true);
+check('T2 tanpa kegagalan, masuk diizinkan',
+	$throttle->state('203.0.113.10', 9002)['allowed'] === true);
+
+$baseline_audit = (int) $db->count_all_results('audit_logs');
+$db->query('START TRANSACTION');
+$now = time();
+$insert = $db->query(
+	"INSERT INTO audit_logs (actor_user_id, action, entity_type, entity_id, ip_address, metadata_json, created_at)
+	 VALUES (NULL, 'login_failed', 'auth', '9002', '203.0.113.10', '{}', ?)",
+	array(date('Y-m-d H:i:s', $now - 60))
+);
+$throttle->state('203.0.113.10', 9002);
+for ($i = 0; $i < 3; $i++) {
+	$db->query(
+		"INSERT INTO audit_logs (actor_user_id, action, entity_type, entity_id, ip_address, metadata_json, created_at)
+		 VALUES (NULL, 'login_failed', 'auth', '9002', '203.0.113.10', '{}', ?)",
+		array(date('Y-m-d H:i:s', $now - 30 + $i))
+	);
+}
+$blocked_state = $throttle->state('203.0.113.10', 9002);
+check('T3 akun diblokir setelah batas kegagalan terlampaui',
+	$blocked_state['allowed'] === false && $blocked_state['scope'] === 'account',
+	'allowed=' . var_export($blocked_state['allowed'], true) . ' scope=' . $blocked_state['scope']);
+check('T4 sisa waktu tunggu masuk akal',
+	$blocked_state['retry_after_seconds'] > 0 && $blocked_state['retry_after_seconds'] <= 900,
+	'retry_after=' . $blocked_state['retry_after_seconds']);
+check('T5 akun lain di alamat IP yang sama tetap boleh masuk',
+	$throttle->state('203.0.113.10', 9003)['allowed'] === true);
+
+$db->query(
+	"INSERT INTO audit_logs (actor_user_id, action, entity_type, entity_id, ip_address, metadata_json, created_at)
+	 VALUES (NULL, 'login_failed', 'auth', NULL, '198.51.100.7', '{}', ?)",
+	array(date('Y-m-d H:i:s', $now - 20))
+);
+for ($i = 1; $i < $throttle_config['ip_max_failures']; $i++) {
+	$db->query(
+		"INSERT INTO audit_logs (actor_user_id, action, entity_type, entity_id, ip_address, metadata_json, created_at)
+		 VALUES (NULL, 'login_failed', 'auth', NULL, '198.51.100.7', '{}', ?)",
+		array(date('Y-m-d H:i:s', $now - 20 + $i))
+	);
+}
+$ip_state = $throttle->state('198.51.100.7', 0);
+check('T6 nama pengguna tak dikenal tetap ditahan lewat batas alamat IP',
+	$ip_state['allowed'] === false && $ip_state['scope'] === 'ip',
+	'allowed=' . var_export($ip_state['allowed'], true) . ' scope=' . $ip_state['scope']
+		. ' failures=' . $ip_state['failures']);
+
+$db->query('ROLLBACK');
+check('T7 rollback mengembalikan jumlah baris audit_logs',
+	(int) $db->count_all_results('audit_logs') === $baseline_audit,
+	'sebelum=' . $baseline_audit . ' sesudah=' . (int) $db->count_all_results('audit_logs'));
+
+$disabled = new Nakes_login_throttle($db, array('enabled' => false));
+check('T8 saat pembatasan dimatikan, masuk selalu diizinkan',
+	$disabled->state('203.0.113.10', 9002)['allowed'] === true);
+
+$window = new Nakes_login_throttle($db, array('enabled' => true, 'max_failures' => 1, 'window_seconds' => 60));
+$db->query('START TRANSACTION');
+$db->query(
+	"INSERT INTO audit_logs (actor_user_id, action, entity_type, entity_id, ip_address, metadata_json, created_at)
+	 VALUES (NULL, 'login_failed', 'auth', '9005', '203.0.113.99', '{}', ?)",
+	array(date('Y-m-d H:i:s', time() - 3600))
+);
+check('T9 kegagalan di luar jendela waktu tidak dihitung',
+	$window->state('203.0.113.99', 9005)['allowed'] === true);
+$db->query('ROLLBACK');
+
 echo "\n" . ($fails === 0 ? 'PROBE_RESULT=PASS' : "PROBE_RESULT=FAIL (gagal={$fails})") . "\n";
 exit($fails === 0 ? 0 : 1);
