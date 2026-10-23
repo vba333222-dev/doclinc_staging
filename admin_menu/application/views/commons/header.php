@@ -110,6 +110,7 @@
 		$doclinc_active_diagnosis = ($doclinc_admin_segment === 'diagnosis') ? 'active' : '';
 		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed') ? 'active' : '';
 		$doclinc_active_landing = ($doclinc_admin_segment === 'landing_page') ? 'active' : '';
+		$doclinc_active_konten_landing = ($doclinc_admin_segment === 'konten_landing') ? 'active' : '';
 		$doclinc_active_audit = ($doclinc_admin_segment === 'audit') ? 'active' : '';
 		$doclinc_active_kapabilitas = ($doclinc_admin_segment === 'kapabilitas') ? 'active' : '';
 		?>
@@ -240,6 +241,13 @@
 				<a class="nav-link" href="<?php echo site_url('kelola_news_feed'); ?>">
 					<i class="fas fa-newspaper"></i>
 					<span>Berita</span>
+				</a>
+			</li>
+
+			<li class="nav-item <?= $doclinc_active_konten_landing; ?>">
+				<a class="nav-link" href="<?php echo site_url('konten_landing'); ?>">
+					<i class="fas fa-window-maximize"></i>
+					<span>Konten landing</span>
 				</a>
 			</li>
 
