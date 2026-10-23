@@ -16,13 +16,27 @@ class Konten_landing_m extends CI_Model
 		return $this->db->table_exists('landing_blocks') && $this->db->table_exists('landing_faqs');
 	}
 
+	/**
+	 * Pembacaan konten memakai library bersama `Landing_content` supaya halaman
+	 * publik dan panel editor tidak bisa menyimpang. `require_once` lewat jalur
+	 * berkas mengikuti pola yang sama dengan gateway kapabilitas.
+	 */
+	private function content()
+	{
+		$file = dirname(APPPATH, 2) . '/application/libraries/Landing_content.php';
+		if (is_file($file)) {
+			require_once $file;
+		}
+		if (!class_exists('Landing_content')) {
+			return null;
+		}
+		return new Landing_content($this->db);
+	}
+
 	public function getBlocks()
 	{
-		return $this->db
-			->order_by('urutan', 'ASC')
-			->order_by('block_key', 'ASC')
-			->get('landing_blocks')
-			->result();
+		$content = $this->content();
+		return $content === null ? array() : $content->blocks(false);
 	}
 
 	public function getBlock($id)
@@ -44,11 +58,8 @@ class Konten_landing_m extends CI_Model
 
 	public function getFaqs()
 	{
-		return $this->db
-			->order_by('urutan', 'ASC')
-			->order_by('id', 'ASC')
-			->get('landing_faqs')
-			->result();
+		$content = $this->content();
+		return $content === null ? array() : $content->faqs(false);
 	}
 
 	public function getFaq($id)
@@ -87,48 +98,13 @@ class Konten_landing_m extends CI_Model
 	}
 
 	/**
-	 * Angka nyata untuk bagian statistik landing. Setiap angka diberi keterangan
-	 * sumbernya supaya pengelola tahu dari mana asalnya; yang tidak bisa dihitung
-	 * (tabelnya belum ada) dikembalikan sebagai null, bukan nol palsu.
+	 * Angka nyata untuk bagian statistik landing. Dihitung oleh library bersama
+	 * `Landing_content`; setiap angka disertai keterangan sumbernya, dan yang
+	 * belum bisa dihitung dikembalikan sebagai null - bukan nol palsu.
 	 */
 	public function getPublicStats()
 	{
-		$stats = array();
-
-		$kecamatan = $this->db->table_exists('kecamatan') ? (int) $this->db->count_all_results('kecamatan') : null;
-		$stats[] = array(
-			'label' => 'Kecamatan terlayani',
-			'value' => $kecamatan,
-			'source' => 'tabel kecamatan',
-		);
-
-		$puskesmas = $this->db->table_exists('puskesmas') ? (int) $this->db->count_all_results('puskesmas') : null;
-		$stats[] = array(
-			'label' => 'Puskesmas terdaftar',
-			'value' => $puskesmas,
-			'source' => 'tabel puskesmas',
-		);
-
-		$selesai = null;
-		if ($this->db->table_exists('requests') && $this->db->field_exists('request_status', 'requests')) {
-			$selesai = (int) $this->db->where('request_status', 'Completed')->count_all_results('requests');
-		}
-		$stats[] = array(
-			'label' => 'Konsultasi selesai',
-			'value' => $selesai,
-			'source' => "permintaan berstatus 'Completed'",
-		);
-
-		$terkode = null;
-		if ($this->db->table_exists('medicalrecord_diagnoses') && $this->db->field_exists('coding_state', 'medicalrecord_diagnoses')) {
-			$terkode = (int) $this->db->where('coding_state', 'coded')->count_all_results('medicalrecord_diagnoses');
-		}
-		$stats[] = array(
-			'label' => 'Diagnosis terkode',
-			'value' => $terkode,
-			'source' => "baris diagnosis dengan coding_state 'coded'",
-		);
-
-		return $stats;
+		$content = $this->content();
+		return $content === null ? array() : $content->stats();
 	}
 }

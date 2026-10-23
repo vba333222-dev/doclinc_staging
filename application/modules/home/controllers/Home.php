@@ -22,6 +22,30 @@ class Home extends MX_Controller
 				$this->output->_display();
 				exit;
 			}
+			/* Pengunjung tanpa sesi yang membuka halaman depan (`/`) tidak lagi
+			 * langsung dilempar ke login: yang tampil adalah konten landing DocLinc
+			 * dengan tautan masuk/daftar. Metode lain di controller ini tetap
+			 * dialihkan ke login seperti semula, dan pengguna yang sudah masuk tidak
+			 * terpengaruh sama sekali.
+			 *
+			 * Gate sesi aplikasi tidak menghalangi: ia berhenti lebih awal bila tidak
+			 * ada sesi login, jadi halaman publik aman dibuka siapa pun. */
+			if ($this->router->fetch_method() === 'index') {
+				/* Library diinstansiasi langsung dengan koneksi database: memakai
+				 * `load->library()` tanpa parameter membuat konstruktornya menerima
+				 * null, dan galatnya hanya tampak sebagai 500 berbadan kosong karena
+				 * display_errors/log_errors mati di container. */
+				require_once APPPATH . 'libraries/Landing_content.php';
+				$this->landing_content = new Landing_content($this->db);
+				$this->load->view('landing_v', array(
+					'blocks' => $this->landing_content->active_blocks(),
+					'faqs' => $this->landing_content->faqs(),
+					'stats' => $this->landing_content->stats(),
+					'contact_placeholder' => $this->landing_content->contact_is_placeholder(),
+				));
+				$this->output->_display();
+				exit;
+			}
 			redirect('login');
 		}
 		$this->load->helper('maps');

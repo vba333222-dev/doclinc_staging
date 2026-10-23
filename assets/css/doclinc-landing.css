@@ -1,0 +1,255 @@
+/* ==========================================================================
+   Halaman depan publik DocLinc
+   Permukaan baru, jadi berkasnya sendiri (satu CSS per permukaan).
+
+   Aturan yang dipegang:
+   - warna, garis, dan jarak hanya dari token --dl-*; tidak ada hex di sini;
+   - gradien hanya di area hero, bukan pada kartu data;
+   - angka memakai huruf monospace supaya digit tidak bergeser;
+   - target sentuh minimal 44px dan focus-visible tidak dihapus.
+   ========================================================================== */
+
+.dl-landing {
+	margin: 0;
+	font-family: var(--dl-font);
+	font-size: var(--dl-body-size);
+	line-height: var(--dl-body-leading);
+	color: var(--dl-text);
+	background: var(--dl-bg);
+}
+
+.dl-landing-skip {
+	position: absolute;
+	left: -9999px;
+	top: 0;
+	padding: var(--dl-space-2) var(--dl-space-3);
+	background: var(--dl-surface);
+	color: var(--dl-brand-ink);
+	border-radius: var(--dl-radius-sm);
+}
+
+.dl-landing-skip:focus {
+	left: var(--dl-space-3);
+	top: var(--dl-space-3);
+	z-index: 10;
+}
+
+.dl-landing-topbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--dl-space-3);
+	padding: var(--dl-space-3) var(--dl-space-4);
+	border-bottom: 1px solid var(--dl-border);
+	background: var(--dl-surface);
+}
+
+.dl-landing-brand {
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	color: var(--dl-brand-ink);
+}
+
+.dl-landing-main {
+	max-width: 1040px;
+	margin: 0 auto;
+	padding: var(--dl-space-5) var(--dl-space-4) var(--dl-space-6);
+}
+
+/* Gradien hanya di hero: area sambutan, bukan kartu data. */
+.dl-landing-hero {
+	padding: var(--dl-space-6) var(--dl-space-5);
+	border-radius: var(--dl-radius-lg);
+	background: linear-gradient(150deg, var(--dl-brand-strong) 0%, var(--dl-brand) 60%, var(--dl-brand-ink) 100%);
+	color: var(--dl-surface);
+}
+
+.dl-landing-hero-title {
+	margin: 0 0 var(--dl-space-3);
+	font-size: 34px;
+	line-height: 1.2;
+	font-weight: 700;
+	/* Warna ditulis eksplisit: design system memberi warna pada elemen h1-h6,
+	   dan aturan elemen itu menang atas pewarisan dari pembungkus hero. */
+	color: var(--dl-surface);
+}
+
+.dl-landing-hero-text {
+	margin: 0 0 var(--dl-space-4);
+	max-width: 60ch;
+	font-size: 16px;
+	color: var(--dl-surface);
+}
+
+.dl-landing-hero-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--dl-space-3);
+}
+
+.dl-landing-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 48px;
+	padding: 0 var(--dl-space-4);
+	font-weight: 700;
+	text-decoration: none;
+	color: var(--dl-brand-ink);
+	background: var(--dl-surface);
+	border: 1px solid var(--dl-surface);
+	border-radius: var(--dl-radius-md);
+}
+
+.dl-landing-cta-small {
+	min-height: 44px;
+	padding: 0 var(--dl-space-3);
+	font-size: var(--dl-text-sm);
+}
+
+.dl-landing-cta-ghost {
+	color: var(--dl-surface);
+	background: transparent;
+	border-color: var(--dl-surface);
+}
+
+.dl-landing-cta:focus-visible,
+.dl-landing-footer-link:focus-visible,
+.dl-landing-faq-question:focus-visible {
+	outline: 3px solid var(--dl-focus);
+	outline-offset: 2px;
+}
+
+.dl-landing-stats {
+	margin-top: var(--dl-space-6);
+}
+
+.dl-landing-section {
+	margin-top: var(--dl-space-6);
+}
+
+.dl-landing-section-title {
+	margin: 0 0 var(--dl-space-2);
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--dl-text);
+}
+
+.dl-landing-section-note,
+.dl-landing-section-text-muted {
+	color: var(--dl-text-muted);
+	font-size: var(--dl-text-sm);
+}
+
+.dl-landing-section-text {
+	margin: 0;
+	max-width: 70ch;
+}
+
+.dl-landing-stat-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: var(--dl-space-3);
+	margin: var(--dl-space-4) 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.dl-landing-stat {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: var(--dl-space-3);
+	background: var(--dl-surface);
+	border: 1px solid var(--dl-border);
+	border-radius: var(--dl-radius-md);
+}
+
+.dl-landing-stat-label {
+	font-size: var(--dl-text-sm);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	color: var(--dl-text-muted);
+}
+
+.dl-landing-stat-value {
+	font-family: var(--dl-font-mono);
+	font-size: 26px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: var(--dl-text);
+}
+
+.dl-landing-stat-value-muted {
+	font-size: 16px;
+	font-weight: 400;
+	color: var(--dl-text-muted);
+}
+
+.dl-landing-stat-source {
+	font-size: var(--dl-text-sm);
+	color: var(--dl-text-muted);
+}
+
+.dl-landing-faq {
+	margin-top: var(--dl-space-3);
+	border-top: 1px solid var(--dl-border);
+}
+
+.dl-landing-faq-item {
+	border-bottom: 1px solid var(--dl-border);
+}
+
+.dl-landing-faq-question {
+	display: block;
+	min-height: 44px;
+	padding: var(--dl-space-3) 0;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.dl-landing-faq-answer {
+	padding: 0 0 var(--dl-space-3);
+	max-width: 70ch;
+	color: var(--dl-text-secondary);
+}
+
+.dl-landing-footer {
+	padding: var(--dl-space-5) var(--dl-space-4);
+	border-top: 1px solid var(--dl-border);
+	background: var(--dl-surface);
+	text-align: center;
+}
+
+.dl-landing-footer-text {
+	margin: 0 0 var(--dl-space-2);
+	color: var(--dl-text-muted);
+	font-size: var(--dl-text-sm);
+}
+
+.dl-landing-footer-link {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+	color: var(--dl-brand-ink);
+	font-weight: 700;
+}
+
+@media (max-width: 575.98px) {
+	.dl-landing-hero {
+		padding: var(--dl-space-5) var(--dl-space-4);
+	}
+
+	.dl-landing-hero-title {
+		font-size: 26px;
+	}
+
+	.dl-landing-hero-actions .dl-landing-cta {
+		width: 100%;
+	}
+}
+
+/* Tidak ada blok prefers-reduced-motion di berkas ini karena halaman ini memang
+   tidak memakai transisi maupun animasi - tidak ada yang perlu diredupkan.
+   Bila kelak ditambahkan, gerak wajib dihormati di sini juga. */
