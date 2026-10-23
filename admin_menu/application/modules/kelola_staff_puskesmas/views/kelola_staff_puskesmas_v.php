@@ -50,6 +50,23 @@ $form_values = array(
 	<div class="container-fluid">
 	<?php if ($this->session->flashdata('success')): ?>
 		<div class="alert alert-success shadow-sm"><?= html_escape($this->session->flashdata('success')); ?></div>
+<?php $staff_handover = $this->session->flashdata('staff_handover'); ?>
+<?php if (is_array($staff_handover) && !empty($staff_handover['code'])): ?>
+<div class="card shadow mb-4 doclinc-table-card">
+	<div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-ticket-alt mr-2"></i>Serah-terima kode aktivasi</h6></div>
+	<div class="card-body">
+		<p class="mb-2">Sampaikan kode ini kepada <strong><?= html_escape($staff_handover['nama']); ?></strong><?= !empty($staff_handover['nama_puskesmas']) ? ' (' . html_escape($staff_handover['nama_puskesmas']) . ')' : ''; ?>.</p>
+		<p class="mb-2"><span class="doclinc-code-chip"><?= html_escape($staff_handover['code']); ?></span></p>
+		<p class="mb-3">Berlaku sampai <strong><?= html_escape($staff_handover['expires_at']); ?></strong> dan hanya bisa dipakai sekali. Setelah halaman ini dimuat ulang, kode tidak dapat dilihat lagi &mdash; terbitkan kode baru bila perlu.</p>
+		<ol class="mb-3">
+			<li>Buka <span class="doclinc-code-chip"><?= html_escape($staff_handover['activate_url']); ?></span>.</li>
+			<li>Isi kolom <em>Kode aktivasi</em> dengan kode di atas<?= !empty($staff_handover['username']) ? ' (nama pengguna: <strong>' . html_escape($staff_handover['username']) . '</strong>)' : ''; ?>.</li>
+			<li>Buat password pribadi, lalu masuk.</li>
+		</ol>
+		<p class="mb-0 doclinc-muted-text">Nama pengguna dan password sementara tetap berlaku sebagai jalur cadangan bila kode kedaluwarsa.</p>
+	</div>
+</div>
+<?php endif; ?>
 	<?php endif; ?>
 	<?php if ($this->session->flashdata('error')): ?>
 		<div class="alert alert-danger shadow-sm"><?= html_escape($this->session->flashdata('error')); ?></div>
@@ -410,6 +427,13 @@ $form_values = array(
 												</button>
 												<button type="button" class="btn doclinc-action-btn doclinc-action-btn--warning" data-toggle="modal" data-target="#modalResetPersonalPassword<?= (int) $staff_id; ?>">
 													<i class="fas fa-key"></i> Reset password
+<form action="<?= site_url('kelola_staff_puskesmas/issue_activation_code'); ?>" method="post" class="d-inline">
+	<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
+	<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
+	<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--primary" onclick="return confirm('Terbitkan kode aktivasi baru? Kode lama yang belum dipakai akan dibatalkan.');">
+		<i class="fas fa-ticket-alt"></i> Kode aktivasi
+	</button>
+</form>
 												</button>
 											<?php endif; ?>
 											<form action="<?= site_url('kelola_staff_puskesmas/unbind_account'); ?>" method="post">

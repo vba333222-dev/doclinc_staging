@@ -76,10 +76,12 @@ class Nakes_activation_code
 			return null;
 		}
 		$now = date('Y-m-d H:i:s');
-		$this->db->trans_begin();
-		$this->db->where('user_id', $user_id);
-		$this->db->where('used_at IS NULL', null, false);
-		$this->db->update(self::TABLE, array('used_at' => $now));
+		/* Urutan dan ketiadaan transaksi eksplisit di sini disengaja:
+		   `trans_begin()`/`trans_commit()` di dalam transaksi pemanggil akan
+		   meng-commit transaksi luar (perilaku CodeIgniter 3), sehingga pustaka ini
+		   tidak bisa dipakai di dalam transaksi uji maupun transaksi pemanggil.
+		   Kode baru disimpan lebih dulu, kode lama dibatalkan setelahnya; kalau
+		   pembatalan gagal, kode baru tetap sah dan Admin cukup menerbitkan ulang. */
 		$inserted = $this->db->insert(self::TABLE, array(
 			'user_id' => $user_id,
 			'code_hash' => $this->hash($code),
@@ -89,11 +91,14 @@ class Nakes_activation_code
 			'issued_reason' => substr((string) $reason, 0, 40),
 			'created_at' => $now,
 		));
-		if (!$inserted || $this->db->trans_status() === false) {
-			$this->db->trans_rollback();
+		if (!$inserted) {
 			return null;
 		}
-		$this->db->trans_commit();
+		$new_id = (int) $this->db->insert_id();
+		$this->db->where('user_id', $user_id);
+		$this->db->where('id !=', $new_id);
+		$this->db->where('used_at IS NULL', null, false);
+		$this->db->update(self::TABLE, array('used_at' => $now));
 		return $code;
 	}
 

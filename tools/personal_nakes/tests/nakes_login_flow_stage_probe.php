@@ -247,5 +247,53 @@ check('V5 akun yang sudah aktivasi diberi jalan masuk, bukan jalan buntu',
 check('V6 langkah aktivasi disebut sebagai langkah 1 dari 2',
 	strpos($activation_view, 'Langkah 1 dari 2') !== false);
 
+/* ================= 8. Kode aktivasi sekali pakai (jalur baru) ============= */
+require_once APPPATH . 'libraries/Nakes_activation_code.php';
+$pepper = (string) getenv('DOCLINC_ENCRYPTION_KEY');
+check('C1 tanpa pepper, penerbitan kode ditolak (fail-closed)',
+	(new Nakes_activation_code($db, ''))->failSafe() === false
+		&& (new Nakes_activation_code($db, ''))->issue(9002) === null);
+check('C2 pepper tersedia di lingkungan ini', $pepper !== '');
+
+$codes = new Nakes_activation_code($db, $pepper, array('ttl_seconds' => 3600));
+$baseline_codes = (int) $db->count_all_results('nakes_activation_codes');
+$db->query('START TRANSACTION');
+$first = $codes->issue(9002, 9001, 'probe');
+check('C3 kode terbit: 8 karakter dari abjad tanpa huruf rancu',
+	is_string($first) && strlen($first) === 8
+		&& preg_match('/\A[A-HJ-KM-NP-Z2-9]{8}\z/', $first) === 1,
+	'kode=' . var_export($first, true));
+check('C4 kode dikenali walau diketik huruf kecil atau berspasi',
+	$codes->consume(' ' . strtolower(substr((string) $first, 0, 4)) . ' ' . strtolower(substr((string) $first, 4)) . ' ') === 9002);
+check('C5 kode tidak bisa dipakai dua kali',
+	$codes->consume((string) $first) === null);
+
+$second = $codes->issue(9002, 9001, 'probe_reissue');
+$third = $codes->issue(9002, 9001, 'probe_reissue');
+check('C6 penerbitan ulang membatalkan kode sebelumnya',
+	$codes->consume((string) $second) === null && $codes->consume((string) $third) === 9002);
+
+$expired = $codes->issue(9002, 9001, 'probe_expiry');
+$db->query(
+	'UPDATE nakes_activation_codes SET expires_at = ? WHERE user_id = 9002 AND used_at IS NULL',
+	array(date('Y-m-d H:i:s', time() - 60))
+);
+check('C7 kode kedaluwarsa ditolak',
+	$codes->consume((string) $expired) === null);
+check('C8 kode yang sudah terpakai tidak muncul sebagai kode hidup',
+	$codes->activeFor(9002) === null);
+
+$live = $codes->issue(9003, 9001, 'probe_active');
+$active_row = $codes->activeFor(9003);
+check('C9 kode hidup terbaca untuk ditampilkan di panel',
+	$active_row !== null && (int) $active_row->id > 0);
+check('C10 kode akun lain tidak bocor ke akun ini',
+	$codes->consume((string) $live) === 9003 && $codes->activeFor(9002) === null);
+
+$db->query('ROLLBACK');
+check('C11 rollback mengembalikan jumlah baris kode aktivasi',
+	(int) $db->count_all_results('nakes_activation_codes') === $baseline_codes,
+	'sebelum=' . $baseline_codes . ' sesudah=' . (int) $db->count_all_results('nakes_activation_codes'));
+
 echo "\n" . ($fails === 0 ? 'PROBE_RESULT=PASS' : "PROBE_RESULT=FAIL (gagal={$fails})") . "\n";
 exit($fails === 0 ? 0 : 1);
