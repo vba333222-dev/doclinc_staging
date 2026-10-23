@@ -104,6 +104,7 @@
 		$doclinc_active_layanan_kesehatan = ($doclinc_admin_segment === 'kelola_layanan_kesehatan') ? 'active' : '';
 		$doclinc_active_tindakan = ($doclinc_admin_segment === 'kelola_tindakan') ? 'active' : '';
 		$doclinc_active_warga = ($doclinc_admin_segment === 'kelola_warga') ? 'active' : '';
+		$doclinc_active_icd10 = ($doclinc_admin_segment === 'icd10') ? 'active' : '';
 		$doclinc_active_keluhan = ($doclinc_admin_segment === 'kelola_keluhan') ? 'active' : '';
 		$doclinc_active_rekam_medis = ($doclinc_admin_segment === 'rekam_medis') ? 'active' : '';
 		$doclinc_active_laporan = ($doclinc_admin_segment === 'laporan') ? 'active' : '';
@@ -197,6 +198,13 @@
 				<a class="nav-link" href="<?php echo site_url('kelola_warga'); ?>">
 					<i class="fas fa-users"></i>
 					<span>Data warga</span>
+				</a>
+			</li>
+
+			<li class="nav-item <?= $doclinc_active_icd10; ?>">
+				<a class="nav-link" href="<?php echo site_url('icd10'); ?>">
+					<i class="fas fa-book-medical"></i>
+					<span>Master ICD-10</span>
 				</a>
 			</li>
 
