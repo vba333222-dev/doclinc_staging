@@ -148,7 +148,12 @@ $summary_cards = array(
 
 <div class="card shadow-sm mb-4 doclinc-filter-card">
 	<div class="card-body">
-		<form method="get" action="<?= site_url('konsultasi_kesehatan'); ?>">
+		<?php
+		/* base_url(), bukan site_url(): dengan `index_page = 'index.php?'` parameter
+		   formulir ikut masuk ke URI dan dijawab 400 oleh filter URI CodeIgniter.
+		   Lihat catatan lengkap di laporan_v.php. */
+		?>
+		<form method="get" action="<?= base_url('konsultasi_kesehatan'); ?>">
 			<div class="form-row align-items-end">
 				<div class="form-group col-md-2">
 					<label class="small font-weight-bold text-muted" for="status">Status</label>

@@ -52,7 +52,16 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 </div>
 
 <div id="form-perhari" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
-	<form id="formLaporanPerHari" action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
+	<?php
+	/* Aksi formulir memakai base_url(), bukan site_url(). Panel ini memakai
+	   `index_page = 'index.php?'`, sehingga site_url() menghasilkan
+	   `index.php?/laporan` dan parameter yang ditempelkan ikut menjadi bagian URI -
+	   '=' dan '&' tidak ada di permitted_uri_chars dan permintaan dijawab 400
+	   (filter tampak tidak berfungsi). base_url() menghasilkan `/admin_menu/laporan`,
+	   yang oleh nginx diteruskan ke index.php dengan PATH_INFO, sehingga parameter
+	   tetap berada di query string dan terbaca oleh $this->input->get(). */
+	?>
+	<form id="formLaporanPerHari" action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="d-flex align-items-start justify-content-between flex-wrap mb-3">
 			<div>
 				<h5 class="mb-1 font-weight-bold">Laporan konsultasi harian</h5>
@@ -121,7 +130,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 </div>
 
 <div id="form-perminggu" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
-	<form action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
+	<form action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
 				<label for="minggu_tahun" class="col-form-label">Tahun</label>
@@ -139,7 +148,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 	</form>
 </div>
 <div id="form-perbulan" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
-	<form action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
+	<form action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
 				<label for="bulan" class="col-form-label">Bulan</label>
@@ -163,7 +172,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 	</form>
 </div>
 <div id="form-pertahun" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
-	<form action="<?= site_url('laporan'); ?>" method="get" class="mb-4">
+	<form action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
 				<label for="tahun_tahun" class="col-form-label">Tahun</label>

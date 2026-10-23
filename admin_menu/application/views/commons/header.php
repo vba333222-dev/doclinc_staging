@@ -94,6 +94,9 @@
 		$doclinc_active_master_puskesmas = ($doclinc_admin_segment === 'master_puskesmas' || $this->session->flashdata('active_tab_master_puskesmas')) ? 'active' : '';
 		$doclinc_active_akun_puskesmas = ($doclinc_admin_segment === 'kelola_dokter_nakes' || $this->session->flashdata('active_tab_kelola_dokter_nakes')) ? 'active' : '';
 		$doclinc_active_staff_puskesmas = ($doclinc_admin_segment === 'kelola_staff_puskesmas' || $this->session->flashdata('active_tab_kelola_staff_puskesmas')) ? 'active' : '';
+		$doclinc_active_layanan_kesehatan = ($doclinc_admin_segment === 'kelola_layanan_kesehatan') ? 'active' : '';
+		$doclinc_active_tindakan = ($doclinc_admin_segment === 'kelola_tindakan') ? 'active' : '';
+		$doclinc_active_warga = ($doclinc_admin_segment === 'kelola_warga') ? 'active' : '';
 		$doclinc_active_keluhan = ($doclinc_admin_segment === 'kelola_keluhan' || $this->session->flashdata('active_tab_keluhan')) ? 'active' : '';
 		$doclinc_active_rekam_medis = ($doclinc_admin_segment === 'rekam_medis' || $this->session->flashdata('active_tab_rekam_medis')) ? 'active' : '';
 		$doclinc_active_laporan = ($doclinc_admin_segment === 'laporan' || $this->session->flashdata('active_tab_laporan')) ? 'active' : '';
@@ -149,11 +152,32 @@
 				</a>
 			</li>
 
+			<li class="nav-item <?= $doclinc_active_layanan_kesehatan; ?>">
+				<a class="nav-link" href="<?php echo site_url('kelola_layanan_kesehatan'); ?>">
+					<i class="fas fa-hand-holding-heart"></i>
+					<span>Layanan kesehatan</span>
+				</a>
+			</li>
+
+			<li class="nav-item <?= $doclinc_active_tindakan; ?>">
+				<a class="nav-link" href="<?php echo site_url('kelola_tindakan'); ?>">
+					<i class="fas fa-clipboard-list"></i>
+					<span>Tindakan</span>
+				</a>
+			</li>
+
 			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Data</li>
 			<li class="nav-item <?= $doclinc_active_keluhan; ?>">
 				<a class="nav-link" href="<?php echo site_url('kelola_keluhan'); ?>">
 					<i class="fas fa-comments"></i>
 					<span>Data keluhan</span>
+				</a>
+			</li>
+
+			<li class="nav-item <?= $doclinc_active_warga; ?>">
+				<a class="nav-link" href="<?php echo site_url('kelola_warga'); ?>">
+					<i class="fas fa-users"></i>
+					<span>Data warga</span>
 				</a>
 			</li>
 
