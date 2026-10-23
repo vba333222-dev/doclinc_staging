@@ -92,6 +92,7 @@
 		$doclinc_active_dashboard = ($doclinc_admin_segment === 'home' || $this->session->flashdata('active_tab_dashboard')) ? 'active' : '';
 		$doclinc_active_konsultasi = ($doclinc_admin_segment === 'konsultasi_kesehatan' || $this->session->flashdata('active_tab_konsultasi_kesehatan')) ? 'active' : '';
 		$doclinc_active_master_puskesmas = ($doclinc_admin_segment === 'master_puskesmas' || $this->session->flashdata('active_tab_master_puskesmas')) ? 'active' : '';
+		$doclinc_active_wilayah = ($doclinc_admin_segment === 'wilayah') ? 'active' : '';
 		$doclinc_active_akun_puskesmas = ($doclinc_admin_segment === 'kelola_dokter_nakes' || $this->session->flashdata('active_tab_kelola_dokter_nakes')) ? 'active' : '';
 		$doclinc_active_staff_puskesmas = ($doclinc_admin_segment === 'kelola_staff_puskesmas' || $this->session->flashdata('active_tab_kelola_staff_puskesmas')) ? 'active' : '';
 		$doclinc_active_layanan_kesehatan = ($doclinc_admin_segment === 'kelola_layanan_kesehatan') ? 'active' : '';
@@ -135,6 +136,13 @@
 				<a class="nav-link" href="<?php echo site_url('master_puskesmas'); ?>">
 					<i class="fas fa-hospital"></i>
 					<span>Data Puskesmas</span>
+				</a>
+			</li>
+
+			<li class="nav-item <?= $doclinc_active_wilayah; ?>">
+				<a class="nav-link" href="<?php echo site_url('wilayah'); ?>">
+					<i class="fas fa-map-marked-alt"></i>
+					<span>Master wilayah</span>
 				</a>
 			</li>
 
