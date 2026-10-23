@@ -39,7 +39,7 @@ class Password_change_gate
 			->row();
 		if (!$user || (string) $user->role !== $session_role || (string) $user->status !== 'aktif') {
 			$CI->session->sess_destroy();
-			$this->deny($CI, $policy, 'session_not_allowed');
+			$this->deny($CI, $policy, 'session_not_allowed', $session_role);
 		}
 
 		$must_change_password = doclinc_nakes_effective_must_change_password(
@@ -60,13 +60,13 @@ class Password_change_gate
 		$enabled = $CI->config->item('first_login_password_change_enabled') === true;
 		if (!$enabled || !$has_password_gate || $session_role !== 'dokter') {
 			$CI->session->sess_destroy();
-			$this->deny($CI, $policy, 'password_change_unavailable');
+			$this->deny($CI, $policy, 'password_change_unavailable', $session_role);
 		}
 
-		$this->deny($CI, $policy, 'password_change_required');
+		$this->deny($CI, $policy, 'password_change_required', $session_role);
 	}
 
-	private function deny($CI, First_login_gate_policy $policy, $code)
+	private function deny($CI, First_login_gate_policy $policy, $code, $role = null)
 	{
 		if ($code !== 'password_change_required') {
 			$CI->session->sess_destroy();
@@ -92,10 +92,12 @@ class Password_change_gate
 		}
 
 		if ($code !== 'password_change_required') {
-			redirect('login');
+			/* Akun nakes tidak boleh dilempar ke halaman masuk warga: permukaan
+			   masuknya sendiri ada di `login-nakes`. */
+			redirect($role === 'dokter' ? 'login-nakes' : 'login');
 			exit;
 		}
-		redirect('login/change-password');
+		redirect('login-nakes/change-password');
 		exit;
 	}
 }

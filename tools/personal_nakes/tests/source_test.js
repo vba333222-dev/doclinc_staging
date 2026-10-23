@@ -13,9 +13,12 @@ function expect(condition, label) {
 
 const routes = read('application/config/routes.php');
 const login = read('application/modules/login/controllers/Login.php');
+const nakesLogin = read('application/modules/login_nakes/controllers/Login_nakes.php');
+const loginView = read('application/modules/login/views/login_v.php');
 const loginModel = read('application/modules/login/models/Login_m.php');
-const activationView = read('application/modules/login/views/activate_account_v.php');
-const changeView = read('application/modules/login/views/change_password_v.php');
+const activationView = read('application/modules/login_nakes/views/activate_nakes_v.php');
+const changeView = read('application/modules/login_nakes/views/change_password_nakes_v.php');
+const passwordGate = read('application/hooks/Password_change_gate.php');
 const adminController = read('admin_menu/application/modules/kelola_staff_puskesmas/controllers/Kelola_staff_puskesmas.php');
 const adminModel = read('admin_menu/application/modules/kelola_staff_puskesmas/models/Kelola_staff_puskesmas_m.php');
 const adminView = read('admin_menu/application/modules/kelola_staff_puskesmas/views/kelola_staff_puskesmas_v.php');
@@ -32,18 +35,38 @@ const methodBody = (source, name, nextName) => {
   return start < 0 ? '' : source.slice(start, end < 0 ? source.length : end);
 };
 
-expect(routes.includes("$route['login/activate']") && routes.includes("$route['login/activate/auth']"), 'activation_routes_are_explicit');
-expect(login.includes('public function activate_auth()') && login.includes("method(TRUE) !== 'POST'"), 'activation_auth_is_post_only');
-expect(login.includes("'credential_activation_user_id'") && login.includes("'password_change_session_binding'") && login.includes('sess_regenerate(TRUE)'), 'activation_session_is_bound_and_regenerated');
-expect(login.includes("'id', 'username', 'nama', 'email', 'role', 'remark', 'picture', 'logged_in'") && !login.match(/credential_activation_user_id[\s\S]{0,250}'logged_in'\s*=>\s*TRUE/), 'activation_session_is_not_full_runtime_session');
-expect(login.includes("first_login_password_change_enabled') !== true") && login.includes("nakes_credential_enforcement_enabled') === true"), 'workflow_availability_remains_separate_from_enforcement');
+expect(routes.includes("$route['login/activate']") && routes.includes("$route['login/activate/auth']")
+  && routes.includes("$route['login-nakes']") && routes.includes("$route['login-nakes/activate/auth']"), 'activation_routes_are_explicit');
+expect(nakesLogin.includes('public function activate_auth()') && nakesLogin.includes("method(TRUE) !== 'POST'"), 'activation_auth_is_post_only');
+expect(nakesLogin.includes("'credential_activation_user_id'") && nakesLogin.includes("'password_change_session_binding'") && nakesLogin.includes('sess_regenerate(TRUE)'), 'activation_session_is_bound_and_regenerated');
+expect(nakesLogin.includes("'id', 'username', 'nama', 'email', 'role', 'remark', 'picture', 'logged_in'") && !nakesLogin.match(/credential_activation_user_id[\s\S]{0,250}'logged_in'\s*=>\s*TRUE/), 'activation_session_is_not_full_runtime_session');
+expect(nakesLogin.includes("first_login_password_change_enabled') !== true") && nakesLogin.includes("nakes_credential_enforcement_enabled') === true"), 'workflow_availability_remains_separate_from_enforcement');
 expect(loginModel.includes('get_personal_activation_identity') && loginModel.includes('Nakes_personal_account_policy'), 'activation_uses_canonical_identity_policy');
 expect(loginModel.includes('FOR UPDATE') && loginModel.includes('hash_equals($expected_current_hash') && loginModel.includes("'password_changed_at' => date"), 'credential_completion_is_atomic_and_compare_and_swap');
-expect(login.includes("Nama pengguna atau password sementara belum sesuai.") && !login.includes("metadata_json' => $password"), 'activation_failure_does_not_enumerate_or_log_credentials');
+expect(nakesLogin.includes("Nama pengguna atau password sementara belum sesuai.") && !nakesLogin.includes("metadata_json' => $password"), 'activation_failure_does_not_enumerate_or_log_credentials');
 expect(loginModel.includes("'must_change_password' => 0") && loginModel.includes("'password_changed_at' => date"), 'successful_enrollment_transitions_to_active_raw_state');
-expect(activationView.includes('password sementara') && activationView.includes("site_url('login/activate/auth')"), 'activation_ui_has_controlled_credential_boundary');
-expect(changeView.includes('password_change_token') && changeView.includes("site_url('login/change-password/submit')")
-  && login.includes("unset_userdata('password_change_token_state')") && login.includes('first_login_token_policy->consume'), 'password_change_consumes_single_use_form_token');
+expect(activationView.includes('password sementara') && activationView.includes("site_url('login-nakes/activate/auth')"), 'activation_ui_has_controlled_credential_boundary');
+expect(changeView.includes('password_change_token') && changeView.includes("site_url('login-nakes/change-password/submit')")
+  && nakesLogin.includes("unset_userdata('password_change_token_state')") && nakesLogin.includes('first_login_token_policy->consume'), 'password_change_consumes_single_use_form_token');
+
+/*
+ * Pemisahan permukaan masuk nakes dari permukaan warga.
+ *
+ * Permintaan pemilik produk 2026-10-24: cara verifikasi dan masuk akun nakes
+ * tidak boleh berada di halaman yang sama dengan warga/pasien.
+ */
+expect(!loginView.includes("site_url('login/activate')") && loginView.includes("site_url('login-nakes')"), 'warga_login_has_no_nakes_activation_entry');
+expect(!loginView.includes('sign_up') || loginView.includes("site_url('sign_up')"), 'warga_login_keeps_warga_registration_only');
+expect(!activationView.includes("site_url('sign_up')") && !changeView.includes("site_url('sign_up')"), 'nakes_surface_never_offers_self_registration');
+expect(routes.includes("$route['login/activate'] = 'login_nakes/activate'")
+  && routes.includes("$route['login/change-password'] = 'login_nakes/change_password'"), 'legacy_nakes_routes_alias_to_nakes_module');
+expect(nakesLogin.includes("(string) $user->role !== 'dokter'") && nakesLogin.includes('echo "2"'), 'nakes_login_refuses_non_nakes_accounts');
+expect(nakesLogin.includes("'role' => $user->role,") && login.includes('public function auth()'), 'both_surfaces_keep_single_shared_identity_model');
+expect(nakesLogin.includes("site_url('login-nakes") === false && nakesLogin.includes("redirect('login-nakes"), 'nakes_controller_redirects_to_nakes_surface');
+expect(passwordGate.includes("redirect($role === 'dokter' ? 'login-nakes' : 'login')")
+  && passwordGate.includes("redirect('login-nakes/change-password')"), 'password_gate_sends_nakes_to_nakes_surface');
+expect(read('assets/css/doclinc-nakes-auth.css').includes('--dl-brand')
+  && !read('application/modules/login/views/login_v.php').includes('doclinc-nakes-auth.css'), 'nakes_surface_has_its_own_stylesheet');
 expect(tokenPolicy.includes('function consume') && tokenPolicy.includes('$state = null') && tokenPolicy.includes('hash_hmac'), 'token_policy_has_destructive_consume_and_session_binding');
 expect(policy.includes('STAFF_ONLY') && policy.includes('STAFF_WITH_UNLINKED_ACCOUNT') && policy.includes('ADMIN_RESET_PENDING') && policy.includes('INVALID'), 'provisioning_domain_states_are_centralized');
 expect(policy.includes("active_link_count") && policy.includes("is_command_center") && policy.includes("facility_status"), 'identity_conflicts_fail_closed_in_policy');

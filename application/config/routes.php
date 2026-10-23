@@ -80,8 +80,23 @@ $route['realtime/connection-token'] = 'realtime_access/connection_token';
 $route['realtime/subscription-token'] = 'realtime_access/subscription_token';
 $route['notifications/snapshot'] = 'notifikasi/snapshot';
 $route['realtime/requests/snapshot'] = 'realtime_requests/snapshot';
-$route['login/change-password'] = 'login/change_password';
+$route['login/change-password'] = 'login_nakes/change_password';
 $route['logout'] = 'login/logout';
-$route['login/change-password/submit'] = 'login/update_password';
-$route['login/activate'] = 'login/activate';
-$route['login/activate/auth'] = 'login/activate_auth';
+$route['login/change-password/submit'] = 'login_nakes/update_password';
+$route['login/activate'] = 'login_nakes/activate';
+$route['login/activate/auth'] = 'login_nakes/activate_auth';
+
+/*
+ * Permukaan masuk & verifikasi akun Nakes.
+ *
+ * Rute `login/activate*` dan `login/change-password*` di atas adalah alias lama:
+ * keduanya kini dilayani modul `login_nakes` supaya hanya ada satu implementasi.
+ * Alamat kanonik yang dipakai halaman nakes ada di bawah ini.
+ */
+$route['login-nakes'] = 'login_nakes/index';
+$route['login-nakes/auth'] = 'login_nakes/auth';
+$route['login-nakes/logout'] = 'login_nakes/logout';
+$route['login-nakes/activate'] = 'login_nakes/activate';
+$route['login-nakes/activate/auth'] = 'login_nakes/activate_auth';
+$route['login-nakes/change-password'] = 'login_nakes/change_password';
+$route['login-nakes/change-password/submit'] = 'login_nakes/update_password';

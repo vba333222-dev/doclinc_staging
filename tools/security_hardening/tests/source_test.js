@@ -96,7 +96,7 @@ expect(csrfClient.includes("headers.set('X-CSRF-TOKEN', token)") && csrfClient.i
 
 for (const viewPath of [
   'application/modules/login/views/login_v.php',
-  'application/modules/login/views/change_password_v.php',
+  'application/modules/login_nakes/views/change_password_nakes_v.php',
   'application/modules/sign_up/views/sign_up_v.php',
   'application/modules/home/views/home_v.php',
   'application/modules/home_nakes/views/home_nakes_v.php',

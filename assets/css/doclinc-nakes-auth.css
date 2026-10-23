@@ -1,0 +1,197 @@
+/*
+ * Permukaan masuk & verifikasi akun Nakes.
+ *
+ * Berkas ini hanya untuk halaman `login-nakes` (masuk, aktivasi, ganti sandi
+ * login pertama). Aturan halaman warga tidak boleh masuk ke sini, dan
+ * sebaliknya — lihat aturan "satu CSS per permukaan".
+ *
+ * Nilai hanya dari token `--dl-*` di doclinc-design-system.css: tidak ada hex
+ * baru, tidak ada paksaan prioritas, tidak ada gradien.
+ */
+
+.dl-nakes-auth-body {
+	background-color: var(--dl-bg);
+	color: var(--dl-text);
+	font-family: var(--dl-font);
+	font-size: var(--dl-body-size);
+	line-height: var(--dl-body-leading);
+}
+
+.dl-nakes-auth-logo {
+	width: 100%;
+	max-width: 232px;
+	height: auto;
+	margin-bottom: var(--dl-space-5);
+}
+
+.dl-nakes-auth-card {
+	background-color: var(--dl-surface);
+	border: 1px solid var(--dl-border);
+	border-top: 3px solid var(--dl-brand);
+	border-radius: var(--dl-radius-lg);
+	box-shadow: var(--dl-shadow-2);
+}
+
+.dl-nakes-auth-card-body {
+	padding: var(--dl-space-5);
+}
+
+/* Penanda permukaan: pembeda visual dari halaman masuk warga. */
+.dl-nakes-auth-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--dl-space-2);
+	margin: 0 0 var(--dl-space-3);
+	padding: var(--dl-space-1) var(--dl-space-3);
+	border: 1px solid var(--dl-border);
+	border-radius: 999px;
+	background-color: var(--dl-brand-subtle);
+	color: var(--dl-brand-ink);
+	font-size: var(--dl-text-sm);
+	font-weight: 700;
+	letter-spacing: .01em;
+}
+
+.dl-nakes-auth-badge i {
+	color: var(--dl-brand-ink);
+	font-size: 14px;
+}
+
+.dl-nakes-auth-title {
+	margin: 0 0 var(--dl-space-1);
+	font-size: 22px;
+	font-weight: 800;
+	color: var(--dl-text);
+}
+
+.dl-nakes-auth-subtitle {
+	margin: 0 0 var(--dl-space-4);
+	color: var(--dl-text-secondary);
+	font-size: var(--dl-text-sm);
+}
+
+.dl-nakes-auth-note {
+	margin: 0 0 var(--dl-space-4);
+	padding: var(--dl-space-3);
+	border-radius: var(--dl-radius-sm);
+	background-color: var(--dl-surface-subtle);
+	color: var(--dl-text-secondary);
+	font-size: var(--dl-text-sm);
+}
+
+.dl-nakes-auth-field {
+	margin-bottom: var(--dl-space-4);
+}
+
+.dl-nakes-auth-control {
+	position: relative;
+}
+
+.dl-nakes-auth-control .form-control {
+	min-height: 44px;
+	padding-left: 40px;
+	padding-right: 44px;
+}
+
+.dl-nakes-auth-icon {
+	position: absolute;
+	top: 50%;
+	left: 14px;
+	transform: translateY(-50%);
+	color: var(--dl-text-muted);
+	font-size: 14px;
+	pointer-events: none;
+}
+
+.dl-nakes-auth-toggle-pw {
+	position: absolute;
+	top: 50%;
+	right: 4px;
+	transform: translateY(-50%);
+	width: 44px;
+	height: 44px;
+	border: 0;
+	background: none;
+	color: var(--dl-text-muted);
+	cursor: pointer;
+}
+
+.dl-nakes-auth-toggle-pw:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent);
+	outline-offset: 2px;
+	border-radius: var(--dl-radius-sm);
+}
+
+.dl-nakes-auth-btn {
+	min-height: 44px;
+	width: 100%;
+	border: 1px solid var(--dl-brand-strong);
+	border-radius: var(--dl-radius-sm);
+	background-color: var(--dl-brand);
+	color: var(--dl-surface);
+	font-size: var(--dl-text-sm);
+	font-weight: 800;
+}
+
+.dl-nakes-auth-btn:hover,
+.dl-nakes-auth-btn:focus {
+	background-color: var(--dl-brand-strong);
+	color: var(--dl-surface);
+}
+
+.dl-nakes-auth-btn:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--dl-focus) 62%, transparent);
+	outline-offset: 2px;
+}
+
+.dl-nakes-auth-btn[disabled] {
+	opacity: .7;
+}
+
+.dl-nakes-auth-link {
+	color: var(--dl-brand-ink);
+	font-weight: 700;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.dl-nakes-auth-linkbtn {
+	min-height: 44px;
+	border: 0;
+	background: none;
+	color: var(--dl-text-secondary);
+	font-size: var(--dl-text-sm);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.dl-nakes-auth-divider {
+	margin: var(--dl-space-4) 0;
+	border-top: 1px solid var(--dl-divider);
+	opacity: 1;
+}
+
+.dl-nakes-auth-hint {
+	margin-top: var(--dl-space-1);
+	color: var(--dl-text-muted);
+	font-size: var(--dl-text-sm);
+}
+
+.dl-nakes-auth-footer-text {
+	margin: 0;
+	color: var(--dl-text-secondary);
+	font-size: var(--dl-text-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.dl-nakes-auth-btn,
+	.dl-nakes-auth-link {
+		transition: none;
+	}
+}
+
+@media (min-width: 768px) {
+	.dl-nakes-auth-card-body {
+		padding: var(--dl-space-6);
+	}
+}

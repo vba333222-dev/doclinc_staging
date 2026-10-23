@@ -16,6 +16,8 @@ function expect(condition, name) {
 const publicConfig = source('application/config/config.php');
 const adminConfig = source('admin_menu/application/config/config.php');
 const publicLogin = source('application/modules/login/controllers/Login.php');
+/* Alur verifikasi nakes pindah ke permukaan sendiri (2026-10-24). */
+const publicNakesLogin = source('application/modules/login_nakes/controllers/Login_nakes.php');
 const adminLogin = source('admin_menu/application/modules/login/controllers/Login.php');
 const publicHooks = source('application/config/hooks.php');
 const adminHooks = source('admin_menu/application/config/hooks.php');
@@ -63,8 +65,8 @@ const staffAdminView = source('admin_menu/application/modules/kelola_staff_puske
 const commandCenterAdminView = source('admin_menu/application/modules/kelola_dokter_nakes/views/kelola_dokter_nakes_v.php');
 const passwordViews = [
   'application/modules/login/views/login_v.php',
-  'application/modules/login/views/activate_account_v.php',
-  'application/modules/login/views/change_password_v.php',
+  'application/modules/login_nakes/views/activate_nakes_v.php',
+  'application/modules/login_nakes/views/change_password_nakes_v.php',
   'application/modules/sign_up/views/sign_up_v.php',
   'admin_menu/application/modules/login/views/login_v.php',
   'admin_menu/application/views/commons/footer.php'
@@ -93,7 +95,7 @@ expect(activationModel.includes('revokeLocked') && activationModel.includes('com
 expect(resetModel.includes('revokeLocked') && resetModel.indexOf('revokeLocked') < resetModel.indexOf('trans_commit()', resetModel.indexOf('revokeLocked')), 'admin_reset_revokes_inside_transaction');
 expect(adminRecoveryModel.includes('revokeLocked') && adminRecoveryModel.includes('FOR UPDATE'), 'admin_password_recovery_revokes_inside_transaction');
 expect(adminHome.includes('normal_session_token') && adminHome.includes('Session_binding_service') && adminHome.includes('->rotatePassword('), 'admin_password_change_rotates_binding_atomically');
-expect(publicLogin.includes("$context['mode'] === 'enforcement'") && publicLogin.includes("set_userdata('normal_session_token', $completion)")
+expect(publicNakesLogin.includes("$context['mode'] === 'enforcement'") && publicNakesLogin.includes("set_userdata('normal_session_token', $completion)")
   && activationModel.includes('rotateLocked') && activationModel.indexOf('rotateLocked') < activationModel.indexOf('trans_commit()', activationModel.indexOf('rotateLocked')), 'public_enforced_password_change_rotates_binding_atomically');
 expect(commandCenterModel.includes('session_binding_service') && commandCenterModel.includes('revokeLocked'), 'command_center_reset_and_deactivation_revoke_binding');
 expect(sessionPolicy.includes('random_bytes(32)') && sessionPolicy.includes("hash('sha256', $token)") && sessionPolicy.includes('hash_equals'), 'binding_is_random_hashed_and_constant_time');

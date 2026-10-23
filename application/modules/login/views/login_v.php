@@ -67,9 +67,7 @@
 						<hr class="dl-auth-divider">
 						<div class="text-center">
 							<p class="dl-auth-footer-text">Belum punya akun? <a href="<?= site_url('sign_up'); ?>" class="dl-auth-link">Daftar di sini</a></p>
-							<?php if (!empty($activation_available)): ?>
-								<p class="mt-2 mb-0"><a href="<?= html_escape(site_url('login/activate')); ?>" class="dl-auth-link">Aktivasi akun Nakes</a></p>
-							<?php endif; ?>
+							<p class="dl-auth-footer-text mt-2">Tenaga kesehatan? <a href="<?= html_escape(site_url('login-nakes')); ?>" class="dl-auth-link">Masuk lewat halaman Nakes</a></p>
 						</div>
 					</div>
 				</div>

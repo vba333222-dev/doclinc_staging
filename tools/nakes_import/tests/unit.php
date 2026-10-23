@@ -52,7 +52,7 @@ try {
 		dirname(__DIR__, 3) . '/application/migrations/20260727000300_nakes_import_account_foundation.php',
 		dirname(__DIR__, 3) . '/application/modules/login/controllers/Login.php',
 		dirname(__DIR__, 3) . '/application/modules/login/models/Login_m.php',
-		dirname(__DIR__, 3) . '/application/modules/login/views/change_password_v.php',
+		dirname(__DIR__, 3) . '/application/modules/login_nakes/views/change_password_nakes_v.php',
 	);
 	foreach ($artifactRoots as $artifactRoot) {
 		$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($artifactRoot, FilesystemIterator::SKIP_DOTS));

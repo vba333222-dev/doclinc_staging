@@ -13,48 +13,50 @@
 	<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/style.css')); ?>">
 	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-design-system.css')); ?>">
-	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-auth.css')); ?>">
+	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-nakes-auth.css')); ?>">
 </head>
-<body class="dl-auth-body">
+<body class="dl-nakes-auth-body">
 	<div class="container">
 		<div class="row d-flex align-items-center justify-content-center min-vh-100 py-4">
 			<div class="col-11 col-sm-8 col-md-6 col-lg-5 col-xl-4">
 				<div class="text-center">
-					<img class="dl-auth-logo" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DokLinc" width="3167" height="1396" decoding="async" fetchpriority="high">
+					<img class="dl-nakes-auth-logo" src="<?= base_url('assets/images/doklinc.png'); ?>" alt="DokLinc" width="3167" height="1396" decoding="async" fetchpriority="high">
 				</div>
-				<div class="dl-auth-card">
-					<div class="dl-auth-card-body">
-						<h1 class="dl-auth-title">Aktivasi akun Nakes</h1>
-						<p class="dl-auth-subtitle">Masukkan nama pengguna dan password sementara dari Admin Dinas Kesehatan.</p>
+				<div class="dl-nakes-auth-card">
+					<div class="dl-nakes-auth-card-body">
+						<p class="dl-nakes-auth-badge"><i class="fas fa-user-md" aria-hidden="true"></i> Tenaga kesehatan</p>
+						<h1 class="dl-nakes-auth-title">Aktivasi akun Nakes</h1>
+						<p class="dl-nakes-auth-subtitle">Masukkan nama pengguna dan password sementara dari Admin Dinas Kesehatan.</p>
 						<?php if (!empty($error_message)) : ?>
 							<div class="alert alert-danger" role="alert"><?= html_escape($error_message); ?></div>
 						<?php endif; ?>
-						<p class="dl-auth-note">Jika data cocok, Anda akan diminta membuat password pribadi sebelum masuk ke beranda.</p>
-						<form method="post" action="<?= html_escape(site_url('login/activate/auth')); ?>" autocomplete="off">
-							<div class="dl-auth-field">
+						<p class="dl-nakes-auth-note">Jika data cocok, Anda akan diminta membuat password pribadi sebelum masuk ke beranda.</p>
+						<form method="post" action="<?= html_escape(site_url('login-nakes/activate/auth')); ?>" autocomplete="off">
+							<div class="dl-nakes-auth-field">
 								<label class="form-label" for="activation_username">Nama pengguna</label>
-								<div class="dl-auth-control">
-									<i class="fas fa-user dl-auth-icon" aria-hidden="true"></i>
+								<div class="dl-nakes-auth-control">
+									<i class="fas fa-user dl-nakes-auth-icon" aria-hidden="true"></i>
 									<input class="form-control" type="text" id="activation_username" name="username" maxlength="100" autocomplete="username" autocapitalize="none" spellcheck="false" required>
 								</div>
 							</div>
-							<div class="dl-auth-field">
+							<div class="dl-nakes-auth-field">
 								<label class="form-label" for="activation_password">Password sementara</label>
-								<div class="dl-auth-control">
-									<i class="fas fa-lock dl-auth-icon" aria-hidden="true"></i>
+								<div class="dl-nakes-auth-control">
+									<i class="fas fa-lock dl-nakes-auth-icon" aria-hidden="true"></i>
 									<input class="form-control" type="password" id="activation_password" name="password" maxlength="72" autocomplete="current-password" required>
-									<button type="button" class="dl-auth-toggle-pw" data-target="activation_password" aria-label="Tampilkan password sementara">
+									<button type="button" class="dl-nakes-auth-toggle-pw" data-target="activation_password" aria-label="Tampilkan password sementara">
 										<i class="fas fa-eye" aria-hidden="true"></i>
 									</button>
 								</div>
 							</div>
 							<div class="d-grid mb-3">
-								<button class="dl-auth-btn" type="submit">Lanjutkan aktivasi</button>
+								<button class="dl-nakes-auth-btn" type="submit">Lanjutkan aktivasi</button>
 							</div>
 						</form>
-						<hr class="dl-auth-divider">
+						<hr class="dl-nakes-auth-divider">
 						<div class="text-center">
-							<p class="dl-auth-footer-text">Bukan akun Nakes? <a href="<?= html_escape(site_url('login')); ?>" class="dl-auth-link">Kembali ke halaman masuk</a></p>
+							<p class="dl-nakes-auth-footer-text">Sudah punya password pribadi? <a href="<?= html_escape(site_url('login-nakes')); ?>" class="dl-nakes-auth-link">Masuk Nakes</a></p>
+							<p class="dl-nakes-auth-footer-text">Bukan tenaga kesehatan? <a href="<?= html_escape(site_url('login')); ?>" class="dl-nakes-auth-link">Masuk sebagai warga</a></p>
 						</div>
 					</div>
 				</div>
@@ -62,10 +64,9 @@
 		</div>
 	</div>
 	<script>
-		document.querySelectorAll('.dl-auth-toggle-pw').forEach(function(btn) {
+		document.querySelectorAll('.dl-nakes-auth-toggle-pw').forEach(function(btn) {
 			btn.addEventListener('click', function() {
-				var targetId = this.getAttribute('data-target');
-				var input = document.getElementById(targetId);
+				var input = document.getElementById(this.getAttribute('data-target'));
 				if (!input) return;
 				var icon = this.querySelector('i');
 				if (input.type === 'password') {
