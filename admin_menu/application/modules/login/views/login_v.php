@@ -74,7 +74,8 @@ $doclinc_logo_url = $doclinc_public_base_url . '/assets/images/doklinc.png';
 							<?php echo $this->session->flashdata('info'); ?>
 						</div>
 						<?php if (!empty($session_message)): ?>
-							<div class="alert alert-info" role="status"><?= html_escape($session_message); ?></div>
+							<?php $session_notice_level = in_array(($session_notice_level ?? ''), array('success', 'info', 'warning', 'danger'), true) ? $session_notice_level : 'info'; ?>
+							<div class="alert alert-<?= html_escape($session_notice_level); ?>" role="status"><?= html_escape($session_message); ?></div>
 						<?php endif; ?>
 						<form class="user">
 							<input type="hidden" name="<?= html_escape($this->security->get_csrf_token_name()); ?>" value="<?= html_escape($this->security->get_csrf_hash()); ?>">

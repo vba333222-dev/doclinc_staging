@@ -1,49 +1,20 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Session_binding_gate
-{
-	public function enforce()
-	{
-		if (PHP_SAPI === 'cli') {
-			return;
-		}
-		$CI = &get_instance();
-		if ($CI->config->item('single_active_session_enabled') !== true
-			|| $CI->session->userdata('is_login') != true) {
-			return;
-		}
-		$service_file = dirname(APPPATH, 2) . '/application/libraries/Session_binding_service.php';
-		if (!is_file($service_file)) {
-			$this->deny($CI);
-		}
-		require_once $service_file;
-		$service = new Session_binding_service($CI->db);
-		if ($service->validate(
-			(int) $CI->session->userdata('id'),
-			$CI->session->userdata('normal_session_token')
-		)) {
-			return;
-		}
-		$this->deny($CI);
-	}
-
-	private function deny($CI)
-	{
-		$CI->session->sess_destroy();
-		$accept = strtolower((string) $CI->input->server('HTTP_ACCEPT'));
-		$content_type = strtolower((string) $CI->input->server('CONTENT_TYPE'));
-		if ($CI->input->is_ajax_request()
-			|| strpos($accept, 'application/json') !== false
-			|| strpos($content_type, 'application/json') !== false) {
-			$CI->output
-				->set_status_header(401)
-				->set_content_type('application/json', 'utf-8')
-				->set_output(json_encode(array('success' => false, 'safe_error_code' => 'session_expired')));
-			$CI->output->_display();
-			exit;
-		}
-		redirect('login?session=expired');
-		exit;
-	}
-}
+/* Panel admin memakai gate sesi yang SAMA dengan aplikasi utama.
+ *
+ * Berkas ini dulu salinan yang menyimpang (49 baris): tanpa adopsi sesi lama,
+ * tanpa jejak audit, tanpa penghapusan cookie, tanpa pembedaan sebab, dan
+ * tanpa Sec-Fetch-Mode - padahal hook di aplikasi utama sudah punya semuanya.
+ * Salinan seperti itu akan tertinggal lagi setiap kali gate utama diperbaiki,
+ * jadi sekarang ia hanya menumpang implementasinya.
+ *
+ * Dua perbedaan antar-aplikasi dibaca dari config, bukan disalin ke sini:
+ *   - session_binding_login_key    : 'is_login' (admin) vs 'logged_in' (utama)
+ *   - session_binding_library_path : lokasi library bersama aplikasi utama
+ *
+ * Bila berkas gate utama tidak ada, CI3 melewati hook ini secara diam-diam
+ * (system/core/Hooks.php memeriksa file_exists). Karena itu keberadaannya
+ * diuji: lihat tools/admin_panel/tests/source_test.js.
+ */
+require_once dirname(APPPATH, 2) . '/application/hooks/Session_binding_gate.php';

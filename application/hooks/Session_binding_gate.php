@@ -9,11 +9,25 @@ class Session_binding_gate
 			return;
 		}
 		$CI = &get_instance();
+		/* Gate ini dipakai DUA aplikasi: aplikasi utama dan panel admin
+		 * (admin_menu/application/hooks/Session_binding_gate.php menumpang berkas
+		 * ini, tidak menyalinnya). Hanya dua hal yang berbeda di sana - kunci
+		 * sesi login dan lokasi library bersama - dan keduanya dibaca dari
+		 * config supaya tidak ada implementasi kedua yang bisa menyimpang.
+		 * Nilai kosong berarti perilaku aplikasi utama seperti semula. */
+		$login_key = (string) $CI->config->item('session_binding_login_key');
+		if ($login_key === '') {
+			$login_key = 'logged_in';
+		}
+		$libraries = (string) $CI->config->item('session_binding_library_path');
+		if ($libraries === '') {
+			$libraries = APPPATH . 'libraries/';
+		}
 		if ($CI->config->item('single_active_session_enabled') !== true
-			|| !$CI->session->userdata('logged_in')) {
+			|| !$CI->session->userdata($login_key)) {
 			return;
 		}
-		require_once APPPATH . 'libraries/Session_binding_service.php';
+		require_once $libraries . 'Session_binding_service.php';
 		$service = new Session_binding_service($CI->db);
 		$user_id = (int) $CI->session->userdata('id');
 		$token = $CI->session->userdata('normal_session_token');
@@ -24,12 +38,12 @@ class Session_binding_gate
 		 * lain" bukan hal yang sama dengan "sesi kedaluwarsa", dan pengguna
 		 * berhak tahu bedanya - terutama di aplikasi klinis. */
 		$diagnosis = $service->diagnose($user_id, $token);
-		require_once APPPATH . 'libraries/Session_binding_response_policy.php';
+		require_once $libraries . 'Session_binding_response_policy.php';
 		$response_policy = new Session_binding_response_policy();
 		/* Jendela rollout: sesi yang dibuat sebelum fitur menyala belum punya
 		 * token. Tanpa adopsi, semua pengguna ditendang serentak. Hanya sesi
 		 * tanpa baris binding yang boleh diadopsi - lihat policy-nya. */
-		require_once APPPATH . 'libraries/Session_binding_adoption_policy.php';
+		require_once $libraries . 'Session_binding_adoption_policy.php';
 		$adoption = new Session_binding_adoption_policy();
 		if ($adoption->shouldAdopt($CI->config->item('single_active_session_adopt_legacy') === true, $diagnosis)) {
 			$issued = $service->issue($user_id, null);
@@ -45,7 +59,7 @@ class Session_binding_gate
 		$reason = $response_policy->reasonCode($diagnosis);
 		$CI->session->sess_destroy();
 		$this->clearSessionCookie($CI);
-		require_once APPPATH . 'libraries/First_login_gate_policy.php';
+		require_once $libraries . 'First_login_gate_policy.php';
 		$policy = new First_login_gate_policy();
 		$is_json = $policy->jsonResponse(
 			(string) $CI->router->class,

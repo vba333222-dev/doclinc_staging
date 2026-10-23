@@ -75,6 +75,42 @@ class Session_binding_response_policy
 		);
 	}
 
+	/**
+	 * Pesan di halaman login setelah sesi berakhir.
+	 *
+	 * Dipakai DUA aplikasi (aplikasi utama dan panel admin) supaya kalimat yang
+	 * dibaca pengguna tidak berbeda antar-permukaan. Sebabnya dibedakan karena
+	 * akibatnya berbeda: sesi yang diakhiri oleh login di perangkat lain adalah
+	 * sinyal keamanan, bukan sekadar kedaluwarsa.
+	 *
+	 * Mengembalikan array('message' => string, 'level' => 'success|info|warning').
+	 * Message kosong berarti tidak ada yang perlu ditampilkan.
+	 */
+	public function noticeFor($session_param, $reason, $unsaved)
+	{
+		if ((string) $session_param !== 'expired') {
+			return array('message' => '', 'level' => 'success');
+		}
+		$reason = strtolower(trim((string) $reason));
+		if ($reason === 'other_device') {
+			$message = 'Sesi ini diakhiri karena akun Anda masuk di perangkat lain. Jika bukan Anda, segera ganti kata sandi.';
+			$level = 'warning';
+		} elseif ($reason === 'signed_out') {
+			$message = 'Sesi Anda sudah diakhiri. Masuk lagi untuk melanjutkan.';
+			$level = 'info';
+		} elseif ($reason === 'account_inactive') {
+			$message = 'Akun ini tidak aktif sehingga sesinya diakhiri. Hubungi admin puskesmas.';
+			$level = 'warning';
+		} else {
+			$message = 'Sesi berakhir. Masuk lagi.';
+			$level = 'success';
+		}
+		if ((string) $unsaved === '1') {
+			$message .= ' Perubahan yang belum tersimpan dibatalkan.';
+		}
+		return array('message' => $message, 'level' => $level);
+	}
+
 	/** Nama cookie sesi yang harus dihapus; kosong berarti tidak ada yang dihapus. */
 	public function sessionCookieName($configured_name)
 	{

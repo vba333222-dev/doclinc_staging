@@ -39,6 +39,8 @@ const ciFileSession = source('system/libraries/Session/drivers/Session_files_dri
 const passwordMask = source('assets/js/doclinc-password-mask.js');
 const adminRecoveryModel = source('admin_menu/application/modules/login/models/Login_m.php');
 const adminHome = source('admin_menu/application/modules/home/controllers/Home.php');
+const adminGate = source('admin_menu/application/hooks/Session_binding_gate.php');
+const adminFooter = source('admin_menu/application/views/commons/footer.php');
 const commandCenterModel = source('admin_menu/application/modules/kelola_dokter_nakes/models/Kelola_dokter_nakes_m.php');
 const homeNakesController = source('application/modules/home_nakes/controllers/Home_nakes.php');
 const homeNakesModel = source('application/modules/home_nakes/models/Home_nakes_m.php');
@@ -215,6 +217,15 @@ expect(sessionResponsePolicy.includes("'channel' => $is_json === true ? 'json' :
    sudah lebih cepat mati lewat 401 + teardown() di klien. Pemutusan bedah harus
    lewat {"connection":...}, dan itu butuh penanda sesi di token. Lihat DESIGN.md. */
 expect(!publicGate.includes('/api/disconnect'), 'revocation_must_not_force_disconnect_all_user_connections');
+
+/* Panel admin memakai gate yang SAMA, bukan salinan. Salinan lama (49 baris)
+   tidak punya adopsi sesi lama, jejak audit, penghapusan cookie, maupun
+   pembedaan sebab - dan akan tertinggal lagi setiap kali gate utama diperbaiki. */
+expect(adminGate.includes("require_once dirname(APPPATH, 2) . '/application/hooks/Session_binding_gate.php'")
+  && !adminGate.includes('private function deny('), 'admin_gate_reuses_single_implementation');
+expect(adminConfig.includes('session_binding_login_key') && adminConfig.includes('session_binding_library_path')
+  && adminConfig.includes('single_active_session_adopt_legacy'), 'admin_gate_differences_declared_in_config');
+expect(adminFooter.includes('doclinc-session-guard.js') && adminFooter.includes('doclincSessionGuardConfig'), 'admin_panel_loads_session_guard');
 
 process.stdout.write('PHASE45_SOURCE_PASSED=' + passed + '\nPHASE45_SOURCE_FAILED=' + failed + '\n');
 process.exit(failed === 0 ? 0 : 1);

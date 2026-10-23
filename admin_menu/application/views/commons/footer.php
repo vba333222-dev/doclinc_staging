@@ -159,6 +159,16 @@
         <?php endif; ?>
 
 	<script src="<?= base_url('../assets/js/doclinc-password-mask.js'); ?>"></script>
+
+	<?php
+	/* Penangan "sesi berakhir". Panel admin hidup dari AJAX (notifikasi, snapshot
+	   presence, daftar konsultasi); tanpa ini halaman tetap tampak masuk padahal
+	   setiap permintaan sudah ditolak 401 - admin tidak akan tahu kenapa datanya
+	   berhenti berubah. Guard-nya sama dengan aplikasi utama, hanya alamat login
+	   yang berbeda. */
+	?>
+	<script id="doclincSessionGuardConfig" type="application/json"><?= json_encode(array('login_url' => base_url('login')), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+	<script src="<?= base_url('../assets/js/doclinc-session-guard.js'); ?>"></script>
 </body>
 
         </html>

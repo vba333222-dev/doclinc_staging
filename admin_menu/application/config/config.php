@@ -635,3 +635,18 @@ $single_active_session_feature = class_exists('Doclinc_feature_flags')
 $config['single_active_session_enabled'] = !empty($single_active_session_feature['enabled']);
 $config['single_active_session_environment'] = (string) ($single_active_session_feature['environment'] ?? '');
 $config['single_active_session_feature_reason'] = (string) ($single_active_session_feature['reason'] ?? 'disabled');
+
+/* Gate sesi tunggal dipakai bersama aplikasi utama: hook panel admin menumpang
+   berkas gate utama (admin_menu/application/hooks/Session_binding_gate.php),
+   jadi dua perbedaan antar-aplikasi dinyatakan di sini - bukan disalin. */
+$config['session_binding_login_key'] = 'is_login';
+$config['session_binding_library_path'] = dirname(APPPATH, 2) . '/application/libraries/';
+
+/* Saklar migrasi, bukan fitur: sesi lama diadopsi sekali selama jendela
+   rollout. Perhitungannya harus sama persis dengan application/config/config.php
+   supaya kedua aplikasi tidak mengambil keputusan berbeda atas sesi yang sama. */
+$single_active_session_adopt_legacy_env = strtolower(trim((string) (getenv('DOCLINC_SINGLE_ACTIVE_SESSION_ADOPT_LEGACY') ?: '')));
+if ($single_active_session_adopt_legacy_env === '') {
+	$single_active_session_adopt_legacy_env = strtolower(trim((string) ($_SERVER['DOCLINC_SINGLE_ACTIVE_SESSION_ADOPT_LEGACY'] ?? '')));
+}
+$config['single_active_session_adopt_legacy'] = in_array($single_active_session_adopt_legacy_env, array('1', 'true', 'yes', 'on'), true);

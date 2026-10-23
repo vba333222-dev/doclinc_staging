@@ -16,8 +16,23 @@
 				// }
 				redirect('/home');
 			}else{
+				/* Pesan sebab sesi berakhir memakai policy yang sama dengan aplikasi
+				   utama. Tanpa itu admin hanya melihat kalimat generik dan tidak tahu
+				   bahwa sesinya diakhiri karena akun dipakai di perangkat lain. */
+				$notice_policy = dirname(APPPATH, 2) . '/application/libraries/Session_binding_response_policy.php';
+				if (is_file($notice_policy)) {
+					require_once $notice_policy;
+				}
+				$notice = class_exists('Session_binding_response_policy')
+					? (new Session_binding_response_policy())->noticeFor(
+						$this->input->get('session', true),
+						$this->input->get('reason', true),
+						$this->input->get('unsaved', true)
+					)
+					: array('message' => '', 'level' => 'success');
 				$this->load->view('login_v', array(
-					'session_message' => (string) $this->input->get('session', true) === 'expired' ? 'Sesi berakhir. Masuk lagi.' : '',
+					'session_message' => $notice['message'],
+					'session_notice_level' => $notice['level'],
 				));
 			}
 		}
