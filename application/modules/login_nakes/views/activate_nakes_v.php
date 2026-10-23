@@ -37,6 +37,7 @@
 							'account_inactive' => 'Akun ini belum diaktifkan Admin Dinas Kesehatan, jadi aktivasi belum bisa dilanjutkan.',
 							'already_activated' => 'Akun ini sudah diaktivasi. Masuk dengan password pribadi Anda.',
 							'identity_incomplete' => 'Akun ini belum tertaut data staf Puskesmas, jadi aktivasi belum bisa dilanjutkan. Hubungi Admin Dinas Kesehatan.',
+							'code_invalid' => 'Kode aktivasi tidak dikenali, sudah dipakai, atau sudah kedaluwarsa. Minta kode baru ke Admin Dinas Kesehatan.',
 							'throttled' => 'Terlalu banyak percobaan. Tunggu beberapa menit, lalu coba lagi.',
 						);
 						$error_code = isset($error_code) ? (string) $error_code : '';
@@ -52,6 +53,15 @@
 						<?php endif; ?>
 						<p class="dl-nakes-auth-note">Jika data cocok, Anda akan diminta membuat password pribadi sebelum masuk ke beranda.</p>
 						<form method="post" action="<?= html_escape(site_url('login-nakes/activate/auth')); ?>" autocomplete="off">
+							<div class="dl-nakes-auth-field">
+								<label class="form-label" for="activation_code">Kode aktivasi</label>
+								<div class="dl-nakes-auth-control">
+									<i class="fas fa-key dl-nakes-auth-icon" aria-hidden="true"></i>
+									<input class="form-control" type="text" id="activation_code" name="code" maxlength="16" inputmode="latin" autocapitalize="characters" spellcheck="false" autocomplete="one-time-code" aria-describedby="activation_code_hint">
+								</div>
+								<div class="dl-nakes-auth-hint" id="activation_code_hint">Delapan karakter dari Admin Dinas Kesehatan. Bila kode ini diisi, nama pengguna dan password sementara di bawah tidak perlu diisi.</div>
+							</div>
+							<p class="dl-nakes-auth-note">Atau, bila Anda menerima nama pengguna dan password sementara:</p>
 							<div class="dl-nakes-auth-field">
 								<label class="form-label" for="activation_username">Nama pengguna</label>
 								<div class="dl-nakes-auth-control">

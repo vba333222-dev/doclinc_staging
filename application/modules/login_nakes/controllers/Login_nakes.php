@@ -204,6 +204,11 @@ class Login_nakes extends MX_Controller
 		}
 		$username = trim((string) $this->input->post('username', TRUE));
 		$password = $this->input->post('password', false);
+		$submitted_code = $this->input->post('code', false);
+		if (is_string($submitted_code) && trim($submitted_code) !== '') {
+			$this->activate_with_code(trim($submitted_code));
+			return;
+		}
 		if ($username === '' || !is_string($password) || $password === '') {
 			$this->activation_failure('credential_mismatch');
 			return;
@@ -471,6 +476,57 @@ class Login_nakes extends MX_Controller
 	{
 		$labels = array('warga' => 'warga', 'dokter' => 'Nakes', 'admin' => 'admin');
 		return isset($labels[$role]) ? $labels[$role] : 'peran lain';
+	}
+
+	/**
+	 * Aktivasi memakai kode sekali pakai dari Admin Dinas Kesehatan.
+	 *
+	 * Kode menggantikan peran "password yang dibacakan": nakes tidak perlu
+	 * mengetik password sementara sama sekali. Kode ditandai terpakai **sebelum**
+	 * identitasnya diperiksa, supaya kode yang sudah bocor tidak bisa dicoba
+	 * berkali-kali; bila data staf ternyata belum lengkap, Admin menerbitkan kode
+	 * baru (dan itu memang pekerjaan Admin, bukan pekerjaan nakes).
+	 */
+	private function activate_with_code($code)
+	{
+		require_once APPPATH . 'libraries/Nakes_activation_code.php';
+		$library = new Nakes_activation_code($this->db, getenv('DOCLINC_ENCRYPTION_KEY'));
+		if (!$library->failSafe()) {
+			$this->activation_failure('workflow_unavailable');
+			return;
+		}
+		$user_id = $library->consume($code);
+		if ($user_id === null) {
+			$this->Login_m->log_login_event('credential_activation_failed', null, array('area' => 'activation', 'reason' => 'code_invalid'));
+			$this->activation_failure('code_invalid');
+			return;
+		}
+		$identity = $this->Login_m->get_personal_activation_identity((int) $user_id);
+		if (!$identity || (int) ($identity['must_change_password'] ?? 0) !== 1) {
+			$this->Login_m->log_login_event('credential_activation_failed', (int) $user_id, array('area' => 'activation', 'reason' => 'identity_incomplete'));
+			$this->activation_failure('identity_incomplete');
+			return;
+		}
+		$this->start_activation_session($identity);
+	}
+
+	/** Sesi antara (bukan sesi kerja) lalu lanjut ke langkah ganti password. */
+	private function start_activation_session(array $identity)
+	{
+		$this->session->sess_regenerate(TRUE);
+		$this->session->unset_userdata(array(
+			'id', 'username', 'nama', 'email', 'role', 'remark', 'picture', 'logged_in',
+			'must_change_password', 'password_change_token_state', 'normal_session_token',
+		));
+		$this->session->set_userdata(array(
+			'credential_activation_user_id' => (int) $identity['userId'],
+			'credential_activation_mode' => (string) $identity['credential_state'],
+			'password_change_session_binding' => bin2hex(random_bytes(16)),
+		));
+		$this->Login_m->log_login_event('credential_activation_authenticated', (int) $identity['userId'], array(
+			'credential_state' => (string) $identity['credential_state'],
+		));
+		redirect('login-nakes/change-password');
 	}
 
 	/**

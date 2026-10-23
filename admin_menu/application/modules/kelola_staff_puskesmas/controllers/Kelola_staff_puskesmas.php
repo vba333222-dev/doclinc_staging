@@ -376,6 +376,85 @@ class Kelola_staff_puskesmas extends MX_Controller
 		redirect('kelola_staff_puskesmas', 'refresh');
 	}
 
+	/**
+	 * Terbitkan kode aktivasi sekali pakai untuk akun yang tertaut ke staf ini.
+	 *
+	 * Dipisah dari "Buat akun" dan "Reset password" supaya Admin bisa menerbitkan
+	 * kode baru kapan saja (mis. kode sebelumnya kedaluwarsa atau terpakai) tanpa
+	 * mengubah password akun. Kode lama yang belum terpakai otomatis dibatalkan
+	 * oleh library, jadi hanya ada satu kode hidup per akun.
+	 */
+	public function issue_activation_code()
+	{
+		if (!$this->require_post()) {
+			return;
+		}
+		$staff_id = (int) $this->input->post('staff_id');
+		$staff = $staff_id > 0 ? $this->Kelola_staff_puskesmas_m->get_by_id($staff_id) : null;
+		if (!$staff) {
+			$this->personal_account_flash('Staf tidak ditemukan.');
+			return;
+		}
+		$user_id = (int) ($staff->user_id ?? 0);
+		if ($user_id < 1) {
+			$this->personal_account_flash('Staf ini belum memiliki akun login. Buat akun terlebih dahulu.');
+			return;
+		}
+		require_once dirname(APPPATH, 2) . '/application/libraries/Nakes_activation_code.php';
+		$library = new Nakes_activation_code($this->db, getenv('DOCLINC_ENCRYPTION_KEY'));
+		if (!$library->failSafe()) {
+			$this->personal_account_flash('Kode aktivasi belum dapat diterbitkan. Hubungi pengelola sistem.');
+			return;
+		}
+		$code = $library->issue($user_id, (int) $this->session->userdata('id'), 'admin_reissue');
+		if (!is_string($code) || $code === '') {
+			$this->personal_account_flash('Kode aktivasi gagal dibuat. Tidak ada perubahan data yang disimpan.');
+			return;
+		}
+		$this->write_activation_code_audit($staff_id, $user_id);
+
+		$facility_label = '';
+		foreach ($this->Kelola_staff_puskesmas_m->get_active_puskesmas_options() as $option) {
+			if ((string) $option->kode_pkm === (string) $staff->kode_pkm) {
+				$facility_label = (string) $option->nama_puskesmas;
+				break;
+			}
+		}
+		$this->session->set_flashdata('staff_handover', array(
+			'staff_id' => $staff_id,
+			'nama' => (string) $staff->nama,
+			'kode_pkm' => (string) $staff->kode_pkm,
+			'nama_puskesmas' => $facility_label,
+			'username' => (string) ($staff->akun_username ?? ''),
+			'code' => $code,
+			'activate_url' => base_url('login-nakes/activate'),
+			'expires_at' => date('Y-m-d H:i', time() + $library->ttl_seconds()),
+		));
+		$this->session->set_flashdata('success', 'Kode aktivasi baru dibuat untuk ' . $staff->nama . '.');
+		redirect('kelola_staff_puskesmas', 'refresh');
+	}
+
+	/** Jejak audit penerbitan kode; password maupun kode tidak pernah dicatat. */
+	private function write_activation_code_audit($staff_id, $user_id)
+	{
+		if (!$this->db->table_exists('audit_logs')) {
+			return;
+		}
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = FALSE;
+		$this->db->insert('audit_logs', array(
+			'actor_user_id' => (int) $this->session->userdata('id'),
+			'action' => 'admin_issue_nakes_activation_code',
+			'entity_type' => 'puskesmas_staff',
+			'entity_id' => (string) (int) $staff_id,
+			'ip_address' => $this->input->ip_address(),
+			'user_agent' => substr((string) $this->input->user_agent(), 0, 255),
+			'metadata_json' => json_encode(array('target_user_id' => (int) $user_id, 'reason' => 'admin_reissue')),
+			'created_at' => date('Y-m-d H:i:s'),
+		));
+		$this->db->db_debug = $db_debug;
+	}
+
 	private function render_page($form_mode = '', $staff_id = null)
 	{
 		$this->session->set_flashdata('title', 'Staf Puskesmas');
