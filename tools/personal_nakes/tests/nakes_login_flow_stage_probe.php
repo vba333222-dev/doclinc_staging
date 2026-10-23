@@ -217,5 +217,35 @@ check('T9 kegagalan di luar jendela waktu tidak dihitung',
 	$window->state('203.0.113.99', 9005)['allowed'] === true);
 $db->query('ROLLBACK');
 
+/* ============ 7. Pesan aktivasi berkeadaan (kode, bukan kalimat) ========= */
+$activation_body = method_body($controller, 'activate_auth', 'change_password');
+$activation_view = (string) file_get_contents(APPPATH . 'modules/login_nakes/views/activate_nakes_v.php');
+preg_match_all("/activation_failure\\('([^']*)'\\)/", $activation_body, $codes);
+$code_list = $codes[1] ?? array();
+$sentences = array_values(array_filter($code_list, function ($code) {
+	return strpos($code, ' ') !== false;
+}));
+check('V1 seluruh kegagalan aktivasi dikirim sebagai kode, bukan kalimat',
+	!empty($code_list) && empty($sentences),
+	'kode=' . (empty($code_list) ? 'none' : implode(',', $code_list)) . ' kalimat=' . (empty($sentences) ? 'none' : implode('|', $sentences)));
+check('V2 sebab rinci hanya dipakai setelah password terbukti benar',
+	strpos($activation_body, '$password_ok') !== false
+		&& strpos($activation_body, '$password_ok') < strpos($activation_body, "'account_inactive'"),
+	'posisi password_ok=' . var_export(strpos($activation_body, '$password_ok'), true));
+check('V3 password salah tetap satu jawaban generik tanpa sebab rinci',
+	substr_count($activation_body, "activation_failure('credential_mismatch')") >= 1
+		&& substr_count($activation_body, "array('area' => 'activation'))") === 1,
+	'generik=' . substr_count($activation_body, "array('area' => 'activation'))"));
+check('V4 halaman memetakan kode ke kalimat Indonesia',
+	strpos($activation_view, '$activation_messages') !== false
+		&& strpos($activation_view, "'credential_mismatch' =>") !== false
+		&& strpos($activation_view, "'already_activated' =>") !== false
+		&& strpos($activation_view, "'identity_incomplete' =>") !== false);
+check('V5 akun yang sudah aktivasi diberi jalan masuk, bukan jalan buntu',
+	strpos($activation_view, "\$error_code === 'already_activated'") !== false
+		&& strpos($activation_view, "site_url('login-nakes')") !== false);
+check('V6 langkah aktivasi disebut sebagai langkah 1 dari 2',
+	strpos($activation_view, 'Langkah 1 dari 2') !== false);
+
 echo "\n" . ($fails === 0 ? 'PROBE_RESULT=PASS' : "PROBE_RESULT=FAIL (gagal={$fails})") . "\n";
 exit($fails === 0 ? 0 : 1);

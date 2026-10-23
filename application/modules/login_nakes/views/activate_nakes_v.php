@@ -26,9 +26,29 @@
 					<div class="dl-nakes-auth-card-body">
 						<p class="dl-nakes-auth-badge"><i class="fas fa-user-md" aria-hidden="true"></i> Tenaga kesehatan</p>
 						<h1 class="dl-nakes-auth-title">Aktivasi akun Nakes</h1>
-						<p class="dl-nakes-auth-subtitle">Masukkan nama pengguna dan password sementara dari Admin Dinas Kesehatan.</p>
-						<?php if (!empty($error_message)) : ?>
-							<div class="alert alert-danger" role="alert"><?= html_escape($error_message); ?></div>
+						<p class="dl-nakes-auth-subtitle">Langkah 1 dari 2: masukkan nama pengguna dan password sementara dari Admin Dinas Kesehatan.</p>
+						<?php
+						/* Sebab galat dipetakan dari kode, bukan kalimat yang dikirim
+						   controller: satu kode, satu kalimat, dan tidak ada nilai dari
+						   luar yang dipakai mentah. */
+						$activation_messages = array(
+							'workflow_unavailable' => 'Aktivasi akun belum tersedia. Hubungi Admin Dinas Kesehatan.',
+							'credential_mismatch' => 'Nama pengguna atau password sementara belum sesuai. Periksa kembali tulisan pada ringkasan serah-terima, atau minta reset ke Admin Dinas Kesehatan.',
+							'account_inactive' => 'Akun ini belum diaktifkan Admin Dinas Kesehatan, jadi aktivasi belum bisa dilanjutkan.',
+							'already_activated' => 'Akun ini sudah diaktivasi. Masuk dengan password pribadi Anda.',
+							'identity_incomplete' => 'Akun ini belum tertaut data staf Puskesmas, jadi aktivasi belum bisa dilanjutkan. Hubungi Admin Dinas Kesehatan.',
+							'throttled' => 'Terlalu banyak percobaan. Tunggu beberapa menit, lalu coba lagi.',
+						);
+						$error_code = isset($error_code) ? (string) $error_code : '';
+						$error_message = isset($activation_messages[$error_code]) ? $activation_messages[$error_code] : '';
+						?>
+						<?php if ($error_message !== '') : ?>
+							<div class="alert alert-danger" role="alert">
+								<?= html_escape($error_message); ?>
+								<?php if ($error_code === 'already_activated') : ?>
+									<div class="mt-2"><a href="<?= html_escape(site_url('login-nakes')); ?>" class="dl-nakes-auth-link">Masuk Nakes</a></div>
+								<?php endif; ?>
+							</div>
 						<?php endif; ?>
 						<p class="dl-nakes-auth-note">Jika data cocok, Anda akan diminta membuat password pribadi sebelum masuk ke beranda.</p>
 						<form method="post" action="<?= html_escape(site_url('login-nakes/activate/auth')); ?>" autocomplete="off">

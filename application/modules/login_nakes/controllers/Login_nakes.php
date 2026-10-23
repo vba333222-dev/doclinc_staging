@@ -187,7 +187,7 @@ class Login_nakes extends MX_Controller
 		}
 		$this->output->set_header('Cache-Control: no-store, private');
 		$this->load->view('activate_nakes_v', array(
-			'error_message' => (string) $this->session->flashdata('activation_error'),
+			'error_code' => (string) $this->session->flashdata('activation_error'),
 		));
 	}
 
@@ -199,13 +199,13 @@ class Login_nakes extends MX_Controller
 		}
 		if ($this->config->item('first_login_password_change_enabled') !== true
 			|| $this->session->userdata('logged_in') == TRUE) {
-			$this->activation_failure('Aktivasi akun belum dapat dilanjutkan.');
+			$this->activation_failure('workflow_unavailable');
 			return;
 		}
 		$username = trim((string) $this->input->post('username', TRUE));
 		$password = $this->input->post('password', false);
 		if ($username === '' || !is_string($password) || $password === '') {
-			$this->activation_failure('Nama pengguna atau password sementara belum sesuai.');
+			$this->activation_failure('credential_mismatch');
 			return;
 		}
 		$auth = $this->Login_m->auth($username);
@@ -218,17 +218,33 @@ class Login_nakes extends MX_Controller
 				'failures' => $throttle['failures'],
 				'retry_after_seconds' => $throttle['retry_after_seconds'],
 			));
-			$this->activation_failure('Terlalu banyak percobaan. Coba lagi beberapa menit lagi, atau hubungi Admin Dinas Kesehatan.');
+			$this->activation_failure('throttled');
 			return;
 		}
-		$identity = $user && (string) ($user->status ?? '') === 'aktif'
-			&& doclinc_password_verify($password, (string) ($user->password ?? ''))
-			? $this->Login_m->get_personal_activation_identity((int) $user->userId)
-			: null;
+		$password_ok = $user && doclinc_password_verify($password, (string) ($user->password ?? ''));
 		$password = null;
-		if (!$identity || (int) ($identity['must_change_password'] ?? 0) !== 1) {
+		if (!$password_ok) {
+			/* Selama password belum terbukti, sebabnya tidak dirinci: menyebut
+			   "akun ada tetapi nonaktif" sebelum password benar sama dengan
+			   membocorkan daftar nama pengguna. */
 			$this->Login_m->log_login_event('credential_activation_failed', $user ? (int) $user->userId : null, array('area' => 'activation'));
-			$this->activation_failure('Nama pengguna atau password sementara belum sesuai.');
+			$this->activation_failure('credential_mismatch');
+			return;
+		}
+		/* Mulai titik ini password terbukti benar, jadi sebab yang lebih spesifik
+		   boleh disebut apa adanya — itu justru yang dibutuhkan nakes. */
+		if ((string) ($user->status ?? '') !== 'aktif') {
+			$this->Login_m->log_login_event('credential_activation_failed', (int) $user->userId, array('area' => 'activation', 'reason' => 'account_inactive'));
+			$this->activation_failure('account_inactive');
+			return;
+		}
+		$identity = $this->Login_m->get_personal_activation_identity((int) $user->userId);
+		if (!$identity) {
+			$reason = ((int) ($user->must_change_password ?? 0) === 0 && !empty($user->password_changed_at))
+				? 'already_activated'
+				: 'identity_incomplete';
+			$this->Login_m->log_login_event('credential_activation_failed', (int) $user->userId, array('area' => 'activation', 'reason' => $reason));
+			$this->activation_failure($reason);
 			return;
 		}
 

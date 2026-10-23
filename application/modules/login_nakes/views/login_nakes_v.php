@@ -71,6 +71,7 @@
 							<?php if (!empty($activation_available)): ?>
 								<p class="dl-nakes-auth-footer-text mb-2">Pertama kali masuk? <a href="<?= html_escape(site_url('login-nakes/activate')); ?>" class="dl-nakes-auth-link">Aktivasi akun Nakes</a></p>
 							<?php endif; ?>
+							<p class="dl-nakes-auth-footer-text mb-2">Lupa password sementara? Hubungi Admin Dinas Kesehatan untuk reset.</p>
 							<p class="dl-nakes-auth-footer-text">Bukan tenaga kesehatan? <a href="<?= html_escape(site_url('login')); ?>" class="dl-nakes-auth-link">Masuk sebagai warga</a></p>
 						</div>
 					</div>

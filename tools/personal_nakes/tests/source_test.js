@@ -43,7 +43,7 @@ expect(nakesLogin.includes("'id', 'username', 'nama', 'email', 'role', 'remark',
 expect(nakesLogin.includes("first_login_password_change_enabled') !== true") && nakesLogin.includes("nakes_credential_enforcement_enabled') === true"), 'workflow_availability_remains_separate_from_enforcement');
 expect(loginModel.includes('get_personal_activation_identity') && loginModel.includes('Nakes_personal_account_policy'), 'activation_uses_canonical_identity_policy');
 expect(loginModel.includes('FOR UPDATE') && loginModel.includes('hash_equals($expected_current_hash') && loginModel.includes("'password_changed_at' => date"), 'credential_completion_is_atomic_and_compare_and_swap');
-expect(nakesLogin.includes("Nama pengguna atau password sementara belum sesuai.") && !nakesLogin.includes("metadata_json' => $password"), 'activation_failure_does_not_enumerate_or_log_credentials');
+expect(nakesLogin.includes("activation_failure('credential_mismatch')") && !nakesLogin.includes("metadata_json' => $password"), 'activation_failure_does_not_enumerate_or_log_credentials');
 expect(loginModel.includes("'must_change_password' => 0") && loginModel.includes("'password_changed_at' => date"), 'successful_enrollment_transitions_to_active_raw_state');
 expect(activationView.includes('password sementara') && activationView.includes("site_url('login-nakes/activate/auth')"), 'activation_ui_has_controlled_credential_boundary');
 expect(changeView.includes('password_change_token') && changeView.includes("site_url('login-nakes/change-password/submit')")
