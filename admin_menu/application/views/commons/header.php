@@ -113,6 +113,7 @@
 		$doclinc_active_konten_landing = ($doclinc_admin_segment === 'konten_landing') ? 'active' : '';
 		$doclinc_active_audit = ($doclinc_admin_segment === 'audit') ? 'active' : '';
 		$doclinc_active_kapabilitas = ($doclinc_admin_segment === 'kapabilitas') ? 'active' : '';
+		$doclinc_active_sesi = ($doclinc_admin_segment === 'sesi') ? 'active' : '';
 		?>
 		<!-- Sidebar -->
 		<ul class="navbar-nav sidebar sidebar-dark accordion position-fixed vh-100 doclinc-sidebar" id="accordionSidebar">
@@ -233,6 +234,13 @@
 				<a class="nav-link" href="<?php echo site_url('kapabilitas'); ?>">
 					<i class="fas fa-user-shield"></i>
 					<span>Kapabilitas admin</span>
+				</a>
+			</li>
+
+			<li class="nav-item <?= $doclinc_active_sesi; ?>">
+				<a class="nav-link" href="<?php echo site_url('sesi'); ?>">
+					<i class="fas fa-shield-alt"></i>
+					<span>Sesi &amp; keamanan</span>
 				</a>
 			</li>
 
