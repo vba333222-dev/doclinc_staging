@@ -200,6 +200,13 @@ check('A9 drill-down Z99 tersebar: 1 baris di Cibeber dan 1 di Cilegon',
 	$drill_names === array('Cibeber' => 1, 'Cilegon' => 1), json_encode($drill_names));
 check('A10 drill-down menolak kode di luar pola ICD-10',
 	$model->getCodeByKecamatan('bukan-kode', $filters) === array());
+/* Z96 pada data uji sengaja berstatus 'uncoded' padahal kolom kodenya terisi.
+ * Peringkat kode tidak boleh mengambilnya: itu teks bebas, bukan kode ICD-10. */
+check('A10b baris belum dikode tidak masuk peringkat kode ICD-10',
+	top_entry($after, 'Z96') === null && $model->getCodeByKecamatan('Z96', $filters) === array());
+check('A10c peringkat hanya berisi baris terkode (delta 2 kode uji)',
+	$after['city']['distinct_codes'] - $baseline['city']['distinct_codes'] === 2,
+	'delta=' . ($after['city']['distinct_codes'] - $baseline['city']['distinct_codes']));
 
 $only_coded = $model->getInfographic(array('coding_state' => 'coded'));
 check('A11 filter terkode hanya menghitung baris coded',

@@ -1,0 +1,319 @@
+/* ==========================================================================
+   Infografis penyakit terbanyak - panel admin DocLink
+   Berkas ini hanya untuk permukaan ini (satu CSS per permukaan).
+
+   Warna, garis, dan radius memakai token lapisan visual panel
+   (`doclinc-reference-ui.css`, keluarga --dl-ref-*). Tidak ada hex baru di
+   sini: kalau butuh warna baru, tokennya ditambah di berkas token - bukan
+   ditulis langsung di sini. Gradien tidak dipakai untuk kartu data.
+   ========================================================================== */
+
+.doclinc-analytics-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 12px;
+	padding: 16px;
+	margin-bottom: 20px;
+	background: var(--dl-ref-surface);
+	border: 1px solid var(--dl-ref-line);
+	border-radius: var(--dl-ref-radius-tile);
+}
+
+.doclinc-analytics-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 180px;
+}
+
+.doclinc-analytics-field > label {
+	margin: 0;
+	font-size: var(--dl-ref-label);
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	color: var(--dl-ref-muted);
+}
+
+.doclinc-analytics-field select {
+	min-height: var(--dl-ref-control);
+	padding: 0 12px;
+	color: var(--dl-ref-ink);
+	background: var(--dl-ref-surface);
+	border: 1px solid var(--dl-ref-line);
+	border-radius: var(--dl-ref-radius-control);
+}
+
+.doclinc-analytics-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-left: auto;
+}
+
+.doclinc-analytics-actions .btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: var(--dl-ref-control);
+	padding: 0 16px;
+	border-radius: var(--dl-ref-radius-control);
+}
+
+.doclinc-analytics-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.doclinc-analytics-card {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 16px;
+	background: var(--dl-ref-surface);
+	border: 1px solid var(--dl-ref-line);
+	border-radius: var(--dl-ref-radius-tile);
+}
+
+.doclinc-analytics-card-label {
+	font-size: var(--dl-ref-label);
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: var(--dl-ref-muted);
+}
+
+/* Angka memakai huruf monospace supaya digit tidak bergeser saat nilainya berubah. */
+.doclinc-analytics-card-value {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 1.1;
+	font-variant-numeric: tabular-nums;
+	color: var(--dl-ref-ink);
+}
+
+.doclinc-analytics-card-hint {
+	font-size: var(--dl-ref-caption);
+	color: var(--dl-ref-muted);
+}
+
+.doclinc-analytics-panel {
+	padding: 16px;
+	margin-bottom: 20px;
+	background: var(--dl-ref-surface);
+	border: 1px solid var(--dl-ref-line);
+	border-radius: var(--dl-ref-radius-tile);
+}
+
+.doclinc-analytics-panel-title {
+	margin: 0 0 4px;
+	font-size: var(--dl-ref-title);
+	font-weight: 700;
+	color: var(--dl-ref-ink);
+}
+
+.doclinc-analytics-panel-note {
+	margin: 0 0 12px;
+	font-size: var(--dl-ref-caption);
+	color: var(--dl-ref-muted);
+}
+
+.doclinc-analytics-chart {
+	position: relative;
+	width: 100%;
+	height: 320px;
+}
+
+.doclinc-analytics-note {
+	padding: 12px 14px;
+	margin-bottom: 16px;
+	font-size: var(--dl-ref-body);
+	background: var(--dl-ref-mint-soft);
+	border-left: 4px solid var(--dl-ref-green-600);
+	border-radius: var(--dl-ref-radius-control);
+	color: var(--dl-ref-ink);
+}
+
+.doclinc-analytics-note-warning {
+	background: var(--dl-ref-danger-soft);
+	border-left-color: var(--dl-ref-danger);
+}
+
+.doclinc-analytics-note-title {
+	display: block;
+	font-weight: 700;
+	margin-bottom: 2px;
+}
+
+.doclinc-analytics-tablewrap {
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.doclinc-analytics-table {
+	width: 100%;
+	margin: 0;
+	border-collapse: collapse;
+}
+
+/* Hanya tabel berkolom banyak yang dipaksa lebar: tabel 2-3 kolom cukup
+   memakai lebar layar, jadi angkanya tidak perlu digeser di ponsel. */
+.doclinc-analytics-table-wide {
+	min-width: 640px;
+}
+
+.doclinc-analytics-table caption {
+	padding-bottom: 8px;
+	font-size: var(--dl-ref-caption);
+	color: var(--dl-ref-muted);
+	text-align: left;
+}
+
+.doclinc-analytics-table th,
+.doclinc-analytics-table td {
+	padding: 10px 12px;
+	font-size: var(--dl-ref-body-compact);
+	vertical-align: middle;
+	border-bottom: 1px solid var(--dl-ref-line);
+}
+
+.doclinc-analytics-table th {
+	font-size: var(--dl-ref-label);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	color: var(--dl-ref-muted);
+	text-align: left;
+}
+
+.doclinc-analytics-table .doclinc-analytics-number {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.doclinc-analytics-table .doclinc-analytics-code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-weight: 700;
+	color: var(--dl-ref-ink);
+}
+
+/* Tombol sebaran: target sentuh tetap >= 44px walau hanya berisi ikon + teks kecil. */
+.doclinc-analytics-drill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0 12px;
+	font-size: var(--dl-ref-label);
+	color: var(--dl-ref-green-700);
+	background: transparent;
+	border: 1px solid var(--dl-ref-line);
+	border-radius: var(--dl-ref-radius-control);
+	cursor: pointer;
+}
+
+.doclinc-analytics-drill:hover {
+	background: var(--dl-ref-mint-soft);
+}
+
+/* Batang proporsi memakai elemen <progress> bawaan: tanpa lebar inline. */
+.doclinc-analytics-bar {
+	display: block;
+	width: 100%;
+	height: 8px;
+	border: 0;
+	border-radius: 999px;
+	background: var(--dl-ref-mint-soft);
+	appearance: none;
+}
+
+.doclinc-analytics-bar::-webkit-progress-bar {
+	background: var(--dl-ref-mint-soft);
+	border-radius: 999px;
+}
+
+.doclinc-analytics-bar::-webkit-progress-value {
+	background: var(--dl-ref-green-600);
+	border-radius: 999px;
+}
+
+.doclinc-analytics-bar::-moz-progress-bar {
+	background: var(--dl-ref-green-600);
+	border-radius: 999px;
+}
+
+.doclinc-analytics-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	font-size: var(--dl-ref-label);
+	font-weight: 700;
+	border-radius: 999px;
+}
+
+.doclinc-analytics-badge-coded {
+	color: var(--dl-ref-green-900);
+	background: var(--dl-ref-mint-soft);
+}
+
+.doclinc-analytics-badge-uncoded {
+	color: var(--dl-ref-danger);
+	background: var(--dl-ref-danger-soft);
+}
+
+.doclinc-analytics-empty {
+	padding: 20px;
+	font-size: var(--dl-ref-body);
+	color: var(--dl-ref-muted);
+	text-align: center;
+	border: 1px dashed var(--dl-ref-line);
+	border-radius: var(--dl-ref-radius-tile);
+}
+
+.doclinc-analytics-drill-target {
+	margin-top: 16px;
+}
+
+.doclinc-analytics-drill-target[hidden] {
+	display: none;
+}
+
+.doclinc-analytics a:focus-visible,
+.doclinc-analytics button:focus-visible,
+.doclinc-analytics select:focus-visible,
+.doclinc-analytics-table a:focus-visible {
+	outline: 3px solid var(--dl-ref-green-600);
+	outline-offset: 2px;
+}
+
+@media (max-width: 767.98px) {
+	.doclinc-analytics-field {
+		min-width: 100%;
+	}
+
+	.doclinc-analytics-actions {
+		width: 100%;
+		margin-left: 0;
+	}
+
+	.doclinc-analytics-actions .btn {
+		flex: 1 1 auto;
+		justify-content: center;
+	}
+
+	.doclinc-analytics-chart {
+		height: 260px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.doclinc-analytics-drill,
+	.doclinc-analytics-actions .btn {
+		transition: none;
+	}
+}

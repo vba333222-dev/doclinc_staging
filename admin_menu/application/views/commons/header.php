@@ -40,7 +40,15 @@
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<!-- Custom CSS -->
 	<link href="<?php echo base_url(); ?>assets/css/custom.css" rel="stylesheet">
-	<link rel="stylesheet" href="<?= html_escape(base_url('assets/css/doclinc-reference-ui.css') . '?v=' . rawurlencode((string) @filemtime(FCPATH . 'assets/css/doclinc-reference-ui.css'))); ?>">
+	<?php
+	/* Lapisan visual panel hidup di folder aset aplikasi utama. Panel disajikan
+	   dari /admin_menu/, jadi 'assets/...' menunjuk ke folder panel - dan di sana
+	   berkasnya tidak ada. Permintaannya dulu dijawab CI dengan 200 berbadan
+	   kosong (Content-Type text/html), sehingga token dan gaya .doclinc-admin-*
+	   tidak pernah termuat. Pola '../assets/...' sama dengan berkas JS di footer. */
+	$doclinc_reference_css = '../assets/css/doclinc-reference-ui.css';
+	?>
+	<link rel="stylesheet" href="<?= html_escape(base_url($doclinc_reference_css) . '?v=' . rawurlencode((string) @filemtime(FCPATH . $doclinc_reference_css))); ?>">
 	<!-- gijgo -->
 	<script src="https://unpkg.com/gijgo@1.9.13/js/gijgo.min.js" type="text/javascript"></script>
 	<link href="https://unpkg.com/gijgo@1.9.13/css/gijgo.min.css" rel="stylesheet" type="text/css" />
@@ -89,6 +97,7 @@
 		$doclinc_active_keluhan = ($doclinc_admin_segment === 'kelola_keluhan' || $this->session->flashdata('active_tab_keluhan')) ? 'active' : '';
 		$doclinc_active_rekam_medis = ($doclinc_admin_segment === 'rekam_medis' || $this->session->flashdata('active_tab_rekam_medis')) ? 'active' : '';
 		$doclinc_active_laporan = ($doclinc_admin_segment === 'laporan' || $this->session->flashdata('active_tab_laporan')) ? 'active' : '';
+		$doclinc_active_diagnosis = ($doclinc_admin_segment === 'diagnosis') ? 'active' : '';
 		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed' || $this->session->flashdata('active_tab_news_feed')) ? 'active' : '';
 		?>
 		<!-- Sidebar -->
@@ -160,6 +169,13 @@
 				<a class="nav-link" href="<?php echo site_url('laporan'); ?>">
 					<i class="fas fa-file-alt"></i>
 					<span>Laporan</span>
+				</a>
+			</li>
+
+			<li class="nav-item <?= $doclinc_active_diagnosis; ?>">
+				<a class="nav-link" href="<?php echo site_url('diagnosis'); ?>">
+					<i class="fas fa-chart-bar"></i>
+					<span>Penyakit terbanyak</span>
 				</a>
 			</li>
 

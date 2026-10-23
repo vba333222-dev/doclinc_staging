@@ -218,7 +218,15 @@ class Diagnosis_infographic_m extends CI_Model
 		);
 	}
 
-	/** Kode ICD-10 terbanyak di seluruh kota. Baris tanpa kode tidak masuk daftar ini. */
+	/**
+	 * Kode ICD-10 terbanyak di seluruh kota.
+	 *
+	 * HANYA baris `coding_state = 'coded'`. Alasannya: layanan pengodean menandai
+	 * 'coded' hanya ketika kodenya benar-benar kode ICD-10 yang sah, sedangkan
+	 * baris 'uncoded' bisa berisi teks bebas di kolom kode. Tanpa aturan ini,
+	 * peringkat "Kode ICD-10" bisa menampilkan teks bebas sebagai kode ICD-10 -
+	 * angka yang menyesatkan. Baris tanpa kode tidak masuk daftar ini.
+	 */
 	public function getCityTopCodes(array $filters, $limit = 10)
 	{
 		$limit = (int) $limit;
@@ -233,6 +241,7 @@ class Diagnosis_infographic_m extends CI_Model
 			FALSE
 		);
 		$this->baseQuery($date_expr, $filters);
+		$this->db->where('d.coding_state', 'coded');
 		$this->db->where("d.diagnosis_code IS NOT NULL AND TRIM(d.diagnosis_code) <> ''", NULL, FALSE);
 		$this->db->group_by('TRIM(d.diagnosis_code)', FALSE);
 		$this->db->order_by('entries', 'DESC');
@@ -291,12 +300,13 @@ class Diagnosis_infographic_m extends CI_Model
 		return (int) ($row->entries ?? 0);
 	}
 
-	/** Jumlah kode ICD-10 berbeda yang muncul pada periode terpilih. */
+	/** Jumlah kode ICD-10 berbeda yang muncul pada periode terpilih (hanya terkode). */
 	public function getDistinctCodeCount(array $filters)
 	{
 		$date_expr = $this->dateExpression();
 		$this->db->select('COUNT(DISTINCT TRIM(d.diagnosis_code)) AS total', FALSE);
 		$this->baseQuery($date_expr, $filters);
+		$this->db->where('d.coding_state', 'coded');
 		$this->db->where("d.diagnosis_code IS NOT NULL AND TRIM(d.diagnosis_code) <> ''", NULL, FALSE);
 		$row = $this->db->get()->row();
 		return (int) ($row->total ?? 0);
@@ -336,6 +346,9 @@ class Diagnosis_infographic_m extends CI_Model
 		);
 		$this->baseQuery($date_expr, $filters, true);
 		$this->db->where('k.id_kecamatan IS NOT NULL', NULL, FALSE);
+		/* Kode terbanyak per kecamatan juga hanya dari baris terkode, supaya
+		 * peringkatnya sebanding dengan peringkat kota. */
+		$this->db->where('d.coding_state', 'coded');
 		$this->db->where("d.diagnosis_code IS NOT NULL AND TRIM(d.diagnosis_code) <> ''", NULL, FALSE);
 		$this->db->group_by('k.id_kecamatan, TRIM(d.diagnosis_code)', FALSE);
 		$this->db->order_by('entries', 'DESC');
@@ -385,6 +398,7 @@ class Diagnosis_infographic_m extends CI_Model
 		);
 		$this->baseQuery($date_expr, $filters, true);
 		$this->db->where('k.id_kecamatan IS NOT NULL', NULL, FALSE);
+		$this->db->where('d.coding_state', 'coded');
 		$this->db->where('TRIM(d.diagnosis_code)', $code);
 		$this->db->group_by('k.id_kecamatan, k.nama_kecamatan', FALSE);
 		$this->db->order_by('entries', 'DESC');
