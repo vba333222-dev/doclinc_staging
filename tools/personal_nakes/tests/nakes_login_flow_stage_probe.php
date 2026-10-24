@@ -246,6 +246,11 @@ check('V5 akun yang sudah aktivasi diberi jalan masuk, bukan jalan buntu',
 		&& strpos($activation_view, "site_url('login-nakes')") !== false);
 check('V6 langkah aktivasi disebut sebagai langkah 1 dari 2',
 	strpos($activation_view, 'Langkah 1 dari 2') !== false);
+$code_body = method_body($controller, 'activate_with_code', 'start_activation_session');
+check('V7 kode untuk akun yang sudah aktivasi tidak disebut "data staf kurang"',
+	strpos($code_body, "'already_activated'") !== false
+		&& strpos($code_body, "password_changed_at") !== false
+		&& strpos($activation_view, "'already_activated' =>") !== false);
 
 /* ================= 8. Kode aktivasi sekali pakai (jalur baru) ============= */
 require_once APPPATH . 'libraries/Nakes_activation_code.php';

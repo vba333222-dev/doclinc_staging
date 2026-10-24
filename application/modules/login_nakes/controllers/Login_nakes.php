@@ -503,8 +503,20 @@ class Login_nakes extends MX_Controller
 		}
 		$identity = $this->Login_m->get_personal_activation_identity((int) $user_id);
 		if (!$identity || (int) ($identity['must_change_password'] ?? 0) !== 1) {
-			$this->Login_m->log_login_event('credential_activation_failed', (int) $user_id, array('area' => 'activation', 'reason' => 'identity_incomplete'));
-			$this->activation_failure('identity_incomplete');
+			/* Sebab dibedakan supaya pesannya benar: akun yang sudah aktivasi
+			   bukan akun yang datanya kurang. Tanpa ini, nakes yang mengulang
+			   aktivasi disuruh "hubungi Admin" untuk masalah yang tidak ada. */
+			$row = $this->db
+				->select('must_change_password, password_changed_at')
+				->where('userId', (int) $user_id)
+				->limit(1)
+				->get('users')
+				->row();
+			$reason = ($row && (int) $row->must_change_password === 0 && !empty($row->password_changed_at))
+				? 'already_activated'
+				: 'identity_incomplete';
+			$this->Login_m->log_login_event('credential_activation_failed', (int) $user_id, array('area' => 'activation', 'reason' => $reason));
+			$this->activation_failure($reason);
 			return;
 		}
 		$this->start_activation_session($identity);
