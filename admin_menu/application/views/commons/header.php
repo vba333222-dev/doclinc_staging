@@ -49,6 +49,13 @@
 	$doclinc_reference_css = '../assets/css/doclinc-reference-ui.css';
 	?>
 	<link rel="stylesheet" href="<?= html_escape(base_url($doclinc_reference_css) . '?v=' . rawurlencode((string) @filemtime(FCPATH . $doclinc_reference_css))); ?>">
+	<?php
+	/* Konvensi bersama seluruh halaman panel: kepala halaman, tombol info,
+	   aksi utama, dan isi modal penjelasan. Dimuat SETELAH CSS referensi supaya
+	   aturannya menang atas nilai bawaan, dan hanya sekali per halaman. */
+	$doclinc_admin_shell_css = 'assets/css/doclinc-admin-shell.css';
+	?>
+	<link rel="stylesheet" href="<?= html_escape(base_url($doclinc_admin_shell_css) . '?v=' . rawurlencode((string) @filemtime(FCPATH . $doclinc_admin_shell_css))); ?>">
 	<!-- gijgo -->
 	<script src="https://unpkg.com/gijgo@1.9.13/js/gijgo.min.js" type="text/javascript"></script>
 	<link href="https://unpkg.com/gijgo@1.9.13/css/gijgo.min.css" rel="stylesheet" type="text/css" />

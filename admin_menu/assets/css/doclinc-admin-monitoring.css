@@ -1,0 +1,789 @@
+@charset "UTF-8";
+
+/* ==========================================================================
+   Dasbor Monitoring Layanan Kesehatan - panel admin DocLink (permukaan Dinkes)
+   --------------------------------------------------------------------------
+   Berkas ini HANYA untuk halaman /admin_menu/index.php?/home (modul `home`).
+   Satu permukaan, satu berkas gaya.
+
+   Aturan yang dipegang:
+   - Warna hanya dari token `--dl-ref-*` (assets/css/doclinc-reference-ui.css).
+     Tidak ada hex baru di berkas ini. Nuansa lembut dihitung dengan `color-mix`
+     dari token yang sudah ada.
+   - Tidak memakai penanda prioritas paksa sama sekali. Aturan bersama yang perlu
+     dikalahkan (mis. gradien `.doclinc-page-header` dari custom.css) dikalahkan
+     dengan selector yang lebih spesifik dan di-scope ke `.dl-mon`. Berkas ini
+     sengaja bernilai nol pada metrik itu di .clinerules/20-slop-budget.md.
+   - Permukaan datar: pemisah berupa garis 1px, bukan bayangan.
+   - Angka dan waktu memakai huruf monospace dan tabular.
+   - `focus-visible` tidak dihapus.
+   ========================================================================== */
+
+/* --- Kerangka ----------------------------------------------------------- */
+
+.dl-mon {
+  color: var(--dl-ref-ink);
+  font-family: var(--dl-ref-font);
+  font-size: var(--dl-ref-body);
+}
+
+/* custom.css memberi gradien hijau-biru pada header halaman ini; gradien tidak
+   dipakai untuk chrome dasbor data, jadi diganti permukaan datar. Selector
+   di-scope ke `.dl-mon` supaya header 12 modul lain tidak ikut berubah. */
+.dl-mon .doclinc-page-header {
+  background: var(--dl-ref-surface);
+  border-bottom: 1px solid var(--dl-ref-line);
+}
+
+.dl-mon .doclinc-page-title {
+  color: var(--dl-ref-ink);
+  font-weight: 800;
+  font-size: 1.5rem;
+}
+
+.dl-mon-lede {
+  max-width: 68ch;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-body);
+  line-height: 1.5;
+}
+
+.dl-mon .dl-mon-notice {
+  margin: 0 1.5rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--dl-ref-warning) 34%, transparent);
+  border-radius: var(--dl-ref-radius-control);
+  background: color-mix(in srgb, var(--dl-ref-warning) 10%, var(--dl-ref-surface));
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-body-compact);
+}
+
+/* --- Filter ------------------------------------------------------------- */
+
+.dl-mon .dl-mon-filter {
+  margin: 0 1.5rem 1rem;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-tile);
+  background: var(--dl-ref-surface);
+  box-shadow: none;
+}
+
+.dl-mon .dl-mon-field-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-label);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.dl-mon .dl-mon-filter .form-control,
+.dl-mon .dl-mon-filter .btn {
+  min-height: var(--dl-ref-control);
+  border-radius: var(--dl-ref-radius-control);
+  font-size: var(--dl-ref-body-compact);
+}
+
+.dl-mon .dl-mon-filter .form-control {
+  border-color: var(--dl-ref-line);
+  color: var(--dl-ref-ink);
+  background: var(--dl-ref-surface);
+}
+
+.dl-mon .dl-mon-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dl-mon .dl-mon-filter-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+}
+
+.dl-mon-hint {
+  margin-top: 12px;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.45;
+}
+
+/* --- Konteks pelaporan -------------------------------------------------- */
+
+.dl-mon .dl-mon-context {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1px;
+  margin: 0 1.5rem 1.5rem;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-tile);
+  background: var(--dl-ref-line);
+  overflow: hidden;
+}
+
+.dl-mon .dl-mon-context-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  background: var(--dl-ref-surface);
+}
+
+.dl-mon .dl-mon-context-key {
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-label);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.dl-mon .dl-mon-context-value {
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-body);
+  font-weight: 700;
+}
+
+.dl-mon .dl-mon-context-note {
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.4;
+}
+
+/* --- Judul bagian & angka ----------------------------------------------- */
+
+.dl-mon .dl-mon-section-title {
+  margin: 0 1.5rem 12px;
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-section);
+  font-weight: 800;
+}
+
+/* Angka, waktu, dan kode memakai huruf monospace dengan lebar digit tetap
+   supaya kolom angka rata dan bisa dipindai. */
+.dl-mon .dl-mon-num,
+.dl-mon .dl-mon-code,
+.dl-mon .dl-mon-exception-id,
+.dl-mon .dl-mon-exception-wait {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.dl-mon .dl-mon-code {
+  display: block;
+  margin-top: 2px;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.4;
+}
+
+/* --- Kartu KPI ---------------------------------------------------------- */
+
+.dl-mon .dl-mon-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 1.5rem 12px;
+}
+
+/* KPI adalah tipografi, bukan hiasan: tanpa ikon berlingkar, tanpa bayangan,
+   tanpa gradien. Pemisahnya garis rambut. */
+.dl-mon .dl-mon-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-tile);
+  background: var(--dl-ref-surface);
+}
+
+.dl-mon .dl-mon-kpi-label {
+  margin: 0;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-label);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.dl-mon .dl-mon-kpi-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+}
+
+.dl-mon .dl-mon-kpi-value .dl-mon-num {
+  color: var(--dl-ref-ink);
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.dl-mon .dl-mon-kpi-unit {
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  font-weight: 700;
+}
+
+.dl-mon .dl-mon-kpi-note {
+  margin: 0;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.45;
+}
+
+.dl-mon .dl-mon-kpi-delta {
+  margin: 0;
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-caption);
+  font-weight: 700;
+}
+
+.dl-mon .dl-mon-kpi-link {
+  margin: 0;
+}
+
+.dl-mon .dl-mon-kpi-link a,
+.dl-mon .dl-mon-exception-action a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--dl-ref-control);
+  color: var(--dl-ref-green-700);
+  font-size: var(--dl-ref-body-compact);
+  font-weight: 700;
+}
+
+.dl-mon .dl-mon-kpi.is-kosong .dl-mon-kpi-value .dl-mon-num {
+  color: var(--dl-ref-muted);
+}
+
+/* --- Strip beban kerja saat ini ---------------------------------------- */
+
+.dl-mon .dl-mon-strip {
+  margin: 0 1.5rem 1.5rem;
+  padding: 12px 16px;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-tile);
+  background: color-mix(in srgb, var(--dl-ref-mint-soft) 55%, var(--dl-ref-surface));
+}
+
+.dl-mon .dl-mon-strip-title {
+  margin: 0 0 8px;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-label);
+  font-weight: 700;
+}
+
+/* Baris status pembaruan berkala.
+   Titiknya menandai keadaan pemeriksaan terakhir: hijau saat penyegaran
+   berhasil, peringatan saat pemeriksaan terakhir gagal. Warnanya dari token,
+   bukan hex, dan gerak denyutnya dimatikan oleh blok prefers-reduced-motion
+   di bawah. */
+.dl-mon .dl-mon-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+}
+
+.dl-mon .dl-mon-live-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dl-ref-green-600);
+  animation: dl-mon-live-pulse 2.4s ease-in-out infinite;
+}
+
+.dl-mon .dl-mon-live.is-stale {
+  color: var(--dl-ref-warning-ink);
+}
+
+.dl-mon .dl-mon-live.is-stale .dl-mon-live-dot {
+  background: var(--dl-ref-warning);
+  animation: none;
+}
+
+/* Baris cakupan pelaporan pada panel per-Puskesma. Jaraknya dipisahkan dari
+   tabel di bawahnya supaya angkanya tidak terbaca sebagai bagian tabel. */
+.dl-mon .dl-mon-coverage {
+  margin-bottom: 12px;
+}
+
+/* Penandaan tindak lanjut pada daftar pengecualian.
+   Tingginya dipatok 44px karena ini sasaran sentuh, bukan tombol dekoratif:
+   `.btn-sm` Bootstrap berada di sekitar 31px, di bawah ambang sistem ini. */
+.dl-mon .dl-mon-followup {
+  margin: 8px 0 0;
+}
+
+.dl-mon .dl-mon-followup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: var(--dl-ref-caption);
+}
+
+.dl-mon .dl-mon-followup-state {
+  margin: 6px 0 0;
+  color: var(--dl-ref-green-700);
+  font-size: var(--dl-ref-caption);
+}
+
+/* Angka kemajuan pengawasan: berapa pengecualian yang sudah ditandai. */
+.dl-mon .dl-mon-followup-progress {
+  margin: 0 0 12px;
+  color: var(--dl-ref-green-700);
+  font-size: var(--dl-ref-caption);
+}
+
+/* Baris yang sudah ditandai ditindaklanjuti. Perubahannya sengaja tipis:
+   warna tingkat keparahan harus tetap terbaca - permintaan yang sudah
+   ditandai belum tentu selesai - jadi yang bergeser hanya permukaannya. */
+.dl-mon .dl-mon-exception.is-ditandai {
+  background: color-mix(in srgb, var(--dl-ref-green-600) 6%, var(--dl-ref-surface));
+}
+
+@keyframes dl-mon-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.dl-mon .dl-mon-strip-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px 20px;
+  margin: 0;
+}
+
+.dl-mon .dl-mon-strip-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--dl-ref-line) 70%, transparent);
+}
+
+.dl-mon .dl-mon-strip-item dt {
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  font-weight: 400;
+}
+
+.dl-mon .dl-mon-strip-item dd {
+  margin: 0;
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-body);
+  font-weight: 800;
+}
+
+/* --- Panel -------------------------------------------------------------- */
+
+.dl-mon .dl-mon-panel {
+  margin: 0 1.5rem 1.5rem;
+}
+
+.dl-mon .dl-mon-panel .card {
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-tile);
+  background: var(--dl-ref-surface);
+  box-shadow: none;
+}
+
+.dl-mon .dl-mon-panel .card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--dl-ref-line);
+  background: var(--dl-ref-surface);
+}
+
+.dl-mon .dl-mon-panel-head h2 {
+  color: var(--dl-ref-ink);
+}
+
+.dl-mon .dl-mon-panel-sub {
+  max-width: 78ch;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.45;
+}
+
+.dl-mon .dl-mon-badge {
+  flex: 0 0 auto;
+  padding: 3px 10px;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: 999px;
+  background: var(--dl-ref-surface);
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* --- Grafik ------------------------------------------------------------- */
+
+.dl-mon .dl-mon-chart-wrap {
+  position: relative;
+  height: 260px;
+  margin-bottom: 16px;
+}
+
+/* Grafik batang horizontal butuh tinggi mengikuti jumlah baris supaya label
+   nama fasilitas tidak bertumpuk. */
+.dl-mon .dl-mon-chart-wrap--bar {
+  height: 340px;
+}
+
+.dl-mon .dl-mon-chart-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Tabel -------------------------------------------------------------- */
+
+.dl-mon .dl-mon-table-wrap {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-control);
+}
+
+.dl-mon .dl-mon-table {
+  margin: 0;
+  color: var(--dl-ref-ink);
+  background: var(--dl-ref-surface);
+}
+
+.dl-mon .dl-mon-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--dl-ref-line);
+  background: var(--dl-ref-surface);
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-label);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.dl-mon .dl-mon-table tbody th,
+.dl-mon .dl-mon-table tbody td,
+.dl-mon .dl-mon-table tfoot th,
+.dl-mon .dl-mon-table tfoot td {
+  padding: 8px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--dl-ref-line) 65%, transparent);
+  font-size: var(--dl-ref-body-compact);
+  vertical-align: middle;
+}
+
+.dl-mon .dl-mon-table tbody th,
+.dl-mon .dl-mon-table tfoot th {
+  color: var(--dl-ref-ink);
+  font-weight: 700;
+}
+
+.dl-mon .dl-mon-table tfoot th,
+.dl-mon .dl-mon-table tfoot td {
+  border-top: 1px solid var(--dl-ref-line);
+  font-weight: 800;
+}
+
+.dl-mon .dl-mon-num-col {
+  text-align: right;
+}
+
+.dl-mon .dl-mon-caption {
+  padding: 0 12px 8px;
+  color: var(--dl-ref-muted);
+  caption-side: top;
+  font-size: var(--dl-ref-caption);
+  line-height: 1.4;
+  text-align: left;
+}
+
+.dl-mon .dl-mon-row-nihil th,
+.dl-mon .dl-mon-row-nihil td {
+  color: var(--dl-ref-muted);
+}
+
+/* --- Label tingkat ------------------------------------------------------ */
+
+.dl-mon .dl-mon-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: 999px;
+  background: var(--dl-ref-surface);
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Warna hanyalah penanda tambahan; tingkat selalu tertulis sebagai teks di
+   dalam label, jadi status tidak pernah disampaikan lewat warna saja. */
+.dl-mon .dl-mon-tag--kritis {
+  border-color: color-mix(in srgb, var(--dl-ref-danger) 40%, transparent);
+  background: var(--dl-ref-danger-soft);
+  color: var(--dl-ref-danger);
+}
+
+.dl-mon .dl-mon-tag--peringatan {
+  border-color: color-mix(in srgb, var(--dl-ref-warning) 40%, transparent);
+  /* Tint 12% membuat latar terlalu pekat sehingga teks kanonik --dl-ref-warning-ink
+     hanya mencapai kontras 4,41:1 (di bawah ambang AA 4,5:1). 6% memberi margin
+     yang aman tanpa mengubah warna teks. */
+  background: color-mix(in srgb, var(--dl-ref-warning) 6%, var(--dl-ref-surface));
+  color: var(--dl-ref-warning-ink);
+}
+
+.dl-mon .dl-mon-tag--informasi {
+  border-color: var(--dl-ref-line);
+  background: var(--dl-ref-mint-soft);
+  color: var(--dl-ref-green-700);
+}
+
+/* --- Ringkasan tingkat & daftar pengecualian ---------------------------- */
+
+.dl-mon .dl-mon-severity {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+.dl-mon .dl-mon-severity-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "label value" "note note";
+  align-items: baseline;
+  gap: 2px 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--dl-ref-line);
+  border-left-width: 3px;
+  border-radius: var(--dl-ref-radius-control);
+  background: var(--dl-ref-surface);
+}
+
+.dl-mon .dl-mon-severity-item dt {
+  grid-area: label;
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-body-compact);
+  font-weight: 700;
+}
+
+.dl-mon .dl-mon-severity-item dd {
+  grid-area: value;
+  margin: 0;
+  color: var(--dl-ref-ink);
+  font-size: 1.35rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.dl-mon .dl-mon-severity-item span {
+  grid-area: note;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.4;
+}
+
+.dl-mon .dl-mon-severity-item--kritis {
+  border-left-color: var(--dl-ref-danger);
+}
+
+.dl-mon .dl-mon-severity-item--peringatan {
+  border-left-color: var(--dl-ref-warning);
+}
+
+.dl-mon .dl-mon-severity-item--informasi {
+  border-left-color: var(--dl-ref-green-500);
+}
+
+.dl-mon .dl-mon-exception-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dl-mon .dl-mon-exception {
+  padding: 12px 14px;
+  border: 1px solid var(--dl-ref-line);
+  border-left-width: 3px;
+  border-radius: var(--dl-ref-radius-control);
+  background: var(--dl-ref-surface);
+}
+
+.dl-mon .dl-mon-exception--kritis {
+  border-left-color: var(--dl-ref-danger);
+}
+
+.dl-mon .dl-mon-exception--peringatan {
+  border-left-color: var(--dl-ref-warning);
+}
+
+.dl-mon .dl-mon-exception--informasi {
+  border-left-color: var(--dl-ref-green-500);
+}
+
+.dl-mon .dl-mon-exception-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dl-mon .dl-mon-exception-id {
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-body-compact);
+  font-weight: 700;
+}
+
+.dl-mon .dl-mon-exception-wait {
+  margin-left: auto;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-body-compact);
+  font-weight: 700;
+}
+
+.dl-mon .dl-mon-exception-reason {
+  margin: 6px 0 0;
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-body-compact);
+}
+
+.dl-mon .dl-mon-exception-meta {
+  margin: 2px 0 0;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.4;
+}
+
+.dl-mon .dl-mon-exception-action {
+  margin: 4px 0 0;
+}
+
+/* --- Fokus -------------------------------------------------------------- */
+
+.dl-mon a:focus-visible,
+.dl-mon button:focus-visible,
+.dl-mon select:focus-visible,
+.dl-mon input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--dl-ref-green-500) 70%, transparent);
+  outline-offset: 2px;
+}
+
+/* --- Layar sempit ------------------------------------------------------- */
+
+@media (max-width: 991.98px) {
+  .dl-mon .dl-mon-filter,
+  .dl-mon .dl-mon-context,
+  .dl-mon .dl-mon-kpi-grid,
+  .dl-mon .dl-mon-strip,
+  .dl-mon .dl-mon-panel,
+  .dl-mon .dl-mon-section-title,
+  .dl-mon .dl-mon-notice {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+
+  .dl-mon .dl-mon-chart-wrap {
+    height: 220px;
+  }
+
+  .dl-mon .dl-mon-chart-wrap--bar {
+    height: 300px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .dl-mon .dl-mon-filter,
+  .dl-mon .dl-mon-context,
+  .dl-mon .dl-mon-kpi-grid,
+  .dl-mon .dl-mon-strip,
+  .dl-mon .dl-mon-panel,
+  .dl-mon .dl-mon-section-title,
+  .dl-mon .dl-mon-notice {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+
+  .dl-mon .dl-mon-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dl-mon .dl-mon-kpi-value .dl-mon-num {
+    font-size: 1.6rem;
+  }
+
+  .dl-mon .dl-mon-table-wrap {
+    max-height: 300px;
+  }
+
+  /* Tabel lebar digulir mendatar di dalam bingkainya, bukan membuat seluruh
+     halaman ikut bergeser. */
+  .dl-mon .dl-mon-table {
+    min-width: 520px;
+  }
+}
+
+/* --- Tema gelap --------------------------------------------------------- */
+
+/* doclinc-reference-ui.css belum punya varian gelap, sedangkan panel ini punya
+   tombol tema. Peran token di bawah ini dipetakan ulang khusus untuk dasbor ini
+   memakai token milik panel (`custom.css`) yang SUDAH punya nilai gelap, supaya
+   tidak ada hex baru di berkas ini. */
+html[data-theme="dark"] .dl-mon {
+  --dl-ref-ink: var(--doclinc-text);
+  --dl-ref-muted: var(--doclinc-muted);
+  --dl-ref-line: var(--doclinc-border);
+  --dl-ref-surface: var(--doclinc-surface);
+  --dl-ref-mint-soft: var(--doclinc-table-head);
+  --dl-ref-green-500: var(--doclinc-primary);
+  --dl-ref-green-700: var(--doclinc-primary-dark);
+  /* --dl-ref-danger-soft tidak punya padanan gelap di custom.css. Tanpa peta ini,
+     label tingkat "Kritis" menjadi teks terang di atas latar terang: terukur
+     1,01:1, praktis tak terbaca. Dihitung dari token yang sudah ada, jadi tetap
+     nol hex baru. */
+  --dl-ref-danger-soft: color-mix(in srgb, var(--dl-ref-danger) 22%, var(--dl-ref-surface));
+}
+
+/* Di tema gelap, warna teks label tingkat diambil dari token tinta supaya
+   kontrasnya pasti. Warna tingkat tetap ada pada garis tepi dan latar label,
+   jadi status tidak pernah bergantung pada warna saja. */
+html[data-theme="dark"] .dl-mon .dl-mon-tag--kritis,
+html[data-theme="dark"] .dl-mon .dl-mon-tag--peringatan,
+html[data-theme="dark"] .dl-mon .dl-mon-tag--informasi,
+html[data-theme="dark"] .dl-mon .dl-mon-kpi-link a,
+html[data-theme="dark"] .dl-mon .dl-mon-exception-action a {
+  color: var(--dl-ref-ink);
+}
+
+/* --- Hormati preferensi gerak ------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-mon * {
+    transition-duration: 0.001ms;
+    animation-duration: 0.001ms;
+  }
+}

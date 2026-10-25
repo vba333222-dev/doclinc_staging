@@ -1918,6 +1918,26 @@ html[data-theme="dark"] .doclinc-action-danger {
     display: none;
 }
 
+/* Bagian dalam blok tanda tangan cetak. Sebelumnya keempat gaya ini ditulis
+   inline di dalam untai JavaScript, sehingga tidak dapat ditimpa dan tetap
+   terhitung sebagai gaya inline. Sekarang kelasnya di sini, dan untai JS-nya
+   hanya menyusun markup. */
+.print-signature-date {
+    width: 87%;
+    text-align: right;
+    margin-bottom: 40px;
+}
+
+.print-signature-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.print-signature-block {
+    text-align: center;
+    width: 40%;
+}
+
 @media (max-width: 768px) {
     .doclinc-sidebar {
         background: var(--doclinc-sidebar-bg);
@@ -2282,9 +2302,14 @@ input, select, textarea, button {
     display: block;
 }
 
-/* Page Header */
+/* Page Header
+   Gradien di sini dicabut. DESIGN.md §6 mengizinkan gradien hanya untuk
+   splash/hero/auth, dan kepala halaman daftar bukan salah satunya. Warnanya
+   sekarang permukaan datar, sama seperti kepala halaman baru `.dl-adm-head`,
+   supaya sepuluh halaman yang belum dikonversi pun tidak lagi memakai gradien
+   di halaman data. */
 .doclinc-page-header {
-    background: linear-gradient(135deg, rgba(31, 111, 75, 0.08) 0%, rgba(56, 182, 255, 0.06) 100%);
+    background: var(--doclinc-surface);
     border-bottom: 1px solid var(--doclinc-border);
 }
 

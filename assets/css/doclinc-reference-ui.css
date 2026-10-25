@@ -21,6 +21,15 @@
   --dl-ref-mint-soft: #E8F7F0;
   --dl-ref-danger: #A8443F;
   --dl-ref-danger-soft: #F7E7E6;
+  /* Token tambahan 2026-10-24 untuk dasbor "Monitoring Layanan Kesehatan"
+     (panel admin, permukaan Dinas Kesehatan). Nilainya adalah nilai kanonik
+     --dl-warning dan --dl-warning-ink dari assets/css/doclinc-design-system.css,
+     supaya panel dan aplikasi utama tidak memakai dua kuning peringatan yang
+     berbeda. Tidak ada warna baru: hanya peran yang belum ada di berkas ini.
+     -ink dipakai untuk teks label tingkat: --dl-warning pada latar amber lembut
+     hanya mencapai kontras 3,64:1, di bawah ambang WCAG AA 4,5:1. */
+  --dl-ref-warning: #B7791F;
+  --dl-ref-warning-ink: #98641A;
   --dl-ref-body: 14px;
   --dl-ref-body-compact: 13px;
   --dl-ref-label: 12px;

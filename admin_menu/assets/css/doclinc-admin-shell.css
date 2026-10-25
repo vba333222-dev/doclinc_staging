@@ -1,0 +1,368 @@
+/* ==========================================================================
+   Panel admin Dinas Kesehatan — konvensi bersama seluruh halaman.
+
+   Berkas ini BUKAN permukaan --dl-*. Panel admin adalah aplikasi terpisah
+   (CodeIgniter 3, sb-admin-2, Bootstrap 4), dan DESIGN.md §5.9 mengunci hanya
+   aturan yang wajib sama dengan aplikasi utama. Token --dl-ref-* sudah dimuat
+   header panel lewat doclinc-reference-ui.css, jadi warna di sini memakai token
+   itu dan bukan hex baru.
+
+   Masalah yang dijawab berkas ini
+   ------------------------------
+   Halaman-halaman panel menumpuk penjelasan di badan halaman. Diukur pada
+   halaman dasbor saja: 28 blok teks, 3.176 karakter. Pembaca lelah sebelum
+   sempat menjelajah. Aturannya sekarang:
+
+     - Halaman utama hanya menampilkan DATA BESAR dan satu aksi utama.
+     - Penjelasan metode, cakupan, dan pengecualian pindah ke modal.
+     - Yang tetap di halaman hanya keadaan yang benar-benar sedang terjadi
+       (mis. peringatan kerangka jam), bukan instruksi.
+
+   Aturan yang dipegang
+   --------------------
+     - tanpa hex: warna dari token --dl-ref-*;
+     - tanpa aturan yang menimpa paksa;
+     - target sentuh >= 44px;
+     - focus-visible tidak dihapus, hanya diberi bentuk yang konsisten;
+     - prefers-reduced-motion dihormati.
+   ========================================================================== */
+
+/* --- Kepala halaman ------------------------------------------------------
+   Satu judul, satu baris keterangan pendek, satu aksi utama, dan satu pintu
+   ke penjelasan lengkap. Bukan tiga paragraf. */
+
+.dl-adm-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 20px 24px 16px;
+  margin: 0 0 16px;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-section);
+  background: var(--dl-ref-surface);
+}
+
+.dl-adm-head-text {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.dl-adm-head-title {
+  margin: 0;
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-title);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+/* Satu baris saja. Kalau perlu lebih dari satu baris, isinya milik modal. */
+.dl-adm-head-sub {
+  margin: 6px 0 0;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-body-compact);
+  line-height: 1.5;
+}
+
+.dl-adm-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- Tombol info: pintu ke penjelasan -----------------------------------
+   Ikon saja, jadi wajib punya aria-label. Targetnya 44px karena ini sasaran
+   sentuh, bukan hiasan. Warnanya abu saat diam dan mengikuti warna teks saat
+   disorot, sesuai aturan ikon DESIGN.md §4. */
+
+.dl-adm-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-control);
+  background: transparent;
+  color: var(--dl-ref-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dl-adm-info:hover,
+.dl-adm-info:focus {
+  color: var(--dl-ref-ink);
+  border-color: var(--dl-ref-muted);
+}
+
+/* --- Aksi utama ---------------------------------------------------------
+   DESIGN.md §1.2: satu aksi utama per layar. Tombol aksi di panel dipatok
+   44px supaya memenuhi ambang sasaran sentuh yang sama dengan aplikasi utama;
+   `.btn-sm` bawaan tema berada di sekitar 31px. */
+
+.dl-adm-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--dl-ref-radius-control);
+  font-size: var(--dl-ref-body-compact);
+  font-weight: 700;
+}
+
+.dl-adm-action i {
+  font-size: 14px;
+}
+
+/* --- Isi modal penjelasan ------------------------------------------------
+   Penjelasan yang dipindahkan dari badan halaman tinggal di sini. Bentuknya
+   sengaja tenang: ukuran teks nyaman dibaca, jarak antar blok lega, dan
+   istilah teknis tetap monospace. */
+
+.dl-adm-help-body {
+  color: var(--dl-ref-body);
+  font-size: var(--dl-ref-body-compact);
+  line-height: 1.65;
+}
+
+.dl-adm-help-body > * + * {
+  margin-top: 12px;
+}
+
+.dl-adm-help-body h6 {
+  margin: 0;
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-label);
+  font-weight: 800;
+}
+
+.dl-adm-help-body p {
+  margin: 0;
+}
+
+.dl-adm-help-body ul,
+.dl-adm-help-body ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.dl-adm-help-body li + li {
+  margin-top: 6px;
+}
+
+.dl-adm-help-body code,
+.dl-adm-help-body .dl-adm-help-code {
+  color: var(--dl-ref-ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+}
+
+/* Catatan kaki di dalam modal: keterbatasan yang perlu diketahui pembaca,
+   bukan instruksi. */
+.dl-adm-help-note {
+  padding: 10px 12px;
+  border-left: 3px solid var(--dl-ref-warning);
+  border-radius: var(--dl-ref-radius-control);
+  background: var(--dl-ref-mint-soft);
+  color: var(--dl-ref-ink);
+}
+
+/* Daftar definisi di dalam modal: satu istilah, satu penjelasan. Dipakai untuk
+   definisi KPI dan sebab tiap temuan mutu data yang dulu tercetak di tabel. */
+.dl-adm-help-defs {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-control);
+  overflow: hidden;
+}
+
+.dl-adm-help-def {
+  padding: 10px 12px;
+}
+
+.dl-adm-help-def + .dl-adm-help-def {
+  border-top: 1px solid var(--dl-ref-line);
+}
+
+.dl-adm-help-def dt {
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-label);
+  font-weight: 700;
+}
+
+.dl-adm-help-def dd {
+  margin: 4px 0 0;
+  color: var(--dl-ref-body);
+}
+
+/* --- Jalur angka ringkas ------------------------------------------------
+   Deretan angka yang dibaca sekali lihat: jumlah, pembanding, penanda. Dipakai
+   menggantikan kalimat panjang yang merangkai angka yang sama menjadi paragraf,
+   dan menggantikan blok peringatan Bootstrap untuk keadaan yang sebenarnya
+   hanya data. */
+
+.dl-adm-strip {
+  padding: 16px 20px;
+  margin: 0 0 16px;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-section);
+  background: var(--dl-ref-surface);
+}
+
+.dl-adm-strip-title {
+  margin: 0 0 12px;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-label);
+  font-weight: 700;
+}
+
+.dl-adm-strip-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+}
+
+.dl-adm-strip-item dt {
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  font-weight: 600;
+}
+
+.dl-adm-strip-item dd {
+  margin: 2px 0 0;
+  color: var(--dl-ref-ink);
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Penanda keadaan di dalam jalur: bukan angka, tapi menandai angka di
+   sebelahnya. Warnanya tetap dari token, dan gradien tidak dipakai. */
+.dl-adm-strip-flag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--dl-ref-radius-control);
+  background: var(--dl-ref-mint-soft);
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-caption);
+  font-weight: 700;
+}
+
+.dl-adm-strip-flag--perhatian {
+  background: var(--dl-ref-danger-soft);
+  color: var(--dl-ref-danger);
+}
+
+/* Catatan singkat satu baris di dalam jalur, untuk keterbatasan yang memang
+   harus terlihat tanpa dibuka. */
+.dl-adm-strip-note {
+  margin: 12px 0 0;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.5;
+}
+
+/* --- Kartu pilihan -------------------------------------------------------
+   Dipakai ketika sebuah halaman meminta pembaca memilih satu dari beberapa
+   jenis pekerjaan yang setara. Kartunya sengaja netral: tidak ada warna per
+   jenis, karena warna menyiratkan hierarki yang tidak ada. Ikonnya mengikuti
+   aturan ikon (abu-abu, mewarisi currentColor). */
+
+.dl-adm-choice {
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-section);
+  background: var(--dl-ref-surface);
+}
+
+.dl-adm-choice-icon {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--dl-ref-muted);
+  font-size: 24px;
+}
+
+.dl-adm-choice-title {
+  margin: 0;
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-label);
+  font-weight: 800;
+}
+
+.dl-adm-choice-note {
+  margin: 4px 0 12px;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.5;
+}
+
+/* --- Baris aksi formulir ------------------------------------------------
+   Deretan tombol aksi di dalam formulir. Jaraknya memakai `gap` supaya tidak
+   perlu gaya inline, dan tiap tombol tetap memenuhi sasaran sentuh 44px. */
+
+.dl-adm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dl-adm-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* Alasan tombol nonaktif ditulis sebagai kalimat yang terlihat, bukan hanya
+   di atribut title: pembaca di layar sentuh tidak dapat melihat title. */
+.dl-adm-disabled-reason {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+}
+
+/* Sembunyikan tanpa gaya inline. Formulir jenis laporan ditampilkan lewat
+   skrip yang mengganti kelas ini, bukan menulis style="display:none". */
+.dl-adm-hide {
+  display: none;
+}
+
+/* Tombol tutup modal. `.close` bawaan Bootstrap 4 hanya sekitar 24px, di bawah
+   ambang sasaran sentuh DESIGN.md §5.9, jadi tingginya dipatok 44px tanpa
+   menghapus bentuk silangnya. */
+.dl-adm-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  font-size: 24px;
+  line-height: 1;
+}
+
+/* --- Baris keterangan ringkas di dalam panel ----------------------------
+   Dipakai untuk satu kalimat pendek yang memang harus terlihat tanpa dibuka,
+   mis. satuan angka atau cakupan waktu. Bukan tempat paragraf. */
+
+.dl-adm-panel-note {
+  margin: 0;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-adm-info,
+  .dl-adm-action {
+    transition-duration: 0.001ms;
+  }
+}

@@ -3,6 +3,41 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 /*
 |--------------------------------------------------------------------------
+| Zona waktu proses PHP
+|--------------------------------------------------------------------------
+|
+| Skema basis data ini memakai `CURRENT_TIMESTAMP` sebagai nilai bawaan di
+| banyak kolom waktu, jadi jam basis data adalah acuan yang sudah tertanam.
+| Sebelum baris ini ada, proses PHP berjalan pada UTC sementara zona sesi
+| basis data +07:00. Akibatnya dua penulis kolom waktu memakai dua jam
+| berbeda untuk satu kejadian yang sama:
+|
+|   - kolom TIMESTAMP yang dibiarkan kosong  -> diisi basis data -> jam LOKAL
+|   - kolom DATETIME yang diisi date() PHP   -> jam UTC
+|
+| Pertandingan yang tidak sezona itu membuat batas periode laporan meleset
+| dan perbandingan waktu lintas tabel tidak sah. Menyamakan zona waktu PHP
+| dengan zona sesi basis data memperbaiki SEMUA penulis sekaligus, tanpa
+| mengubah satu pun titik pemanggilan date().
+|
+| Nilainya bisa diatur lewat DOCLINC_TIMEZONE. Bawaannya Asia/Jakarta karena
+| itulah zona sesi basis data pada pemasangan ini (diukur: NOW() minus
+| UTC_TIMESTAMP() = 25.200 detik). Kalau zona sesi basis data diubah,
+| ubah nilai ini agar tetap sama - jangan dibiarkan berbeda.
+|
+| Catatan: baris data LAMA yang terlanjur ditulis dalam jam UTC tidak ikut
+| diperbaiki oleh perubahan ini; lihat Amandemen PRODUCT.md 2026-10-25.
+*/
+$doclinc_timezone = getenv('DOCLINC_TIMEZONE');
+if ($doclinc_timezone === false || trim((string) $doclinc_timezone) === '') {
+	$doclinc_timezone = 'Asia/Jakarta';
+}
+if (in_array($doclinc_timezone, timezone_identifiers_list(), true)) {
+	date_default_timezone_set($doclinc_timezone);
+}
+
+/*
+|--------------------------------------------------------------------------
 | Base Site URL
 |--------------------------------------------------------------------------
 |
@@ -971,6 +1006,37 @@ $config['login_throttle_enabled'] = true;
 $config['login_throttle_max_failures'] = 8;
 $config['login_throttle_ip_max_failures'] = 20;
 $config['login_throttle_window_seconds'] = 900;
+
+/*
+| Ambang eskalasi permintaan yang belum diterima puskesmas.
+|
+| Dibaca oleh DUA aplikasi: pengawas permintaan di aplikasi utama
+| (application/libraries/Pending_request_watchdog.php) dan dasbor Dinas
+| Kesehatan di panel admin (Home_m::monitoring_escalation_thresholds).
+|
+| Karena keduanya aplikasi CodeIgniter terpisah dengan berkas config sendiri,
+| blok ini WAJIB ada di kedua config dengan nilai bawaan yang sama. Kalau hanya
+| diubah di satu sisi, dasbor dan pengawas memakai dua angka berbeda untuk
+| konsep yang sama - persis yang ingin dihindari.
+|
+| Satuan menit. Nilai yang tidak sah (kosong, bukan angka, nol, negatif) jatuh
+| ke nilai bawaan supaya salah ketik tidak mematikan pengawas diam-diam.
+| Bawaan: pengingat 10 menit, terlambat 20 menit.
+*/
+$request_accept_reminder_env = getenv('DOCLINC_REQUEST_ACCEPT_REMINDER_MINUTES');
+if ($request_accept_reminder_env === false || $request_accept_reminder_env === '') {
+	$request_accept_reminder_env = $_SERVER['DOCLINC_REQUEST_ACCEPT_REMINDER_MINUTES'] ?? null;
+}
+$request_accept_overdue_env = getenv('DOCLINC_REQUEST_ACCEPT_OVERDUE_MINUTES');
+if ($request_accept_overdue_env === false || $request_accept_overdue_env === '') {
+	$request_accept_overdue_env = $_SERVER['DOCLINC_REQUEST_ACCEPT_OVERDUE_MINUTES'] ?? null;
+}
+$config['request_accept_reminder_minutes'] = (is_numeric($request_accept_reminder_env) && (int) $request_accept_reminder_env > 0)
+	? (int) $request_accept_reminder_env
+	: 10;
+$config['request_accept_overdue_minutes'] = (is_numeric($request_accept_overdue_env) && (int) $request_accept_overdue_env > 0)
+	? (int) $request_accept_overdue_env
+	: 20;
 $config['nakes_presence_online_timeout_seconds'] = 90;
 
 $puskesmas_operations_enabled_env = getenv('DOCLINC_PUSKESMAS_OPERATIONS_ENABLED');

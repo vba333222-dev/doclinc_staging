@@ -1,57 +1,50 @@
 <?php
 $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ? $puskesmas_options : array();
 ?>
-<div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
-	<div>
-		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-file-alt"></i> Laporan</h1>
-		<div class="text-white-50 doclinc-page-subtitle">Lihat rekap konsultasi terbaru.</div>
+<div class="dl-adm-head">
+	<div class="dl-adm-head-text">
+		<h1 class="dl-adm-head-title">Laporan</h1>
+		<p class="dl-adm-head-sub">Rekap konsultasi per hari, minggu, bulan, atau tahun.</p>
+	</div>
+	<div class="dl-adm-head-actions">
+		<button type="button" class="dl-adm-info" data-toggle="modal" data-target="#dlLaporanHelp"
+			aria-label="Penjelasan isi laporan dan batasannya">
+			<i class="fas fa-circle-info" aria-hidden="true"></i>
+		</button>
 	</div>
 </div>
 
+<?php
+/* Empat jenis laporan adalah pilihan yang setara, bukan hierarki: tidak ada
+   yang lebih utama dari yang lain. Karena itu kartunya netral dan ikonnya
+   abu-abu (DESIGN.md §4 melarang ikon berwarna), bukan empat warna berbeda
+   dengan empat warna tombol berbeda seperti sebelumnya. Tiap pilihan juga
+   menyebut rentangnya, supaya pembaca tahu bedanya tanpa mencoba. */
+$laporan_types = array(
+	array('kunci' => 'form-perhari', 'judul' => 'Laporan harian', 'keterangan' => 'Satu tanggal, atau rentang tanggal.', 'ikon' => 'fa-calendar-day'),
+	array('kunci' => 'form-perminggu', 'judul' => 'Laporan mingguan', 'keterangan' => 'Satu tahun dan minggu ke berapa.', 'ikon' => 'fa-calendar-week'),
+	array('kunci' => 'form-perbulan', 'judul' => 'Laporan bulanan', 'keterangan' => 'Satu bulan pada satu tahun.', 'ikon' => 'fa-calendar-alt'),
+	array('kunci' => 'form-pertahun', 'judul' => 'Laporan tahunan', 'keterangan' => 'Seluruh satu tahun.', 'ikon' => 'fa-calendar'),
+);
+?>
 <div class="row">
-	<div class="col-lg-3 col-md-6 mb-4">
-		<div class="card border-left-primary shadow h-100 py-2">
-			<div class="card-body text-center">
-				<div class="text-xs font-weight-bold text-primary text-uppercase mb-3">
-					<i class="fas fa-calendar-day fa-2x mb-2"></i><br>Laporan harian
+	<?php foreach ($laporan_types as $tipe): ?>
+		<div class="col-lg-3 col-md-6 mb-4">
+			<div class="card dl-adm-choice h-100">
+				<div class="card-body text-center">
+					<i class="fas <?= html_escape($tipe['ikon']); ?> dl-adm-choice-icon" aria-hidden="true"></i>
+					<h2 class="dl-adm-choice-title"><?= html_escape($tipe['judul']); ?></h2>
+					<p class="dl-adm-choice-note"><?= html_escape($tipe['keterangan']); ?></p>
+					<button type="button" class="btn btn-outline-primary dl-adm-action show-form" data-form="<?= html_escape($tipe['kunci']); ?>">
+						Pilih
+					</button>
 				</div>
-				<button type="button" class="btn btn-primary btn-block btn-sm rounded-pill show-form" data-form="form-perhari">Lihat laporan</button>
 			</div>
 		</div>
-	</div>
-	<div class="col-lg-3 col-md-6 mb-4">
-		<div class="card border-left-success shadow h-100 py-2">
-			<div class="card-body text-center">
-				<div class="text-xs font-weight-bold text-success text-uppercase mb-3">
-					<i class="fas fa-calendar-week fa-2x mb-2"></i><br>Laporan mingguan
-				</div>
-				<button type="button" class="btn btn-success btn-block btn-sm rounded-pill show-form" data-form="form-perminggu">Lihat laporan</button>
-			</div>
-		</div>
-	</div>
-	<div class="col-lg-3 col-md-6 mb-4">
-		<div class="card border-left-info shadow h-100 py-2">
-			<div class="card-body text-center">
-				<div class="text-xs font-weight-bold text-info text-uppercase mb-3">
-					<i class="fas fa-calendar-alt fa-2x mb-2"></i><br>Laporan bulanan
-				</div>
-				<button type="button" class="btn btn-info btn-block btn-sm rounded-pill show-form" data-form="form-perbulan">Lihat laporan</button>
-			</div>
-		</div>
-	</div>
-	<div class="col-lg-3 col-md-6 mb-4">
-		<div class="card border-left-warning shadow h-100 py-2">
-			<div class="card-body text-center">
-				<div class="text-xs font-weight-bold text-warning text-uppercase mb-3">
-					<i class="fas fa-calendar fa-2x mb-2"></i><br>Laporan tahunan
-				</div>
-				<button type="button" class="btn btn-warning btn-block btn-sm rounded-pill show-form" data-form="form-pertahun">Lihat laporan</button>
-			</div>
-		</div>
-	</div>
+	<?php endforeach; ?>
 </div>
 
-<div id="form-perhari" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
+<div id="form-perhari" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4 dl-adm-hide">
 	<?php
 	/* Aksi formulir memakai base_url(), bukan site_url(). Panel ini memakai
 	   `index_page = 'index.php?'`, sehingga site_url() menghasilkan
@@ -111,16 +104,26 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 			<input type="hidden" name="tipe" value="perhari">
 			<input type="hidden" name="tipeBtn" id="tipeBtn">
 
-			<div class="col-auto mb-2">
+			<div class="col-auto mb-2 dl-adm-actions">
+				<?php /* Satu aksi utama per layar (DESIGN.md §1.2): hanya
+				   "Lihat laporan" yang berbobot utama. "Jumlah pasien" dan
+				   "Jumlah diagnosis" adalah penyaring lain atas data yang sama,
+				   jadi tampil sebagai tombol garis, bukan tombol berwarna yang
+				   bersaing dengan aksi utama. */ ?>
 				<button type="button" id="btnTampilkan" class="btn btn-primary">Lihat laporan</button>
-				<button type="button" id="btnJumlahPasien" class="btn btn-success">Jumlah pasien</button>
-				<button type="button" id="btnJumlahDiagnosa" class="btn btn-secondary">Jumlah diagnosis</button>
-				<button type="button" id="btnResetLaporan" class="btn btn-outline-secondary">Hapus filter</button>
+				<button type="button" id="btnJumlahPasien" class="btn btn-outline-secondary">Jumlah pasien</button>
+				<button type="button" id="btnJumlahDiagnosa" class="btn btn-outline-secondary">Jumlah diagnosis</button>
+				<button type="button" id="btnResetLaporan" class="btn btn-link">Hapus filter</button>
 			</div>
 
-			<div class="col mb-2 ml-auto d-flex justify-content-end flex-wrap" style="gap: 0.75rem;">
-				<button type="button" id="btnCetak" class="btn btn-secondary">Cetak laporan</button>
-				<button type="button" id="btnExport" class="btn btn-outline-secondary" disabled title="Ekspor belum tersedia.">Ekspor Excel</button>
+			<div class="col mb-2 ml-auto dl-adm-actions justify-content-end">
+				<button type="button" id="btnCetak" class="btn btn-outline-secondary">Cetak laporan</button>
+				<button type="button" id="btnExport" class="btn btn-outline-secondary" disabled
+					aria-describedby="dlExportReason">Ekspor Excel</button>
+				<?php /* DESIGN.md §5.9: tombol yang tidak berlaku tampil nonaktif
+				   beserta alasannya, dan alasannya kalimat yang terlihat — bukan
+				   hanya atribut title yang tidak muncul di layar sentuh. */ ?>
+				<p class="dl-adm-disabled-reason" id="dlExportReason">Ekspor Excel belum tersedia.</p>
 			</div>
 		</div>
 	</form>
@@ -129,7 +132,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 	</div>
 </div>
 
-<div id="form-perminggu" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
+<div id="form-perminggu" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4 dl-adm-hide">
 	<form action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
@@ -147,7 +150,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		</div>
 	</form>
 </div>
-<div id="form-perbulan" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
+<div id="form-perbulan" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4 dl-adm-hide">
 	<form action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
@@ -171,7 +174,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 		</div>
 	</form>
 </div>
-<div id="form-pertahun" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4" style="display:none;">
+<div id="form-pertahun" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4 dl-adm-hide">
 	<form action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="form-row align-items-end">
 			<div class="col-auto">
@@ -202,16 +205,27 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 	</div>
 </div>
 
+<?php
+/* Menampilkan formulir jenis laporan yang dipilih. Sebelumnya skrip menulis
+   `style.display` langsung ke elemen; sekarang kelas yang diganti, supaya tidak
+   ada gaya inline di halaman. Gerak gulir dihormati: pembaca yang meminta gerak
+   dikurangi tidak dipaksa melihat halaman meluncur. */
+?>
 <script>
-	document.querySelectorAll('.show-form').forEach(function(btn) {
-		btn.addEventListener('click', function() {
-			document.querySelectorAll('.laporan-form').forEach(function(form) {
-				form.style.display = 'none';
+	document.querySelectorAll('.show-form').forEach(function (btn) {
+		btn.addEventListener('click', function () {
+			document.querySelectorAll('.laporan-form').forEach(function (form) {
+				form.classList.add('dl-adm-hide');
 			});
 			var formId = this.getAttribute('data-form');
-			document.getElementById(formId).style.display = 'block';
-			document.getElementById(formId).scrollIntoView({
-				behavior: 'smooth',
+			var form = document.getElementById(formId);
+			if (!form) {
+				return;
+			}
+			form.classList.remove('dl-adm-hide');
+			var halus = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			form.scrollIntoView({
+				behavior: halus ? 'smooth' : 'auto',
 				block: 'start'
 			});
 		});
@@ -405,7 +419,7 @@ $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ?
 				html += '</tr>';
 			});
 			html += '</tbody></table></div>';
-			html += '<br><br><div class="print-signature"><div style="width: 87%; text-align: right; margin-bottom: 40px;">Cilegon, <span id="tanggal-hari-ini"></span></div><div style="display: flex; justify-content: space-between;"><div style="text-align: center; width: 40%;">Petugas,<br><br><br><br>(________________)</div><div style="text-align: center; width: 40%;">Kepala Dinas Kesehatan,<br><br><br><br>(________________)</div></div></div>';
+			html += '<br><br><div class="print-signature"><div class="print-signature-date">Cilegon, <span id="tanggal-hari-ini"></span></div><div class="print-signature-row"><div class="print-signature-block">Petugas,<br><br><br><br>(________________)</div><div class="print-signature-block">Kepala Dinas Kesehatan,<br><br><br><br>(________________)</div></div></div>';
 			html += '</div>';
 			return html;
 		}

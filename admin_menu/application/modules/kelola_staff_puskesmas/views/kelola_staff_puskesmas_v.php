@@ -43,8 +43,20 @@ $form_values = array(
 );
 ?>
 <div class="doclinc-admin-page doclinc-akun-page">
-	<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-		<h1 class="doclinc-page-title mb-0"><i class="fas fa-fw fa-users-cog"></i> Staf Puskesmas</h1>
+	<div class="dl-adm-head">
+		<div class="dl-adm-head-text">
+			<h1 class="dl-adm-head-title">Staf Puskesmas</h1>
+			<p class="dl-adm-head-sub">Data staf dan akun login personal per Puskesmas.</p>
+		</div>
+		<div class="dl-adm-head-actions">
+			<button type="button" class="dl-adm-info" data-toggle="modal" data-target="#dlStaffHelp"
+				aria-label="Penjelasan pengelolaan staf dan akun personal">
+				<i class="fas fa-circle-info" aria-hidden="true"></i>
+			</button>
+			<a href="<?= site_url('kelola_staff_puskesmas/create'); ?>" class="btn btn-success dl-adm-action">
+				<i class="fas fa-plus-circle" aria-hidden="true"></i> Tambah staf
+			</a>
+		</div>
 	</div>
 
 	<div class="container-fluid">
@@ -75,30 +87,53 @@ $form_values = array(
 	<?php if (empty($table_ready)): ?>
 		<div class="alert alert-warning shadow-sm">Data staf belum tersedia.</div>
 	<?php else: ?>
-		<div class="doclinc-staff-note shadow-sm">
-			<i class="fas fa-info-circle"></i>
-			<span>Data staf, gelar, SIP, masa berlaku SIP, status, dan hubungan akun hanya dikelola Administrator Dinas Kesehatan. NIP bersifat opsional sesuai kebutuhan administratif.</span>
-		</div>
-		<div class="alert <?= (int) ($staff_readiness_summary['attention'] ?? 0) > 0 ? 'alert-warning' : 'alert-success'; ?> shadow-sm" role="status">
-			<strong>Kelengkapan data staf aktif:</strong>
-			<?= html_escape((string) (int) ($staff_readiness_summary['ready'] ?? 0)); ?> dari
-			<?= html_escape((string) (int) ($staff_readiness_summary['total'] ?? 0)); ?> memiliki data lengkap.
-			<?php if ((int) ($staff_readiness_summary['warning'] ?? 0) > 0): ?>
-				<?= html_escape((string) (int) $staff_readiness_summary['warning']); ?> memiliki SIP yang mendekati kedaluwarsa.
+		<?php
+		/* Keadaan kelengkapan dulu dirangkai jadi kalimat di dalam blok peringatan,
+		   sehingga halaman dibuka dengan empat blok teks sebelum satu angka pun
+		   terlihat. Sekarang angkanya berdiri sendiri sebagai jalur, dan penjelasan
+		   artinya ada di modal. Yang benar-benar keadaan (bukan angka) tetap
+		   dinyatakan, tetapi satu baris saja. */
+		$readiness_total = (int) ($staff_readiness_summary['total'] ?? 0);
+		$readiness_ready = (int) ($staff_readiness_summary['ready'] ?? 0);
+		$readiness_warning = (int) ($staff_readiness_summary['warning'] ?? 0);
+		$readiness_attention = (int) ($staff_readiness_summary['attention'] ?? 0);
+		$readiness_pending = (int) (($staff_readiness_summary['issue_counts'] ?? array())['staff_first_login_pending'] ?? 0);
+		?>
+		<div class="dl-adm-strip">
+			<p class="dl-adm-strip-title">Kelengkapan data staf aktif</p>
+			<dl class="dl-adm-strip-items">
+				<div class="dl-adm-strip-item">
+					<dt>Data lengkap</dt>
+					<dd><?= number_format($readiness_ready); ?> <span class="dl-adm-strip-flag">dari <?= number_format($readiness_total); ?></span></dd>
+				</div>
+				<?php if ($readiness_warning > 0): ?>
+					<div class="dl-adm-strip-item">
+						<dt>SIP mendekati kedaluwarsa</dt>
+						<dd><?= number_format($readiness_warning); ?></dd>
+					</div>
+				<?php endif; ?>
+				<?php if ($readiness_attention > 0): ?>
+					<div class="dl-adm-strip-item">
+						<dt>Perlu dilengkapi</dt>
+						<dd><?= number_format($readiness_attention); ?></dd>
+					</div>
+				<?php endif; ?>
+				<?php if ($readiness_pending > 0): ?>
+					<div class="dl-adm-strip-item">
+						<dt>Password bawaan belum diganti</dt>
+						<dd>
+							<?= number_format($readiness_pending); ?>
+							<span class="dl-adm-strip-flag dl-adm-strip-flag--perhatian">Jangan dibagikan bersama</span>
+						</dd>
+					</div>
+				<?php endif; ?>
+			</dl>
+			<?php if (!$nakes_profile_schema_ready): ?>
+				<p class="dl-adm-strip-note">
+					Gelar dan masa berlaku SIP belum dapat dicatat sampai pembaruan penyimpanan data selesai.
+				</p>
 			<?php endif; ?>
-			<?php if ((int) ($staff_readiness_summary['attention'] ?? 0) > 0): ?>
-				<?= html_escape((string) (int) $staff_readiness_summary['attention']); ?> data staf perlu dilengkapi.
-			<?php endif; ?>
 		</div>
-		<?php if ((int) (($staff_readiness_summary['issue_counts'] ?? array())['staff_first_login_pending'] ?? 0) > 0): ?>
-			<div class="alert alert-danger shadow-sm" role="alert">
-				<strong>Password bawaan belum diganti:</strong>
-				<?= html_escape((string) (int) $staff_readiness_summary['issue_counts']['staff_first_login_pending']); ?> akun Nakes belum menyelesaikan aktivasi pertama. Jangan membagikan satu password bawaan yang sama ke banyak pengguna.
-			</div>
-		<?php endif; ?>
-		<?php if (!$nakes_profile_schema_ready): ?>
-			<div class="alert alert-warning shadow-sm" role="alert">Gelar dan masa berlaku SIP belum dapat dicatat. Data profesi Nakes tetap belum lengkap sampai pembaruan penyimpanan data selesai.</div>
-		<?php endif; ?>
 		<?php if ($is_form): ?>
 			<div class="card shadow mb-4 doclinc-filter-card">
 				<div class="card-header py-3 d-flex align-items-center justify-content-between">
@@ -197,13 +232,8 @@ $form_values = array(
 
 		<div class="card shadow mb-4 doclinc-table-card doclinc-account-list-card">
 			<div class="card-header py-3 d-flex align-items-center justify-content-between">
-				<div>
-					<h6 class="m-0 font-weight-bold">Daftar staf</h6>
-					<div class="doclinc-muted-text mt-1">Kelola staf dan akun personal.</div>
-				</div>
-				<a href="<?= site_url('kelola_staff_puskesmas/create'); ?>" class="btn btn-sm btn-success shadow-sm rounded-pill doclinc-action-btn doclinc-action-primary">
-					<i class="fas fa-plus-circle mr-1"></i> Tambah staf
-				</a>
+				<h6 class="m-0 font-weight-bold">Daftar staf</h6>
+				<span class="badge badge-light border"><?= number_format(count($staff_rows)); ?> baris</span>
 			</div>
 			<div class="card-body doclinc-table-body">
 				<form method="post" action="<?= site_url('kelola_staff_puskesmas'); ?>" class="doclinc-account-toolbar doclinc-staff-filter-toolbar" id="staffPuskesmasFilterForm">
@@ -670,5 +700,80 @@ $form_values = array(
 			</div>
 		</div>
 	<?php endif; ?>
+	</div>
+</div>
+
+<?php
+/* Modal penjelasan halaman.
+   Catatan cakupan yang dulu tercetak sebagai banner di atas daftar, dan arti
+   tiap penanda kelengkapan yang dulu dirangkai jadi kalimat, dikumpulkan di
+   sini. Daftar tinggal memuat data dan aksi per baris. */
+?>
+<div class="modal fade" id="dlStaffHelp" tabindex="-1" role="dialog" aria-labelledby="dlStaffHelpLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h2 class="modal-title h6 mb-0 font-weight-bold" id="dlStaffHelpLabel">Cara membaca halaman ini</h2>
+				<button type="button" class="close dl-adm-modal-close" data-dismiss="modal" aria-label="Tutup penjelasan">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body dl-adm-help-body">
+				<h6>Siapa yang mengelola</h6>
+				<p>
+					Data staf, gelar, SIP, masa berlaku SIP, status, dan hubungan akun hanya dikelola
+					Administrator Dinas Kesehatan. NIP bersifat opsional sesuai kebutuhan administratif.
+				</p>
+
+				<h6>Arti tiap penanda kelengkapan</h6>
+				<p>
+					Jalur &ldquo;Kelengkapan data staf aktif&rdquo; di atas menghitung staf aktif, bukan seluruh
+					riwayat. Satu baris dihitung <b>data lengkap</b> hanya bila semua hal berikut terpenuhi.
+				</p>
+				<dl class="dl-adm-help-defs">
+					<?php foreach ($staff_readiness_labels as $kode => $label): ?>
+						<?php $issue_jumlah = (int) (($staff_readiness_summary['issue_counts'] ?? array())[$kode] ?? 0); ?>
+						<div class="dl-adm-help-def">
+							<dt><?= html_escape((string) $label); ?></dt>
+							<dd>
+								<?php if ($issue_jumlah > 0): ?>
+									<span class="dl-adm-help-code"><?= number_format($issue_jumlah); ?></span> baris staf aktif.
+								<?php else: ?>
+									Tidak ada baris pada pemeriksaan ini.
+								<?php endif; ?>
+							</dd>
+						</div>
+					<?php endforeach; ?>
+				</dl>
+
+				<h6>Keadaan yang menghambat</h6>
+				<ul>
+					<li>
+						<b>Password bawaan belum diganti.</b> Akun Nakes yang belum menyelesaikan aktivasi pertama
+						masih memakai password yang diterbitkan Administrator. Jangan membagikan satu password
+						bawaan yang sama ke banyak pengguna; terbitkan kode aktivasi per orang.
+					</li>
+					<?php if (!$nakes_profile_schema_ready): ?>
+						<li>
+							<b>Gelar dan masa berlaku SIP belum dapat dicatat.</b> Data profesi Nakes tetap belum
+							lengkap sampai pembaruan penyimpanan data selesai. Kolomnya tampil nonaktif, bukan
+							dihilangkan.
+						</li>
+					<?php endif; ?>
+					<?php if (!$nip_schema_ready): ?>
+						<li><b>Pengisian NIP belum tersedia</b> pada penyimpanan data saat ini.</li>
+					<?php endif; ?>
+				</ul>
+
+				<h6>Satu orang nakes, satu baris</h6>
+				<p>
+					Catatan staf (<span class="dl-adm-help-code">puskesmas_staff</span>) dan akun login
+					(<span class="dl-adm-help-code">users</span>) tertaut lewat
+					<span class="dl-adm-help-code">puskesmas_staff.user_id</span>. Daftar ini menampilkan semua
+					baris; akun yang belum tertaut tampil sebagai keadaan yang perlu dilengkapi, bukan sebagai
+					daftar kedua yang setara.
+				</p>
+			</div>
+		</div>
 	</div>
 </div>

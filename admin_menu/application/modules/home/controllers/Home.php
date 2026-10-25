@@ -14,22 +14,165 @@ class Home extends MX_Controller
 			show_error('Akses admin diperlukan.', 403, 'Akses ditolak');
 		}
 	}
+
 	public function index()
 	{
-		$this->session->set_flashdata('title', 'Dashboard');
+		$this->session->set_flashdata('title', 'Monitoring Layanan Kesehatan');
 		$this->session->set_flashdata('active_tab_dashboard', 'active');
 		unset($_SESSION['active_tab_keluhan']);
-		$x['operational_summary'] = $this->Home_m->get_operational_summary();
-		$x['puskesmas_distribution'] = $this->Home_m->get_puskesmas_distribution(8);
-		$x['attention_requests'] = $this->Home_m->get_attention_requests(8);
-		$x['recent_activity'] = $this->Home_m->get_recent_request_events(8);
-		$x['diagnosis_analytics'] = $this->Home_m->get_diagnosis_dashboard(30);
-		$x['nakes_presence_enabled'] = $this->config->item('nakes_presence_enabled') === true;
+
+		/* Filter dibaca lewat query string (base_url() di view, bukan site_url()),
+		   karena `index_page` bernilai 'index.php?' dan parameter formulir yang
+		   masuk ke URI dijawab 400 oleh filter URI CodeIgniter. */
+		$filters = array(
+			'periode' => trim((string) $this->input->get('periode', TRUE)),
+			'dari' => trim((string) $this->input->get('dari', TRUE)),
+			'sampai' => trim((string) $this->input->get('sampai', TRUE)),
+			'puskesmas' => trim((string) $this->input->get('puskesmas', TRUE)),
+		);
+
+		$period = $this->Home_m->monitoring_resolve_period($filters['periode'], $filters['dari'], $filters['sampai']);
+		$filters['periode'] = $period['preset'];
+
+		$puskesmas_options = $this->Home_m->monitoring_puskesmas_options();
+		if ($filters['puskesmas'] !== '' && $filters['puskesmas'] !== '__legacy__') {
+			$valid = false;
+			foreach ($puskesmas_options as $option) {
+				if ((string) $option->kode_pkm === $filters['puskesmas']) {
+					$valid = true;
+					break;
+				}
+			}
+			if (!$valid) {
+				$filters['puskesmas'] = '';
+			}
+		}
+
+		/* Pengecualian diambil lebih dulu karena penanda tindak lanjutnya perlu
+		   id permintaan yang benar-benar ditampilkan - bukan seluruh tabel. */
+		$pengecualian = $this->Home_m->monitoring_exceptions(10, $filters['puskesmas']);
+		$followup_ids = array();
+		if (isset($pengecualian['rows']) && is_array($pengecualian['rows'])) {
+			foreach ($pengecualian['rows'] as $exception_row) {
+				$followup_ids[] = (int) $exception_row->request_id;
+			}
+		}
+
+		$x = array(
+			'filters' => $filters,
+			'periode_options' => $this->Home_m->monitoring_period_options(),
+			'puskesmas_options' => $puskesmas_options,
+			'monitoring' => array(
+				'periode' => $period,
+				'ringkasan' => $this->Home_m->monitoring_period_summary($period, $filters['puskesmas']),
+				'aktif' => $this->Home_m->monitoring_outstanding($filters['puskesmas']),
+				'kesiapan' => $this->Home_m->monitoring_facility_readiness(),
+				'seri' => $this->Home_m->monitoring_series($period, $filters['puskesmas']),
+				'fasilitas' => $this->Home_m->monitoring_facility_comparison($period, $filters['puskesmas']),
+				'respons' => $this->Home_m->monitoring_response_median($period, $filters['puskesmas']),
+				'pengecualian' => $pengecualian,
+				'mutu_data' => $this->Home_m->monitoring_data_quality(),
+				'kesegaran' => $this->Home_m->monitoring_freshness(),
+				'tindak_lanjut' => $this->Home_m->monitoring_followup_map($followup_ids),
+			),
+			/* Panel lama dipertahankan apa adanya supaya tidak ada informasi yang
+			   hilang dari dasbor sebelumnya. */
+			'recent_activity' => $this->Home_m->get_recent_request_events(8),
+			'diagnosis_analytics' => $this->Home_m->get_diagnosis_dashboard(30),
+			'nakes_presence_enabled' => $this->config->item('nakes_presence_enabled') === true,
+		);
 
 		$this->load->view('commons/header');
 		$this->load->view('home_v', $x);
 		$this->load->view('commons/footer');
 	}
+	/**
+	 * Irisan tipis untuk pembaruan berkala dasbor.
+	 *
+	 * Otorisasi tidak ditulis ulang di sini: konstruktor kelas ini sudah menolak
+	 * permintaan tanpa sesi dan permintaan yang bukan admin, dan konstruktor
+	 * berjalan untuk setiap metode. Menambah pemeriksaan kedua hanya akan
+	 * membuat dua definisi yang bisa berbeda.
+	 */
+	public function live_snapshot()
+	{
+		$this->output->set_content_type('application/json')->set_header('Cache-Control: no-store');
+
+		if ($this->input->method(TRUE) !== 'GET') {
+			$this->admin_monitoring_response(405, false, 'method_not_allowed');
+			return;
+		}
+
+		/* Filter Puskesmas divalidasi persis seperti index(), supaya endpoint ini
+		   tidak menjadi jalur kedua yang menerima nilai sembarang. Nilainya juga
+		   sudah lewat escape() di model, jadi aman untuk SQL. */
+		$filter = trim((string) $this->input->get('puskesmas', TRUE));
+		if ($filter !== '' && $filter !== '__legacy__') {
+			$valid = false;
+			foreach ($this->Home_m->monitoring_puskesmas_options() as $option) {
+				if ((string) $option->kode_pkm === $filter) {
+					$valid = true;
+					break;
+				}
+			}
+			if (!$valid) {
+				$filter = '';
+			}
+		}
+
+		$this->admin_monitoring_response(200, true, 'ok', $this->Home_m->monitoring_live_slice($filter));
+	}
+
+	/**
+	 * Menandai satu permintaan sebagai sudah ditindaklanjuti.
+	 *
+	 * POST saja: ini menulis data, dan penulisan lewat GET dapat terpicu oleh
+	 * prefetch peramban atau tautan yang dibagikan. Otorisasi tetap dari
+	 * konstruktor kelas ini, dan CSRF ditangani CodeIgniter secara global
+	 * karena `csrf_protection` aktif.
+	 */
+	public function followup_mark()
+	{
+		$this->output->set_content_type('application/json')->set_header('Cache-Control: no-store');
+
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->admin_monitoring_response(405, false, 'method_not_allowed');
+			return;
+		}
+
+		$result = $this->Home_m->monitoring_mark_followup(
+			$this->input->post('request_id', TRUE),
+			$this->input->post('note', TRUE)
+		);
+
+		$this->admin_monitoring_response($result['ok'] ? 200 : 422, $result['ok'], $result['kode'], $result);
+	}
+
+	/** Mencabut penanda, supaya penandaan yang keliru dapat dibatalkan. */
+	public function followup_unmark()
+	{
+		$this->output->set_content_type('application/json')->set_header('Cache-Control: no-store');
+
+		if ($this->input->method(TRUE) !== 'POST') {
+			$this->admin_monitoring_response(405, false, 'method_not_allowed');
+			return;
+		}
+
+		$result = $this->Home_m->monitoring_unmark_followup($this->input->post('request_id', TRUE));
+
+		$this->admin_monitoring_response($result['ok'] ? 200 : 422, $result['ok'], $result['kode'], $result);
+	}
+
+	private function admin_monitoring_response($status, $success, $code, array $data = array())
+	{
+		$body = array('success' => (bool) $success, 'safe_error_code' => (string) $code);
+		if ($success) {
+			$body['data'] = $data;
+		}
+		$this->output->set_status_header((int) $status)->set_output(json_encode($body));
+	}
+
+
 
 	public function nakes_presence_snapshot()
 	{
@@ -147,151 +290,5 @@ class Home extends MX_Controller
 			$this->session->set_flashdata('info', $info);
 		}
 		redirect($_SERVER['HTTP_REFERER']);
-	}
-
-	public function get_realtime_konsultasi()
-	{
-		$start = $this->input->get('start'); // format yyyy-mm-dd
-		$end = $this->input->get('end');
-
-		if ($start && $end) {
-			$whereTanggal = "AND DATE(created_at) BETWEEN " . $this->db->escape($start) . " AND " . $this->db->escape($end);
-		} else {
-			$whereTanggal = "";
-		}
-
-		$get_konsultasi_baru = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Pending' $whereTanggal");
-		$get_konsultasi_proses = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Accepted' $whereTanggal");
-		$get_konsultasi_selesai = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Completed' $whereTanggal");
-		$get_konsultasi_selesai_total = $this->db->query("SELECT COUNT(request_id) AS jml FROM requests WHERE request_status='Completed'");
-
-		$data = [
-			'baru' => (int)$get_konsultasi_baru->row()->jml,
-			'proses' => (int)$get_konsultasi_proses->row()->jml,
-			'selesai' => (int)$get_konsultasi_selesai->row()->jml,
-
-		];
-		$data['total'] = array_sum($data);
-		$x = ['total_selesai' => (int)$get_konsultasi_selesai_total->row()->jml];
-
-		$datas = array_merge($data, $x);
-
-		$this->output->set_content_type('application/json')->set_output(json_encode($datas));
-	}
-
-
-	public function get_konsultasi_baru_ajax()
-	{
-		$tanggal = $this->input->get('tanggal'); // Format: yyyy-mm-dd
-
-		$list = $this->Home_m->konsultasi_baru_list($tanggal); // kirim tanggal ke model
-		$data = [];
-
-		foreach ($list->result() as $row) {
-			$created_at = new DateTime($row->created_at);
-			$now = new DateTime();
-			$interval = $created_at->diff($now);
-			// $tertunda_jam = $interval->days * 24 + $interval->h;
-			$tertunda_jam = sprintf(
-				'%02d:%02d:%02d',
-				$interval->days * 24 + $interval->h,
-				$interval->i,
-				$interval->s
-			);
-
-			$data[] = [
-				'request_id' => $row->request_id,
-				'nama' => $row->nama,
-				'created_at' => $row->created_at,
-				'tertunda_jam' => $tertunda_jam,
-				'nama_puskesmas' => $row->nama_puskesmas,
-				'dokter' => $row->name
-			];
-		}
-
-		$this->output->set_content_type('application/json')->set_output(json_encode($data));
-	}
-
-
-	public function get_konsultasi_proses_ajax()
-	{
-		$tanggal = $this->input->get('tanggal'); // Format: yyyy-mm-dd
-
-		$list = $this->Home_m->konsultasi_proses_list($tanggal);
-		$data = [];
-
-		foreach ($list->result() as $row) {
-			$created_at = new DateTime($row->created_at);
-			$now = new DateTime();
-			$interval = $created_at->diff($now);
-			// $tertunda_jam = $interval->days * 24 + $interval->h;
-			$tertunda_jam = sprintf(
-				'%02d:%02d:%02d',
-				$interval->days * 24 + $interval->h,
-				$interval->i,
-				$interval->s
-			);
-
-			$data[] = [
-				'request_id' => $row->request_id,
-				'nama' => $row->nama,
-				'created_at' => $row->created_at,
-				'tertunda_jam' => $tertunda_jam,
-				'nama_puskesmas' => $row->nama_puskesmas,
-				'dokter' => $row->name
-			];
-		}
-
-		$this->output->set_content_type('application/json')->set_output(json_encode($data));
-	}
-
-	public function ajax_konsultasi_selesai()
-	{
-		$list = $this->Home_m->konsultasi_selesai_list()->result();
-		$selesai_konsultasi = $this->Home_m->selesai_konsultasi_per_puskesmas();
-		$kunjungan_nakes = $this->Home_m->kunjungan_nakes_per_puskesmas();
-
-		$konsultasi_map = [];
-		foreach ($selesai_konsultasi as $row) {
-			$konsultasi_map[$row->remark] = $row->jumlah_selesai;
-		}
-
-		$kunjungan_map = [];
-		foreach ($kunjungan_nakes as $row) {
-			$kunjungan_map[$row->remark] = $row->jumlah_kunjungan;
-		}
-
-		// Total dari semua total_selesai
-		$total_konsultasi = array_sum(array_column($list, 'total_selesai'));
-		if ($total_konsultasi <= 0) {
-			$list = [];
-		}
-
-		$data = [
-			'list' => $list,
-			'konsultasi_map' => $konsultasi_map,
-			'kunjungan_map' => $kunjungan_map,
-			'total_konsultasi' => $total_konsultasi,
-		];
-
-		$this->output->set_content_type('application/json')->set_output(json_encode($data));
-	}
-
-	public function get_top_diagnosa()
-	{
-		$tanggal = $this->input->get('tanggal'); // Format: yyyy-mm-dd (optional)
-		$limit = $this->input->get('limit') ?: 5; // Default top 5
-
-		$list = $this->Home_m->get_top_diagnosa($limit);
-
-		$data = [];
-		foreach ($list as $row) {
-			$data[] = [
-				'diagnosa' => $row->diagnosa,
-				'total' => (int)$row->jumlah
-			];
-		}
-
-		$this->output->set_content_type('application/json')->set_output(json_encode($data));
 	}
 }

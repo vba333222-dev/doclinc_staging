@@ -3,6 +3,31 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 /*
 |--------------------------------------------------------------------------
+| Zona waktu proses PHP
+|--------------------------------------------------------------------------
+|
+| Harus SAMA dengan zona sesi basis data, karena skema ini memakai
+| `CURRENT_TIMESTAMP` sebagai nilai bawaan di banyak kolom waktu. Sebelum
+| baris ini ada, panel berjalan pada UTC sementara basis data +07:00,
+| sehingga kolom DATETIME yang diisi date() berisi jam UTC sedangkan kolom
+| TIMESTAMP yang dibiarkan kosong berisi jam lokal - dua jam untuk satu
+| kejadian yang sama. Itu membuat batas periode dasbor meleset.
+|
+| Diletakkan di berkas ini (bukan hanya di aplikasi utama) karena panel
+| adalah aplikasi CodeIgniter terpisah dengan berkas config sendiri.
+| Diatur lewat DOCLINC_TIMEZONE; lihat catatan lengkap di
+| application/config/config.php aplikasi utama.
+*/
+$doclinc_timezone = getenv('DOCLINC_TIMEZONE');
+if ($doclinc_timezone === false || trim((string) $doclinc_timezone) === '') {
+	$doclinc_timezone = 'Asia/Jakarta';
+}
+if (in_array($doclinc_timezone, timezone_identifiers_list(), true)) {
+	date_default_timezone_set($doclinc_timezone);
+}
+
+/*
+|--------------------------------------------------------------------------
 | Base Site URL
 |--------------------------------------------------------------------------
 |
@@ -603,6 +628,58 @@ $config['nakes_presence_enabled'] = !empty($nakes_presence_feature['enabled']);
 $config['nakes_presence_environment'] = (string) ($nakes_presence_feature['environment'] ?? '');
 $config['nakes_presence_feature_reason'] = (string) ($nakes_presence_feature['reason'] ?? 'disabled');
 $config['nakes_presence_online_timeout_seconds'] = 90;
+
+/*
+| Ambang eskalasi permintaan yang belum diterima puskesmas.
+|
+| Dibaca oleh DUA aplikasi: pengawas permintaan di aplikasi utama
+| (application/libraries/Pending_request_watchdog.php) dan dasbor Dinas
+| Kesehatan di panel admin ini (Home_m::monitoring_escalation_thresholds).
+|
+| Karena keduanya aplikasi CodeIgniter terpisah dengan berkas config sendiri,
+| blok ini WAJIB ada di kedua config dengan nilai bawaan yang sama. Kalau hanya
+| diubah di satu sisi, dasbor dan pengawas memakai dua angka berbeda untuk
+| konsep yang sama - persis yang ingin dihindari. Satuan menit.
+*/
+$request_accept_reminder_env = getenv('DOCLINC_REQUEST_ACCEPT_REMINDER_MINUTES');
+if ($request_accept_reminder_env === false || $request_accept_reminder_env === '') {
+	$request_accept_reminder_env = $_SERVER['DOCLINC_REQUEST_ACCEPT_REMINDER_MINUTES'] ?? null;
+}
+$request_accept_overdue_env = getenv('DOCLINC_REQUEST_ACCEPT_OVERDUE_MINUTES');
+if ($request_accept_overdue_env === false || $request_accept_overdue_env === '') {
+	$request_accept_overdue_env = $_SERVER['DOCLINC_REQUEST_ACCEPT_OVERDUE_MINUTES'] ?? null;
+}
+$config['request_accept_reminder_minutes'] = (is_numeric($request_accept_reminder_env) && (int) $request_accept_reminder_env > 0)
+	? (int) $request_accept_reminder_env
+	: 10;
+$config['request_accept_overdue_minutes'] = (is_numeric($request_accept_overdue_env) && (int) $request_accept_overdue_env > 0)
+	? (int) $request_accept_overdue_env
+	: 20;
+
+/*
+| -------------------------------------------------------------------------
+|  Simpanan hasil pemeriksaan mutu data dasbor
+| -------------------------------------------------------------------------
+|
+| Sepuluh pemeriksaan mutu data membaca SELURUH riwayat dan sengaja tidak
+| punya penyaring rentang tanggal, jadi biayanya tumbuh mengikuti total
+| riwayat. Diukur pada 100.000 permintaan: 2.600 ms dari 3.207 ms satu muat
+| halaman, dan rumusan alternatif yang diuji semuanya lebih lambat.
+|
+| Nilai ini adalah umur simpanan dalam detik. 0 berarti simpanan dimatikan dan
+| hasilnya selalu dihitung ulang.
+|
+| Hanya ada di config panel admin karena hanya aplikasi ini yang memakainya;
+| aplikasi utama tidak menampilkan panel ini. Halaman WAJIB menyatakan kapan
+| hasilnya dihitung, supaya pembaca tahu angkanya bisa tertinggal.
+*/
+$monitoring_dq_cache_env = getenv('DOCLINC_MONITORING_DQ_CACHE_SECONDS');
+if ($monitoring_dq_cache_env === false || $monitoring_dq_cache_env === '') {
+	$monitoring_dq_cache_env = $_SERVER['DOCLINC_MONITORING_DQ_CACHE_SECONDS'] ?? null;
+}
+$config['monitoring_data_quality_cache_seconds'] = (is_numeric($monitoring_dq_cache_env) && (int) $monitoring_dq_cache_env >= 0)
+	? (int) $monitoring_dq_cache_env
+	: 300;
 $nakes_placement_enabled_env = getenv('DOCLINC_NAKES_PLACEMENT_ENABLED');
 if ($nakes_placement_enabled_env === false || $nakes_placement_enabled_env === '') {
 	$nakes_placement_enabled_env = $_SERVER['DOCLINC_NAKES_PLACEMENT_ENABLED'] ?? null;
