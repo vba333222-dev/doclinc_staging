@@ -1,9 +1,12 @@
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-comments"></i> Layanan Kesehatan</h1>
-</div>
-<div class="doclinc-helper-note mb-3">
-	Halaman referensi layanan legacy ini menampilkan data permintaan yang masih terkait layanan kesehatan. Untuk pemantauan konsultasi harian, gunakan menu Monitoring Konsultasi.
-</div>
+<?php
+/* Kepala halaman dari partial bersama. `.doclinc-helper-note` di bawah judul
+   digabung ke `sub`: satu kalimat penjelas cukup jadi subjudul. */
+$page_head = array(
+	'title' => 'Layanan Kesehatan',
+	'sub' => 'Data layanan lama. Konsultasi harian ada di Monitoring konsultasi.',
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 <!-- Content Row -->
 <div class="row">
 	<div class="col">
@@ -11,11 +14,11 @@
 			<div class="card-body table-responsive">
 				<table class="table table-bordered" id="tbl_konsultasi" style="width:100%" cellspacing="0">
 					<thead>
-						<th>No.</th>
-						<th>ID </th>
-						<th>Keluhan</th>
-						<th>Tanggal</th>
-						<th>Status</th>
+						<th scope="col">No.</th>
+						<th scope="col">ID </th>
+						<th scope="col">Keluhan</th>
+						<th scope="col">Tanggal</th>
+						<th scope="col">Status</th>
 					</thead>
 					<tbody>
 						<?php

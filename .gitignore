@@ -71,6 +71,21 @@ vendor/
 !assets/vendor/centrifuge/5.7.0/centrifuge.js
 !assets/vendor/centrifuge/5.7.0/LICENSE
 !assets/vendor/centrifuge/5.7.0/PROVENANCE.md
+# Leaflet dipakai panel admin untuk peta sebaran penyakit, dan panel harus tetap
+# utuh di jaringan Puskesmas yang tidak punya internet. Karena itu pustakanya
+# ikut repositori - dengan lisensi dan catatan asalnya, seperti centrifuge.
+#
+# Git tidak bisa memasukkan berkas yang direktori induknya diabaikan, jadi
+# `vendor/` harus dibuka lebih dulu, lalu isinya diabaikan lagi satu per satu:
+# yang lama tetap terlacak seperti sebelumnya (aturan abaikan hanya berlaku
+# untuk berkas yang BELUM terlacak), dan yang dibuka hanya folder Leaflet.
+!admin_menu/assets/vendor/
+admin_menu/assets/vendor/*
+!admin_menu/assets/vendor/leaflet/
+!admin_menu/assets/vendor/leaflet/leaflet.js
+!admin_menu/assets/vendor/leaflet/leaflet.css
+!admin_menu/assets/vendor/leaflet/LICENSE
+!admin_menu/assets/vendor/leaflet/PROVENANCE.md
 node_modules/
 
 .DS_Store
@@ -86,6 +101,8 @@ application/third_party/firebase/*firebase-adminsdk*.json
 
 # Files the application, its tests, or third-party licences require
 !assets/vendor/centrifuge/5.7.0/PROVENANCE.md
+!admin_menu/assets/vendor/leaflet/LICENSE
+!admin_menu/assets/vendor/leaflet/PROVENANCE.md
 !license.txt
 !admin_menu/license.txt
 !database/master_data/clinical/v1/SHA256SUMS.txt

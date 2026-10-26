@@ -24,19 +24,19 @@ $capability_labels = array(
 );
 $can_change = $feature_enabled && $actor_is_active_admin && $actor_is_super_admin;
 ?>
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
-	<div>
-		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title">
-			<i class="fas fa-user-shield" aria-hidden="true"></i> Kapabilitas admin
-		</h1>
-		<p class="mb-0 doclinc-page-subtitle">
-			Menentukan siapa boleh melakukan apa di panel ini, di luar peran <code>admin</code>.
-		</p>
-	</div>
-	<a href="<?= html_escape(site_url('audit')); ?>" class="btn btn-outline-primary btn-sm shadow-sm">
-		<i class="fas fa-clipboard-list" aria-hidden="true"></i> Penampil audit
-	</a>
-</div>
+<?php
+/* Kepala halaman dari partial bersama. Penanda `<code>admin</code>` pada sub
+   dilepas: isi teksnya sama, dan partial meng-escape teks sehingga tag akan
+   tampil harfiah. */
+$page_head = array(
+	'title' => 'Kapabilitas admin',
+	'sub' => 'Hak tambahan per akun, di luar peran admin.',
+	'actions' => array(
+		array('kind' => 'link', 'label' => 'Penampil audit', 'href' => site_url('audit'), 'icon' => 'fas fa-clipboard-list', 'variant' => 'outline-primary'),
+	),
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 
 <?php if (!$schema_ready): ?>
 	<div class="alert alert-warning" role="status">
@@ -79,7 +79,7 @@ $can_change = $feature_enabled && $actor_is_active_admin && $actor_is_super_admi
 	<div class="card shadow-sm mb-4">
 		<div class="card-header d-flex align-items-center justify-content-between">
 			<h2 class="h6 mb-0 font-weight-bold">Akun admin (<?= number_format(count($admins)); ?>)</h2>
-			<span class="text-muted small">Hanya akun berperan admin yang bisa menerima kapabilitas</span>
+			<span class="text-muted small">Hanya akun admin yang bisa menerima kapabilitas</span>
 		</div>
 		<div class="card-body p-0">
 			<?php if (empty($admins)): ?>
@@ -87,7 +87,7 @@ $can_change = $feature_enabled && $actor_is_active_admin && $actor_is_super_admi
 			<?php else: ?>
 				<div class="table-responsive">
 					<table class="table table-sm align-middle mb-0">
-						<caption class="px-3 pt-3">Satu kolom per kapabilitas; tombol menunjukkan keadaan saat ini.</caption>
+						<caption class="px-3 pt-3">Tombol menunjukkan keadaan kapabilitas saat ini.</caption>
 						<thead>
 							<tr>
 								<th scope="col">Akun</th>
@@ -149,7 +149,7 @@ $can_change = $feature_enabled && $actor_is_active_admin && $actor_is_super_admi
 	<div class="card shadow-sm mb-4">
 		<div class="card-header d-flex align-items-center justify-content-between">
 			<h2 class="h6 mb-0 font-weight-bold">Riwayat perubahan kapabilitas</h2>
-			<a href="<?= html_escape(site_url('audit')); ?>" class="btn btn-sm btn-outline-secondary">Buka penampil audit</a>
+			<a href="<?= html_escape(site_url('audit')); ?>" class="btn btn-sm btn-outline-secondary">Buka audit</a>
 		</div>
 		<div class="card-body p-0">
 			<?php if (empty($recent_audit)): ?>

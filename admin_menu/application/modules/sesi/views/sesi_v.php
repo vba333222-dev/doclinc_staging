@@ -13,19 +13,17 @@ $summary = isset($summary) && is_array($summary) ? $summary : array('total' => 0
 $audit = isset($audit) && is_array($audit) ? $audit : array();
 $snapshot = isset($snapshot) && is_array($snapshot) ? $snapshot : array();
 ?>
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
-	<div>
-		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title">
-			<i class="fas fa-shield-alt" aria-hidden="true"></i> Sesi dan keamanan
-		</h1>
-		<p class="mb-0 doclinc-page-subtitle">
-			Keadaan pengikatan sesi per akun dan konfigurasi keamanan yang sedang berlaku.
-		</p>
-	</div>
-	<a href="<?= html_escape(site_url('audit')); ?>" class="btn btn-outline-primary btn-sm shadow-sm">
-		<i class="fas fa-clipboard-list" aria-hidden="true"></i> Penampil audit
-	</a>
-</div>
+<?php
+/* Kepala halaman dari partial bersama. */
+$page_head = array(
+	'title' => 'Sesi dan keamanan',
+	'sub' => 'Status sesi per akun dan konfigurasi keamanan.',
+	'actions' => array(
+		array('kind' => 'link', 'label' => 'Penampil audit', 'href' => site_url('audit'), 'icon' => 'fas fa-clipboard-list', 'variant' => 'outline-primary'),
+	),
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 
 <div class="alert alert-info" role="status">
 	<h2 class="h6 font-weight-bold">Halaman ini tidak memutus sesi siapa pun</h2>
@@ -74,7 +72,7 @@ $snapshot = isset($snapshot) && is_array($snapshot) ? $snapshot : array();
 	<div class="card-body p-0">
 		<div class="table-responsive">
 			<table class="table table-sm mb-0">
-				<caption class="px-3 pt-3">Ditampilkan apa adanya, termasuk yang masih bermasalah.</caption>
+				<caption class="px-3 pt-3">Termasuk yang masih bermasalah.</caption>
 				<tbody>
 					<?php foreach ($snapshot as $row): ?>
 						<tr>
@@ -101,7 +99,7 @@ $snapshot = isset($snapshot) && is_array($snapshot) ? $snapshot : array();
 		<?php else: ?>
 			<div class="table-responsive">
 				<table class="table table-sm align-middle mb-0">
-					<caption class="px-3 pt-3">Satu baris per akun: mekanisme sesi tunggal menyimpan satu token per akun.</caption>
+					<caption class="px-3 pt-3">Satu baris per akun; sesi tunggal menyimpan satu token.</caption>
 					<thead>
 						<tr>
 							<th scope="col">Akun</th>
@@ -151,7 +149,7 @@ $snapshot = isset($snapshot) && is_array($snapshot) ? $snapshot : array();
 <div class="card shadow-sm mb-4">
 	<div class="card-header d-flex align-items-center justify-content-between">
 		<h2 class="h6 mb-0 font-weight-bold">Jejak audit sesi terbaru</h2>
-		<a href="<?= html_escape(site_url('audit')); ?>" class="btn btn-sm btn-outline-secondary">Saring di penampil audit</a>
+		<a href="<?= html_escape(site_url('audit')); ?>" class="btn btn-sm btn-outline-secondary">Saring audit</a>
 	</div>
 	<div class="card-body p-0">
 		<?php if (empty($audit)): ?>
@@ -189,14 +187,12 @@ $snapshot = isset($snapshot) && is_array($snapshot) ? $snapshot : array();
 
 <div class="card shadow-sm mb-4">
 	<div class="card-header">
-		<h2 class="h6 mb-0 font-weight-bold">Catatan operasional yang belum beres</h2>
+		<h2 class="h6 mb-0 font-weight-bold">Catatan teknis</h2>
 	</div>
 	<div class="card-body">
-		<p class="text-muted small">
-			Ditulis di halaman ini supaya tidak hilang. Dua hal berikut dua kali memperlambat penelusuran
-			galat pada 2026-10-23.
-		</p>
-		<ol class="mb-0">
+		<details>
+			<summary>Untuk pengembang: dua kendala penelusuran galat</summary>
+			<ol class="mb-0 mt-2">
 			<li class="mb-2">
 				<strong><code>display_errors</code> dan <code>log_errors</code> mati.</strong>
 				Akibatnya galat fatal PHP hanya tampak sebagai <em>500 berbadan kosong</em>. Yang masih tertolong
@@ -211,5 +207,6 @@ $snapshot = isset($snapshot) && is_array($snapshot) ? $snapshot : array();
 				<code><?= html_escape((string) ($snapshot[6]['value'] ?? '')); ?></code>.
 			</li>
 		</ol>
+		</details>
 	</div>
 </div>

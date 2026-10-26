@@ -64,7 +64,7 @@ class Master_puskesmas extends MX_Controller
 		if ($this->Master_puskesmas_m->create($data)) {
 			$this->session->set_flashdata('success', 'Puskesmas ditambahkan.');
 		} else {
-			$this->session->set_flashdata('error', 'Gagal menambahkan Puskesmas.');
+			$this->session->set_flashdata('error', 'Gagal menambahkan Puskesmas. Tidak ada data yang tersimpan; periksa kembali isian lalu simpan ulang.');
 		}
 		redirect('master_puskesmas', 'refresh');
 	}
@@ -96,7 +96,7 @@ class Master_puskesmas extends MX_Controller
 		if ($this->Master_puskesmas_m->update($kode, $data)) {
 			$this->session->set_flashdata('success', 'Puskesmas diperbarui.');
 		} else {
-			$this->session->set_flashdata('error', 'Gagal memperbarui Puskesmas.');
+			$this->session->set_flashdata('error', 'Gagal memperbarui Puskesmas. Perubahan belum tersimpan; periksa kembali isian lalu simpan ulang.');
 		}
 		redirect('master_puskesmas', 'refresh');
 	}
@@ -136,7 +136,7 @@ class Master_puskesmas extends MX_Controller
 		if ($this->Master_puskesmas_m->set_status($kode, $status)) {
 			$this->session->set_flashdata('success', $status === 'aktif' ? 'Puskesmas diaktifkan.' : 'Puskesmas dinonaktifkan.');
 		} else {
-			$this->session->set_flashdata('error', 'Gagal memperbarui status Puskesmas.');
+			$this->session->set_flashdata('error', 'Gagal memperbarui status Puskesmas. Status belum berubah; muat ulang halaman lalu ulangi.');
 		}
 		redirect('master_puskesmas', 'refresh');
 	}

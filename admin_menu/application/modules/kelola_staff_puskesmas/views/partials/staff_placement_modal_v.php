@@ -31,7 +31,7 @@ $tomorrow_local = date('Y-m-d\TH:i', strtotime('+1 day'));
 						<input type="hidden" name="staff_id" value="<?= $staff_id; ?>">
 						<div class="form-group">
 							<label class="font-weight-bold">Fasilitas</label>
-							<select class="form-control rounded-pill border-info" name="facility_code" required>
+							<select class="form-control" name="facility_code" required>
 								<option value="">Pilih Puskesmas</option>
 								<?php foreach ($puskesmas_options as $puskesmas): ?>
 									<?php $option_code = strtoupper((string) ($puskesmas->kode_pkm ?? '')); ?>
@@ -43,11 +43,11 @@ $tomorrow_local = date('Y-m-d\TH:i', strtotime('+1 day'));
 						</div>
 						<div class="form-group">
 							<label class="font-weight-bold">Berlaku mulai</label>
-							<input type="datetime-local" class="form-control rounded-pill border-info" name="effective_from" value="<?= html_escape($now_local); ?>" max="<?= html_escape($now_local); ?>" required>
+							<input type="datetime-local" class="form-control" name="effective_from" value="<?= html_escape($now_local); ?>" max="<?= html_escape($now_local); ?>" required>
 						</div>
 						<div class="modal-footer border-0 px-0">
-							<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
-							<button type="submit" class="btn btn-info rounded-pill">Simpan penempatan</button>
+							<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+							<button type="submit" class="btn btn-primary">Simpan penempatan</button>
 						</div>
 					</form>
 				<?php else: ?>
@@ -65,12 +65,12 @@ $tomorrow_local = date('Y-m-d\TH:i', strtotime('+1 day'));
 						<form action="<?= site_url('kelola_staff_puskesmas/cancel_transfer'); ?>" method="post" class="mb-2">
 							<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
 							<input type="hidden" name="transfer_id" value="<?= (int) $scheduled_transfer->transfer_id; ?>">
-							<button type="submit" class="btn btn-outline-danger rounded-pill btn-block">Batalkan transfer</button>
+							<button type="submit" class="btn btn-outline-danger dl-adm-action">Batalkan transfer</button>
 						</form>
 						<form action="<?= site_url('kelola_staff_puskesmas/activate_transfer'); ?>" method="post">
 							<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
 							<input type="hidden" name="transfer_id" value="<?= (int) $scheduled_transfer->transfer_id; ?>">
-							<button type="submit" class="btn btn-outline-success rounded-pill btn-block" onclick="return confirm('Terapkan transfer sekarang? Pastikan waktu efektif sudah tiba.');">Terapkan transfer sekarang</button>
+							<button type="submit" class="btn btn-primary dl-adm-action" onclick="return confirm('Terapkan transfer sekarang? Pastikan waktu efektif sudah tiba.');">Terapkan transfer sekarang</button>
 						</form>
 					<?php else: ?>
 						<form action="<?= site_url('kelola_staff_puskesmas/schedule_transfer'); ?>" method="post">
@@ -78,7 +78,7 @@ $tomorrow_local = date('Y-m-d\TH:i', strtotime('+1 day'));
 							<input type="hidden" name="staff_id" value="<?= $staff_id; ?>">
 							<div class="form-group">
 								<label class="font-weight-bold">Fasilitas tujuan</label>
-								<select class="form-control rounded-pill border-info" name="destination_facility" required>
+								<select class="form-control" name="destination_facility" required>
 									<option value="">Pilih Puskesmas tujuan</option>
 									<?php foreach ($puskesmas_options as $puskesmas): ?>
 										<?php $option_code = strtoupper((string) ($puskesmas->kode_pkm ?? '')); ?>
@@ -91,15 +91,15 @@ $tomorrow_local = date('Y-m-d\TH:i', strtotime('+1 day'));
 							</div>
 							<div class="form-group">
 								<label class="font-weight-bold">Efektif pada</label>
-								<input type="datetime-local" class="form-control rounded-pill border-info" name="effective_at" value="<?= html_escape($tomorrow_local); ?>" required>
+								<input type="datetime-local" class="form-control" name="effective_at" value="<?= html_escape($tomorrow_local); ?>" required>
 							</div>
 							<div class="form-group">
 								<label class="font-weight-bold">Alasan</label>
-								<input type="text" class="form-control rounded-pill border-info" name="reason" maxlength="500" required>
+								<input type="text" class="form-control" name="reason" maxlength="500" required>
 							</div>
 							<div class="modal-footer border-0 px-0">
-								<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
-								<button type="submit" class="btn btn-info rounded-pill">Jadwalkan transfer</button>
+								<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+								<button type="submit" class="btn btn-primary">Jadwalkan transfer</button>
 							</div>
 						</form>
 					<?php endif; ?>

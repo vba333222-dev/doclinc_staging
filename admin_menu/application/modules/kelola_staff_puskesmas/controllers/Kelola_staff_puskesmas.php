@@ -46,7 +46,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 		if ($this->Kelola_staff_puskesmas_m->insert($data)) {
 			$this->session->set_flashdata('success', 'Staf Puskesmas ditambahkan.');
 		} else {
-			$this->session->set_flashdata('error', 'Gagal menambahkan staf Puskesmas.');
+			$this->session->set_flashdata('error', 'Gagal menambahkan staf Puskesmas. Tidak ada data yang tersimpan; periksa kembali isian lalu simpan ulang.');
 		}
 		redirect('kelola_staff_puskesmas', 'refresh');
 	}
@@ -95,7 +95,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 		if ($this->Kelola_staff_puskesmas_m->update($staff_id, $data)) {
 			$this->session->set_flashdata('success', 'Staf Puskesmas diperbarui.');
 		} else {
-			$this->session->set_flashdata('error', 'Gagal memperbarui staf Puskesmas.');
+			$this->session->set_flashdata('error', 'Gagal memperbarui staf Puskesmas. Perubahan belum tersimpan; periksa kembali isian lalu simpan ulang.');
 		}
 		redirect('kelola_staff_puskesmas', 'refresh');
 	}
@@ -696,7 +696,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 		if ($this->Kelola_staff_puskesmas_m->set_status($staff_id, $status)) {
 			$this->session->set_flashdata('success', $status === 'aktif' ? 'Staf diaktifkan.' : 'Staf dinonaktifkan.');
 		} else {
-			$this->session->set_flashdata('error', 'Gagal memperbarui status staf Puskesmas.');
+			$this->session->set_flashdata('error', 'Gagal memperbarui status staf Puskesmas. Status belum berubah; muat ulang halaman lalu ulangi.');
 		}
 		redirect('kelola_staff_puskesmas', 'refresh');
 	}

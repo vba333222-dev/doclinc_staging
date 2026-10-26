@@ -23,9 +23,13 @@ foreach ($account_rows as $account_row) {
 }
 ?>
 <div class="doclinc-admin-page doclinc-akun-page">
-	<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-		<h1 class="doclinc-page-title mb-0"><i class="fas fa-fw fa-hospital"></i> Akun Puskesmas</h1>
-	</div>
+	<?php
+	/* Kepala halaman dari partial bersama. Judulnya "Akun Puskesmas" — itu yang
+	   dikelola halaman ini, bukan daftar dokter. Tombol "Tambah akun" tetap di
+	   kepala daftar karena modalnya hidup di sana. */
+	$page_head = array('title' => 'Akun Puskesmas');
+	$this->load->view('commons/page_head', array('page_head' => $page_head));
+	?>
 
 	<div class="container-fluid">
 		<?php if ($credential_counts['first_login_pending'] > 0): ?>
@@ -34,17 +38,22 @@ foreach ($account_rows as $account_row) {
 				<?= html_escape((string) $credential_counts['first_login_pending']); ?> akun aktif belum pernah mengganti password bawaan. Akses operasional tetap dikunci sampai pengelola membuat password pribadinya.
 			</div>
 		<?php endif; ?>
-		<div class="card shadow mb-4 doclinc-table-card doclinc-account-list-card">
-			<div class="card-header py-3 d-flex align-items-center justify-content-between">
-				<div>
-					<h6 class="m-0 font-weight-bold">Daftar Akun Puskesmas</h6>
-					<div class="doclinc-muted-text mt-1">Kelola akun login koordinasi Puskesmas.</div>
-				</div>
-				<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill doclinc-action-btn doclinc-action-primary" data-toggle="modal" data-target="#modalTambahDokterNakes">
-					<i class="fas fa-plus-circle mr-1"></i> Tambah akun
-				</button>
-			</div>
-			<div class="card-body doclinc-table-body">
+		<?php
+		$list_card = array(
+			'part' => 'open',
+			'title' => 'Daftar Akun Puskesmas',
+			'sub' => 'Akun login koordinator per Puskesmas.',
+			'action' => array(
+				'kind' => 'modal',
+				'label' => 'Tambah akun',
+				'target' => '#modalTambahDokterNakes',
+				'icon' => 'fas fa-plus-circle',
+				'variant' => 'success',
+			),
+			'card_class' => 'doclinc-account-list-card',
+		);
+		$this->load->view('commons/list_card', array('list_card' => $list_card));
+		?>
 				<div class="doclinc-account-toolbar">
 					<label for="puskesmasAccountSelector">Puskesmas aktif</label>
 					<select id="puskesmasAccountSelector" class="form-control doclinc-puskesmas-selector">
@@ -155,27 +164,27 @@ foreach ($account_rows as $account_row) {
 													</div>
 													<div class="col-md-9">
 														<input type="file" class="form-control-file" name="photo">
-														<small class="text-muted">Upload foto baru atau biarkan kosong untuk menggunakan foto yang ada</small>
+														<small class="text-muted">Unggah foto baru, atau biarkan kosong</small>
 													</div>
 												</div>
 											</div>
 											<div class="modal-body bg-light rounded mx-3">
 												<div class="form-group">
 													<label class="text-info"><i class="fas fa-user-md mr-1"></i> Nama Lengkap</label>
-													<input type="text" class="form-control rounded-pill border-info" name="nama" value="<?= html_escape($data->nama ?? '') ?>" required>
+													<input type="text" class="form-control" name="nama" value="<?= html_escape($data->nama ?? '') ?>" required>
 												</div>
 												<div class="form-group">
 													<label class="text-info"><i class="fas fa-envelope mr-1"></i> Email</label>
-													<input type="email" class="form-control rounded-pill border-info" name="email" value="<?= html_escape($data->email ?? '') ?>" required>
+													<input type="email" class="form-control" name="email" value="<?= html_escape($data->email ?? '') ?>" required>
 												</div>
 												<div class="form-group">
 													<label class="text-info"><i class="fas fa-user mr-1"></i> Username</label>
-													<input type="text" class="form-control rounded-pill border-info" name="username" value="<?= html_escape($data->username ?? '') ?>" required>
+													<input type="text" class="form-control" name="username" value="<?= html_escape($data->username ?? '') ?>" required>
 												</div>
 												<div class="form-group">
 													<label class="text-info"><i class="fas fa-clinic-medical mr-1"></i> Puskesmas</label>
 													<?php if (!empty($puskesmas_options)): ?>
-														<select class="form-control rounded-pill border-info" name="remark" required>
+														<select class="form-control" name="remark" required>
 															<?php foreach ($puskesmas_options as $puskesmas): ?>
 																<option value="<?= html_escape($puskesmas->kode_pkm); ?>" <?= (string) ($data->remark ?? '') === (string) $puskesmas->kode_pkm ? 'selected' : ''; ?>>
 																	<?= html_escape($puskesmas->nama_puskesmas); ?> (<?= html_escape($puskesmas->kode_pkm); ?>)
@@ -183,35 +192,35 @@ foreach ($account_rows as $account_row) {
 															<?php endforeach; ?>
 														</select>
 													<?php else: ?>
-														<input type="text" class="form-control rounded-pill border-info" name="remark" value="<?= html_escape($data->remark ?? 'DEFAULT') ?>" required>
+														<input type="text" class="form-control" name="remark" value="<?= html_escape($data->remark ?? 'DEFAULT') ?>" required>
 													<?php endif; ?>
 												</div>
 												<div class="form-group">
 													<label class="text-info"><i class="fas fa-phone-alt mr-1"></i> Nomor Telepon</label>
-													<input type="text" class="form-control rounded-pill border-info" name="no_hp" value="<?= html_escape($data->no_hp ?? '') ?>">
+													<input type="text" class="form-control" name="no_hp" value="<?= html_escape($data->no_hp ?? '') ?>">
 												</div>
 												<div class="form-group">
 													<label class="text-info"><i class="fas fa-toggle-on mr-1"></i> Status</label>
-													<select class="form-control rounded-pill border-info" name="status">
+													<select class="form-control" name="status">
 														<option value="aktif" <?= ($data->status ?? '') === 'aktif' ? 'selected' : ''; ?>>Aktif</option>
 														<option value="nonaktif" <?= ($data->status ?? '') === 'nonaktif' ? 'selected' : ''; ?>>Nonaktif</option>
 													</select>
 												</div>
 											<div class="form-group">
 												<label class="text-info"><i class="fas fa-lock mr-1"></i> Password Baru</label>
-												<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password">
-												<small class="text-muted">Biarkan kosong jika tidak ingin mereset. Jika diisi, gunakan minimal 8 karakter dengan huruf besar, huruf kecil, angka, dan karakter khusus. Pengguna wajib menggantinya saat login berikutnya.</small>
+												<input type="password" class="form-control" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password">
+												<small class="text-muted">Kosongkan bila tidak direset. Minimal 8 karakter: huruf besar, huruf kecil, angka, dan simbol.</small>
 											</div>
 											<div class="form-group">
 												<label class="text-info"><i class="fas fa-lock mr-1"></i> Konfirmasi Password Baru</label>
-												<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password">
+												<input type="password" class="form-control" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password">
 												</div>
 											</div>
 											<div class="modal-footer border-0 px-4 pb-4">
-												<button type="button" class="btn btn-light rounded-pill px-4 border" data-dismiss="modal">
+												<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
 													<i class="fas fa-times-circle mr-1"></i>Batal
 												</button>
-												<button type="submit" class="btn btn-info rounded-pill px-4">
+												<button type="submit" class="btn btn-primary">
 													<i class="fas fa-check-circle mr-1"></i>Simpan
 												</button>
 											</div>
@@ -222,8 +231,10 @@ foreach ($account_rows as $account_row) {
 						<?php endforeach; ?>
 					</div>
 				<?php endif; ?>
-			</div>
-		</div>
+		<?php
+		$list_card = array('part' => 'close');
+		$this->load->view('commons/list_card', array('list_card' => $list_card));
+		?>
 	</div>
 </div>
 
@@ -244,13 +255,13 @@ foreach ($account_rows as $account_row) {
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-user-md mr-1"></i> Nama Lengkap</label>
-								<input type="text" class="form-control rounded-pill border-success" name="nama" required>
+								<input type="text" class="form-control" name="nama" required>
 							</div>
 						</div>
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-envelope mr-1"></i> Email</label>
-								<input type="email" class="form-control rounded-pill border-success" name="email" required>
+								<input type="email" class="form-control" name="email" required>
 							</div>
 						</div>
 					</div>
@@ -258,13 +269,13 @@ foreach ($account_rows as $account_row) {
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-user mr-1"></i> Username</label>
-								<input type="text" class="form-control rounded-pill border-success" name="username" required>
+								<input type="text" class="form-control" name="username" required>
 							</div>
 						</div>
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-phone-alt mr-1"></i> No HP</label>
-								<input type="text" class="form-control rounded-pill border-success" name="no_hp">
+								<input type="text" class="form-control" name="no_hp">
 							</div>
 						</div>
 					</div>
@@ -272,14 +283,14 @@ foreach ($account_rows as $account_row) {
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-lock mr-1"></i> Password</label>
-								<input type="password" class="form-control rounded-pill border-success" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
+								<input type="password" class="form-control" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
 								<small class="text-muted">Minimal 8 karakter: huruf besar, huruf kecil, angka, dan karakter khusus.</small>
 							</div>
 						</div>
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-lock mr-1"></i> Konfirmasi Password</label>
-								<input type="password" class="form-control rounded-pill border-success" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
+								<input type="password" class="form-control" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
 							</div>
 						</div>
 					</div>
@@ -288,7 +299,7 @@ foreach ($account_rows as $account_row) {
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-clinic-medical mr-1"></i> Puskesmas</label>
 								<?php if (!empty($puskesmas_options)): ?>
-									<select class="form-control rounded-pill border-success" name="remark">
+									<select class="form-control" name="remark">
 										<?php foreach ($puskesmas_options as $puskesmas): ?>
 											<option value="<?= html_escape($puskesmas->kode_pkm); ?>">
 												<?= html_escape($puskesmas->nama_puskesmas); ?> (<?= html_escape($puskesmas->kode_pkm); ?>)
@@ -296,15 +307,15 @@ foreach ($account_rows as $account_row) {
 										<?php endforeach; ?>
 									</select>
 								<?php else: ?>
-									<input type="text" class="form-control rounded-pill border-success" name="remark" value="DEFAULT">
-									<small class="text-muted">Fallback sementara jika master puskesmas aktif belum tersedia.</small>
+									<input type="text" class="form-control" name="remark" value="DEFAULT">
+									<small class="text-muted">Dipakai selama master Puskesmas belum tersedia.</small>
 								<?php endif; ?>
 							</div>
 						</div>
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success"><i class="fas fa-toggle-on mr-1"></i> Status</label>
-								<select class="form-control rounded-pill border-success" name="status">
+								<select class="form-control" name="status">
 									<option value="aktif">Aktif</option>
 									<option value="nonaktif">Nonaktif</option>
 								</select>
@@ -313,10 +324,10 @@ foreach ($account_rows as $account_row) {
 					</div>
 				</div>
 				<div class="modal-footer border-0 px-4 pb-4">
-					<button type="button" class="btn btn-light rounded-pill px-4 border" data-dismiss="modal">
+					<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
 						<i class="fas fa-times-circle mr-1"></i>Batal
 					</button>
-					<button type="submit" class="btn btn-success rounded-pill px-4">
+					<button type="submit" class="btn btn-primary">
 						<i class="fas fa-check-circle mr-1"></i>Simpan
 					</button>
 				</div>

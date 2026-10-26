@@ -1,12 +1,17 @@
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-comments"></i> Master Gejala/Keluhan</h1>
-	<button type="button" class="btn btn-sm btn-success shadow-sm" data-toggle="modal" data-target="#modalTambah">
-		<i class="fas fa-plus fa-sm text-white-50"></i> Tambah keluhan
-	</button>
-</div>
-<div class="doclinc-helper-note mb-3">
-	Data ini digunakan sebagai pilihan gejala/keluhan umum saat warga membuat request konsultasi.
-</div>
+<?php
+/* Kepala halaman dari partial bersama. Kalimat penjelas yang tadinya berdiri
+   sebagai `.doclinc-helper-note` di bawah judul dipindah ke `sub`: isinya satu
+   kalimat, dan blok terpisah untuk satu kalimat menambah satu kotak lagi tanpa
+   menambah informasi. */
+$page_head = array(
+	'title' => 'Master Gejala/Keluhan',
+	'sub' => 'Pilihan gejala saat warga membuat konsultasi.',
+	'actions' => array(
+		array('kind' => 'modal', 'label' => 'Tambah keluhan', 'target' => '#modalTambah', 'icon' => 'fas fa-plus', 'variant' => 'success'),
+	),
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 <!-- Content Row -->
 <div class="row">
 	<div class="col">
@@ -14,13 +19,13 @@
 			<div class="card-body table-responsive">
 				<table class="table table-bordered" id="tbl_keluhan" style="width:100%" cellspacing="0">
 					<thead>
-						<th>No.</th>
-						<th>ID Keluhan</th>
-						<th>Kategori</th>
-						<th>Nama Keluhan</th>
-						<th>Deskripsi</th>
-						<th>Status</th>
-						<th>Aksi</th>
+						<th scope="col">No.</th>
+						<th scope="col">ID Keluhan</th>
+						<th scope="col">Kategori</th>
+						<th scope="col">Nama Keluhan</th>
+						<th scope="col">Deskripsi</th>
+						<th scope="col">Status</th>
+						<th scope="col">Aksi</th>
 					</thead>
 					<tbody>
 						<?php

@@ -1,18 +1,18 @@
 <?php
 $puskesmas_options = isset($puskesmas_options) && is_array($puskesmas_options) ? $puskesmas_options : array();
+
+/* Kepala halaman dirender partial bersama. Sebelumnya blok yang sama ditulis
+   tangan di sini, dan setiap halaman menyalinnya dengan ukuran judul serta
+   susunan tombol yang sedikit berbeda. */
+$page_head = array(
+	'title' => 'Laporan',
+	'sub' => 'Rekap konsultasi per hari, minggu, bulan, atau tahun.',
+	'actions' => array(
+		array('kind' => 'help', 'label' => 'Penjelasan isi laporan dan batasannya', 'target' => '#dlLaporanHelp'),
+	),
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
 ?>
-<div class="dl-adm-head">
-	<div class="dl-adm-head-text">
-		<h1 class="dl-adm-head-title">Laporan</h1>
-		<p class="dl-adm-head-sub">Rekap konsultasi per hari, minggu, bulan, atau tahun.</p>
-	</div>
-	<div class="dl-adm-head-actions">
-		<button type="button" class="dl-adm-info" data-toggle="modal" data-target="#dlLaporanHelp"
-			aria-label="Penjelasan isi laporan dan batasannya">
-			<i class="fas fa-circle-info" aria-hidden="true"></i>
-		</button>
-	</div>
-</div>
 
 <?php
 /* Empat jenis laporan adalah pilihan yang setara, bukan hierarki: tidak ada
@@ -57,24 +57,24 @@ $laporan_types = array(
 	<form id="formLaporanPerHari" action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
 		<div class="d-flex align-items-start justify-content-between flex-wrap mb-3">
 			<div>
-				<h5 class="mb-1 font-weight-bold">Laporan konsultasi harian</h5>
+				<h2 class="h5 mb-1 font-weight-bold">Laporan konsultasi harian</h2>
 			</div>
 		</div>
-		<div class="form-row align-items-end">
-			<div class="col-auto mb-2">
-				<label for="tanggal_hari" class="col-form-label">Tanggal</label>
+		<div class="dl-adm-toolbar">
+			<div class="dl-adm-toolbar-field">
+				<label for="tanggal_hari" class="dl-adm-toolbar-label">Tanggal</label>
 				<input type="date" class="form-control" id="tanggal_hari" name="tanggal">
 			</div>
-			<div class="col-auto mb-2">
-				<label for="tanggal_awal_hari" class="col-form-label">Dari</label>
+			<div class="dl-adm-toolbar-field">
+				<label for="tanggal_awal_hari" class="dl-adm-toolbar-label">Dari</label>
 				<input type="date" class="form-control" id="tanggal_awal_hari" name="tanggal_awal">
 			</div>
-			<div class="col-auto mb-2">
-				<label for="tanggal_akhir_hari" class="col-form-label">Sampai</label>
+			<div class="dl-adm-toolbar-field">
+				<label for="tanggal_akhir_hari" class="dl-adm-toolbar-label">Sampai</label>
 				<input type="date" class="form-control" id="tanggal_akhir_hari" name="tanggal_akhir">
 			</div>
-			<div class="col-auto mb-2">
-				<label for="puskesmas_hari" class="col-form-label">Puskesmas</label>
+			<div class="dl-adm-toolbar-field">
+				<label for="puskesmas_hari" class="dl-adm-toolbar-label">Puskesmas</label>
 				<select class="form-control" id="puskesmas_hari" name="puskesmas">
 					<option value="">Semua Puskesmas</option>
 					<?php foreach ($puskesmas_options as $puskesmas): ?>
@@ -83,8 +83,8 @@ $laporan_types = array(
 					<option value="__legacy__">Puskesmas belum tersedia</option>
 				</select>
 			</div>
-			<div class="col-auto mb-2">
-				<label for="status_hari" class="col-form-label">Status</label>
+			<div class="dl-adm-toolbar-field">
+				<label for="status_hari" class="dl-adm-toolbar-label">Status</label>
 				<select class="form-control" id="status_hari" name="status">
 					<option value="">Semua status</option>
 					<option value="Pending">Menunggu konfirmasi Puskesmas</option>
@@ -93,18 +93,18 @@ $laporan_types = array(
 					<option value="Cancelled">Dibatalkan</option>
 				</select>
 			</div>
-			<div class="col-auto mb-2">
-				<label for="dokter_hari" class="col-form-label">Akun Puskesmas</label>
+			<div class="dl-adm-toolbar-field">
+				<label for="dokter_hari" class="dl-adm-toolbar-label">Akun Puskesmas</label>
 				<input type="text" class="form-control" id="dokter_hari" name="dokter" placeholder="Nama akun">
 			</div>
-			<div class="col-auto mb-2">
-				<label for="keyword_hari" class="col-form-label">Kata kunci</label>
+			<div class="dl-adm-toolbar-field">
+				<label for="keyword_hari" class="dl-adm-toolbar-label">Kata kunci</label>
 				<input type="text" class="form-control" id="keyword_hari" name="keyword" placeholder="ID, warga, diagnosa">
 			</div>
 			<input type="hidden" name="tipe" value="perhari">
 			<input type="hidden" name="tipeBtn" id="tipeBtn">
 
-			<div class="col-auto mb-2 dl-adm-actions">
+			<div class="dl-adm-toolbar-actions">
 				<?php /* Satu aksi utama per layar (DESIGN.md §1.2): hanya
 				   "Lihat laporan" yang berbobot utama. "Jumlah pasien" dan
 				   "Jumlah diagnosis" adalah penyaring lain atas data yang sama,
@@ -113,48 +113,51 @@ $laporan_types = array(
 				<button type="button" id="btnTampilkan" class="btn btn-primary">Lihat laporan</button>
 				<button type="button" id="btnJumlahPasien" class="btn btn-outline-secondary">Jumlah pasien</button>
 				<button type="button" id="btnJumlahDiagnosa" class="btn btn-outline-secondary">Jumlah diagnosis</button>
-				<button type="button" id="btnResetLaporan" class="btn btn-link">Hapus filter</button>
-			</div>
-
-			<div class="col mb-2 ml-auto dl-adm-actions justify-content-end">
+				<button type="button" id="btnResetLaporan" class="btn btn-outline-secondary">Hapus filter</button>
 				<button type="button" id="btnCetak" class="btn btn-outline-secondary">Cetak laporan</button>
 				<button type="button" id="btnExport" class="btn btn-outline-secondary" disabled
 					aria-describedby="dlExportReason">Ekspor Excel</button>
-				<?php /* DESIGN.md §5.9: tombol yang tidak berlaku tampil nonaktif
-				   beserta alasannya, dan alasannya kalimat yang terlihat — bukan
-				   hanya atribut title yang tidak muncul di layar sentuh. */ ?>
-				<p class="dl-adm-disabled-reason" id="dlExportReason">Ekspor Excel belum tersedia.</p>
 			</div>
+			<?php /* DESIGN.md §5.9: tombol yang tidak berlaku tampil nonaktif
+			   beserta alasannya, dan alasannya kalimat yang terlihat — bukan
+			   hanya atribut title yang tidak muncul di layar sentuh. */ ?>
+			<p class="dl-adm-disabled-reason mb-0" id="dlExportReason">Ekspor Excel belum tersedia.</p>
 		</div>
 	</form>
 	<div id="hasil-laporan-perhari" class="mt-4 doclinc-table-card">
-		<div class="doclinc-empty-state">Pilih filter, lalu tampilkan laporan.</div>
+		<?php
+		$empty_state = array(
+			'title' => 'Pilih filter, lalu tampilkan laporan.',
+			'message' => 'Hasil muncul di sini setelah filter dijalankan.',
+		);
+		$this->load->view('commons/empty_state', array('empty_state' => $empty_state));
+		?>
 	</div>
 </div>
 
-<div id="form-perminggu" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4 dl-adm-hide">
+<div id="form-perminggu" class="laporan-form dl-adm-hide">
 	<form action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
-		<div class="form-row align-items-end">
-			<div class="col-auto">
-				<label for="minggu_tahun" class="col-form-label">Tahun</label>
+		<div class="dl-adm-toolbar">
+			<div class="dl-adm-toolbar-field">
+				<label for="minggu_tahun" class="dl-adm-toolbar-label">Tahun</label>
 				<input type="number" class="form-control" id="minggu_tahun" name="tahun" min="2000" max="2100" required>
 			</div>
-			<div class="col-auto">
-				<label for="minggu_ke" class="col-form-label">Minggu ke-</label>
+			<div class="dl-adm-toolbar-field">
+				<label for="minggu_ke" class="dl-adm-toolbar-label">Minggu ke-</label>
 				<input type="number" class="form-control" id="minggu_ke" name="minggu" min="1" max="53" required>
 			</div>
 			<input type="hidden" name="tipe" value="perminggu">
-			<div class="col-auto">
-				<button type="submit" class="btn btn-success">Lihat laporan</button>
+			<div class="dl-adm-toolbar-actions">
+				<button type="submit" class="btn btn-primary">Lihat laporan</button>
 			</div>
 		</div>
 	</form>
 </div>
-<div id="form-perbulan" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4 dl-adm-hide">
+<div id="form-perbulan" class="laporan-form dl-adm-hide">
 	<form action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
-		<div class="form-row align-items-end">
-			<div class="col-auto">
-				<label for="bulan" class="col-form-label">Bulan</label>
+		<div class="dl-adm-toolbar">
+			<div class="dl-adm-toolbar-field">
+				<label for="bulan" class="dl-adm-toolbar-label">Bulan</label>
 				<select class="form-control" id="bulan" name="bulan" required>
 					<option value="">Pilih bulan</option>
 					<?php
@@ -164,25 +167,25 @@ $laporan_types = array(
 					?>
 				</select>
 			</div>
-			<div class="col-auto">
-				<label for="tahun_bulan" class="col-form-label">Tahun</label>
+			<div class="dl-adm-toolbar-field">
+				<label for="tahun_bulan" class="dl-adm-toolbar-label">Tahun</label>
 				<input type="number" class="form-control" id="tahun_bulan" name="tahun" min="2000" max="2100" required>
 			</div>
-			<div class="col-auto">
-				<button type="submit" class="btn btn-info">Lihat laporan</button>
+			<div class="dl-adm-toolbar-actions">
+				<button type="submit" class="btn btn-primary">Lihat laporan</button>
 			</div>
 		</div>
 	</form>
 </div>
-<div id="form-pertahun" class="laporan-form doclinc-filter-card card shadow-sm p-3 mb-4 dl-adm-hide">
+<div id="form-pertahun" class="laporan-form dl-adm-hide">
 	<form action="<?= base_url('laporan'); ?>" method="get" class="mb-4">
-		<div class="form-row align-items-end">
-			<div class="col-auto">
-				<label for="tahun_tahun" class="col-form-label">Tahun</label>
+		<div class="dl-adm-toolbar">
+			<div class="dl-adm-toolbar-field">
+				<label for="tahun_tahun" class="dl-adm-toolbar-label">Tahun</label>
 				<input type="number" class="form-control" id="tahun_tahun" name="tahun" min="2000" max="2100" required>
 			</div>
-			<div class="col-auto">
-				<button type="submit" class="btn btn-warning">Lihat laporan</button>
+			<div class="dl-adm-toolbar-actions">
+				<button type="submit" class="btn btn-primary">Lihat laporan</button>
 			</div>
 		</div>
 	</form>
@@ -236,6 +239,9 @@ $laporan_types = array(
 	$(document).ready(function() {
 		var latestRows = [];
 		var uploadBaseUrl = '<?= base_url('../uploads/'); ?>';
+		/* Keadaan kosong awal dirender server lewat commons/empty_state; HTML-nya
+		   disimpan sekali di sini supaya tombol Reset tidak perlu menyalin markup. */
+		var emptyReportHtml = $('#hasil-laporan-perhari').html();
 		var eventLabels = {
 			request_created: 'Menunggu konfirmasi Puskesmas',
 			request_accepted: 'Diterima',
@@ -252,6 +258,19 @@ $laporan_types = array(
 
 		function escapeHtml(value) {
 			return $('<div>').text(value == null || value === '' ? '-' : value).html();
+		}
+
+		/* Keadaan kosong untuk daftar yang dirakit JS. Bentuknya mengikuti
+		   commons/empty_state.php (`.dl-adm-empty` + judul + keterangan): kalau
+		   markup partial berubah, ubah di sini juga — ini satu-satunya salinan
+		   markup keadaan kosong di sisi klien untuk halaman ini. */
+		function emptyStateHtml(title, message) {
+			var html = '<div class="doclinc-empty-state dl-adm-empty"><i class="fas fa-inbox" aria-hidden="true"></i>';
+			html += '<p class="dl-adm-empty-title">' + escapeHtml(title) + '</p>';
+			if (message) {
+				html += '<p class="dl-adm-empty-note">' + escapeHtml(message) + '</p>';
+			}
+			return html + '</div>';
 		}
 
 		function shortText(value, limit) {
@@ -370,13 +389,13 @@ $laporan_types = array(
 		function renderBreakdown(items) {
 			items = items || [];
 			if (!items.length) {
-				return '<div class="doclinc-report-breakdown mb-4"><div class="doclinc-empty-state">Belum ada rekap Puskesmas.</div></div>';
+				return '<div class="doclinc-report-breakdown mb-4">' + emptyStateHtml('Belum ada rekap Puskesmas.') + '</div>';
 			}
 			var html = '<div class="doclinc-report-breakdown mb-4"><div class="d-flex align-items-center justify-content-between mb-2 flex-wrap">';
-			html += '<h6 class="font-weight-bold mb-1">Rekap Puskesmas</h6>';
+			html += '<h2 class="h6 font-weight-bold mb-1">Rekap Puskesmas</h2>';
 			html += '</div>';
 			html += '<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr>';
-			html += '<th>Puskesmas</th><th>Total</th><th>Selesai</th><th>Batal</th><th>Aktif</th><th>% Selesai</th>';
+			html += '<th scope="col">Puskesmas</th><th scope="col">Total</th><th scope="col">Selesai</th><th scope="col">Batal</th><th scope="col">Aktif</th><th scope="col">% Selesai</th>';
 			html += '</tr></thead><tbody>';
 			$.each(items, function(_, item) {
 				html += '<tr>';
@@ -395,12 +414,12 @@ $laporan_types = array(
 		function renderReportRows(rows, summary, breakdown) {
 			var html = '<div id="print-area">';
 			html += '<div class="d-flex align-items-start justify-content-between flex-wrap mb-3">';
-			html += '<div><h5 class="font-weight-bold mb-1">Laporan konsultasi</h5></div>';
+			html += '<div><h2 class="h5 font-weight-bold mb-1">Laporan konsultasi</h2></div>';
 			html += '</div>';
 			html += renderSummary(summary);
 			html += renderBreakdown(breakdown);
 			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr>';
-			html += '<th>Tanggal</th><th>ID permintaan</th><th>Puskesmas</th><th>Warga</th><th>Status</th><th>PIC</th><th>Aktivitas terbaru</th><th>Diagnosis dan saran</th><th>Lampiran</th><th class="no-print">Detail</th>';
+			html += '<th scope="col">Tanggal</th><th scope="col">ID permintaan</th><th scope="col">Puskesmas</th><th scope="col">Warga</th><th scope="col">Status</th><th scope="col">PIC</th><th scope="col">Aktivitas terbaru</th><th scope="col">Diagnosis dan saran</th><th scope="col">Lampiran</th><th scope="col" class="no-print">Detail</th>';
 			html += '</tr></thead><tbody>';
 			$.each(rows, function(i, row) {
 				var latest = latestEventInfo(row);
@@ -415,7 +434,7 @@ $laporan_types = array(
 				html += '<td><div class="doclinc-timeline-pill">' + escapeHtml(latest.label) + (latest.time ? '<span>' + escapeHtml(latest.time) + '</span>' : '') + '</div></td>';
 				html += '<td><strong>Diagnosa:</strong> ' + escapeHtml(shortText(row.diagnosa, 56)) + '<div class="doclinc-report-meta"><strong>Saran:</strong> ' + escapeHtml(shortText(row.saran, 64)) + '</div></td>';
 				html += '<td>' + (hasFoto ? '<span class="badge badge-info">Ada foto</span>' : '<span class="doclinc-report-meta">Tidak ada</span>') + '</td>';
-				html += '<td class="no-print"><button type="button" class="btn btn-sm btn-outline-primary btn-detail-laporan" data-index="' + i + '">Lihat detail</button></td>';
+				html += '<td class="no-print"><button type="button" class="btn btn-sm btn-outline-primary btn-detail-laporan" data-index="' + i + '">Buka</button></td>';
 				html += '</tr>';
 			});
 			html += '</tbody></table></div>';
@@ -455,7 +474,7 @@ $laporan_types = array(
 					var rows = response.data || [];
 					if (rows.length === 0) {
 						latestRows = [];
-						$hasil.html('<div class="doclinc-empty-state">Belum ada data laporan. Hapus filter untuk melihat semua data.</div>');
+						$hasil.html(emptyStateHtml('Belum ada data laporan.', 'Hapus filter untuk melihat semua data.'));
 						return;
 					}
 					if (tipeBtn === 1) {
@@ -476,8 +495,8 @@ $laporan_types = array(
 		}
 
 		function renderJumlahPasien(rows, $hasil) {
-			var html = '<div id="print-area"><h5 class="font-weight-bold">Jumlah pasien per Puskesmas</h5>';
-			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr><th>No</th><th>Puskesmas</th><th>Jumlah pasien</th></tr></thead><tbody>';
+			var html = '<div id="print-area"><h2 class="h5 font-weight-bold">Jumlah pasien per Puskesmas</h2>';
+			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr><th scope="col">No</th><th scope="col">Puskesmas</th><th scope="col">Jumlah pasien</th></tr></thead><tbody>';
 			$.each(rows, function(i, row) {
 				html += '<tr><td>' + (i + 1) + '</td><td class="font-weight-bold">' + escapeHtml(puskesmasLabel(row.nama_puskesmas)) + '</td><td>' + escapeHtml(row.jumlah_pasien) + '</td></tr>';
 			});
@@ -486,8 +505,8 @@ $laporan_types = array(
 		}
 
 		function renderJumlahDiagnosa(rows, $hasil) {
-			var html = '<div id="print-area"><h5 class="font-weight-bold">Jumlah diagnosis per Puskesmas</h5>';
-			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr><th>No</th><th>Puskesmas</th><th>Diagnosa</th><th>Jumlah</th></tr></thead><tbody>';
+			var html = '<div id="print-area"><h2 class="h5 font-weight-bold">Jumlah diagnosis per Puskesmas</h2>';
+			html += '<div class="table-responsive"><table class="table table-sm doclinc-report-table"><thead><tr><th scope="col">No</th><th scope="col">Puskesmas</th><th scope="col">Diagnosa</th><th scope="col">Jumlah</th></tr></thead><tbody>';
 			var grouped = {};
 			$.each(rows, function(_, row) {
 				var key = safeText(row.nama_puskesmas);
@@ -529,7 +548,7 @@ $laporan_types = array(
 		$('#btnResetLaporan').on('click', function() {
 			$('#formLaporanPerHari')[0].reset();
 			$('#tipeBtn').val('');
-			$('#hasil-laporan-perhari').html('<div class="doclinc-empty-state">Pilih filter, lalu tampilkan laporan.</div>');
+			$('#hasil-laporan-perhari').html(emptyReportHtml);
 			latestRows = [];
 		});
 
@@ -541,18 +560,18 @@ $laporan_types = array(
 			var latest = latestEventInfo(row);
 			var fotoHtml = row.foto ? '<img src="' + uploadBaseUrl + encodeURIComponent(row.foto) + '" alt="Foto konsultasi" class="img-fluid rounded border">' : '<div class="doclinc-empty-state">Tidak ada lampiran foto.</div>';
 			var body = '<div class="row">';
-			body += '<div class="col-lg-6 mb-3"><div class="doclinc-detail-block"><h6>Identitas laporan</h6>';
+			body += '<div class="col-lg-6 mb-3"><div class="doclinc-detail-block"><h2 class="h6">Identitas laporan</h2>';
 			body += '<p><strong>ID permintaan:</strong> #' + escapeHtml(row.request_id) + '</p>';
 			body += '<p><strong>Warga:</strong> ' + escapeHtml(row.nama_user) + '</p>';
 			body += '<p><strong>Puskesmas:</strong> ' + escapeHtml(puskesmasLabel(row.nama_puskesmas)) + '</p>';
 			body += '<p><strong>Status:</strong> ' + statusBadge(row.request_status) + visitBadge(row.visit_status) + '</p>';
 			body += '<p class="mb-0"><strong>PIC:</strong><br>' + picHtml(row) + '</p></div></div>';
-			body += '<div class="col-lg-6 mb-3"><div class="doclinc-detail-block"><h6>Aktivitas terakhir</h6>';
+			body += '<div class="col-lg-6 mb-3"><div class="doclinc-detail-block"><h2 class="h6">Aktivitas terakhir</h2>';
 			body += '<div class="doclinc-timeline-pill">' + escapeHtml(latest.label) + (latest.time ? '<span>' + escapeHtml(latest.time) + '</span>' : '') + '</div></div></div>';
-			body += '<div class="col-lg-7 mb-3"><div class="doclinc-detail-block"><h6>Diagnosis dan saran</h6>';
+			body += '<div class="col-lg-7 mb-3"><div class="doclinc-detail-block"><h2 class="h6">Diagnosis dan saran</h2>';
 			body += '<p><strong>Diagnosa:</strong><br>' + escapeHtml(row.diagnosa) + '</p>';
 			body += '<p class="mb-0"><strong>Saran:</strong><br>' + escapeHtml(row.saran) + '</p></div></div>';
-			body += '<div class="col-lg-5 mb-3"><div class="doclinc-detail-block"><h6>Lampiran foto</h6>' + fotoHtml + '</div></div>';
+			body += '<div class="col-lg-5 mb-3"><div class="doclinc-detail-block"><h2 class="h6">Lampiran foto</h2>' + fotoHtml + '</div></div>';
 			body += '</div>';
 			$('#laporanDetailTitle').text('Detail laporan #' + safeText(row.request_id));
 			$('#laporanDetailBody').html(body);

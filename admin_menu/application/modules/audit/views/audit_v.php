@@ -40,16 +40,15 @@ $metadata_text = static function ($json) {
 	return implode(' · ', $parts);
 };
 ?>
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
-	<div>
-		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title">
-			<i class="fas fa-clipboard-list" aria-hidden="true"></i> Penampil audit
-		</h1>
-		<p class="mb-0 doclinc-page-subtitle">
-			Catatan siapa melakukan apa, kapan, dan dari mana &middot; <?= html_escape($period_options[(int) $filters['days']] ?? 'Seluruh periode'); ?>
-		</p>
-	</div>
-</div>
+<?php
+/* Kepala halaman dari partial bersama. `&middot;` ditulis sebagai karakter
+   `·` karena partial meng-escape teks: entitas akan tampil harfiah. */
+$page_head = array(
+	'title' => 'Penampil audit',
+	'sub' => 'Catatan aksi pengguna · ' . ($period_options[(int) $filters['days']] ?? 'Seluruh periode'),
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 
 <?php if (!$schema_ready): ?>
 	<div class="alert alert-warning" role="status">
@@ -65,18 +64,18 @@ $metadata_text = static function ($json) {
 		<?php endif; ?>
 	</div>
 
-	<?= form_open('audit/filter', array('class' => 'form-row align-items-end mb-4', 'method' => 'post')); ?>
-		<div class="form-group col-md-3 mb-2">
-			<label for="audit_days">Periode</label>
-			<select class="form-control form-control-lg" id="audit_days" name="days">
+	<?= form_open('audit/filter', array('class' => 'dl-adm-toolbar', 'method' => 'post')); ?>
+		<div class="dl-adm-toolbar-field">
+			<label class="dl-adm-toolbar-label" for="audit_days">Periode</label>
+			<select class="form-control" id="audit_days" name="days">
 				<?php foreach ($period_options as $value => $label): ?>
 					<option value="<?= (int) $value; ?>" <?= (int) $filters['days'] === (int) $value ? 'selected' : ''; ?>><?= html_escape($label); ?></option>
 				<?php endforeach; ?>
 			</select>
 		</div>
-		<div class="form-group col-md-4 mb-2">
-			<label for="audit_action">Jenis aksi</label>
-			<select class="form-control form-control-lg" id="audit_action" name="action">
+		<div class="dl-adm-toolbar-field">
+			<label class="dl-adm-toolbar-label" for="audit_action">Jenis aksi</label>
+			<select class="form-control" id="audit_action" name="action">
 				<option value="">Semua aksi</option>
 				<?php foreach ($action_options as $option): ?>
 					<option value="<?= html_escape($option['action']); ?>" <?= $filters['action'] === $option['action'] ? 'selected' : ''; ?>>
@@ -85,9 +84,9 @@ $metadata_text = static function ($json) {
 				<?php endforeach; ?>
 			</select>
 		</div>
-		<div class="form-group col-md-3 mb-2">
-			<label for="audit_actor">Aktor</label>
-			<select class="form-control form-control-lg" id="audit_actor" name="actor_user_id">
+		<div class="dl-adm-toolbar-field">
+			<label class="dl-adm-toolbar-label" for="audit_actor">Aktor</label>
+			<select class="form-control" id="audit_actor" name="actor_user_id">
 				<option value="0">Semua aktor</option>
 				<?php foreach ($actor_options as $option): ?>
 					<option value="<?= (int) $option['actor_user_id']; ?>" <?= (int) $filters['actor_user_id'] === (int) $option['actor_user_id'] ? 'selected' : ''; ?>>
@@ -96,9 +95,9 @@ $metadata_text = static function ($json) {
 				<?php endforeach; ?>
 			</select>
 		</div>
-		<div class="form-group col-md-2 mb-2">
-			<button type="submit" class="btn btn-primary btn-lg btn-block">
-				<i class="fas fa-filter" aria-hidden="true"></i> Terapkan
+		<div class="dl-adm-toolbar-actions">
+			<button type="submit" class="btn btn-primary dl-adm-action">
+				<i class="fas fa-filter" aria-hidden="true"></i> Terapkan filter
 			</button>
 		</div>
 	<?= form_close(); ?>
@@ -165,7 +164,7 @@ $metadata_text = static function ($json) {
 					<?php else: ?>
 						<div class="table-responsive">
 							<table class="table table-sm mb-0">
-								<caption class="px-3 pt-3">Nama diambil dari tabel pengguna; bila tidak ditemukan, hanya id yang ditampilkan.</caption>
+								<caption class="px-3 pt-3">Nama dari tabel pengguna; bila kosong, hanya id.</caption>
 								<thead>
 									<tr>
 										<th scope="col">Aktor</th>
@@ -204,7 +203,7 @@ $metadata_text = static function ($json) {
 			<?php else: ?>
 				<div class="table-responsive">
 					<table class="table table-sm align-middle mb-0">
-						<caption class="px-3 pt-3">Waktu ditulis server. Metadata ditampilkan apa adanya tanpa diterjemahkan.</caption>
+						<caption class="px-3 pt-3">Waktu dari server; metadata ditampilkan apa adanya.</caption>
 						<thead>
 							<tr>
 								<th scope="col">Waktu</th>

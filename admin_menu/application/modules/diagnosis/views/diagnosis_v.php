@@ -59,23 +59,71 @@ foreach ($top_codes as $row) {
 	$chart_payload['values'][] = (int) $row['entries'];
 	$chart_payload['codes'][] = $row['code'];
 }
+/* Peta sebaran: data, aset, dan payload bootstrap. Leaflet dan GeoJSON disajikan
+ * dari panel ini sendiri (assets/vendor/leaflet, assets/geojson), bukan CDN,
+ * karena panel dipakai di jaringan Puskesmas yang tidak selalu punya internet. */
+$map_geojson = 'assets/geojson/kecamatan-cilegon.geojson';
+$leaflet_css = 'assets/vendor/leaflet/leaflet.css';
+$leaflet_js = 'assets/vendor/leaflet/leaflet.js';
+$map_js = 'assets/js/doclinc-disease-map.js';
+$map_data = isset($payload['map']) && is_array($payload['map']) ? $payload['map'] : array('codes' => array(), 'kecamatan' => array());
+$map_codes = isset($map_data['codes']) && is_array($map_data['codes']) ? $map_data['codes'] : array();
+$map_kecamatan = isset($map_data['kecamatan']) && is_array($map_data['kecamatan']) ? $map_data['kecamatan'] : array();
+$map_payload = array(
+	'geojsonUrl' => base_url($map_geojson),
+	'codes' => array(),
+	'kecamatan' => $map_kecamatan,
+	/* 1.700 ms per kode: cukup untuk membaca satu keadaan sebelum berganti, tanpa
+	 * membuat orang menunggu seluruh putaran selesai. */
+	'stepMs' => 1700,
+);
+foreach ($map_codes as $row) {
+	$map_payload['codes'][] = array(
+		'code' => (string) $row['code'],
+		'label' => (string) $row['label'],
+		'entries' => (int) $row['entries'],
+	);
+}
+$map_max = 0;
+foreach ($map_kecamatan as $row) {
+	$map_max = max($map_max, (int) ($row['max_entries'] ?? 0));
+}
+
+/* Angka "semua kode" memakai jumlah diagnosis terkode dari SELURUH kode, bukan
+ * jumlah delapan kode teratas. Tanpa ini, kecamatan yang diagnosisnya jatuh di
+ * luar delapan kode teratas akan berlabel "0 diagnosis" padahal datanya ada -
+ * persis kesalahan yang paling mudah dipercaya karena tampil sebagai angka. */
+$coded_by_name = array();
+foreach ($by_kecamatan as $row) {
+	$coded_by_name[strtolower(trim((string) $row['kecamatan']))] = (int) $row['coded'];
+}
+$max_coded = 0;
+foreach ($map_kecamatan as $index => $row) {
+	$key = strtolower(trim((string) $row['kecamatan']));
+	$map_kecamatan[$index]['coded'] = isset($coded_by_name[$key]) ? $coded_by_name[$key] : 0;
+	$max_coded = max($max_coded, (int) $map_kecamatan[$index]['coded']);
+}
+$map_payload['kecamatan'] = $map_kecamatan;
+$map_payload['maxEntries'] = $map_max;
+$map_payload['maxCoded'] = $max_coded;
 ?>
+<link rel="stylesheet" href="<?= html_escape(base_url($leaflet_css) . '?v=' . rawurlencode((string) @filemtime(FCPATH . $leaflet_css))); ?>">
 <link rel="stylesheet" href="<?= html_escape(base_url($analytics_css) . '?v=' . rawurlencode($analytics_css_version)); ?>">
 
 <div class="doclinc-analytics">
-	<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
-		<div>
-			<h1 class="h3 mb-1 font-weight-bold doclinc-page-title">
-				<i class="fas fa-chart-bar" aria-hidden="true"></i> Penyakit terbanyak
-			</h1>
-			<p class="mb-0 doclinc-page-subtitle">
-				Diagnosis ICD-10 per kecamatan dan seluruh Kota Cilegon &middot; <?= html_escape((string) ($period['label'] ?? 'Seluruh periode')); ?>
-			</p>
-		</div>
-		<a href="<?= html_escape($export_url); ?>" class="btn btn-outline-primary btn-sm shadow-sm">
-			<i class="fas fa-file-csv" aria-hidden="true"></i> Unduh CSV
-		</a>
-	</div>
+<?php
+/* Kepala halaman dari partial bersama. `&middot;` diganti karakter `·` karena
+   partial meng-escape teks: entitas HTML akan tampil harfiah kalau tetap
+   ditulis sebagai entitas. */
+$page_head = array(
+	'title' => 'Penyakit terbanyak',
+	'sub' => 'ICD-10 per kecamatan · ' . (string) ($period['label'] ?? 'Seluruh periode'),
+	'actions' => array(
+		array('kind' => 'link', 'label' => 'Unduh CSV', 'href' => $export_url, 'icon' => 'fas fa-file-csv', 'variant' => 'outline-primary'),
+	),
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 
 	<?php if (!$source_available): ?>
 		<div class="doclinc-analytics-note doclinc-analytics-note-warning" role="status">
@@ -103,18 +151,18 @@ foreach ($top_codes as $row) {
 	   tidak diizinkan `permitted_uri_chars` (permintaan dijawab 400). form_open()
 	   sekaligus menyertakan token CSRF karena csrf_protection = TRUE. */
 	?>
-	<?= form_open('diagnosis/filter', array('class' => 'doclinc-analytics-toolbar', 'method' => 'post')); ?>
-		<div class="doclinc-analytics-field">
-			<label for="doclincDiagnosisDays">Periode</label>
-			<select id="doclincDiagnosisDays" name="days">
+	<?= form_open('diagnosis/filter', array('class' => 'dl-adm-toolbar', 'method' => 'post')); ?>
+		<div class="dl-adm-toolbar-field">
+			<label class="dl-adm-toolbar-label" for="doclincDiagnosisDays">Periode</label>
+			<select class="form-control" id="doclincDiagnosisDays" name="days">
 				<?php foreach ($period_options as $value => $label): ?>
 					<option value="<?= (int) $value; ?>" <?= (int) $filters['days'] === (int) $value ? 'selected' : ''; ?>><?= html_escape($label); ?></option>
 				<?php endforeach; ?>
 			</select>
 		</div>
-		<div class="doclinc-analytics-field">
-			<label for="doclincDiagnosisKecamatan">Kecamatan</label>
-			<select id="doclincDiagnosisKecamatan" name="kecamatan_id" <?= empty($kecamatan_options) ? 'disabled' : ''; ?>>
+		<div class="dl-adm-toolbar-field">
+			<label class="dl-adm-toolbar-label" for="doclincDiagnosisKecamatan">Kecamatan</label>
+			<select class="form-control" id="doclincDiagnosisKecamatan" name="kecamatan_id" <?= empty($kecamatan_options) ? 'disabled' : ''; ?>>
 				<option value="0">Seluruh Kota Cilegon</option>
 				<?php foreach ($kecamatan_options as $option): ?>
 					<option value="<?= (int) $option['id_kecamatan']; ?>" <?= (int) $filters['kecamatan_id'] === (int) $option['id_kecamatan'] ? 'selected' : ''; ?>>
@@ -123,19 +171,19 @@ foreach ($top_codes as $row) {
 				<?php endforeach; ?>
 			</select>
 		</div>
-		<div class="doclinc-analytics-field">
-			<label for="doclincDiagnosisCoding">Status pengodean</label>
-			<select id="doclincDiagnosisCoding" name="coding_state">
+		<div class="dl-adm-toolbar-field">
+			<label class="dl-adm-toolbar-label" for="doclincDiagnosisCoding">Status pengodean</label>
+			<select class="form-control" id="doclincDiagnosisCoding" name="coding_state">
 				<?php foreach ($coding_options as $value => $label): ?>
 					<option value="<?= html_escape($value); ?>" <?= (string) $filters['coding_state'] === (string) $value ? 'selected' : ''; ?>><?= html_escape($label); ?></option>
 				<?php endforeach; ?>
 			</select>
 		</div>
-		<div class="doclinc-analytics-actions">
-			<button type="submit" class="btn btn-primary btn-sm">
-				<i class="fas fa-filter" aria-hidden="true"></i> Terapkan
+		<div class="dl-adm-toolbar-actions">
+			<button type="submit" class="btn btn-primary dl-adm-action">
+				<i class="fas fa-filter" aria-hidden="true"></i> Terapkan filter
 			</button>
-			<a href="<?= html_escape(site_url('diagnosis')); ?>" class="btn btn-outline-secondary btn-sm">Reset</a>
+			<a href="<?= html_escape(site_url('diagnosis')); ?>" class="btn btn-outline-secondary dl-adm-action">Hapus filter</a>
 		</div>
 	<?= form_close(); ?>
 
@@ -148,7 +196,7 @@ foreach ($top_codes as $row) {
 		<div class="doclinc-analytics-card">
 			<span class="doclinc-analytics-card-label">Rekam medis terpisah</span>
 			<span class="doclinc-analytics-card-value"><?= number_format($distinct_records); ?></span>
-			<span class="doclinc-analytics-card-hint">Menunjukkan angkanya datang dari banyak kunjungan atau satu kunjungan dengan banyak diagnosis.</span>
+			<span class="doclinc-analytics-card-hint">Asalnya dari banyak kunjungan atau satu kunjungan.</span>
 		</div>
 		<div class="doclinc-analytics-card">
 			<span class="doclinc-analytics-card-label">Terkode ICD-10</span>
@@ -172,18 +220,84 @@ foreach ($top_codes as $row) {
 		</div>
 	</div>
 
+	<div class="doclinc-analytics-panel doclinc-map-panel">
+		<div class="doclinc-map-head">
+			<div>
+				<h2 class="doclinc-analytics-panel-title">Peta sebaran penyakit</h2>
+				<p class="doclinc-analytics-panel-note">Warna dan gelembung mengikuti kode yang sedang diputar.</p>
+			</div>
+			<div class="doclinc-map-controls">
+				<div class="dl-adm-toolbar-field">
+					<label class="dl-adm-toolbar-label" for="doclincMapCode">Kode</label>
+					<select class="form-control" id="doclincMapCode">
+						<option value="">Semua kode</option>
+						<?php foreach ($map_codes as $row): ?>
+							<option value="<?= html_escape((string) $row['code']); ?>"><?= html_escape((string) $row['code']); ?><?= $row['label'] === '' ? '' : ' - ' . html_escape((string) $row['label']); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+				<button type="button" class="btn btn-primary dl-adm-action" id="doclincMapPlay" aria-pressed="false" <?= empty($map_codes) ? 'disabled' : ''; ?>>
+					<i class="fas fa-play" aria-hidden="true"></i> <span>Putar</span>
+				</button>
+			</div>
+		</div>
+		<?php if (empty($map_kecamatan)): ?>
+			<div class="doclinc-analytics-empty">
+				Belum ada diagnosis terkode dengan wilayah pada periode ini.
+			</div>
+		<?php else: ?>
+			<div class="doclinc-map-stage">
+				<div class="doclinc-map-canvas">
+					<div id="doclincDiseaseMap" class="doclinc-map" role="img" aria-label="Peta Kota Cilegon per kecamatan dengan jumlah diagnosis terkode"></div>
+					<p class="doclinc-map-status" id="doclincMapStatus" role="status" aria-live="polite">Semua kode</p>
+					<div class="doclinc-map-legend" aria-hidden="true">
+						<span>Sedikit</span>
+						<span class="doclinc-map-legend-scale"></span>
+						<span>Banyak</span>
+					</div>
+				</div>
+				<div class="doclinc-map-ranking">
+					<h3 class="doclinc-map-ranking-title" id="doclincMapRankingTitle">Kecamatan</h3>
+					<ol class="doclinc-map-ranking-list" id="doclincMapRanking"></ol>
+				</div>
+			</div>
+			<details class="doclinc-map-table">
+				<summary>Angka di peta</summary>
+				<div class="doclinc-analytics-tablewrap mt-2">
+					<table class="doclinc-analytics-table doclinc-analytics-table-wide">
+						<caption>Jumlah diagnosis terkode per kecamatan untuk tiap kode.</caption>
+						<thead>
+							<tr>
+								<th scope="col">Kecamatan</th>
+								<?php foreach ($map_codes as $row): ?>
+									<th scope="col" class="doclinc-analytics-number"><?= html_escape((string) $row['code']); ?></th>
+								<?php endforeach; ?>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ($map_kecamatan as $row): ?>
+								<tr>
+									<th scope="row"><?= html_escape((string) $row['kecamatan']); ?></th>
+									<?php foreach ($map_codes as $code_row): ?>
+										<td class="doclinc-analytics-number"><?= number_format((int) ($row['by_code'][$code_row['code']] ?? 0)); ?></td>
+									<?php endforeach; ?>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+			</details>
+		<?php endif; ?>
+	</div>
+
 	<div class="doclinc-analytics-panel">
 		<h2 class="doclinc-analytics-panel-title">Kode ICD-10 terbanyak</h2>
 		<p class="doclinc-analytics-panel-note">
-			Sumber: <code>medicalrecord_diagnoses</code>. Waktu mengikuti urutan
-			<code>clinical_finalized_at</code> &rarr; <code>visit_completed_at</code> &rarr; <code>completed_at</code>;
-			<code>created_at</code> tidak dipakai karena itu waktu permintaan dibuat, bukan waktu layanan selesai.
-			Peringkat hanya menghitung diagnosis yang sudah dikode; baris yang belum dikode dilaporkan terpisah di bawah.
+			Hanya diagnosis terkode yang masuk peringkat. Yang belum dikode ada di panel bawah.
 		</p>
 		<?php if (empty($top_codes)): ?>
 			<div class="doclinc-analytics-empty">
-				Belum ada diagnosis terkode pada periode ini. Peringkat diisi otomatis begitu tenaga kesehatan memilih kode ICD-10;
-				selama itu, catatan yang belum dikode bisa dilihat pada panel &ldquo;Isi keranjang belum dikode&rdquo; di bawah.
+				Belum ada diagnosis terkode pada periode ini. Catatan yang belum dikode ada di panel bawah.
 			</div>
 		<?php else: ?>
 			<div class="doclinc-analytics-chart">
@@ -191,7 +305,7 @@ foreach ($top_codes as $row) {
 			</div>
 			<div class="doclinc-analytics-tablewrap mt-3">
 				<table class="doclinc-analytics-table doclinc-analytics-table-wide">
-					<caption>Tabel ini berisi angka yang sama dengan grafik di atas, supaya bisa dibaca tanpa grafik.</caption>
+					<caption>Angka yang sama dengan grafik.</caption>
 					<thead>
 						<tr>
 							<th scope="col">Kode</th>
@@ -242,7 +356,7 @@ foreach ($top_codes as $row) {
 		<?php else: ?>
 			<div class="doclinc-analytics-tablewrap">
 				<table class="doclinc-analytics-table doclinc-analytics-table-wide">
-					<caption>Jumlah baris per kecamatan; kode terbanyak dihitung di dalam kecamatan itu sendiri.</caption>
+					<caption>Baris per kecamatan; kode terbanyak di dalam kecamatan itu.</caption>
 					<thead>
 						<tr>
 							<th scope="col">Kecamatan</th>
@@ -294,7 +408,7 @@ foreach ($top_codes as $row) {
 		<div class="doclinc-analytics-panel">
 			<h2 class="doclinc-analytics-panel-title">Isi keranjang &ldquo;belum dikode&rdquo;</h2>
 			<p class="doclinc-analytics-panel-note">
-				Ditampilkan apa adanya supaya terlihat apa yang menunggu pengodean. Baris ini belum masuk peringkat kode ICD-10.
+				Belum masuk peringkat ICD-10; menunggu pengodean.
 			</p>
 			<div class="doclinc-analytics-tablewrap">
 				<table class="doclinc-analytics-table">
@@ -326,4 +440,7 @@ foreach ($top_codes as $row) {
 </div>
 
 <script id="doclincDiagnosisBootstrap" type="application/json"><?= json_encode($chart_payload, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+<script id="doclincDiseaseMapBootstrap" type="application/json"><?= json_encode($map_payload, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+<script src="<?= html_escape(base_url($leaflet_js) . '?v=' . rawurlencode((string) @filemtime(FCPATH . $leaflet_js))); ?>"></script>
+<script src="<?= html_escape(base_url($map_js) . '?v=' . rawurlencode((string) @filemtime(FCPATH . $map_js))); ?>"></script>
 <script src="<?= html_escape(base_url($analytics_js) . '?v=' . rawurlencode($analytics_js_version)); ?>"></script>

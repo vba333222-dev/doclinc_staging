@@ -72,6 +72,28 @@
   gap: 8px;
 }
 
+/* Label aksi tidak boleh dilipat menjadi dua baris hanya karena induknya sempit.
+   Tinggi minimum tombol sudah dipegang lapisan token; yang tersisa adalah kata
+   terakhir yang dipecah saat wadahnya kurang beberapa piksel. Dengan nowrap,
+   wadah yang membungkus baris (induknya flex-wrap), bukan kata di dalam tombol. */
+.dl-adm-action,
+.dl-adm-head-actions .btn,
+.dl-adm-toolbar-actions .btn,
+.card-header .btn,
+.table-responsive .btn {
+  white-space: nowrap;
+}
+
+/* Di bawah 768px tabel bergaya Bootstrap menyusut sampai kolom aksi lebih kecil
+   dari label tombolnya (48px untuk "Ubah"), sehingga teks pecah 3–4 baris.
+   Tabel yang memang berisi tombol diberi lebar minimum dan digeser mendatar
+   lewat .table-responsive; tabel teks biasa tetap menyusut seperti semula. */
+@media (max-width: 767.98px) {
+  .table-responsive > table:has(.btn) {
+    min-inline-size: 640px;
+  }
+}
+
 /* --- Tombol info: pintu ke penjelasan -----------------------------------
    Ikon saja, jadi wajib punya aria-label. Targetnya 44px karena ini sasaran
    sentuh, bukan hiasan. Warnanya abu saat diam dan mengikuti warna teks saat
@@ -100,24 +122,38 @@
 }
 
 /* --- Aksi utama ---------------------------------------------------------
-   DESIGN.md §1.2: satu aksi utama per layar. Tombol aksi di panel dipatok
-   44px supaya memenuhi ambang sasaran sentuh yang sama dengan aplikasi utama;
-   `.btn-sm` bawaan tema berada di sekitar 31px. */
+   DESIGN.md §1.2: satu aksi utama per layar. Ambang sasaran sentuh dipegang
+   lapisan token (`--dl-ref-control` 44px, `--dl-ref-control-primary` 48px);
+   `.btn-sm` bawaan tema berada di sekitar 31px, jadi jangan dipakai untuk aksi
+   utama. */
 
 .dl-adm-action {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
   padding: 0 16px;
   border-radius: var(--dl-ref-radius-control);
   font-size: var(--dl-ref-body-compact);
   font-weight: 700;
 }
 
+/* Tinggi aksi TIDAK dideklarasikan di sini. `assets/css/doclinc-reference-ui.css`
+   memasang `min-height: var(--dl-ref-control) !important` (44px) untuk
+   `.doclinc-admin-shell .btn` dan `var(--dl-ref-control-primary) !important`
+   (48px) untuk varian primary/success. Deklarasi tanpa `!important` di berkas
+   ini selalu kalah, jadi `min-height` 44/34px di sini hanya menciptakan satu
+   sumber kebenaran semu: nilainya benar di dalam berkas, salah di layar.
+   Yang tetap diatur di sini adalah padding, ukuran ikon, dan ukuran teks -
+   properti yang tidak diperebutkan lapisan token. */
 .dl-adm-action i {
   font-size: 14px;
 }
+
+/* Aksi di kepala kartu daftar (`commons/list_card.php`) memakai kelas tombol
+   yang sama PERSIS dengan aksi kepala halaman - `btn btn-<varian> dl-adm-action`.
+   Varian "satu tingkat lebih kecil" sudah dihapus: lapisan token menetapkan
+   tinggi dengan `!important`, sehingga versi kecilnya tidak pernah render dan
+   hanya meninggalkan CSS mati yang menipu pembaca berikutnya. */
 
 /* --- Isi modal penjelasan ------------------------------------------------
    Penjelasan yang dipindahkan dari badan halaman tinggal di sini. Bentuknya
@@ -302,6 +338,82 @@
   line-height: 1.5;
 }
 
+/* --- Bingkai filter (toolbar) -------------------------------------------
+   Satu bingkai untuk semua baris filter: label kecil di atas kontrol, aksi
+   menempel ke kanan, dan di ponsel aksi turun selebar bingkai.
+
+   Alasannya bukan keseragaman demi keseragaman. Sebelum ini tiga halaman
+   memfilter dengan tiga bentuk: `btn-lg btn-block` (Audit), `btn-sm`
+   (Diagnosis), dan tombol biasa (dasbor). Yang berbeda bukan hanya tombolnya,
+   melainkan bingkainya - jadi yang diseragamkan bingkainya, bukan tombolnya
+   satu per satu. Tinggi kontrol tetap milik lapisan token. */
+
+.dl-adm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  padding: 12px 16px;
+  margin: 0 0 16px;
+  border: 1px solid var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-section);
+  background: var(--dl-ref-surface);
+}
+
+.dl-adm-toolbar-field {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Label pendek di atas kontrol. Huruf kecil, bukan kapital semua: sembilan
+   dasbor yang diukur memakai label kalimat biasa, dan kapital semua diulang
+   di setiap kolom membuat baris filter lebih berisik daripada isinya. */
+.dl-adm-toolbar-label {
+  margin: 0;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-label);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Kontrol di dalam bingkai filter. Tingginya tidak ditulis di sini: lapisan
+   token sudah menetapkan tinggi kontrol, dan menyebutkannya lagi hanya
+   menciptakan sumber kebenaran kedua yang kalah tanpa `!important`. */
+.dl-adm-toolbar .form-control {
+  border-color: var(--dl-ref-line);
+  border-radius: var(--dl-ref-radius-control);
+  background: var(--dl-ref-surface);
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-body-compact);
+}
+
+.dl-adm-toolbar-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+@media (max-width: 575.98px) {
+  .dl-adm-toolbar-field,
+  .dl-adm-toolbar-actions {
+    flex-basis: 100%;
+  }
+
+  .dl-adm-toolbar-actions {
+    margin-left: 0;
+  }
+
+  .dl-adm-toolbar-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
 /* --- Baris aksi formulir ------------------------------------------------
    Deretan tombol aksi di dalam formulir. Jaraknya memakai `gap` supaya tidak
    perlu gaya inline, dan tiap tombol tetap memenuhi sasaran sentuh 44px. */
@@ -316,7 +428,6 @@
 .dl-adm-actions .btn {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
 }
 
 /* Alasan tombol nonaktif ditulis sebagai kalimat yang terlihat, bukan hanya
@@ -360,9 +471,142 @@
   line-height: 1.5;
 }
 
+/* --- Keadaan kosong ------------------------------------------------------
+   Bentuk dasarnya dari `.doclinc-empty-state` (custom.css), yang sudah dipakai
+   dasbor untuk pesan satu baris. Yang ditambahkan di sini hanya tiga bagian yang
+   belum ada: judul, keterangan, dan satu aksi.
+
+   `.doclinc-empty-state i` di custom.css berukuran 3rem — itu untuk ikon besar
+   di tengah, bukan untuk ikon di dalam tombol. Tanpa aturan terakhir di bawah,
+   ikon pada tombol aksi ikut membesar tiga kali lipat. Aturannya dibatasi ke
+   `.dl-adm-empty-actions` supaya ikon besar tadi tidak tersentuh. */
+
+.dl-adm-empty-title {
+  margin: 0;
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-title);
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.dl-adm-empty-note {
+  max-width: 46ch;
+  margin: 6px auto 0;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-body-compact);
+  line-height: 1.5;
+}
+
+.dl-adm-empty-actions {
+  margin: 16px 0 0;
+}
+
+.dl-adm-empty .dl-adm-empty-actions .btn {
+  display: inline-flex;
+  align-items: center;
+}
+
+.dl-adm-empty .dl-adm-empty-actions i {
+  display: inline-block;
+  margin: 0 0.4em 0 0;
+  color: inherit;
+  font-size: inherit;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dl-adm-info,
   .dl-adm-action {
     transition-duration: 0.001ms;
   }
 }
+
+/* --- Navigasi samping: empat kelompok ------------------------------------
+   Sebelumnya tujuh judul untuk dua puluh tautan, lima di antaranya berisi
+   satu butir: judul berhenti menolong dan hanya menambah tinggi. Empat
+   kelompok membuat batasnya berarti, jadi batas itu harus terlihat - diberi
+   garis pemisah tipis. Judul pertama tidak diberi garis karena di atasnya
+   sudah ada logo.
+
+   Warna garis memakai putih transparan, bukan token --dl-ref-*: sidebar
+   berlatar gradien gelap milik panel (custom.css) di tema terang maupun
+   gelap, dan di atas latar itu tidak ada token permukaan yang berlaku.
+   Cara pewarnaan ini sama dengan judul sidebar yang sudah ada di sana. */
+
+.doclinc-sidebar .doclinc-sidebar-heading {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.doclinc-sidebar > .doclinc-sidebar-heading:first-of-type {
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 0;
+}
+
+/* Tautan aktif di sidebar harus tetap terbaca sebagai "halaman ini" walau
+   kelompoknya sedang di bawah layar. Panel sudah memberi penanda batang kiri
+   (`border-left: 3px` putih lewat token --doclinc-sidebar-active-border);
+   di sini hanya ditambahkan tebal huruf, tanpa batang kedua - batang ganda
+   membuat penandanya tampak terlepas dari pilnya. */
+.doclinc-sidebar .nav-item.active > .nav-link {
+  font-weight: 700;
+}
+
+/* --- Panel geser sidebar di layar sempit ---------------------------------
+   custom.css menjadikan sidebar panel geser sampai 768px, tetapi keadaan
+   "terbuka" dikaitkan ke `.doclinc-sidebar.show` - kelas yang tidak pernah
+   dipasang skrip mana pun. Diukur pada 390px: setelah tombol menu ditekan,
+   transform tetap -250px, jadi tidak satu pun halaman dapat dicapai dari
+   ponsel. Keadaan terbuka sekarang mengikuti kelas yang memang dipakai
+   SB Admin, sehingga tombol menu, gestur tutup, dan `aria-expanded` yang
+   disinkronkan skrip header berbicara tentang hal yang sama.
+
+   Latar gelap diperlukan karena panel menutupi tombol menunya sendiri: tanpa
+   sasaran ketuk di luar panel, menu yang sudah terbuka tidak bisa ditutup. */
+@media (max-width: 768px) {
+  body:not(.sidebar-toggled) .doclinc-sidebar {
+    transform: translateX(0);
+  }
+
+  /* SB Admin menyiapkan butir selebar 6.5rem dengan label di tengah untuk
+     sidebar yang DICIUTKAN di desktop; aturan itu hanya berlaku di bawah
+     768px, jadi justru panel geser yang mewarisinya. Terukur di 393px:
+     butir setinggi 63px dengan label terlipat, dan dua puluh butir menjadi
+     ~2.600px gulir. Di ponsel ruangnya penuh, jadi butir dikembalikan ke
+     bentuk satu baris seperti di desktop - ~48px per butir. */
+  .doclinc-sidebar .nav-item .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: auto;
+    min-height: var(--dl-ref-control);
+    text-align: left;
+    padding: 12px 14px;
+  }
+
+  .doclinc-sidebar .nav-item .nav-link i {
+    flex: 0 0 auto;
+    width: 1.25em;
+    margin-right: 0;
+    text-align: center;
+  }
+
+  /* Isi halaman tidak ikut bergulir di belakang panel yang terbuka. */
+  body.doclinc-nav-open {
+    overflow: hidden;
+  }
+
+  .doclinc-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1029;
+    border: 0;
+    background: rgba(16, 24, 32, 0.45);
+  }
+
+  .doclinc-sidebar-backdrop[hidden] {
+    display: none;
+  }
+}
+

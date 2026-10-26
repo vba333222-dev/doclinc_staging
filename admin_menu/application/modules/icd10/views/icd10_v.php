@@ -16,19 +16,18 @@ $query = isset($query) ? (string) $query : '';
 $search = isset($search) && is_array($search) ? $search : null;
 $meta = $search !== null && isset($search['meta']) ? $search['meta'] : array();
 ?>
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
-	<div>
-		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title">
-			<i class="fas fa-book-medical" aria-hidden="true"></i> Master ICD-10
-		</h1>
-		<p class="mb-0 doclinc-page-subtitle">
-			Referensi kode diagnosis WHO ICD-10 2019 yang tersimpan di repo, beserta bab dan bloknya.
-		</p>
-	</div>
-	<a href="<?= html_escape(site_url('diagnosis')); ?>" class="btn btn-outline-primary btn-sm shadow-sm">
-		<i class="fas fa-chart-bar" aria-hidden="true"></i> Infografis diagnosis
-	</a>
-</div>
+<?php
+/* Kepala halaman dari partial bersama. Ikon judul dilepas: `.dl-adm-head-title`
+   tidak punya slot ikon, dan tiga halaman lain sudah tampil tanpa ikon judul. */
+$page_head = array(
+	'title' => 'Master ICD-10',
+	'sub' => 'Kode ICD-10 WHO 2019 beserta bab dan bloknya.',
+	'actions' => array(
+		array('kind' => 'link', 'label' => 'Infografis diagnosis', 'href' => site_url('diagnosis'), 'icon' => 'fas fa-chart-bar', 'variant' => 'outline-primary'),
+	),
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 
 <?php if (!$available): ?>
 	<div class="alert alert-warning" role="status">
@@ -37,11 +36,8 @@ $meta = $search !== null && isset($search['meta']) ? $search['meta'] : array();
 	</div>
 <?php else: ?>
 	<div class="alert alert-info" role="status">
-		<strong>Baca saja, dan sengaja tidak diimpor.</strong>
-		Master ini belum masuk ke pipeline <code>clinical_master_*</code> karena alat yang ada
-		(<code>tools/clinical_schema</code>) hanya mengurus skema - ia sendiri melaporkan
-		<code>PACKAGE_IMPORT_SUPPORTED=false</code>. Menyalin langsung ke tabel akan melewati
-		governance dataset (checksum, status review, revisi) yang sudah dirancang repo ini.
+		<strong>Baca saja.</strong>
+		Master ini belum diimpor ke database; menyalin langsung akan melewati pemeriksaan dataset.
 	</div>
 
 	<div class="row mb-4">
@@ -75,14 +71,14 @@ $meta = $search !== null && isset($search['meta']) ? $search['meta'] : array();
 		</div>
 	</div>
 
-	<?= form_open('icd10/filter', array('class' => 'form-row align-items-end mb-4', 'method' => 'post')); ?>
-		<div class="form-group col-md-8 mb-2">
-			<label for="q">Cari kode, judul, atau kata kunci</label>
-			<input type="text" class="form-control form-control-lg" id="q" name="q" value="<?= html_escape($query); ?>"
+	<?= form_open('icd10/filter', array('class' => 'dl-adm-toolbar mb-4', 'method' => 'post')); ?>
+		<div class="dl-adm-toolbar-field">
+			<label class="dl-adm-toolbar-label" for="q">Cari kode, judul, atau kata kunci</label>
+			<input type="text" class="form-control" id="q" name="q" value="<?= html_escape($query); ?>"
 				maxlength="60" placeholder="Contoh: A09, kolera, tuberkulosis">
 		</div>
-		<div class="form-group col-md-4 mb-2">
-			<button type="submit" class="btn btn-primary btn-lg btn-block">
+		<div class="dl-adm-toolbar-actions">
+			<button type="submit" class="btn btn-primary dl-adm-action">
 				<i class="fas fa-search" aria-hidden="true"></i> Cari
 			</button>
 		</div>

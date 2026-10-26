@@ -8,57 +8,11 @@
    ditulis langsung di sini. Gradien tidak dipakai untuk kartu data.
    ========================================================================== */
 
-.doclinc-analytics-toolbar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: flex-end;
-	gap: 12px;
-	padding: 16px;
-	margin-bottom: 20px;
-	background: var(--dl-ref-surface);
-	border: 1px solid var(--dl-ref-line);
-	border-radius: var(--dl-ref-radius-tile);
-}
-
-.doclinc-analytics-field {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	min-width: 180px;
-}
-
-.doclinc-analytics-field > label {
-	margin: 0;
-	font-size: var(--dl-ref-label);
-	font-weight: 700;
-	letter-spacing: 0.01em;
-	color: var(--dl-ref-muted);
-}
-
-.doclinc-analytics-field select {
-	min-height: var(--dl-ref-control);
-	padding: 0 12px;
-	color: var(--dl-ref-ink);
-	background: var(--dl-ref-surface);
-	border: 1px solid var(--dl-ref-line);
-	border-radius: var(--dl-ref-radius-control);
-}
-
-.doclinc-analytics-actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-	margin-left: auto;
-}
-
-.doclinc-analytics-actions .btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	min-height: var(--dl-ref-control);
-	padding: 0 16px;
-	border-radius: var(--dl-ref-radius-control);
-}
+/* Bingkai filter tidak lagi didefinisikan di sini. Dasbor, Audit, dan Diagnosis
+   memakai satu bingkai bersama: `.dl-adm-toolbar` di `doclinc-admin-shell.css`.
+   Sebelumnya berkas ini punya `.doclinc-analytics-toolbar/-field/-actions`
+   sendiri, jadi halaman yang sama memfilter dengan dua bingkai berbeda
+   tergantung modulnya. */
 
 .doclinc-analytics-grid {
 	display: grid;
@@ -292,28 +246,210 @@
 }
 
 @media (max-width: 767.98px) {
-	.doclinc-analytics-field {
-		min-width: 100%;
-	}
-
-	.doclinc-analytics-actions {
-		width: 100%;
-		margin-left: 0;
-	}
-
-	.doclinc-analytics-actions .btn {
-		flex: 1 1 auto;
-		justify-content: center;
-	}
-
+	/* Aturan tumpukan untuk bingkai filter pindah ke `.dl-adm-toolbar` di
+	   doclinc-admin-shell.css. Yang tersisa di sini hanya bentuk grafik. */
 	.doclinc-analytics-chart {
 		height: 260px;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.doclinc-analytics-drill,
-	.doclinc-analytics-actions .btn {
+	.doclinc-analytics-drill {
 		transition: none;
+	}
+}
+
+/* ---------------------------------------------------------------- peta sebaran
+   Peta digambar dari batas kecamatan (GeoJSON) tanpa tile internet: latarnya
+   mint-soft, jadi poligon hijau tetap terbaca di kedua tema. Ukuran panggung
+   memakai clamp supaya di layar pendek peta tidak mendorong tabel ke bawah. */
+
+.doclinc-map-head {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	align-items: flex-end;
+	justify-content: space-between;
+	margin-bottom: 14px;
+}
+
+.doclinc-map-controls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: flex-end;
+}
+
+.doclinc-map-controls .dl-adm-toolbar-field {
+	min-inline-size: 240px;
+}
+
+.doclinc-map-stage {
+	position: relative;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(210px, 260px);
+	gap: 16px;
+	align-items: start;
+}
+
+.doclinc-map-canvas {
+	min-inline-size: 0;
+}
+
+/* Peringkat kecamatan: angka yang sama dengan warna peta, dalam bentuk yang
+   tidak bisa saling menutupi seperti label di atas poligon. */
+.doclinc-map-ranking-title {
+	margin: 0 0 8px;
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-label);
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.doclinc-map-ranking-list {
+	display: grid;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	counter-reset: doclinc-map-rank;
+}
+
+.doclinc-map-ranking-item {
+	position: relative;
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 6px;
+	padding-block-end: 6px;
+	color: var(--dl-ref-ink);
+	font-size: var(--dl-ref-caption);
+}
+
+.doclinc-map-ranking-name::before {
+	counter-increment: doclinc-map-rank;
+	content: counter(doclinc-map-rank) '. ';
+	color: var(--dl-ref-muted);
+}
+
+.doclinc-map-ranking-value {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+}
+
+.doclinc-map-ranking-bar {
+	grid-column: 1 / -1;
+	block-size: 6px;
+	border-radius: 999px;
+	background: var(--dl-ref-green-600);
+	/* Lebar datang dari JS; transisi membuat perpindahan kode terlihat mulus. */
+	transition: inline-size 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.doclinc-map {
+	block-size: clamp(360px, 56vh, 620px);
+	background: var(--dl-ref-mint-soft);
+	border: 1px solid var(--dl-ref-line);
+	border-radius: var(--dl-ref-radius-tile);
+}
+
+/* Leaflet memberi latar putih pada kontainernya; warnanya diambil dari token
+   supaya tema gelap tidak menyisakan kotak putih. */
+.doclinc-map .leaflet-container {
+	background: var(--dl-ref-mint-soft);
+	font-family: var(--dl-ref-font);
+}
+
+.doclinc-map .leaflet-control-zoom a {
+	color: var(--dl-ref-ink);
+	background: var(--dl-ref-surface);
+	border-color: var(--dl-ref-line);
+}
+
+.doclinc-map-label {
+	padding: 2px 6px;
+	border: 0;
+	border-radius: var(--dl-ref-radius-control);
+	background: color-mix(in srgb, var(--dl-ref-surface) 88%, transparent);
+	box-shadow: none;
+	color: var(--dl-ref-ink);
+	font-size: var(--dl-ref-caption);
+	line-height: 1.25;
+	text-align: center;
+	white-space: nowrap;
+}
+
+/* Tanpa transisi: tooltip yang memudar meninggalkan bayangan angka lama di atas
+   poligon, dan angka lama yang masih terbaca lebih buruk daripada angka yang
+   hilang. */
+.doclinc-map .leaflet-tooltip {
+	transition: none;
+}
+
+.doclinc-map-label::before {
+	display: none;
+}
+
+.doclinc-map-status {
+	margin: 10px 0 0;
+	color: var(--dl-ref-ink);
+	font-size: var(--dl-ref-caption);
+	font-weight: 700;
+}
+
+.doclinc-map-legend {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-top: 6px;
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-caption);
+}
+
+.doclinc-map-legend-scale {
+	inline-size: 96px;
+	block-size: 8px;
+	border-radius: 999px;
+	background: linear-gradient(90deg,
+		color-mix(in srgb, var(--dl-ref-green-600) 18%, var(--dl-ref-surface)),
+		var(--dl-ref-green-600),
+		var(--dl-ref-green-900));
+}
+
+.doclinc-map-table {
+	margin-top: 14px;
+}
+
+.doclinc-map-table > summary {
+	cursor: pointer;
+	color: var(--dl-ref-ink);
+	font-size: var(--dl-ref-caption);
+	font-weight: 700;
+}
+
+.doclinc-map-table > summary:focus-visible {
+	outline: 3px solid var(--dl-ref-green-600);
+	outline-offset: 2px;
+}
+
+@media (max-width: 991.98px) {
+	.doclinc-map-stage {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.doclinc-map-ranking-bar {
+		transition: none;
+	}
+}
+
+@media (max-width: 767.98px) {
+	.doclinc-map-controls,
+	.doclinc-map-controls .dl-adm-toolbar-field {
+		inline-size: 100%;
+		min-inline-size: 0;
 	}
 }

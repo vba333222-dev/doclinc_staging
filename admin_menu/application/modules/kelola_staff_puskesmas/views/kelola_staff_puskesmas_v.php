@@ -43,21 +43,19 @@ $form_values = array(
 );
 ?>
 <div class="doclinc-admin-page doclinc-akun-page">
-	<div class="dl-adm-head">
-		<div class="dl-adm-head-text">
-			<h1 class="dl-adm-head-title">Staf Puskesmas</h1>
-			<p class="dl-adm-head-sub">Data staf dan akun login personal per Puskesmas.</p>
-		</div>
-		<div class="dl-adm-head-actions">
-			<button type="button" class="dl-adm-info" data-toggle="modal" data-target="#dlStaffHelp"
-				aria-label="Penjelasan pengelolaan staf dan akun personal">
-				<i class="fas fa-circle-info" aria-hidden="true"></i>
-			</button>
-			<a href="<?= site_url('kelola_staff_puskesmas/create'); ?>" class="btn btn-success dl-adm-action">
-				<i class="fas fa-plus-circle" aria-hidden="true"></i> Tambah staf
-			</a>
-		</div>
-	</div>
+	<?php
+	/* Kepala halaman dari partial bersama; dua aksi di sini sekaligus jadi
+	   contoh bentuk `help` (tombol ikon) dan `link` (tombol berteks). */
+	$page_head = array(
+		'title' => 'Staf Puskesmas',
+		'sub' => 'Staf dan akun login personal per Puskesmas.',
+		'actions' => array(
+			array('kind' => 'help', 'label' => 'Penjelasan pengelolaan staf dan akun personal', 'target' => '#dlStaffHelp'),
+			array('kind' => 'link', 'label' => 'Tambah staf', 'href' => site_url('kelola_staff_puskesmas/create'), 'icon' => 'fas fa-plus-circle', 'variant' => 'success'),
+		),
+	);
+	$this->load->view('commons/page_head', array('page_head' => $page_head));
+	?>
 
 	<div class="container-fluid">
 	<?php if ($this->session->flashdata('success')): ?>
@@ -65,17 +63,17 @@ $form_values = array(
 <?php $staff_handover = $this->session->flashdata('staff_handover'); ?>
 <?php if (is_array($staff_handover) && !empty($staff_handover['code'])): ?>
 <div class="card shadow mb-4 doclinc-table-card">
-	<div class="card-header py-3"><h6 class="m-0 font-weight-bold"><i class="fas fa-ticket-alt mr-2"></i>Serah-terima kode aktivasi</h6></div>
+	<div class="card-header py-3"><h2 class="h6 m-0 font-weight-bold"><i class="fas fa-ticket-alt mr-2"></i>Serah-terima kode aktivasi</h2></div>
 	<div class="card-body">
 		<p class="mb-2">Sampaikan kode ini kepada <strong><?= html_escape($staff_handover['nama']); ?></strong><?= !empty($staff_handover['nama_puskesmas']) ? ' (' . html_escape($staff_handover['nama_puskesmas']) . ')' : ''; ?>.</p>
 		<p class="mb-2"><span class="doclinc-code-chip"><?= html_escape($staff_handover['code']); ?></span></p>
-		<p class="mb-3">Berlaku sampai <strong><?= html_escape($staff_handover['expires_at']); ?></strong> dan hanya bisa dipakai sekali. Setelah halaman ini dimuat ulang, kode tidak dapat dilihat lagi &mdash; terbitkan kode baru bila perlu.</p>
+		<p class="mb-3">Berlaku sampai <strong><?= html_escape($staff_handover['expires_at']); ?></strong>, sekali pakai. Setelah halaman dimuat ulang, kode tidak bisa dilihat lagi.</p>
 		<ol class="mb-3">
 			<li>Buka <span class="doclinc-code-chip"><?= html_escape($staff_handover['activate_url']); ?></span>.</li>
 			<li>Isi kolom <em>Kode aktivasi</em> dengan kode di atas<?= !empty($staff_handover['username']) ? ' (nama pengguna: <strong>' . html_escape($staff_handover['username']) . '</strong>)' : ''; ?>.</li>
 			<li>Buat password pribadi, lalu masuk.</li>
 		</ol>
-		<p class="mb-0 doclinc-muted-text">Nama pengguna dan password sementara tetap berlaku sebagai jalur cadangan bila kode kedaluwarsa.</p>
+		<p class="mb-0 doclinc-muted-text">Nama pengguna dan password sementara tetap berlaku bila kode kedaluwarsa.</p>
 	</div>
 </div>
 <?php endif; ?>
@@ -137,8 +135,8 @@ $form_values = array(
 		<?php if ($is_form): ?>
 			<div class="card shadow mb-4 doclinc-filter-card">
 				<div class="card-header py-3 d-flex align-items-center justify-content-between">
-					<h6 class="m-0 font-weight-bold text-primary"><?= html_escape($form_title); ?></h6>
-					<a href="<?= site_url('kelola_staff_puskesmas'); ?>" class="btn btn-sm btn-light rounded-pill border">Batal</a>
+					<h2 class="h6 m-0 font-weight-bold text-primary"><?= html_escape($form_title); ?></h2>
+					<a href="<?= site_url('kelola_staff_puskesmas'); ?>" class="btn btn-sm btn-outline-secondary">Batal</a>
 				</div>
 				<form action="<?= $form_action; ?>" method="post">
 					<input type="hidden" name="_provisioning_csrf_token" value="<?= html_escape($provisioning_csrf_token); ?>">
@@ -147,7 +145,7 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Puskesmas</label>
-									<select class="form-control rounded-pill border-info" name="kode_pkm" required>
+									<select class="form-control" name="kode_pkm" required>
 										<option value="">Pilih Puskesmas</option>
 										<?php foreach ($puskesmas_options as $puskesmas): ?>
 											<option value="<?= html_escape($puskesmas->kode_pkm); ?>" <?= $form_values['kode_pkm'] === (string) $puskesmas->kode_pkm ? 'selected' : ''; ?>>
@@ -161,7 +159,7 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Nama staf</label>
-									<input type="text" class="form-control rounded-pill border-info" name="nama" value="<?= html_escape($form_values['nama']); ?>" placeholder="Nama staf" required>
+									<input type="text" class="form-control" name="nama" value="<?= html_escape($form_values['nama']); ?>" placeholder="Nama staf" required>
 								</div>
 							</div>
 						</div>
@@ -169,19 +167,19 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Gelar</label>
-									<input type="text" class="form-control rounded-pill border-info" name="gelar" value="<?= html_escape($form_values['gelar']); ?>" placeholder="Gelar profesional" <?= $nakes_profile_schema_ready ? 'required' : 'disabled'; ?>>
+									<input type="text" class="form-control" name="gelar" value="<?= html_escape($form_values['gelar']); ?>" placeholder="Gelar profesional" <?= $nakes_profile_schema_ready ? 'required' : 'disabled'; ?>>
 								</div>
 							</div>
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Profesi</label>
-									<input type="text" class="form-control rounded-pill border-info" name="profesi" value="<?= html_escape($form_values['profesi']); ?>" placeholder="Profesi atau peran layanan" required>
+									<input type="text" class="form-control" name="profesi" value="<?= html_escape($form_values['profesi']); ?>" placeholder="Profesi atau peran layanan" required>
 								</div>
 							</div>
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">No HP</label>
-									<input type="text" class="form-control rounded-pill border-info" name="no_hp" value="<?= html_escape($form_values['no_hp']); ?>" placeholder="Nomor kontak staf" required>
+									<input type="text" class="form-control" name="no_hp" value="<?= html_escape($form_values['no_hp']); ?>" placeholder="Nomor kontak staf" required>
 								</div>
 							</div>
 						</div>
@@ -189,13 +187,13 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Nomor SIP</label>
-									<input type="text" class="form-control rounded-pill border-info" name="nomor_sip" value="<?= html_escape($form_values['nomor_sip']); ?>" placeholder="Nomor SIP" required>
+									<input type="text" class="form-control" name="nomor_sip" value="<?= html_escape($form_values['nomor_sip']); ?>" placeholder="Nomor SIP" required>
 								</div>
 							</div>
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Masa berlaku SIP</label>
-									<input type="date" class="form-control rounded-pill border-info" name="sip_expired_at" value="<?= html_escape($form_values['sip_expired_at']); ?>" <?= $nakes_profile_schema_ready ? 'required' : 'disabled'; ?>>
+									<input type="date" class="form-control" name="sip_expired_at" value="<?= html_escape($form_values['sip_expired_at']); ?>" <?= $nakes_profile_schema_ready ? 'required' : 'disabled'; ?>>
 									<small class="form-text text-muted">Menentukan state SIP aktif, mendekati kedaluwarsa, atau kedaluwarsa.</small>
 								</div>
 							</div>
@@ -204,7 +202,7 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">NIP (opsional/administratif)</label>
-									<input type="text" class="form-control rounded-pill border-info" name="nip" value="<?= html_escape($form_values['nip']); ?>" placeholder="NIP 18 angka bila relevan" inputmode="numeric" pattern="[0-9]{18}" minlength="18" maxlength="18" autocomplete="off" <?= $nip_schema_ready ? '' : 'disabled'; ?>>
+									<input type="text" class="form-control" name="nip" value="<?= html_escape($form_values['nip']); ?>" placeholder="NIP 18 angka bila relevan" inputmode="numeric" pattern="[0-9]{18}" minlength="18" maxlength="18" autocomplete="off" <?= $nip_schema_ready ? '' : 'disabled'; ?>>
 									<small class="form-text <?= $nip_schema_ready ? 'text-muted' : 'text-danger'; ?>"><?= $nip_schema_ready ? 'Kosongkan bila staf bukan ASN/tidak memerlukan NIP. Jangan membuat nomor pengganti.' : 'Pengisian NIP belum tersedia.'; ?></small>
 								</div>
 							</div>
@@ -213,7 +211,7 @@ $form_values = array(
 							<div class="col-md-6">
 								<div class="form-group">
 									<label class="text-info">Status</label>
-									<select class="form-control rounded-pill border-info" name="status">
+									<select class="form-control" name="status">
 										<option value="aktif" <?= $form_values['status'] === 'aktif' ? 'selected' : ''; ?>>Aktif</option>
 										<option value="nonaktif" <?= $form_values['status'] === 'nonaktif' ? 'selected' : ''; ?>>Nonaktif</option>
 									</select>
@@ -223,19 +221,22 @@ $form_values = array(
 						</div>
 					</div>
 					<div class="card-footer bg-white border-0 text-right">
-						<a href="<?= site_url('kelola_staff_puskesmas'); ?>" class="btn btn-light rounded-pill px-4 border">Batal</a>
-						<button type="submit" class="btn btn-success rounded-pill px-4">Simpan</button>
+						<a href="<?= site_url('kelola_staff_puskesmas'); ?>" class="btn btn-outline-secondary">Batal</a>
+						<button type="submit" class="btn btn-primary">Simpan</button>
 					</div>
 				</form>
 			</div>
 		<?php endif; ?>
 
-		<div class="card shadow mb-4 doclinc-table-card doclinc-account-list-card">
-			<div class="card-header py-3 d-flex align-items-center justify-content-between">
-				<h6 class="m-0 font-weight-bold">Daftar staf</h6>
-				<span class="badge badge-light border"><?= number_format(count($staff_rows)); ?> baris</span>
-			</div>
-			<div class="card-body doclinc-table-body">
+		<?php
+		$list_card = array(
+			'part' => 'open',
+			'title' => 'Daftar staf',
+			'count' => number_format(count($staff_rows)) . ' baris',
+			'card_class' => 'doclinc-account-list-card',
+		);
+		$this->load->view('commons/list_card', array('list_card' => $list_card));
+		?>
 				<form method="post" action="<?= site_url('kelola_staff_puskesmas'); ?>" class="doclinc-account-toolbar doclinc-staff-filter-toolbar" id="staffPuskesmasFilterForm">
 					<div class="row">
 						<div class="col-md-3 mb-2">
@@ -271,12 +272,12 @@ $form_values = array(
 								<option value="password_reset" <?= ($filters['readiness'] ?? '') === 'password_reset' ? 'selected' : ''; ?>>Menunggu setelah reset</option>
 							</select>
 						</div>
-						<div class="col-md-3 mb-2">
+						<div class="col-md-2 mb-2">
 							<label class="sr-only" for="staffFilterKeyword">Kata kunci</label>
 							<input type="text" name="keyword" id="staffFilterKeyword" class="form-control doclinc-account-search" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="Nama, no HP, profesi, SIP, NIP">
 						</div>
-						<div class="col-md-2 mb-2">
-							<button type="submit" class="btn btn-info rounded-pill btn-block">Terapkan filter</button>
+						<div class="col-md-3 mb-2 d-flex align-items-end">
+							<button type="submit" class="btn btn-primary dl-adm-action">Terapkan filter</button>
 						</div>
 					</div>
 				</form>
@@ -416,7 +417,7 @@ $form_values = array(
 													<small class="text-warning mt-1">Nakes belum membuat password baru setelah reset Admin.</small>
 												<?php endif; ?>
 												<?php if ($is_command_center_link): ?>
-													<div class="doclinc-account-card__note is-warning mt-2"><i class="fas fa-exclamation-triangle mr-1"></i> Akun ini terlihat sebagai akun koordinator Puskesmas. Periksa ulang sebelum digunakan sebagai akun personal.</div>
+													<div class="doclinc-account-card__note is-warning mt-2"><i class="fas fa-exclamation-triangle mr-1"></i> Akun ini tampak seperti akun koordinator. Periksa sebelum dipakai.</div>
 												<?php endif; ?>
 											<?php else: ?>
 												<strong class="doclinc-muted-text">Belum terhubung akun login</strong>
@@ -503,14 +504,14 @@ $form_values = array(
 															<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup"><span aria-hidden="true">&times;</span></button>
 														</div>
 														<div class="modal-body bg-light">
-															<p class="small text-muted">Nama dan nomor HP mengikuti data staf. Perubahan ini hanya berlaku untuk akun personal yang terhubung.</p>
+															<p class="small text-muted">Nama dan nomor HP mengikuti data staf akun yang terhubung.</p>
 															<div class="form-group">
 																<label class="text-info">Tanggal lahir</label>
-																<input type="date" class="form-control rounded-pill border-info" name="birthdate" value="<?= html_escape((string) ($row->akun_tgl ?? '')); ?>" max="<?= html_escape(date('Y-m-d')); ?>" required>
+																<input type="date" class="form-control" name="birthdate" value="<?= html_escape((string) ($row->akun_tgl ?? '')); ?>" max="<?= html_escape(date('Y-m-d')); ?>" required>
 															</div>
 															<div class="form-group">
 																<label class="text-info">Jenis kelamin</label>
-																<select class="form-control rounded-pill border-info" name="gender" required>
+																<select class="form-control" name="gender" required>
 																	<option value="">Pilih jenis kelamin</option>
 																	<option value="Laki-laki" <?= (string) ($row->akun_gender ?? '') === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
 																	<option value="Perempuan" <?= (string) ($row->akun_gender ?? '') === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
@@ -518,8 +519,8 @@ $form_values = array(
 															</div>
 														</div>
 														<div class="modal-footer border-0">
-															<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
-															<button type="submit" class="btn btn-info rounded-pill">Simpan data personal</button>
+															<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+															<button type="submit" class="btn btn-primary">Simpan data personal</button>
 														</div>
 													</form>
 												</div>
@@ -536,19 +537,19 @@ $form_values = array(
 														</div>
 														<div class="modal-body bg-light">
 															<input type="hidden" name="staff_id" value="<?= (int) $staff_id; ?>">
-															<div class="alert alert-warning">Gunakan password sementara unik untuk akun ini. Password tidak ditampilkan kembali dan Nakes wajib menggantinya saat login.</div>
+															<div class="alert alert-warning">Password sementara tidak ditampilkan lagi dan wajib diganti saat login.</div>
 															<div class="form-group">
 																<label class="text-info">Password sementara baru</label>
-																<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
+																<input type="password" class="form-control" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
 															</div>
 															<div class="form-group">
 																<label class="text-info">Konfirmasi password</label>
-																<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
+																<input type="password" class="form-control" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
 															</div>
 														</div>
 														<div class="modal-footer border-0">
-															<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
-																<button type="submit" class="btn btn-warning rounded-pill" onclick="return confirm('Reset password sementara akun ini? Semua sesi lama akan dihentikan saat permintaan berikutnya.');">Reset password</button>
+															<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+																<button type="submit" class="btn btn-outline-danger" onclick="return confirm('Reset password sementara akun ini? Semua sesi lama akan dihentikan saat permintaan berikutnya.');">Reset password</button>
 														</div>
 													</form>
 												</div>
@@ -576,11 +577,11 @@ $form_values = array(
 														<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? 'Puskesmas belum tersedia'); ?></div>
 															</div>
 															<?php if (empty($candidates)): ?>
-																<div class="doclinc-staff-account-empty">Belum ada akun personal yang dapat dihubungkan untuk Puskesmas ini.</div>
+																<div class="doclinc-staff-account-empty">Belum ada akun personal untuk Puskesmas ini.</div>
 															<?php else: ?>
 																<div class="form-group">
 																	<label class="text-info">Akun login personal</label>
-																	<select class="form-control rounded-pill border-info" name="user_id" required>
+																	<select class="form-control" name="user_id" required>
 																		<option value="">Pilih akun login</option>
 																		<?php foreach ($candidates as $candidate): ?>
 																			<?php
@@ -598,13 +599,13 @@ $form_values = array(
 																			</option>
 																		<?php endforeach; ?>
 																	</select>
-																	<small class="form-text text-muted">Pilihan hanya menampilkan akun dokter aktif dari Puskesmas yang sama, bukan akun koordinator.</small>
+																	<small class="form-text text-muted">Hanya akun dokter aktif dari Puskesmas ini.</small>
 																</div>
 															<?php endif; ?>
 														</div>
 														<div class="modal-footer">
-															<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
-															<button type="submit" class="btn btn-primary rounded-pill" <?= empty($candidates) ? 'disabled' : ''; ?>>Hubungkan akun</button>
+															<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+															<button type="submit" class="btn btn-primary" <?= empty($candidates) ? 'disabled' : ''; ?>>Hubungkan akun</button>
 														</div>
 													</form>
 												</div>
@@ -630,25 +631,25 @@ $form_values = array(
 																	<div class="small text-muted"><?= html_escape($profession_label); ?></div>
 																	<div class="small text-muted"><?= html_escape($row->nama_puskesmas ?? '-'); ?> (<?= html_escape($row->kode_pkm ?? '-'); ?>)</div>
 																</div>
-														<div class="alert alert-info">Berikan password sementara hanya kepada Nakes yang bersangkutan. Password tidak disimpan dalam bentuk teks dan harus diganti melalui halaman aktivasi akun.</div>
+														<div class="alert alert-info">Berikan hanya kepada Nakes yang bersangkutan. Wajib diganti lewat halaman aktivasi.</div>
 																<div class="row">
 																			<div class="col-md-6"><div class="form-group">
 																				<label class="text-info">Username</label>
-																				<input type="text" class="form-control rounded-pill border-info" name="username" minlength="3" maxlength="100" pattern="[A-Za-z0-9._-]+" autocomplete="username" required>
+																				<input type="text" class="form-control" name="username" minlength="3" maxlength="100" pattern="[A-Za-z0-9._-]+" autocomplete="username" required>
 																			</div></div>
 																			<div class="col-md-6"><div class="form-group">
 																				<label class="text-info">Email</label>
-																				<input type="email" class="form-control rounded-pill border-info" name="email" maxlength="100" autocomplete="email" required>
+																				<input type="email" class="form-control" name="email" maxlength="100" autocomplete="email" required>
 																			</div></div>
 																</div>
 																<div class="row">
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Tanggal lahir</label>
-																		<input type="date" class="form-control rounded-pill border-info" name="birthdate" max="<?= html_escape(date('Y-m-d')); ?>" required>
+																		<input type="date" class="form-control" name="birthdate" max="<?= html_escape(date('Y-m-d')); ?>" required>
 																	</div></div>
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Jenis kelamin</label>
-																		<select class="form-control rounded-pill border-info" name="gender" required>
+																		<select class="form-control" name="gender" required>
 																			<option value="">Pilih jenis kelamin</option>
 																			<option value="Laki-laki">Laki-laki</option>
 																			<option value="Perempuan">Perempuan</option>
@@ -658,18 +659,18 @@ $form_values = array(
 														<div class="row">
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Password sementara</label>
-																<input type="password" class="form-control rounded-pill border-info" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
+																<input type="password" class="form-control" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
 																<small class="text-muted">Minimal 8 karakter: huruf besar, huruf kecil, angka, dan karakter khusus.</small>
 																	</div></div>
 																	<div class="col-md-6"><div class="form-group">
 																		<label class="text-info">Konfirmasi password</label>
-																<input type="password" class="form-control rounded-pill border-info" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
+																<input type="password" class="form-control" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
 																	</div></div>
 																</div>
 															</div>
 															<div class="modal-footer border-0">
-																<button type="button" class="btn btn-light rounded-pill border" data-dismiss="modal">Batal</button>
-																<button type="submit" class="btn btn-info rounded-pill">Buat akun</button>
+																<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+																<button type="submit" class="btn btn-primary">Buat akun</button>
 															</div>
 														</form>
 													</div>
@@ -697,8 +698,10 @@ $form_values = array(
 				<?php else: ?>
 					<div class="doclinc-account-empty">Belum ada staf untuk filter ini.</div>
 				<?php endif; ?>
-			</div>
-		</div>
+		<?php
+		$list_card = array('part' => 'close');
+		$this->load->view('commons/list_card', array('list_card' => $list_card));
+		?>
 	<?php endif; ?>
 	</div>
 </div>
@@ -719,13 +722,13 @@ $form_values = array(
 				</button>
 			</div>
 			<div class="modal-body dl-adm-help-body">
-				<h6>Siapa yang mengelola</h6>
+				<h2 class="h6">Siapa yang mengelola</h2>
 				<p>
 					Data staf, gelar, SIP, masa berlaku SIP, status, dan hubungan akun hanya dikelola
 					Administrator Dinas Kesehatan. NIP bersifat opsional sesuai kebutuhan administratif.
 				</p>
 
-				<h6>Arti tiap penanda kelengkapan</h6>
+				<h2 class="h6">Arti tiap penanda kelengkapan</h2>
 				<p>
 					Jalur &ldquo;Kelengkapan data staf aktif&rdquo; di atas menghitung staf aktif, bukan seluruh
 					riwayat. Satu baris dihitung <b>data lengkap</b> hanya bila semua hal berikut terpenuhi.
@@ -746,7 +749,7 @@ $form_values = array(
 					<?php endforeach; ?>
 				</dl>
 
-				<h6>Keadaan yang menghambat</h6>
+				<h2 class="h6">Keadaan yang menghambat</h2>
 				<ul>
 					<li>
 						<b>Password bawaan belum diganti.</b> Akun Nakes yang belum menyelesaikan aktivasi pertama
@@ -765,7 +768,7 @@ $form_values = array(
 					<?php endif; ?>
 				</ul>
 
-				<h6>Satu orang nakes, satu baris</h6>
+				<h2 class="h6">Satu orang nakes, satu baris</h2>
 				<p>
 					Catatan staf (<span class="dl-adm-help-code">puskesmas_staff</span>) dan akun login
 					(<span class="dl-adm-help-code">users</span>) tertaut lewat

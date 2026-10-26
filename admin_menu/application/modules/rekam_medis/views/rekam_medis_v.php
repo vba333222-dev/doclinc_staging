@@ -73,12 +73,14 @@ $summary_cards = array(
 ?>
 
 <div class="doclinc-record-library">
-	<div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
-		<div>
-			<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-notes-medical"></i> Pemantauan layanan</h1>
-			<div class="doclinc-page-subtitle">Ringkasan layanan tanpa isi klinis pasien.</div>
-		</div>
-	</div>
+	<?php
+	/* Kepala halaman dari partial bersama. */
+	$page_head = array(
+		'title' => 'Pemantauan layanan',
+		'sub' => 'Ringkasan layanan tanpa isi klinis pasien.',
+	);
+	$this->load->view('commons/page_head', array('page_head' => $page_head));
+	?>
 
 	<div class="doclinc-monitor-summary mb-4">
 		<?php foreach ($summary_cards as $card): ?>
@@ -95,40 +97,34 @@ $summary_cards = array(
 		<?php endforeach; ?>
 	</div>
 
-	<div class="card shadow-sm mb-4 doclinc-filter-card">
-		<div class="card-body">
-			<form method="post" action="<?= site_url('rekam_medis'); ?>">
-				<div class="form-row align-items-end">
-					<div class="form-group col-lg-4">
-						<label class="small font-weight-bold text-muted" for="keyword">Cari</label>
-						<input type="text" class="form-control" id="keyword" name="keyword" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="Nomor permintaan atau Puskesmas">
-					</div>
-					<div class="form-group col-lg-3">
-						<label class="small font-weight-bold text-muted" for="puskesmas">Puskesmas</label>
-						<select class="form-control" id="puskesmas" name="puskesmas">
-							<option value="">Semua Puskesmas</option>
-							<?php foreach ($puskesmas_options as $option): ?>
-								<option value="<?= html_escape($option->kode_pkm ?? ''); ?>" <?= (($filters['puskesmas'] ?? '') === (string) ($option->kode_pkm ?? '')) ? 'selected' : ''; ?>>
-									<?= html_escape(doclinc_record_puskesmas_label($option->nama_puskesmas ?? $option->kode_pkm ?? '')); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-					</div>
-					<div class="form-group col-lg-3">
-						<label class="small font-weight-bold text-muted" for="period">Periode</label>
-						<select class="form-control" id="period" name="period">
-							<?php foreach (array('7' => '7 hari', '30' => '30 hari', '90' => '90 hari', 'all' => 'Semua') as $value => $label): ?>
-								<option value="<?= html_escape($value); ?>" <?= (($filters['period'] ?? '30') === $value) ? 'selected' : ''; ?>><?= html_escape($label); ?></option>
-							<?php endforeach; ?>
-						</select>
-					</div>
-					<div class="form-group col-lg-2">
-						<button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search mr-1"></i> Terapkan filter</button>
-					</div>
-				</div>
-			</form>
+	<form method="post" action="<?= site_url('rekam_medis'); ?>" class="dl-adm-toolbar">
+		<div class="dl-adm-toolbar-field">
+			<label class="dl-adm-toolbar-label" for="keyword">Cari</label>
+			<input type="text" class="form-control" id="keyword" name="keyword" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="Nomor permintaan atau Puskesmas">
 		</div>
-	</div>
+		<div class="dl-adm-toolbar-field">
+			<label class="dl-adm-toolbar-label" for="puskesmas">Puskesmas</label>
+			<select class="form-control" id="puskesmas" name="puskesmas">
+				<option value="">Semua Puskesmas</option>
+				<?php foreach ($puskesmas_options as $option): ?>
+					<option value="<?= html_escape($option->kode_pkm ?? ''); ?>" <?= (($filters['puskesmas'] ?? '') === (string) ($option->kode_pkm ?? '')) ? 'selected' : ''; ?>>
+						<?= html_escape(doclinc_record_puskesmas_label($option->nama_puskesmas ?? $option->kode_pkm ?? '')); ?>
+					</option>
+				<?php endforeach; ?>
+			</select>
+		</div>
+		<div class="dl-adm-toolbar-field">
+			<label class="dl-adm-toolbar-label" for="period">Periode</label>
+			<select class="form-control" id="period" name="period">
+				<?php foreach (array('7' => '7 hari', '30' => '30 hari', '90' => '90 hari', 'all' => 'Semua') as $value => $label): ?>
+					<option value="<?= html_escape($value); ?>" <?= (($filters['period'] ?? '30') === $value) ? 'selected' : ''; ?>><?= html_escape($label); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</div>
+		<div class="dl-adm-toolbar-actions">
+			<button type="submit" class="btn btn-primary"><i class="fas fa-search" aria-hidden="true"></i> Terapkan filter</button>
+		</div>
+	</form>
 
 	<div class="card shadow-sm doclinc-record-card">
 		<div class="card-header d-flex flex-wrap align-items-center justify-content-between">
@@ -143,13 +139,13 @@ $summary_cards = array(
 					<table class="table doclinc-record-table" id="doclincRecordTable">
 						<thead>
 							<tr>
-								<th>Tanggal</th>
-								<th>Permintaan</th>
-								<th>Puskesmas</th>
-								<th>Dokter penanggung jawab</th>
-								<th>Dicatat oleh</th>
-								<th>Jenis layanan</th>
-								<th>Status</th>
+								<th scope="col">Tanggal</th>
+								<th scope="col">Permintaan</th>
+								<th scope="col">Puskesmas</th>
+								<th scope="col">Dokter penanggung jawab</th>
+								<th scope="col">Dicatat oleh</th>
+								<th scope="col">Jenis layanan</th>
+								<th scope="col">Status</th>
 							</tr>
 						</thead>
 						<tbody>

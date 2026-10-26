@@ -102,192 +102,180 @@
 		   sekaligus (terukur: 6 menu aktif bersamaan) dan penandanya bergantung pada
 		   halaman yang terakhir dibuka, bukan halaman yang sedang dilihat. Segmen
 		   URL selalu tepat dan tidak perlu dirawat dari sisi modul. */
-		$doclinc_active_dashboard = ($doclinc_admin_segment === 'home') ? 'active' : '';
-		$doclinc_active_konsultasi = ($doclinc_admin_segment === 'konsultasi_kesehatan') ? 'active' : '';
-		$doclinc_active_master_puskesmas = ($doclinc_admin_segment === 'master_puskesmas') ? 'active' : '';
-		$doclinc_active_wilayah = ($doclinc_admin_segment === 'wilayah') ? 'active' : '';
-		$doclinc_active_akun_puskesmas = ($doclinc_admin_segment === 'kelola_dokter_nakes') ? 'active' : '';
-		$doclinc_active_staff_puskesmas = ($doclinc_admin_segment === 'kelola_staff_puskesmas') ? 'active' : '';
-		$doclinc_active_layanan_kesehatan = ($doclinc_admin_segment === 'kelola_layanan_kesehatan') ? 'active' : '';
-		$doclinc_active_tindakan = ($doclinc_admin_segment === 'kelola_tindakan') ? 'active' : '';
-		$doclinc_active_warga = ($doclinc_admin_segment === 'kelola_warga') ? 'active' : '';
-		$doclinc_active_icd10 = ($doclinc_admin_segment === 'icd10') ? 'active' : '';
-		$doclinc_active_keluhan = ($doclinc_admin_segment === 'kelola_keluhan') ? 'active' : '';
-		$doclinc_active_rekam_medis = ($doclinc_admin_segment === 'rekam_medis') ? 'active' : '';
-		$doclinc_active_laporan = ($doclinc_admin_segment === 'laporan') ? 'active' : '';
-		$doclinc_active_diagnosis = ($doclinc_admin_segment === 'diagnosis') ? 'active' : '';
-		$doclinc_active_news = ($doclinc_admin_segment === 'kelola_news_feed') ? 'active' : '';
-		$doclinc_active_landing = ($doclinc_admin_segment === 'landing_page') ? 'active' : '';
-		$doclinc_active_konten_landing = ($doclinc_admin_segment === 'konten_landing') ? 'active' : '';
-		$doclinc_active_audit = ($doclinc_admin_segment === 'audit') ? 'active' : '';
-		$doclinc_active_kapabilitas = ($doclinc_admin_segment === 'kapabilitas') ? 'active' : '';
-		$doclinc_active_sesi = ($doclinc_admin_segment === 'sesi') ? 'active' : '';
+		/* Navigasi dikelompokkan menurut pekerjaan, bukan menurut tabel basis
+		   data. Sebelumnya tujuh judul untuk dua puluh tautan - lima di antaranya
+		   berisi satu butir - sehingga judul berhenti menolong dan hanya menambah
+		   tinggi. Empat kelompok membuat setiap tujuan menjawab satu pertanyaan:
+		   sedang merawat layanan, mengurus data, menulis konten, atau mengawasi
+		   tata kelola.
+		
+		   Daftar ini satu-satunya sumber: dua puluh <li> yang dulu ditulis tangan
+		   diganti perulangan, dan penanda aktif dihitung dari rute butir itu
+		   sendiri - jadi tautan dan penandanya tidak bisa menyimpang lagi. Tidak
+		   ada tautan yang dihapus; sweep.php memeriksa ke-20 rute. */
+		$doclinc_sidebar_groups = array(
+			'Operasional' => array(
+				array('route' => 'home', 'icon' => 'fa-tachometer-alt', 'text' => 'Dashboard'),
+				array('route' => 'rekam_medis', 'icon' => 'fa-notes-medical', 'text' => 'Pemantauan layanan'),
+				array('route' => 'konsultasi_kesehatan', 'icon' => 'fa-stethoscope', 'text' => 'Pantau konsultasi'),
+				array('route' => 'kelola_tindakan', 'icon' => 'fa-procedures', 'text' => 'Tindakan'),
+			),
+			'Data induk' => array(
+				array('route' => 'kelola_warga', 'icon' => 'fa-users', 'text' => 'Data warga'),
+				array('route' => 'kelola_dokter_nakes', 'icon' => 'fa-user-md', 'text' => 'Akun Puskesmas'),
+				array('route' => 'kelola_staff_puskesmas', 'icon' => 'fa-users-cog', 'text' => 'Staf Puskesmas'),
+				array('route' => 'master_puskesmas', 'icon' => 'fa-hospital', 'text' => 'Data Puskesmas'),
+				array('route' => 'wilayah', 'icon' => 'fa-map-marked-alt', 'text' => 'Master wilayah'),
+				array('route' => 'icd10', 'icon' => 'fa-book-medical', 'text' => 'Master ICD-10'),
+				array('route' => 'diagnosis', 'icon' => 'fa-chart-bar', 'text' => 'Penyakit terbanyak'),
+				array('route' => 'kelola_keluhan', 'icon' => 'fa-comments', 'text' => 'Data keluhan'),
+			),
+			'Konten' => array(
+				array('route' => 'kelola_layanan_kesehatan', 'icon' => 'fa-hand-holding-heart', 'text' => 'Layanan kesehatan'),
+				array('route' => 'kelola_news_feed', 'icon' => 'fa-newspaper', 'text' => 'Berita'),
+				array('route' => 'konten_landing', 'icon' => 'fa-window-maximize', 'text' => 'Konten landing'),
+				array('route' => 'landing_page', 'icon' => 'fa-globe', 'text' => 'Landing page'),
+			),
+			'Tata kelola' => array(
+				array('route' => 'laporan', 'icon' => 'fa-file-alt', 'text' => 'Laporan'),
+				array('route' => 'kapabilitas', 'icon' => 'fa-user-shield', 'text' => 'Kapabilitas admin'),
+				array('route' => 'audit', 'icon' => 'fa-clipboard-list', 'text' => 'Penampil audit'),
+				array('route' => 'sesi', 'icon' => 'fa-shield-alt', 'text' => 'Sesi & keamanan'),
+			),
+		);
 		?>
+		<!-- Latar gelap saat panel geser terbuka di layar sempit. Panel menutupi
+		     tombol menunya sendiri, jadi tanpa sasaran ketuk di luar panel, menu
+		     yang sudah terbuka tidak bisa ditutup. -->
+		<div class="doclinc-sidebar-backdrop" id="sidebarBackdrop" hidden></div>
 		<!-- Sidebar -->
 		<ul class="navbar-nav sidebar sidebar-dark accordion position-fixed vh-100 doclinc-sidebar" id="accordionSidebar">
 			<!-- Sidebar - Brand -->
 			<!-- Dulu href="#" sehingga mengklik logo tidak melakukan apa pun. Sekarang
-			     menuju dasbor, sesuai kebiasaan umum panel admin. -->
-			<a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo site_url('home'); ?>" aria-label="DocLink, kembali ke dasbor">
-				<div class="sidebar-brand-icon">
-					<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="DocLink" width="3167" height="1396">
-				</div>
-			</a>
-
-			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Dashboard</li>
-			<li class="nav-item <?= $doclinc_active_dashboard; ?>">
-				<a class="nav-link" href="<?php echo site_url('home'); ?>">
-					<i class="fas fa-tachometer-alt"></i>
-					<span>Dashboard</span>
+			     menuju dasbor, sesuai kebiasaan umum panel admin. Tautannya dibungkus
+			     <li> karena <ul> hanya boleh berisi <li> (bawaan SB Admin menaruh <a>
+			     langsung di dalam <ul>). -->
+			<li class="doclinc-sidebar-brand-item">
+				<a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo site_url('home'); ?>" aria-label="DocLink, kembali ke dasbor">
+					<div class="sidebar-brand-icon">
+						<img src="<?php echo html_escape($doclinc_logo_url); ?>" alt="DocLink" width="3167" height="1396">
+					</div>
 				</a>
 			</li>
 
-			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Operasional</li>
-			<li class="nav-item <?= $doclinc_active_konsultasi; ?>">
-				<a class="nav-link" href="<?php echo site_url('konsultasi_kesehatan'); ?>">
-					<i class="fas fa-stethoscope"></i>
-					<span>Pantau konsultasi</span>
-				</a>
-			</li>
+			<?php foreach ($doclinc_sidebar_groups as $doclinc_group_label => $doclinc_group_items): ?>
+				<li class="doclinc-sidebar-section doclinc-sidebar-heading"><?= html_escape($doclinc_group_label); ?></li>
+				<?php foreach ($doclinc_group_items as $doclinc_item): ?>
+					<?php $doclinc_item_active = ($doclinc_admin_segment === $doclinc_item['route']); ?>
+					<li class="nav-item<?= $doclinc_item_active ? ' active' : ''; ?>">
+						<a class="nav-link" href="<?php echo site_url($doclinc_item['route']); ?>"<?= $doclinc_item_active ? ' aria-current="page"' : ''; ?>>
+							<i class="fas <?= html_escape($doclinc_item['icon']); ?>" aria-hidden="true"></i>
+							<span><?= html_escape($doclinc_item['text']); ?></span>
+						</a>
+					</li>
+				<?php endforeach; ?>
+			<?php endforeach; ?>
 
-			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Puskesmas</li>
-			<li class="nav-item <?= $doclinc_active_master_puskesmas; ?>">
-				<a class="nav-link" href="<?php echo site_url('master_puskesmas'); ?>">
-					<i class="fas fa-hospital"></i>
-					<span>Data Puskesmas</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_wilayah; ?>">
-				<a class="nav-link" href="<?php echo site_url('wilayah'); ?>">
-					<i class="fas fa-map-marked-alt"></i>
-					<span>Master wilayah</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_akun_puskesmas; ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_dokter_nakes'); ?>">
-					<i class="fas fa-user-md"></i>
-					<span>Akun Puskesmas</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_staff_puskesmas; ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_staff_puskesmas'); ?>">
-					<i class="fas fa-users-cog"></i>
-					<span>Staf Puskesmas</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_layanan_kesehatan; ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_layanan_kesehatan'); ?>">
-					<i class="fas fa-hand-holding-heart"></i>
-					<span>Layanan kesehatan</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_tindakan; ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_tindakan'); ?>">
-					<i class="fas fa-clipboard-list"></i>
-					<span>Tindakan</span>
-				</a>
-			</li>
-
-			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Data</li>
-			<li class="nav-item <?= $doclinc_active_keluhan; ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_keluhan'); ?>">
-					<i class="fas fa-comments"></i>
-					<span>Data keluhan</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_warga; ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_warga'); ?>">
-					<i class="fas fa-users"></i>
-					<span>Data warga</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_icd10; ?>">
-				<a class="nav-link" href="<?php echo site_url('icd10'); ?>">
-					<i class="fas fa-book-medical"></i>
-					<span>Master ICD-10</span>
-				</a>
-			</li>
-
-			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Laporan</li>
-			<li class="nav-item <?= $doclinc_active_rekam_medis; ?>">
-				<a class="nav-link" href="<?php echo site_url('rekam_medis'); ?>">
-					<i class="fas fa-notes-medical"></i>
-					<span>Pemantauan layanan</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_laporan; ?>">
-				<a class="nav-link" href="<?php echo site_url('laporan'); ?>">
-					<i class="fas fa-file-alt"></i>
-					<span>Laporan</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_diagnosis; ?>">
-				<a class="nav-link" href="<?php echo site_url('diagnosis'); ?>">
-					<i class="fas fa-chart-bar"></i>
-					<span>Penyakit terbanyak</span>
-				</a>
-			</li>
-
-			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Keamanan</li>
-			<li class="nav-item <?= $doclinc_active_audit; ?>">
-				<a class="nav-link" href="<?php echo site_url('audit'); ?>">
-					<i class="fas fa-clipboard-list"></i>
-					<span>Penampil audit</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_kapabilitas; ?>">
-				<a class="nav-link" href="<?php echo site_url('kapabilitas'); ?>">
-					<i class="fas fa-user-shield"></i>
-					<span>Kapabilitas admin</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_sesi; ?>">
-				<a class="nav-link" href="<?php echo site_url('sesi'); ?>">
-					<i class="fas fa-shield-alt"></i>
-					<span>Sesi &amp; keamanan</span>
-				</a>
-			</li>
-
-			<li class="doclinc-sidebar-section doclinc-sidebar-heading">Konten</li>
-			<li class="nav-item <?= $doclinc_active_news; ?>">
-				<a class="nav-link" href="<?php echo site_url('kelola_news_feed'); ?>">
-					<i class="fas fa-newspaper"></i>
-					<span>Berita</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_konten_landing; ?>">
-				<a class="nav-link" href="<?php echo site_url('konten_landing'); ?>">
-					<i class="fas fa-window-maximize"></i>
-					<span>Konten landing</span>
-				</a>
-			</li>
-
-			<li class="nav-item <?= $doclinc_active_landing; ?>">
-				<a class="nav-link" href="<?php echo site_url('landing_page'); ?>">
-					<i class="fas fa-globe"></i>
-					<span>Landing page</span>
-				</a>
-			</li>
-
-			<div class="text-center d-none d-md-inline">
+			<li class="text-center d-none d-md-inline">
 				<!-- Tombol ini tadinya benar-benar kosong (tanpa teks maupun aria-label),
-				     sehingga pembaca layar mengumumkan "tombol" tanpa keterangan. -->
+				     sehingga pembaca layar mengumumkan "tombol" tanpa keterangan.
+				     Pembungkusnya dulu <div> di dalam <ul> - tidak sah menurut HTML
+				     dan membuat sebagian pembaca layar mengumumkan daftar yang
+				     strukturnya rusak. -->
 				<button type="button" class="rounded-circle border-0" id="sidebarToggle" aria-label="Sembunyikan atau tampilkan menu samping" aria-controls="accordionSidebar"></button>
-			</div>
+			</li>
 		</ul>
 		<!-- End of Sidebar -->
+		<script>
+			/* Sidebar memuat 20 tautan dalam empat kelompok, lebih tinggi dari layar
+			   900px. Tanpa ini, pada halaman yang butirnya jatuh di bawah lipatan
+			   (mis. Penampil audit), penanda "halaman ini" tidak terlihat sama
+			   sekali - jadi pengguna kehilangan satu-satunya petunjuk posisinya.
+			   Yang digeser hanya wadah sidebar, bukan halaman, dan tanpa animasi
+			   supaya tidak terasa seperti lompatan. */
+			(function() {
+				var sidebar = document.getElementById('accordionSidebar');
+				if (!sidebar) {
+					return;
+				}
+
+				var active = sidebar.querySelector('.nav-item.active');
+				if (active) {
+					/* 120px di atas butir aktif supaya judul kelompoknya ikut terlihat. */
+					var offset = active.offsetTop - 120;
+					sidebar.scrollTop = offset > 0 ? offset : 0;
+				}
+
+				/* Di layar <=768px sidebar adalah panel geser. SB Admin hanya memasang
+				   keadaan tertutup di bawah 480px, sedangkan CSS menjadikannya panel
+				   geser sampai 768px - jadi antara 480 dan 768px panel itu menutupi
+				   isi halaman tanpa cara membukanya. Ambang di sini disamakan dengan
+				   CSS, dan keadaan terbuka dibaca dari kelas yang sama. */
+				var body = document.body;
+				var backdrop = document.getElementById('sidebarBackdrop');
+				var narrow = window.matchMedia ? window.matchMedia('(max-width: 768px)') : null;
+
+				function drawerOpen() {
+					return body.classList.contains('doclinc-nav-open');
+				}
+
+				function sync() {
+					var narrowScreen = !!(narrow && narrow.matches);
+					var open = narrowScreen
+						? !body.classList.contains('sidebar-toggled')
+						: !sidebar.classList.contains('toggled');
+					body.classList.toggle('doclinc-nav-open', narrowScreen && open);
+					if (backdrop) {
+						backdrop.hidden = !(narrowScreen && open);
+					}
+					/* Dicari ulang tiap kali: tombol di topbar baru ada di DOM setelah
+					   blok ini dijalankan (skrip ini berada di atas topbar). */
+					var toggles = document.querySelectorAll('#sidebarToggle, #sidebarToggleTop');
+					Array.prototype.forEach.call(toggles, function(button) {
+						button.setAttribute('aria-expanded', open ? 'true' : 'false');
+					});
+				}
+
+				function close() {
+					body.classList.add('sidebar-toggled');
+					sidebar.classList.add('toggled');
+					sync();
+				}
+
+				/* Dua sasaran tutup yang masih terjangkau: latar gelap dan Escape. */
+				if (backdrop) {
+					backdrop.addEventListener('click', close);
+				}
+				document.addEventListener('keydown', function(event) {
+					if (event.key === 'Escape' && drawerOpen()) {
+						close();
+					}
+				});
+
+				/* Kedua tombol mengubah kelas lewat SB Admin; sinkronkan sesudahnya.
+				   Delegasi dipakai supaya tombol yang dirender belakangan tetap ikut. */
+				document.addEventListener('click', function(event) {
+					var target = event.target;
+					if (target && target.closest && target.closest('#sidebarToggle, #sidebarToggleTop')) {
+						window.setTimeout(sync, 0);
+					}
+				});
+
+				if (narrow && narrow.addEventListener) {
+					narrow.addEventListener('change', function(event) {
+						if (event.matches) {
+							close();
+						} else {
+							sync();
+						}
+					});
+				}
+				if (narrow && narrow.matches) {
+					close();
+				}
+				sync();
+			})();
+		</script>
 
 		<!-- Content Wrapper -->
 		<div id="content-wrapper" class="d-flex flex-column doclinc-content-wrapper">
@@ -367,6 +355,15 @@
 				</nav>
 				<!-- End of Topbar -->
 				<!-- Begin Page Content -->
+				<?php
+				/* Landmark isi halaman. Tanpa satu pun landmark, pembaca layar tidak
+				   punya cara melompat ke isi — 20 dari 20 rute panel ini sebelumnya
+				   hanya div. Dibuka di sini (setelah topbar) dan ditutup di
+				   commons/footer.php tepat setelah .container-fluid, supaya footer
+				   dan modal tidak ikut masuk landmark isi. */
+				?>
+				<main id="main-content">
+
 				<div class="container-fluid doclinc-admin-page">
 					<script type="text/javascript">
 						$(function() {

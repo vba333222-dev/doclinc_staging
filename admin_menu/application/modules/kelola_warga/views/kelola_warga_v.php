@@ -1,7 +1,10 @@
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-	<h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-users"></i> Kelola Warga</h1>
-	<!-- <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a> -->
-</div>
+<?php
+/* Kepala halaman dari partial bersama. Tombol "Generate Report" lama dibuang,
+   bukan dipindah: href-nya `#` dan komentarnya hanya menyisakan tombol mati di
+   markup setiap halaman. */
+$page_head = array('title' => 'Kelola Warga');
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 <!-- Content Row -->
 <div class="row">
     <div class="col">
@@ -10,17 +13,17 @@
                 <div class="table-responsive">
                     <table class="table table-bordered" id="tbl_warga" style="width:100%" cellspacing="0">
                         <thead>
-                            <th>No.</th>
-                            <th>Status</th>
-                            <th>Nama</th>
-                            <th>Email</th>
-                            <th>No.HP</th>
-                            <th>Tgl Lahir</th>
-                            <th>Gender</th>
-                            <th>Alamat</th>
-                            <th>KTP</th>
-                            <th>Foto</th>
-                            <th>Role</th>
+                            <th scope="col">No.</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Nama</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">No.HP</th>
+                            <th scope="col">Tgl Lahir</th>
+                            <th scope="col">Gender</th>
+                            <th scope="col">Alamat</th>
+                            <th scope="col">KTP</th>
+                            <th scope="col">Foto</th>
+                            <th scope="col">Role</th>
                         </thead>
                         <tbody>
                           <?php 

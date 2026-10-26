@@ -96,7 +96,7 @@ class Kelola_dokter_nakes extends MX_Controller
 			return;
 		}
 
-		$this->session->set_flashdata('error', 'Gagal menambahkan akun Puskesmas.');
+		$this->session->set_flashdata('error', 'Gagal menambahkan akun Puskesmas. Tidak ada akun yang dibuat; periksa kembali isian lalu simpan ulang.');
 		redirect('kelola_dokter_nakes', 'refresh');
 	}
 	public function aktifkan_user()
@@ -237,7 +237,7 @@ class Kelola_dokter_nakes extends MX_Controller
 		if ($this->Kelola_dokter_nakes_m->destroy_dokter_nakes($id_user)) {
 			$this->session->set_flashdata('success', 'Akun Puskesmas dihapus permanen.');
 		} else {
-			$this->session->set_flashdata('error', 'Gagal menghapus akun Puskesmas secara permanen.');
+			$this->session->set_flashdata('error', 'Gagal menghapus akun Puskesmas secara permanen. Akun belum terhapus; muat ulang halaman lalu ulangi.');
 		}
 		redirect('kelola_dokter_nakes', 'refresh');
 	}

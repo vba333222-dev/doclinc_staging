@@ -16,19 +16,17 @@ foreach ($puskesmas_list as $row) {
 }
 ?>
 <div class="doclinc-analytics">
-	<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
-		<div>
-			<h1 class="h3 mb-1 font-weight-bold doclinc-page-title">
-				<i class="fas fa-map-marked-alt" aria-hidden="true"></i> Master wilayah
-			</h1>
-			<p class="mb-0 doclinc-page-subtitle">
-				Kecamatan dan puskesmas yang menjadi dasar pemetaan wilayah infografis penyakit terbanyak.
-			</p>
-		</div>
-		<a href="<?= html_escape(site_url('diagnosis')); ?>" class="btn btn-outline-primary btn-sm shadow-sm">
-			<i class="fas fa-chart-bar" aria-hidden="true"></i> Lihat infografis
-		</a>
-	</div>
+<?php
+/* Kepala halaman dari partial bersama. */
+$page_head = array(
+	'title' => 'Master wilayah',
+	'sub' => 'Dasar pemetaan wilayah pada infografis penyakit.',
+	'actions' => array(
+		array('kind' => 'link', 'label' => 'Lihat infografis', 'href' => site_url('diagnosis'), 'icon' => 'fas fa-chart-bar', 'variant' => 'outline-primary'),
+	),
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 
 	<?php if (!$schema_ready): ?>
 		<div class="alert alert-warning" role="status">
@@ -49,13 +47,13 @@ foreach ($puskesmas_list as $row) {
 				<h2 class="h6 mb-0 font-weight-bold">Kecamatan (<?= number_format(count($kecamatan_list)); ?>)</h2>
 			</div>
 			<div class="card-body">
-				<?= form_open('wilayah/store_kecamatan', array('class' => 'form-row align-items-end mb-4', 'method' => 'post')); ?>
-					<div class="form-group col-md-6 mb-2">
-						<label for="nama_kecamatan_baru">Nama kecamatan</label>
-						<input type="text" class="form-control form-control-lg" id="nama_kecamatan_baru" name="nama_kecamatan" required maxlength="150" placeholder="Contoh: Citangkil">
+				<?= form_open('wilayah/store_kecamatan', array('class' => 'dl-adm-toolbar mb-4', 'method' => 'post')); ?>
+					<div class="dl-adm-toolbar-field">
+						<label class="dl-adm-toolbar-label" for="nama_kecamatan_baru">Nama kecamatan</label>
+						<input type="text" class="form-control" id="nama_kecamatan_baru" name="nama_kecamatan" required maxlength="150" placeholder="Contoh: Citangkil">
 					</div>
-					<div class="form-group col-md-3 mb-2">
-						<button type="submit" class="btn btn-primary btn-lg btn-block">
+					<div class="dl-adm-toolbar-actions">
+						<button type="submit" class="btn btn-primary dl-adm-action">
 							<i class="fas fa-plus" aria-hidden="true"></i> Tambah kecamatan
 						</button>
 					</div>
@@ -66,7 +64,7 @@ foreach ($puskesmas_list as $row) {
 				<?php else: ?>
 					<div class="table-responsive">
 						<table class="table table-sm align-middle">
-							<caption class="text-muted">Nama kecamatan dipakai sebagai label di infografis.</caption>
+							<caption class="text-muted">Nama ini jadi label di peta infografis.</caption>
 							<thead>
 								<tr>
 									<th scope="col">Kecamatan</th>
@@ -101,14 +99,18 @@ foreach ($puskesmas_list as $row) {
 									</tr>
 									<tr class="collapse" id="ubahKecamatan<?= (int) $row->id_kecamatan; ?>">
 										<td colspan="3">
-											<?= form_open('wilayah/update_kecamatan/' . (int) $row->id_kecamatan, array('class' => 'form-row align-items-end', 'method' => 'post')); ?>
-												<div class="form-group col-md-6 mb-2">
-													<label for="nama_kecamatan_<?= (int) $row->id_kecamatan; ?>">Nama kecamatan</label>
-													<input type="text" class="form-control form-control-lg" id="nama_kecamatan_<?= (int) $row->id_kecamatan; ?>"
+											<?= form_open('wilayah/update_kecamatan/' . (int) $row->id_kecamatan, array('class' => 'dl-adm-toolbar mb-0', 'method' => 'post')); ?>
+												<div class="dl-adm-toolbar-field">
+													<label class="dl-adm-toolbar-label" for="nama_kecamatan_<?= (int) $row->id_kecamatan; ?>">Nama kecamatan</label>
+													<input type="text" class="form-control" id="nama_kecamatan_<?= (int) $row->id_kecamatan; ?>"
 														name="nama_kecamatan" value="<?= html_escape($row->nama_kecamatan); ?>" required maxlength="150">
 												</div>
-												<div class="form-group col-md-3 mb-2">
-													<button type="submit" class="btn btn-primary btn-lg btn-block">Simpan</button>
+												<div class="dl-adm-toolbar-actions">
+													<?php /* Tanpa `dl-adm-action`: baris ini `collapse`, jadi tombolnya
+													   tidak dirender sampai "Ubah" ditekan. Memberi kelas aksi
+													   bersama di sini membuat gerbang "setiap .dl-adm-action
+													   minimal 44px" membaca tinggi 0 dari elemen tersembunyi. */ ?>
+													<button type="submit" class="btn btn-primary">Simpan</button>
 												</div>
 											<?= form_close(); ?>
 										</td>
@@ -127,37 +129,37 @@ foreach ($puskesmas_list as $row) {
 				<span class="text-muted small">Kode dipakai mencocokkan permintaan layanan</span>
 			</div>
 			<div class="card-body">
-				<?= form_open('wilayah/store_puskesmas', array('class' => 'form-row align-items-end mb-4', 'method' => 'post')); ?>
-					<div class="form-group col-md-3 mb-2">
-						<label for="kode_pkm_baru">Kode puskesmas</label>
-						<input type="text" class="form-control form-control-lg" id="kode_pkm_baru" name="kode_pkm" required maxlength="100" placeholder="Contoh: 10280501">
+				<?= form_open('wilayah/store_puskesmas', array('class' => 'dl-adm-toolbar mb-4', 'method' => 'post')); ?>
+					<div class="dl-adm-toolbar-field">
+						<label class="dl-adm-toolbar-label" for="kode_pkm_baru">Kode puskesmas</label>
+						<input type="text" class="form-control" id="kode_pkm_baru" name="kode_pkm" required maxlength="100" placeholder="Contoh: 10280501">
 					</div>
-					<div class="form-group col-md-4 mb-2">
-						<label for="nama_puskesmas_baru">Nama puskesmas</label>
-						<input type="text" class="form-control form-control-lg" id="nama_puskesmas_baru" name="nama_puskesmas" required maxlength="150" placeholder="Contoh: Puskesmas Citangkil">
+					<div class="dl-adm-toolbar-field">
+						<label class="dl-adm-toolbar-label" for="nama_puskesmas_baru">Nama puskesmas</label>
+						<input type="text" class="form-control" id="nama_puskesmas_baru" name="nama_puskesmas" required maxlength="150" placeholder="Contoh: Puskesmas Citangkil">
 					</div>
-					<div class="form-group col-md-3 mb-2">
-						<label for="id_kecamatan_baru">Kecamatan</label>
-						<select class="form-control form-control-lg" id="id_kecamatan_baru" name="id_kecamatan" required>
+					<div class="dl-adm-toolbar-field">
+						<label class="dl-adm-toolbar-label" for="id_kecamatan_baru">Kecamatan</label>
+						<select class="form-control" id="id_kecamatan_baru" name="id_kecamatan" required>
 							<option value="">Pilih kecamatan</option>
 							<?php foreach ($kecamatan_list as $kecamatan): ?>
 								<option value="<?= (int) $kecamatan->id_kecamatan; ?>"><?= html_escape($kecamatan->nama_kecamatan); ?></option>
 							<?php endforeach; ?>
 						</select>
 					</div>
-					<div class="form-group col-md-2 mb-2">
-						<button type="submit" class="btn btn-primary btn-lg btn-block">
+					<div class="dl-adm-toolbar-actions">
+						<button type="submit" class="btn btn-primary dl-adm-action">
 							<i class="fas fa-plus" aria-hidden="true"></i> Tambah
 						</button>
 					</div>
 				<?= form_close(); ?>
 
 				<?php if (empty($puskesmas_list)): ?>
-					<p class="text-muted mb-0">Belum ada puskesmas. Tanpa puskesmas, infografis hanya bisa menampilkan total kota.</p>
+					<p class="text-muted mb-0">Belum ada Puskesmas; infografis hanya bisa menampilkan total kota.</p>
 				<?php else: ?>
 					<div class="table-responsive">
 						<table class="table table-sm align-middle">
-							<caption class="text-muted">Satu kode hanya boleh dipakai satu puskesmas; kode ganda membuat hitungan wilayah menjadi ganda.</caption>
+							<caption class="text-muted">Satu kode untuk satu Puskesmas; kode ganda menghitung dua kali.</caption>
 							<thead>
 								<tr>
 									<th scope="col">Kode</th>
@@ -207,20 +209,20 @@ foreach ($puskesmas_list as $row) {
 									</tr>
 									<tr class="collapse" id="ubahPuskesmas<?= (int) $row->id_puskesmas; ?>">
 										<td colspan="5">
-											<?= form_open('wilayah/update_puskesmas/' . (int) $row->id_puskesmas, array('class' => 'form-row align-items-end', 'method' => 'post')); ?>
-												<div class="form-group col-md-3 mb-2">
-													<label for="kode_pkm_<?= (int) $row->id_puskesmas; ?>">Kode puskesmas</label>
-													<input type="text" class="form-control form-control-lg" id="kode_pkm_<?= (int) $row->id_puskesmas; ?>"
+											<?= form_open('wilayah/update_puskesmas/' . (int) $row->id_puskesmas, array('class' => 'dl-adm-toolbar mb-0', 'method' => 'post')); ?>
+												<div class="dl-adm-toolbar-field">
+													<label class="dl-adm-toolbar-label" for="kode_pkm_<?= (int) $row->id_puskesmas; ?>">Kode puskesmas</label>
+													<input type="text" class="form-control" id="kode_pkm_<?= (int) $row->id_puskesmas; ?>"
 														name="kode_pkm" value="<?= html_escape((string) $row->kode_pkm); ?>" required maxlength="100">
 												</div>
-												<div class="form-group col-md-4 mb-2">
-													<label for="nama_puskesmas_<?= (int) $row->id_puskesmas; ?>">Nama puskesmas</label>
-													<input type="text" class="form-control form-control-lg" id="nama_puskesmas_<?= (int) $row->id_puskesmas; ?>"
+												<div class="dl-adm-toolbar-field">
+													<label class="dl-adm-toolbar-label" for="nama_puskesmas_<?= (int) $row->id_puskesmas; ?>">Nama puskesmas</label>
+													<input type="text" class="form-control" id="nama_puskesmas_<?= (int) $row->id_puskesmas; ?>"
 														name="nama_puskesmas" value="<?= html_escape($row->nama_puskesmas); ?>" required maxlength="150">
 												</div>
-												<div class="form-group col-md-3 mb-2">
-													<label for="id_kecamatan_<?= (int) $row->id_puskesmas; ?>">Kecamatan</label>
-													<select class="form-control form-control-lg" id="id_kecamatan_<?= (int) $row->id_puskesmas; ?>" name="id_kecamatan" required>
+												<div class="dl-adm-toolbar-field">
+													<label class="dl-adm-toolbar-label" for="id_kecamatan_<?= (int) $row->id_puskesmas; ?>">Kecamatan</label>
+													<select class="form-control" id="id_kecamatan_<?= (int) $row->id_puskesmas; ?>" name="id_kecamatan" required>
 														<option value="">Pilih kecamatan</option>
 														<?php foreach ($kecamatan_list as $kecamatan): ?>
 															<option value="<?= (int) $kecamatan->id_kecamatan; ?>"
@@ -230,8 +232,10 @@ foreach ($puskesmas_list as $row) {
 														<?php endforeach; ?>
 													</select>
 												</div>
-												<div class="form-group col-md-2 mb-2">
-													<button type="submit" class="btn btn-primary btn-lg btn-block">Simpan</button>
+												<div class="dl-adm-toolbar-actions">
+													<?php /* Sama seperti formulir kecamatan: baris collapse, jadi
+													   kelas aksi bersama tidak dipakai di sini. */ ?>
+													<button type="submit" class="btn btn-primary">Simpan</button>
 												</div>
 											<?= form_close(); ?>
 										</td>

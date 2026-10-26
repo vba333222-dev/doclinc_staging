@@ -10,6 +10,9 @@
 # digests. They must never be line-ending converted, or the checksum verifies a
 # normalised copy instead of the published artefact.
 assets/vendor/** -text
+# Sama untuk pustaka yang disajikan panel admin sendiri: leaflet.css dikirim
+# upstream dengan CRLF, dan PROVENANCE.md mencatat SHA-256 berkas apa adanya.
+admin_menu/assets/vendor/** -text
 
 # Binary assets
 *.png binary

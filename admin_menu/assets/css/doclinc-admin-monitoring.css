@@ -57,50 +57,11 @@
   font-size: var(--dl-ref-body-compact);
 }
 
-/* --- Filter ------------------------------------------------------------- */
-
-.dl-mon .dl-mon-filter {
-  margin: 0 1.5rem 1rem;
-  border: 1px solid var(--dl-ref-line);
-  border-radius: var(--dl-ref-radius-tile);
-  background: var(--dl-ref-surface);
-  box-shadow: none;
-}
-
-.dl-mon .dl-mon-field-label {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--dl-ref-muted);
-  font-size: var(--dl-ref-label);
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-.dl-mon .dl-mon-filter .form-control,
-.dl-mon .dl-mon-filter .btn {
-  min-height: var(--dl-ref-control);
-  border-radius: var(--dl-ref-radius-control);
-  font-size: var(--dl-ref-body-compact);
-}
-
-.dl-mon .dl-mon-filter .form-control {
-  border-color: var(--dl-ref-line);
-  color: var(--dl-ref-ink);
-  background: var(--dl-ref-surface);
-}
-
-.dl-mon .dl-mon-filter-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.dl-mon .dl-mon-filter-actions .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 16px;
-}
+/* --- Filter -------------------------------------------------------------
+   Bingkai, label, dan baris aksi filter sekarang milik `.dl-adm-toolbar`
+   (doclinc-admin-shell.css): satu definisi untuk dasbor, Audit, dan
+   Diagnosis. Yang tersisa di sini tidak ada - jangan menambah override
+   `.dl-mon-filter` baru tanpa menghapus definisi bersama itu lebih dulu. */
 
 .dl-mon-hint {
   margin-top: 12px;
@@ -109,37 +70,42 @@
   line-height: 1.45;
 }
 
-/* --- Konteks pelaporan -------------------------------------------------- */
+/* --- Konteks pelaporan --------------------------------------------------
+   Satu baris meta, bukan empat kotak berbingkai. Blok berbingkai setinggi
+   ~170px mendorong "Perlu tindak lanjut" ke bawah lipatan pada 1440x900,
+   padahal isinya hanya empat keterangan pendek: periode, pembanding, kesegaran
+   data, dan mutu pelaporan. Kuncinya tetap ada, nilainya tetap terbaca, dan
+   pemisahnya middot - bukan kotak. */
 
 .dl-mon .dl-mon-context {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 1px;
-  margin: 0 1.5rem 1.5rem;
-  border: 1px solid var(--dl-ref-line);
-  border-radius: var(--dl-ref-radius-tile);
-  background: var(--dl-ref-line);
-  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 20px;
+  margin: 0 1.5rem 16px;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.5;
 }
 
 .dl-mon .dl-mon-context-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 16px;
-  background: var(--dl-ref-surface);
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  min-width: 0;
 }
 
 .dl-mon .dl-mon-context-key {
   color: var(--dl-ref-muted);
-  font-size: var(--dl-ref-label);
+  font-size: var(--dl-ref-caption);
   font-weight: 700;
   letter-spacing: 0.01em;
 }
 
 .dl-mon .dl-mon-context-value {
   color: var(--dl-ref-ink);
-  font-size: var(--dl-ref-body);
+  font-size: var(--dl-ref-caption);
   font-weight: 700;
 }
 
@@ -179,9 +145,13 @@
 
 /* --- Kartu KPI ---------------------------------------------------------- */
 
+/* Empat angka kunci, dua kolom: bento 2x2 yang disepakati di rencana §6.2.
+   `auto-fit` sengaja ditinggalkan - dengan empat kartu ia menghasilkan 4 kolom
+   sempit, dan angka besar kehilangan bobotnya. Di bawah 576px grid menjadi satu
+   kolom (lihat media query di bawah). */
 .dl-mon .dl-mon-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin: 0 1.5rem 12px;
 }
@@ -216,7 +186,10 @@
 
 .dl-mon .dl-mon-kpi-value .dl-mon-num {
   color: var(--dl-ref-ink);
-  font-size: 1.85rem;
+  /* Dua kolom, bukan empat: kartu jadi dua kali lebih lebar, dan angka 1.85rem
+     di dalamnya terbaca kecil. Angka kunci adalah hal pertama yang dibaca di
+     layar ini, jadi ia yang paling besar - bukan judulnya. */
+  font-size: 2.4rem;
   font-weight: 800;
   line-height: 1.1;
 }
@@ -315,8 +288,12 @@
 }
 
 /* Penandaan tindak lanjut pada daftar pengecualian.
-   Tingginya dipatok 44px karena ini sasaran sentuh, bukan tombol dekoratif:
-   `.btn-sm` Bootstrap berada di sekitar 31px, di bawah ambang sistem ini. */
+   Tingginya TIDAK ditulis di sini: tombol ini sasaran sentuh, dan tingginya
+   sudah dipegang lapisan token (`.doclinc-admin-shell .btn` →
+   `var(--dl-ref-control)` = 44px) yang berlaku untuk semua tombol panel.
+   Angka sendiri di berkas ini hanya akan kalah oleh lapisan itu, jadi
+   menduplikasinya justru membuat dua sumber kebenaran yang bisa menyimpang.
+   Yang khas di sini hanya tata letak dan ukuran huruf. */
 .dl-mon .dl-mon-followup {
   margin: 8px 0 0;
 }
@@ -325,7 +302,6 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
   font-size: var(--dl-ref-caption);
 }
 
@@ -626,6 +602,34 @@
   list-style: none;
 }
 
+/* Sisa temuan setelah empat yang teratas. `<details>` dipilih supaya daftar
+   tetap lengkap tanpa JavaScript; ringkasannya diberi tinggi sasaran sentuh
+   44px dan penanda buka-tutup bawaan dipertahankan (tidak dihapus, hanya
+   diberi warna). */
+.dl-mon .dl-mon-more {
+  margin-top: 8px;
+}
+
+.dl-mon .dl-mon-more > summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--dl-ref-control);
+  padding: 0 4px;
+  color: var(--dl-ref-ink);
+  font-size: var(--dl-ref-body-compact);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dl-mon .dl-mon-more > summary:focus-visible {
+  outline: 2px solid var(--dl-ref-ink);
+  outline-offset: 2px;
+}
+
+.dl-mon .dl-mon-more > ul {
+  margin-top: 8px;
+}
+
 .dl-mon .dl-mon-exception {
   padding: 12px 14px;
   border: 1px solid var(--dl-ref-line);
@@ -681,6 +685,19 @@
 
 .dl-mon .dl-mon-exception-action {
   margin: 4px 0 0;
+}
+
+/* Tautan dan tombol penandaan satu temuan berdampingan; keduanya menjawab
+   pertanyaan yang sama ("apa yang harus saya lakukan dengan ini?"). */
+.dl-mon .dl-mon-exception-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+}
+
+.dl-mon .dl-mon-exception-actions .dl-mon-followup {
+  margin: 0;
 }
 
 /* --- Fokus -------------------------------------------------------------- */

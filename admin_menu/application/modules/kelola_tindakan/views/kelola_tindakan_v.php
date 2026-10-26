@@ -1,6 +1,10 @@
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-    <h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-comments"></i> Tindakan</h1>
-</div>
+<?php
+/* Kepala halaman dari partial bersama. Tidak ada keterangan tambahan yang
+   dikarang di sini: satu-satunya kalimat penjelas halaman ini sudah ada di kartu
+   di bawah, dan mengulangnya di kepala halaman hanya menambah teks. */
+$page_head = array('title' => 'Tindakan');
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 <div class="card shadow-sm">
     <div class="card-body">
         <h2 class="h6 font-weight-bold mb-2">Data klinis tidak dapat diubah di sini.</h2>

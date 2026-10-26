@@ -415,6 +415,71 @@ class Diagnosis_infographic_m extends CI_Model
 	}
 
 	/** Payload lengkap untuk halaman infografis. Semua kunci selalu ada. */
+	/**
+	 * Matriks sebaran kode ICD-10 teratas per kecamatan untuk peta infografis.
+	 *
+	 * Bentuk hasil:
+	 *   array(
+	 *     'codes' => array(array('code','label','entries'), ...),  // menurun
+	 *     'kecamatan' => array(
+	 *        array('kecamatan_id','kecamatan','entries','max_entries',
+	 *              'by_code' => array('J06' => 12, ...)),
+	 *     ),
+	 *   )
+	 *
+	 * Hanya baris terkode, sama seperti peringkat kota: kalau baris belum dikode
+	 * ikut dihitung, warnanya akan membandingkan hal yang berbeda. `entries` pada
+	 * tiap kecamatan adalah jumlah baris untuk kode-kode teratas itu saja, bukan
+	 * seluruh diagnosis kecamatan - angka itu sudah ada di tabel per kecamatan.
+	 */
+	public function getDiseaseMapMatrix(array $filters, $limit = 8)
+	{
+		$codes = $this->getCityTopCodes($filters, $limit);
+		$result = array('codes' => $codes, 'kecamatan' => array());
+		if (empty($codes) || !$this->canQueryWilayah()) {
+			return $result;
+		}
+
+		$code_list = array();
+		foreach ($codes as $row) {
+			$code_list[] = $this->db->escape((string) $row['code']);
+		}
+		$date_expr = $this->dateExpression();
+		$this->db->select(
+			'k.id_kecamatan AS kecamatan_id, k.nama_kecamatan AS kecamatan, '
+			. 'TRIM(d.diagnosis_code) AS code, COUNT(*) AS entries',
+			FALSE
+		);
+		$this->baseQuery($date_expr, $filters, true);
+		$this->db->where('k.id_kecamatan IS NOT NULL', NULL, FALSE);
+		$this->db->where('d.coding_state', 'coded');
+		$this->db->where('TRIM(d.diagnosis_code) IN (' . implode(', ', $code_list) . ')', NULL, FALSE);
+		$this->db->group_by('k.id_kecamatan, k.nama_kecamatan, TRIM(d.diagnosis_code)', FALSE);
+		$this->db->order_by('entries', 'DESC');
+		$rows = $this->db->get()->result();
+
+		$by_kecamatan = array();
+		foreach ($rows as $row) {
+			$key = (int) $row->kecamatan_id;
+			if (!isset($by_kecamatan[$key])) {
+				$by_kecamatan[$key] = array(
+					'kecamatan_id' => $key,
+					'kecamatan' => (string) $row->kecamatan,
+					'entries' => 0,
+					'max_entries' => 0,
+					'by_code' => array(),
+				);
+			}
+			$entries = (int) $row->entries;
+			$by_kecamatan[$key]['by_code'][(string) $row->code] = $entries;
+			$by_kecamatan[$key]['entries'] += $entries;
+			$by_kecamatan[$key]['max_entries'] = max($by_kecamatan[$key]['max_entries'], $entries);
+		}
+		ksort($by_kecamatan);
+		$result['kecamatan'] = array_values($by_kecamatan);
+		return $result;
+	}
+
 	public function getInfographic(array $filters)
 	{
 		$filters = $this->normalizeFilters($filters);
@@ -446,6 +511,7 @@ class Diagnosis_infographic_m extends CI_Model
 			'unknown_wilayah' => array('entries' => 0, 'note' => ''),
 			'max_kecamatan_entries' => 0,
 			'max_city_code_entries' => 0,
+			'map' => array('codes' => array(), 'kecamatan' => array()),
 		);
 
 		if (!$payload['source_available']) {
@@ -483,6 +549,7 @@ class Diagnosis_infographic_m extends CI_Model
 				'entries' => $this->getUnmappedWilayahTotal($filters),
 				'note' => 'Baris yang kode puskesmasnya tidak ada di master wilayah. Tidak dihilangkan dari total kota.',
 			);
+			$payload['map'] = $this->getDiseaseMapMatrix($filters, 8);
 		} else {
 			$payload['unknown_wilayah']['note'] = 'Master wilayah (kecamatan + puskesmas) belum diisi, jadi rincian per kecamatan belum bisa dihitung. Total kota tetap ditampilkan.';
 		}

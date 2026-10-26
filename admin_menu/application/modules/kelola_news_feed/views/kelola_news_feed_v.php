@@ -1,12 +1,16 @@
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-    <h1 class="h3 mb-0 font-weight-bold"><i class="fas fa-fw fa-newspaper"></i> News & Feed</h1>
-    <button type="button" class="btn btn-sm btn-success shadow-sm" data-toggle="modal" data-target="#modalTambah">
-        <i class="fas fa-plus fa-sm text-white-50"></i> Tambah berita
-    </button>
-</div>
-<div class="doclinc-helper-note mb-3">
-    Pengelolaan konten dan feed yang tampil sebagai informasi publik DocLink.
-</div>
+<?php
+/* Kepala halaman dari partial bersama. `.doclinc-helper-note` di bawah judul
+   digabung ke `sub`; tombol tambah naik ke kepala halaman supaya aksi utama
+   halaman berada di satu tempat. */
+$page_head = array(
+	'title' => 'News & Feed',
+	'sub' => 'Berita yang tampil di situs publik DocLink.',
+	'actions' => array(
+		array('kind' => 'modal', 'label' => 'Tambah berita', 'target' => '#modalTambah', 'icon' => 'fas fa-plus', 'variant' => 'success'),
+	),
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 <!-- Content Row -->
 <div class="row">
     <div class="col">
@@ -14,15 +18,15 @@
             <div class="card-body table-responsive">
                 <table class="table table-bordered" id="tbl_news_feed" style="width:100%" cellspacing="0">
                     <thead>
-                        <th>No.</th>
-                        <th>ID Feed</th>
-                        <th>Subject</th>
-                        <th>Gambar</th>
-                        <th>Tanggal Upload</th>
-                        <th>Status</th>
-                        <th>Create User</th>
-                        <th>Create Date</th>
-                        <th>Aksi</th>
+                        <th scope="col">No.</th>
+                        <th scope="col">ID Feed</th>
+                        <th scope="col">Subject</th>
+                        <th scope="col">Gambar</th>
+                        <th scope="col">Tanggal Upload</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Create User</th>
+                        <th scope="col">Create Date</th>
+                        <th scope="col">Aksi</th>
                     </thead>
                     <tbody>
                       <?php

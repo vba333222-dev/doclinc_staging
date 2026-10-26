@@ -9,9 +9,13 @@ $puskesmas_readiness_labels = array(
 );
 ?>
 <div class="doclinc-admin-page doclinc-akun-page">
-	<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-5 px-4 mt-n4 mx-n4 you-are-here">
-		<h1 class="doclinc-page-title mb-0"><i class="fas fa-fw fa-hospital"></i> Master Puskesmas</h1>
-	</div>
+	<?php
+	/* Kepala halaman dari partial bersama. Tombol "Tambah Puskesmas" tidak
+	   dipindah ke sini: tombol itu sudah ada di kepala daftar, dan menaruhnya
+	   dua kali di satu layar membuat dua tombol utama bersaing. */
+	$page_head = array('title' => 'Master Puskesmas');
+	$this->load->view('commons/page_head', array('page_head' => $page_head));
+	?>
 
 	<div class="container-fluid">
 	<?php if ($this->session->flashdata('success')): ?>
@@ -29,17 +33,22 @@ $puskesmas_readiness_labels = array(
 		<?php endif; ?>
 	</div>
 
-	<div class="card shadow mb-4 doclinc-table-card doclinc-account-list-card">
-		<div class="card-header py-3 d-flex align-items-center justify-content-between">
-			<div>
-				<h6 class="m-0 font-weight-bold">Daftar Puskesmas</h6>
-				<div class="doclinc-muted-text mt-1">Kelola data Puskesmas aktif yang digunakan untuk routing dan koordinasi layanan DocLink. Nama, alamat lengkap, dan titik lokasi wajib lengkap sebelum fasilitas dapat diaktifkan.</div>
-			</div>
-			<button type="button" class="btn btn-sm btn-success shadow-sm rounded-pill doclinc-action-btn doclinc-action-primary" data-toggle="modal" data-target="#modalTambahPuskesmas">
-				<i class="fas fa-plus-circle mr-1"></i> Tambah Puskesmas
-			</button>
-		</div>
-		<div class="card-body doclinc-table-body">
+	<?php
+	$list_card = array(
+		'part' => 'open',
+		'title' => 'Daftar Puskesmas',
+		'sub' => 'Puskesmas aktif untuk routing dan koordinasi layanan.',
+		'action' => array(
+			'kind' => 'modal',
+			'label' => 'Tambah Puskesmas',
+			'target' => '#modalTambahPuskesmas',
+			'icon' => 'fas fa-plus-circle',
+			'variant' => 'success',
+		),
+		'card_class' => 'doclinc-account-list-card',
+	);
+	$this->load->view('commons/list_card', array('list_card' => $list_card));
+	?>
 			<?php if ($puskesmas && $puskesmas->num_rows() > 0): ?>
 				<div class="doclinc-account-toolbar">
 					<div class="doclinc-account-toolbar__field">
@@ -154,12 +163,12 @@ $puskesmas_readiness_labels = array(
 											<div class="modal-body bg-light">
 												<div class="form-group">
 													<label class="text-info">Kode Puskesmas</label>
-													<input type="text" class="form-control rounded-pill border-info" value="<?= html_escape($row->kode_pkm ?? '') ?>" readonly>
+													<input type="text" class="form-control" value="<?= html_escape($row->kode_pkm ?? '') ?>" readonly>
 													<small class="form-text text-muted">Kode Puskesmas tidak diubah dari halaman edit.</small>
 												</div>
 												<div class="form-group">
 													<label class="text-info">Nama Puskesmas</label>
-													<input type="text" class="form-control rounded-pill border-info" name="nama_puskesmas" value="<?= html_escape($row->nama_puskesmas ?? '') ?>" required>
+													<input type="text" class="form-control" name="nama_puskesmas" value="<?= html_escape($row->nama_puskesmas ?? '') ?>" required>
 												</div>
 										<div class="form-group">
 											<label class="text-info">Alamat</label>
@@ -170,19 +179,19 @@ $puskesmas_readiness_labels = array(
 													<div class="col-md-4">
 														<div class="form-group">
 															<label class="text-info">Latitude</label>
-														<input type="number" name="latitude" step="any" min="-90" max="90" class="form-control rounded-pill border-info" value="<?= html_escape($row->latitude ?? '') ?>" required>
+														<input type="number" name="latitude" step="any" min="-90" max="90" class="form-control" value="<?= html_escape($row->latitude ?? '') ?>" required>
 														</div>
 													</div>
 													<div class="col-md-4">
 														<div class="form-group">
 															<label class="text-info">Longitude</label>
-														<input type="number" name="longitude" step="any" min="-180" max="180" class="form-control rounded-pill border-info" value="<?= html_escape($row->longitude ?? '') ?>" required>
+														<input type="number" name="longitude" step="any" min="-180" max="180" class="form-control" value="<?= html_escape($row->longitude ?? '') ?>" required>
 														</div>
 													</div>
 													<div class="col-md-4">
 														<div class="form-group">
 															<label class="text-info">Status</label>
-															<select class="form-control rounded-pill border-info" name="status">
+															<select class="form-control" name="status">
 																<option value="aktif" <?= ($row->status ?? '') === 'aktif' ? 'selected' : ''; ?>>Aktif</option>
 																<option value="nonaktif" <?= ($row->status ?? '') === 'nonaktif' ? 'selected' : ''; ?>>Nonaktif</option>
 															</select>
@@ -192,8 +201,8 @@ $puskesmas_readiness_labels = array(
 												</div>
 											</div>
 											<div class="modal-footer border-0 px-4 pb-4">
-												<button type="button" class="btn btn-light rounded-pill px-4 border" data-dismiss="modal">Batal</button>
-												<button type="submit" class="btn btn-info rounded-pill px-4">Simpan</button>
+												<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+												<button type="submit" class="btn btn-primary">Simpan</button>
 											</div>
 										</form>
 									</div>
@@ -207,8 +216,10 @@ $puskesmas_readiness_labels = array(
 			<?php else: ?>
 				<div class="doclinc-account-empty">Belum ada data Puskesmas.</div>
 			<?php endif; ?>
-		</div>
-	</div>
+	<?php
+	$list_card = array('part' => 'close');
+	$this->load->view('commons/list_card', array('list_card' => $list_card));
+	?>
 	</div>
 </div>
 
@@ -263,14 +274,14 @@ $puskesmas_readiness_labels = array(
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success">Kode Puskesmas</label>
-								<input type="text" class="form-control rounded-pill border-success" name="kode_pkm" placeholder="Contoh: 10280101" required>
-								<small class="form-text text-muted">Gunakan kode resmi Puskesmas. Jangan gunakan DEFAULT untuk data aktif.</small>
+								<input type="text" class="form-control" name="kode_pkm" placeholder="Contoh: 10280101" required>
+								<small class="form-text text-muted">Pakai kode resmi Puskesmas, bukan DEFAULT.</small>
 							</div>
 						</div>
 						<div class="col-md-6">
 							<div class="form-group">
 								<label class="text-success">Nama Puskesmas</label>
-								<input type="text" class="form-control rounded-pill border-success" name="nama_puskesmas" placeholder="Nama Puskesmas" required>
+								<input type="text" class="form-control" name="nama_puskesmas" placeholder="Nama Puskesmas" required>
 							</div>
 						</div>
 					</div>
@@ -283,20 +294,20 @@ $puskesmas_readiness_labels = array(
 						<div class="col-md-4">
 							<div class="form-group">
 								<label class="text-success">Latitude</label>
-								<input type="number" name="latitude" step="any" min="-90" max="90" class="form-control rounded-pill border-success" placeholder="-6.000000" required>
-								<small class="form-text text-muted">Latitude dan longitude dipakai untuk routing/monitoring lokasi.</small>
+								<input type="number" name="latitude" step="any" min="-90" max="90" class="form-control" placeholder="-6.000000" required>
+								<small class="form-text text-muted">Dipakai untuk routing dan peta lokasi.</small>
 							</div>
 						</div>
 						<div class="col-md-4">
 							<div class="form-group">
 								<label class="text-success">Longitude</label>
-								<input type="number" name="longitude" step="any" min="-180" max="180" class="form-control rounded-pill border-success" placeholder="106.000000" required>
+								<input type="number" name="longitude" step="any" min="-180" max="180" class="form-control" placeholder="106.000000" required>
 							</div>
 						</div>
 						<div class="col-md-4">
 							<div class="form-group">
 								<label class="text-success">Status</label>
-								<select class="form-control rounded-pill border-success" name="status">
+								<select class="form-control" name="status">
 									<option value="aktif">Aktif</option>
 									<option value="nonaktif">Nonaktif</option>
 								</select>
@@ -306,8 +317,8 @@ $puskesmas_readiness_labels = array(
 					</div>
 				</div>
 				<div class="modal-footer border-0 px-4 pb-4">
-					<button type="button" class="btn btn-light rounded-pill px-4 border" data-dismiss="modal">Batal</button>
-					<button type="submit" class="btn btn-success rounded-pill px-4">Simpan</button>
+					<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Batal</button>
+					<button type="submit" class="btn btn-primary">Simpan</button>
 				</div>
 			</form>
 		</div>

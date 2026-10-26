@@ -127,12 +127,14 @@ $summary_cards = array(
 );
 ?>
 
-<div class="d-sm-flex align-items-start justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
-	<div>
-		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title"><i class="fas fa-fw fa-stethoscope"></i> Monitoring konsultasi</h1>
-		<div class="doclinc-page-subtitle">Pantau konsultasi dan riwayatnya.</div>
-	</div>
-</div>
+<?php
+/* Kepala halaman dari partial bersama. */
+$page_head = array(
+	'title' => 'Monitoring konsultasi',
+	'sub' => 'Pantau konsultasi dan riwayatnya.',
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 
 <div class="doclinc-monitor-summary mb-4">
 	<?php foreach ($summary_cards as $card): ?>
@@ -146,78 +148,75 @@ $summary_cards = array(
 	<?php endforeach; ?>
 </div>
 
-<div class="card shadow-sm mb-4 doclinc-filter-card">
-	<div class="card-body">
-		<?php
-		/* base_url(), bukan site_url(): dengan `index_page = 'index.php?'` parameter
-		   formulir ikut masuk ke URI dan dijawab 400 oleh filter URI CodeIgniter.
-		   Lihat catatan lengkap di laporan_v.php. */
-		?>
-		<form method="get" action="<?= base_url('konsultasi_kesehatan'); ?>">
-			<div class="form-row align-items-end">
-				<div class="form-group col-md-2">
-					<label class="small font-weight-bold text-muted" for="status">Status</label>
-					<select name="status" id="status" class="form-control">
-						<option value="">Semua</option>
-						<?php foreach (array('Pending' => 'Menunggu konfirmasi Puskesmas', 'Accepted' => 'Diterima', 'Completed' => 'Selesai', 'Cancelled' => 'Dibatalkan') as $status => $status_label): ?>
-							<option value="<?= html_escape($status); ?>" <?= (($filters['status'] ?? '') === $status) ? 'selected' : ''; ?>><?= html_escape($status_label); ?></option>
-						<?php endforeach; ?>
-					</select>
-				</div>
-				<div class="form-group col-md-3">
-					<label class="small font-weight-bold text-muted" for="puskesmas">Puskesmas</label>
-					<select name="puskesmas" id="puskesmas" class="form-control">
-						<option value="">Semua Puskesmas</option>
-						<?php foreach ($puskesmas_options as $puskesmas): ?>
-							<option value="<?= html_escape($puskesmas->kode_pkm); ?>" <?= (($filters['puskesmas'] ?? '') === (string) $puskesmas->kode_pkm) ? 'selected' : ''; ?>>
-								<?= html_escape($puskesmas->nama_puskesmas); ?>
-							</option>
-						<?php endforeach; ?>
-						<option value="__legacy__" <?= (($filters['puskesmas'] ?? '') === '__legacy__') ? 'selected' : ''; ?>>Puskesmas belum tersedia</option>
-					</select>
-				</div>
-				<div class="form-group col-md-2">
-					<label class="small font-weight-bold text-muted" for="date_from">Dari</label>
-					<input type="date" name="date_from" id="date_from" class="form-control" value="<?= html_escape($filters['date_from'] ?? ''); ?>">
-				</div>
-				<div class="form-group col-md-2">
-					<label class="small font-weight-bold text-muted" for="date_to">Sampai</label>
-					<input type="date" name="date_to" id="date_to" class="form-control" value="<?= html_escape($filters['date_to'] ?? ''); ?>">
-				</div>
-				<div class="form-group col-md-2">
-					<label class="small font-weight-bold text-muted" for="keyword">Kata kunci</label>
-					<input type="text" name="keyword" id="keyword" class="form-control" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="ID, warga, Puskesmas">
-				</div>
-				<div class="form-group col-md-1">
-					<button type="submit" class="btn btn-primary btn-block">Terapkan filter</button>
-				</div>
+<div class="mb-4">
+	<?php
+	/* base_url(), bukan site_url(): dengan `index_page = 'index.php?'` parameter
+	   formulir ikut masuk ke URI dan dijawab 400 oleh filter URI CodeIgniter.
+	   Lihat catatan lengkap di laporan_v.php. */
+	?>
+	<form method="get" action="<?= base_url('konsultasi_kesehatan'); ?>" class="dl-adm-toolbar">
+			<div class="dl-adm-toolbar-field">
+				<label class="dl-adm-toolbar-label" for="status">Status</label>
+				<select name="status" id="status" class="form-control">
+					<option value="">Semua</option>
+					<?php foreach (array('Pending' => 'Menunggu konfirmasi Puskesmas', 'Accepted' => 'Diterima', 'Completed' => 'Selesai', 'Cancelled' => 'Dibatalkan') as $status => $status_label): ?>
+						<option value="<?= html_escape($status); ?>" <?= (($filters['status'] ?? '') === $status) ? 'selected' : ''; ?>><?= html_escape($status_label); ?></option>
+					<?php endforeach; ?>
+				</select>
 			</div>
-			<div class="d-flex justify-content-between align-items-center flex-wrap">
-				<a href="<?= site_url('konsultasi_kesehatan'); ?>" class="btn btn-sm btn-light border">Hapus filter</a>
+			<div class="dl-adm-toolbar-field">
+				<label class="dl-adm-toolbar-label" for="puskesmas">Puskesmas</label>
+				<select name="puskesmas" id="puskesmas" class="form-control">
+					<option value="">Semua Puskesmas</option>
+					<?php foreach ($puskesmas_options as $puskesmas): ?>
+						<option value="<?= html_escape($puskesmas->kode_pkm); ?>" <?= (($filters['puskesmas'] ?? '') === (string) $puskesmas->kode_pkm) ? 'selected' : ''; ?>>
+							<?= html_escape($puskesmas->nama_puskesmas); ?>
+						</option>
+					<?php endforeach; ?>
+					<option value="__legacy__" <?= (($filters['puskesmas'] ?? '') === '__legacy__') ? 'selected' : ''; ?>>Puskesmas belum tersedia</option>
+				</select>
+			</div>
+			<div class="dl-adm-toolbar-field">
+				<label class="dl-adm-toolbar-label" for="date_from">Dari</label>
+				<input type="date" name="date_from" id="date_from" class="form-control" value="<?= html_escape($filters['date_from'] ?? ''); ?>">
+			</div>
+			<div class="dl-adm-toolbar-field">
+				<label class="dl-adm-toolbar-label" for="date_to">Sampai</label>
+				<input type="date" name="date_to" id="date_to" class="form-control" value="<?= html_escape($filters['date_to'] ?? ''); ?>">
+			</div>
+			<div class="dl-adm-toolbar-field">
+				<label class="dl-adm-toolbar-label" for="keyword">Kata kunci</label>
+				<input type="text" name="keyword" id="keyword" class="form-control" value="<?= html_escape($filters['keyword'] ?? ''); ?>" placeholder="ID, warga, Puskesmas">
+			</div>
+			<div class="dl-adm-toolbar-actions">
+				<button type="submit" class="btn btn-primary">Terapkan filter</button>
+				<a href="<?= site_url('konsultasi_kesehatan'); ?>" class="btn btn-outline-secondary">Hapus filter</a>
 			</div>
 		</form>
-	</div>
 </div>
 
 <div class="row">
 	<div class="col">
-		<div class="card shadow-sm doclinc-table-card">
-			<div class="card-header bg-white d-flex justify-content-between align-items-center">
-				<h6 class="m-0 font-weight-bold text-primary">Daftar konsultasi</h6>
-				<span class="badge badge-light border"><?= count($data_konsultasi); ?> data</span>
-			</div>
-			<div class="card-body table-responsive">
+		<?php
+		$list_card = array(
+			'part' => 'open',
+			'title' => 'Daftar konsultasi',
+			'count' => count($data_konsultasi) . ' data',
+			'body_class' => 'doclinc-table-body table-responsive',
+		);
+		$this->load->view('commons/list_card', array('list_card' => $list_card));
+		?>
 				<table class="table table-hover doclinc-monitor-table" id="tbl_konsultasi" style="width:100%" cellspacing="0">
 					<thead>
 						<tr>
-							<th>Permintaan</th>
-							<th>Warga</th>
-							<th>Puskesmas dan PIC</th>
-							<th>Status</th>
-							<th>Riwayat</th>
-							<th>Diagnosis dan saran</th>
-							<th>Lampiran</th>
-							<th>Detail</th>
+							<th scope="col">Permintaan</th>
+							<th scope="col">Warga</th>
+							<th scope="col">Puskesmas dan PIC</th>
+							<th scope="col">Status</th>
+							<th scope="col">Riwayat</th>
+							<th scope="col">Diagnosis dan saran</th>
+							<th scope="col">Lampiran</th>
+							<th scope="col">Detail</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -292,7 +291,7 @@ $summary_cards = array(
 								</td>
 								<td>
 									<button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#detailKonsultasi<?= $request_id; ?>">
-										Lihat detail
+										Buka
 									</button>
 								</td>
 							</tr>
@@ -300,13 +299,20 @@ $summary_cards = array(
 					</tbody>
 				</table>
 				<?php if (empty($data_konsultasi)): ?>
-					<div class="doclinc-empty-state">
-						Belum ada konsultasi sesuai filter.
-						<div class="mt-2"><a href="<?= site_url('konsultasi_kesehatan'); ?>" class="btn btn-sm btn-light border">Hapus filter</a></div>
-					</div>
+					<?php
+					/* Keadaan kosong dari partial bersama: judul menyebut keadaan,
+					   aksi menyebut langkah berikutnya. */
+					$empty_state = array(
+						'title' => 'Belum ada konsultasi sesuai filter.',
+						'action' => array('label' => 'Hapus filter', 'href' => site_url('konsultasi_kesehatan'), 'variant' => 'outline-primary'),
+					);
+					$this->load->view('commons/empty_state', array('empty_state' => $empty_state));
+					?>
 				<?php endif; ?>
-			</div>
-		</div>
+		<?php
+		$list_card = array('part' => 'close');
+		$this->load->view('commons/list_card', array('list_card' => $list_card));
+		?>
 	</div>
 </div>
 
@@ -334,7 +340,7 @@ $summary_cards = array(
 					<div class="row">
 						<div class="col-lg-5 mb-3">
 							<div class="doclinc-detail-block">
-								<h6>Koordinasi</h6>
+								<h2 class="h6">Koordinasi</h2>
 								<dl class="row mb-0">
 									<dt class="col-sm-4">ID permintaan</dt>
 									<dd class="col-sm-8">#<?= html_escape($request_id ?: '-'); ?></dd>
@@ -349,19 +355,19 @@ $summary_cards = array(
 								</dl>
 							</div>
 							<div class="doclinc-detail-block mt-3">
-								<h6>Status</h6>
+								<h2 class="h6">Status</h2>
 								<?= doclinc_admin_status_badge($row->request_status ?? ''); ?>
 								<span class="ml-2"><?= doclinc_admin_visit_badge($row->visit_status ?? ''); ?></span>
 							</div>
 							<div class="doclinc-detail-block mt-3">
-								<h6>Diagnosis dan saran</h6>
+								<h2 class="h6">Diagnosis dan saran</h2>
 								<p><strong>Diagnosa:</strong><br><?= nl2br(html_escape(trim((string) ($row->diagnosa ?? '')) !== '' ? $row->diagnosa : '-')); ?></p>
 								<p class="mb-0"><strong>Saran:</strong><br><?= nl2br(html_escape(trim((string) ($row->saran ?? '')) !== '' ? $row->saran : '-')); ?></p>
 							</div>
 						</div>
 						<div class="col-lg-4 mb-3">
 							<div class="doclinc-detail-block h-100">
-								<h6>Riwayat</h6>
+								<h2 class="h6">Riwayat</h2>
 								<?php if (empty($request_events)): ?>
 									<div class="doclinc-empty-state">Belum ada riwayat.</div>
 								<?php else: ?>
@@ -382,7 +388,7 @@ $summary_cards = array(
 						</div>
 						<div class="col-lg-3 mb-3">
 							<div class="doclinc-detail-block h-100">
-								<h6>Lampiran</h6>
+								<h2 class="h6">Lampiran</h2>
 								<?php if (!empty($row->foto)): ?>
 									<img src="<?= base_url('../uploads/' . rawurlencode($row->foto)); ?>" alt="Foto konsultasi" class="img-fluid rounded border">
 								<?php else: ?>

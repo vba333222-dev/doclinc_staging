@@ -24,19 +24,17 @@ $block_label = array(
 	'kontak' => 'Kontak resmi',
 );
 ?>
-<div class="d-sm-flex align-items-center justify-content-between pt-4 pb-4 px-4 mt-n4 mx-n4 you-are-here doclinc-page-header">
-	<div>
-		<h1 class="h3 mb-1 font-weight-bold doclinc-page-title">
-			<i class="fas fa-window-maximize" aria-hidden="true"></i> Konten landing
-		</h1>
-		<p class="mb-0 doclinc-page-subtitle">
-			Teks halaman perkenalan DocLinc: blok utama dan tanya-jawab.
-		</p>
-	</div>
-	<a href="<?= html_escape(site_url('wilayah')); ?>" class="btn btn-outline-secondary btn-sm shadow-sm">
-		<i class="fas fa-map-marked-alt" aria-hidden="true"></i> Master wilayah
-	</a>
-</div>
+<?php
+/* Kepala halaman dari partial bersama. */
+$page_head = array(
+	'title' => 'Konten landing',
+	'sub' => 'Teks halaman perkenalan DocLinc.',
+	'actions' => array(
+		array('kind' => 'link', 'label' => 'Master wilayah', 'href' => site_url('wilayah'), 'icon' => 'fas fa-map-marked-alt', 'variant' => 'outline-secondary'),
+	),
+);
+$this->load->view('commons/page_head', array('page_head' => $page_head));
+?>
 
 <?php if (!$schema_ready): ?>
 	<div class="alert alert-warning" role="status">
@@ -74,28 +72,28 @@ $block_label = array(
 				<?= form_open('konten_landing/update_block/' . (int) $block->id, array('method' => 'post')); ?>
 					<div class="form-group">
 						<label for="judul_<?= (int) $block->id; ?>">Judul blok</label>
-						<input type="text" class="form-control form-control-lg" id="judul_<?= (int) $block->id; ?>"
+						<input type="text" class="form-control" id="judul_<?= (int) $block->id; ?>"
 							name="judul" value="<?= html_escape((string) $block->judul); ?>" required maxlength="200">
 					</div>
 					<div class="form-group">
 						<label for="isi_<?= (int) $block->id; ?>">Isi</label>
 						<textarea class="form-control" id="isi_<?= (int) $block->id; ?>" name="isi" rows="4" required><?= html_escape((string) $block->isi); ?></textarea>
 					</div>
-					<div class="form-row align-items-end">
-						<div class="form-group col-md-3">
-							<label for="urutan_<?= (int) $block->id; ?>">Urutan tampil</label>
-							<input type="number" class="form-control form-control-lg" id="urutan_<?= (int) $block->id; ?>"
+					<div class="dl-adm-toolbar">
+						<div class="dl-adm-toolbar-field">
+							<label for="urutan_<?= (int) $block->id; ?>" class="dl-adm-toolbar-label">Urutan tampil</label>
+							<input type="number" class="form-control" id="urutan_<?= (int) $block->id; ?>"
 								name="urutan" value="<?= (int) $block->urutan; ?>" min="0" max="999">
 						</div>
-						<div class="form-group col-md-4">
-							<div class="custom-control custom-checkbox mb-2">
+						<div class="dl-adm-toolbar-field">
+							<div class="custom-control custom-checkbox">
 								<input type="checkbox" class="custom-control-input" id="aktif_<?= (int) $block->id; ?>"
 									name="aktif" value="1" <?= (int) $block->aktif === 1 ? 'checked' : ''; ?>>
 								<label class="custom-control-label" for="aktif_<?= (int) $block->id; ?>">Tampilkan di halaman</label>
 							</div>
 						</div>
-						<div class="form-group col-md-3">
-							<button type="submit" class="btn btn-primary btn-lg btn-block">Simpan blok</button>
+						<div class="dl-adm-toolbar-actions">
+							<button type="submit" class="btn btn-primary dl-adm-action">Simpan blok</button>
 						</div>
 					</div>
 				<?= form_close(); ?>
@@ -109,17 +107,17 @@ $block_label = array(
 			<span class="text-muted small">Ditampilkan berurutan pada bagian pertanyaan umum</span>
 		</div>
 		<div class="card-body">
-			<?= form_open('konten_landing/create_faq', array('class' => 'form-row align-items-end mb-4', 'method' => 'post')); ?>
-				<div class="form-group col-md-5 mb-2">
-					<label for="pertanyaan_baru">Pertanyaan</label>
-					<input type="text" class="form-control form-control-lg" id="pertanyaan_baru" name="pertanyaan" required maxlength="255">
+			<?= form_open('konten_landing/create_faq', array('class' => 'dl-adm-toolbar mb-4', 'method' => 'post')); ?>
+				<div class="dl-adm-toolbar-field">
+					<label for="pertanyaan_baru" class="dl-adm-toolbar-label">Pertanyaan</label>
+					<input type="text" class="form-control" id="pertanyaan_baru" name="pertanyaan" required maxlength="255">
 				</div>
-				<div class="form-group col-md-5 mb-2">
-					<label for="jawaban_baru">Jawaban</label>
-					<input type="text" class="form-control form-control-lg" id="jawaban_baru" name="jawaban" required>
+				<div class="dl-adm-toolbar-field">
+					<label for="jawaban_baru" class="dl-adm-toolbar-label">Jawaban</label>
+					<input type="text" class="form-control" id="jawaban_baru" name="jawaban" required>
 				</div>
-				<div class="form-group col-md-2 mb-2">
-					<button type="submit" class="btn btn-primary btn-lg btn-block">
+				<div class="dl-adm-toolbar-actions">
+					<button type="submit" class="btn btn-primary dl-adm-action">
 						<i class="fas fa-plus" aria-hidden="true"></i> Tambah
 					</button>
 				</div>
@@ -133,29 +131,29 @@ $block_label = array(
 			<?php else: ?>
 				<?php foreach ($faqs as $faq): ?>
 					<div class="border rounded p-3 mb-3">
-						<?= form_open('konten_landing/update_faq/' . (int) $faq->id, array('class' => 'form-row align-items-end', 'method' => 'post')); ?>
-							<div class="form-group col-md-5 mb-2">
-								<label for="pertanyaan_<?= (int) $faq->id; ?>">Pertanyaan</label>
-								<input type="text" class="form-control form-control-lg" id="pertanyaan_<?= (int) $faq->id; ?>"
+						<?= form_open('konten_landing/update_faq/' . (int) $faq->id, array('class' => 'dl-adm-toolbar', 'method' => 'post')); ?>
+							<div class="dl-adm-toolbar-field">
+								<label for="pertanyaan_<?= (int) $faq->id; ?>" class="dl-adm-toolbar-label">Pertanyaan</label>
+								<input type="text" class="form-control" id="pertanyaan_<?= (int) $faq->id; ?>"
 									name="pertanyaan" value="<?= html_escape((string) $faq->pertanyaan); ?>" required maxlength="255">
 							</div>
-							<div class="form-group col-md-4 mb-2">
-								<label for="jawaban_<?= (int) $faq->id; ?>">Jawaban</label>
-								<input type="text" class="form-control form-control-lg" id="jawaban_<?= (int) $faq->id; ?>"
+							<div class="dl-adm-toolbar-field">
+								<label for="jawaban_<?= (int) $faq->id; ?>" class="dl-adm-toolbar-label">Jawaban</label>
+								<input type="text" class="form-control" id="jawaban_<?= (int) $faq->id; ?>"
 									name="jawaban" value="<?= html_escape((string) $faq->jawaban); ?>" required>
 							</div>
-							<div class="form-group col-md-1 mb-2">
-								<label for="urutan_faq_<?= (int) $faq->id; ?>">Urutan</label>
-								<input type="number" class="form-control form-control-lg" id="urutan_faq_<?= (int) $faq->id; ?>"
+							<div class="dl-adm-toolbar-field">
+								<label for="urutan_faq_<?= (int) $faq->id; ?>" class="dl-adm-toolbar-label">Urutan</label>
+								<input type="number" class="form-control" id="urutan_faq_<?= (int) $faq->id; ?>"
 									name="urutan" value="<?= (int) $faq->urutan; ?>" min="0" max="999">
 							</div>
-							<div class="form-group col-md-2 mb-2">
-								<div class="custom-control custom-checkbox mb-2">
+							<div class="dl-adm-toolbar-actions">
+								<div class="custom-control custom-checkbox">
 									<input type="checkbox" class="custom-control-input" id="aktif_faq_<?= (int) $faq->id; ?>"
 										name="aktif" value="1" <?= (int) $faq->aktif === 1 ? 'checked' : ''; ?>>
 									<label class="custom-control-label" for="aktif_faq_<?= (int) $faq->id; ?>">Tampilkan</label>
 								</div>
-								<button type="submit" class="btn btn-primary btn-block">Simpan</button>
+								<button type="submit" class="btn btn-primary dl-adm-action">Simpan</button>
 							</div>
 						<?= form_close(); ?>
 						<?= form_open('konten_landing/delete_faq/' . (int) $faq->id, array(
@@ -179,8 +177,7 @@ $block_label = array(
 		</div>
 		<div class="card-body">
 			<p class="text-muted small">
-				Pratinjau memakai blok yang berstatus tampil dan angka nyata dari database.
-				Halaman publik belum diarahkan ke konten ini; yang tampil di bawah adalah isinya.
+				Pratinjau memakai blok berstatus tampil. Halaman publik belum memakai konten ini.
 			</p>
 
 			<?php if (isset($active_blocks['hero_judul'])): ?>
@@ -207,12 +204,12 @@ $block_label = array(
 			</div>
 
 			<?php if (isset($active_blocks['tentang'])): ?>
-				<h4 class="h6 font-weight-bold mt-3">Tentang layanan</h4>
+				<h3 class="h6 font-weight-bold mt-3">Tentang layanan</h3>
 				<p><?= nl2br(html_escape((string) $active_blocks['tentang']->isi)); ?></p>
 			<?php endif; ?>
 
 			<?php if (isset($active_blocks['kontak'])): ?>
-				<h4 class="h6 font-weight-bold mt-3">Kontak</h4>
+				<h3 class="h6 font-weight-bold mt-3">Kontak</h3>
 				<?php if (stripos((string) $active_blocks['kontak']->isi, 'belum diisi') !== false): ?>
 					<div class="alert alert-warning mb-2" role="status">
 						Kontak resmi belum diisi. Lengkapi sebelum halaman ini dipublikasikan.
@@ -221,7 +218,7 @@ $block_label = array(
 				<p><?= nl2br(html_escape((string) $active_blocks['kontak']->isi)); ?></p>
 			<?php endif; ?>
 
-			<h4 class="h6 font-weight-bold mt-3">Pertanyaan umum</h4>
+			<h3 class="h6 font-weight-bold mt-3">Pertanyaan umum</h3>
 			<?php
 			$active_faqs = array();
 			foreach ($faqs as $faq) {

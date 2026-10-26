@@ -54,6 +54,10 @@
 			}
 			/* View dikembalikan sebagai string lalu dicetak: `exit` melewati
 			 * pengiriman buffer CI, jadi tanpa ini responsnya berbadan kosong. */
+			/* Judul dokumen dipasang di sini, bukan di aksi: pagar ini berjalan
+			   di konstruktor, sebelum aksi mana pun sempat menyetel
+			   `flashdata('title')`. Tanpa baris ini tab browser kosong. */
+			$this->session->set_flashdata('title', 'Landing page tidak tersedia');
 			echo $this->load->view('commons/header', array(), TRUE);
 			echo $this->load->view('legacy_unavailable_v', array('missing_tables' => $missing), TRUE);
 			echo $this->load->view('commons/footer', array(), TRUE);
