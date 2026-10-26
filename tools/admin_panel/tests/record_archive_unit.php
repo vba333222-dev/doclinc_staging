@@ -135,6 +135,14 @@ rec_check(strpos($view, 'rekam per halaman') !== false,
 	'kepala kartu menyebut ukuran halaman, bukan "maksimal 200 data terbaru"');
 rec_check(strpos($view, 'Maksimal 200 data terbaru') === false,
 	'janji lama yang sudah tidak benar tidak tertinggal');
+/* Kunci array PHP yang berbentuk angka menjadi int: array('7' => ...) memberi
+   $value = 7, sedangkan filter yang dibaca dari input selalu string. Perbandingan
+   === tanpa cast karena itu tidak pernah cocok, tidak ada opsi yang ditandai
+   `selected`, dan peramban memilih opsi PERTAMA — "7 hari". Akibatnya menekan
+   "Berikutnya" diam-diam mempersempit periode dan daftar menyusut ke satu
+   halaman. Ditemukan uji browser pada 2026-10-26, bukan oleh gerbang statis. */
+rec_check(strpos($view, "((string) (\$filters['period'] ?? '30') === (string) \$value)") !== false,
+	'opsi periode dibandingkan sebagai string, jadi pilihan yang aktif benar-benar ditandai');
 rec_check(preg_match('/if \(\$clinical_ready\):\s*\?>\s*<th scope="col">Rekam<\/th>/', $view) === 1,
 	'kolom Rekam hanya ada bila akses klinis aktif');
 rec_check(strpos($view, 'Isi klinis tidak tersedia untuk Admin') !== false,

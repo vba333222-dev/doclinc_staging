@@ -127,7 +127,7 @@ $summary_cards = array(
 			<label class="dl-adm-toolbar-label" for="period">Periode</label>
 			<select class="form-control" id="period" name="period">
 				<?php foreach (array('7' => '7 hari', '30' => '30 hari', '90' => '90 hari', 'all' => 'Semua') as $value => $label): ?>
-					<option value="<?= html_escape($value); ?>" <?= (($filters['period'] ?? '30') === $value) ? 'selected' : ''; ?>><?= html_escape($label); ?></option>
+					<option value="<?= html_escape((string) $value); ?>" <?= ((string) ($filters['period'] ?? '30') === (string) $value) ? 'selected' : ''; ?>><?= html_escape($label); ?></option>
 				<?php endforeach; ?>
 			</select>
 		</div>
