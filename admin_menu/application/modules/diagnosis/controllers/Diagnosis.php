@@ -18,6 +18,9 @@ class Diagnosis extends MX_Controller
 	{
 		parent::__construct();
 		$this->load->model('Diagnosis_infographic_m');
+		/* Panel pengodean memakai model sendiri: ia yang tahu master ICD-10 dan
+		 * satu-satunya tempat yang menulis `coding_state` dari panel ini. */
+		$this->load->model('Diagnosis_coding_m');
 		/* Helper form dipakai untuk membuka formulir filter: form_open() otomatis
 		 * menyertakan token CSRF, yang wajib karena csrf_protection = TRUE. */
 		$this->load->helper('form');
@@ -46,8 +49,45 @@ class Diagnosis extends MX_Controller
 			'infographic' => $this->Diagnosis_infographic_m->getInfographic($filters),
 			'filters' => $filters,
 			'kecamatan_options' => $this->Diagnosis_infographic_m->getKecamatanOptions(),
+			'coding' => $this->coding_panel(),
 		));
 		$this->load->view('commons/footer');
+	}
+
+	/**
+	 * Data panel "Pengodean diagnosis".
+	 *
+	 * Daftar teks belum dikode sengaja TIDAK memakai filter periode/kecamatan
+	 * (lihat catatan di `Diagnosis_infographic_m::getUncodedTextGroups`): satu
+	 * teks yang sama muncul di banyak kunjungan, dan memperbaiki sebagian saja
+	 * akan menyisakan pekerjaan yang sama besok. Panel menjelaskan itu ke pembaca.
+	 */
+	private function coding_panel()
+	{
+		$empty = array(
+			'available' => false,
+			'master_available' => false,
+			'groups' => array(),
+			'total_rows' => 0,
+			'truncated' => false,
+			'totals' => array(
+				'groups' => 0, 'rows' => 0,
+				'ready_groups' => 0, 'ready_rows' => 0,
+				'review_groups' => 0, 'review_rows' => 0,
+				'manual_groups' => 0, 'manual_rows' => 0,
+			),
+		);
+		if (!$this->Diagnosis_coding_m->schemaReady() || !$this->Diagnosis_infographic_m->canQueryDiagnosis()) {
+			return $empty;
+		}
+		$analysis = $this->Diagnosis_coding_m->analyze($this->Diagnosis_infographic_m->getUncodedTextGroups(100));
+		$analysis['available'] = true;
+		$analysis['total_rows'] = $this->Diagnosis_infographic_m->countUncodedRows();
+		/* Daftar dibatasi 100 teks. Kalau total baris lebih besar dari jumlah
+		 * baris yang tampil, panel harus mengatakannya - bukan menyimpulkan
+		 * "semua sudah dikode" dari daftar yang terpotong. */
+		$analysis['truncated'] = (int) $analysis['total_rows'] > (int) $analysis['totals']['rows'];
+		return $analysis;
 	}
 
 	/**
@@ -71,6 +111,211 @@ class Diagnosis extends MX_Controller
 			'diagnosis/index/' . (int) $filters['days'] . '/' . (int) $filters['kecamatan_id'] . '/' . $filters['coding_state'],
 			'refresh'
 		);
+	}
+
+	/**
+	 * "Kodekan otomatis": menulis kode untuk semua teks yang kodenya sudah
+	 * tertulis di dalam teks dan sah di master ICD-10.
+	 *
+	 * Hanya POST. Setelah selesai, pengguna dikembalikan ke halaman dengan
+	 * filter yang sama - bukan ke halaman kosong - supaya angka yang berubah
+	 * bisa langsung dibandingkan.
+	 */
+	public function repair($days = null, $kecamatan_id = null, $coding_state = null)
+	{
+		$filters = $this->filters_from_args($days, $kecamatan_id, $coding_state);
+		if (!$this->require_post($filters, 'Pengodean otomatis harus dijalankan dari tombol di halaman diagnosis.')) {
+			return;
+		}
+		if (!$this->Diagnosis_coding_m->schemaReady() || !$this->Diagnosis_infographic_m->canQueryDiagnosis()) {
+			$this->finish($filters, 'error', 'Tabel diagnosis belum tersedia, jadi tidak ada yang bisa dikodekan.');
+			return;
+		}
+		$result = $this->Diagnosis_coding_m->repair($this->Diagnosis_infographic_m->getUncodedTextGroups(100));
+		if (!$result['ok']) {
+			$this->finish($filters, 'error', 'Tidak ada yang diubah: ' . Diagnosis_coding_m::reasonLabel($result['reason']));
+			return;
+		}
+		if ((int) $result['rows'] < 1) {
+			$this->finish($filters, 'error', 'Tidak ada baris yang berubah. Mungkin teks yang bisa dikode otomatis sudah habis.');
+			return;
+		}
+		$remaining = 0;
+		foreach ($this->Diagnosis_infographic_m->getUncodedTextGroups(200) as $group) {
+			$remaining += (int) $group['entries'];
+		}
+		$this->audit('diagnosis_coding_repair', array(
+			'rows' => (int) $result['rows'],
+			'texts' => (int) $result['texts'],
+			'remaining_uncoded' => $remaining,
+		));
+		$this->finish($filters, 'success', number_format((int) $result['rows']) . ' baris diagnosis dikodekan otomatis dari '
+			. number_format((int) $result['texts']) . ' teks. Sisa yang belum dikode: ' . number_format($remaining) . ' baris.');
+	}
+
+	/**
+	 * Halaman pemilih kode untuk satu teks yang tidak memuat kode ICD-10.
+	 * POST dari panel (teks yang akan dikodekan ikut terkirim), lalu halaman ini
+	 * menampilkan hasil pencarian master dengan tombol "Pilih kode ini".
+	 */
+	public function pilih()
+	{
+		$filters = $this->filters_from_post();
+		if (!$this->require_post($filters, 'Halaman pemilih kode dibuka dari tombol "Pilih kode" pada halaman diagnosis.')) {
+			return;
+		}
+		$text = $this->posted_text();
+		if ($text === '') {
+			$this->finish($filters, 'error', 'Teks diagnosis tidak terbaca, jadi kode tidak bisa dipilih. Muat ulang halaman diagnosis.');
+			return;
+		}
+		$submitted = trim((string) $this->input->post('q')) !== '';
+		$query = trim((string) $this->input->post('q'));
+		if ($query === '') {
+			$query = $this->default_query($text);
+		}
+		$this->session->set_flashdata('title', 'Pilih kode ICD-10');
+		$entries = $this->Diagnosis_infographic_m->countUncodedText($text);
+		$search = $this->Diagnosis_coding_m->search($query, 25);
+		/* Kata kunci awal berasal dari teks diagnosis, bukan dari admin. Halaman
+		 * pemilih memakainya untuk membedakan "belum ada yang cocok dengan teks
+		 * ini" dari "kata kunci yang Anda ketik tidak ada". */
+		$search['submitted'] = $submitted;
+		$this->load->view('commons/header');
+		$this->load->view('diagnosis_pilih_v', array(
+			'text' => $text,
+			'entries' => $entries,
+			'filters' => $filters,
+			'search' => $search,
+			'master_available' => $this->Diagnosis_coding_m->masterAvailable(),
+		));
+		$this->load->view('commons/footer');
+	}
+
+	/** Simpan kode pilihan admin untuk satu teks. */
+	public function assign()
+	{
+		$filters = $this->filters_from_post();
+		if (!$this->require_post($filters, 'Kode dipilih dari halaman pemilih kode ICD-10.')) {
+			return;
+		}
+		$text = $this->posted_text();
+		$code = strtoupper(trim((string) $this->input->post('code')));
+		if ($text === '') {
+			$this->finish($filters, 'error', 'Teks diagnosis tidak terbaca, jadi tidak ada yang diubah.');
+			return;
+		}
+		$result = $this->Diagnosis_coding_m->assign($text, $code);
+		if (!$result['ok']) {
+			$this->finish($filters, 'error', 'Tidak ada yang diubah: ' . Diagnosis_coding_m::reasonLabel($result['reason'], $code));
+			return;
+		}
+		$this->audit('diagnosis_coding_assign', array(
+			'text' => $text,
+			'code' => (string) $result['code'],
+			'rows' => (int) $result['rows'],
+		));
+		if ((int) $result['rows'] < 1) {
+			$this->finish($filters, 'error', 'Kode ' . $result['code'] . ' tidak dipakai: tidak ada baris belum dikode dengan teks itu (mungkin sudah dikode sebelumnya).');
+			return;
+		}
+		$this->finish($filters, 'success', number_format((int) $result['rows']) . ' baris dengan teks "'
+			. $this->short_text($text) . '" sekarang dikode ' . $result['code'] . '.');
+	}
+
+	/** Kata kunci awal pemilih manual: kode yang tertulis di teks, atau labelnya. */
+	private function default_query($text)
+	{
+		require_once dirname(APPPATH, 2) . '/application/libraries/Icd10_code_text.php';
+		$parsed = Icd10_code_text::extract($text);
+		if ($parsed['code'] !== null) {
+			return $parsed['code'];
+		}
+		return $parsed['label'] === '' ? (string) $text : $parsed['label'];
+	}
+
+	/**
+	 * Teks diagnosis dari formulir, dibaca APA ADANYA (tanpa filter XSS).
+	 * Alasan: teks ini dicocokkan persis dengan kolom `display_text`; mengubah
+	 * "&" menjadi "&amp;" membuat pencocokan gagal tanpa pesan yang jelas.
+	 * Keamanan tampilan tetap dijaga `html_escape()` di view.
+	 */
+	private function posted_text()
+	{
+		$text = (string) $this->input->post('text');
+		$text = (string) preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $text);
+		$text = trim($text);
+		if ($text === '' || preg_match('//u', $text) !== 1) {
+			return '';
+		}
+		if (function_exists('mb_strlen') && mb_strlen($text, 'UTF-8') > 320) {
+			return '';
+		}
+		return $text;
+	}
+
+	private function short_text($text)
+	{
+		$text = (string) $text;
+		if (function_exists('mb_strlen') && mb_strlen($text, 'UTF-8') > 60) {
+			return mb_substr($text, 0, 57, 'UTF-8') . '...';
+		}
+		return $text;
+	}
+
+	private function filters_from_post()
+	{
+		return $this->filters_from_args(
+			(string) $this->input->post('days'),
+			(string) $this->input->post('kecamatan_id'),
+			(string) $this->input->post('coding_state')
+		);
+	}
+
+	/**
+	 * POST wajib. GET hanya diarahkan kembali dengan pesan: tautan yang bisa
+	 * diklik dari luar tidak boleh mengubah data diagnosis.
+	 */
+	private function require_post(array $filters, $message)
+	{
+		if ($this->input->method(TRUE) === 'POST') {
+			return true;
+		}
+		$this->output->set_status_header(405);
+		$this->session->set_flashdata('error', (string) $message);
+		redirect($this->index_url($filters), 'refresh');
+		return false;
+	}
+
+	private function finish(array $filters, $flash, $message)
+	{
+		$this->session->set_flashdata($flash === 'success' ? 'success' : 'error', (string) $message);
+		redirect($this->index_url($filters), 'refresh');
+	}
+
+	private function index_url(array $filters)
+	{
+		return 'diagnosis/index/' . (int) $filters['days'] . '/' . (int) $filters['kecamatan_id'] . '/' . (string) $filters['coding_state'];
+	}
+
+	/** Catat perubahan pengodean. Kegagalan menulis audit tidak menghentikan permintaan. */
+	private function audit($action, array $metadata)
+	{
+		if (!$this->db->table_exists('audit_logs')) {
+			return;
+		}
+		$this->db->db_debug = false;
+		$this->db->insert('audit_logs', array(
+			'actor_user_id' => (int) $this->session->userdata('id'),
+			'action' => (string) $action,
+			'entity_type' => 'medicalrecord_diagnoses',
+			'entity_id' => null,
+			'ip_address' => (string) $this->input->ip_address(),
+			'user_agent' => substr((string) $this->input->user_agent(), 0, 255),
+			'metadata_json' => json_encode($metadata, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+			'created_at' => date('Y-m-d H:i:s'),
+		));
+		$this->db->db_debug = true;
 	}
 
 	/** Unduh CSV dari payload yang sama dengan yang tampil di layar. */

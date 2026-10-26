@@ -1964,6 +1964,34 @@ html[data-theme="dark"] {
     --dl-ref-surface: var(--doclinc-surface);
     --dl-ref-mint-soft: var(--doclinc-table-head);
     --dl-ref-green-700: var(--doclinc-primary-dark);
+    /* Tangga nilai peta/grafik dibalik di tema gelap: latar peta ikut gelap
+       (--doclinc-table-head), jadi nilai kecil harus lebih gelap daripada nilai
+       besar supaya urutan warnanya tetap terbaca. Warna tetap konkret (bukan
+       color-mix()) karena nilai token ini dipakai Canvas 2D sebagai fillStyle,
+       dan Canvas tidak menerima color-mix(). */
+    --dl-ref-seq-0: #22313B;
+    --dl-ref-seq-1: #29463B;
+    --dl-ref-seq-2: #345C4B;
+    --dl-ref-seq-3: #47785F;
+    --dl-ref-seq-4: #639C7E;
+    --dl-ref-seq-5: #92C9A9;
+    /* Biru seleksi dinaikkan supaya tetap terlihat di atas poligon gelap. */
+    --dl-ref-select: #7FB3CE;
+    /* Warna nominal (penyakit terbanyak) versi tema gelap: luminansnya
+       dinaikkan supaya tetap terbaca di latar peta gelap, tetapi hue-nya tetap
+       sama - hijau, zaitun, okra, karat, prem, teal - sehingga legenda tidak
+       berubah arti saat tema diganti. Tetap tanpa biru: biru = seleksi. */
+    --dl-ref-cat-0: #6FAE8A;
+    --dl-ref-cat-1: #A9B957;
+    --dl-ref-cat-2: #D2A44C;
+    --dl-ref-cat-3: #C87B58;
+    --dl-ref-cat-4: #C3749B;
+    --dl-ref-cat-5: #66ABA7;
+    /* Kartu mengambang di atas peta gelap: bayangan hitam lebih pekat, karena
+       bayangan hijau tua versi tema terang tidak terlihat di atas latar gelap. */
+    --dl-ref-shadow-card:
+      0 2px 6px rgba(0, 0, 0, .45),
+      0 18px 40px -14px rgba(0, 0, 0, .65);
     /* Dipakai .doclinc-analytics-note-warning sebagai latar. Tanpa peta ini,
        latarnya tetap merah-muda sementara tintanya ikut menjadi terang:
        terukur 1,01:1. */

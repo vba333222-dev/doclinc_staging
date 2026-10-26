@@ -37,6 +37,13 @@ class Diagnosis_infographic_m extends CI_Model
 	const REASON_SCHEMA = 'diagnosis_schema_unavailable';
 	const REASON_WILAYAH = 'wilayah_master_empty';
 
+	/**
+	 * Panjang daftar "penyakit terbanyak" per kecamatan yang dikirim ke peta.
+	 * Sepuluh karena itu yang diminta permukaan ini; angkanya dipakai bersama
+	 * oleh panel klik peta, bukan ditebak ulang di JavaScript.
+	 */
+	const KECAMATAN_TOP_LIMIT = 10;
+
 	public function __construct()
 	{
 		parent::__construct();
@@ -289,6 +296,84 @@ class Diagnosis_infographic_m extends CI_Model
 		return $labels;
 	}
 
+	/**
+	 * Daftar TEKS yang belum punya kode, dikelompokkan per teks apa adanya.
+	 *
+	 * Dipakai panel "Pengodean diagnosis" untuk merapikan data, jadi SENGAJA
+	 * tanpa filter periode/kecamatan: satu teks yang sama bisa muncul di banyak
+	 * kunjungan, dan memperbaiki setengahnya saja akan membuat daftar yang sama
+	 * muncul lagi besok. Angka kartu di atas halaman tetap mengikuti filter;
+	 * panel itu menjelaskan perbedaan ini kepada pembaca.
+	 *
+	 * `display_text` adalah teks yang benar-benar diketik tenaga kesehatan -
+	 * di situlah kode sering ikut tertulis ("Dermatitis atopik (L20.9)"),
+	 * sementara `diagnosis_label` bisa sudah dibersihkan.
+	 */
+	public function getUncodedTextGroups($limit = 100)
+	{
+		$limit = (int) $limit;
+		if ($limit < 1) {
+			$limit = 100;
+		}
+		$filters = $this->normalizeFilters(array('days' => 0, 'kecamatan_id' => 0, 'coding_state' => ''));
+		$date_expr = $this->dateExpression();
+		$expr = $this->wilayahExpressions();
+		$text_expr = "COALESCE(NULLIF(TRIM(d.display_text), ''), NULLIF(TRIM(d.diagnosis_label), ''), '(tanpa keterangan)')";
+		$this->db->select(
+			$text_expr . ' AS raw_text, '
+			. "MAX(COALESCE({$expr['label']}, '')) AS label, "
+			. 'COUNT(*) AS entries, COUNT(DISTINCT d.medicalrecord_id) AS records, '
+			. "MAX(COALESCE({$date_expr}, d.created_at)) AS last_seen",
+			FALSE
+		);
+		$this->baseQuery($date_expr, $filters);
+		$this->db->where("(d.coding_state IS NULL OR d.coding_state <> 'coded')", NULL, FALSE);
+		$this->db->group_by($text_expr, FALSE);
+		$this->db->order_by('entries', 'DESC');
+		$this->db->order_by('raw_text', 'ASC');
+		$this->db->limit($limit);
+		$rows = $this->db->get()->result();
+		$groups = array();
+		foreach ($rows as $row) {
+			$groups[] = array(
+				'text' => (string) $row->raw_text,
+				'label' => (string) ($row->label ?? ''),
+				'entries' => (int) $row->entries,
+				'records' => (int) $row->records,
+				'last_seen' => (string) ($row->last_seen ?? ''),
+			);
+		}
+		return $groups;
+	}
+
+	/** Jumlah baris belum dikode untuk satu teks tertentu (tanpa filter). */
+	public function countUncodedText($text)
+	{
+		$text = (string) $text;
+		if ($text === '') {
+			return 0;
+		}
+		$this->db->where('display_text', $text);
+		$this->db->where("(coding_state IS NULL OR coding_state <> 'coded')", NULL, FALSE);
+		return (int) $this->db->count_all_results('medicalrecord_diagnoses');
+	}
+
+	/**
+	 * Jumlah SELURUH baris belum dikode (tanpa filter), untuk membandingkan
+	 * dengan daftar teks yang ditampilkan. Tanpa angka ini, panel bisa
+	 * mengatakan "semua sudah dikode" padahal daftarnya hanya 100 teks pertama.
+	 */
+	public function countUncodedRows()
+	{
+		$filters = $this->normalizeFilters(array('days' => 0, 'kecamatan_id' => 0, 'coding_state' => ''));
+		$date_expr = $this->dateExpression();
+		$this->db->select('COUNT(*) AS entries', FALSE);
+		$this->baseQuery($date_expr, $filters);
+		$this->db->where("(d.coding_state IS NULL OR d.coding_state <> 'coded')", NULL, FALSE);
+		$row = $this->db->get()->row();
+		return (int) ($row->entries ?? 0);
+	}
+
 	/** Jumlah baris yang kode puskesmasnya tidak ada di master wilayah. */
 	public function getUnmappedWilayahTotal(array $filters)
 	{
@@ -315,6 +400,12 @@ class Diagnosis_infographic_m extends CI_Model
 	/**
 	 * Agregasi per kecamatan. Baris tanpa pemetaan tidak masuk sini - ia dilaporkan
 	 * terpisah sebagai `unknown_wilayah` supaya penjumlahannya tetap utuh.
+	 *
+	 * Tiap baris membawa `top_codes`: sampai `KECAMATAN_TOP_LIMIT` kode ICD-10
+	 * terbanyak di kecamatan itu (hanya baris terkode, sama dengan peringkat
+	 * kota). Daftar ini yang ditampilkan saat kecamatan diklik di peta; kalau
+	 * dihitung di JavaScript, angkanya bisa berbeda dari tabel di halaman yang
+	 * sama - dua sumber angka untuk satu pertanyaan.
 	 */
 	public function getByKecamatan(array $filters)
 	{
@@ -323,7 +414,14 @@ class Diagnosis_infographic_m extends CI_Model
 			'k.id_kecamatan AS kecamatan_id, k.nama_kecamatan AS kecamatan, '
 			. 'COUNT(*) AS entries, COUNT(DISTINCT d.medicalrecord_id) AS records, '
 			. "SUM(CASE WHEN d.coding_state = 'coded' THEN 1 ELSE 0 END) AS coded, "
-			. "SUM(CASE WHEN d.coding_state IS NULL OR d.coding_state <> 'coded' THEN 1 ELSE 0 END) AS uncoded",
+			. "SUM(CASE WHEN d.coding_state IS NULL OR d.coding_state <> 'coded' THEN 1 ELSE 0 END) AS uncoded, "
+			/* Jumlah kode BERBEDA per kecamatan, bukan panjang `top_codes`:
+			 * panel peta menampilkan sepuluh kode teratas, jadi menghitung
+			 * panjang daftar itu akan menulis "10 jenis penyakit" untuk
+			 * kecamatan yang sebenarnya punya 23. */
+			. "COUNT(DISTINCT CASE WHEN d.coding_state = 'coded'"
+			. " AND d.diagnosis_code IS NOT NULL AND TRIM(d.diagnosis_code) <> ''"
+			. ' THEN TRIM(d.diagnosis_code) END) AS codes_coded',
 			FALSE
 		);
 		$this->baseQuery($date_expr, $filters, true);
@@ -352,22 +450,34 @@ class Diagnosis_infographic_m extends CI_Model
 		$this->db->where("d.diagnosis_code IS NOT NULL AND TRIM(d.diagnosis_code) <> ''", NULL, FALSE);
 		$this->db->group_by('k.id_kecamatan, TRIM(d.diagnosis_code)', FALSE);
 		$this->db->order_by('entries', 'DESC');
+		/* Urutan kedua adalah kode. Tanpa itu, dua kode dengan jumlah sama bisa
+		 * bertukar tempat antar-permintaan, dan daftar "10 terbanyak" berubah
+		 * urutannya padahal tidak ada satu baris pun yang berubah. */
+		$this->db->order_by('code', 'ASC');
 		foreach ($this->db->get()->result() as $row) {
 			$key = (int) $row->kecamatan_id;
 			if (!isset($top_by_kecamatan[$key])) {
-				$top_by_kecamatan[$key] = array(
-					'code' => (string) $row->code,
-					'label' => (string) ($row->label ?? ''),
-					'entries' => (int) $row->entries,
-				);
+				$top_by_kecamatan[$key] = array();
 			}
+			/* Query sengaja tanpa LIMIT: pemenang tiap kecamatan tidak boleh
+			 * terpotong oleh kecamatan lain yang barisnya lebih banyak. Yang
+			 * dibatasi hanya panjang daftar per kecamatan, di sini. */
+			if (count($top_by_kecamatan[$key]) >= self::KECAMATAN_TOP_LIMIT) {
+				continue;
+			}
+			$top_by_kecamatan[$key][] = array(
+				'code' => (string) $row->code,
+				'label' => (string) ($row->label ?? ''),
+				'entries' => (int) $row->entries,
+			);
 		}
 
 		$kecamatan = array();
 		foreach ($rows as $row) {
 			$key = (int) $row->kecamatan_id;
-			$top = isset($top_by_kecamatan[$key])
-				? $top_by_kecamatan[$key]
+			$top_list = isset($top_by_kecamatan[$key]) ? $top_by_kecamatan[$key] : array();
+			$top = isset($top_list[0])
+				? $top_list[0]
 				: array('code' => '', 'label' => '', 'entries' => 0);
 			$kecamatan[] = array(
 				'kecamatan_id' => $key,
@@ -376,9 +486,16 @@ class Diagnosis_infographic_m extends CI_Model
 				'records' => (int) $row->records,
 				'coded' => (int) $row->coded,
 				'uncoded' => (int) $row->uncoded,
+				/* Kode ICD-10 berbeda yang sudah dikode di kecamatan ini.
+				 * Dipakai panel infografik; bukan angka yang dihitung ulang
+				 * di browser. */
+				'codes_coded' => (int) $row->codes_coded,
 				'top_code' => $top['code'],
 				'top_label' => $top['label'],
 				'top_entries' => $top['entries'],
+				/* Daftar lengkap (maks. 10) untuk panel klik peta. Kunci ini
+				 * selalu ada, juga saat kosong, supaya tampilan tidak menebak. */
+				'top_codes' => $top_list,
 			);
 		}
 		return $kecamatan;

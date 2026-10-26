@@ -17,6 +17,35 @@
   --dl-ref-green-600: #2D7D56;
   --dl-ref-green-700: #1F6F4B;
   --dl-ref-green-900: #12472F;
+  /* Tangga nilai berurutan untuk peta sebaran dan grafik batang analitik.
+     Enam langkah, bukan gradien opasitas: pembaca membandingkan wilayah dengan
+     mencocokkan warna ke legenda, dan dua opasitas yang berbeda 3% tidak bisa
+     dibedakan. Nilainya turunan dari hijau di atas yang dicampur permukaan -
+     tidak ada hue baru. Peran "dipilih" di peta memakai biru --dl-info dari
+     doclinc-design-system.css: satu-satunya hue non-hijau yang sudah dipakai
+     aplikasi ini, jadi seleksi tidak pernah tertukar dengan kelas nilai. */
+  --dl-ref-seq-0: #EAF2EE;
+  --dl-ref-seq-1: #C3E1D2;
+  --dl-ref-seq-2: #91C7AD;
+  --dl-ref-seq-3: #5B9A7B;
+  --dl-ref-seq-4: #2D7D56;
+  --dl-ref-seq-5: #12472F;
+  --dl-ref-select: #2E6685;
+  /* Warna NOMINAL untuk satu pertanyaan yang berbeda dari tangga nilai di
+     atas: "penyakit apa yang paling banyak di kecamatan ini?". Tiap hue
+     menunjuk satu kode ICD-10, bukan satu tingkat besaran, jadi urutannya
+     mengikuti peringkat kode kota - hue yang sama tidak pernah berarti dua
+     kode berbeda saat kode teratas berganti.
+     Enam hue, tidak ada biru 200-250 derajat: biru adalah warna "dipilih" di
+     peta ini, dan seleksi tidak boleh terbaca sebagai salah satu kelas.
+     Nilainya heksadesimal konkret (bukan color-mix()) karena dipasang sebagai
+     atribut `fill` SVG dan `fillStyle` Canvas. */
+  --dl-ref-cat-0: #1F6B4C;
+  --dl-ref-cat-1: #6D7A1D;
+  --dl-ref-cat-2: #A9761B;
+  --dl-ref-cat-3: #9E4526;
+  --dl-ref-cat-4: #8A3560;
+  --dl-ref-cat-5: #2B6F6C;
   --dl-ref-mint: #89F6DA;
   --dl-ref-mint-soft: #E8F7F0;
   --dl-ref-danger: #A8443F;
@@ -30,6 +59,10 @@
      hanya mencapai kontras 3,64:1, di bawah ambang WCAG AA 4,5:1. */
   --dl-ref-warning: #B7791F;
   --dl-ref-warning-ink: #98641A;
+  /* Latar amber lembut untuk lencana "perlu diperiksa" di panel pengodean
+     diagnosis. Nilainya sama dengan latar `.alert-warning` di
+     doclinc-design-system.css, jadi satu peringatan tidak memakai dua kuning. */
+  --dl-ref-warning-soft: #FCF5E6;
   --dl-ref-body: 14px;
   --dl-ref-body-compact: 13px;
   --dl-ref-label: 12px;
@@ -49,6 +82,13 @@
     0 2px 4px rgba(18, 71, 47, .24),
     0 8px 18px -4px rgba(18, 71, 47, .28),
     inset 0 1px 0 rgba(255, 255, 255, .2);
+  /* Bayangan kartu mengambang (kartu infografik di atas peta). Token sendiri,
+     bukan --dl-ref-shadow-primary: bayangan itu hijau tua untuk tombol di atas
+     latar terang, sedangkan kartu ini menutupi peta dan butuh bayangan netral
+     yang lebih lebar supaya terbaca sebagai lapisan di atas peta. */
+  --dl-ref-shadow-card:
+    0 2px 6px rgba(16, 38, 30, .14),
+    0 18px 40px -14px rgba(16, 38, 30, .38);
   --dl-ref-texture-plus:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'%3E%3Cpath d='M9 3h4v6h6v4h-6v6H9v-6H3V9h6z' fill='%232D7D56' fill-opacity='0.07'/%3E%3C/svg%3E");
   --dl-ref-texture-plus-light:

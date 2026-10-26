@@ -97,15 +97,26 @@ failed same-origin subresource" check covers them.
 | `PuskesmasPulomerak.geojson` | 588907 | `571ae5b96eb55f9498c2ebfb74cfa9c6abf04cdf0b023ea66bb66a7dbb0918d8` |
 | `PuskesmasPurwakarta.geojson` | 42990 | `41d2865fcc3eea8e0f262650bf3f0e8f328da5ccdcf9d4d1f267f4e5f885512f` |
 
-## Licence: not recorded — open item
+## Licence: stated by the repository owner (2026-10-26)
 
-The source files carry no licence, attribution, or copyright statement, and the
-repository history records none, so the upstream origin of the boundaries is
-unknown. This is an unresolved gap, not a resolved one: boundary data is
-copyrightable, and the sources are runtime routing data as well as map geometry,
-so neither they nor this derived copy should be redistributed outside this
-repository until the upstream licence is established. Tracked here so it is
-decided before F6 (staging and rollout), not discovered after it.
+The boundaries are declared to be **open data from Indonesia Geospasial**
+(Ina-Geoportal, Badan Informasi Geospasial). That statement replaces the earlier
+"licence unknown" status: the data is no longer treated as unlicensed, so neither
+the eight sources nor this derived copy is held back from being served by the
+panel or shipped with the repository.
+
+Because a statement is not a file, two things are still worth attaching before
+F6 (staging and rollout), and this section is where they belong:
+
+1. the exact Ina-Geoportal dataset or download page the eight
+   `servicearea/Puskesmas*.geojson` came from, and
+2. the licence or terms-of-use text that page applies — in particular the
+   attribution wording, and whether redistribution and commercial use are
+   allowed.
+
+Until (2) is attached, the panel credits the source in the map panel
+("Sumber batas kecamatan: Indonesia Geospasial") rather than claiming a licence
+name it has not read.
 
 ## Updating
 
@@ -115,8 +126,9 @@ decided before F6 (staging and rollout), not discovered after it.
    subsequence of its source ring, so a regeneration cannot silently redraw a
    boundary
 4. update the sizes and hashes in both tables
-5. run the map gate, which fails if polygons stop drawing or a kecamatan loses
-   its bubble — what a half-copied or wrongly simplified upgrade looks like:
+5. run the map gate, which fails if polygons stop drawing, a kecamatan loses its
+   colour class, or the klik-to-10 list stops opening — what a half-copied or
+   wrongly simplified upgrade looks like:
 
    ```
    cd tools/task11_browser

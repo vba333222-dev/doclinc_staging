@@ -41,6 +41,63 @@
 		return config.drillUrl + '/' + encodeURIComponent(code) + '/' + (config.filterSegments || '30/0/');
 	}
 
+	/* Warna batang menunjukkan POSISI dalam peringkat (tangga yang sama dengan
+	 * peta, --dl-ref-seq-1..5), bukan besar nilainya: sumbu grafik ini adalah
+	 * peringkat, dan pada data nyata banyak kode berimpit di nilai yang hampir
+	 * sama sehingga warna berbasis nilai membuat lima batang teratas tampak
+	 * identik. Angka di ujung batang tetap nilai aslinya, jadi tidak ada
+	 * pembaca yang menyimpulkan selisih yang tidak ada. Nilai yang sama selalu
+	 * mendapat warna yang sama: dua kode dengan jumlah identik tidak boleh
+	 * dibedakan warnanya. */
+	function barColors(values) {
+		var unique = [];
+		values.forEach(function (value) {
+			var number = Number(value) || 0;
+			if (unique.indexOf(number) === -1) {
+				unique.push(number);
+			}
+		});
+		unique.sort(function (a, b) {
+			return b - a;
+		});
+		return values.map(function (value) {
+			var number = Number(value) || 0;
+			if (unique.length <= 1) {
+				return token('--dl-ref-seq-5');
+			}
+			var position = unique.indexOf(number);
+			var step = Math.round((position / (unique.length - 1)) * 4);
+			var level = Math.max(2, Math.min(5, 5 - step));
+			return token('--dl-ref-seq-' + level);
+		});
+	}
+
+	/* Angka di ujung batang. Tanpa ini, tinggi batang hanya bisa dibaca dengan
+	 * hover atau dengan menurunkan mata ke tabel - dan grafik yang memaksa
+	 * pembacaannya lewat tooltip bukan grafik yang terbaca. */
+	function valueLabelsPlugin(inkColor, fontSize, fontFamily) {
+		return {
+			id: 'doclincBarValueLabels',
+			afterDatasetsDraw: function (chart) {
+				var meta = chart.getDatasetMeta(0);
+				if (!meta || !meta.data || !meta.data.length) {
+					return;
+				}
+				var ctx = chart.ctx;
+				ctx.save();
+				ctx.fillStyle = inkColor || '#1f2a24';
+				ctx.font = '600 ' + fontSize + 'px ' + fontFamily;
+				ctx.textAlign = 'left';
+				ctx.textBaseline = 'middle';
+				meta.data.forEach(function (bar, index) {
+					var value = Number(config.values[index]) || 0;
+					ctx.fillText(value.toLocaleString('id-ID'), bar.x + 6, bar.y);
+				});
+				ctx.restore();
+			}
+		};
+	}
+
 	function drawChart() {
 		var canvas = document.getElementById(config.canvasId);
 		if (!canvas || typeof window.Chart !== 'function') {
@@ -54,10 +111,11 @@
 		}
 		canvas.dataset.doclincChartReady = '1';
 
-		var barColor = token('--dl-ref-green-600');
 		var gridColor = token('--dl-ref-line');
 		var inkColor = token('--dl-ref-ink');
 		var labelColor = token('--dl-ref-muted');
+		var fontFamily = token('--dl-ref-font') || 'sans-serif';
+		var totalCoded = Number(config.totalCoded) || 0;
 
 		/* Pada layar sempit label panjang terpotong di sumbu. Kode saja tetap
 		 * terbaca; label lengkap tetap ada di tooltip dan di tabel bawah. */
@@ -73,16 +131,26 @@
 				datasets: [{
 					label: 'Diagnosis tercatat',
 					data: config.values,
-					backgroundColor: barColor || undefined,
+					backgroundColor: barColors(config.values),
+					hoverBackgroundColor: barColors(config.values),
 					borderWidth: 0,
-					borderRadius: 4
+					borderRadius: 4,
+					/* Batang tipis lebih mudah dibandingkan daripada balok tebal
+					 * yang memenuhi tinggi baris; 26px masih nyaman disentuh. */
+					maxBarThickness: 26,
+					categoryPercentage: 0.82,
+					barPercentage: 0.9
 				}]
 			},
+			plugins: [valueLabelsPlugin(inkColor, narrow ? 10 : 11, fontFamily)],
 			options: {
 				indexAxis: 'y',
 				responsive: true,
 				maintainAspectRatio: false,
 				animation: reducedMotion() ? false : { duration: 320 },
+				/* Ruang kanan untuk angka di ujung batang; tanpa ini angka
+				 * terbesar tergambar di luar area grafik. */
+				layout: { padding: { right: narrow ? 34 : 48, left: 0, top: 0, bottom: 0 } },
 				plugins: {
 					legend: { display: false },
 					tooltip: {
@@ -94,7 +162,10 @@
 								return config.labels[items[0].dataIndex] || '';
 							},
 							label: function (context) {
-								return context.parsed.x + ' diagnosis tercatat';
+								var value = Number(context.parsed.x) || 0;
+								var share = totalCoded > 0 ? Math.round((value / totalCoded) * 100) : 0;
+								return value.toLocaleString('id-ID') + ' diagnosis tercatat'
+									+ (totalCoded > 0 ? ' (' + share + '% dari diagnosis yang sudah dikode)' : '');
 							}
 						}
 					}
@@ -102,11 +173,22 @@
 				scales: {
 					x: {
 						beginAtZero: true,
-						ticks: { precision: 0, color: labelColor || undefined },
+						ticks: {
+							precision: 0,
+							color: labelColor || undefined,
+							font: { size: narrow ? 10 : 11 }
+						},
 						grid: { color: gridColor || undefined }
 					},
 					y: {
-						ticks: { color: inkColor || undefined },
+						ticks: {
+							color: inkColor || undefined,
+							/* Semua kode harus tampil: grafik ini tentang
+							 * peringkat, dan peringkat yang barisnya
+							 * dilewati tidak bisa dibaca. */
+							autoSkip: false,
+							font: { size: narrow ? 10 : 11, weight: '600' }
+						},
 						grid: { display: false }
 					}
 				}

@@ -127,14 +127,14 @@ class Medicalrecord_diagnosis_service
 	{
 		$text = trim((string) $text);
 		$plain = array('code' => null, 'label' => $text, 'term_id' => null, 'source' => null, 'version' => null);
-		$code = null;
-		$label = null;
-		if (preg_match('/^([A-Z][0-9]{2}(?:\.[0-9A-Z]{1,4})?)(?:\s*[\x{2014}\x{2013}\-]\s*|\s+)(.+)$/u', $text, $match) === 1) {
-			$code = $match[1];
-			$label = trim($match[2]);
-		} elseif (preg_match('/^([A-Z][0-9]{2}(?:\.[0-9A-Z]{1,4})?)$/u', $text, $match) === 1) {
-			$code = $match[1];
-		}
+
+		/* Pemisahan kode dari label ada di satu tempat (`Icd10_code_text`) supaya
+		 * bentuk "Dermatitis atopik (L20.9)" yang diketik tangan ikut dikenali,
+		 * bukan hanya "L20.9 — Dermatitis atopik" dari pemilih. */
+		require_once __DIR__ . '/Icd10_code_text.php';
+		$parsed = Icd10_code_text::extract($text);
+		$code = $parsed['code'];
+		$label = $parsed['label'];
 		if ($code === null) {
 			return $plain;
 		}

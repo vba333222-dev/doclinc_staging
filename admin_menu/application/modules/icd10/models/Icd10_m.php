@@ -142,6 +142,30 @@ class Icd10_m extends CI_Model
 		return $built;
 	}
 
+	/**
+	 * Peta `kode => entri` untuk memeriksa kode tertentu tanpa memindai 12.246
+	 * baris. Dipakai panel pengodean diagnosis (modul diagnosis) untuk menjawab
+	 * satu pertanyaan: "kode yang tertulis di teks ini benar-benar ada dan boleh
+	 * dipakai sebagai diagnosis?".
+	 *
+	 * Indeks yang sama dipakai `search()`, jadi tidak ada pembacaan berkas 12 MB
+	 * tambahan: hasilnya berasal dari cache indeks yang sudah ada.
+	 */
+	public function codeIndex()
+	{
+		$index = $this->loadIndex();
+		if (($index['meta']['status'] ?? '') !== 'ok') {
+			return array();
+		}
+		$map = array();
+		foreach ($index['entries'] as $entry) {
+			if ($entry['kode'] !== '') {
+				$map[$entry['kode']] = $entry;
+			}
+		}
+		return $map;
+	}
+
 	private function buildIndex($fingerprint)
 	{
 		$started = microtime(true);

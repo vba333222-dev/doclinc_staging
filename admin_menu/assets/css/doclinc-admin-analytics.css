@@ -54,6 +54,16 @@
 	color: var(--dl-ref-muted);
 }
 
+/* Tautan di dalam keterangan kartu: satu-satunya jalan dari angka "Belum
+ * dikode" ke panel yang bisa merapikannya. Warnanya memakai token hijau yang
+ * sudah dipetakan untuk tema gelap, dan digarisbawahi supaya tidak bergantung
+ * pada warna saja (WCAG 1.4.1). */
+.doclinc-analytics-card-hint a {
+	color: var(--dl-ref-green-700);
+	font-weight: 700;
+	text-decoration: underline;
+}
+
 .doclinc-analytics-panel {
 	padding: 16px;
 	margin-bottom: 20px;
@@ -78,7 +88,10 @@
 .doclinc-analytics-chart {
 	position: relative;
 	width: 100%;
-	height: 320px;
+	/* Dinaikkan dari 320px: sepuluh batang dengan angka di ujungnya butuh ruang
+	   supaya tinggi tiap batang tidak jatuh di bawah ~22px, batas di mana
+	   perbandingan tinggi mulai sulit dilakukan dengan mata. */
+	height: 380px;
 }
 
 .doclinc-analytics-note {
@@ -208,6 +221,7 @@
 	font-size: var(--dl-ref-label);
 	font-weight: 700;
 	border-radius: 999px;
+	white-space: nowrap;
 }
 
 .doclinc-analytics-badge-coded {
@@ -236,6 +250,195 @@
 .doclinc-analytics-drill-target[hidden] {
 	display: none;
 }
+
+/* --- Panel pengodean diagnosis ---------------------------------------------
+   Panel ini menjawab satu pertanyaan: "teks mana yang belum punya kode, dan
+   apa yang bisa saya lakukan?". Karena itu ia punya tiga bagian yang urutannya
+   mengikuti pekerjaan: angka ringkas, satu tombol untuk kode yang sudah
+   tertulis, lalu tabel teks yang harus dipilih manual. Semua warna memakai
+   token --dl-ref-*; tidak ada hex baru di sini. */
+
+.doclinc-coding-figures {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-block: 4px 16px;
+}
+
+.doclinc-coding-figure {
+	flex: 1 1 180px;
+	padding: 12px 14px;
+	background: var(--dl-ref-surface);
+	border: 1px solid var(--dl-ref-line);
+	border-radius: var(--dl-ref-radius-tile);
+}
+
+.doclinc-coding-figure-value {
+	display: block;
+	font-size: 22px;
+	font-weight: 800;
+	line-height: 1.2;
+	color: var(--dl-ref-ink);
+	font-variant-numeric: tabular-nums;
+}
+
+.doclinc-coding-figure-label {
+	display: block;
+	font-size: var(--dl-ref-caption);
+	line-height: 1.4;
+	color: var(--dl-ref-muted);
+}
+
+.doclinc-coding-action {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 16px;
+	margin-block-end: 12px;
+	background: var(--dl-ref-mint-soft);
+	border: 1px solid var(--dl-ref-line);
+	border-radius: var(--dl-ref-radius-tile);
+}
+
+.doclinc-coding-action-text {
+	flex: 1 1 320px;
+	min-inline-size: 0;
+	font-size: var(--dl-ref-body-compact);
+	line-height: 1.55;
+	color: var(--dl-ref-ink);
+}
+
+.doclinc-coding-action-form {
+	flex: 0 0 auto;
+	margin: 0;
+}
+
+.doclinc-coding-help {
+	margin-block: 0 12px;
+	font-size: var(--dl-ref-body-compact);
+	line-height: 1.55;
+	color: var(--dl-ref-muted);
+}
+
+.doclinc-coding-text {
+	display: block;
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+.doclinc-coding-sub {
+	display: block;
+	font-size: var(--dl-ref-caption);
+	line-height: 1.45;
+	color: var(--dl-ref-muted);
+	overflow-wrap: anywhere;
+}
+
+.doclinc-coding-code-label {
+	color: var(--dl-ref-muted);
+}
+
+.doclinc-coding-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	margin-inline-end: 6px;
+	font-size: var(--dl-ref-label);
+	font-weight: 700;
+	border-radius: 999px;
+}
+
+.doclinc-coding-badge-ready {
+	color: var(--dl-ref-green-900);
+	background: var(--dl-ref-mint-soft);
+}
+
+.doclinc-coding-badge-review {
+	color: var(--dl-ref-warning-ink);
+	background: var(--dl-ref-warning-soft);
+}
+
+.doclinc-coding-badge-manual {
+	color: var(--dl-ref-danger);
+	background: var(--dl-ref-danger-soft);
+}
+
+/* Tema gelap: lencana ini memakai latar tint yang ikut menggelap (mint-soft
+ * dipetakan ke --doclinc-table-head di custom.css), sedangkan tintanya tetap
+ * versi tema terang. Tanpa koreksi di bawah, "Bisa dikode otomatis" menjadi
+ * hijau tua di atas latar gelap - terukur 1,54:1. `--dl-ref-ink` di tema gelap
+ * adalah #e5edf5, jadi angkanya kembali di atas 10:1. Dua lencana lama di
+ * halaman yang sama (.doclinc-analytics-badge-coded/-uncoded) memakai pasangan
+ * warna yang sama dan ikut dikoreksi di sini, bukan dibiarkan berbeda. */
+html[data-theme="dark"] .doclinc-coding-badge-ready,
+html[data-theme="dark"] .doclinc-coding-badge-manual,
+html[data-theme="dark"] .doclinc-analytics-badge-coded,
+html[data-theme="dark"] .doclinc-analytics-badge-uncoded {
+	color: var(--dl-ref-ink);
+}
+
+html[data-theme="dark"] .doclinc-coding-badge-review {
+	color: var(--dl-ref-ink);
+	background: color-mix(in srgb, var(--dl-ref-warning) 22%, var(--dl-ref-surface));
+}
+
+.doclinc-coding-pick {
+	display: inline;
+	margin: 0;
+}
+
+.doclinc-coding-pick .dl-adm-action {
+	margin: 0;
+}
+
+.doclinc-coding-details {
+	margin-block-start: 16px;
+	padding-block-start: 12px;
+	font-size: var(--dl-ref-body-compact);
+	line-height: 1.55;
+	color: var(--dl-ref-muted);
+	border-top: 1px solid var(--dl-ref-line);
+}
+
+.doclinc-coding-details summary {
+	font-weight: 700;
+	color: var(--dl-ref-ink);
+	cursor: pointer;
+}
+
+.doclinc-coding-details ul {
+	margin-block: 8px 0;
+	padding-inline-start: 20px;
+}
+
+.doclinc-coding-target {
+	padding: 10px 12px;
+	margin-block: 0 8px;
+	font-size: var(--dl-ref-body);
+	font-weight: 700;
+	overflow-wrap: anywhere;
+	background: var(--dl-ref-mint-soft);
+	border-inline-start: 4px solid var(--dl-ref-green-600);
+	border-radius: var(--dl-ref-radius-control);
+	color: var(--dl-ref-ink);
+}
+
+.doclinc-coding-table td {
+	vertical-align: top;
+}
+
+@media (max-width: 767.98px) {
+	.doclinc-coding-action {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.doclinc-coding-action-form .dl-adm-action {
+		inline-size: 100%;
+	}
+}
+
 
 .doclinc-analytics a:focus-visible,
 .doclinc-analytics button:focus-visible,
@@ -286,69 +489,25 @@
 
 .doclinc-map-stage {
 	position: relative;
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(210px, 260px);
-	gap: 16px;
-	align-items: start;
 }
 
+/* Kanvas memuat bingkai peta, status, lalu legenda. Bingkai inilah konteks
+   posisi kartu infografik, bukan kanvas: kartu menempel di tepi peta, dan
+   legenda/atribusi yang ada di bawah peta tidak boleh ikut menjadi acuan.
+   Tinggi peta disimpan sebagai variabel karena kartu memakai tinggi yang sama
+   untuk batas tingginya - dua angka yang harus tetap sama saat clamp berubah di
+   layar pendek. */
 .doclinc-map-canvas {
+	--doclinc-map-height: clamp(360px, 56vh, 620px);
 	min-inline-size: 0;
 }
 
-/* Peringkat kecamatan: angka yang sama dengan warna peta, dalam bentuk yang
-   tidak bisa saling menutupi seperti label di atas poligon. */
-.doclinc-map-ranking-title {
-	margin: 0 0 8px;
-	color: var(--dl-ref-muted);
-	font-size: var(--dl-ref-label);
-	font-weight: 700;
-	letter-spacing: 0.02em;
-	text-transform: uppercase;
-}
-
-.doclinc-map-ranking-list {
-	display: grid;
-	gap: 6px;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	counter-reset: doclinc-map-rank;
-}
-
-.doclinc-map-ranking-item {
+.doclinc-map-frame {
 	position: relative;
-	display: grid;
-	grid-template-columns: 1fr auto;
-	gap: 6px;
-	padding-block-end: 6px;
-	color: var(--dl-ref-ink);
-	font-size: var(--dl-ref-caption);
-}
-
-.doclinc-map-ranking-name::before {
-	counter-increment: doclinc-map-rank;
-	content: counter(doclinc-map-rank) '. ';
-	color: var(--dl-ref-muted);
-}
-
-.doclinc-map-ranking-value {
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	font-variant-numeric: tabular-nums;
-	font-weight: 700;
-}
-
-.doclinc-map-ranking-bar {
-	grid-column: 1 / -1;
-	block-size: 6px;
-	border-radius: 999px;
-	background: var(--dl-ref-green-600);
-	/* Lebar datang dari JS; transisi membuat perpindahan kode terlihat mulus. */
-	transition: inline-size 620ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .doclinc-map {
-	block-size: clamp(360px, 56vh, 620px);
+	block-size: var(--doclinc-map-height);
 	background: var(--dl-ref-mint-soft);
 	border: 1px solid var(--dl-ref-line);
 	border-radius: var(--dl-ref-radius-tile);
@@ -402,20 +561,388 @@
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 8px;
+	gap: 8px 12px;
 	margin-top: 6px;
 	color: var(--dl-ref-muted);
 	font-size: var(--dl-ref-caption);
 }
 
-.doclinc-map-legend-scale {
-	inline-size: 96px;
-	block-size: 8px;
+.doclinc-map-legend-title {
+	font-weight: 700;
+	color: var(--dl-ref-ink);
+}
+
+.doclinc-map-legend-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* `hidden` dari JS dipakai saat nilai maksimum terlalu kecil untuk enam kelas;
+   aturan ini perlu karena `display: inline-flex` di atas mengalahkan gaya
+   bawaan peramban untuk atribut `hidden`. */
+.doclinc-map-legend-item[hidden] {
+	display: none;
+}
+
+/* Dua legenda berganti menurut mode warna. `display: flex` di atas juga
+   mengalahkan atribut `hidden` pada kontainer legenda, jadi aturannya perlu
+   ditulis sendiri. */
+.doclinc-map-legend[hidden] {
+	display: none;
+}
+
+/* Label penyakit bisa panjang. Legenda memotongnya dengan elipsis dan menyimpan
+   teks penuh di `title`; kode dan jumlah kecamatan tetap terbaca utuh. */
+.doclinc-map-legend-text {
+	max-inline-size: 210px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.doclinc-map-legend-range {
+	font-variant-numeric: tabular-nums;
+}
+
+.doclinc-map-swatch {
+	inline-size: 14px;
+	block-size: 10px;
+	border: 1px solid var(--dl-ref-line);
+	border-radius: 3px;
+}
+
+.doclinc-map-swatch-level-0 { background: var(--dl-ref-seq-0); }
+.doclinc-map-swatch-level-1 { background: var(--dl-ref-seq-1); }
+.doclinc-map-swatch-level-2 { background: var(--dl-ref-seq-2); }
+.doclinc-map-swatch-level-3 { background: var(--dl-ref-seq-3); }
+.doclinc-map-swatch-level-4 { background: var(--dl-ref-seq-4); }
+.doclinc-map-swatch-level-5 { background: var(--dl-ref-seq-5); }
+
+.doclinc-map-swatch-selected {
+	background: var(--dl-ref-select);
+	border-color: var(--dl-ref-select);
+}
+
+/* "Tanpa data" memakai garis putus-putus, bukan warna muda: warna muda di mode
+   penyakit terbanyak akan terbaca sebagai penyakit lain yang jumlahnya kecil. */
+.doclinc-map-swatch-empty {
+	background: var(--dl-ref-seq-0);
+	border: 1px dashed var(--dl-ref-muted);
+}
+
+/* Atribusi sumber batas. Teks kecil dan tenang: ia wajib ada, bukan wajib
+   menonjol. */
+.doclinc-map-attribution {
+	margin: 6px 0 0;
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-caption);
+}
+
+/* Petunjuk klik harus terbaca sebelum peta dicoba, bukan sesudahnya. */
+.doclinc-map-hint {
+	margin: 0 0 10px;
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-caption);
+}
+
+/* Poligon peta adalah tombol: kursor, fokus, dan transisi warna. Transisinya
+   hanya pada `fill`, jadi perpindahan kode tidak menggeser geometri. */
+.doclinc-map path.leaflet-interactive {
+	cursor: pointer;
+	transition: fill 220ms var(--dl-ref-ease);
+}
+
+.doclinc-map path.leaflet-interactive:focus-visible {
+	outline: 3px solid var(--dl-ref-green-600);
+	outline-offset: 1px;
+}
+
+/* Kartu infografik kecamatan: satu kartu mengambang di atas peta, bukan panel
+   yang mendorong tabel ke bawah. Alasannya bukan gaya: klik pada peta adalah
+   pertanyaan tentang tempat yang sedang dilihat, dan jawaban yang muncul di
+   luar layar (atau setelah menggulir) memutus hubungan antara poligon biru dan
+   angka yang menjelaskannya. */
+.doclinc-map-card {
+	position: absolute;
+	/* Di atas pane Leaflet (400-700) dan kontrol zoom (1000). */
+	z-index: 1001;
+	inset-block-start: 12px;
+	inset-inline-end: 12px;
+	display: flex;
+	flex-direction: column;
+	/* 400px: cukup untuk empat angka dua kolom dan satu baris kode + label,
+	   dan masih menyisakan lebih dari separuh lebar peta untuk poligon. */
+	inline-size: min(400px, calc(100% - 24px));
+	max-block-size: calc(var(--doclinc-map-height) - 24px);
+	overflow: hidden;
+	border: 1px solid var(--dl-ref-line);
+	border-radius: var(--dl-ref-radius-tile);
+	background: var(--dl-ref-surface);
+	box-shadow: var(--dl-ref-shadow-card);
+	/* Kartu masuk seperti kertas yang diletakkan di atas peta. Hanya opacity
+	   dan transform, jadi animasinya tidak memicu tata letak ulang. */
+	animation: doclinc-card-in 260ms var(--dl-ref-ease) both;
+}
+
+.doclinc-map-card[hidden] {
+	display: none;
+}
+
+@keyframes doclinc-card-in {
+	from {
+		opacity: 0;
+		transform: translateY(14px) scale(0.985);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+.doclinc-map-card-head {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 4px 10px;
+	align-items: start;
+	padding: 14px 14px 10px;
+	border-block-end: 1px solid var(--dl-ref-line);
+	background: var(--dl-ref-surface);
+}
+
+.doclinc-map-card-heading {
+	min-inline-size: 0;
+}
+
+.doclinc-map-card-eyebrow {
+	margin: 0;
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-label);
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.doclinc-map-card-title {
+	margin: 2px 0 4px;
+	color: var(--dl-ref-ink);
+	font-size: var(--dl-ref-title);
+}
+
+/* Tombol tutup: 32px di layar lebar supaya tidak berebut perhatian dengan
+   judul, 44px di ponsel supaya tetap bisa disentuh dengan jempol. */
+.doclinc-map-card-close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 32px;
+	block-size: 32px;
+	padding: 0;
+	border: 1px solid var(--dl-ref-line);
 	border-radius: 999px;
-	background: linear-gradient(90deg,
-		color-mix(in srgb, var(--dl-ref-green-600) 18%, var(--dl-ref-surface)),
-		var(--dl-ref-green-600),
-		var(--dl-ref-green-900));
+	background: var(--dl-ref-surface);
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-body);
+	cursor: pointer;
+}
+
+.doclinc-map-card-close:hover {
+	color: var(--dl-ref-ink);
+	background: var(--dl-ref-mint-soft);
+}
+
+.doclinc-map-card-close:focus-visible {
+	outline: 3px solid var(--dl-ref-green-600);
+	outline-offset: 2px;
+}
+
+/* Badan kartu satu-satunya yang menggulir: kepala kartu (judul + tombol tutup)
+   tetap di tempatnya, jadi jalan keluar tidak pernah ikut tergulir hilang. */
+.doclinc-map-card-body {
+	min-block-size: 0;
+	padding: 12px 14px 16px;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
+/* Subjudul kecamatan: satu kalimat yang menyebut asal angka, bukan paragraf
+   pengantar - kartu ini dibaca setelah orang sudah mengklik. */
+.doclinc-map-selection-scope {
+	margin: 0;
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-caption);
+}
+
+.doclinc-map-selection-subtitle {
+	margin: 0 0 8px;
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-label);
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+/* Empat angka kecamatan. Bukan empat kartu berikon: garis rambut di atas dan
+   bawah memisahkan blok ini dari judul dan pita, dan angka 22px yang lebih
+   besar dari labelnya sudah membentuk hierarki tanpa kotak tambahan. */
+.doclinc-map-figures {
+	display: grid;
+	/* 130px, bukan 150px: pada 390px panel menyisakan ~318px, dan dua kolom
+	   150px + celah 20px tidak lagi muat - panel jadi empat baris vertikal
+	   yang mendorong daftar kode jauh ke bawah. */
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 10px 16px;
+	margin: 2px 0 14px;
+	padding-block: 12px;
+	border-block: 1px solid var(--dl-ref-line);
+}
+
+.doclinc-map-figures:empty {
+	display: none;
+}
+
+.doclinc-map-figure {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-inline-size: 0;
+}
+
+.doclinc-map-figure-label {
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-label);
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.doclinc-map-figure-value {
+	color: var(--dl-ref-ink);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 1.15;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Kode ICD-10 lebih panjang dari angka; 18px membuat empat kolom seimbang dan
+   tetap jelas lebih besar dari catatan di bawahnya. */
+.doclinc-map-figure-code {
+	font-size: 18px;
+}
+
+.doclinc-map-figure-note {
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-caption);
+}
+
+/* Satu batang 100%: bentuk penyebaran penyakit, bukan daftar. Celah 2px
+   memisahkan segmen tanpa menambah garis tepi. */
+.doclinc-map-share {
+	display: flex;
+	gap: 2px;
+	block-size: 10px;
+	overflow: hidden;
+	border-radius: 999px;
+	background: var(--dl-ref-line);
+}
+
+.doclinc-map-share[hidden] {
+	display: none;
+}
+
+.doclinc-map-share-seg {
+	min-inline-size: 2px;
+	background: var(--dl-ref-seq-3);
+}
+
+/* Sisa di luar sepuluh kode teratas digambar sebagai garis miring, bukan warna
+   kesebelas: pitanya harus berjumlah 100%, tetapi "kode lain" bukan penyakit
+   yang bisa diberi hue sendiri. */
+.doclinc-map-share-seg-rest {
+	background: repeating-linear-gradient(
+		135deg,
+		var(--dl-ref-line) 0 3px,
+		var(--dl-ref-mint-soft) 3px 6px
+	);
+}
+
+.doclinc-map-share-note {
+	margin: 6px 0 14px;
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-caption);
+}
+
+.doclinc-map-share-note:empty {
+	margin: 0;
+}
+
+.doclinc-map-selection-list {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.doclinc-map-selection-item {
+	display: grid;
+	grid-template-columns: 2ch minmax(6ch, max-content) minmax(0, 1fr) auto;
+	gap: 4px 10px;
+	align-items: baseline;
+	padding-block-end: 8px;
+	border-bottom: 1px solid var(--dl-ref-line);
+	color: var(--dl-ref-ink);
+	font-size: var(--dl-ref-caption);
+}
+
+.doclinc-map-selection-item:last-child {
+	padding-block-end: 0;
+	border-bottom: 0;
+}
+
+.doclinc-map-selection-rank {
+	color: var(--dl-ref-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.doclinc-map-selection-code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-weight: 700;
+}
+
+/* Hue di baris daftar hanya muncul di mode "Penyakit terbanyak", tempat hue
+   yang sama dipakai poligon kecamatan di peta. Titik kecil, bukan latar baris:
+   angka dan panjang batang tetap pembawa besaran. */
+.doclinc-map-selection-swatch {
+	display: inline-block;
+	inline-size: 8px;
+	block-size: 8px;
+	margin-inline-end: 5px;
+	border-radius: 2px;
+}
+
+.doclinc-map-selection-label {
+	min-inline-size: 0;
+}
+
+.doclinc-map-selection-value {
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	text-align: end;
+}
+
+.doclinc-map-selection-bar {
+	grid-column: 3 / -1;
+	block-size: 6px;
+	border-radius: 999px;
+	background: var(--dl-ref-seq-3);
+}
+
+.doclinc-map-selection-empty {
+	color: var(--dl-ref-muted);
+	font-size: var(--dl-ref-caption);
 }
 
 .doclinc-map-table {
@@ -434,14 +961,16 @@
 	outline-offset: 2px;
 }
 
-@media (max-width: 991.98px) {
-	.doclinc-map-stage {
-		grid-template-columns: minmax(0, 1fr);
-	}
-}
-
 @media (prefers-reduced-motion: reduce) {
-	.doclinc-map-ranking-bar {
+	/* Kartu tetap muncul, tetapi tanpa gerakan: pembaca yang meminta gerak
+	   dikurangi tidak perlu melihat kartu melayang masuk di atas peta. */
+	.doclinc-map-card {
+		animation: none;
+	}
+
+	/* Warna peta tetap berubah, tetapi tanpa animasi: pembaca yang meminta
+	   gerak dikurangi tidak perlu melihat poligon "memudar" antar-kode. */
+	.doclinc-map path.leaflet-interactive {
 		transition: none;
 	}
 }
@@ -451,5 +980,28 @@
 	.doclinc-map-controls .dl-adm-toolbar-field {
 		inline-size: 100%;
 		min-inline-size: 0;
+	}
+
+	/* Di ponsel kartu menjadi lembar bawah: lebar penuh, menempel di tepi bawah
+	   peta, dan menyisakan pita peta di atasnya - kartu setinggi peta menutupi
+	   poligon yang baru saja diklik, sehingga orang kehilangan hubungan antara
+	   klik dan jawabannya. */
+	.doclinc-map-card {
+		inset: auto 8px 8px;
+		inline-size: auto;
+		max-block-size: calc(var(--doclinc-map-height) - 80px);
+	}
+
+	.doclinc-map-card-head {
+		padding: 12px 12px 8px;
+	}
+
+	.doclinc-map-card-body {
+		padding: 10px 12px 14px;
+	}
+
+	.doclinc-map-card-close {
+		inline-size: 44px;
+		block-size: 44px;
 	}
 }
