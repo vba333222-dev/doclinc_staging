@@ -51,6 +51,13 @@ def head_source(path):
 def empty_blocks(src):
     blocks = []
     for m in re.finditer(r'<div class="doclinc-empty-state[^"]*"[^>]*>', src):
+        # Keadaan kosong yang dirakit JavaScript bukan markup halaman: pembukanya
+        # ada di dalam literal string ('<div ...>'), sehingga pencarian </div>
+        # penutup di berkas PHP tidak menemukan pasangan yang benar dan menelan
+        # seluruh skrip sesudahnya - lalu potongan skrip itu dilaporkan sebagai
+        # "kalimat yang hilang". Kasus nyatanya laporan_v.php:268.
+        if src[:m.start()].rstrip()[-1:] in ("'", '"'):
+            continue
         depth, end = 0, m.start()
         for tag in re.finditer(r'<div\b|</div>', src[m.start():]):
             depth += -1 if tag.group(0).startswith('</') else 1
