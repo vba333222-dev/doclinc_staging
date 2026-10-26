@@ -1,7 +1,11 @@
 # Harness lokal panel admin DocLink.
 #
 # Pemakaian (dari akar repo):
-#   sudo docker compose -f tools/admin_panel/local/docker-compose.yml up -d --build
+#   tools/admin_panel/local/docker_up.sh --clinical
+# Skrip itu menutup semua langkah manual (pasang, tunggu sehat, isi fixture
+# bila kosong, siapkan tabel audit + kapabilitas klinis). Perintah compose di
+# bawah tetap sah untuk dipakai langsung:
+#   docker compose -f tools/admin_panel/local/docker-compose.yml up -d --build
 #
 # Gerbang di dalam kontainer (fixture + tiga gerbang statis + sapuan 20 rute).
 # Jangan menyetel BASE_URL ke 8080 di sini: di dalam kontainer Apache mendengar

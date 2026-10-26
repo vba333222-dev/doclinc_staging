@@ -1,0 +1,25 @@
+# Tambahan compose untuk menghidupkan akses klinis di harness lokal.
+#
+#   docker compose -f tools/admin_panel/local/docker-compose.yml \
+#                  -f tools/admin_panel/local/docker-compose.clinical.yml \
+#                  up -d
+#
+# Harness biasa sengaja menyalakan flag MATI: halaman arsip lalu menjelaskan
+# "Isi klinis tidak tersedia untuk Admin" dan tidak menyisakan tombol yang
+# pasti gagal. Berkas ini menyalakan jalur sebaliknya supaya modal "Buka rekam"
+# dan permintaan beralasan (428 tanpa alasan, 403 tanpa kapabilitas, 200 dengan
+# alasan) bisa diuji di kontainer yang sama.
+#
+# Tiga pasang variabel ini harus konsisten satu sama lain; flag hanya menyala
+# bila nilai `enabled` benar, lingkungan fitur ada di daftar yang diizinkan, DAN
+# sama dengan `DOCLINC_RUNTIME_ENVIRONMENT` (lihat `Doclinc_feature_flags`).
+# Kapabilitas `clinical_audit` sendiri tetap harus ada di database — itu tugas
+# `fixture_clinical.php`, bukan flag.
+services:
+  app:
+    environment:
+      DOCLINC_RUNTIME_ENVIRONMENT: staging
+      DOCLINC_CLINICAL_AUDIT_ENABLED: "1"
+      DOCLINC_CLINICAL_AUDIT_ENVIRONMENT: staging
+      DOCLINC_ADMIN_CAPABILITIES_ENABLED: "1"
+      DOCLINC_ADMIN_CAPABILITIES_ENVIRONMENT: staging
