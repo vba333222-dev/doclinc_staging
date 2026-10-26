@@ -234,6 +234,115 @@ test('peta sebaran penyakit tergambar, berkelas warna, dan tanpa gelembung', asy
   expect(pageErrors, 'skrip peta tidak boleh melempar galat').toEqual([]);
 });
 
+test('peta bisa dibuka layar penuh lewat tombol dan ditutup lagi', async ({ page }) => {
+  await login(page);
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(String(error)));
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${adminBase}/diagnosis`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#doclincDiseaseMap path[role="button"]');
+
+  /* Diukur dari layar, bukan dari kelas: tombol ini memakai Fullscreen API bila
+     ada dan kelas `is-expanded` bila tidak. Kedua jalur harus sama-sama
+     membesarkan PETA-nya, jadi yang diperiksa tinggi peta, bukan mekanismenya. */
+  const measure = () => page.evaluate(() => {
+    const canvas = document.querySelector('.doclinc-map-canvas');
+    const host = document.getElementById('doclincDiseaseMap');
+    const bar = document.getElementById('doclincMapFullBar');
+    const exit = document.getElementById('doclincMapExit');
+    const toggle = document.getElementById('doclincMapFullscreen');
+    const fullscreen = document.fullscreenElement || document.webkitFullscreenElement || null;
+    return {
+      fullscreen: fullscreen === canvas,
+      expanded: Boolean(canvas && canvas.classList.contains('is-expanded')),
+      mapHeight: host ? Math.round(host.getBoundingClientRect().height) : 0,
+      barHeight: bar ? Math.round(bar.getBoundingClientRect().height) : 0,
+      exitVisible: Boolean(exit && exit.getClientRects().length > 0),
+      pressed: toggle ? toggle.getAttribute('aria-pressed') : null,
+      label: toggle ? (toggle.textContent || '').replace(/\s+/g, ' ').trim() : '',
+      polygons: host ? host.querySelectorAll('path.leaflet-interactive').length : 0,
+    };
+  });
+
+  const toggle = page.locator('#doclincMapFullscreen');
+  await expect(toggle, 'tombol layar penuh harus tersedia begitu peta tergambar').toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(toggle).toContainText('Layar penuh');
+
+  const before = await measure();
+  expect(before.fullscreen || before.expanded, 'peta harus mulai dalam keadaan normal').toBe(false);
+  expect(before.mapHeight, 'peta harus tergambar sebelum dibesarkan').toBeGreaterThan(120);
+  expect(before.barHeight, 'bar keluar tidak boleh tampil sebelum peta dibesarkan').toBe(0);
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(toggle).toContainText('Keluar layar penuh');
+
+  const opened = await measure();
+  expect(opened.fullscreen || opened.expanded, 'peta harus masuk mode layar penuh').toBe(true);
+  expect(opened.barHeight, 'bar judul dan tombol keluar harus tampil di layar penuh').toBeGreaterThan(0);
+  expect(opened.exitVisible, 'tombol keluar harus terlihat selama peta besar').toBe(true);
+  expect(opened.mapHeight, 'peta harus ikut membesar, bukan hanya bingkainya')
+    .toBeGreaterThan(before.mapHeight + 60);
+  expect(opened.polygons, 'poligon tidak boleh hilang saat peta dibesarkan').toBe(before.polygons);
+
+  await page.locator('#doclincMapExit').click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect.poll(
+    () => page.evaluate(() => Boolean(document.fullscreenElement || document.webkitFullscreenElement)),
+    { message: 'peramban harus keluar dari layar penuh' }
+  ).toBe(false);
+
+  const closed = await measure();
+  expect(closed.expanded, 'kelas layar penuh harus dilepas').toBe(false);
+  expect(closed.mapHeight, 'peta harus kembali ke tinggi panel').toBeLessThan(opened.mapHeight - 60);
+  expect(closed.barHeight, 'bar keluar harus tersembunyi lagi').toBe(0);
+  expect(closed.polygons, 'poligon harus tetap utuh setelah keluar').toBe(before.polygons);
+  expect(pageErrors, 'skrip peta tidak boleh melempar galat saat peta dibesarkan').toEqual([]);
+});
+
+test('layar penuh peta tetap bekerja tanpa Fullscreen API', async ({ page }) => {
+  await login(page);
+
+  /* Meniru Safari iOS: elemen biasa tidak bisa masuk layar penuh. Jalur
+     cadangannya (kanvas ditempel ke seluruh layar) harus tetap membesarkan
+     peta - kalau tidak, tombol ini mati di ponsel. */
+  await page.addInitScript(() => {
+    Object.defineProperty(Element.prototype, 'requestFullscreen', { value: undefined, configurable: true });
+    Object.defineProperty(Element.prototype, 'webkitRequestFullscreen', { value: undefined, configurable: true });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${adminBase}/diagnosis`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#doclincDiseaseMap path[role="button"]');
+
+  const mapHeight = () => page.evaluate(
+    () => Math.round(document.getElementById('doclincDiseaseMap').getBoundingClientRect().height)
+  );
+  const before = await mapHeight();
+
+  await page.locator('#doclincMapFullscreen').click();
+  await page.waitForFunction(
+    () => document.querySelector('.doclinc-map-canvas').classList.contains('is-expanded'),
+    null,
+    { timeout: 3000 }
+  );
+  await expect.poll(mapHeight, { message: 'peta harus membesar tanpa Fullscreen API' })
+    .toBeGreaterThan(before + 40);
+
+  /* Escape adalah satu-satunya jalan keluar di jalur ini: peramban tidak
+     menyediakan Escape layar penuh saat kanvas hanya ditempel dengan CSS. */
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(
+    () => !document.querySelector('.doclinc-map-canvas').classList.contains('is-expanded'),
+    null,
+    { timeout: 3000 }
+  );
+  await expect.poll(mapHeight, { message: 'peta harus kembali ke tinggi panel' })
+    .toBeLessThan(before + 4);
+});
+
 test('klik kecamatan membuka 10 penyakit dan mewarnai kecamatan terpilih', async ({ page }) => {
   await login(page);
   const pageErrors = [];

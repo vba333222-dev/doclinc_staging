@@ -296,6 +296,15 @@ $this->load->view('commons/page_head', array('page_head' => $page_head));
 				<button type="button" class="btn btn-primary dl-adm-action" id="doclincMapPlay" aria-pressed="false" <?= empty($map_codes) ? 'disabled' : ''; ?>>
 					<i class="fas fa-play" aria-hidden="true"></i> <span>Putar</span>
 				</button>
+				<?php
+				/* Tombol layar penuh. Disembunyikan sampai skrip peta siap: tanpa
+				   JavaScript peta tidak tergambar, jadi tombolnya hanya akan menjadi
+				   tombol mati. Skrip peta yang menampilkannya (hidden = false). */
+				?>
+				<button type="button" class="btn btn-outline-secondary dl-adm-action" id="doclincMapFullscreen"
+					aria-pressed="false" hidden>
+					<i class="fas fa-expand" aria-hidden="true"></i> <span>Layar penuh</span>
+				</button>
 			</div>
 		</div>
 		<?php if (empty($map_kecamatan)): ?>
@@ -308,6 +317,19 @@ $this->load->view('commons/page_head', array('page_head' => $page_head));
 			</p>
 			<div class="doclinc-map-stage">
 				<div class="doclinc-map-canvas">
+					<?php
+					/* Bar layar penuh: hanya tampil saat peta dibuka memenuhi layar.
+					   Letaknya DI DALAM kanvas karena kanvas itulah elemen yang
+					   dibesarkan - tombol di kepala panel tidak ikut terlihat, dan
+					   tanpa tombol keluar di sini satu-satunya jalan pulang adalah
+					   tombol Escape, yang tidak ada di layar sentuh. */
+					?>
+					<div class="doclinc-map-fullbar" id="doclincMapFullBar">
+						<p class="doclinc-map-fullbar-title">Peta sebaran penyakit</p>
+						<button type="button" class="btn btn-outline-secondary dl-adm-action" id="doclincMapExit">
+							<i class="fas fa-compress" aria-hidden="true"></i> <span>Keluar layar penuh</span>
+						</button>
+					</div>
 					<?php
 					/* Bingkai peta = peta + kartu. Kartu diposisikan absolut di
 					   dalam bingkai ini, jadi "menempel di tepi bawah peta" tetap

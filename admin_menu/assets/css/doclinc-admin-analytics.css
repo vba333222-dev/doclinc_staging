@@ -961,6 +961,101 @@ html[data-theme="dark"] .doclinc-coding-badge-review {
 	outline-offset: 2px;
 }
 
+/* --------------------------------------------------------------- layar penuh
+   Delapan kecamatan Cilegon terlalu kecil untuk dibaca di dalam peta setinggi
+   ~620px, jadi peta bisa dibuka memenuhi layar. Yang dibesarkan adalah KANVAS
+   (peta + status + legenda + atribusi), bukan bingkai peta: peta tanpa
+   legendanya hanya menampilkan warna yang tidak bisa diartikan.
+
+   Dua jalur berbagi aturan yang sama:
+
+     :fullscreen    - Fullscreen API, elemen masuk lapisan atas peramban.
+     .is-expanded   - cadangan untuk peramban tanpa API itu (Safari iOS):
+                      kanvas ditempel ke seluruh layar dengan `position: fixed`.
+
+   Bar judul + tombol keluar hanya tampil di dua keadaan itu. Tombol di kepala
+   panel tidak ikut, karena ia berada di luar elemen yang dibesarkan. */
+
+.doclinc-map-fullbar {
+	display: none;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px 12px;
+}
+
+.doclinc-map-fullbar-title {
+	margin: 0;
+	color: var(--dl-ref-ink);
+	font-size: var(--dl-ref-title);
+	font-weight: 700;
+}
+
+/* Latar dan warna teks dipasang sendiri: peramban memberi latar hitam pada
+   elemen layar penuh, dan panel ini bertema terang. `overflow: auto` menjaga
+   legenda yang panjang (mode penyakit terbanyak) tetap terjangkau. */
+.doclinc-map-canvas:fullscreen,
+.doclinc-map-canvas.is-expanded {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-sizing: border-box;
+	padding: 16px;
+	overflow: auto;
+	background: var(--dl-ref-surface);
+	color: var(--dl-ref-ink);
+}
+
+.doclinc-map-canvas.is-expanded {
+	position: fixed;
+	inset: 0;
+	z-index: 1080;
+}
+
+/* Gulir halaman dikunci selama peta menutupi layar; tanpa ini latar belakang
+   ikut bergulir di balik peta. */
+html.doclinc-map-expanded {
+	overflow: hidden;
+}
+
+.doclinc-map-canvas:fullscreen .doclinc-map-fullbar,
+.doclinc-map-canvas.is-expanded .doclinc-map-fullbar {
+	display: flex;
+}
+
+/* Peta mengisi sisa tinggi. `min-block-size` menjaga peta tetap bisa dibaca;
+   bila legenda tidak lagi muat, kanvas yang menggulir, bukan petanya yang
+   mengecil sampai tak terbaca. */
+.doclinc-map-canvas:fullscreen .doclinc-map-frame,
+.doclinc-map-canvas.is-expanded .doclinc-map-frame {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-block-size: 240px;
+}
+
+.doclinc-map-canvas:fullscreen .doclinc-map,
+.doclinc-map-canvas.is-expanded .doclinc-map {
+	flex: 1 1 auto;
+	block-size: auto;
+	min-block-size: 0;
+	border: 0;
+	border-radius: 0;
+}
+
+/* Batas tinggi kartu mengikuti bingkai yang baru, bukan tinggi peta lama. */
+.doclinc-map-canvas:fullscreen .doclinc-map-card,
+.doclinc-map-canvas.is-expanded .doclinc-map-card {
+	max-block-size: calc(100% - 24px);
+}
+
+.doclinc-map-canvas:fullscreen .doclinc-map-status,
+.doclinc-map-canvas.is-expanded .doclinc-map-status,
+.doclinc-map-canvas:fullscreen .doclinc-map-legend,
+.doclinc-map-canvas.is-expanded .doclinc-map-legend {
+	margin: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	/* Kartu tetap muncul, tetapi tanpa gerakan: pembaca yang meminta gerak
 	   dikurangi tidak perlu melihat kartu melayang masuk di atas peta. */
@@ -1003,5 +1098,18 @@ html[data-theme="dark"] .doclinc-coding-badge-review {
 	.doclinc-map-card-close {
 		inline-size: 44px;
 		block-size: 44px;
+	}
+
+	/* Layar penuh di ponsel: tepi lebih tipis, dan kartu lembar bawah tetap
+	   menyisakan pita peta di atasnya - di layar penuh pita itu lebih tinggi
+	   karena kartunya juga memakai ruang yang lebih besar. */
+	.doclinc-map-canvas:fullscreen,
+	.doclinc-map-canvas.is-expanded {
+		padding: 12px;
+	}
+
+	.doclinc-map-canvas:fullscreen .doclinc-map-card,
+	.doclinc-map-canvas.is-expanded .doclinc-map-card {
+		max-block-size: calc(100% - 88px);
 	}
 }

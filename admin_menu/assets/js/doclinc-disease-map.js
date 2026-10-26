@@ -334,6 +334,9 @@
 	});
 
 	var layers = [];
+	/* Batas seluruh kota, disimpan supaya peta bisa dipaskan ulang setelah
+	 * ukurannya berubah (layar penuh). `null` selama GeoJSON belum tergambar. */
+	var cityBounds = null;
 	var state = { code: '', mode: 'count', frame: 0, playing: false, timer: null, selected: '' };
 
 	function labelFor(name) {
@@ -1006,6 +1009,7 @@
 
 		map.fitBounds(geoLayer.getBounds(), { padding: [18, 18] });
 		map.setMaxBounds(geoLayer.getBounds().pad(0.35));
+		cityBounds = geoLayer.getBounds();
 	}
 
 	var order = [''].concat(codes.map(function (row) {
@@ -1107,6 +1111,185 @@
 		playButton.addEventListener('click', play);
 	}
 
+	/* ----------------------------------------------------------- layar penuh
+	 * Peta bisa dibuka memenuhi layar karena delapan kecamatan Cilegon sulit
+	 * dibaca di dalam peta setinggi ~620px. Dua jalur untuk satu tombol:
+	 *
+	 *   1. Fullscreen API pada KANVAS peta, bukan pada bingkai peta: legenda,
+	 *      status, dan atribusi ada di dalam kanvas, dan membesarkan bingkai
+	 *      saja akan menyembunyikan arti warnanya.
+	 *   2. Kelas `is-expanded` bila API tidak ada atau permintaannya ditolak
+	 *      (Safari iOS, iframe tanpa izin fullscreen). Hasilnya sama di layar,
+	 *      hanya bilah peramban tetap terlihat.
+	 *
+	 * Leaflet menyimpan ukuran kontainer saat peta dibuat. Tanpa
+	 * invalidateSize(), poligon tetap menempati ukuran lama di pojok kanvas
+	 * yang sudah membesar - peta terlihat "setengah kosong", bukan penuh.
+	 */
+	var canvas = document.querySelector('.doclinc-map-canvas');
+	var fullscreenButton = document.getElementById('doclincMapFullscreen');
+	var exitButton = document.getElementById('doclincMapExit');
+	var expanded = false;
+
+	function fullscreenElement() {
+		return document.fullscreenElement || document.webkitFullscreenElement || null;
+	}
+
+	function isExpanded() {
+		return expanded || (canvas !== null && fullscreenElement() === canvas);
+	}
+
+	/* Satu tombol, dua label. `aria-pressed` mengikuti keadaan yang sama supaya
+	 * pembaca layar tidak perlu menebak dari ikon; label ikut berubah karena
+	 * tombol yang sama juga yang mengeluarkan peta dari layar penuh. Tombol
+	 * "Keluar layar penuh" di dalam peta tidak perlu `aria-pressed`: ia aksi
+	 * sesaat, bukan sakelar. */
+	function syncFullscreen() {
+		var on = isExpanded();
+		if (fullscreenButton) {
+			fullscreenButton.setAttribute('aria-pressed', on ? 'true' : 'false');
+			var label = fullscreenButton.querySelector('span');
+			var icon = fullscreenButton.querySelector('i');
+			if (label) {
+				label.textContent = on ? 'Keluar layar penuh' : 'Layar penuh';
+			}
+			if (icon) {
+				icon.className = on ? 'fas fa-compress' : 'fas fa-expand';
+			}
+		}
+	}
+
+	function fitCity() {
+		if (cityBounds) {
+			map.fitBounds(cityBounds, { padding: [18, 18], animate: false });
+		}
+	}
+
+	function resizeMap() {
+		map.invalidateSize({ animate: false });
+		/* Dipaskan ulang ke seluruh kota: peta yang sama pada kotak yang lebih
+		 * besar menyisakan tepi kosong di mana-mana, padahal tujuan layar penuh
+		 * justru membuat poligonnya lebih besar. */
+		fitCity();
+	}
+
+	/* Ukuran baru terbaca dua kali: segera setelah tata letak berubah, dan lagi
+	 * setelah transisi layar penuh peramban selesai - selama transisi itu
+	 * kontainer tumbuh sedikit demi sedikit. */
+	function requestResize() {
+		window.requestAnimationFrame(resizeMap);
+		window.setTimeout(resizeMap, 240);
+	}
+
+	function collapseExpanded() {
+		if (!expanded) {
+			return;
+		}
+		expanded = false;
+		if (canvas) {
+			canvas.classList.remove('is-expanded');
+		}
+		document.documentElement.classList.remove('doclinc-map-expanded');
+		syncFullscreen();
+		requestResize();
+		if (fullscreenButton) {
+			fullscreenButton.focus({ preventScroll: true });
+		}
+	}
+
+	function expandWithClass() {
+		if (!canvas) {
+			return;
+		}
+		expanded = true;
+		canvas.classList.add('is-expanded');
+		/* Gulir halaman dikunci; tanpa ini latar belakang ikut bergulir di balik
+		 * peta yang menutupi seluruh layar. */
+		document.documentElement.classList.add('doclinc-map-expanded');
+		syncFullscreen();
+		requestResize();
+		if (exitButton) {
+			exitButton.focus({ preventScroll: true });
+		}
+	}
+
+	function exitFullscreen() {
+		if (expanded) {
+			collapseExpanded();
+			return;
+		}
+		if (fullscreenElement() !== canvas) {
+			return;
+		}
+		if (typeof document.exitFullscreen === 'function') {
+			document.exitFullscreen();
+		} else if (typeof document.webkitExitFullscreen === 'function') {
+			document.webkitExitFullscreen();
+		}
+	}
+
+	function enterFullscreen() {
+		if (!canvas) {
+			return;
+		}
+		var request = null;
+		try {
+			request = canvas.requestFullscreen
+				? canvas.requestFullscreen({ navigationUI: 'hide' })
+				: (canvas.webkitRequestFullscreen ? canvas.webkitRequestFullscreen() : null);
+		} catch (error) {
+			request = null;
+		}
+		if (request && typeof request.catch === 'function') {
+			/* Permintaan bisa ditolak (mis. iframe tanpa allow="fullscreen").
+			 * Jangan biarkan tombolnya mati: pakai jalur kelas. */
+			request.catch(expandWithClass);
+		} else if (!request) {
+			expandWithClass();
+		}
+	}
+
+	/* Dipanggil peramban setiap kali elemen layar penuh berganti - termasuk
+	 * saat pengguna keluar dengan Escape. Fokus dipindahkan ke tombol yang
+	 * terlihat: setelah kanvas menjadi layar penuh, tombol di kepala panel
+	 * berada di luar pandangan. */
+	function onFullscreenChange() {
+		var on = isExpanded();
+		syncFullscreen();
+		requestResize();
+		var target = on ? exitButton : fullscreenButton;
+		if (target && typeof target.focus === 'function') {
+			target.focus({ preventScroll: true });
+		}
+	}
+
+	if (fullscreenButton) {
+		fullscreenButton.hidden = false;
+		fullscreenButton.addEventListener('click', function () {
+			if (isExpanded()) {
+				exitFullscreen();
+			} else {
+				enterFullscreen();
+			}
+		});
+	}
+
+	if (exitButton) {
+		exitButton.addEventListener('click', exitFullscreen);
+	}
+
+	['fullscreenchange', 'webkitfullscreenchange'].forEach(function (name) {
+		document.addEventListener(name, onFullscreenChange);
+	});
+
+	/* Rotasi layar ponsel atau jendela yang diubah saat peta besar: ukuran
+	 * kontainer berubah tanpa fullscreenchange, jadi peta perlu dikabari. */
+	window.addEventListener('resize', function () {
+		if (isExpanded()) {
+			requestResize();
+		}
+	});
+
 	if (modeSelect) {
 		modeSelect.addEventListener('change', function () {
 			setMode(String(modeSelect.value || 'count'));
@@ -1134,10 +1317,22 @@
 	/* Escape menutup kartu dari mana pun fokus berada; tanpa ini satu-satunya
 	 * jalan keluar adalah tombol yang bisa saja tergulir keluar dari pandangan
 	 * di dalam badan kartu. Fokus kembali ke poligon supaya pengguna papan
-	 * ketik tidak kehilangan tempatnya. */
+	 * ketik tidak kehilangan tempatnya.
+	 *
+	 * Di jalur layar penuh cadangan (tanpa Fullscreen API) Escape juga keluar
+	 * dari peta besar - peramban tidak menyediakannya di sana, dan tanpa ini
+	 * papan ketik tidak punya jalan pulang sama sekali. Kartu ditutup lebih
+	 * dulu: Escape berulang berarti "tutup lapisan teratas". */
 	document.addEventListener('keydown', function (event) {
-		if (event.key === 'Escape') {
+		if (event.key !== 'Escape') {
+			return;
+		}
+		if (state.selected !== '') {
 			clearSelection({ restoreFocus: true });
+			return;
+		}
+		if (expanded) {
+			collapseExpanded();
 		}
 	});
 
