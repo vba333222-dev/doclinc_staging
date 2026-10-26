@@ -80,13 +80,18 @@ $db_host = getenv('ADMIN_DB_HOST') ?: getenv('DB_HOST') ?: '';
 $db_name = getenv('ADMIN_DB_NAME') ?: getenv('DB_NAME') ?: '';
 $db_user = getenv('ADMIN_DB_USER') ?: getenv('DB_USER') ?: '';
 $db_pass = getenv('ADMIN_DB_PASS') ?: getenv('DB_PASS') ?: '';
+/* Port ikut env seperti kredensial lain. Sebelumnya nilainya dipaku '3306',
+   sehingga `ADMIN_DB_PORT` yang dikirim `docker-compose.yml` (dan setiap
+   database di port selain default) diam-diam diabaikan dan koneksi jatuh ke
+   3306 - gejalanya "Connection refused" tanpa petunjuk apa pun. */
+$db_port = getenv('ADMIN_DB_PORT') ?: getenv('DB_PORT') ?: '3306';
 
 $db['default'] = array(
 	'dsn'	=> '',
 	'hostname' => $db_host,
 	'username' => $db_user,
 	'password' => $db_pass,
-	'port'     => '3306',
+	'port'     => $db_port,
 	'database' => $db_name,
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',

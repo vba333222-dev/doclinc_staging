@@ -145,7 +145,7 @@ foreach ($staff_rows as $row) {
 check('A1b setiap staf Puskesmas menunjuk Puskesmas aktif',
 	empty($bad_staff),
 	'staf=' . count($staff_rows) . ' menyimpang=' . (empty($bad_staff) ? 'none' : implode(',', $bad_staff)));
-check('A2 kode Puskesmas nonaktif ditolak model', $model->puskesmas_exists('PKM01') === false);
+check('A2 kode Puskesmas nonaktif ditolak model', $model->puskesmas_exists('PKM11') === false);
 check('A3 kode Puskesmas aktif diterima model', $model->puskesmas_exists('10280101') === true);
 check('A4 tidak ada akun must_change_password=1 dengan password_changed_at terisi',
 	empty($contradict), 'menyimpang=' . (empty($contradict) ? 'none' : implode(',', $contradict)));

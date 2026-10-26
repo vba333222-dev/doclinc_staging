@@ -1,0 +1,21 @@
+# Repo ini 373 MB dan `Dockerfile` melakukan `COPY . /var/www/html/`.
+# Tanpa berkas ini, riwayat git dan dependensi Playwright ikut masuk ke image.
+# Untuk pengujian lokal, aplikasi dijalankan dengan repo di-mount (`-v`), jadi
+# isi image hanya perlu PHP + ekstensi; daftar di bawah menjaga build tetap kecil.
+.git
+.gitignore
+*.log
+*.sql
+database/backups
+tools/task11_browser/node_modules
+tools/task11_browser/playwright-report
+tools/task11_browser/test-results
+**/node_modules
+**/__pycache__
+uploads/video
+uploads/chat_images
+uploads/foto
+uploads/profile
+.agents
+.env
+.env.*

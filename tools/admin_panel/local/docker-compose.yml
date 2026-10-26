@@ -1,0 +1,91 @@
+# Harness lokal panel admin DocLink.
+#
+# Pemakaian (dari akar repo):
+#   sudo docker compose -f tools/admin_panel/local/docker-compose.yml up -d --build
+#
+# Gerbang di dalam kontainer (fixture + tiga gerbang statis + sapuan 20 rute).
+# Jangan menyetel BASE_URL ke 8080 di sini: di dalam kontainer Apache mendengar
+# di port 80, dan 8080 hanya pemetaan di mesin. `gates.sh` memilih sendiri
+# berdasarkan keberadaan `/.dockerenv`.
+#   sudo docker exec doclinc-app \
+#     /var/www/html/tools/admin_panel/local/gates.sh --seed
+#
+# Lima pemeriksa Python dan uji browser dijalankan dari MESIN, bukan dari
+# kontainer: pemeriksa Python membaca `git show HEAD:` (riwayat commit), dan
+# image ini sengaja tanpa python3/git/Node.
+#   python3 tools/admin_panel/local/checks/head_verify.py
+#   cd tools/task11_browser
+#   TASK11_BASE_URL=http://127.0.0.1:8080/admin_menu \
+#     npx playwright test --config=playwright.admin.config.js --reporter=line
+#
+# Port sengaja diikat ke 127.0.0.1 supaya fixture berisi data contoh tidak
+# pernah terbuka ke jaringan. Database dipetakan ke 3307 agar tidak bentrok
+# dengan MySQL/MariaDB yang mungkin sudah memakai 3306 di mesin ini.
+name: doclinc-local
+
+services:
+  db:
+    image: mariadb:10.11
+    container_name: doclinc-db
+    environment:
+      MARIADB_ROOT_PASSWORD: rootlokal
+      MARIADB_DATABASE: doclinc_stage_local_test
+      MARIADB_USER: doclinc
+      MARIADB_PASSWORD: doclinclokal
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - 127.0.0.1:3307:3306
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: doclinc-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # `admin_menu/application/config/config.php` membaca ADMIN_BASE_URL lebih
+      # dulu; tanpa ini base_url ditebak dari REQUEST_URI dan tautan aset bisa
+      # menunjuk path yang salah saat diakses lewat port 8080.
+      #
+      # Panel disajikan dari `/admin_menu/` — bukan dari akar — supaya
+      # `../assets/css/doclinc-reference-ui.css` (token desain) dapat dijangkau,
+      # persis seperti di produksi. Akar repo sendiri dilayani sebagai docroot.
+      ADMIN_BASE_URL: http://127.0.0.1:8080/admin_menu/
+      ADMIN_DB_HOST: db
+      ADMIN_DB_NAME: doclinc_stage_local_test
+      ADMIN_DB_USER: doclinc
+      ADMIN_DB_PASS: doclinclokal
+      ADMIN_DB_PORT: "3306"
+      # Galat SQL ditampilkan di halaman: seluruh gunanya harness ini adalah
+      # melihat galat, bukan menyembunyikannya.
+      ADMIN_DB_DEBUG: "1"
+      DOCLINC_SESSION_PATH: /var/lib/php/sessions
+      # Sesi tunggal dimatikan: sapuan rute dan Playwright membuka beberapa
+      # konteks sekaligus, dan aturan "satu sesi aktif" akan saling menendang.
+      DOCLINC_SINGLE_ACTIVE_SESSION_ENABLED: "0"
+      DOCLINC_SINGLE_ACTIVE_SESSION_ENVIRONMENT: local
+      DOCLINC_NAKES_PLACEMENT_ENABLED: "0"
+    ports:
+      - 127.0.0.1:8080:80
+    volumes:
+      # Kode dari mesin ini, bukan salinan di dalam image: setiap perubahan
+      # berkas langsung berlaku tanpa build ulang.
+      - ../../../:/var/www/html
+      # Sesi disimpan di volume supaya hak akses www-data tidak bergantung pada
+      # berkas sesi di repo (yang bisa saja dimiliki pengguna mesin ini).
+      - sessions:/var/lib/php/sessions
+
+volumes:
+  db_data:
+  sessions:

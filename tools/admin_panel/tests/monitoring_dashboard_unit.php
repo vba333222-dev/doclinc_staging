@@ -63,6 +63,9 @@ $adminConfig = mon_source('admin_menu/application/config/config.php');
 $mainConfig = mon_source('application/config/config.php');
 $surfaceCss = mon_source('admin_menu/assets/css/doclinc-admin-monitoring.css');
 $surfaceJs = mon_source('admin_menu/assets/js/doclinc-admin-monitoring.js');
+/* Lapisan token adalah pemilik tinggi kontrol panel; uji di bawah memastikan
+   berkas permukaan memanggilnya, bukan menuliskan angka sendiri. */
+$referenceCss = mon_source('assets/css/doclinc-reference-ui.css');
 
 $block = mon_monitoring_block($model);
 
@@ -408,8 +411,21 @@ mon_check(strpos($surfaceJs, 'function initFollowup') !== false, 'ada penanganan
 mon_check(strpos($surfaceJs, "credentials: 'same-origin'") !== false,
 	'permintaan penandaan membawa kredensial sesi');
 mon_check(strpos($surfaceCss, 'dl-mon-followup-btn') !== false, 'tombol penanda punya gaya sendiri');
-mon_check(strpos($surfaceCss, 'min-height: 44px') !== false,
-	'tombol penanda memenuhi ambang sasaran sentuh 44px');
+/* Tombol ini sasaran sentuh 44px, tetapi angkanya tidak boleh ditulis di berkas
+   permukaan: `.doclinc-admin-shell .btn` di lapisan token sudah memaksanya
+   lewat `var(--dl-ref-control)`. Deklarasi kembar di sini akan kalah oleh
+   lapisan itu dan hanya menyisakan sumber kebenaran kedua yang bisa menyimpang.
+   Jadi yang dikunci: aturan tombol tidak memuat tinggi sendiri, dan lapisan
+   token memang memegang 44px untuk seluruh tombol panel. */
+$followup_rule = preg_match('/\.dl-mon \.dl-mon-followup-btn\s*\{(.*?)\}/s', $surfaceCss, $followup_match) === 1
+	? $followup_match[1]
+	: '';
+mon_check($followup_rule !== '', 'aturan gaya tombol penanda dapat dibaca');
+mon_check(strpos($followup_rule, 'min-height') === false,
+	'tinggi tombol penanda tidak ditulis ulang di permukaan');
+mon_check(strpos($referenceCss, '--dl-ref-control: 44px') !== false
+	&& preg_match('/\.doclinc-admin-shell \.btn,[^{]*\{[^}]*min-height:\s*var\(--dl-ref-control\)/s', $referenceCss) === 1,
+	'lapisan token memegang tinggi 44px untuk tombol panel');
 
 echo "\n== pelabelan panel diagnosis ==\n";
 /* Panel ini sumber terdekat ke data penanganan pasien, yang menurut keputusan
@@ -488,6 +504,102 @@ $cache_source = is_file($cache_migration) ? file_get_contents($cache_migration) 
 mon_check(strpos($cache_source, 'monitoring_cache') !== false
 	&& strpos($cache_source, 'REVERSIBLE_BY=') !== false,
 	'migrasi simpanan dapat dibatalkan dan menyatakan namanya');
+
+/* --- F4: bingkai filter bersama dan urutan informasi --------------------
+   Yang dikunci di sini adalah hal-hal yang bisa hilang tanpa terlihat di layar:
+   satu definisi bingkai filter, urutan bagian yang disepakati rencana §6, empat
+   angka kunci, dan daftar pengecualian yang tidak boleh mendorong grafik turun
+   tanpa batas. */
+
+echo "\n== F4: bingkai filter bersama ==\n";
+$shellCss = mon_source('admin_menu/assets/css/doclinc-admin-shell.css');
+$analyticsCss = mon_source('admin_menu/assets/css/doclinc-admin-analytics.css');
+$auditView = mon_source('admin_menu/application/modules/audit/views/audit_v.php');
+$diagnosisView = mon_source('admin_menu/application/modules/diagnosis/views/diagnosis_v.php');
+
+foreach (array('.dl-adm-toolbar {', '.dl-adm-toolbar-field {', '.dl-adm-toolbar-label {', '.dl-adm-toolbar-actions {') as $selector) {
+	mon_check(strpos($shellCss, $selector) !== false, "shell CSS mendefinisikan {$selector}");
+}
+mon_check(strpos($shellCss, '.dl-adm-toolbar .form-control {') !== false,
+	'kontrol di dalam bingkai filter diberi bentuk oleh shell CSS');
+/* Tinggi kontrol hanya boleh datang dari lapisan token. Deklarasi `min-height`
+   di shell CSS akan kalah oleh `!important` milik token - sumber kebenaran kedua
+   yang tidak pernah berlaku. */
+$toolbar_css_start = strpos($shellCss, '.dl-adm-toolbar {');
+$toolbar_css_end = strpos($shellCss, '.dl-adm-actions {', $toolbar_css_start);
+$toolbar_css = ($toolbar_css_start !== false && $toolbar_css_end !== false && $toolbar_css_end > $toolbar_css_start)
+	? substr($shellCss, $toolbar_css_start, $toolbar_css_end - $toolbar_css_start)
+	: '';
+mon_check($toolbar_css !== '' && stripos($toolbar_css, 'min-height') === false,
+	'bingkai filter tidak menulis tinggi sendiri');
+
+mon_check(strpos($view, 'class="dl-adm-toolbar mb-4"') !== false,
+	'dasbor memakai bingkai filter bersama');
+mon_check(strpos($auditView, "'class' => 'dl-adm-toolbar'") !== false,
+	'Audit memakai bingkai filter bersama');
+mon_check(strpos($diagnosisView, "'class' => 'dl-adm-toolbar'") !== false,
+	'Diagnosis memakai bingkai filter bersama');
+
+/* Satu definisi, bukan dua. Sebelum F4, Diagnosis punya bingkai sendiri di
+   doclinc-admin-analytics.css dan dasbor punya bingkai lain lagi. */
+mon_check(strpos($analyticsCss, '.doclinc-analytics-toolbar {') === false
+	&& strpos($analyticsCss, '.doclinc-analytics-field {') === false
+	&& strpos($analyticsCss, '.doclinc-analytics-actions {') === false,
+	'CSS analitik tidak lagi punya definisi bingkai filter sendiri');
+mon_check(strpos($surfaceCss, '.dl-mon-filter {') === false
+	&& strpos($surfaceCss, '.dl-mon .dl-mon-filter {') === false,
+	'CSS monitoring tidak lagi punya definisi bingkai filter sendiri');
+
+/* Tombol filter: tiga ukuran berbeda sebelum F4 (btn-lg btn-block, btn-sm, biasa). */
+foreach (array('audit_v.php' => $auditView, 'diagnosis_v.php' => $diagnosisView, 'home_v.php' => $view) as $name => $source) {
+	$form_start = strpos($source, 'dl-adm-toolbar');
+	$form_slice = $form_start === false ? '' : substr($source, $form_start, 2600);
+	mon_check($form_slice !== '' && strpos($form_slice, 'btn-lg') === false && strpos($form_slice, 'btn-block') === false,
+		"{$name}: tombol filter tanpa btn-lg/btn-block");
+	mon_check($form_slice !== '' && strpos($form_slice, 'dl-adm-action') !== false,
+		"{$name}: tombol filter memakai kelas aksi bersama");
+}
+
+echo "\n== F4: urutan informasi dasbor ==\n";
+$order_markers = array(
+	'dl-mon-kpis' => 'angka kunci',
+	'id="dlMonPengecualian"' => 'perlu tindak lanjut',
+	'id="dlMonTrenTitle"' => 'alur 30 hari',
+	'id="dlMonFasilitasTitle"' => 'kesiapan fasilitas',
+	'doclinc-diagnosis-panel' => 'diagnosis terbanyak',
+	'id="dlMonMutuTitle"' => 'mutu data',
+	'Aktivitas Terbaru' => 'aktivitas terbaru',
+);
+$previous_position = -1;
+$previous_label = '';
+$order_ok = true;
+foreach ($order_markers as $marker => $label) {
+	$position = strpos($view, $marker);
+	if ($position === false || $position < $previous_position) {
+		$order_ok = false;
+		break;
+	}
+	$previous_position = $position;
+	$previous_label = $previous_label . $label . ' < ';
+}
+mon_check($order_ok, 'bagian dasbor tersusun menurut rencana §6', rtrim($previous_label, '< '));
+
+mon_check(substr_count($view, '$kpi_cards[]') === 4, 'empat angka kunci, bukan tujuh',
+	'ditemukan ' . substr_count($view, '$kpi_cards[]'));
+mon_check(strpos($view, '$kpi_extra[]') !== false
+	&& strpos($view, 'array_merge($kpi_cards, $kpi_extra)') !== false,
+	'angka yang tidak lagi menjadi kartu tetap punya definisi di modal');
+mon_check(strpos($view, 'Median waktu respons') !== false,
+	'median waktu respons tetap terbaca, di kepala panel alur');
+
+/* Daftar pengecualian boleh panjang; grafik tidak boleh tenggelam karenanya. */
+mon_check(strpos($view, 'array_slice($exception_rows, 0, 4)') !== false,
+	'hanya empat temuan teratas yang terbuka');
+mon_check(strpos($view, '<details class="dl-mon-more">') !== false
+	&& strpos($view, 'temuan lainnya') !== false,
+	'sisanya dapat dibuka tanpa JavaScript');
+mon_check(strpos($surfaceCss, '.dl-mon-more > summary') !== false,
+	'ringkasan buka-tutup punya bentuk sendiri');
 
 echo "\n== hasil ==\n";
 echo "MONITORING_DASHBOARD_PASSED={$passed}\n";
