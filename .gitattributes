@@ -14,6 +14,10 @@ assets/vendor/** -text
 # upstream dengan CRLF, dan PROVENANCE.md mencatat SHA-256 berkas apa adanya.
 admin_menu/assets/vendor/** -text
 
+# Batas kecamatan juga diperiksa terhadap SHA-256 yang dicatat di
+# assets/geojson/PROVENANCE.md, jadi berkasnya tidak boleh dinormalkan git.
+admin_menu/assets/geojson/** -text
+
 # Binary assets
 *.png binary
 *.jpg binary

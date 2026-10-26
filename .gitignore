@@ -103,6 +103,7 @@ application/third_party/firebase/*firebase-adminsdk*.json
 !assets/vendor/centrifuge/5.7.0/PROVENANCE.md
 !admin_menu/assets/vendor/leaflet/LICENSE
 !admin_menu/assets/vendor/leaflet/PROVENANCE.md
+!admin_menu/assets/geojson/PROVENANCE.md
 !license.txt
 !admin_menu/license.txt
 !database/master_data/clinical/v1/SHA256SUMS.txt
