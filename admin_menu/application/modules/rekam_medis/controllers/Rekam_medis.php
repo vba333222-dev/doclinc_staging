@@ -39,6 +39,9 @@ class Rekam_medis extends MX_Controller
 			->set_output(json_encode($payload));
 	}
 
+	/** Baris per halaman daftar arsip. */
+	const PER_PAGE = 25;
+
 	private function filters()
 	{
 		return array(
@@ -46,6 +49,36 @@ class Rekam_medis extends MX_Controller
 			'puskesmas' => trim((string) $this->input->post('puskesmas', TRUE)),
 			'period' => trim((string) $this->input->post('period', TRUE)),
 		);
+	}
+
+	/**
+	 * Halaman yang diminta tombol "Sebelumnya"/"Berikutnya". Tombol itu berada
+	 * di dalam form filter, jadi filter yang sedang aktif ikut terkirim dan
+	 * tidak hilang saat berpindah halaman.
+	 */
+	private function requested_page()
+	{
+		$page = (int) $this->input->post('page', TRUE);
+
+		return $page > 0 ? $page : 1;
+	}
+
+	/**
+	 * Apakah isi klinis bisa dibuka di lingkungan ini. Hanya membaca feature
+	 * flag tanpa query: hak akses per akun tetap diputuskan gateway saat rekam
+	 * dibuka, karena keputusan itu memerlukan alasan dan jejak audit.
+	 */
+	private function clinical_detail_ready()
+	{
+		$libraries = dirname(APPPATH, 2) . '/application/libraries/';
+		foreach (array('Doclinc_feature_flags', 'Admin_capability_flags') as $class) {
+			if (!is_file($libraries . $class . '.php')) {
+				return false;
+			}
+			require_once $libraries . $class . '.php';
+		}
+
+		return Admin_capability_flags::enabled('clinical_audit');
 	}
 
 	public function index()
@@ -57,10 +90,25 @@ class Rekam_medis extends MX_Controller
 			? $this->filters()
 			: array('keyword' => '', 'puskesmas' => '', 'period' => '30');
 
+		$total = $this->Rekam_medis_m->count_records($filters);
+		$pages = max(1, (int) ceil($total / self::PER_PAGE));
+		$page = min($this->requested_page(), $pages);
+		$offset = ($page - 1) * self::PER_PAGE;
+		$records = $total > 0 ? $this->Rekam_medis_m->get_records($filters, self::PER_PAGE, $offset) : array();
+
 		$x['filters'] = $filters;
 		$x['summary'] = $this->Rekam_medis_m->get_summary($filters);
-		$x['records'] = $this->Rekam_medis_m->get_records($filters);
+		$x['records'] = $records;
 		$x['puskesmas_options'] = $this->Rekam_medis_m->get_puskesmas_options();
+		$x['pagination'] = array(
+			'page' => $page,
+			'pages' => $pages,
+			'total' => $total,
+			'per_page' => self::PER_PAGE,
+			'from' => $total > 0 ? $offset + 1 : 0,
+			'to' => $offset + count($records),
+		);
+		$x['clinical_ready'] = $this->clinical_detail_ready();
 
 		$this->load->view('commons/header');
 		$this->load->view('rekam_medis_v', $x);

@@ -154,7 +154,11 @@ class Rekam_medis_m extends MX_Controller
 		$this->db->select($visit_expr . ' AS visit_status', FALSE);
 	}
 
-	public function get_records($filters = array(), $limit = 200)
+	/**
+	 * Satu halaman daftar arsip. `$offset` dipakai tombol "Berikutnya";
+	 * nilai bawaannya 0 supaya pemanggil lama tetap mendapat 200 baris terbaru.
+	 */
+	public function get_records($filters = array(), $limit = 200, $offset = 0)
 	{
 		if (!$this->ready()) {
 			return array();
@@ -164,9 +168,26 @@ class Rekam_medis_m extends MX_Controller
 		$this->join_base();
 		$this->apply_filters($filters);
 		$this->db->order_by($this->created_expr(), 'DESC', FALSE);
-		$this->db->limit((int) $limit > 0 ? (int) $limit : 200);
+		$this->db->limit((int) $limit > 0 ? (int) $limit : 200, (int) $offset > 0 ? (int) $offset : 0);
 
 		return $this->db->get()->result();
+	}
+
+	/**
+	 * Jumlah seluruh baris yang cocok filter, untuk teks "dari N rekam" dan
+	 * batas halaman. Join di sini banyak-ke-satu (users dan m_puskesmas
+	 * berprimary key), jadi hitungannya tidak berlipat seperti join multi-baris.
+	 */
+	public function count_records($filters = array())
+	{
+		if (!$this->ready()) {
+			return 0;
+		}
+
+		$this->join_base();
+		$this->apply_filters($filters);
+
+		return (int) $this->db->count_all_results();
 	}
 
 	public function get_record_detail($record_id)
