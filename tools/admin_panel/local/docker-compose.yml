@@ -58,14 +58,26 @@ services:
       db:
         condition: service_healthy
     environment:
-      # `admin_menu/application/config/config.php` membaca ADMIN_BASE_URL lebih
-      # dulu; tanpa ini base_url ditebak dari REQUEST_URI dan tautan aset bisa
-      # menunjuk path yang salah saat diakses lewat port 8080.
+      # ADMIN_BASE_URL sengaja TIDAK disetel di sini.
+      #
+      # Sebelumnya nilainya dipatok `http://127.0.0.1:8080/admin_menu/`, dan itu
+      # membuat panel hanya bisa dipakai lewat 127.0.0.1. Bila peramban membuka
+      # `http://localhost:8080/admin_menu/`, `site_url('login/ceklogin')`
+      # menghasilkan URL absolut ke 127.0.0.1, sehingga POST login menjadi
+      # lintas-situs: cookie `csrf_cookie_name` milik `localhost` tidak ikut
+      # terkirim, proteksi CSRF menolak, dan jawabannya 403 (halaman galat 1504
+      # byte) tanpa satu pun baris `login_failed` — tampak seperti password
+      # salah padahal passwordnya tidak pernah diperiksa.
+      #
+      # Tanpa variabel ini, `admin_menu/application/config/config.php` memakai
+      # cabang deteksi otomatis: host diambil dari `Host` yang dipakai peramban
+      # dan path `/admin_menu/` dari SCRIPT_NAME. Hasilnya sama untuk
+      # 127.0.0.1, dan benar juga untuk localhost — tautan, aset, dan POST
+      # selalu kembali ke host yang sedang dipakai.
       #
       # Panel disajikan dari `/admin_menu/` — bukan dari akar — supaya
       # `../assets/css/doclinc-reference-ui.css` (token desain) dapat dijangkau,
       # persis seperti di produksi. Akar repo sendiri dilayani sebagai docroot.
-      ADMIN_BASE_URL: http://127.0.0.1:8080/admin_menu/
       ADMIN_DB_HOST: db
       ADMIN_DB_NAME: doclinc_stage_local_test
       ADMIN_DB_USER: doclinc

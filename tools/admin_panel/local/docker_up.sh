@@ -29,6 +29,11 @@ set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd) || exit 1
 LOCAL="$ROOT/tools/admin_panel/local"
 BASE_URL="http://127.0.0.1:8080/admin_menu"
+# Host satunya yang juga sah: compose tidak lagi memaku ADMIN_BASE_URL, jadi
+# tautan mengikuti host yang dipakai peramban dan POST formulir tetap sesama
+# asal (cookie CSRF ikut terkirim). Memaku satu host membuat host lain dijawab
+# 403 oleh proteksi CSRF.
+BASE_URL_ALT="http://localhost:8080/admin_menu"
 DB_NAME="doclinc_stage_local_test"
 DB_USER="doclinc"
 DB_PASS="doclinclokal"
@@ -115,6 +120,7 @@ records=$(docker exec doclinc-db mariadb -u"$DB_USER" -p"$DB_PASS" -N -B \
 cat <<EOF
 
 panel     : ${BASE_URL}/
+          juga ${BASE_URL_ALT}/ (host mana pun yang menunjuk ke mesin ini)
 masuk     : admin@lokal.test / Lokal#2026!
 database  : 127.0.0.1:3307 ${DB_NAME} (${DB_USER} / ${DB_PASS})
 rekam     : ${records} baris

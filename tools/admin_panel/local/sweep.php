@@ -13,6 +13,12 @@
  *   - tidak ada jejak galat PHP atau MySQL di badan halaman
  *   - jumlah <h1> dan <h2> dicatat sebagai metrik sistem judul
  *
+ * Sebelum itu ada satu pemeriksaan pendahuluan yang bukan per rute: halaman
+ * login ditembak dengan header `Host` host-loopback satunya, lalu URL absolut
+ * yang tertulis di halaman harus memakai host itu juga. Galat yang dicegahnya:
+ * base_url yang dipaku ke satu host membuat POST formulir lintas-situs, cookie
+ * CSRF tidak terkirim, dan login dijawab 403 tanpa jejak `login_failed`.
+ *
  * Pemakaian:
  *   docker exec doclinc-app php /var/www/html/tools/admin_panel/local/sweep.php
  *   docker exec doclinc-app php /var/www/html/tools/admin_panel/local/sweep.php \
@@ -94,7 +100,7 @@ $jar = tempnam(sys_get_temp_dir(), 'doclinc-cookie-');
 $failures = 0;
 $report = array('base' => $base, 'generated_at' => date('c'), 'routes' => array());
 
-function http_request($url, $post_fields = null, $jar = null)
+function http_request($url, $post_fields = null, $jar = null, $extra_headers = array())
 {
 	$ch = curl_init($url);
 	curl_setopt_array($ch, array(
@@ -105,6 +111,9 @@ function http_request($url, $post_fields = null, $jar = null)
 		CURLOPT_COOKIEJAR => $jar,
 		CURLOPT_COOKIEFILE => $jar,
 	));
+	if (!empty($extra_headers)) {
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $extra_headers);
+	}
 	if ($post_fields !== null) {
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post_fields));
@@ -167,6 +176,49 @@ function page_errors($body)
 	}
 	return $found;
 }
+
+/* Penjaga regresi: base_url wajib mengikuti host yang dipakai peramban.
+
+   Pernah terjadi dan biayanya mahal untuk dilacak: `docker-compose.yml`
+   memaku `ADMIN_BASE_URL=http://127.0.0.1:8080/admin_menu/`. Panel pun hanya
+   bisa dipakai lewat 127.0.0.1. Begitu dibuka lewat
+   `http://localhost:8080/admin_menu/`, `site_url('login/ceklogin')` menulis
+   URL absolut ke 127.0.0.1, sehingga POST login menjadi lintas-situs, cookie
+   `csrf_cookie_name` milik localhost tidak ikut terkirim, proteksi CSRF
+   menolak dengan 403, dan tidak ada satu pun baris `login_failed` di
+   `audit_logs` - gejalanya persis seperti password salah padahal password
+   tidak pernah diperiksa.
+
+   Pemeriksaan ini menembak halaman login dengan header `Host` lain (host
+   loopback satunya, port sama) lalu memastikan URL absolut yang tertulis di
+   halaman memakai host itu juga. Murah, dan menangkap kelas galat yang sama
+   untuk semua tautan, bukan hanya formulir login.
+*/
+$base_parts = parse_url($base);
+$alt_host = $host === 'localhost' ? '127.0.0.1' : 'localhost';
+$alt_authority = $alt_host . (isset($base_parts['port']) ? ':' . $base_parts['port'] : '');
+$host_probe = http_request($base . 'login', null, null, array('Host: ' . $alt_authority));
+$emitted_host = null;
+$host_ok = false;
+if ($host_probe['status'] === 200
+	&& preg_match('/url:\s*"([^"]*ceklogin[^"]*)"/', $host_probe['body'], $host_match)) {
+	$emitted_host = parse_url($host_match[1], PHP_URL_HOST);
+	$host_ok = strcasecmp((string) $emitted_host, $alt_host) === 0;
+}
+if (!$host_ok) {
+	$failures++;
+	fwrite(STDERR, "GAGAL: base_url tidak mengikuti Host permintaan (dikirim Host: {$alt_authority},"
+		. ' URL yang tertulis di halaman: ' . ($emitted_host ?: '<tidak ditemukan>') . ")\n");
+	fwrite(STDERR, "Petunjuk: jangan paku ADMIN_BASE_URL ke satu host; biarkan"
+		. " admin_menu/application/config/config.php mendeteksinya dari Host.\n");
+} else {
+	echo "== host: tautan mengikuti permintaan ({$alt_authority}) ==\n";
+}
+$report['host_follow'] = array(
+	'host_header' => $alt_authority,
+	'emitted_host' => $emitted_host,
+	'ok' => $host_ok,
+);
 
 echo "== login: {$email} di {$base} ==\n";
 $login_page = http_request($base . 'login', null, $jar);
@@ -277,7 +329,11 @@ $report['total'] = count($routes);
 
 echo str_repeat('-', 110) . "\n";
 $heading_note = array();
+$route_failures = 0;
 foreach ($report['routes'] as $row) {
+	if (!$row['ok']) {
+		$route_failures++;
+	}
 	$heading_note[$row['h1']] = ($heading_note[$row['h1']] ?? 0) + 1;
 }
 ksort($heading_note);
@@ -286,7 +342,7 @@ foreach ($heading_note as $count => $routes_count) {
 	$heading_summary[] = $count . ' h1 di ' . $routes_count . ' rute';
 }
 echo '== judul: ' . implode(', ', $heading_summary) . " ==\n";
-echo '== hasil: ' . (count($routes) - $failures) . '/' . count($routes) . " rute bersih ==\n";
+echo '== hasil: ' . (count($routes) - $route_failures) . '/' . count($routes) . " rute bersih ==\n";
 
 if ($json_path !== null) {
 	file_put_contents($json_path, json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
