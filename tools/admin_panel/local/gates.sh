@@ -110,6 +110,8 @@ run_gate 'kontrak dasbor monitoring' \
 	"$PHP" "$ROOT/tools/admin_panel/tests/monitoring_dashboard_unit.php"
 run_gate 'IA navigasi samping' \
 	"$PHP" "$ROOT/tools/admin_panel/tests/sidebar_ia_unit.php"
+run_gate 'kontrak arsip rekam medis' \
+	"$PHP" "$ROOT/tools/admin_panel/tests/record_archive_unit.php"
 
 # L2 rute: butuh aplikasi hidup di BASE_URL dan fixture yang sudah diisi.
 #
