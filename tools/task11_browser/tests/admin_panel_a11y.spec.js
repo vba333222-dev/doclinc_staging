@@ -250,7 +250,7 @@ const THEMES = [
 for (const theme of THEMES) {
   for (const route of ROUTES) {
     test(`${route} @${theme.name}: kontras, landmark, dan struktur`, async ({ page }, testInfo) => {
-      /* Hanya desktop: kontras tidak bergantung lebar layar, dan 40 uji sudah
+      /* Hanya desktop: kontras tidak bergantung lebar layar, dan 38 uji sudah
          menggandakan durasi gerbang. Varian ponsel tetap diuji di
          admin_panel_visual.spec.js. */
       test.skip(testInfo.project.name !== 'admin-desktop', 'pemeriksaan kontras cukup sekali per tema');
@@ -310,5 +310,9 @@ test('daftar rute gerbang a11y sama dengan sapuan visual', async () => {
   const visual = new Set(routesFromVisualSpec());
   const a11y = new Set(ROUTES);
   expect([...a11y].sort(), 'daftar rute kedua uji harus identik').toEqual([...visual].sort());
-  expect(a11y.size, 'jumlah rute tidak boleh menyusut tanpa sengaja').toBeGreaterThanOrEqual(20);
+  /* 19, bukan 20: `master_puskesmas` dipensiunkan dan rutenya kini hanya
+     mengalihkan ke hub `kelola_dokter_nakes`, jadi tidak lagi dipotret sendiri.
+     Angka ini sengaja tetap ditulis eksplisit supaya penyusutan berikutnya
+     terlihat sebagai perubahan, bukan sebagai kebetulan. */
+  expect(a11y.size, 'jumlah rute tidak boleh menyusut tanpa sengaja').toBeGreaterThanOrEqual(19);
 });

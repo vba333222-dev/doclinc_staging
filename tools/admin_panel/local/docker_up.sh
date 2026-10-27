@@ -3,10 +3,24 @@
 # Satu perintah untuk menghidupkan harness panel admin di Docker, dipakai
 # berulang kali tanpa langkah manual.
 #
+# Untuk menguji SEMUA peran (warga, nakes, puskesmas) sekaligus, pakai
+# `tools/local_stack/up.sh`: skrip itu memanggil skrip ini apa adanya lalu
+# melengkapi skema portal dan menguji masuk tiap peran. Skrip ini sendiri
+# sengaja tetap panel-saja supaya gerbang panel tidak bergantung pada fixture
+# portal.
+#
 #   tools/admin_panel/local/docker_up.sh              # flag klinis MATI
 #   tools/admin_panel/local/docker_up.sh --clinical   # flag klinis MENYALA
+#   tools/admin_panel/local/docker_up.sh --calls      # + LiveKit (uji panggilan)
 #   tools/admin_panel/local/docker_up.sh --revoke     # cabut kapabilitas saja
-#   tools/admin_panel/local/docker_up.sh --down       # hentikan, data tetap ada
+#   tools/admin_panel/local/docker_up.sh --down       # hentikan & hapus kontainer,
+#                                                     # data (volume) tetap ada
+#
+# `--calls` menambahkan `docker-compose.livekit.yml`: satu kontainer SFU LiveKit
+# di 127.0.0.1:7880 supaya percobaan panggilan suara/video dari halaman chat
+# tidak berakhir 503 "Panggilan belum aktif". Tanpa flag itu (default skrip ini)
+# tidak ada kontainer tambahan - panel admin memang tidak memanggil LiveKit;
+# `tools/local_stack/up.sh` yang menyalakannya secara default.
 #
 # Yang dikerjakan berurutan, semuanya idempoten:
 #
@@ -39,15 +53,18 @@ DB_USER="doclinc"
 DB_PASS="doclinclokal"
 
 WITH_CLINICAL=0
+WITH_CALLS=0
 REVOKE_ONLY=0
 DOWN=0
 for arg in "$@"; do
 	case "$arg" in
 		--clinical) WITH_CLINICAL=1 ;;
 		--no-clinical) WITH_CLINICAL=0 ;;
+		--calls) WITH_CALLS=1 ;;
+		--no-calls) WITH_CALLS=0 ;;
 		--revoke) REVOKE_ONLY=1 ;;
 		--down) DOWN=1 ;;
-		-h|--help) sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//' ; exit 0 ;;
+		-h|--help) sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//' ; exit 0 ;;
 		*) echo "argumen tidak dikenal: $arg (pakai --help)" >&2 ; exit 2 ;;
 	esac
 done
@@ -65,10 +82,21 @@ COMPOSE="docker compose -f $LOCAL/docker-compose.yml"
 if [ "$WITH_CLINICAL" = "1" ] || [ "$REVOKE_ONLY" = "1" ]; then
 	COMPOSE="$COMPOSE -f $LOCAL/docker-compose.clinical.yml"
 fi
+if [ "$WITH_CALLS" = "1" ]; then
+	COMPOSE="$COMPOSE -f $LOCAL/docker-compose.livekit.yml"
+fi
 
 if [ "$DOWN" = "1" ]; then
-	$COMPOSE down
-	echo "kontainer dihentikan; volume doclinc-local_db_data tetap ada"
+	# Ketiga berkas ikut disebut supaya kontainer LiveKit (bila pernah dinyalakan
+	# lewat --calls) ikut terhapus: `compose down` hanya menyentuh servis yang
+	# tercantum di berkas yang diberikan.
+	docker compose \
+		-f "$LOCAL/docker-compose.yml" \
+		-f "$LOCAL/docker-compose.clinical.yml" \
+		-f "$LOCAL/docker-compose.livekit.yml" \
+		down
+	echo "kontainer dihentikan dan dihapus; volume doclinc-local_db_data tetap ada"
+	echo "pasang lagi: tools/local_stack/up.sh  (fixture tidak diisi ulang)"
 	exit 0
 fi
 
@@ -117,6 +145,12 @@ fi
 records=$(docker exec doclinc-db mariadb -u"$DB_USER" -p"$DB_PASS" -N -B \
 	-e "SELECT COUNT(*) FROM medicalrecords" "$DB_NAME" 2>/dev/null || echo '?')
 
+if [ "$WITH_CALLS" = "1" ]; then
+	calls_note="LiveKit ws://127.0.0.1:7880 (devkey/secret)"
+else
+	calls_note="mati - jalankan ulang dengan --calls untuk uji suara/video"
+fi
+
 cat <<EOF
 
 panel     : ${BASE_URL}/
@@ -124,6 +158,7 @@ panel     : ${BASE_URL}/
 masuk     : admin@lokal.test / Lokal#2026!
 database  : 127.0.0.1:3307 ${DB_NAME} (${DB_USER} / ${DB_PASS})
 rekam     : ${records} baris
+panggilan : ${calls_note}
 uji browser:
   cd tools/task11_browser && TASK11_BASE_URL=${BASE_URL} \\
     npx playwright test --config=playwright.admin.config.js --reporter=line

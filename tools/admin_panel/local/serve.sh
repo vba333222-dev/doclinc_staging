@@ -2,6 +2,11 @@
 #
 # Menyajikan panel admin dengan `php -S` + `router.php`, tanpa Apache/Docker.
 #
+# Jalur ini HANYA untuk panel: portal warga/nakes membutuhkan Apache/mod_rewrite
+# dengan DocumentRoot di akar repo (lihat tools/admin_panel/local/vhost.conf dan
+# tools/local_stack/up.sh). `router.php` menolak rute di luar `/admin_menu/`
+# dengan 404 supaya kesan "portal rusak" tidak muncul di sini.
+#
 # Tata letaknya sengaja sama dengan produksi: docroot adalah akar repo, panel
 # ada di `/admin_menu/`, dan token desain di `/assets/css/`. Lihat komentar
 # `router.php` untuk alasan detailnya.

@@ -1,0 +1,77 @@
+# Tambahan compose untuk menguji panggilan suara/video (LiveKit) di lokal.
+#
+#   docker compose -f tools/admin_panel/local/docker-compose.yml \
+#                  -f tools/admin_panel/local/docker-compose.livekit.yml up -d
+#
+# atau lewat skrip yang juga mengisi fixture dan memeriksa hasilnya:
+#
+#   tools/local_stack/up.sh              # panggilan MENYALA (default)
+#   tools/local_stack/up.sh --no-calls   # tanpa LiveKit, lebih ringan
+#
+# Kenapa LiveKit, bukan server WebRTC buatan sendiri:
+# `assets/js/doclinc-livekit-*.js` dan `application/modules/chat/views/thread_v.php`
+# sudah memakai SDK `livekit-client`; token-nya dibuat `application/helpers/
+# livekit_helper.php` (JWT HS256 berisi `iss` = API key). Jadi yang kurang di
+# harness lokal hanya SFU-nya, bukan kode aplikasi. Tanpa SFU, tombol panggilan
+# menjawab "Panggilan belum aktif" (503) karena `LIVEKIT_ENABLED` kosong.
+#
+# Mode `--dev` dipakai supaya tidak perlu menyalin berkas kunci: LiveKit
+# menetapkan pasangan API key/secret `devkey`/`secret` (didokumentasikan di
+# https://docs.livekit.io/transport/self-hosting/local/). Pasangan itu
+# diteruskan ke `app` di blok environment bawah. Karena kuncinya terbuka,
+# seluruh port di sini diikat ke 127.0.0.1 - jangan pakai berkas ini untuk
+# apa pun selain pengujian di mesin sendiri.
+#
+# `--node-ip 127.0.0.1` + `--rtc.use_external_ip=false`: kontainer tidak boleh
+# mengumumkan alamat hasil STUN (IP publik rumah) kepada peramban yang berjalan
+# di mesin yang sama - kandidat itu tidak bisa dijangkau balik, dan panggilan
+# akan "connected" lalu diam. Dengan node-ip loopback, kandidat yang
+# diumumkan adalah 127.0.0.1 dan port UDP 7882 yang dipetakan compose.
+#
+# Port:
+#   7880  signalling HTTP/WebSocket (klien memakai ws://127.0.0.1:7880)
+#   7881  fallback RTC lewat TCP (bila UDP diblokir kebijakan jaringan)
+#   7882  RTC lewat UDP (jalur utama audio/video)
+#
+# Image diambil sekali saat pemasangan pertama. Bila Docker Hub lambat/diblokir
+# (gejalanya `failed to copy ... context deadline exceeded`), ambil dari mirror
+# lalu beri tag nama yang sama supaya compose memakai image lokal:
+#   docker pull mirror.gcr.io/livekit/livekit-server:v1.13.11
+#   docker tag mirror.gcr.io/livekit/livekit-server:v1.13.11 livekit/livekit-server:v1.13.11
+name: doclinc-local
+
+services:
+  livekit:
+    image: livekit/livekit-server:v1.13.11
+    container_name: doclinc-livekit
+    # Sama seperti db/app: sekali dibuat, cukup dinyalakan (Docker Desktop ▶).
+    restart: unless-stopped
+    command:
+      - --dev
+      - --bind
+      - 0.0.0.0
+      - --node-ip
+      - 127.0.0.1
+      - --rtc.use_external_ip=false
+    ports:
+      - 127.0.0.1:7880:7880
+      - 127.0.0.1:7881:7881
+      - 127.0.0.1:7882:7882/udp
+
+  app:
+    environment:
+      # `doclinc_livekit_enabled()` membaca env ini; tanpa ketiganya halaman chat
+      # tetap tampil tetapi panggilan dijawab 503 "Panggilan belum aktif".
+      #
+      # Nilainya HARUS pasangan mode `--dev` di atas: `devkey`/`secret` dan
+      # `ws://127.0.0.1:7880`. Jangan menyalin kredensial LiveKit Cloud ke sini.
+      # Token ditandatangani dengan secret aplikasi lalu diperiksa SFU lokal,
+      # jadi kunci cloud membuat setiap token ditolak (`validate` gagal) dan
+      # peramban menunjuk host yang tidak dipakai kontainer ini. Skrip
+      # `tools/local_stack/check_calls.sh` menangkap kesalahan itu sebagai
+      # "token ditolak LiveKit", bukan sebagai panggilan yang berhasil.
+      LIVEKIT_ENABLED: "1"
+      LIVEKIT_WS_URL: ws://127.0.0.1:7880
+      LIVEKIT_API_KEY: devkey
+      LIVEKIT_API_SECRET: secret
+      LIVEKIT_TOKEN_TTL_SECONDS: "3600"

@@ -923,9 +923,7 @@ foreach (array_slice($fasilitas_rows, 0, 12) as $chart_row) {
 			<div class="card-body">
 				<div class="doclinc-shortcut-grid">
 					<a href="<?= site_url('konsultasi_kesehatan'); ?>"><i class="fas fa-stethoscope" aria-hidden="true"></i><span>Pantau konsultasi</span></a>
-					<a href="<?= site_url('master_puskesmas'); ?>"><i class="fas fa-hospital" aria-hidden="true"></i><span>Data Puskesmas</span></a>
-					<a href="<?= site_url('kelola_dokter_nakes'); ?>"><i class="fas fa-user-md" aria-hidden="true"></i><span>Akun Puskesmas</span></a>
-					<a href="<?= site_url('kelola_staff_puskesmas'); ?>"><i class="fas fa-users-cog" aria-hidden="true"></i><span>Staf Puskesmas</span></a>
+					<a href="<?= site_url('kelola_dokter_nakes'); ?>"><i class="fas fa-hospital" aria-hidden="true"></i><span>Puskesmas</span></a>
 					<a href="<?= site_url('laporan'); ?>"><i class="fas fa-file-alt" aria-hidden="true"></i><span>Laporan</span></a>
 				</div>
 			</div>

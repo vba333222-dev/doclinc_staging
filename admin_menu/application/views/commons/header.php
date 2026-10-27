@@ -109,10 +109,18 @@
 		   sedang merawat layanan, mengurus data, menulis konten, atau mengawasi
 		   tata kelola.
 		
-		   Daftar ini satu-satunya sumber: dua puluh <li> yang dulu ditulis tangan
+		   Daftar ini satu-satunya sumber: <li> yang dulu ditulis tangan
 		   diganti perulangan, dan penanda aktif dihitung dari rute butir itu
-		   sendiri - jadi tautan dan penandanya tidak bisa menyimpang lagi. Tidak
-		   ada tautan yang dihapus; sweep.php memeriksa ke-20 rute. */
+		   sendiri - jadi tautan dan penandanya tidak bisa menyimpang lagi.
+
+		   Delapan belas tautan, bukan dua puluh: "Akun Puskesmas", "Staf
+		   Puskesmas", dan "Data Puskesmas" adalah tiga pintu ke pekerjaan yang
+		   sama, dan masing-masing menampilkan Puskesmas dengan cara berbeda.
+		   Ketiganya digabung menjadi satu butir "Puskesmas" yang menuju
+		   `kelola_dokter_nakes`: daftar sembilan Puskesmas inti, dengan profil
+		   fasilitas, akun, dan staf dikelola dari halaman detailnya. Dua rute
+		   lama tetap hidup - `master_puskesmas` dialihkan ke daftar itu - jadi
+		   tautan luar dan uji tata kelola tidak putus. */
 		$doclinc_sidebar_groups = array(
 			'Operasional' => array(
 				array('route' => 'home', 'icon' => 'fa-tachometer-alt', 'text' => 'Dashboard'),
@@ -122,12 +130,10 @@
 			),
 			'Data induk' => array(
 				array('route' => 'kelola_warga', 'icon' => 'fa-users', 'text' => 'Data warga'),
-				array('route' => 'kelola_dokter_nakes', 'icon' => 'fa-user-md', 'text' => 'Akun Puskesmas'),
-				array('route' => 'kelola_staff_puskesmas', 'icon' => 'fa-users-cog', 'text' => 'Staf Puskesmas'),
-				array('route' => 'master_puskesmas', 'icon' => 'fa-hospital', 'text' => 'Data Puskesmas'),
+				array('route' => 'kelola_dokter_nakes', 'icon' => 'fa-hospital', 'text' => 'Puskesmas'),
 				array('route' => 'wilayah', 'icon' => 'fa-map-marked-alt', 'text' => 'Master wilayah'),
 				array('route' => 'icd10', 'icon' => 'fa-book-medical', 'text' => 'Master ICD-10'),
-				array('route' => 'diagnosis', 'icon' => 'fa-chart-bar', 'text' => 'Penyakit terbanyak'),
+				array('route' => 'diagnosis', 'icon' => 'fa-chart-bar', 'text' => 'Infografik'),
 				array('route' => 'kelola_keluhan', 'icon' => 'fa-comments', 'text' => 'Data keluhan'),
 			),
 			'Konten' => array(
@@ -187,8 +193,9 @@
 		</ul>
 		<!-- End of Sidebar -->
 		<script>
-			/* Sidebar memuat 20 tautan dalam empat kelompok, lebih tinggi dari layar
-			   900px. Tanpa ini, pada halaman yang butirnya jatuh di bawah lipatan
+			/* Sidebar tetap lebih tinggi dari layar 900px: empat kelompok penuh
+			   tidak muat sekaligus. Tanpa ini, pada halaman yang butirnya jatuh
+			   di bawah lipatan
 			   (mis. Penampil audit), penanda "halaman ini" tidak terlihat sama
 			   sekali - jadi pengguna kehilangan satu-satunya petunjuk posisinya.
 			   Yang digeser hanya wadah sidebar, bukan halaman, dan tanpa animasi
@@ -357,7 +364,7 @@
 				<!-- Begin Page Content -->
 				<?php
 				/* Landmark isi halaman. Tanpa satu pun landmark, pembaca layar tidak
-				   punya cara melompat ke isi — 20 dari 20 rute panel ini sebelumnya
+				   punya cara melompat ke isi — setiap rute panel ini sebelumnya
 				   hanya div. Dibuka di sini (setelah topbar) dan ditutup di
 				   commons/footer.php tepat setelah .container-fluid, supaya footer
 				   dan modal tidak ikut masuk landmark isi. */

@@ -4,7 +4,7 @@
  *
  * Uji ini tidak membutuhkan basis data dan tidak menjalankan aplikasi: yang
  * diperiksa adalah SUMBER view dan CSS. Tujuannya menahan tiga kemunduran yang
- * paling mudah terjadi saat 19 halaman disunting satu per satu:
+ * paling mudah terjadi saat puluhan halaman disunting satu per satu:
  *
  *   1. kepala halaman kembali dikarang di dalam view, sehingga ukuran judul dan
  *      susunan aksi menyimpang lagi;
@@ -64,10 +64,11 @@ $pages = array(
 	'modules/diagnosis/views/diagnosis_v.php',
 	'modules/kelola_keluhan/views/kelola_keluhan_v.php',
 	'modules/kelola_tindakan/views/kelola_tindakan_v.php',
-	'modules/master_puskesmas/views/master_puskesmas_v.php',
 	'modules/wilayah/views/wilayah_v.php',
 	'modules/kelola_staff_puskesmas/views/kelola_staff_puskesmas_v.php',
 	'modules/kelola_dokter_nakes/views/kelola_dokter_nakes_v.php',
+	'modules/kelola_dokter_nakes/views/puskesmas_detail_v.php',
+	'modules/kelola_dokter_nakes/views/puskesmas_password_v.php',
 	'modules/rekam_medis/views/rekam_medis_v.php',
 	'modules/konsultasi_kesehatan/views/konsultasi_kesehatan_v.php',
 	'modules/laporan/views/laporan_v.php',
@@ -281,7 +282,6 @@ $list_card_pages = array(
 	'modules/konsultasi_kesehatan/views/konsultasi_kesehatan_v.php' => 0,
 	'modules/kelola_staff_puskesmas/views/kelola_staff_puskesmas_v.php' => 1,
 	'modules/kelola_dokter_nakes/views/kelola_dokter_nakes_v.php' => 0,
-	'modules/master_puskesmas/views/master_puskesmas_v.php' => 0,
 );
 $unpaired = array();
 $frame_rewritten = array();

@@ -14,7 +14,7 @@
  *   3. penanda aktif dihitung dari rute butir itu, bukan dari variabel kedua
  *      yang harus dirawat tangan;
  *   4. pemisah kelompok tetap punya aturan CSS, dan sidebar tetap bisa
- *      digulir - dua puluh tautan lebih tinggi dari layar 900px.
+ *      digulir - delapan belas tautan lebih tinggi dari layar 900px.
  */
 $root = dirname(__DIR__, 3) . '/';
 $passed = 0;
@@ -43,8 +43,7 @@ f5_check($header !== false && $sweep !== false && $shell !== false && $custom !=
 /* Harapan ditulis literal: kelompok -> rute, berurutan. */
 $expected = array(
 	'Operasional' => array('home', 'rekam_medis', 'konsultasi_kesehatan', 'kelola_tindakan'),
-	'Data induk' => array('kelola_warga', 'kelola_dokter_nakes', 'kelola_staff_puskesmas',
-		'master_puskesmas', 'wilayah', 'icd10', 'diagnosis', 'kelola_keluhan'),
+	'Data induk' => array('kelola_warga', 'kelola_dokter_nakes', 'wilayah', 'icd10', 'diagnosis', 'kelola_keluhan'),
 	'Konten' => array('kelola_layanan_kesehatan', 'kelola_news_feed', 'konten_landing', 'landing_page'),
 	'Tata kelola' => array('laporan', 'kapabilitas', 'audit', 'sesi'),
 );
@@ -72,7 +71,7 @@ $all = array();
 foreach ($found as $routes) {
 	$all = array_merge($all, $routes);
 }
-f5_check(count($all) === 20, 'dua puluh tautan hadir', (string) count($all));
+f5_check(count($all) === 18, 'delapan belas tautan hadir', (string) count($all));
 f5_check(count(array_unique($all)) === count($all), 'tidak ada rute ganda',
 	implode(', ', array_diff_key($all, array_unique($all))));
 
@@ -80,9 +79,9 @@ f5_check(count(array_unique($all)) === count($all), 'tidak ada rute ganda',
    pembeda; sebelumnya Tindakan dan Penampil audit sama-sama fa-clipboard-list. */
 preg_match_all("/'text' => '([^']+)'/", $header, $texts);
 preg_match_all("/'icon' => '([^']+)'/", $header, $icons);
-f5_check(count($texts[1]) === 20 && count(array_unique($texts[1])) === 20,
+f5_check(count($texts[1]) === 18 && count(array_unique($texts[1])) === 18,
 	'tiap tautan berlabel unik', (string) count($texts[1]));
-f5_check(count($icons[1]) === 20 && count(array_unique($icons[1])) === 20,
+f5_check(count($icons[1]) === 18 && count(array_unique($icons[1])) === 18,
 	'tiap tautan berikon unik', (string) count($icons[1]));
 
 /* Satu sumber penanda aktif: rute butir itu sendiri. */
@@ -125,11 +124,11 @@ $sidebar_set = $all;
 $sweep_set = $swept[1];
 sort($sidebar_set);
 sort($sweep_set);
-f5_check(count($sweep_set) === 20 && $sidebar_set === $sweep_set,
+f5_check(count($sweep_set) === 18 && $sidebar_set === $sweep_set,
 	'rute sidebar sama dengan rute sweep.php',
 	'beda: ' . implode(',', array_merge(array_diff($sidebar_set, $sweep_set), array_diff($sweep_set, $sidebar_set))));
 
-/* Wayfinding: dua puluh tautan lebih tinggi dari layar 900px, jadi butir aktif
+/* Wayfinding: delapan belas tautan lebih tinggi dari layar 900px, jadi butir aktif
    harus dijangkau tanpa menggeser halaman. */
 f5_check(strpos($header, "sidebar.querySelector('.nav-item.active')") !== false,
 	'butir aktif digulirkan ke dalam pandangan');

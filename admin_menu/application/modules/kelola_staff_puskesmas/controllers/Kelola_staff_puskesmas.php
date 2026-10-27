@@ -460,6 +460,46 @@ class Kelola_staff_puskesmas extends MX_Controller
 		$this->session->set_flashdata('title', 'Staf Puskesmas');
 		$this->session->set_flashdata('active_tab_kelola_staff_puskesmas', 'active');
 
+		$data = $this->page_data($form_mode, $staff_id, $this->request_filters());
+
+		$this->load->view('commons/header');
+		$this->load->view('kelola_staff_puskesmas_v', $data);
+		$this->load->view('commons/footer');
+	}
+
+	/**
+	 * Daftar staf satu Puskesmas, untuk disematkan di halaman detail Puskesmas.
+	 *
+	 * Dikembalikan sebagai HTML (argumen ketiga `TRUE`) karena pemanggilnya
+	 * adalah `Kelola_dokter_nakes::detail()` lewat `Modules::run`. Yang dirender
+	 * hanya DAFTARNYA - tanpa kepala halaman, tanpa filter, tanpa modal - supaya
+	 * halaman hospes tetap punya satu judul dan satu kartu daftar. Pengelolaan
+	 * (tambah, ubah, tautkan akun, mutasi) tetap di rute staf yang sudah ada;
+	 * menyematkan seluruh formulir berarti dua salinan kontrak POST yang harus
+	 * dijaga bersamaan.
+	 *
+	 * @param string $kode_pkm
+	 * @return string
+	 */
+	public function staff_section($kode_pkm = '')
+	{
+		$filters = $this->request_filters();
+		$filters['kode_pkm'] = trim((string) $kode_pkm);
+		$filters['status'] = '';
+		$filters['readiness'] = '';
+		$filters['keyword'] = '';
+
+		$data = $this->page_data('', null, $filters);
+		$data['embedded_kode_pkm'] = $filters['kode_pkm'];
+
+		return $this->load->view('partials/staff_embed_v', $data, TRUE);
+	}
+
+	/**
+	 * @return array<string,string>
+	 */
+	private function request_filters()
+	{
 		$filter_input = $this->input->method(TRUE) === 'POST' ? 'post' : 'get';
 		$filters = array(
 			'kode_pkm' => trim((string) $this->input->{$filter_input}('kode_pkm', TRUE)),
@@ -471,6 +511,19 @@ class Kelola_staff_puskesmas extends MX_Controller
 			$filters['readiness'] = '';
 		}
 
+		return $filters;
+	}
+
+	/**
+	 * Data halaman staf: dipakai halaman mandiri dan daftar sematan.
+	 *
+	 * @param string $form_mode
+	 * @param int|null $staff_id
+	 * @param array<string,string> $filters
+	 * @return array<string,mixed>
+	 */
+	private function page_data($form_mode, $staff_id, $filters)
+	{
 		$data = array(
 			'table_ready' => $this->Kelola_staff_puskesmas_m->table_ready(),
 			'nip_schema_ready' => $this->Kelola_staff_puskesmas_m->nip_schema_ready(),
@@ -545,9 +598,7 @@ class Kelola_staff_puskesmas extends MX_Controller
 			}
 		}
 
-		$this->load->view('commons/header');
-		$this->load->view('kelola_staff_puskesmas_v', $data);
-		$this->load->view('commons/footer');
+		return $data;
 	}
 
 	private function staff_matches_readiness_filter($staff, $filter)

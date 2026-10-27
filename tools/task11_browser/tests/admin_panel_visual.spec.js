@@ -28,9 +28,13 @@ const { test, expect } = require('@playwright/test');
 const ROUTES = [
   { route: 'home', label: 'Dasbor' },
   { route: 'kelola_warga', label: 'Kelola warga' },
-  { route: 'kelola_dokter_nakes', label: 'Kelola dokter & nakes' },
+  /* `kelola_dokter_nakes` kini hub Puskesmas: daftar sembilan Puskesmas inti
+     dengan profil fasilitas, akun koordinator, dan staf di halaman detail.
+     `master_puskesmas` tidak lagi dipotret karena rutenya hanya mengalihkan
+     ke hub ini; `kelola_staff_puskesmas` tetap dipotret karena CRUD stafnya
+     masih dipakai dan ditautkan dari halaman detail. */
+  { route: 'kelola_dokter_nakes', label: 'Puskesmas' },
   { route: 'kelola_staff_puskesmas', label: 'Kelola staf Puskesmas' },
-  { route: 'master_puskesmas', label: 'Master Puskesmas' },
   { route: 'wilayah', label: 'Wilayah' },
   { route: 'rekam_medis', label: 'Rekam medis' },
   { route: 'diagnosis', label: 'Diagnosis' },
@@ -132,7 +136,14 @@ for (const { route, label } of ROUTES) {
          menjadi kosong, dan ukuran teks jatuh ke nilai warisan - halaman tetap
          "tampil", jadi tanpa pemeriksaan ini kegagalan itu tidak terlihat. */
       tokensLoaded: getComputedStyle(document.documentElement).getPropertyValue('--dl-ref-control').trim() !== '',
-      actionHeights: Array.from(document.querySelectorAll('.dl-adm-action')).map((el) => Math.round(el.getBoundingClientRect().height)),
+      /* Hanya tombol yang benar-benar terlukis. Dua tombol peta memang
+         disembunyikan sampai keadaannya berlaku (`hidden` pada tombol layar
+         penuh, `display:none` pada bar keluar layar penuh), jadi tinggi 0 di
+         sana adalah desain, bukan sasaran sentuh yang mengecil. Tanpa saringan
+         ini rute diagnosis selalu gagal karena tombol tersembunyi. */
+      actionHeights: Array.from(document.querySelectorAll('.dl-adm-action'))
+        .filter((el) => el.getClientRects().length > 0)
+        .map((el) => Math.round(el.getBoundingClientRect().height)),
     }));
 
     /* `overflow` dihitung sekali di sini. Sebelumnya nilai yang sama ditulis

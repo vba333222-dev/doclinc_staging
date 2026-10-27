@@ -1,13 +1,35 @@
 # Harness lokal panel admin DocLink.
 #
 # Pemakaian (dari akar repo):
-#   tools/admin_panel/local/docker_up.sh --clinical
-# Skrip itu menutup semua langkah manual (pasang, tunggu sehat, isi fixture
-# bila kosong, siapkan tabel audit + kapabilitas klinis). Perintah compose di
-# bawah tetap sah untuk dipakai langsung:
+#   tools/local_stack/up.sh --clinical        # SEMUA peran: warga, nakes,
+#                                             # puskesmas, panel admin
+#   tools/admin_panel/local/docker_up.sh --clinical   # panel saja
+#
+# Sekali pasang, lalu cukup dinyalakan. Kedua servis memakai
+# `restart: unless-stopped` dan seluruh data tinggal di volume, jadi setelah
+# `up.sh` berhasil sekali:
+#   - nyalakan Docker Desktop (atau tekan ▶ pada grup `doclinc-local`) → lagi
+#     jalan sendiri, data fixture utuh;
+#   - bila ingin dipastikan sekaligus, `tools/local_stack/up.sh --start`
+#     menyalakan kontainer yang sudah ada tanpa build dan tanpa mengisi ulang
+#     fixture, lalu memeriksa login tiap peran.
+# Yang perlu diulang hanya `up.sh` penuh bila Dockerfile/berkas compose berubah
+# atau volume sengaja dihapus.
+#
+# `tools/local_stack/up.sh` memanggil skrip ini apa adanya, lalu menambahkan
+# env `DB_*` untuk portal (lihat blok environment di bawah) dan skema yang
+# dibutuhkan halaman warga/nakes. Skrip itu juga yang menguji masuk tiap peran.
+#
+# Panggilan suara/video memakai overlay terpisah, `docker-compose.livekit.yml`
+# (kontainer `doclinc-livekit` + env `LIVEKIT_*` untuk app). Overlay itu TIDAK
+# dimuat di sini supaya harness panel tetap ringan; nyalakan lewat
+# `tools/local_stack/up.sh` (default) atau `docker_up.sh --calls`.
+# Skrip ini menutup semua langkah manual panel (pasang, tunggu sehat, isi
+# fixture bila kosong, siapkan tabel audit + kapabilitas klinis). Perintah
+# compose di bawah tetap sah untuk dipakai langsung:
 #   docker compose -f tools/admin_panel/local/docker-compose.yml up -d --build
 #
-# Gerbang di dalam kontainer (fixture + tiga gerbang statis + sapuan 20 rute).
+# Gerbang di dalam kontainer (fixture + tiga gerbang statis + sapuan 18 rute).
 # Jangan menyetel BASE_URL ke 8080 di sini: di dalam kontainer Apache mendengar
 # di port 80, dan 8080 hanya pemetaan di mesin. `gates.sh` memilih sendiri
 # berdasarkan keberadaan `/.dockerenv`.
@@ -31,6 +53,12 @@ services:
   db:
     image: mariadb:10.11
     container_name: doclinc-db
+    # `unless-stopped`, bukan `always`: begitu kontainer sudah dibuat sekali,
+    # menyalakan Docker Desktop (atau menekan ▶ di dasbornya) sudah cukup —
+    # MariaDB ikut naik dan data di volume `db_data` tetap ada. `unless-stopped`
+    # tetap menghormati `--down`/`docker stop`, jadi kontainer yang sengaja
+    # dihentikan tidak bangkit sendiri saat Docker dinyalakan lagi.
+    restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: rootlokal
       MARIADB_DATABASE: doclinc_stage_local_test
@@ -57,6 +85,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Sama seperti `db`: sekali dibuat, cukup dinyalakan. `depends_on` di atas
+    # hanya berlaku saat compose yang menaikkan; bila Docker Desktop yang
+    # menyalakan ulang, Apache bisa melayani permintaan sebelum MariaDB siap
+    # dan halaman sempat menjawab galat SQL. `tools/local_stack/up.sh --start`
+    # menutup celah itu: ia menyalakan, menunggu DB, lalu memeriksa login.
+    restart: unless-stopped
     environment:
       # ADMIN_BASE_URL sengaja TIDAK disetel di sini.
       #
@@ -86,6 +120,20 @@ services:
       # Galat SQL ditampilkan di halaman: seluruh gunanya harness ini adalah
       # melihat galat, bukan menyembunyikannya.
       ADMIN_DB_DEBUG: "1"
+      # Portal warga & nakes di akar repo membaca DB_* (bukan ADMIN_DB_*).
+      # Nilainya sengaja menunjuk database yang sama supaya satu fixture cukup:
+      # akun warga, akun nakes, koordinator puskesmas, dan admin panel semuanya
+      # melihat data yang konsisten. Kolom yang belum dibuat `bootstrap.php`
+      # dilengkapi `tools/local_stack/fixture_portal.php` - lihat
+      # `tools/local_stack/up.sh`.
+      DB_HOST: db
+      DB_NAME: doclinc_stage_local_test
+      DB_USER: doclinc
+      DB_PASS: doclinclokal
+      DB_PORT: "3306"
+      # Tanpa ini `application/config/database.php` menyetel db_debug=false dan
+      # galat SQL portal hanya muncul sebagai halaman kosong.
+      DB_DEBUG: "1"
       DOCLINC_SESSION_PATH: /var/lib/php/sessions
       # Sesi tunggal dimatikan: sapuan rute dan Playwright membuka beberapa
       # konteks sekaligus, dan aturan "satu sesi aktif" akan saling menendang.
@@ -105,3 +153,4 @@ services:
 volumes:
   db_data:
   sessions:
+

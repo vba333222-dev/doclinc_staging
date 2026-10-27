@@ -651,6 +651,11 @@
 				code: true
 			},
 			{
+				/* Satu istilah untuk satu status: panel "Diagnosis belum dikode",
+				   kartu angka, dan tabel semuanya memakai "belum dikode".
+				   `admin_panel_diagnosis_coding.spec.js` mengunci keseragaman itu;
+				   istilah kedua di sini ("belum teridentifikasi") membuat admin
+				   mengira keduanya keadaan berbeda. */
 				label: 'Belum dikode',
 				value: formatNumber(uncoded),
 				note: percent(uncoded, entries) + '% dari ' + formatNumber(entries) + ' diagnosis'
@@ -1025,7 +1030,7 @@
 		var icon = playButton.querySelector('i');
 		playButton.setAttribute('aria-pressed', state.playing ? 'true' : 'false');
 		if (label) {
-			label.textContent = state.playing ? 'Jeda' : 'Putar';
+			label.textContent = state.playing ? 'Jeda' : 'Presentasi';
 		}
 		if (icon) {
 			icon.className = state.playing ? 'fas fa-pause' : 'fas fa-play';

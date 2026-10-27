@@ -128,6 +128,8 @@ $schema['m_puskesmas'] = "CREATE TABLE m_puskesmas (
 	kota varchar(100) NULL,
 	provinsi varchar(100) NULL,
 	telepon varchar(50) NULL,
+	email varchar(150) NULL,
+	kepala_puskesmas varchar(150) NULL,
 	latitude decimal(10,7) NULL,
 	longitude decimal(10,7) NULL,
 	created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -548,23 +550,25 @@ $password_hash = password_hash('Lokal#2026!', PASSWORD_DEFAULT);
 
    Daftar ini sengaja diletakkan paling awal karena kode fasilitas dipakai di
    empat tempat: `m_puskesmas`, `puskesmas_staff.kode_pkm`, `users.remark`, dan
-   `requests.assigned_puskesmas_code`. Tujuh fasilitas memakai kode resmi
-   Kemenkes karena kode itulah yang ada di master wilayah (`puskesmas.kode_pkm`);
-   infografis penyakit terbanyak menjumlahkan per kecamatan lewat join
-   `requests.assigned_puskesmas_code = puskesmas.kode_pkm`. Selama dua master itu
-   memakai kode berbeda (PKMxx vs 1028xxxx), rincian per kecamatan selalu nol dan
-   peta sebarannya kosong - panelnya tampak "belum ada data" tanpa sebab yang
-   terlihat. Purwakarta (PKM08) belum punya baris di master wilayah, sedangkan
-   Merak/Anyer/Bojonegara berada di luar daftar kecamatan Kota Cilegon. */
+   `requests.assigned_puskesmas_code`. Sembilan baris pertama adalah sembilan
+   Puskesmas inti Kota Cilegon dengan kode resmi Kemenkes
+   (`application/libraries/Core_puskesmas.php`); kode itulah yang ada di master
+   wilayah (`puskesmas.kode_pkm`), sehingga infografis penyakit terbanyak dapat
+   menjumlahkan per kecamatan lewat join
+   `requests.assigned_puskesmas_code = puskesmas.kode_pkm`. Selama dua master
+   itu memakai kode berbeda (PKMxx vs 1028xxxx), rincian per kecamatan selalu
+   nol dan peta sebarannya kosong - panelnya tampak "belum ada data" tanpa
+   sebab yang terlihat. Tiga baris terakhir sengaja di luar daftar inti: Merak
+   aktif tanpa staf, Anyer dan Bojonegara nonaktif. */
 $facilities = array(
-	array('10280101', 'Puskesmas Cibeber', 'aktif', 'Jl. Raya Cibeber No. 1'),
-	array('10280201', 'Puskesmas Cilegon', 'aktif', 'Jl. Merdeka No. 12'),
-	array('10280301', 'Puskesmas Citangkil', 'aktif', 'Jl. Citangkil No. 8'),
-	array('10280401', 'Puskesmas Ciwandan', 'aktif', 'Jl. Ciwandan No. 21'),
-	array('10280501', 'Puskesmas Gerogol', 'aktif', 'Jl. Gerogol No. 5'),
-	array('10280601', 'Puskesmas Jombang', 'aktif', 'Jl. Jombang No. 33'),
-	array('10280701', 'Puskesmas Pulomerak', 'aktif', 'Jl. Pulomerak No. 9'),
-	array('PKM08', 'Puskesmas Purwakarta', 'aktif', 'Jl. Purwakarta No. 17'),
+	array('10280101', 'Puskesmas Cilegon', 'aktif', 'Jl. Merdeka No. 12'),
+	array('10280201', 'Puskesmas Cibeber', 'aktif', 'Jl. Raya Cibeber No. 1'),
+	array('10280301', 'Puskesmas Ciwandan', 'aktif', 'Jl. Ciwandan No. 21'),
+	array('10280401', 'Puskesmas Pulomerak', 'aktif', 'Jl. Pulomerak No. 9'),
+	array('10280402', 'Puskesmas Gerogol', 'aktif', 'Jl. Gerogol No. 5'),
+	array('10280501', 'Puskesmas Citangkil', 'aktif', 'Jl. Citangkil No. 8'),
+	array('10280601', 'Puskesmas Purwakarta', 'aktif', 'Jl. Purwakarta No. 17'),
+	array('10280701', 'Puskesmas Jombang', 'aktif', 'Jl. Jombang No. 33'),
 	array('2241001', 'Puskesmas Citangkil II', 'aktif', 'Jl. Citangkil II No. 4'),
 	array('PKM10', 'Puskesmas Merak', 'aktif', 'Jl. Merak No. 2'),
 	array('PKM11', 'Puskesmas Anyer', 'nonaktif', 'Jl. Anyer No. 44'),
@@ -649,8 +653,15 @@ for ($i = 1; $i <= 40; $i++) {
 	));
 }
 
-/* Master fasilitas ditulis dari daftar `$facilities` di awal seed. */
+/* Master fasilitas ditulis dari daftar `$facilities` di awal seed.
+   `email` dan `kepala_puskesmas` sengaja tidak seragam: satu baris inti
+   dibiarkan tanpa nama kepala supaya keadaan "belum diisi" pada layar detail
+   pernah benar-benar dirender, bukan hanya ada di teori. */
 $facility_name = array();
+$kepala_names = array(
+	'dr. Ratna Sari', 'dr. Bagus Prakoso', 'dr. Lestari Widodo', 'dr. Ahmad Fauzi',
+	'dr. Sinta Marlina', 'dr. Hendra Wijaya', 'dr. Nurlaila', 'dr. Yoga Pratama',
+);
 foreach ($facilities as $index => $facility) {
 	$insert('m_puskesmas', array(
 		'kode_pkm' => $facility[0],
@@ -660,6 +671,8 @@ foreach ($facilities as $index => $facility) {
 		'kota' => 'Cilegon',
 		'provinsi' => 'Banten',
 		'telepon' => '0254' . str_pad((string) (100000 + $index), 6, '0', STR_PAD_LEFT),
+		'email' => preg_replace('/[^a-z0-9]+/', '.', strtolower($facility[1])) . '@cilegon.go.id',
+		'kepala_puskesmas' => isset($kepala_names[$index]) ? $kepala_names[$index] : null,
 		'latitude' => -6.0 - ($index / 1000),
 		'longitude' => 106.0 + ($index / 1000),
 		'created_at' => $stamp(-120 * 86400),
@@ -1122,14 +1135,14 @@ foreach ($keluhan_list as $index => $row) {
    ini; menyimpang dari daftar itu membuat uji seed wilayah gagal pada fixture
    yang seharusnya netral. */
 $kecamatan_rows = array(
-	'Cibeber' => array('10280101'),
-	'Cilegon' => array('10280201'),
-	'Citangkil' => array('10280301', '2241001'),
-	'Ciwandan' => array('10280401', '10280402'),
-	'Gerogol' => array('10280501'),
-	'Jombang' => array('10280601'),
-	'Pulomerak' => array('10280701'),
-	'Purwakarta' => array(),
+	'Cilegon' => array('10280101'),
+	'Cibeber' => array('10280201'),
+	'Ciwandan' => array('10280301'),
+	'Pulomerak' => array('10280401'),
+	'Gerogol' => array('10280402'),
+	'Citangkil' => array('10280501', '2241001'),
+	'Purwakarta' => array('10280601'),
+	'Jombang' => array('10280701'),
 );
 $kecamatan_id = array();
 $kecamatan_index = 0;
@@ -1141,14 +1154,14 @@ foreach ($kecamatan_rows as $nama => $codes) {
 	), 'id_kecamatan');
 }
 $wilayah_names = array(
-	'10280101' => 'Puskesmas Cibeber',
-	'10280201' => 'Puskesmas Cilegon',
-	'10280301' => 'Puskesmas Citangkil',
-	'10280401' => 'Puskesmas Ciwandan',
-	'10280402' => 'Puskesmas Kubangsari',
-	'10280501' => 'Puskesmas Gerogol',
-	'10280601' => 'Puskesmas Jombang',
-	'10280701' => 'Puskesmas Pulomerak',
+	'10280101' => 'Puskesmas Cilegon',
+	'10280201' => 'Puskesmas Cibeber',
+	'10280301' => 'Puskesmas Ciwandan',
+	'10280401' => 'Puskesmas Pulomerak',
+	'10280402' => 'Puskesmas Gerogol',
+	'10280501' => 'Puskesmas Citangkil',
+	'10280601' => 'Puskesmas Purwakarta',
+	'10280701' => 'Puskesmas Jombang',
 	'2241001' => 'Puskesmas Citangkil II',
 );
 $puskesmas_index = 0;

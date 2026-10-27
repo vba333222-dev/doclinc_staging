@@ -27,12 +27,17 @@
 #   --seed            jalankan bootstrap.php --fresh lebih dulu (butuh
 #                     ALLOW_LOCAL_FIXTURE=1 dan database yang namanya memuat
 #                     "stage" serta "test")
-#   --with-browser    ikut menjalankan Playwright: sapuan visual (20 rute x 2
+#   --with-browser    ikut menjalankan Playwright: sapuan visual (19 rute x 2
 #                     layar + uji panel geser ponsel) dan gerbang
-#                     aksesibilitas (20 rute x 2 tema: kontras WCAG AA,
+#                     aksesibilitas (19 rute x 2 tema: kontras WCAG AA,
 #                     landmark, urutan judul, scope <th>, ikon ber-glyph,
 #                     subresource same-origin). Butuh fixture hidup dan
 #                     browser yang sudah diunduh.
+#                     Rute uji browser 19, sapuan rute 18: rute lama
+#                     `kelola_staff_puskesmas` masih dipotret karena CRUD
+#                     stafnya hidup dan ditautkan dari detail Puskesmas,
+#                     sedangkan `master_puskesmas` hanya mengalihkan sehingga
+#                     tidak dipotret dan tidak disapu.
 #   --php=CMD         PHP yang dipakai (default: php)
 #   --base=URL        basis URL untuk sapuan rute
 #                     (default: lihat BASE_URL di bawah)
@@ -110,6 +115,8 @@ run_gate 'kontrak dasbor monitoring' \
 	"$PHP" "$ROOT/tools/admin_panel/tests/monitoring_dashboard_unit.php"
 run_gate 'IA navigasi samping' \
 	"$PHP" "$ROOT/tools/admin_panel/tests/sidebar_ia_unit.php"
+run_gate 'kontrak hub Puskesmas' \
+	"$PHP" "$ROOT/tools/admin_panel/tests/puskesmas_hub_unit.php"
 run_gate 'kontrak arsip rekam medis' \
 	"$PHP" "$ROOT/tools/admin_panel/tests/record_archive_unit.php"
 
@@ -118,9 +125,9 @@ run_gate 'kontrak arsip rekam medis' \
 # Kesiapan diperiksa dengan PHP, bukan dengan perintah `curl`: image harness
 # hanya memasang ekstensi curl untuk PHP, bukan biner curl. Dulu pemeriksaan
 # memakai biner itu, sehingga di kontainer hasilnya selalu "tidak menjawab"
-# walaupun aplikasi hidup - dan sapuan 20 rute ikut gagal tanpa sebab nyata.
+# walaupun aplikasi hidup - dan sapuan 18 rute ikut gagal tanpa sebab nyata.
 echo
-echo "== sapuan 20 rute =="
+echo "== sapuan 18 rute =="
 echo "-- basis URL: $BASE_URL"
 probe=$("$PHP" -r '
 	$url = $argv[1];
@@ -154,9 +161,9 @@ case $probe in
 		;;
 	*)
 		if BASE_URL="$BASE_URL" "$PHP" "$ROOT/tools/admin_panel/local/sweep.php"; then
-			echo "-- sapuan 20 rute: lulus"
+			echo "-- sapuan 18 rute: lulus"
 		else
-			echo "-- sapuan 20 rute: GAGAL" >&2
+			echo "-- sapuan 18 rute: GAGAL" >&2
 			failures=$((failures + 1))
 		fi
 		;;

@@ -45,12 +45,12 @@ if (!function_exists('curl_init')) {
 	exit(2);
 }
 
-/* Penjaga host lokal, bukan kemalasan: sapuan menembak 20 rute dengan sesi
+/* Penjaga host lokal, bukan kemalasan: sapuan menembak 18 rute dengan sesi
    admin yang sudah masuk, jadi satu salah ketik BASE_URL saja cukup untuk
-   mengirim 20 permintaan ber-sesi ke produksi. Staging karena itu diperiksa
+   mengirim 18 permintaan ber-sesi ke produksi. Staging karena itu diperiksa
    dengan uji browser (`tools/task11_browser`, TASK11_BASE_URL) yang menguji
    hal yang sama - status 200, tanpa jejak galat, tidak terpantul ke login -
-   tanpa pernah menembakkan 20 rute sekaligus dari harness ini. */
+   tanpa pernah menembakkan 18 rute sekaligus dari harness ini. */
 $base = rtrim(getenv('BASE_URL') ?: 'http://127.0.0.1:8080/admin_menu', '/') . '/';
 $host = parse_url($base, PHP_URL_HOST);
 if (!in_array($host, array('127.0.0.1', 'localhost'), true)) {
@@ -68,17 +68,20 @@ foreach ($_SERVER['argv'] as $arg) {
 	}
 }
 
-/* 20 rute = dasbor + 19 modul, diambil dari tautan sidebar di
+/* 18 rute = dasbor + 17 modul, diambil dari tautan sidebar di
    `application/views/commons/header.php` (termasuk "Sesi & keamanan").
    Daftar ini sengaja literal: bila sebuah modul ditambahkan ke sidebar, sapuan
    harus ikut diperbarui, dan itu memang yang diinginkan (tidak ada rute yang
-   lolos diam-diam). */
+   lolos diam-diam).
+
+   `kelola_staff_puskesmas` dan `master_puskesmas` tidak lagi disapu karena
+   keduanya bukan tujuan navigasi lagi: staf disematkan di detail Puskesmas, dan
+   `master_puskesmas` mengalihkan ke daftar Puskesmas. Rutenya tetap hidup -
+   `http_matrix.php` masih menembaknya. */
 $routes = array(
 	'home' => 'Dasbor',
 	'kelola_warga' => 'Kelola warga',
-	'kelola_dokter_nakes' => 'Kelola dokter & nakes',
-	'kelola_staff_puskesmas' => 'Kelola staf Puskesmas',
-	'master_puskesmas' => 'Master Puskesmas',
+	'kelola_dokter_nakes' => 'Puskesmas',
 	'wilayah' => 'Wilayah',
 	'rekam_medis' => 'Rekam medis',
 	'diagnosis' => 'Diagnosis',

@@ -1,236 +1,189 @@
 <?php
 require_once dirname(APPPATH, 2) . '/application/libraries/Nakes_credential_policy.php';
+/* Daftar Puskesmas inti. Satu baris = satu Puskesmas, dan seluruh pekerjaan
+   lanjutan (profil fasilitas, akun, staf) ada di halaman detailnya. Daftar ini
+   sengaja TIDAK memuat formulir apa pun: dulu halaman ini adalah daftar akun
+   dengan modal tambah/ubah, sementara Puskesmas-nya sendiri dikelola di dua
+   layar lain. */
 $credential_policy = new Nakes_credential_policy();
-$puskesmas_options = isset($puskesmas_options) ? $puskesmas_options : array();
-$puskesmas_names = array();
-foreach ($puskesmas_options as $puskesmas) {
-	$puskesmas_names[(string) $puskesmas->kode_pkm] = $puskesmas->nama_puskesmas;
-}
-$account_rows = isset($data_dokter_nakes) ? $data_dokter_nakes->result() : array();
-$credential_counts = array('first_login_pending' => 0, 'admin_reset_pending' => 0, 'active' => 0);
-foreach ($account_rows as $account_row) {
-	if ((string) ($account_row->status ?? '') !== 'aktif') {
+$puskesmas_rows = isset($puskesmas_rows) && is_array($puskesmas_rows) ? $puskesmas_rows : array();
+
+$summary = array('account_missing' => 0, 'credential_pending' => 0, 'staff_empty' => 0, 'master_missing' => 0);
+$readiness_summary = isset($puskesmas_readiness_summary) && is_array($puskesmas_readiness_summary)
+	? $puskesmas_readiness_summary
+	: array('total' => 0, 'ready' => 0, 'attention' => 0, 'issue_counts' => array());
+$row_states = array();
+foreach ($puskesmas_rows as $puskesmas_row) {
+	$account_status = strtolower(trim((string) ($puskesmas_row->account_status ?? '')));
+	if ((int) ($puskesmas_row->account_user_id ?? 0) < 1) {
+		$summary['account_missing']++;
+		$row_states[(string) $puskesmas_row->kode_pkm] = array('label' => 'Belum ada akun', 'class' => 'badge-secondary');
 		continue;
 	}
-	$state = $credential_policy->state(
-		(string) ($account_row->role ?? ''),
-		(int) ($account_row->must_change_password ?? 0),
-		$account_row->password_changed_at ?? null
+	if ($account_status !== 'aktif') {
+		$row_states[(string) $puskesmas_row->kode_pkm] = array('label' => 'Akun nonaktif', 'class' => 'badge-secondary');
+		continue;
+	}
+	$credential_state = $credential_policy->state(
+		'dokter',
+		(int) ($puskesmas_row->must_change_password ?? 0),
+		$puskesmas_row->password_changed_at ?? null
 	);
-	if (array_key_exists($state, $credential_counts)) {
-		$credential_counts[$state]++;
+	if ($credential_state !== Nakes_credential_policy::ACTIVE) {
+		$summary['credential_pending']++;
+		$row_states[(string) $puskesmas_row->kode_pkm] = array('label' => 'Password belum diganti', 'class' => 'badge-warning');
+		continue;
+	}
+	$row_states[(string) $puskesmas_row->kode_pkm] = array('label' => 'Siap dipakai', 'class' => 'badge-success');
+}
+foreach ($puskesmas_rows as $puskesmas_row) {
+	if ((int) ($puskesmas_row->staff_active ?? 0) < 1) {
+		$summary['staff_empty']++;
+	}
+	if (empty($puskesmas_row->master_ready)) {
+		$summary['master_missing']++;
 	}
 }
 ?>
 <div class="doclinc-admin-page doclinc-akun-page">
 	<?php
-	/* Kepala halaman dari partial bersama. Judulnya "Akun Puskesmas" — itu yang
-	   dikelola halaman ini, bukan daftar dokter. Tombol "Tambah akun" tetap di
-	   kepala daftar karena modalnya hidup di sana. */
-	$page_head = array('title' => 'Akun Puskesmas');
+	$page_head = array(
+		'title' => 'Puskesmas',
+		'sub' => 'Sembilan Puskesmas inti Kota Cilegon. Buka satu baris untuk mengubah profil fasilitas, akun login, dan stafnya.',
+	);
 	$this->load->view('commons/page_head', array('page_head' => $page_head));
 	?>
 
 	<div class="container-fluid">
-		<?php if ($credential_counts['first_login_pending'] > 0): ?>
-			<div class="alert alert-danger shadow-sm" role="alert">
-				<strong>Akun Puskesmas belum diaktivasi:</strong>
-				<?= html_escape((string) $credential_counts['first_login_pending']); ?> akun aktif belum pernah mengganti password bawaan. Akses operasional tetap dikunci sampai pengelola membuat password pribadinya.
+		<?php if ($summary['master_missing'] > 0): ?>
+			<div class="alert alert-warning shadow-sm" role="alert">
+				<strong>Sebagian Puskesmas belum ada di master fasilitas:</strong>
+				<?= html_escape((string) $summary['master_missing']); ?> dari <?= html_escape((string) count($puskesmas_rows)); ?> baris.
+				Profil fasilitas tidak dapat disimpan untuk baris tersebut sampai migrasi master dijalankan.
 			</div>
 		<?php endif; ?>
+		<?php if ($summary['account_missing'] > 0): ?>
+			<div class="alert alert-danger shadow-sm" role="alert">
+				<strong>Puskesmas tanpa akun login:</strong>
+				<?= html_escape((string) $summary['account_missing']); ?> Puskesmas.
+				Permintaan warga tidak dapat diterima Puskesmas yang tidak punya akun aktif.
+			</div>
+		<?php endif; ?>
+
+		<?php if ($readiness_summary['attention'] > 0): ?>
+			<div class="alert alert-warning shadow-sm" role="alert">
+				<strong>Kesiapan Puskesmas aktif:</strong> <?= html_escape((string) $readiness_summary['attention']); ?> dari
+				<?= html_escape((string) $readiness_summary['total']); ?> Puskesmas aktif belum lengkap data pelayanannya.
+				Lengkapi alamat dan titik lokasi dari halaman detail masing-masing.
+			</div>
+		<?php endif; ?>
+
 		<?php
 		$list_card = array(
 			'part' => 'open',
-			'title' => 'Daftar Akun Puskesmas',
-			'sub' => 'Akun login koordinator per Puskesmas.',
-			'action' => array(
-				'kind' => 'modal',
-				'label' => 'Tambah akun',
-				'target' => '#modalTambahDokterNakes',
-				'icon' => 'fas fa-plus-circle',
-				'variant' => 'success',
-			),
+			'title' => 'Daftar Puskesmas',
+			'count' => count($puskesmas_rows) . ' Puskesmas',
+			'sub' => 'Kode resmi Kemenkes, nama fasilitas, dan kepala Puskesmas.',
 			'card_class' => 'doclinc-account-list-card',
 		);
 		$this->load->view('commons/list_card', array('list_card' => $list_card));
 		?>
-				<div class="doclinc-account-toolbar">
-					<label for="puskesmasAccountSelector">Puskesmas aktif</label>
-					<select id="puskesmasAccountSelector" class="form-control doclinc-puskesmas-selector">
-						<option value="">Pilih Puskesmas aktif</option>
-						<option value="__all">Semua Puskesmas aktif</option>
-						<?php foreach ($puskesmas_options as $puskesmas): ?>
-							<option value="<?= html_escape($puskesmas->nama_puskesmas); ?>"><?= html_escape($puskesmas->nama_puskesmas); ?></option>
-						<?php endforeach; ?>
+
+		<?php if (empty($puskesmas_rows)): ?>
+			<div class="doclinc-account-empty">Daftar Puskesmas inti belum tersedia.</div>
+		<?php else: ?>
+			<?php if ($readiness_summary['total'] > 1): ?>
+				<div class="d-flex justify-content-end mb-3">
+					<label class="sr-only" for="puskesmasReadinessFilter">Saring menurut kesiapan</label>
+					<select class="form-control form-control-sm w-auto" id="puskesmasReadinessFilter">
+						<option value="all">Semua Puskesmas</option>
+						<option value="attention">Perlu dilengkapi</option>
+						<option value="ready">Siap dipakai</option>
 					</select>
 				</div>
-
-				<?php if (empty($account_rows)): ?>
-					<div class="doclinc-account-empty">Belum ada akun Puskesmas.</div>
-				<?php else: ?>
-					<div class="doclinc-account-list" id="accountCardList">
-						<?php foreach ($account_rows as $data): ?>
+			<?php endif; ?>
+			<div class="table-responsive">
+				<table class="table table-hover align-middle mb-0">
+					<thead>
+						<tr>
+							<th scope="col">Kode</th>
+							<th scope="col">Puskesmas</th>
+							<th scope="col">Nama kepala</th>
+							<th scope="col">Akun login</th>
+							<th scope="col">Kesiapan</th>
+							<th scope="col">Staf aktif</th>
+							<th scope="col">Tindakan</th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ($puskesmas_rows as $row): ?>
 							<?php
-							$kode_pkm = trim((string) ($data->remark ?? ''));
-							$nama_pkm = $data->nama_puskesmas ?? ($puskesmas_names[$kode_pkm] ?? '');
-							$puskesmas_status = $data->puskesmas_status ?? '';
-							$account_status = strtolower(trim((string) ($data->status ?? '')));
-							$is_active = $account_status === 'aktif';
-							$credential_state = $credential_policy->state(
-								(string) ($data->role ?? ''),
-								(int) ($data->must_change_password ?? 0),
-								$data->password_changed_at ?? null
+							$kode_pkm = (string) $row->kode_pkm;
+							$state = isset($row_states[$kode_pkm]) ? $row_states[$kode_pkm] : array('label' => 'Status belum tersedia', 'class' => 'badge-secondary');
+							$detail_url = site_url('kelola_dokter_nakes/detail/' . rawurlencode($kode_pkm));
+							$kepala = trim((string) ($row->kepala_puskesmas ?? ''));
+							$status = (string) ($row->status ?? '');
+							$readiness_issues = (array) ($row->readiness_issues ?? array());
+							$readiness_state = $status === 'aktif' ? (empty($readiness_issues) ? 'ready' : 'attention') : 'inactive';
+							$readiness_badges = array(
+								'ready' => array('label' => 'Siap dipakai', 'class' => 'badge-success'),
+								'attention' => array('label' => 'Perlu dilengkapi', 'class' => 'badge-warning'),
+								'inactive' => array('label' => 'Nonaktif', 'class' => 'badge-secondary'),
 							);
-							$account_status_labels = array('aktif' => 'Aktif', 'valid' => 'Aktif', 'nonaktif' => 'Nonaktif', 'inactive' => 'Nonaktif');
-							$account_status_label = $account_status_labels[$account_status] ?? 'Status belum tersedia';
-							if ($kode_pkm !== '' && $nama_pkm !== '' && $puskesmas_status !== 'nonaktif') {
-								$relationship_note = 'Terhubung ke Puskesmas aktif';
-							} elseif ($kode_pkm !== '' && $puskesmas_status === 'nonaktif') {
-								$relationship_note = 'Puskesmas nonaktif';
-							} else {
-								$relationship_note = 'Belum terhubung ke Puskesmas aktif';
-							}
+							$readiness_badge = $readiness_badges[$readiness_state];
 							?>
-							<div class="doclinc-account-card" data-puskesmas-name="<?= html_escape($nama_pkm); ?>" data-puskesmas-active="<?= ($kode_pkm !== '' && $nama_pkm !== '' && $puskesmas_status !== 'nonaktif') ? '1' : '0'; ?>">
-								<div class="doclinc-account-card__header">
-									<div>
-										<div class="doclinc-account-card__title"><?= html_escape($data->nama ?? '-'); ?></div>
-									</div>
-									<span class="doclinc-account-card__status <?= $is_active ? 'is-active' : 'is-inactive'; ?>">
-										<?= html_escape($account_status_label); ?>
-									</span>
-								</div>
-
-								<div class="doclinc-account-card__body">
-									<div class="doclinc-account-card__meta">
-										<span>Puskesmas</span>
-										<strong><?= html_escape($nama_pkm !== '' ? $nama_pkm : 'Puskesmas belum tersedia'); ?></strong>
-									</div>
-									<div class="doclinc-account-card__meta">
-										<span>No. Telepon</span>
-										<strong><?= html_escape($data->no_hp ?? '-'); ?></strong>
-									</div>
-									<div class="doclinc-account-card__note <?= $relationship_note === 'Puskesmas nonaktif' ? 'is-warning' : ($relationship_note === 'Belum terhubung ke Puskesmas aktif' ? 'is-muted' : ''); ?>">
-										<?= html_escape($relationship_note); ?>
-									</div>
-									<?php if ($is_active && $credential_state === Nakes_credential_policy::FIRST_LOGIN_PENDING): ?>
-										<div class="doclinc-account-card__note is-warning mt-2">Belum pernah mengganti password bawaan. Hanya halaman aktivasi password yang dapat diakses.</div>
-									<?php elseif ($is_active && $credential_state === Nakes_credential_policy::ADMIN_RESET_PENDING): ?>
-										<div class="doclinc-account-card__note is-warning mt-2">Password di-reset Admin. Menunggu pengelola Puskesmas membuat password baru.</div>
-									<?php endif; ?>
-								</div>
-
-								<div class="doclinc-account-card__footer">
-									<div class="doclinc-account-card__actions">
-										<button type="button" class="btn doclinc-action-btn doclinc-action-btn--primary" data-toggle="modal" data-target="#editModal<?= (int) $data->userId ?>">Ubah</button>
-										<?php if ($is_active): ?>
-											<form action="<?= site_url('kelola_dokter_nakes/nonaktifkan_user') ?>" method="post" class="d-inline">
-												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
-												<input type="hidden" name="remark_nonaktif" value="<?= html_escape($data->remark ?? ''); ?>">
-												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Nonaktifkan akun Puskesmas? Akun tidak dapat digunakan hingga diaktifkan kembali.');">Nonaktifkan</button>
-											</form>
-										<?php else: ?>
-											<form action="<?= site_url('kelola_dokter_nakes/aktifkan_user') ?>" method="post" class="d-inline">
-												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
-												<input type="hidden" name="remark_aktif" value="<?= html_escape($data->remark ?? ''); ?>">
-												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--secondary" onclick="return confirm('Aktifkan akun Puskesmas?');">Aktifkan</button>
-											</form>
-											<form action="<?= site_url('kelola_dokter_nakes/destroy_dokter_nakes') ?>" method="post" class="d-inline">
-												<input type="hidden" name="id_user" value="<?= html_escape($data->userId); ?>">
-												<button type="submit" class="btn doclinc-action-btn doclinc-action-btn--danger doclinc-account-danger" onclick="return confirm('Hapus akun Puskesmas? Data yang dihapus tidak dapat dipulihkan.');">Hapus</button>
-											</form>
+							<tr data-puskesmas-readiness="<?= html_escape($readiness_state); ?>">
+								<td><span class="dl-adm-help-code"><?= html_escape($kode_pkm); ?></span></td>
+								<td>
+									<a href="<?= html_escape($detail_url); ?>"><strong><?= html_escape((string) $row->nama_puskesmas); ?></strong></a>
+									<div class="small text-muted">
+										Kecamatan <?= html_escape((string) $row->kecamatan); ?>
+										<?php if (!$row->master_ready): ?>
+											&middot; belum ada di master fasilitas
+										<?php elseif ((string) $row->status !== 'aktif'): ?>
+											&middot; status master: <?= html_escape((string) $row->status); ?>
 										<?php endif; ?>
 									</div>
-								</div>
-							</div>
-
-							<div class="modal fade" id="editModal<?= (int) $data->userId ?>" tabindex="-1" role="dialog" aria-labelledby="editModalLabel<?= (int) $data->userId ?>" aria-hidden="true">
-								<div class="modal-dialog modal-dialog-centered" role="document">
-									<div class="modal-content border-0 shadow-sm">
-										<div class="modal-header bg-info text-white">
-											<h5 class="modal-title" id="editModalLabel<?= (int) $data->userId ?>">
-												<i class="fas fa-hospital-user mr-2"></i>Ubah akun Puskesmas
-											</h5>
-											<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup">
-												<span aria-hidden="true">&times;</span>
-											</button>
-										</div>
-										<form action="<?= site_url('kelola_dokter_nakes/update/' . rawurlencode($data->userId)) ?>" method="post">
-											<input type="hidden" name="old_photo" value="<?= html_escape($data->foto ?? '') ?>">
-											<div class="form-group mt-3 px-3">
-												<div class="row">
-													<div class="col-md-3">
-														<img src="<?= doclinc_safe_profile_image_src($data->foto ?? '') ?>" class="img-thumbnail rounded-circle" alt="Foto Profil">
-													</div>
-													<div class="col-md-9">
-														<input type="file" class="form-control-file" name="photo">
-														<small class="text-muted">Unggah foto baru, atau biarkan kosong</small>
-													</div>
-												</div>
-											</div>
-											<div class="modal-body bg-light rounded mx-3">
-												<div class="form-group">
-													<label class="text-info"><i class="fas fa-user-md mr-1"></i> Nama Lengkap</label>
-													<input type="text" class="form-control" name="nama" value="<?= html_escape($data->nama ?? '') ?>" required>
-												</div>
-												<div class="form-group">
-													<label class="text-info"><i class="fas fa-envelope mr-1"></i> Email</label>
-													<input type="email" class="form-control" name="email" value="<?= html_escape($data->email ?? '') ?>" required>
-												</div>
-												<div class="form-group">
-													<label class="text-info"><i class="fas fa-user mr-1"></i> Username</label>
-													<input type="text" class="form-control" name="username" value="<?= html_escape($data->username ?? '') ?>" required>
-												</div>
-												<div class="form-group">
-													<label class="text-info"><i class="fas fa-clinic-medical mr-1"></i> Puskesmas</label>
-													<?php if (!empty($puskesmas_options)): ?>
-														<select class="form-control" name="remark" required>
-															<?php foreach ($puskesmas_options as $puskesmas): ?>
-																<option value="<?= html_escape($puskesmas->kode_pkm); ?>" <?= (string) ($data->remark ?? '') === (string) $puskesmas->kode_pkm ? 'selected' : ''; ?>>
-																	<?= html_escape($puskesmas->nama_puskesmas); ?> (<?= html_escape($puskesmas->kode_pkm); ?>)
-																</option>
-															<?php endforeach; ?>
-														</select>
-													<?php else: ?>
-														<input type="text" class="form-control" name="remark" value="<?= html_escape($data->remark ?? 'DEFAULT') ?>" required>
-													<?php endif; ?>
-												</div>
-												<div class="form-group">
-													<label class="text-info"><i class="fas fa-phone-alt mr-1"></i> Nomor Telepon</label>
-													<input type="text" class="form-control" name="no_hp" value="<?= html_escape($data->no_hp ?? '') ?>">
-												</div>
-												<div class="form-group">
-													<label class="text-info"><i class="fas fa-toggle-on mr-1"></i> Status</label>
-													<select class="form-control" name="status">
-														<option value="aktif" <?= ($data->status ?? '') === 'aktif' ? 'selected' : ''; ?>>Aktif</option>
-														<option value="nonaktif" <?= ($data->status ?? '') === 'nonaktif' ? 'selected' : ''; ?>>Nonaktif</option>
-													</select>
-												</div>
-											<div class="form-group">
-												<label class="text-info"><i class="fas fa-lock mr-1"></i> Password Baru</label>
-												<input type="password" class="form-control" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password">
-												<small class="text-muted">Kosongkan bila tidak direset. Minimal 8 karakter: huruf besar, huruf kecil, angka, dan simbol.</small>
-											</div>
-											<div class="form-group">
-												<label class="text-info"><i class="fas fa-lock mr-1"></i> Konfirmasi Password Baru</label>
-												<input type="password" class="form-control" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password">
-												</div>
-											</div>
-											<div class="modal-footer border-0 px-4 pb-4">
-												<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
-													<i class="fas fa-times-circle mr-1"></i>Batal
-												</button>
-												<button type="submit" class="btn btn-primary">
-													<i class="fas fa-check-circle mr-1"></i>Simpan
-												</button>
-											</div>
-										</form>
-									</div>
-								</div>
-							</div>
+								</td>
+								<td>
+									<?php if ($kepala !== ''): ?>
+										<?= html_escape($kepala); ?>
+									<?php else: ?>
+										<span class="text-muted">Belum diisi</span>
+									<?php endif; ?>
+								</td>
+								<td>
+									<?php if ((int) $row->account_user_id > 0): ?>
+										<span class="d-block"><?= html_escape((string) $row->account_username); ?></span>
+									<?php endif; ?>
+									<span class="badge <?= html_escape($state['class']); ?>"><?= html_escape($state['label']); ?></span>
+								</td>
+								<td><span class="badge <?= html_escape($readiness_badge['class']); ?>"><?= html_escape($readiness_badge['label']); ?></span></td>
+								<td><?= html_escape((string) (int) $row->staff_active); ?> / <?= html_escape((string) (int) $row->staff_total); ?></td>
+								<td>
+									<a class="btn btn-sm btn-primary" href="<?= html_escape($detail_url); ?>">
+										<i class="fas fa-hospital-user mr-1" aria-hidden="true"></i>Kelola
+									</a>
+									<?php if ((int) $row->account_user_id > 0): ?>
+										<a class="btn btn-sm btn-outline-secondary" href="<?= html_escape(site_url('kelola_dokter_nakes/password/' . rawurlencode($kode_pkm))); ?>">
+											<i class="fas fa-key mr-1" aria-hidden="true"></i>Password
+										</a>
+									<?php endif; ?>
+								</td>
+							</tr>
 						<?php endforeach; ?>
-					</div>
-				<?php endif; ?>
+					</tbody>
+				</table>
+			</div>
+
+			<?php if ($summary['credential_pending'] > 0): ?>
+				<p class="doclinc-muted-text mt-3 mb-0">
+					<?= html_escape((string) $summary['credential_pending']); ?> akun Puskesmas masih memakai password yang diterbitkan Administrator.
+					Akses operasionalnya terkunci sampai pengelola membuat password pribadi.
+				</p>
+			<?php endif; ?>
+		<?php endif; ?>
+
 		<?php
 		$list_card = array('part' => 'close');
 		$this->load->view('commons/list_card', array('list_card' => $list_card));
@@ -238,134 +191,25 @@ foreach ($account_rows as $account_row) {
 	</div>
 </div>
 
-<div class="modal fade" id="modalTambahDokterNakes" tabindex="-1" role="dialog" aria-labelledby="modalTambahDokterNakesLabel" aria-hidden="true">
-	<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-		<div class="modal-content border-0 shadow-sm">
-			<div class="modal-header bg-success text-white">
-				<h5 class="modal-title" id="modalTambahDokterNakesLabel">
-					<i class="fas fa-user-plus mr-2"></i>Tambah akun Puskesmas
-				</h5>
-				<button type="button" class="close text-white" data-dismiss="modal" aria-label="Tutup">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<form action="<?= site_url('kelola_dokter_nakes/store') ?>" method="post">
-				<div class="modal-body bg-light">
-					<div class="row">
-						<div class="col-md-6">
-							<div class="form-group">
-								<label class="text-success"><i class="fas fa-user-md mr-1"></i> Nama Lengkap</label>
-								<input type="text" class="form-control" name="nama" required>
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="form-group">
-								<label class="text-success"><i class="fas fa-envelope mr-1"></i> Email</label>
-								<input type="email" class="form-control" name="email" required>
-							</div>
-						</div>
-					</div>
-					<div class="row">
-						<div class="col-md-6">
-							<div class="form-group">
-								<label class="text-success"><i class="fas fa-user mr-1"></i> Username</label>
-								<input type="text" class="form-control" name="username" required>
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="form-group">
-								<label class="text-success"><i class="fas fa-phone-alt mr-1"></i> No HP</label>
-								<input type="text" class="form-control" name="no_hp">
-							</div>
-						</div>
-					</div>
-					<div class="row">
-						<div class="col-md-6">
-							<div class="form-group">
-								<label class="text-success"><i class="fas fa-lock mr-1"></i> Password</label>
-								<input type="password" class="form-control" name="password" minlength="8" maxlength="72" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9\s]).{8,72}" autocomplete="new-password" required>
-								<small class="text-muted">Minimal 8 karakter: huruf besar, huruf kecil, angka, dan karakter khusus.</small>
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="form-group">
-								<label class="text-success"><i class="fas fa-lock mr-1"></i> Konfirmasi Password</label>
-								<input type="password" class="form-control" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
-							</div>
-						</div>
-					</div>
-					<div class="row">
-						<div class="col-md-6">
-							<div class="form-group">
-								<label class="text-success"><i class="fas fa-clinic-medical mr-1"></i> Puskesmas</label>
-								<?php if (!empty($puskesmas_options)): ?>
-									<select class="form-control" name="remark">
-										<?php foreach ($puskesmas_options as $puskesmas): ?>
-											<option value="<?= html_escape($puskesmas->kode_pkm); ?>">
-												<?= html_escape($puskesmas->nama_puskesmas); ?> (<?= html_escape($puskesmas->kode_pkm); ?>)
-											</option>
-										<?php endforeach; ?>
-									</select>
-								<?php else: ?>
-									<input type="text" class="form-control" name="remark" value="DEFAULT">
-									<small class="text-muted">Dipakai selama master Puskesmas belum tersedia.</small>
-								<?php endif; ?>
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="form-group">
-								<label class="text-success"><i class="fas fa-toggle-on mr-1"></i> Status</label>
-								<select class="form-control" name="status">
-									<option value="aktif">Aktif</option>
-									<option value="nonaktif">Nonaktif</option>
-								</select>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer border-0 px-4 pb-4">
-					<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
-						<i class="fas fa-times-circle mr-1"></i>Batal
-					</button>
-					<button type="submit" class="btn btn-primary">
-						<i class="fas fa-check-circle mr-1"></i>Simpan
-					</button>
-				</div>
-			</form>
-		</div>
-	</div>
-</div>
-
-<script>
-	document.addEventListener('DOMContentLoaded', function() {
-		var selector = document.getElementById('puskesmasAccountSelector');
-		var cards = Array.prototype.slice.call(document.querySelectorAll('.doclinc-account-card'));
-		if (!selector || cards.length === 0) {
-			return;
-		}
-
-		selector.addEventListener('change', function() {
-			var selected = selector.value;
-			cards.forEach(function(card) {
-				card.classList.remove('doclinc-card-highlight');
-			});
-
-			if (selected === '' || selected === '__all') {
-				window.scrollTo({ top: 0, behavior: 'smooth' });
+<?php if ($readiness_summary['total'] > 1): ?>
+	<script>
+		/* Saringan kesiapan hanya menyembunyikan baris; tidak ada permintaan
+		   jaringan, jadi daftar tetap utuh saat saringan dilepas. */
+		(function () {
+			var filter = document.getElementById('puskesmasReadinessFilter');
+			if (!filter) {
 				return;
 			}
-
-			var matches = cards.filter(function(card) {
-				return card.getAttribute('data-puskesmas-active') === '1' && card.getAttribute('data-puskesmas-name') === selected;
+			filter.addEventListener('change', function () {
+				var wanted = filter.value;
+				var rows = document.querySelectorAll('[data-puskesmas-readiness]');
+				for (var i = 0; i < rows.length; i++) {
+					var state = rows[i].getAttribute('data-puskesmas-readiness');
+					var visible = wanted === 'all' || state === wanted;
+					rows[i].classList.toggle('d-none', !visible);
+				}
 			});
+		})();
+	</script>
+<?php endif; ?>
 
-			matches.forEach(function(card) {
-				card.classList.add('doclinc-card-highlight');
-			});
-
-			if (matches.length > 0) {
-				matches[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-			}
-		});
-	});
-</script>

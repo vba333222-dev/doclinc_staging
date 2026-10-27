@@ -296,6 +296,14 @@
   color: var(--dl-ref-danger);
 }
 
+/* Di tema gelap, `--dl-ref-danger` di atas `--dl-ref-danger-soft` versi gelap
+   terukur 3,01:1 - di bawah ambang WCAG AA untuk teks 12px. Tinta diambil dari
+   token teks supaya kontrasnya pasti; sinyal "perhatian" tetap dibawa latar dan
+   warnanya, jadi status tidak bergantung pada warna teks saja. */
+html[data-theme="dark"] .dl-adm-strip-flag--perhatian {
+  color: var(--dl-ref-ink);
+}
+
 /* Catatan singkat satu baris di dalam jalur, untuk keterbatasan yang memang
    harus terlihat tanpa dibuka. */
 .dl-adm-strip-note {

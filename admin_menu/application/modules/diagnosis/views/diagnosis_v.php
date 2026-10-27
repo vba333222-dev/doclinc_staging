@@ -269,7 +269,7 @@ $this->load->view('commons/page_head', array('page_head' => $page_head));
 	<div class="doclinc-analytics-panel doclinc-map-panel">
 		<div class="doclinc-map-head">
 			<div>
-				<h2 class="doclinc-analytics-panel-title">Peta sebaran penyakit</h2>
+				<h2 class="doclinc-analytics-panel-title">Peta sebaran</h2>
 				<p class="doclinc-analytics-panel-note">
 					Warna menunjukkan jumlah diagnosis yang sudah dikode per kecamatan untuk kode yang dipilih,
 					atau penyakit yang paling banyak di tiap kecamatan.
@@ -294,7 +294,7 @@ $this->load->view('commons/page_head', array('page_head' => $page_head));
 					</select>
 				</div>
 				<button type="button" class="btn btn-primary dl-adm-action" id="doclincMapPlay" aria-pressed="false" <?= empty($map_codes) ? 'disabled' : ''; ?>>
-					<i class="fas fa-play" aria-hidden="true"></i> <span>Putar</span>
+					<i class="fas fa-play" aria-hidden="true"></i> <span>Presentasi</span>
 				</button>
 				<?php
 				/* Tombol layar penuh. Disembunyikan sampai skrip peta siap: tanpa
@@ -325,7 +325,7 @@ $this->load->view('commons/page_head', array('page_head' => $page_head));
 					   tombol Escape, yang tidak ada di layar sentuh. */
 					?>
 					<div class="doclinc-map-fullbar" id="doclincMapFullBar">
-						<p class="doclinc-map-fullbar-title">Peta sebaran penyakit</p>
+						<p class="doclinc-map-fullbar-title">Peta sebaran</p>
 						<button type="button" class="btn btn-outline-secondary dl-adm-action" id="doclincMapExit">
 							<i class="fas fa-compress" aria-hidden="true"></i> <span>Keluar layar penuh</span>
 						</button>

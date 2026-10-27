@@ -29,7 +29,6 @@ VIEWS = [
     'admin_menu/application/modules/konsultasi_kesehatan/views/konsultasi_kesehatan_v.php',
     'admin_menu/application/modules/kelola_staff_puskesmas/views/kelola_staff_puskesmas_v.php',
     'admin_menu/application/modules/kelola_dokter_nakes/views/kelola_dokter_nakes_v.php',
-    'admin_menu/application/modules/master_puskesmas/views/master_puskesmas_v.php',
 ]
 VARIANTS = {'primary', 'success', 'danger', 'outline-primary', 'outline-secondary'}
 FA = re.compile(r'^fa[srlb]? fa-[a-z0-9-]+(?: fa-[a-z0-9-]+)*$')

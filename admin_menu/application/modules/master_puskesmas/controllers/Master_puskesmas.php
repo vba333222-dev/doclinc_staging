@@ -17,18 +17,14 @@ class Master_puskesmas extends MX_Controller
 
 	public function index()
 	{
-		$this->session->set_flashdata('title', 'Master Puskesmas');
-		$this->session->set_flashdata('active_tab_master_puskesmas', 'active');
-		$data['puskesmas'] = $this->Master_puskesmas_m->get_all();
-		$data['puskesmas_readiness_issues'] = array();
-		$puskesmas_rows = $data['puskesmas'] ? $data['puskesmas']->result() : array();
-		foreach ($puskesmas_rows as $puskesmas) {
-			$data['puskesmas_readiness_issues'][(string) $puskesmas->kode_pkm] = $this->Master_puskesmas_m->readiness_issues($puskesmas);
-		}
-		$data['puskesmas_readiness_summary'] = $this->Master_puskesmas_m->readiness_summary($puskesmas_rows);
-		$this->load->view('commons/header');
-		$this->load->view('master_puskesmas_v', $data);
-		$this->load->view('commons/footer');
+		/* Rute lama, bukan halaman. Puskesmas kini dikelola di
+		   `kelola_dokter_nakes` (daftar sembilan Puskesmas inti + halaman
+		   detail). Pengalihan, bukan penghapusan: bookmark, tautan laporan, dan
+		   uji tata kelola yang menembak `/master_puskesmas` tetap mendarat di
+		   tempat yang benar. Aksi POST (`store`, `update`, ...) dibiarkan hidup
+		   sampai tidak ada lagi pemanggilnya. */
+		$this->session->set_flashdata('title', 'Puskesmas');
+		redirect('kelola_dokter_nakes', 'refresh');
 	}
 
 	public function store()
