@@ -29,7 +29,13 @@
 	<!-- Custom styles for this template-->
 	<link href="<?php echo base_url(); ?>assets/css/sb-admin-2.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.2/chart.min.js" integrity="sha512-tMabqarPtykgDtdtSqCL3uLVM0gS1ZkUAVhRFu1vSEFgvB73niFQWJuvviDyBGBH22Lcau4rHB5p2K2T0Xvr6Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<?php /* Chart.js disajikan dari origin ini, bukan dari CDN. Panel dipakai di
+	   jaringan Puskesmas yang tidak selalu punya internet; saat CDN tidak
+	   terjangkau `window.Chart` tetap undefined dan grafik dasbor hanya
+	   menyisakan kotak kosong tanpa penjelasan. Berkas vendor ini byte-identik
+	   dengan build 3.6.2 di cdnjs (hash SRI lamanya tercatat di
+	   assets/vendor/chartjs/PROVENANCE.md). */ ?>
+	<script src="<?php echo base_url(); ?>assets/vendor/chartjs/chart.min.js"></script>
 	<script src="<?php echo base_url(); ?>assets/vendor/jquery/jquery.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/jq-3.6.0/jszip-2.5.0/dt-1.11.3/b-2.0.1/b-colvis-2.0.1/b-html5-2.0.1/b-print-2.0.1/cr-1.5.5/date-1.1.1/fc-4.0.1/fh-3.2.0/kt-2.6.4/r-2.2.9/datatables.min.css" />
 	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>

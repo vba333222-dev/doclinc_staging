@@ -98,9 +98,33 @@
 		};
 	}
 
+	/* Grafik yang tidak dapat digambar tidak boleh menyisakan kotak kosong tanpa
+	 * penjelasan: kanvas disembunyikan dan satu kalimat menyebut di mana angka
+	 * yang sama bisa dibaca. Pustakanya disajikan dari origin ini
+	 * (assets/vendor/chartjs), jadi keadaan ini hanya muncul bila berkas vendor
+	 * hilang atau diblokir. */
+	function markChartUnavailable(canvas) {
+		var wrap = canvas.parentNode;
+		canvas.hidden = true;
+		if (!wrap || wrap.querySelector('.doclinc-analytics-chart-note')) {
+			return;
+		}
+		if (wrap.getAttribute && wrap.classList && wrap.classList.contains('doclinc-analytics-chart')) {
+			wrap.setAttribute('data-chart-state', 'unavailable');
+		}
+		var note = document.createElement('p');
+		note.className = 'doclinc-analytics-chart-note';
+		note.textContent = 'Grafik tidak dapat digambar karena pustaka grafik belum termuat. Angka yang sama ada di tabel di bawah.';
+		wrap.appendChild(note);
+	}
+
 	function drawChart() {
 		var canvas = document.getElementById(config.canvasId);
-		if (!canvas || typeof window.Chart !== 'function') {
+		if (!canvas) {
+			return null;
+		}
+		if (typeof window.Chart !== 'function') {
+			markChartUnavailable(canvas);
 			return null;
 		}
 		if (!Array.isArray(config.labels) || config.labels.length === 0) {

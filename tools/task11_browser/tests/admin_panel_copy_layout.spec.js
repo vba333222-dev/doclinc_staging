@@ -580,6 +580,105 @@ test('grafik batang memakai warna bertingkat dan angka di ujung batang', async (
   expect(pageErrors, 'skrip grafik tidak boleh melempar galat').toEqual([]);
 });
 
+test('grafik dasbor tergambar dari pustaka yang disajikan panel sendiri', async ({ page }) => {
+  await login(page);
+  const pageErrors = [];
+  const requested = [];
+  page.on('pageerror', (error) => pageErrors.push(String(error)));
+  page.on('request', (request) => requested.push(request.url()));
+
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(`${adminBase}/home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#dlMonTrendChart');
+  await page.waitForFunction(
+    () => document.getElementById('dlMonTrendChart').dataset.doclincChartReady === '1',
+  );
+
+  /* Kotak yang berukuran belum tentu berisi: kanvas bisa punya lebar dan tinggi
+     yang benar sambil tetap kosong. Yang diperiksa karena itu piksel yang
+     benar-benar tergambar, bukan sekadar dimensi. */
+  const charts = await page.evaluate(() => {
+    const describe = (canvas) => {
+      const instance = window.Chart && window.Chart.getChart ? window.Chart.getChart(canvas) : null;
+      const ctx = canvas.getContext('2d');
+      let painted = 0;
+      if (ctx && canvas.width && canvas.height) {
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        for (let i = 3; i < data.length; i += 160) {
+          if (data[i] > 8) painted += 1;
+        }
+      }
+      return {
+        id: canvas.id,
+        engine: typeof window.Chart,
+        painted,
+        hidden: canvas.hidden,
+        labels: instance && instance.data.labels ? instance.data.labels.length : 0,
+        datasets: instance && instance.data.datasets ? instance.data.datasets.length : 0,
+      };
+    };
+    return ['dlMonTrendChart', 'dlMonFacilityChart'].map((id) => {
+      const canvas = document.getElementById(id);
+      return canvas ? describe(canvas) : { id, missing: true };
+    });
+  });
+
+  expect(charts.length, 'dasbor harus memuat grafik tren dan grafik Puskesmas').toBe(2);
+  charts.forEach((chart) => {
+    expect(chart.missing, `kanvas ${chart.id} harus ada`).toBeFalsy();
+    expect(chart.engine, 'Chart.js harus tersedia dari origin panel, bukan CDN').toBe('function');
+    expect(chart.hidden, `kanvas ${chart.id} tidak boleh disembunyikan`).toBe(false);
+    expect(chart.labels, `kanvas ${chart.id} harus punya label sumbu`).toBeGreaterThan(0);
+    expect(chart.datasets, `kanvas ${chart.id} harus punya deret data`).toBeGreaterThan(0);
+    expect(chart.painted, `kanvas ${chart.id} harus tergambar, bukan kotak kosong`).toBeGreaterThan(50);
+  });
+
+  /* Pustaka dari CDN akan hilang lagi di jaringan Puskesmas yang tidak punya
+     internet - persis keadaan yang membuat grafik ini tidak tampil. */
+  expect(requested.some((url) => /cdnjs\.cloudflare\.com\/ajax\/libs\/Chart\.js/.test(url)),
+    'Chart.js tidak boleh diminta dari CDN').toBe(false);
+  expect(pageErrors, 'skrip grafik tidak boleh melempar galat').toEqual([]);
+});
+
+test('grafik yang pustakanya gagal dimuat menyebut alasannya, bukan kotak kosong', async ({ page }) => {
+  await login(page);
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(String(error)));
+
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  /* Bentuk kegagalan yang dulu menghasilkan kotak kosong tanpa penjelasan:
+     berkas pustaka tidak sampai ke peramban. */
+  await page.route('**/vendor/chartjs/chart.min.js', (route) => route.abort());
+  await page.goto(`${adminBase}/home`, { waitUntil: 'domcontentloaded' });
+  /* Kanvas yang disembunyikan tetap harus ada di DOM: itu yang dibaca di bawah. */
+  await page.waitForSelector('#dlMonTrendChart', { state: 'attached' });
+  /* Skrip grafik ada di akhir badan halaman: menunggu elemennya terpasang belum
+     berarti skripnya sudah berjalan. Tunggu sampai keadaan akhirnya tercapai -
+     kanvas tersembunyi karena pustaka tidak ada, atau kanvas sudah tergambar. */
+  await page.waitForFunction(() => {
+    const canvas = document.getElementById('dlMonTrendChart');
+    return !!canvas && (canvas.hidden || canvas.dataset.doclincChartReady === '1');
+  });
+
+  const state = await page.evaluate(() => {
+    const canvas = document.getElementById('dlMonTrendChart');
+    const wrap = canvas.parentNode;
+    const note = wrap.querySelector('.dl-mon-chart-note');
+    return {
+      hidden: canvas.hidden,
+      ready: canvas.dataset.doclincChartReady || '',
+      note: note ? note.textContent.replace(/\s+/g, ' ').trim() : '',
+      height: Math.round(wrap.getBoundingClientRect().height),
+    };
+  });
+
+  expect(state.hidden, 'kanvas kosong disembunyikan, bukan dibiarkan tampak kosong').toBe(true);
+  expect(state.ready, 'grafik tidak boleh mengaku tergambar').not.toBe('1');
+  expect(state.note, 'alasan grafik tidak tampil harus tertulis di halaman').toContain('tabel di bawah');
+  expect(state.height, 'wadah tidak menyisakan kotak tinggi tanpa isi').toBeLessThan(80);
+  expect(pageErrors, 'pustaka yang gagal dimuat tidak boleh melempar galat').toEqual([]);
+});
+
 test('peta tetap terbaca pada layar ponsel', async ({ page }) => {
   await login(page);
   await page.setViewportSize({ width: 390, height: 844 });

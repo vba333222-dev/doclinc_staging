@@ -20,6 +20,9 @@
  *   9. Nilai yang tidak tersedia ditampilkan sebagai tanda hubung, bukan nol.
  *  10. Permukaan ini memakai satu berkas gaya sendiri, tanpa hex baru, tanpa
  *      penanda prioritas paksa, dan menghormati prefers-reduced-motion.
+ *  11. Pustaka grafik disajikan dari origin panel (bukan CDN), dan grafik yang
+ *      tetap tidak dapat digambar menyebut alasannya alih-alih menyisakan
+ *      kotak kosong tanpa keterangan.
  *
  * Jalankan:
  *   php tools/admin_panel/tests/monitoring_dashboard_unit.php
@@ -195,6 +198,32 @@ mon_check(stripos($view, 'chart.js') === false && stripos($view, 'chart.min') ==
 	'Chart.js tidak dimuat ulang (sudah global di header panel)');
 mon_check(stripos($view, '24 jam') === false && stripos($view, '24 hours') === false,
 	'aturan waktu lama 24 jam tidak kembali ke permukaan ini');
+
+/* Pustaka grafik disajikan dari origin ini. Selama ia datang dari CDN, mesin
+   tanpa internet luar menampilkan kotak kosong tanpa satu pun keterangan -
+   persis keluhan "grafiknya tidak muncul" - dan tidak ada uji yang gagal. */
+echo "\n== pustaka grafik disajikan panel sendiri ==\n";
+$header = mon_source('admin_menu/application/views/commons/header.php');
+$chartRelative = 'admin_menu/assets/vendor/chartjs/chart.min.js';
+$chartPath = dirname(__DIR__, 3) . '/' . $chartRelative;
+$chartLibrary = is_file($chartPath) ? file_get_contents($chartPath) : '';
+mon_check($header !== '', 'header panel terbaca');
+mon_check(strpos($header, 'assets/vendor/chartjs/chart.min.js') !== false,
+	'header memuat Chart.js dari origin panel');
+mon_check(stripos($header, 'cdnjs.cloudflare.com/ajax/libs/Chart.js') === false,
+	'header tidak lagi meminta Chart.js dari CDN');
+mon_check(strpos($chartLibrary, 'Chart.js v3.6.2') !== false,
+	'berkas vendor Chart.js ada dan versinya cocok');
+mon_check(is_file($chartPath) && filesize($chartPath) > 150000,
+	'berkas vendor utuh, bukan salinan terpotong',
+	is_file($chartPath) ? filesize($chartPath) . ' byte' : 'berkas tidak ditemukan');
+mon_check(strpos($surfaceJs, 'dl-mon-chart-note') !== false,
+	'grafik yang tidak dapat digambar menulis alasannya ke halaman');
+mon_check(strpos($surfaceJs, 'tabel di bawah') !== false,
+	'pesan menyebut di mana angka yang sama bisa dibaca');
+mon_check(strpos(mon_source('admin_menu/assets/js/doclinc-diagnosis-infographic.js'),
+	'doclinc-analytics-chart-note') !== false,
+	'infografik diagnosis memakai aturan mundur yang sama');
 
 echo "\n== kedua aplikasi tidak boleh berbeda ==\n";
 foreach (array('request_accept_reminder_minutes', 'request_accept_overdue_minutes') as $key) {

@@ -94,6 +94,18 @@
 	height: 380px;
 }
 
+/* Grafik yang tidak dapat digambar hanya memakai ruang secukupnya untuk satu
+   kalimat, bukan kotak setinggi 380px tanpa isi. */
+.doclinc-analytics-chart[data-chart-state="unavailable"] {
+	height: auto;
+}
+
+.doclinc-analytics-chart-note {
+	margin: 0;
+	font-size: var(--dl-ref-caption);
+	color: var(--dl-ref-muted);
+}
+
 .doclinc-analytics-note {
 	padding: 12px 14px;
 	margin-bottom: 16px;

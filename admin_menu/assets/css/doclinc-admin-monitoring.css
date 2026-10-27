@@ -431,6 +431,19 @@
   height: 100%;
 }
 
+/* Grafik yang tidak dapat digambar hanya memakai ruang secukupnya untuk satu
+   kalimat, bukan kotak setinggi 260px tanpa isi. */
+.dl-mon .dl-mon-chart-wrap[data-chart-state="unavailable"] {
+  height: auto;
+}
+
+.dl-mon .dl-mon-chart-note {
+  margin: 0;
+  color: var(--dl-ref-muted);
+  font-size: var(--dl-ref-caption);
+  line-height: 1.45;
+}
+
 /* --- Tabel -------------------------------------------------------------- */
 
 .dl-mon .dl-mon-table-wrap {
