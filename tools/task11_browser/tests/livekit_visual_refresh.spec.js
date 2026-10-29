@@ -6,25 +6,30 @@ const repoRoot = path.resolve(__dirname, '..', '..', '..');
 const css = fs.readFileSync(path.join(repoRoot, 'assets/css/doclinc-livekit.css'), 'utf8');
 const thread = fs.readFileSync(path.join(repoRoot, 'application/modules/chat/views/thread_v.php'), 'utf8');
 
-test('LiveKit header uses the canonical DokLinc logo asset', () => {
-  expect(thread).toContain("doclinc_ui_asset('livekit.brand_logo')");
-  expect(thread).not.toContain('>DL<');
+test('LiveKit header is the compact WhatsApp-like call header', () => {
+  expect(thread).toContain('class="dl-call-top"');
+  expect(thread).toContain('id="doclincCallHeaderClose"');
+  expect(thread).toContain('id="doclincCallMore"');
+  expect(thread).not.toContain("doclinc_ui_asset('livekit.brand_logo')");
   expect(thread).not.toContain('Identitas terverifikasi');
 });
 
-test('production dock follows the reference primary action order', () => {
-  const controls = thread.match(/<button[^>]+class="doclinc-call-control[^>]*id="([^"]+)"[\s\S]*?<\/button>/g) || [];
+test('primary dock uses speaker, camera, microphone, chat, and end', () => {
+  const controls = thread.match(/<button[^>]+class="[^"]*dl-call-control[^>]*id="([^"]+)"[\s\S]*?<\/button>/g) || [];
   const ids = controls.map(control => (control.match(/id="([^"]+)"/) || [])[1]).filter(Boolean);
   expect(ids).toEqual([
-    'doclincCallMore',
-    'doclincCallCamera',
     'doclincCallSpeaker',
+    'doclincCallCamera',
     'doclincCallMic',
+    'doclincCallChat',
     'doclincCallEnd',
   ]);
+  expect(thread).not.toContain('doclincCallPrejoin');
+  expect(thread).not.toContain('doclincCallJoin');
+  expect(thread).not.toContain('Gabung sekarang');
   expect(thread).not.toContain('doclincCallParticipants');
   expect(thread).not.toContain('livekit.participants');
-  expect(thread).toContain("doclinc_ui_asset('livekit.end_call')");
+  expect(thread).toContain('fa-phone-slash');
   expect(thread).toMatch(/id="doclincCallMorePanel"[\s\S]*id="doclincCallSwitch"/);
   expect(thread).toMatch(/id="doclincCallMorePanel"[\s\S]*id="doclincCallMinimize"/);
 });

@@ -22,13 +22,15 @@ function extractFunction(source, name) {
   return null;
 }
 
-test('LiveKit exposes exactly five icon-only primary controls and hides participant UI', () => {
-  const controls = thread.match(/<button[^>]+class="doclinc-call-control[^>]*id="([^"]+)"[\s\S]*?<\/button>/g) || [];
+test('LiveKit exposes five primary controls, a direct-call header, and no participant UI', () => {
+  const controls = thread.match(/<button[^>]+class="[^"]*dl-call-control[^>]*id="([^"]+)"[\s\S]*?<\/button>/g) || [];
   const ids = controls.map(control => (control.match(/id="([^"]+)"/) || [])[1]).filter(Boolean);
-  expect(ids).toEqual(['doclincCallMore', 'doclincCallCamera', 'doclincCallSpeaker', 'doclincCallMic', 'doclincCallEnd']);
+  expect(ids).toEqual(['doclincCallSpeaker', 'doclincCallCamera', 'doclincCallMic', 'doclincCallChat', 'doclincCallEnd']);
+  expect(thread).not.toContain('doclincCallPrejoin');
+  expect(thread).not.toContain('doclincCallJoin');
+  expect(thread).not.toContain('Gabung sekarang');
   expect(thread).not.toContain('doclincCallParticipants');
   expect(thread).not.toContain('livekit.participants');
-  expect(thread).toMatch(/id="doclincCallMorePanel"[\s\S]*id="doclincCallChat"/);
   expect(thread).toMatch(/id="doclincCallMorePanel"[\s\S]*id="doclincCallSwitch"/);
   expect(thread).toMatch(/id="doclincCallMorePanel"[\s\S]*id="doclincCallMinimize"/);
   expect(thread).toMatch(/id="doclincCallMorePanel"[\s\S]*id="doclincCallClose"/);
@@ -38,9 +40,9 @@ test('LiveKit exposes exactly five icon-only primary controls and hides particip
   expect(controls.every(control => !control.includes('doclinc-call-control-label'))).toBeTruthy();
 });
 
-test('LiveKit uses the canonical End Call asset and preserves Indonesian icon-only semantics', () => {
-  expect(thread).toContain("doclinc_ui_asset('livekit.end_call')");
+test('LiveKit uses a filled red end control and keeps Indonesian icon-only semantics', () => {
   const endButton = (thread.match(/id="doclincCallEnd"[\s\S]*?<\/button>/) || [''])[0];
+  expect(endButton).toContain('fa-phone-slash');
   expect(endButton).not.toContain("doclinc_ui_asset('voice_call')");
   expect(thread).not.toContain('>Peserta<');
   expect(thread).not.toContain('>Participants<');
@@ -52,24 +54,25 @@ test('LiveKit uses the canonical End Call asset and preserves Indonesian icon-on
   expect(thread).not.toContain('>End Call<');
 });
 
-test('counterpart capsules retain the adaptive role line used by production identity binding', () => {
-  expect(thread).toContain('class="doclinc-call-empty-role"');
-  expect(thread).toContain('id="doclincCallOverlayRole"');
+test('counterpart identity is shown in the direct-call header and empty stage', () => {
+  expect(thread).toContain('class="dl-call-person-name doclinc-call-title"');
+  expect(thread).toContain('class="dl-call-empty-name doclinc-call-empty-name"');
+  expect(thread).toContain('class="dl-call-empty-role doclinc-call-empty-role"');
 });
 
-test('production call controls reference every canonical visible glyph asset', () => {
+test('production call controls render Font Awesome glyphs without image assets', () => {
   const expected = [
-    ['doclincCallMore', "doclinc_ui_asset('more')"],
-    ['doclincCallCamera', "doclinc_ui_asset('video_call')"],
-    ['doclincCallSpeaker', "doclinc_ui_asset('speaker')"],
-    ['doclincCallMic', "doclinc_ui_asset('mute')"],
-    ['doclincCallEnd', "doclinc_ui_asset('livekit.end_call')"]
+    ['doclincCallSpeaker', 'fa-volume-up'],
+    ['doclincCallCamera', 'fa-video'],
+    ['doclincCallMic', 'fa-microphone'],
+    ['doclincCallChat', 'fa-comment-alt'],
+    ['doclincCallEnd', 'fa-phone-slash']
   ];
-  for (const [id, asset] of expected) {
+  for (const [id, icon] of expected) {
     const button = (thread.match(new RegExp(`id="${id}"[\\s\\S]*?<\\/button>`)) || [''])[0];
     expect(button, `${id} markup missing`).not.toBe('');
-    expect(button, `${id} does not use canonical asset`).toContain(asset);
-    expect(button, `${id} has no rendered img glyph`).toMatch(/<img[\s\S]*?src=/);
+    expect(button, `${id} does not use ${icon}`).toContain(icon);
+    expect(button, `${id} should not use an img glyph`).not.toMatch(/<img[\s\S]*?src=/);
   }
 });
 

@@ -41,20 +41,8 @@ async function showIncoming(page, callType, callId) {
   await expect(page.locator('#doclincIncomingCaller')).toHaveText('Task11 Dokter Sintetik');
   await expect(page.locator('#doclincIncomingModeIcon')).toHaveAttribute('src', new RegExp(callType === 'audio' ? 'voicecall\\.svg' : 'videocall\\.svg'));
   await expect.poll(() => page.locator('#doclincIncomingModeIcon').evaluate(el => el.complete && el.naturalWidth > 0 && el.naturalHeight > 0), { timeout: 45000 }).toBe(true);
-  await expect.poll(() => page.locator('#doclincIncomingAnswer img').evaluate(el => el.complete && el.naturalWidth > 0 && el.naturalHeight > 0), { timeout: 45000 }).toBe(true);
-}
-
-async function slide(page, distanceRatio) {
-  const slider = page.locator('#doclincIncomingSlider');
-  const box = await slider.boundingBox();
-  expect(box).not.toBeNull();
-  const startX = box.x + 18;
-  const y = box.y + box.height / 2;
-  const endX = box.x + box.width * distanceRatio;
-  await page.mouse.move(startX, y);
-  await page.mouse.down();
-  await page.mouse.move(endX, y);
-  await page.mouse.up();
+  await expect(page.locator('#doclincIncomingAnswer')).toBeVisible();
+  await expect(page.locator('#doclincIncomingReject')).toBeVisible();
 }
 
 test.describe('fast production Chat + Warga incoming acceptance', () => {
@@ -100,7 +88,7 @@ test.describe('fast production Chat + Warga incoming acceptance', () => {
     await capture(page, 'chat-warga-390.png', { actor: 'WARGA', route: '/chat', viewport: '390x844', state: 'active-chat-no-initiation', icons: ['konsultasi.svg', 'attachment.svg', 'camera.svg', 'send.svg'] });
   });
 
-  test('Warga incoming Voice supports failed slide, keyboard accept, and connected shell', async ({ page }) => {
+  test('Warga incoming Voice accepts with one tap and leaves a failed tap ringing', async ({ page }) => {
     const data = fixtureData({ voiceTextOnly: true });
     await page.addInitScript(() => { window.__DOCLINC_LIVEKIT_TEST__ = true; });
     await loginActor(page, data.actors.WARGA);
@@ -110,21 +98,22 @@ test.describe('fast production Chat + Warga incoming acceptance', () => {
     await showIncoming(page, 'audio', 991000001);
     await expect(page.locator('#doclincIncomingType')).toContainText('Panggilan suara');
     await expect(page.locator('#doclincIncomingWaveform')).toBeVisible();
-    await expect(page.getByText('Geser untuk menjawab')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Terima panggilan' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Tolak panggilan' })).toBeVisible();
+    await expect(page.getByText('Geser untuk menjawab')).toHaveCount(0);
     await expect(page.locator('#doclincIncomingAvatarFallback')).toHaveCount(0);
-    await expect(page.locator('.doclinc-incoming-avatar')).toHaveCount(0);
-    const sliderBox = await page.locator('#doclincIncomingSlider').boundingBox();
-    const declineBox = await page.locator('#doclincIncomingReject').boundingBox();
-    expect(sliderBox).not.toBeNull();
-    expect(declineBox).not.toBeNull();
-    expect(sliderBox.width).toBeGreaterThan(300);
-    expect(declineBox.y).toBeGreaterThan(sliderBox.y + sliderBox.height - 1);
+    await expect(page.locator('.dl-incoming-avatar, .dl-incoming-initials')).toHaveCount(1);
+    const answerBox = await page.locator('#doclincIncomingAnswer').boundingBox();
+    const rejectBox = await page.locator('#doclincIncomingReject').boundingBox();
+    expect(answerBox).not.toBeNull();
+    expect(rejectBox).not.toBeNull();
+    expect(answerBox.width).toBeGreaterThanOrEqual(84);
+    expect(Math.abs(answerBox.y - rejectBox.y)).toBeLessThan(2);
     await capture(page, 'incoming-voice-390.png', { actor: 'WARGA', route: '/chat', viewport: '390x844', state: 'voice-incoming', call_mode: 'audio', icons: ['voicecall.svg'] });
-    await slide(page, 0.35);
+    await page.locator('#doclincIncomingCall .dl-incoming-surface').click({ position: { x: 4, y: 4 } });
     await expect(page.locator('#doclincIncomingCall')).toBeVisible();
     await expect(page.locator('#doclincCallModal.is-open')).toHaveCount(0);
-    await expect(page.locator('#doclincIncomingAnswer')).toHaveCSS('transform', 'none');
-    await slide(page, 0.95);
+    await page.locator('#doclincIncomingAnswer').click();
     await expect(page.locator('#doclincCallModal.is-open')).toBeVisible();
     await expect(page.locator('#doclincIncomingCall')).toHaveClass(/is-hidden/);
     await expect(page.locator('#doclincCallModal.is-audio')).toHaveCount(1);
@@ -172,13 +161,12 @@ test.describe('fast production Chat + Warga incoming acceptance', () => {
     await expect(page.locator('#doclincIncomingType')).toContainText('Panggilan video');
     await expect(page.locator('#doclincIncomingWaveform')).toBeHidden();
     await expect(page.locator('#doclincIncomingAvatarFallback')).toHaveCount(0);
-    await expect(page.locator('.doclinc-incoming-avatar')).toHaveCount(0);
-    const sliderBox = await page.locator('#doclincIncomingSlider').boundingBox();
-    const declineBox = await page.locator('#doclincIncomingReject').boundingBox();
-    expect(sliderBox).not.toBeNull();
-    expect(declineBox).not.toBeNull();
-    expect(sliderBox.width).toBeGreaterThan(300);
-    expect(declineBox.y).toBeGreaterThan(sliderBox.y + sliderBox.height - 1);
+    await expect(page.locator('.dl-incoming-avatar, .dl-incoming-initials')).toHaveCount(1);
+    const answerBox = await page.locator('#doclincIncomingAnswer').boundingBox();
+    const rejectBox = await page.locator('#doclincIncomingReject').boundingBox();
+    expect(answerBox).not.toBeNull();
+    expect(rejectBox).not.toBeNull();
+    expect(Math.abs(answerBox.y - rejectBox.y)).toBeLessThan(2);
     expect(cameraPermissionRequests).toBe(0);
     await capture(page, 'incoming-video-390.png', { actor: 'WARGA', route: '/chat', viewport: '390x844', state: 'video-incoming', call_mode: 'video', icons: ['videocall.svg'] });
     await expect(page.locator('#doclincIncomingAnswer')).toBeEnabled();
@@ -221,7 +209,7 @@ test.afterAll(() => {
     path.join(referenceRoot, 'active chat', 'screen.png'),
     path.join(referenceRoot, 'incoming call', 'screen.png')], { stdio: 'inherit' });
   fs.writeFileSync(path.join(outputDir, 'manifest.json'), JSON.stringify({ source: 'REAL_CI3_PRODUCTION_DOM', screenshots }, null, 2));
-  fs.writeFileSync(path.join(outputDir, 'visual-review.md'), '# Fast Chat + Incoming Call correction review\n\nProduction DOM, synthetic disposable actors only.\n\nStrict Chat canvas: 468x1600 reference and actual.\nIncoming layout: full-width slider with decline below.\n');
+  fs.writeFileSync(path.join(outputDir, 'visual-review.md'), '# Fast Chat + Incoming Call correction review\n\nProduction DOM, synthetic disposable actors only.\n\nStrict Chat canvas: 468x1600 reference and actual.\nIncoming layout: full-screen contact card with side-by-side Terima/Tolak actions.\n');
   const cards = screenshots.map(item => `<figure><a href="${item.file}"><img src="${item.file}" loading="lazy"><figcaption>${item.state}<br>${item.viewport} · ${item.actor}</figcaption></a></figure>`).join('');
   fs.writeFileSync(path.join(outputDir, 'index.html'), `<!doctype html><meta charset="utf-8"><title>Fast Chat + Incoming</title><style>body{font-family:system-ui;background:#edf4f1;margin:24px;color:#17352b}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}figure{background:#fff;margin:0;padding:10px;border-radius:14px}img{width:100%;display:block;border-radius:10px}figcaption{padding:8px 2px}</style><h1>Fast Chat + Incoming Call</h1><main>${cards}</main>`);
 });

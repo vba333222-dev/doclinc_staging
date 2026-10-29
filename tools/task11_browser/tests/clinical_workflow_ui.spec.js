@@ -55,6 +55,7 @@ test.describe('clinical workflow UI surfaces', () => {
     const reviewPanel = read('application/modules/konsultasi_nakes/views/partials/clinical_review_v.php');
     const closurePanel = read('application/modules/konsultasi_nakes/views/partials/clinical_closure_v.php');
     const placementModal = read('admin_menu/application/modules/kelola_staff_puskesmas/views/partials/staff_placement_modal_v.php');
+    const placementForm = read('admin_menu/application/modules/kelola_staff_puskesmas/views/partials/staff_placement_form_v.php');
     const watchdog = read('application/libraries/Active_request_watchdog.php');
     const dashboard = read('application/modules/home_nakes/views/partials/nakes_dashboard_v.php');
 
@@ -71,8 +72,9 @@ test.describe('clinical workflow UI surfaces', () => {
     expect(closurePanel).toContain("'clinical/finalize'");
     expect(closurePanel).toContain("'clinical/amend'");
     expect(closurePanel).toContain("'clinical/close'");
-    expect(placementModal).toContain('create_placement');
-    expect(placementModal).toContain('schedule_transfer');
+    expect(placementModal).toContain('staff_placement_form_v');
+    expect(placementForm).toContain('create_placement');
+    expect(placementForm).toContain('schedule_transfer');
     expect(watchdog).toContain('request.clinical_stall');
     expect(watchdog).toContain('ready_for_closure');
     expect(dashboard).toContain('data-puskesmas-clinical-stall');

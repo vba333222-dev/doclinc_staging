@@ -15,12 +15,14 @@ test.describe('visual refresh production-route integration', () => {
     const response = await page.goto(`/chat?request_id=${encodeURIComponent(data.requests.authority)}`, { waitUntil: 'domcontentloaded' });
     expect(response && response.status()).toBe(200);
     await expect(page.locator('link[href*="doclinc-livekit.css"]')).toHaveCount(1);
+    await expect(page.locator('link[href*="doclinc-livekit-call.css"]')).toHaveCount(1);
     await expect(page.locator('#doclincCallModal')).toHaveCount(1);
     await expect(page.locator('#doclincCallClose')).toHaveAttribute('aria-label', /Tutup/);
     await expect(page.locator('#doclincCallEnd')).toHaveAttribute('aria-label', /Akhiri/);
     await expect(page.locator('.doclinc-call-security, .doclinc-call-signal, .doclinc-call-head-more')).toHaveCount(0);
-    await expect(page.locator('.doclinc-call-control')).toHaveCount(5);
+    await expect(page.locator('.dl-call-control')).toHaveCount(5);
     await expect(page.locator('.doclinc-call-control-label')).toHaveCount(0);
+    await expect(page.locator('.doclinc-call-prejoin, #doclincCallPrejoin, #doclincCallJoin')).toHaveCount(0);
     await expect(page.locator('#doclincCallParticipants, #doclincCallParticipantsPanel')).toHaveCount(0);
     // Wait for the real chat poller to settle before collecting visual evidence;
     // a transient "Memuat pesan..." screen is not a valid final surface.
@@ -34,9 +36,9 @@ test.describe('visual refresh production-route integration', () => {
     for (const token of ['Mute', 'Camera', 'Speaker', 'Chat', 'Participants', 'More', 'End Call', 'Minimize', 'Waiting', 'Connected', 'Retry']) {
       expect(visibleCopy).not.toMatch(new RegExp(`\\b${token.replace(/[- ]/g, '[- ]')}\\b`, 'i'));
     }
-    await expect(page.locator('#doclincCallClose img')).toHaveAttribute('src', /close\.svg$/);
-    await expect(page.locator('#doclincCallEnd img')).toHaveAttribute('src', /endcall\.svg$/);
-    expect(failed.filter(url => url.includes('doclinc-livekit.css') || url.includes('/assets/doclinc_ui/'))).toEqual([]);
+    await expect(page.locator('#doclincCallClose i.fa-times')).toHaveCount(1);
+    await expect(page.locator('#doclincCallEnd i.fa-phone-slash')).toHaveCount(1);
+    expect(failed.filter(url => url.includes('doclinc-livekit.css') || url.includes('doclinc-livekit-call.css') || url.includes('/assets/doclinc_ui/'))).toEqual([]);
     if (process.env.VISUAL_REVIEW_OUTPUT_DIR) {
       const output = path.join(process.env.VISUAL_REVIEW_OUTPUT_DIR, 'desktop', 'chat', 'chat-production-livekit-shell.png');
       fs.mkdirSync(path.dirname(output), { recursive: true });

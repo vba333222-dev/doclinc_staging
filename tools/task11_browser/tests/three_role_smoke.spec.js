@@ -54,8 +54,8 @@ test.afterAll(async ({ request }) => {
 async function login(page, username) {
   await page.context().clearCookies();
   await page.goto(`${BASE}/login`);
-  await page.getByRole('textbox', { name: 'Nama pengguna' }).fill(username);
-  await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
+  await page.locator('#username').fill(username);
+  await page.locator('#password').fill(PASSWORD);
   await page.getByRole('button', { name: 'Masuk' }).click();
   // Menunggu dengan asersi web-first, BUKAN `waitForLoadState('networkidle')`.
   // Beranda ini melakukan polling terus-menerus, sehingga networkidle tidak
@@ -85,6 +85,7 @@ test.describe('tiga peran', () => {
     test(`${role} (${account.username}) bisa masuk dan beranda sehat`, async ({ page }) => {
       await login(page, account.username);
       expect(page.url()).not.toContain('/login');
+      expect(new URL(page.url()).pathname).toBe(account.home);
       await page.goto(`${BASE}${account.home}`);
       await page.waitForLoadState('networkidle');
       await assertHealthy(page);

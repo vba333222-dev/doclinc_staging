@@ -39,11 +39,14 @@ test('chat call entry and active-call affordance use canonical call semantics', 
 test('LiveKit shell stays scoped and keeps destructive end-call distinct from close', () => {
   const view = read('application/modules/chat/views/thread_v.php');
   const css = read('assets/css/doclinc-livekit.css');
+  const callCss = read('assets/css/doclinc-livekit-call.css');
   expect(view).toContain('doclinc-livekit.css');
-  expect(view).toContain("doclinc_ui_asset('livekit.close')");
-  expect(view).toContain("doclinc_ui_asset('voice_call')");
+  expect(view).toContain('doclinc-livekit-call.css');
+  expect(view).toContain('fa-times');
+  expect(view).toContain('fa-phone-slash');
   expect(css).toContain('.doclinc-call-panel');
-  expect(css).toContain('@media');
+  expect(callCss).toContain('.doclinc-call-modal');
+  expect(callCss).toContain('@media');
 });
 
 test('reserved icon filenames are confined to the LiveKit shell', () => {

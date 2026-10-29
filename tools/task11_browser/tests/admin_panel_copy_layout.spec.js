@@ -49,8 +49,8 @@ const VIEWPORTS = [
   { label: 'ponsel 390px', width: 390, height: 844 },
 ];
 
-const adminEmail = process.env.ADMIN_EMAIL || 'admin@lokal.test';
-const adminPassword = process.env.ADMIN_PASSWORD || 'Lokal#2026!';
+const adminEmail = process.env.ADMIN_EMAIL || 'superadmin@lokal.test';
+const adminPassword = process.env.ADMIN_PASSWORD || 'Superadmin#2026!';
 const adminBase = String(process.env.TASK11_BASE_URL || 'http://127.0.0.1:18090').replace(/\/+$/, '');
 
 async function login(page) {
@@ -481,7 +481,7 @@ test('mode penyakit terbanyak mewarnai peta dan klik membuka infografik kecamata
 
   expect(panel.title, 'panel harus menyebut kecamatan yang diklik').toMatch(/^Kecamatan \S/);
   expect(panel.labels, 'empat angka kecamatan harus berurutan dan bernama')
-    .toEqual(['Sudah dikode', 'Jenis penyakit', 'Penyakit dominan', 'Belum dikode']);
+    .toEqual(['Sudah punya kode', 'Jenis penyakit', 'Penyakit dominan', 'Belum punya kode']);
   expect(panel.values[0], 'angka diagnosis sudah dikode tidak boleh nol untuk kecamatan berdata').not.toBe('0');
   expect(panel.values[1], 'jumlah jenis penyakit harus terisi').toMatch(/^\d/);
   expect(panel.values[2], 'penyakit dominan harus berupa kode ICD-10').toMatch(/^[A-Z][0-9]{2}/);

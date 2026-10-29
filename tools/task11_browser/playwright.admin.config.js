@@ -17,7 +17,7 @@ const base = require('./playwright.config');
 module.exports = {
   ...base,
   globalTeardown: undefined,
-  testMatch: ['**/admin_panel_visual.spec.js', '**/admin_panel_a11y.spec.js', '**/admin_panel_copy_layout.spec.js', '**/admin_panel_record_archive.spec.js'],
+  testMatch: ['**/admin_panel_visual.spec.js', '**/admin_panel_a11y.spec.js', '**/admin_panel_copy_layout.spec.js', '**/admin_panel_record_archive.spec.js', '**/admin_nakes_onboarding.spec.js'],
   projects: [
     {
       name: 'admin-desktop',

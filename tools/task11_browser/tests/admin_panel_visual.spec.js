@@ -35,21 +35,23 @@ const ROUTES = [
      masih dipakai dan ditautkan dari halaman detail. */
   { route: 'kelola_dokter_nakes', label: 'Puskesmas' },
   { route: 'kelola_staff_puskesmas', label: 'Kelola staf Puskesmas' },
-  { route: 'wilayah', label: 'Wilayah' },
+  { route: 'kelola_staff_puskesmas/create', label: 'Tambah staf Puskesmas' },
+  { route: 'kelola_staff_puskesmas/edit/1', label: 'Edit staf Puskesmas' },
+  { route: 'kelola_dokter_nakes/detail/10280101', label: 'Detail Puskesmas' },
+  { route: 'kelola_dokter_nakes/password/10280101', label: 'Password akun Puskesmas' },
   { route: 'rekam_medis', label: 'Rekam medis' },
   { route: 'diagnosis', label: 'Diagnosis' },
   { route: 'icd10', label: 'ICD-10' },
-  { route: 'kelola_tindakan', label: 'Kelola tindakan' },
   { route: 'kelola_keluhan', label: 'Kelola keluhan' },
   { route: 'kelola_layanan_kesehatan', label: 'Kelola layanan kesehatan' },
   { route: 'konsultasi_kesehatan', label: 'Konsultasi kesehatan' },
   { route: 'kelola_news_feed', label: 'News feed' },
-  { route: 'konten_landing', label: 'Konten landing' },
-  { route: 'landing_page', label: 'Landing page' },
+  { route: 'konten_landing', label: 'Konten halaman depan' },
+  { route: 'landing_page', label: 'Halaman depan' },
   { route: 'laporan', label: 'Laporan' },
   { route: 'kapabilitas', label: 'Kapabilitas admin' },
   { route: 'sesi', label: 'Sesi & keamanan' },
-  { route: 'audit', label: 'Audit' },
+  { route: 'audit', label: 'Aktivitas admin' },
 ];
 
 const ERROR_NEEDLES = [
@@ -63,8 +65,8 @@ const ERROR_NEEDLES = [
   'Unable to connect to your database',
 ];
 
-const adminEmail = process.env.ADMIN_EMAIL || 'admin@lokal.test';
-const adminPassword = process.env.ADMIN_PASSWORD || 'Lokal#2026!';
+const adminEmail = process.env.ADMIN_EMAIL || 'superadmin@lokal.test';
+const adminPassword = process.env.ADMIN_PASSWORD || 'Superadmin#2026!';
 const baselineDir = process.env.BASELINE_DIR || path.join(os.tmpdir(), 'doclinc-baseline');
 const strictHeadings = process.env.STRICT_HEADINGS === '1';
 /* URL dibangun dari TASK11_BASE_URL secara eksplisit, bukan lewat `baseURL`

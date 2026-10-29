@@ -29,8 +29,8 @@ const { test, expect } = require('@playwright/test');
  * gerbang tanpa ada yang menyadarinya.
  */
 
-const adminEmail = process.env.ADMIN_EMAIL || 'admin@lokal.test';
-const adminPassword = process.env.ADMIN_PASSWORD || 'Lokal#2026!';
+const adminEmail = process.env.ADMIN_EMAIL || 'superadmin@lokal.test';
+const adminPassword = process.env.ADMIN_PASSWORD || 'Superadmin#2026!';
 const adminBase = String(process.env.TASK11_BASE_URL || 'http://127.0.0.1:18090').replace(/\/+$/, '');
 
 const VISUAL_SPEC = path.join(__dirname, 'admin_panel_visual.spec.js');
@@ -38,7 +38,7 @@ const VISUAL_SPEC = path.join(__dirname, 'admin_panel_visual.spec.js');
 function routesFromVisualSpec() {
   const source = fs.readFileSync(VISUAL_SPEC, 'utf8');
   const found = [];
-  const re = /route:\s*'([a-z0-9_]+)'/g;
+  const re = /route:\s*'([a-z0-9_\/]+)'/g;
   let match = re.exec(source);
   while (match) {
     found.push(match[1]);

@@ -6,6 +6,7 @@ const repoRoot = path.resolve(__dirname, '..', '..', '..');
 const thread = fs.readFileSync(path.join(repoRoot, 'application/modules/chat/views/thread_v.php'), 'utf8');
 const chatCss = fs.readFileSync(path.join(repoRoot, 'assets/css/style.css'), 'utf8')
   + fs.readFileSync(path.join(repoRoot, 'assets/css/doclinc-livekit.css'), 'utf8')
+  + fs.readFileSync(path.join(repoRoot, 'assets/css/doclinc-livekit-call.css'), 'utf8')
   + thread;
 
 test('active chat production template exposes screenshot-authoritative surface hooks', () => {
@@ -32,20 +33,25 @@ test('active chat production template exposes screenshot-authoritative surface h
   expect(chatCss).toMatch(/\.chat-date-separator/);
 });
 
-test('incoming call production template is light, adaptive, and mode-specific', () => {
-  expect(thread).toContain('class="doclinc-incoming-surface"');
-  expect(thread).toContain('class="doclinc-incoming-badge"');
-  expect(thread).toContain('class="doclinc-incoming-avatar"');
-  expect(thread).toContain('class="doclinc-incoming-mode"');
+test('incoming call production template is full-screen, adaptive, and mode-specific', () => {
+  expect(thread).toContain('class="doclinc-incoming-call');
+  expect(thread).toContain('class="dl-incoming-surface"');
+  expect(thread).toContain('class="dl-incoming-badge"');
+  expect(thread).toContain('class="dl-incoming-avatar"');
+  expect(thread).toContain('class="dl-incoming-mode"');
   expect(thread).toContain('data-incoming-waveform');
-  expect(thread).toContain('class="doclinc-incoming-slider"');
+  expect(thread).toContain('class="dl-incoming-actions"');
+  expect(thread).toContain('class="dl-incoming-action is-answer"');
+  expect(thread).toContain('class="dl-incoming-action is-reject"');
+  expect(thread).not.toContain('<div class="doclinc-incoming-slider"');
+  expect(thread).not.toContain('Geser untuk menjawab');
   expect(thread).toContain('aria-label="Terima panggilan"');
   expect(thread).toContain('aria-label="Tolak panggilan"');
   expect(thread).not.toContain('Terenkripsi End-to-End');
   expect(thread).not.toContain('home-indicator');
   expect(chatCss).toMatch(/\.doclinc-incoming-call/);
-  expect(chatCss).toMatch(/\.doclinc-incoming-surface/);
-  expect(chatCss).toMatch(/\.doclinc-incoming-slider/);
+  expect(chatCss).toMatch(/\.dl-incoming-surface/);
+  expect(chatCss).toMatch(/\.dl-incoming-action\.is-answer/);
 });
 
 test('incoming voice and video copy remain distinct and truthful', () => {
